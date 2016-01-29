@@ -1,2 +1,0 @@
-/usr/bin/ar cr libtest.a  CMakeFiles/test.dir/test.c.o
-/usr/bin/ranlib libtest.a

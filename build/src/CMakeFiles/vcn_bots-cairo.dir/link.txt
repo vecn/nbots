@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -g   -shared -Wl,-soname,libvcn_bots-cairo.so -o libvcn_bots-cairo.so CMakeFiles/vcn_bots-cairo.dir/vcn/geometric_bot/mesh/modules2D/exporter_cairo.c.o -lcairo 

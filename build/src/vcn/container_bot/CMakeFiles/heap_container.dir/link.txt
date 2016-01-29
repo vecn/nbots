@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -g   -shared -Wl,-soname,libheap_container.so -o libheap_container.so CMakeFiles/heap_container.dir/heap/heap_tree.c.o CMakeFiles/heap_container.dir/heap/heap_dst.c.o CMakeFiles/heap_container.dir/heap/heap_iterator.c.o 

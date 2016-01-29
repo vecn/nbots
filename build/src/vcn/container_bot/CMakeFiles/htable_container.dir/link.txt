@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -g   -shared -Wl,-soname,libhtable_container.so -o libhtable_container.so CMakeFiles/htable_container.dir/htable/htable_dst.c.o CMakeFiles/htable_container.dir/htable/htable_iterator.c.o 

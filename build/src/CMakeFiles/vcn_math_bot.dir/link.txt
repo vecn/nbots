@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -g   -shared -Wl,-soname,libvcn_math_bot.so -o libvcn_math_bot.so CMakeFiles/vcn_math_bot.dir/vcn/math_bot.c.o -lm 

@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -g   -shared -Wl,-soname,libvcn_container_bot.so -o libvcn_container_bot.so CMakeFiles/vcn_container_bot.dir/array.c.o CMakeFiles/vcn_container_bot.dir/container.c.o CMakeFiles/vcn_container_bot.dir/iterator.c.o 

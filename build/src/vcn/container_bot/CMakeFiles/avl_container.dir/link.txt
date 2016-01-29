@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -g   -shared -Wl,-soname,libavl_container.so -o libavl_container.so CMakeFiles/avl_container.dir/avl/avl_tree.c.o CMakeFiles/avl_container.dir/avl/avl_dst.c.o CMakeFiles/avl_container.dir/avl/avl_iterator.c.o 
