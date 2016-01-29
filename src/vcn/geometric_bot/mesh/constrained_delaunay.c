@@ -155,28 +155,29 @@ static void spread_trg_adjacent_to_constrains
 		create_trg_constrained(mesh,
 				       available_vtx,
 				       sgm, v1);
-	if (NULL == new_trg)
-		return;
-  
-	/* Process Counter Clock Wise segment */
-	msh_edge_t* nb_sgm = mtrg_get_CCW_edge(new_trg, sgm);
+	if (NULL != new_trg) {
+		mesh->do_after_trg(mesh);
+
+  		/* Process Counter Clock Wise segment */
+		msh_edge_t* nb_sgm = mtrg_get_CCW_edge(new_trg, sgm);
 	
-	bool process_left_side = true;
-	if (nb_sgm->v1 == v2)
-		process_left_side = false;
+		bool process_left_side = true;
+		if (nb_sgm->v1 == v2)
+			process_left_side = false;
 
-	spread_trg_adjacent_to_constrains(mesh, available_vtx, 
-					nb_sgm, process_left_side);
+		spread_trg_adjacent_to_constrains(mesh, available_vtx, 
+						  nb_sgm, process_left_side);
 
-	/* Process Clock Wise segment */
-	nb_sgm = mtrg_get_CW_edge(new_trg, sgm);
+		/* Process Clock Wise segment */
+		nb_sgm = mtrg_get_CW_edge(new_trg, sgm);
 
-	process_left_side = true;
-	if (nb_sgm->v2 == v1)
-		process_left_side = false;
+		process_left_side = true;
+		if (nb_sgm->v2 == v1)
+			process_left_side = false;
 
-	spread_trg_adjacent_to_constrains(mesh, available_vtx, 
-					  nb_sgm, process_left_side);
+		spread_trg_adjacent_to_constrains(mesh, available_vtx, 
+						  nb_sgm, process_left_side);
+	}
 
 }
 
