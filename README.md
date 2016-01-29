@@ -3,7 +3,7 @@ VCN Bots
 
 Validated Numerical Computations.
 ---------------------------------
-A numerical bot is an automatized tool to perform related numerical task.
+A numerical bot is an automatic tool to perform related numerical task.
 For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes,
 Voronoi diagrams, etc. and the Eigen Bot is a linear algebra library, which includes
 special routines for sparse systems.
