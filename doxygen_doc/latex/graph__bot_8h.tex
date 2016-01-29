@@ -1,0 +1,183 @@
+\hypertarget{graph__bot_8h}{\section{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/graph\+\_\+bot.h File Reference}
+\label{graph__bot_8h}\index{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/graph\+\_\+bot.\+h@{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/graph\+\_\+bot.\+h}}
+}
+
+
+The graph bot is a set of numerical procedures to handle graphs, exahistively used in meshing procedures, parallel computations and machine learning techniques.  
+
+
+{\ttfamily \#include \char`\"{}vcn/typedefs.\+h\char`\"{}}\\*
+Include dependency graph for graph\+\_\+bot.\+h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{graph__bot_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{graph__bot_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structvcn__graph__s}{vcn\+\_\+graph\+\_\+s}
+\begin{DoxyCompactList}\small\item\em Graph structure. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{typedef struct \hyperlink{structvcn__graph__s}{vcn\+\_\+graph\+\_\+s} \hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t}}\label{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}
+
+\begin{DoxyCompactList}\small\item\em Graph structure. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{graph__bot_8h_abc950f7fa0438a1ffcca287c553fe5ad}{vcn\+\_\+graph\+\_\+destroy} (\hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$graph)
+\begin{DoxyCompactList}\small\item\em Destroy graph. \end{DoxyCompactList}\item 
+\hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$ \hyperlink{graph__bot_8h_aed779f5201f689139f20428664dc3a2f}{vcn\+\_\+graph\+\_\+get\+\_\+subgraph} (const \hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$const graph, uint N\+\_\+nodes, uint $\ast$nodes)
+\begin{DoxyCompactList}\small\item\em Get a subgraph from the graph. \end{DoxyCompactList}\item 
+uint $\ast$ \hyperlink{graph__bot_8h_a553a36280e5570478bb6db37903a1c03}{vcn\+\_\+graph\+\_\+labeling\+\_\+amd} (const \hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$const graph, uint $\ast$iperm)
+\begin{DoxyCompactList}\small\item\em Labeling used to minimize entries in L\+U decomposition based on the A\+M\+D algorithm. \end{DoxyCompactList}\item 
+uint $\ast$ \hyperlink{graph__bot_8h_a22d4262265ef055e3fb4eed044540b6d}{vcn\+\_\+graph\+\_\+labeling\+\_\+mmd} (const \hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$const graph, uint $\ast$iperm)
+\begin{DoxyCompactList}\small\item\em Multiple Minimum Degree based on Quotient Graphs. The output labeling reduces the fill-\/in on L\+U decompositions. \end{DoxyCompactList}\item 
+uint $\ast$ \hyperlink{graph__bot_8h_a3efa2fc387b77afe9debece16dd3a7aa}{vcn\+\_\+graph\+\_\+partition\+\_\+sb} (const \hyperlink{graph__bot_8h_a3a951da0c05a3e2ab67d73a94269fdab}{vcn\+\_\+graph\+\_\+t} $\ast$const graph, uint k)
+\begin{DoxyCompactList}\small\item\em Graph partition using Spectral bisection. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The graph bot is a set of numerical procedures to handle graphs, exahistively used in meshing procedures, parallel computations and machine learning techniques. 
+
+\begin{DoxyAuthor}{Author}
+Victor Eduardo Cardoso Nungaray ~\newline
+ victorc@cimat.\+mx ~\newline
+ \href{https://twitter.com/victore_cardoso}{\tt @victore\+\_\+cardoso } 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+10 August 2015
+\end{DoxyDate}
+\begin{DoxyParagraph}{License\+:}
+This piece of code is in the P\+U\+B\+L\+I\+C D\+O\+M\+A\+I\+N, if your government does not recognizes such a dedication, then you are granted a perpetual and irrevocable license to copy and modify this file however you want. This does not imply any warranty. ~\newline
+ Attributions and feedback are always welcome. 
+\end{DoxyParagraph}
+
+
+\subsection{Function Documentation}
+\hypertarget{graph__bot_8h_abc950f7fa0438a1ffcca287c553fe5ad}{\index{graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}!vcn\+\_\+graph\+\_\+destroy@{vcn\+\_\+graph\+\_\+destroy}}
+\index{vcn\+\_\+graph\+\_\+destroy@{vcn\+\_\+graph\+\_\+destroy}!graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}}
+\subsubsection[{vcn\+\_\+graph\+\_\+destroy}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+graph\+\_\+destroy (
+\begin{DoxyParamCaption}
+\item[{{\bf vcn\+\_\+graph\+\_\+t} $\ast$}]{graph}
+\end{DoxyParamCaption}
+)}}\label{graph__bot_8h_abc950f7fa0438a1ffcca287c553fe5ad}
+
+
+Destroy graph. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em graph} & Graph to be destroyed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{graph__bot_8h_aed779f5201f689139f20428664dc3a2f}{\index{graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}!vcn\+\_\+graph\+\_\+get\+\_\+subgraph@{vcn\+\_\+graph\+\_\+get\+\_\+subgraph}}
+\index{vcn\+\_\+graph\+\_\+get\+\_\+subgraph@{vcn\+\_\+graph\+\_\+get\+\_\+subgraph}!graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}}
+\subsubsection[{vcn\+\_\+graph\+\_\+get\+\_\+subgraph}]{\setlength{\rightskip}{0pt plus 5cm}{\bf vcn\+\_\+graph\+\_\+t}$\ast$ vcn\+\_\+graph\+\_\+get\+\_\+subgraph (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+graph\+\_\+t} $\ast$const}]{graph, }
+\item[{uint}]{N\+\_\+nodes, }
+\item[{uint $\ast$}]{nodes}
+\end{DoxyParamCaption}
+)}}\label{graph__bot_8h_aed779f5201f689139f20428664dc3a2f}
+
+
+Get a subgraph from the graph. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em graph} & Super graph containing the output subgraph. \\
+\hline
+\mbox{\tt in}  & {\em N\+\_\+nodes} & Number of nodes in the subgraph. \\
+\hline
+\mbox{\tt in}  & {\em nodes} & I\+D of nodes of the subgraph. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Subgraph. 
+\end{DoxyReturn}
+\hypertarget{graph__bot_8h_a553a36280e5570478bb6db37903a1c03}{\index{graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}!vcn\+\_\+graph\+\_\+labeling\+\_\+amd@{vcn\+\_\+graph\+\_\+labeling\+\_\+amd}}
+\index{vcn\+\_\+graph\+\_\+labeling\+\_\+amd@{vcn\+\_\+graph\+\_\+labeling\+\_\+amd}!graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}}
+\subsubsection[{vcn\+\_\+graph\+\_\+labeling\+\_\+amd}]{\setlength{\rightskip}{0pt plus 5cm}uint$\ast$ vcn\+\_\+graph\+\_\+labeling\+\_\+amd (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+graph\+\_\+t} $\ast$const}]{graph, }
+\item[{uint $\ast$}]{iperm}
+\end{DoxyParamCaption}
+)}}\label{graph__bot_8h_a553a36280e5570478bb6db37903a1c03}
+
+
+Labeling used to minimize entries in L\+U decomposition based on the A\+M\+D algorithm. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em graph} & Input graph to be labeled. \\
+\hline
+\mbox{\tt out}  & {\em iperm} & Inverse permutation, array mapping output I\+Ds with input I\+Ds. N\+U\+L\+L if not required. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The permutation, an array mapping input I\+Ds with output I\+Ds.
+\end{DoxyReturn}
+\begin{DoxySeeAlso}{See also}
+P. R. Amestoy, T. A. Davis and I. S. Duff. {\bfseries An Approximate Minimum Degree Ordering Algorithm.} Journal of Matrix Analysis and Applications (Vol. 17 1996), S\+I\+A\+M, pages 886-\/905. 
+\end{DoxySeeAlso}
+\hypertarget{graph__bot_8h_a22d4262265ef055e3fb4eed044540b6d}{\index{graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}!vcn\+\_\+graph\+\_\+labeling\+\_\+mmd@{vcn\+\_\+graph\+\_\+labeling\+\_\+mmd}}
+\index{vcn\+\_\+graph\+\_\+labeling\+\_\+mmd@{vcn\+\_\+graph\+\_\+labeling\+\_\+mmd}!graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}}
+\subsubsection[{vcn\+\_\+graph\+\_\+labeling\+\_\+mmd}]{\setlength{\rightskip}{0pt plus 5cm}uint$\ast$ vcn\+\_\+graph\+\_\+labeling\+\_\+mmd (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+graph\+\_\+t} $\ast$const}]{graph, }
+\item[{uint $\ast$}]{iperm}
+\end{DoxyParamCaption}
+)}}\label{graph__bot_8h_a22d4262265ef055e3fb4eed044540b6d}
+
+
+Multiple Minimum Degree based on Quotient Graphs. The output labeling reduces the fill-\/in on L\+U decompositions. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em graph} & Input graph to be labeled. \\
+\hline
+\mbox{\tt out}  & {\em iperm} & Inverse permutation, array mapping output I\+Ds with input I\+Ds. N\+U\+L\+L if not required. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The permutation, an array mapping input I\+Ds with output I\+Ds.
+\end{DoxyReturn}
+\begin{DoxySeeAlso}{See also}
+A. George and J. W.\+H. Liu. {\bfseries The evolution of the minimum degree ordering algorithm.} S\+I\+A\+M Review (Vol. 31 1989), pages 1-\/19. 
+\end{DoxySeeAlso}
+\hypertarget{graph__bot_8h_a3efa2fc387b77afe9debece16dd3a7aa}{\index{graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}!vcn\+\_\+graph\+\_\+partition\+\_\+sb@{vcn\+\_\+graph\+\_\+partition\+\_\+sb}}
+\index{vcn\+\_\+graph\+\_\+partition\+\_\+sb@{vcn\+\_\+graph\+\_\+partition\+\_\+sb}!graph\+\_\+bot.\+h@{graph\+\_\+bot.\+h}}
+\subsubsection[{vcn\+\_\+graph\+\_\+partition\+\_\+sb}]{\setlength{\rightskip}{0pt plus 5cm}uint$\ast$ vcn\+\_\+graph\+\_\+partition\+\_\+sb (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+graph\+\_\+t} $\ast$const}]{graph, }
+\item[{uint}]{k}
+\end{DoxyParamCaption}
+)}}\label{graph__bot_8h_a3efa2fc387b77afe9debece16dd3a7aa}
+
+
+Graph partition using Spectral bisection. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em graph} & Graph to be partitioned. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Arrays of I\+Ds corresponding to the partition of each node, starting from zero.
+\end{DoxyReturn}
+\begin{DoxySeeAlso}{See also}
+B. Hendrickson and R. Leland. {\bfseries An improved spectral graph partitioning algorithm for mapping parallel computations.} S\+I\+A\+M J. Sci. Comput. (Vol 16 1995), pages 452-\/469. 
+\end{DoxySeeAlso}

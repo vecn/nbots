@@ -1,0 +1,190 @@
+\hypertarget{fem__bot_8h}{\section{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/fem\+\_\+bot.h File Reference}
+\label{fem__bot_8h}\index{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/fem\+\_\+bot.\+h@{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/fem\+\_\+bot.\+h}}
+}
+
+
+F\+E\+M bot will assemble the linear systems of well stablished F\+E problems, such as solid mechanics and heat diffusion.  
+
+
+{\ttfamily \#include \char`\"{}vcn/typedefs.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}vcn/geometric\+\_\+bot.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}vcn/sparse\+\_\+bot.\+h\char`\"{}}\\*
+Include dependency graph for fem\+\_\+bot.\+h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{fem__bot_8h__incl}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t}
+\item 
+struct \hyperlink{structvcn__fem__output__t}{vcn\+\_\+fem\+\_\+output\+\_\+t}
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{fem__bot_8h_a1960f237d9a84c9671dc61072e6a3eb3}{typedef struct vcn\+\_\+fem\+\_\+elem\+\_\+s {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+t}}\label{fem__bot_8h_a1960f237d9a84c9671dc61072e6a3eb3}
+
+\item 
+\hypertarget{fem__bot_8h_a15d726942269c6b42f99208bb2c96650}{typedef struct vcn\+\_\+fem\+\_\+material\+\_\+s {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+t}}\label{fem__bot_8h_a15d726942269c6b42f99208bb2c96650}
+
+\item 
+\hypertarget{fem__bot_8h_a6f86d7a05fd636d977a565fa2deff097}{typedef struct vcn\+\_\+fem\+\_\+implicit\+\_\+s {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+t}}\label{fem__bot_8h_a6f86d7a05fd636d977a565fa2deff097}
+
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{fem__bot_8h_a6e0a209fa762e820ed5040b7f4c4694d}{vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$ {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+create} ()}\label{fem__bot_8h_a6e0a209fa762e820ed5040b7f4c4694d}
+
+\item 
+\hypertarget{fem__bot_8h_aab49d1d0631f87de940b208e43c3172c}{void {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+destroy} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams)}\label{fem__bot_8h_aab49d1d0631f87de940b208e43c3172c}
+
+\item 
+\hypertarget{fem__bot_8h_a0821a5344b977d6dbede10f086424e20}{void {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+set\+\_\+\+N\+\_\+steps} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams, uint N\+\_\+time\+\_\+steps)}\label{fem__bot_8h_a0821a5344b977d6dbede10f086424e20}
+
+\item 
+\hypertarget{fem__bot_8h_adf5e9f817d29012a79428aefc2f3772a}{void {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+set\+\_\+\+N\+\_\+max\+\_\+iter} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams, uint N\+\_\+max\+\_\+iter)}\label{fem__bot_8h_adf5e9f817d29012a79428aefc2f3772a}
+
+\item 
+\hypertarget{fem__bot_8h_a0cc40abe6a12aa01cca7564a788dbd87}{void {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+set\+\_\+\+N\+\_\+max\+\_\+iter\+\_\+without\+\_\+enhance} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams, uint N\+\_\+max\+\_\+iter)}\label{fem__bot_8h_a0cc40abe6a12aa01cca7564a788dbd87}
+
+\item 
+\hypertarget{fem__bot_8h_a3a7278bb6f47556297a3551166fc2757}{void {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+set\+\_\+residual\+\_\+tolerance} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams, double penergy\+\_\+tol)}\label{fem__bot_8h_a3a7278bb6f47556297a3551166fc2757}
+
+\item 
+\hypertarget{fem__bot_8h_a96345d73fe8dc4465f9af450387a954f}{uint {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+get\+\_\+\+N\+\_\+steps} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams)}\label{fem__bot_8h_a96345d73fe8dc4465f9af450387a954f}
+
+\item 
+\hypertarget{fem__bot_8h_afca7295a2df67d2a53353431ef166dca}{uint {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+get\+\_\+\+N\+\_\+max\+\_\+iter} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams)}\label{fem__bot_8h_afca7295a2df67d2a53353431ef166dca}
+
+\item 
+\hypertarget{fem__bot_8h_a1ca209e0d22c6633f4ad8709053df409}{uint {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+get\+\_\+\+N\+\_\+max\+\_\+iter\+\_\+without\+\_\+enhance} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams)}\label{fem__bot_8h_a1ca209e0d22c6633f4ad8709053df409}
+
+\item 
+\hypertarget{fem__bot_8h_aabefc64cf277cfd45f606b250dfa8d6d}{double {\bfseries vcn\+\_\+fem\+\_\+implicit\+\_\+get\+\_\+residual\+\_\+tolerance} (vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$isparams)}\label{fem__bot_8h_aabefc64cf277cfd45f606b250dfa8d6d}
+
+\item 
+\hypertarget{fem__bot_8h_a9ed0df3a08d6631a1cde7d6932d9f93a}{vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$ {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+create} ()}\label{fem__bot_8h_a9ed0df3a08d6631a1cde7d6932d9f93a}
+
+\item 
+\hypertarget{fem__bot_8h_a03c5001e38c3bec8f4fd87a7c8bb1200}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+destroy} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat)}\label{fem__bot_8h_a03c5001e38c3bec8f4fd87a7c8bb1200}
+
+\item 
+\hypertarget{fem__bot_8h_a253e4585ca16984bb84658c42fa64fa8}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+poisson\+\_\+module} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double pmodule)}\label{fem__bot_8h_a253e4585ca16984bb84658c42fa64fa8}
+
+\item 
+\hypertarget{fem__bot_8h_aaae0ab63d75e70b3abcbce3062cc6b05}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+elasticity\+\_\+module} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double emodule)}\label{fem__bot_8h_aaae0ab63d75e70b3abcbce3062cc6b05}
+
+\item 
+\hypertarget{fem__bot_8h_ae365aa1b369277bb3d1026d10eb7741f}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+density} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double density)}\label{fem__bot_8h_ae365aa1b369277bb3d1026d10eb7741f}
+
+\item 
+\hypertarget{fem__bot_8h_a9e274bd468a268eafdeb2a0a9a21a35b}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+fracture\+\_\+energy} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double frac\+\_\+energy)}\label{fem__bot_8h_a9e274bd468a268eafdeb2a0a9a21a35b}
+
+\item 
+\hypertarget{fem__bot_8h_a58064b76bf2845eb2b3c2063f9f13c1a}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+traction\+\_\+limit\+\_\+stress} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double max\+\_\+stress)}\label{fem__bot_8h_a58064b76bf2845eb2b3c2063f9f13c1a}
+
+\item 
+\hypertarget{fem__bot_8h_acaaebfa88c4f89b78f229c4a64a7af65}{void {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+set\+\_\+compression\+\_\+limit\+\_\+stress} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$mat, double max\+\_\+stress)}\label{fem__bot_8h_acaaebfa88c4f89b78f229c4a64a7af65}
+
+\item 
+\hypertarget{fem__bot_8h_a1d68d578a6f4bfd5d7adcbfd19ec271c}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+poisson\+\_\+module} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_a1d68d578a6f4bfd5d7adcbfd19ec271c}
+
+\item 
+\hypertarget{fem__bot_8h_ae09d11b0ecb173c2546f5401a58cd257}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+elasticity\+\_\+module} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_ae09d11b0ecb173c2546f5401a58cd257}
+
+\item 
+\hypertarget{fem__bot_8h_a9d3a3b029d994ea502eb56a4d214ae95}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+density} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_a9d3a3b029d994ea502eb56a4d214ae95}
+
+\item 
+\hypertarget{fem__bot_8h_a7ea871a26279e69833efe37459455aa0}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+fracture\+\_\+energy} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_a7ea871a26279e69833efe37459455aa0}
+
+\item 
+\hypertarget{fem__bot_8h_ae4764b8f7d1b4d172ba2e6201ce0f01d}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+traction\+\_\+limit\+\_\+stress} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_ae4764b8f7d1b4d172ba2e6201ce0f01d}
+
+\item 
+\hypertarget{fem__bot_8h_a8b9ef465f23b354527f8223cecb15d4c}{double {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+compression\+\_\+limit\+\_\+stress} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_a8b9ef465f23b354527f8223cecb15d4c}
+
+\item 
+\hypertarget{fem__bot_8h_acfa873ce2e48e4a7d0d45c732e7e6ec2}{void $\ast$ {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+get\+\_\+damage\+\_\+function} (const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const mat)}\label{fem__bot_8h_acfa873ce2e48e4a7d0d45c732e7e6ec2}
+
+\item 
+\hypertarget{fem__bot_8h_afcd3b6a1c6a673684b4a9f03242591e8}{int {\bfseries vcn\+\_\+fem\+\_\+material\+\_\+verify} (vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$material)}\label{fem__bot_8h_afcd3b6a1c6a673684b4a9f03242591e8}
+
+\item 
+\hypertarget{fem__bot_8h_a280c2ff2b440b94569511bd4c07dd3d4}{\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$ {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+create} ()}\label{fem__bot_8h_a280c2ff2b440b94569511bd4c07dd3d4}
+
+\item 
+\hypertarget{fem__bot_8h_a50da87b565fea1cf8d7102637475e650}{\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$ {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+clone} (const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bconditions)}\label{fem__bot_8h_a50da87b565fea1cf8d7102637475e650}
+
+\item 
+\hypertarget{fem__bot_8h_a5fc48cba1d23cf07b61b93cdb454eebf}{\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$ {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+read} (const char $\ast$filename)}\label{fem__bot_8h_a5fc48cba1d23cf07b61b93cdb454eebf}
+
+\item 
+\hypertarget{fem__bot_8h_aec3223c95098bfb01b0d57d5b05426d6}{void {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+save} (const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bconditions, const char $\ast$filename)}\label{fem__bot_8h_aec3223c95098bfb01b0d57d5b05426d6}
+
+\item 
+\hypertarget{fem__bot_8h_aad1a0ff13d74dd4d479f872084a19ef9}{void {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+copy} (\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$cpy, const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const src)}\label{fem__bot_8h_aad1a0ff13d74dd4d479f872084a19ef9}
+
+\item 
+\hypertarget{fem__bot_8h_acb398c500e611b24a5b4673da672abd8}{void {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+clear} (\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$bconditions)}\label{fem__bot_8h_acb398c500e611b24a5b4673da672abd8}
+
+\item 
+\hypertarget{fem__bot_8h_a93c02289e868fb33e769ea61ba2cac67}{void {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+destroy} (\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$bconditions)}\label{fem__bot_8h_a93c02289e868fb33e769ea61ba2cac67}
+
+\item 
+\hypertarget{fem__bot_8h_aa11741f7a461d4daf7e44f5d97e88c6c}{void {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+printf} (const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bconditions)}\label{fem__bot_8h_aa11741f7a461d4daf7e44f5d97e88c6c}
+
+\item 
+\hypertarget{fem__bot_8h_afabd73ec672fd81ab6eb84fb59e34725}{\hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$ {\bfseries vcn\+\_\+fem\+\_\+bcond\+\_\+create\+\_\+from\+\_\+model\+\_\+to\+\_\+mesh} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const msh3trg, const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bconditions)}\label{fem__bot_8h_afabd73ec672fd81ab6eb84fb59e34725}
+
+\item 
+\hypertarget{fem__bot_8h_ac20ef2ea5b8ae85c4f072006672707ac}{vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$ {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+create\+\_\+triangle} ()}\label{fem__bot_8h_ac20ef2ea5b8ae85c4f072006672707ac}
+
+\item 
+\hypertarget{fem__bot_8h_a2b72e7aa584bc187b053b4c3ffc7b932}{void {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+destroy} (vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$elemtype)}\label{fem__bot_8h_a2b72e7aa584bc187b053b4c3ffc7b932}
+
+\item 
+\hypertarget{fem__bot_8h_aa4e8da7af135432150ff0ff889e7ec21}{uint {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+get\+\_\+\+N\+\_\+nodes} (const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype)}\label{fem__bot_8h_aa4e8da7af135432150ff0ff889e7ec21}
+
+\item 
+\hypertarget{fem__bot_8h_a5c8622a52f929adda5629290811a2fc2}{void $\ast$ {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+get\+\_\+ith\+\_\+shape\+\_\+function} (const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, uint i)}\label{fem__bot_8h_a5c8622a52f929adda5629290811a2fc2}
+
+\item 
+\hypertarget{fem__bot_8h_a6efe2ca5819425df832c8777a5e85153}{uint {\bfseries vcn\+\_\+fem\+\_\+elem\+\_\+get\+\_\+closest\+\_\+\+Gauss\+\_\+\+Point\+\_\+to\+\_\+the\+\_\+ith\+\_\+node} (const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, uint i)}\label{fem__bot_8h_a6efe2ca5819425df832c8777a5e85153}
+
+\item 
+\hypertarget{fem__bot_8h_a9a88c9ed93f27410998f81e2de0ffc37}{int {\bfseries vcn\+\_\+fem\+\_\+compute\+\_\+2\+D\+\_\+\+Solid\+\_\+\+Mechanics} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const mesh, const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const material, const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bmeshcond, char enable\+\_\+self\+\_\+weight, double gravity\mbox{[}2\mbox{]}, int($\ast$solver)(const \hyperlink{sparse__bot_8h_a7e7199ab50f88583be4e2c093ede990d}{vcn\+\_\+sparse\+\_\+t} $\ast$const A, const double $\ast$const b, double $\ast$x, uint omp\+\_\+threads), bool enable\+\_\+plane\+\_\+stress, double thickness, uint omp\+\_\+parallel\+\_\+threads, bool $\ast$elements\+\_\+enabled, double $\ast$displacement, double $\ast$strain, const char $\ast$logfile)}\label{fem__bot_8h_a9a88c9ed93f27410998f81e2de0ffc37}
+
+\item 
+\hypertarget{fem__bot_8h_aaea871a8df277bd3337704de53d767ad}{void {\bfseries vcn\+\_\+fem\+\_\+compute\+\_\+2\+D\+\_\+\+Non\+\_\+\+Linear\+\_\+\+Solid\+\_\+\+Mechanics} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const mesh, const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const material, const \hyperlink{structvcn__bcond__t}{vcn\+\_\+bcond\+\_\+t} $\ast$const bmeshcond, bool enable\+\_\+self\+\_\+weight, double gravity\mbox{[}2\mbox{]}, bool enable\+\_\+\+Cholesky\+\_\+solver, bool enable\+\_\+plane\+\_\+stress, double thickness, vcn\+\_\+fem\+\_\+implicit\+\_\+t $\ast$params, bool restore\+\_\+computation, \hyperlink{structvcn__fem__output__t}{vcn\+\_\+fem\+\_\+output\+\_\+t} $\ast$output, const char $\ast$logfile)}\label{fem__bot_8h_aaea871a8df277bd3337704de53d767ad}
+
+\item 
+\hypertarget{fem__bot_8h_afc3bab13e038f680ae48abe14dca7d46}{void {\bfseries vcn\+\_\+fem\+\_\+compute\+\_\+stress\+\_\+from\+\_\+strain} (uint N\+\_\+elements, uint $\ast$elements\+\_\+connectivity\+\_\+matrix, const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, const vcn\+\_\+fem\+\_\+material\+\_\+t $\ast$const material, bool enable\+\_\+plane\+\_\+stress, double $\ast$strain, uint omp\+\_\+parallel\+\_\+threads, bool $\ast$elements\+\_\+enabled, double $\ast$stress)}\label{fem__bot_8h_afc3bab13e038f680ae48abe14dca7d46}
+
+\item 
+\hypertarget{fem__bot_8h_af4d7dd2bb5bcd25fd08a0737f9a543ab}{void {\bfseries vcn\+\_\+fem\+\_\+interpolate\+\_\+from\+\_\+\+Gauss\+\_\+points\+\_\+to\+\_\+nodes} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const mesh, const vcn\+\_\+fem\+\_\+elem\+\_\+t $\ast$const elemtype, uint N\+\_\+components, double $\ast$values\+\_\+on\+\_\+\+G\+P\+\_\+from\+\_\+elements, double $\ast$values\+\_\+interpolated\+\_\+on\+\_\+nodes)}\label{fem__bot_8h_af4d7dd2bb5bcd25fd08a0737f9a543ab}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+F\+E\+M bot will assemble the linear systems of well stablished F\+E problems, such as solid mechanics and heat diffusion. 
+
+\begin{DoxyAuthor}{Author}
+Victor Eduardo Cardoso Nungaray ~\newline
+ victorc@cimat.\+mx ~\newline
+ \href{https://twitter.com/victore_cardoso}{\tt @victore\+\_\+cardoso } 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+10 August 2015
+\end{DoxyDate}
+\begin{DoxyParagraph}{License\+:}
+This piece of code is in the P\+U\+B\+L\+I\+C D\+O\+M\+A\+I\+N, if your government does not recognizes such a dedication, then you are granted a perpetual and irrevocable license to copy and modify this file however you want. This does not imply any warranty. ~\newline
+ Attributions and feedback are always welcome. 
+\end{DoxyParagraph}

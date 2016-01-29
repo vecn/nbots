@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/victor/vcn_bots/tests/test.c
+stdlib.h
+-
+test.h
+/home/victor/vcn_bots/tests/test.h
+sys/time.h
+-
+
+/home/victor/vcn_bots/tests/test.h
+stdbool.h
+-
+

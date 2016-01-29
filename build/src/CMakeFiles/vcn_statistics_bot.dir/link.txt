@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -g   -shared -Wl,-soname,libvcn_statistics_bot.so -o libvcn_statistics_bot.so CMakeFiles/vcn_statistics_bot.dir/vcn/statistics_bot.c.o -lm 

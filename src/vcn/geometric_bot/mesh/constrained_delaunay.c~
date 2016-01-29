@@ -1,0 +1,34 @@
+static void set_constraints(vcn_mesh_t *mesh, uint32_t *input_sgm,
+			    uint32_t N_input_sgm);
+
+vcn_mesh_t* vcn_dewall_get_constrained_delaunay
+				(const vcn_model_t *const restrict model)
+{
+	vcn_mesh_t *mesh = 
+		vcn_dewall_get_delaunay(model->N, model->vertex);
+	set_constraints(mesh, model->edge, vcn_model_get_N_edges(model));
+	return mesh;
+}
+
+static void set_constraints(vcn_mesh_t *mesh, uint32_t *input_sgm,
+			    uint32_t N_input_sgm)
+{
+	if (0 < N_input_sgm) {
+		mesh->N_input_sgm = N_input_sgm;
+		mesh->input_sgm = 
+			calloc(N_input_sgm, sizeof(*(mesh->input_sgm)));
+		for (uint32_t i = 0; i < N_input_sgm; i++) {
+			msh_vtx_t* v1 = mesh->input_vtx[input_sgm[i * 2]];
+			msh_vtx_t* v2 = mesh->input_vtx[input_sgm[i*2+1]];
+			msh_edge_t* sgm = 
+				mesh_exist_edge(mesh->ht_edge, v1, v2);
+			if (NULL == sgm) {
+				set_new_constraining_sgm(mesh, v1, v2, i);
+			} else {
+				link_constraining_sgm(sgm);
+				mesh->input_sgm[i] = sgm;
+				medge_set_as_subsgm(sgm, i, NULL, NULL);
+			}
+		}
+	}
+}

@@ -1,0 +1,323 @@
+\hypertarget{geometric__bot-cairo_8h}{\section{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/geometric\+\_\+bot-\/cairo.h File Reference}
+\label{geometric__bot-cairo_8h}\index{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/geometric\+\_\+bot-\/cairo.\+h@{/home/victor/\+Documents/vcn\+\_\+bots/include/vcn/geometric\+\_\+bot-\/cairo.\+h}}
+}
+
+
+Drawing functions using \href{http://www.cairographics.org}{\tt Cairo Graphics Library}.  
+
+
+{\ttfamily \#include $<$cairo.\+h$>$}\\*
+{\ttfamily \#include \char`\"{}vcn/typedefs.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}vcn/geometric\+\_\+bot.\+h\char`\"{}}\\*
+Include dependency graph for geometric\+\_\+bot-\/cairo.h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{geometric__bot-cairo_8h__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{geometric__bot-cairo_8h_a3b8ba617ef66d703239f5eb74487971a}{vcn\+\_\+model\+\_\+export\+\_\+png} (const \hyperlink{geometric__bot_8h_a10375cbf3125046dc59bd4bef92432ad}{vcn\+\_\+model\+\_\+t} $\ast$const model, const char $\ast$filename, int width, int height, bool include\+\_\+numbering)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the model. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_aff415fd425c1c8a60322e5eb45749ee0}{vcn\+\_\+model\+\_\+export\+\_\+eps} (const \hyperlink{geometric__bot_8h_a10375cbf3125046dc59bd4bef92432ad}{vcn\+\_\+model\+\_\+t} $\ast$const model, const char $\ast$filename, int width, int height, bool include\+\_\+numbering)
+\begin{DoxyCompactList}\small\item\em Export an E\+P\+S image of the model. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_a404bf8be5f7e93e864721274dfaa4b69}{vcn\+\_\+mesh\+\_\+save\+\_\+png} (const \hyperlink{geometric__bot_8h_a8942da13867aa76dd55d8f2b079ad3ce}{vcn\+\_\+mesh\+\_\+t} $\ast$const mesh, const char $\ast$filename, int width, int height)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the mesh. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_aab095b139981821f1d079e7da88102e8}{vcn\+\_\+mesh\+\_\+save\+\_\+eps} (const \hyperlink{geometric__bot_8h_a8942da13867aa76dd55d8f2b079ad3ce}{vcn\+\_\+mesh\+\_\+t} $\ast$const mesh, const char $\ast$filename, int width, int height)
+\begin{DoxyCompactList}\small\item\em Export an E\+P\+S image of the mesh. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_aa096a0bdddf902a0cf2380d6397e8e4e}{vcn\+\_\+msh3trg\+\_\+save\+\_\+png} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const msh3trg, const char $\ast$filename, int width, int height, double rgba\+\_\+bg\mbox{[}4\mbox{]}, double rgba\+\_\+fg\mbox{[}4\mbox{]}, double rgb\+\_\+edge\mbox{[}3\mbox{]}, double rgb\+\_\+sgm\mbox{[}3\mbox{]}, double edge\+\_\+width, double sgm\+\_\+width)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the triangulation. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_ae1ddaf8105a328f7c74387319007a87b}{vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png} (const \hyperlink{geometric__bot_8h_af753a8fb5e30b4d81a02489e92b54df2}{vcn\+\_\+msh3trg\+\_\+t} $\ast$const msh3trg, const char $\ast$filename, int width, int height, uint k\+\_\+part, const uint $\ast$const part, uint k\+\_\+to\+\_\+draw, double scale\+\_\+partitions, double rgba\+\_\+bg\mbox{[}4\mbox{]}, double alpha\+\_\+fg, double rgb\+\_\+edge\mbox{[}3\mbox{]}, double rgb\+\_\+sgm\mbox{[}3\mbox{]}, double edge\+\_\+width, double sgm\+\_\+width)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the triangulation and its partitions. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_ad4ac0d9c4ad1f317494ab7314317eb1a}{vcn\+\_\+mshpoly\+\_\+save\+\_\+png} (const \hyperlink{geometric__bot_8h_a25e055df6f6e0902c79e1f37ef4cc329}{vcn\+\_\+mshpoly\+\_\+t} $\ast$const mshpoly, char $\ast$filename, bool draw\+\_\+adjacencies, int width, int height)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the Voronoi graph. \end{DoxyCompactList}\item 
+void \hyperlink{geometric__bot-cairo_8h_a2c2aafbd20b8706da1213271dc086be5}{vcn\+\_\+mshpack\+\_\+save\+\_\+png} (const \hyperlink{geometric__bot_8h_aa1e47f3fc55677e96c43ca151d971d86}{vcn\+\_\+mshpack\+\_\+t} $\ast$const mshpack, const char $\ast$filename, int width, int height)
+\begin{DoxyCompactList}\small\item\em Export a P\+N\+G image of the sphere-\/pack. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Drawing functions using \href{http://www.cairographics.org}{\tt Cairo Graphics Library}. 
+
+\begin{DoxyAuthor}{Author}
+Victor Eduardo Cardoso Nungaray ~\newline
+ victorc@cimat.\+mx ~\newline
+ \href{https://twitter.com/victore_cardoso}{\tt @victore\+\_\+cardoso } 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+4 August 2015
+\end{DoxyDate}
+\begin{DoxyParagraph}{License\+:}
+This piece of code is in the P\+U\+B\+L\+I\+C D\+O\+M\+A\+I\+N, if your government does not recognizes such a dedication, then you are granted a perpetual and irrevocable license to copy and modify this file however you want. This does not imply any warranty. ~\newline
+ Attributions and feedback are always welcome. 
+\end{DoxyParagraph}
+
+
+\subsection{Function Documentation}
+\hypertarget{geometric__bot-cairo_8h_aab095b139981821f1d079e7da88102e8}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+mesh\+\_\+save\+\_\+eps@{vcn\+\_\+mesh\+\_\+save\+\_\+eps}}
+\index{vcn\+\_\+mesh\+\_\+save\+\_\+eps@{vcn\+\_\+mesh\+\_\+save\+\_\+eps}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+mesh\+\_\+save\+\_\+eps}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+mesh\+\_\+save\+\_\+eps (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+mesh\+\_\+t} $\ast$const}]{mesh, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_aab095b139981821f1d079e7da88102e8}
+
+
+Export an E\+P\+S image of the mesh. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em mesh} & Mesh to be displayed in the image. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the P\+N\+G file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Width of the image. \\
+\hline
+\mbox{\tt in}  & {\em height} & of the image. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_a404bf8be5f7e93e864721274dfaa4b69}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+mesh\+\_\+save\+\_\+png@{vcn\+\_\+mesh\+\_\+save\+\_\+png}}
+\index{vcn\+\_\+mesh\+\_\+save\+\_\+png@{vcn\+\_\+mesh\+\_\+save\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+mesh\+\_\+save\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+mesh\+\_\+save\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+mesh\+\_\+t} $\ast$const}]{mesh, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_a404bf8be5f7e93e864721274dfaa4b69}
+
+
+Export a P\+N\+G image of the mesh. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em mesh} & Mesh to be displayed in the image. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the P\+N\+G file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Width of the image. \\
+\hline
+\mbox{\tt in}  & {\em height} & of the image. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_aff415fd425c1c8a60322e5eb45749ee0}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+model\+\_\+export\+\_\+eps@{vcn\+\_\+model\+\_\+export\+\_\+eps}}
+\index{vcn\+\_\+model\+\_\+export\+\_\+eps@{vcn\+\_\+model\+\_\+export\+\_\+eps}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+model\+\_\+export\+\_\+eps}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+model\+\_\+export\+\_\+eps (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+model\+\_\+t} $\ast$const}]{model, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height, }
+\item[{bool}]{include\+\_\+numbering}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_aff415fd425c1c8a60322e5eb45749ee0}
+
+
+Export an E\+P\+S image of the model. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em model} & Model to be displayed in the image. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the E\+P\+S file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Width of the image. \\
+\hline
+\mbox{\tt in}  & {\em height} & of the image. \\
+\hline
+\mbox{\tt in}  & {\em include\+\_\+numbering} & Enable or Disable the ids of vertices and segments. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_a3b8ba617ef66d703239f5eb74487971a}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+model\+\_\+export\+\_\+png@{vcn\+\_\+model\+\_\+export\+\_\+png}}
+\index{vcn\+\_\+model\+\_\+export\+\_\+png@{vcn\+\_\+model\+\_\+export\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+model\+\_\+export\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+model\+\_\+export\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+model\+\_\+t} $\ast$const}]{model, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height, }
+\item[{bool}]{include\+\_\+numbering}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_a3b8ba617ef66d703239f5eb74487971a}
+
+
+Export a P\+N\+G image of the model. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em model} & Model to be displayed in the image. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the P\+N\+G file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Width of the image. \\
+\hline
+\mbox{\tt in}  & {\em height} & of the image. \\
+\hline
+\mbox{\tt in}  & {\em include\+\_\+numbering} & Enable or Disable the ids of vertices and segments. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_ae1ddaf8105a328f7c74387319007a87b}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png@{vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png}}
+\index{vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png@{vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+msh3trg\+\_\+partition\+\_\+save\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+msh3trg\+\_\+t} $\ast$const}]{msh3trg, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height, }
+\item[{uint}]{k\+\_\+part, }
+\item[{const uint $\ast$const}]{part, }
+\item[{uint}]{k\+\_\+to\+\_\+draw, }
+\item[{double}]{scale\+\_\+partitions, }
+\item[{double}]{rgba\+\_\+bg\mbox{[}4\mbox{]}, }
+\item[{double}]{alpha\+\_\+fg, }
+\item[{double}]{rgb\+\_\+edge\mbox{[}3\mbox{]}, }
+\item[{double}]{rgb\+\_\+sgm\mbox{[}3\mbox{]}, }
+\item[{double}]{edge\+\_\+width, }
+\item[{double}]{sgm\+\_\+width}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_ae1ddaf8105a328f7c74387319007a87b}
+
+
+Export a P\+N\+G image of the triangulation and its partitions. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em msh3trg} & Triangulation to be displayed. \\
+\hline
+\mbox{\tt in}  & {\em k\+\_\+part} & Number of partitions. \\
+\hline
+\mbox{\tt in}  & {\em part} & Partition corresponding to the vertex. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the image file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Image width. \\
+\hline
+\mbox{\tt in}  & {\em height} & Image height. \\
+\hline
+\mbox{\tt in}  & {\em k\+\_\+to\+\_\+draw} & Partition to draw. Zero to draw all of them. \\
+\hline
+\mbox{\tt in}  & {\em scale\+\_\+partitions} & Scale of the size of the partitions, in (0,1\mbox{]}. \\
+\hline
+\mbox{\tt in}  & {\em rgba\+\_\+bg} & Background color, N\+U\+L\+L to set white. ~\newline
+ Color channels\+: Red, Green, Blue and Alpha. \\
+\hline
+\mbox{\tt in}  & {\em alpha\+\_\+fg} & Alpha channel for triangles color. ~\newline
+ Color channels\+: Red, Green, Blue and Alpha. \\
+\hline
+\mbox{\tt in}  & {\em rgb\+\_\+edge} & Edges line color, N\+U\+L\+L to set default color. ~\newline
+ Color channels\+: Red, Green and Blue. \\
+\hline
+\mbox{\tt in}  & {\em rgb\+\_\+sgm} & Segments line color, N\+U\+L\+L to set default color. ~\newline
+ Color channels\+: Red, Green and Blue. \\
+\hline
+\mbox{\tt in}  & {\em edge\+\_\+width} & Line width to draw edges. \\
+\hline
+\mbox{\tt in}  & {\em sgm\+\_\+width} & Line width to draw input segments. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_aa096a0bdddf902a0cf2380d6397e8e4e}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+msh3trg\+\_\+save\+\_\+png@{vcn\+\_\+msh3trg\+\_\+save\+\_\+png}}
+\index{vcn\+\_\+msh3trg\+\_\+save\+\_\+png@{vcn\+\_\+msh3trg\+\_\+save\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+msh3trg\+\_\+save\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+msh3trg\+\_\+save\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+msh3trg\+\_\+t} $\ast$const}]{msh3trg, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height, }
+\item[{double}]{rgba\+\_\+bg\mbox{[}4\mbox{]}, }
+\item[{double}]{rgba\+\_\+fg\mbox{[}4\mbox{]}, }
+\item[{double}]{rgb\+\_\+edge\mbox{[}3\mbox{]}, }
+\item[{double}]{rgb\+\_\+sgm\mbox{[}3\mbox{]}, }
+\item[{double}]{edge\+\_\+width, }
+\item[{double}]{sgm\+\_\+width}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_aa096a0bdddf902a0cf2380d6397e8e4e}
+
+
+Export a P\+N\+G image of the triangulation. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em msh3trg} & Triangulation to be displayed. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the image file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Image width. \\
+\hline
+\mbox{\tt in}  & {\em height} & Image height. \\
+\hline
+\mbox{\tt in}  & {\em rgba\+\_\+bg} & Background color, N\+U\+L\+L to set white. ~\newline
+ Color channels\+: Red, Green, Blue and Alpha. \\
+\hline
+\mbox{\tt in}  & {\em rgba\+\_\+fg} & Triangles color, N\+U\+L\+L to set default color. ~\newline
+ Color channels\+: Red, Green, Blue and Alpha. \\
+\hline
+\mbox{\tt in}  & {\em rgb\+\_\+edge} & Edges line color, N\+U\+L\+L to set default color. ~\newline
+ Color channels\+: Red, Green and Blue. \\
+\hline
+\mbox{\tt in}  & {\em rgb\+\_\+sgm} & Segments line color, N\+U\+L\+L to set default color. ~\newline
+ Color channels\+: Red, Green and Blue. \\
+\hline
+\mbox{\tt in}  & {\em edge\+\_\+width} & Line width to draw edges. \\
+\hline
+\mbox{\tt in}  & {\em sgm\+\_\+width} & Line width to draw input segments. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_a2c2aafbd20b8706da1213271dc086be5}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+mshpack\+\_\+save\+\_\+png@{vcn\+\_\+mshpack\+\_\+save\+\_\+png}}
+\index{vcn\+\_\+mshpack\+\_\+save\+\_\+png@{vcn\+\_\+mshpack\+\_\+save\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+mshpack\+\_\+save\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+mshpack\+\_\+save\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+mshpack\+\_\+t} $\ast$const}]{mshpack, }
+\item[{const char $\ast$}]{filename, }
+\item[{int}]{width, }
+\item[{int}]{height}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_a2c2aafbd20b8706da1213271dc086be5}
+
+
+Export a P\+N\+G image of the sphere-\/pack. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em mshpack} & Sphere-\/pack to be displayed. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the image file. \\
+\hline
+\mbox{\tt in}  & {\em width} & Image width. \\
+\hline
+\mbox{\tt in}  & {\em height} & Image height. \\
+\hline
+\end{DoxyParams}
+\hypertarget{geometric__bot-cairo_8h_ad4ac0d9c4ad1f317494ab7314317eb1a}{\index{geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}!vcn\+\_\+mshpoly\+\_\+save\+\_\+png@{vcn\+\_\+mshpoly\+\_\+save\+\_\+png}}
+\index{vcn\+\_\+mshpoly\+\_\+save\+\_\+png@{vcn\+\_\+mshpoly\+\_\+save\+\_\+png}!geometric\+\_\+bot-\/cairo.\+h@{geometric\+\_\+bot-\/cairo.\+h}}
+\subsubsection[{vcn\+\_\+mshpoly\+\_\+save\+\_\+png}]{\setlength{\rightskip}{0pt plus 5cm}void vcn\+\_\+mshpoly\+\_\+save\+\_\+png (
+\begin{DoxyParamCaption}
+\item[{const {\bf vcn\+\_\+mshpoly\+\_\+t} $\ast$const}]{mshpoly, }
+\item[{char $\ast$}]{filename, }
+\item[{bool}]{draw\+\_\+adjacencies, }
+\item[{int}]{width, }
+\item[{int}]{height}
+\end{DoxyParamCaption}
+)}}\label{geometric__bot-cairo_8h_ad4ac0d9c4ad1f317494ab7314317eb1a}
+
+
+Export a P\+N\+G image of the Voronoi graph. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em mshpoly} & Voronoi graph to be displayed. \\
+\hline
+\mbox{\tt in}  & {\em filename} & Name of the image file. \\
+\hline
+\mbox{\tt in}  & {\em draw\+\_\+adjacencies} & Enable or disable drawing adjacencies. \\
+\hline
+\mbox{\tt in}  & {\em width} & Image width. \\
+\hline
+\mbox{\tt in}  & {\em height} & Image height. \\
+\hline
+\end{DoxyParams}

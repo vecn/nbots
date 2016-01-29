@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../src/../include/vcn/math_bot.h
+stdint.h
+-
+
+/home/victor/vcn_bots/src/vcn/math_bot.c
+stdlib.h
+-
+stdint.h
+-
+string.h
+-
+math.h
+-
+vcn/math_bot.h
+/home/victor/vcn_bots/src/vcn/vcn/math_bot.h
+

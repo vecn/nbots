@@ -1,0 +1,126 @@
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
+
+#include "vcn/geometric_bot/utils2D.h"
+#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
+#include "vcn/geometric_bot/mesh/dewall.h"
+
+#include "test_library.h"
+#include "test_add.h"
+
+#define POW2(a) ((a)*(a))
+
+static bool check_get_delaunay_polygon_0_center(void);
+static bool check_get_delaunay_polygon_1_center(void);
+static bool check_get_delaunay_polygon_2_center(void);
+static bool check_get_delaunay_polygon_3_center(void);
+static bool check_get_delaunay_polygon_polycenter(void);
+static bool check_get_delaunay_2_polygonal_rings(void);
+static bool check_get_delaunay_2_polygonal_rings_1_center(void);
+static bool check_get_delaunay_2_polygonal_rings_2_center(void);
+static bool check_get_delaunay_2_polygonal_rings_polycenter(void);
+static bool check_get_delaunay_5_polygonal_rings_polycenter(void);
+static bool check_get_delaunay_10_polygonal_rings_polycenter(void);
+static bool check_get_delaunay_grid(void);
+static bool check_get_delaunay_hexagonal_grid(void);
+static bool check_get_delaunay_1_spiral_110p(void);
+static bool check_get_delaunay_2_spiral_60p(void);
+static bool check_get_delaunay_5_spiral_25p(void);
+static bool check_get_delaunay_10_spiral_11p(void);
+static bool check_get_delaunay_16_spiral_6p(void);
+static bool check_get_delaunay_17_spiral_6p(void);
+static bool check_get_delaunay_20_spiral_5p(void);
+static bool check_get_delaunay_20_spiral_6p(void);
+static bool check_get_delaunay_collinear(void);
+static bool check_get_delaunay_quasi_collinear(void);
+static bool check_get_delaunay_square(void);
+
+static bool all_trg_are_delaunay(vcn_mesh_t *mesh);
+static bool check_get_delaunay_polygon(int N, int N_centers);
+static int get_expected_trg_of_polygon(int N, int N_centers);
+static int get_expected_edg_of_polygon(int N, int N_centers);
+static double* get_polygon(int N_sides, int N_centers, double r);
+static void set_polygon(int N, double r, double vertices[]);
+static void set_vertex(int id, double vertices[], double x, double y);
+static bool check_get_delaunay_rings(int N_rings, int N_sides, int N_centers);
+static int get_expected_trg_of_polygonal_rings(int N_rings, int N_sides,
+					       int N_centers);
+static int get_expected_edg_of_polygonal_rings(int N_rings, int N_sides,
+					       int N_centers);
+static double* get_rings(int N_rings, int N_sides, int N_centers, double r);
+static double* get_grid(int N_width, int N_height, double size);
+static double* get_hexagonal_grid(int N_width, int N_height, double size);
+static bool check_get_delaunay_spiral(int Ns, int Np);
+static double* get_spiral(int Ns, int Np);
+static void set_spiral(int Np, double init_r, 
+		       double init_angle, double vertices[]);
+static double* get_collinear(int N);
+static void set_line_without_end_point(double *vertices, int N,
+				       double x0, double y0,
+				       double x1, double y1);
+static double* get_quasi_collinear(int N);
+static double* get_square(int N_interior, double size);
+
+inline int vcn_test_get_driver_id(void)
+{
+	return VCN_DRIVER_UNIT_TEST;
+}
+
+void vcn_test_load_tests(void *tests_ptr)
+{
+	vcn_test_add(tests_ptr, check_get_delaunay_polygon_0_center,
+		     "Check get_delaunay() of polygon");
+	vcn_test_add(tests_ptr, check_get_delaunay_polygon_1_center,
+		     "Check get_delaunay() of polygon with central point");
+	vcn_test_add(tests_ptr, check_get_delaunay_polygon_2_center,
+		     "Check get_delaunay() of polygon with 2 central points");
+	vcn_test_add(tests_ptr, check_get_delaunay_polygon_3_center,
+		     "Check get_delaunay() of polygon with 3 central points");
+	vcn_test_add(tests_ptr, check_get_delaunay_polygon_polycenter,
+		     "Check get_delaunay() of polygon with polygonal central points");
+	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings,
+		     "Check get_delaunay() of 2 polygonal rings");
+	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_1_center,
+		     "Check get_delaunay() of 2 polygonal rings with center");
+	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_2_center,
+		     "Check get_delaunay() of 2 polygonal rings with 2 centers");
+	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_polycenter,
+		     "Check get_delaunay() of 2 polygonal rings with polygonal center");
+	vcn_test_add(tests_ptr, check_get_delaunay_5_polygonal_rings_polycenter,
+		     "Check get_delaunay() of 5 polygonal rings with polygonal center");
+	vcn_test_add(tests_ptr, check_get_delaunay_10_polygonal_rings_polycenter,
+		     "Check get_delaunay() of 10 polygonal rings with polygonal center");
+	vcn_test_add(tests_ptr, check_get_delaunay_grid,
+		     "Check get_delaunay() of grid");
+	vcn_test_add(tests_ptr, check_get_delaunay_hexagonal_grid,
+		     "Check get_delaunay() of hexagonal grid");
+	vcn_test_add(tests_ptr, check_get_delaunay_1_spiral_110p,
+		     "Check get_delaunay() of 1 spiral with 110 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_2_spiral_60p,
+		     "Check get_delaunay() of 2 spirals with 60 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_5_spiral_25p,
+		     "Check get_delaunay() of 5 spirals with 25 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_10_spiral_11p,
+		     "Check get_delaunay() of 10 spirals with 11 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_16_spiral_6p,
+		     "Check get_delaunay() of 16 spirals with 6 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_17_spiral_6p,
+		     "Check get_delaunay() of 17 spirals with 6 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_20_spiral_5p,
+		     "Check get_delaunay() of 20 spirals with 5 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_20_spiral_6p,
+		     "Check get_delaunay() of 20 spirals with 6 points");
+	vcn_test_add(tests_ptr, check_get_delaunay_collinear,
+		     "Check get_delaunay() of collinear points");
+	vcn_test_add(tests_ptr, check_get_delaunay_quasi_collinear,
+		     "Check get_delaunay() of quasi-collinear points");
+	vcn_test_add(tests_ptr, check_get_delaunay_square,
+		     "Check get_delaunay() of square");
+}
+
+static inline bool check_get_delaunay_polygon_0_center(void)
+{
+	return check_get_delaunay_polygon(110, 0);
+}

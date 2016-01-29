@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC  -std=c11 -funroll-loops -ffast-math -Wall -O3 -fopenmp -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -g   -shared -Wl,-soname,liblist_container.so -o liblist_container.so CMakeFiles/list_container.dir/list/list_node.c.o CMakeFiles/list_container.dir/list/list_dst.c.o CMakeFiles/list_container.dir/list/list_iterator.c.o 
