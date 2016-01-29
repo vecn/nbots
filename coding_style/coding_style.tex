@@ -1,26 +1,69 @@
-> register key word is deprecated.
+\documentclass[pdftex,12pt, twocol]{article} %[...,a4paper]
+\usepackage[pdfborder={0,0,0}, hidelinks]{hyperref}
+%\usepackage[pdfborder={0,0,0}]{hyperref}
+\usepackage{makeidx}
+\makeindex
 
-> Include Paranoid style
- /* Bad */
- if (b == NULL) {}
- /* Good */
- if (NULL == bad) {}
 
-		Linux kernel coding style
+\begin{document}
+\begin{titlepage}
+\begin{center}
+		{\Huge \bf VCN Bots coding style}
 
-This is a short document describing the preferred coding style for the
-linux kernel.  Coding style is very personal, and I won't _force_ my
-views on anybody, but this is what goes for anything that I have to be
-able to maintain, and I'd prefer it for most other things too.  Please
+(Copy-pasted and mainly based on Linux Kernel coding style)
+
+(This document is under development. Date: 29/01/2016)
+\end{center}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+
+\newpage
+\section{Introduction}
+This is a short document describing the preferred coding style for VCN
+Bots.  Coding style is very personal, and we won't \_force\_ our
+views on anybody, but this is what goes for anything that we have to be
+able to maintain, and we'd prefer it for most other things too.  Please
 at least consider the points made here.
 
-First off, I'd suggest printing out a copy of the GNU coding standards,
+First off, we'd suggest printing out a copy of the GNU coding standards,
 and NOT read it.  Burn them, it's a great symbolic gesture.
 
 Anyway, here goes:
 
+\section{Why is written in C (Standard 2011)?}
+For many reasons. The main one is compability with all systems, arquitectures
+and third-party APIs, such as MPI, OpenMP, Posix Threads, OpenCL, Cuda-C,
+Java NDK, Python-C (Cython).
 
-		Chapter 1: Indentation
+\section{Defensive programming}
+The few basic rules of defensive programming are explained in a short chapter in Steve McConnell’s classic book on programming, Code Complete:
+\begin{itemize}
+\item Protect your code from invalid data coming from “outside”, wherever you decide “outside” is. Data from an external system or the user or a file, or any data from outside of the module/component. Establish “barricades” or “safe zones” or “trust boundaries” – everything outside of the boundary is dangerous, everything inside of the boundary is safe. In the barricade code, validate all input data: check all input parameters for the correct type, length, and range of values. Double check for limits and bounds.
+\item After you have checked for bad data, decide how to handle it. Defensive Programming is NOT about swallowing errors or hiding bugs. It’s about deciding on the trade-off between robustness (keep running if there is a problem you can deal with) and correctness (never return inaccurate results). Choose a strategy to deal with bad data: return an error and stop right away (fast fail), return a neutral value, substitute data values, ...Make sure that the strategy is clear and consistent.
+\item Don’t assume that a function call or method call outside of your code will work as advertised. Make sure that you understand and test error handling around external APIs and libraries.
+\item Use assertions to document assumptions and to highlight “impossible” conditions, at least in development and testing. This is especially important in large systems that have been maintained by different people over time, or in high-reliability code.
+\item Add diagnostic code, logging and tracing intelligently to help explain what’s going on at run-time, especially if you run into a problem.
+\item Standardize error handling. Decide how to handle “normal errors” or “expected errors” and warnings, and do all of this consistently.
+\item Use exception handling only when you need to, and make sure that you understand the VCN exception handler inside out.
+\end{itemize}
+
+Paranoid style:
+\begin{verbatim}
+ /* Bad */
+ if (b == NULL) {}
+ /* Good */
+ if (NULL == bad) {}
+\end{verbatim}
+
+
+\section{Quasi-deprecated statements}
+
+"register" key word is deprecated, because most compilers ignore it, and
+store in register the approriate variables.
+
+\section{Indentation}
 
 Tabs are 8 characters, and thus indentations are also 8 characters.
 There are heretic movements that try to make indentations 4 (or even 2!)
@@ -46,6 +89,7 @@ The preferred way to ease multiple indentation levels in a switch statement is
 to align the "switch" and its subordinate "case" labels in the same column
 instead of "double-indenting" the "case" labels.  E.g.:
 
+\begin{verbatim}
 	switch (suffix) {
 	case 'G':
 	case 'g':
@@ -62,12 +106,15 @@ instead of "double-indenting" the "case" labels.  E.g.:
 	default:
 		break;
 	}
+\end{verbatim}
 
 Don't put multiple statements on a single line unless you have
 something to hide:
 
+\begin{verbatim}
 	if (condition) do_this;
 	  do_something_everytime;
+\end{verbatim}
 
 Don't put multiple assignments on a single line either.  Kernel coding style
 is super simple.  Avoid tricky expressions.
@@ -78,7 +125,7 @@ used for indentation, and the above example is deliberately broken.
 Get a decent editor and don't leave whitespace at the end of lines.
 
 
-		Chapter 2: Breaking long lines and strings
+\section{Breaking long lines and strings}
 
 Coding style is all about readability and maintainability using commonly
 available tools.
@@ -94,7 +141,7 @@ with a long argument list. However, never break user-visible strings such as
 printk messages, because that breaks the ability to grep for them.
 
 
-		Chapter 3: Placing Braces and Spaces
+\section{Placing Braces and Spaces}
 
 The other issue that always comes up in C styling is the placement of
 braces.  Unlike the indent size, there are few technical reasons to
@@ -102,13 +149,16 @@ choose one placement strategy over the other, but the preferred way, as
 shown to us by the prophets Kernighan and Ritchie, is to put the opening
 brace last on the line, and put the closing brace first, thusly:
 
+\begin{verbatim}
 	if (x is true) {
 		we do y
 	}
+\end{verbatim}
 
 This applies to all non-function statement blocks (if, switch, for,
 while, do).  E.g.:
 
+\begin{verbatim}
 	switch (action) {
 	case KOBJ_ADD:
 		return "add";
@@ -119,31 +169,37 @@ while, do).  E.g.:
 	default:
 		return NULL;
 	}
+\end{verbatim}
 
 However, there is one special case, namely functions: they have the
 opening brace at the beginning of the next line, thus:
 
+\begin{verbatim}
 	int function(int x)
 	{
 		body of function
 	}
+\end{verbatim}
 
 Heretic people all over the world have claimed that this inconsistency
 is ...  well ...  inconsistent, but all right-thinking people know that
-(a) K&R are _right_ and (b) K&R are right.  Besides, functions are
+(a) \verb+K&R+ are \_right\_ and (b) \verb+K&R+ are right.  Besides, functions are
 special anyway (you can't nest them in C).
 
-Note that the closing brace is empty on a line of its own, _except_ in
+Note that the closing brace is empty on a line of its own, \_except\_ in
 the cases where it is followed by a continuation of the same statement,
 ie a "while" in a do-statement or an "else" in an if-statement, like
 this:
 
+\begin{verbatim}
 	do {
 		body of do-loop
 	} while (condition);
+\end{verbatim}
 
 and
 
+\begin{verbatim}
 	if (x == y) {
 		..
 	} else if (x > y) {
@@ -151,8 +207,9 @@ and
 	} else {
 		....
 	}
+\end{verbatim}
 
-Rationale: K&R.
+Rationale: \verb+K&R+.
 
 Also, note that this brace-placement also minimizes the number of empty
 (or almost empty) lines, without any loss of readability.  Thus, as the
@@ -162,74 +219,96 @@ comments on.
 
 Do not unnecessarily use braces where a single statement will do.
 
+\begin{verbatim}
 	if (condition)
 		action();
+\end{verbatim}
 
 and
 
+\begin{verbatim}
 	if (condition)
 		do_this();
 	else
 		do_that();
+\end{verbatim}
 
 This does not apply if only one branch of a conditional statement is a single
 statement; in the latter case use braces in both branches:
 
+\begin{verbatim}
 	if (condition) {
 		do_this();
 		do_that();
 	} else {
 		otherwise();
 	}
+\end{verbatim}
 
-		3.1:  Spaces
+\subsection{Spaces}
 
 Linux kernel style for use of spaces depends (mostly) on
 function-versus-keyword usage.  Use a space after (most) keywords.  The
-notable exceptions are sizeof, typeof, alignof, and __attribute__, which look
+notable exceptions are sizeof, typeof, alignof, and \verb+__attribute__+, which look
 somewhat like functions (and are usually used with parentheses in Linux,
 although they are not required in the language, as in: "sizeof info" after
 "struct fileinfo info;" is declared).
 
 So use a space after these keywords:
 
+\begin{verbatim}
 	if, switch, case, for, do, while
+\end{verbatim}
 
-but not with sizeof, typeof, alignof, or __attribute__.  E.g.,
+but not with sizeof, typeof, alignof, or \verb+__attribute__+.  E.g.,
 
+\begin{verbatim}
 	s = sizeof(struct file);
+\end{verbatim}
 
 Do not add spaces around (inside) parenthesized expressions.  This example is
 *bad*:
 
+\begin{verbatim}
 	s = sizeof( struct file );
+\end{verbatim}
 
 When declaring pointer data or a function that returns a pointer type, the
 preferred use of '*' is adjacent to the data name or function name and not
 adjacent to the type name.  Examples:
 
+\begin{verbatim}
 	char *linux_banner;
 	unsigned long long memparse(char *ptr, char **retptr);
 	char *match_strdup(substring_t *s);
+\end{verbatim}
 
 Use one space around (on each side of) most binary and ternary operators,
 such as any of these:
 
-	=  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+\begin{verbatim}
+        =  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+\end{verbatim}
 
 but no space after unary operators:
 
+\begin{verbatim}
 	&  *  +  -  ~  !  sizeof  typeof  alignof  __attribute__  defined
+\end{verbatim}
 
-no space before the postfix increment & decrement unary operators:
+no space before the postfix increment \verb+&+ decrement unary operators:
 
+\begin{verbatim}
 	++  --
+\end{verbatim}
 
-no space after the prefix increment & decrement unary operators:
+no space after the prefix increment \verb+&+ decrement unary operators:
 
+\begin{verbatim}
 	++  --
+\end{verbatim}
 
-and no space around the '.' and "->" structure member operators.
+and no space around the \verb+'.'+ and \verb+"->"+ structure member operators.
 
 Do not leave trailing whitespace at the ends of lines.  Some editors with
 "smart" indentation will insert whitespace at the beginning of new lines as
@@ -244,7 +323,7 @@ of patches, this may make later patches in the series fail by changing their
 context lines.
 
 
-		Chapter 4: Naming
+\section{Naming}
 
 C is a Spartan language, and so should your naming be.  Unlike Modula-2
 and Pascal programmers, C programmers do not use cute names like
@@ -256,10 +335,10 @@ HOWEVER, while mixed-case names are frowned upon, descriptive names for
 global variables are a must.  To call a global function "foo" is a
 shooting offense.
 
-GLOBAL variables (to be used only if you _really_ need them) need to
+GLOBAL variables (to be used only if you \_really\_ need them) need to
 have descriptive names, as do global functions.  If you have a function
 that counts the number of active users, you should call that
-"count_active_users()" or similar, you should _not_ call it "cntusr()".
+"count\_active\_users()" or similar, you should \_not\_ call it "cntusr()".
 
 Encoding the type of a function into the name (so-called Hungarian
 notation) is brain damaged - the compiler knows the types anyway and can
@@ -268,7 +347,7 @@ makes buggy programs.
 
 LOCAL variable names should be short, and to the point.  If you have
 some random integer loop counter, it should probably be called "i".
-Calling it "loop_counter" is non-productive, if there is no chance of it
+Calling it "loop\_counter" is non-productive, if there is no chance of it
 being mis-understood.  Similarly, "tmp" can be just about any type of
 variable that is used to hold a temporary value.
 
@@ -277,56 +356,61 @@ problem, which is called the function-growth-hormone-imbalance syndrome.
 See chapter 6 (Functions).
 
 
-		Chapter 5: Typedefs
+\section{Typedefs}
 
-Please don't use things like "vps_t".
-It's a _mistake_ to use typedef for structures and pointers. When you see a
+Please don't use things like \verb+"vps_t"+.
+It's a \_mistake\_ to use typedef for structures and pointers. When you see a
 
+\begin{verbatim}
 	vps_t a;
+\end{verbatim}
 
 in the source, what does it mean?
 In contrast, if it says
 
+\begin{verbatim}
 	struct virtual_container *a;
+\end{verbatim}
 
 you can actually tell what "a" is.
 
 Lots of people think that typedefs "help readability". Not so. They are
 useful only for:
 
- (a) totally opaque objects (where the typedef is actively used to _hide_
+\begin{itemize}
+\item totally opaque objects (where the typedef is actively used to \_hide\_
      what the object is).
 
-     Example: "pte_t" etc. opaque objects that you can only access using
+     Example: "pte\_t" etc. opaque objects that you can only access using
      the proper accessor functions.
 
      NOTE! Opaqueness and "accessor functions" are not good in themselves.
-     The reason we have them for things like pte_t etc. is that there
-     really is absolutely _zero_ portably accessible information there.
+     The reason we have them for things like pte\_t etc. is that there
+     really is absolutely \_zero\_ portably accessible information there.
 
- (b) Clear integer types, where the abstraction _helps_ avoid confusion
+\item Clear integer types, where the abstraction \_helps\_ avoid confusion
      whether it is "int" or "long".
 
      u8/u16/u32 are perfectly fine typedefs, although they fit into
      category (d) better than here.
 
-     NOTE! Again - there needs to be a _reason_ for this. If something is
+     NOTE! Again - there needs to be a \_reason\_ for this. If something is
      "unsigned long", then there's no reason to do
 
-	typedef unsigned long myflags_t;
+	typedef unsigned long myflags\_t;
 
      but if there is a clear reason for why it under certain circumstances
      might be an "unsigned int" and under other configurations might be
      "unsigned long", then by all means go ahead and use a typedef.
 
- (c) when you use sparse to literally create a _new_ type for
+\item when you use sparse to literally create a \_new\_ type for
      type-checking.
 
- (d) New types which are identical to standard C99 types, in certain
+\item New types which are identical to standard C99 types, in certain
      exceptional circumstances.
 
      Although it would only take a short amount of time for the eyes and
-     brain to become accustomed to the standard types like 'uint32_t',
+     brain to become accustomed to the standard types like 'uint32\_t',
      some people object to their use anyway.
 
      Therefore, the Linux-specific 'u8/u16/u32/u64' types and their
@@ -337,21 +421,23 @@ useful only for:
      When editing existing code which already uses one or the other set
      of types, you should conform to the existing choices in that code.
 
- (e) Types safe for use in userspace.
+\item Types safe for use in userspace.
 
      In certain structures which are visible to userspace, we cannot
      require C99 types and cannot use the 'u32' form above. Thus, we
-     use __u32 and similar types in all structures which are shared
+     use \_\_u32 and similar types in all structures which are shared
      with userspace.
+\end{itemize}
+
 
 Maybe there are other cases too, but the rule should basically be to NEVER
 EVER use a typedef unless you can clearly match one of those rules.
 
 In general, a pointer, or a struct that has elements that can reasonably
-be directly accessed should _never_ be a typedef.
+be directly accessed should \_never\_ be a typedef.
 
 
-		Chapter 6: Functions
+\section{Functions}
 
 Functions should be short and sweet, and do just one thing.  They should
 fit on one or two screenfuls of text (the ISO/ANSI screen size is 80x24,
@@ -382,18 +468,20 @@ In source files, separate functions with one blank line.  If the function is
 exported, the EXPORT* macro for it should follow immediately after the closing
 function brace line.  E.g.:
 
+\begin{verbatim}
 	int system_is_up(void)
 	{
 		return system_state == SYSTEM_RUNNING;
 	}
 	EXPORT_SYMBOL(system_is_up);
+\end{verbatim}
 
 In function prototypes, include parameter names with their data types.
 Although this is not required by the C language, it is preferred in Linux
 because it is a simple way to add valuable information for the reader.
 
 
-		Chapter 7: Centralized exiting of functions
+\section{Centralized exiting of functions}
 
 Albeit deprecated by some people, the equivalent of the goto statement is
 used frequently by compilers in form of the unconditional jump instruction.
@@ -403,24 +491,25 @@ locations and some common work such as cleanup has to be done.  If there is no
 cleanup needed then just return directly.
 
 Choose label names which say what the goto does or why the goto exists.  An
-example of a good name could be "out_buffer:" if the goto frees "buffer".  Avoid
+example of a good name could be \verb+"out_buffer:"+ if the \verb+goto+ frees "buffer".  Avoid
 using GW-BASIC names like "err1:" and "err2:".  Also don't name them after the
-goto location like "err_kmalloc_failed:"
+goto location like \verb+"err_malloc_failed:"+
 
-The rationale for using gotos is:
+The rationale for using \verb+gotos+ is:
+\begin{itemize}
+\item Unconditional statements are easier to understand and follow.
+\item Nesting is reduced.
+\item Errors by not updating individual exit points when making modifications are prevented.
+\item Saves the compiler work to optimize redundant code away.
+\end{itemize}
 
-- unconditional statements are easier to understand and follow
-- nesting is reduced
-- errors by not updating individual exit points when making
-    modifications are prevented
-- saves the compiler work to optimize redundant code away ;)
-
+\begin{verbatim}
 	int fun(int a)
 	{
 		int result = 0;
 		char *buffer;
 
-		buffer = kmalloc(SIZE, GFP_KERNEL);
+		buffer = vcn_malloc(SIZE, GFP\_KERNEL);
 		if (!buffer)
 			return -ENOMEM;
 
@@ -429,30 +518,33 @@ The rationale for using gotos is:
 				...
 			}
 			result = 1;
-			goto out_buffer;
+			goto out\_buffer;
 		}
 		...
-	out_buffer:
-		kfree(buffer);
+	out\_buffer:
+		vcn_free(buffer);
 		return result;
 	}
+\end{verbatim}
 
 A common type of bug to be aware of it "one err bugs" which look like this:
 
+\begin{verbatim}
 	err:
-		kfree(foo->bar);
-		kfree(foo);
+		vcn_free(foo->bar);
+		vcn_free(foo);
 		return ret;
+\end{verbatim}
 
 The bug in this code is that on some exit paths "foo" is NULL.  Normally the
-fix for this is to split it up into two error labels "err_bar:" and "err_foo:".
+fix for this is to split it up into two error labels "err\_bar:" and "err\_foo:".
 
 
-		Chapter 8: Commenting
+\section{Commenting}
 
 Comments are good, but there is also a danger of over-commenting.  NEVER
 try to explain HOW your code works in a comment: it's much better to
-write the code so that the _working_ is obvious, and it's a waste of
+write the code so that the \_working\_ is obvious, and it's a waste of
 time to explain badly written code.
 
 Generally, you want your comments to tell WHAT your code does, not HOW.
@@ -473,6 +565,7 @@ Don't use C99-style "// ..." comments.
 
 The preferred style for long (multi-line) comments is:
 
+\begin{verbatim}
 	/*
 	 * This is the preferred style for multi-line
 	 * comments in the Linux kernel source code.
@@ -481,16 +574,19 @@ The preferred style for long (multi-line) comments is:
 	 * Description:  A column of asterisks on the left side,
 	 * with beginning and ending almost-blank lines.
 	 */
+\end{verbatim}
 
 For files in net/ and drivers/net/ the preferred style for long (multi-line)
 comments is a little different.
 
+\begin{verbatim}
 	/* The preferred comment style for files in net/ and drivers/net
 	 * looks like this.
 	 *
 	 * It is nearly the same as the generally preferred comment style,
 	 * but there is no initial almost-blank line.
 	 */
+\end{verbatim}
 
 It's also important to comment data, whether they are basic types or derived
 types.  To this end, use just one data declaration per line (no commas for
@@ -498,7 +594,7 @@ multiple data declarations).  This leaves you room for a small comment on each
 item, explaining its use.
 
 
-		Chapter 9: You've made a mess of it
+\section{You've made a mess of it}
 
 That's OK, we all do.  You've probably been told by your long-time Unix
 user helper that "GNU emacs" automatically formats the C sources for
@@ -540,8 +636,7 @@ values.  To do the latter, you can stick the following in your .emacs file:
                 (setq show-trailing-whitespace t)
                 (c-set-style "linux-tabs-only")))))
 
-This will make emacs go better with the kernel coding style for C
-files below ~/src/linux-trees.
+This will make emacs go better with the coding style for C.
 
 But even if you fail in getting emacs to do sane formatting, not
 everything is lost: use "indent".
@@ -549,58 +644,29 @@ everything is lost: use "indent".
 Now, again, GNU indent has the same brain-dead settings that GNU emacs
 has, which is why you need to give it a few command line options.
 However, that's not too bad, because even the makers of GNU indent
-recognize the authority of K&R (the GNU people aren't evil, they are
+recognize the authority of \verb+K&R+ (the GNU people aren't evil, they are
 just severely misguided in this matter), so you just give indent the
-options "-kr -i8" (stands for "K&R, 8 character indents"), or use
+options "-kr -i8" (stands for "\verb+K&R+, 8 character indents"), or use
 "scripts/Lindent", which indents in the latest style.
 
 "indent" has a lot of options, and especially when it comes to comment
 re-formatting you may want to take a look at the man page.  But
 remember: "indent" is not a fix for bad programming.
 
-
-		Chapter 10: Kconfig configuration files
-
-For all of the Kconfig* configuration files throughout the source tree,
-the indentation is somewhat different.  Lines under a "config" definition
-are indented with one tab, while help text is indented an additional two
-spaces.  Example:
-
-config AUDIT
-	bool "Auditing support"
-	depends on NET
-	help
-	  Enable auditing infrastructure that can be used with another
-	  kernel subsystem, such as SELinux (which requires this for
-	  logging of avc messages output).  Does not do system-call
-	  auditing without CONFIG_AUDITSYSCALL.
-
-Seriously dangerous features (such as write support for certain
-filesystems) should advertise this prominently in their prompt string:
-
-config ADFS_FS_RW
-	bool "ADFS write support (DANGEROUS)"
-	depends on ADFS_FS
-	...
-
-For full documentation on the configuration files, see the file
-Documentation/kbuild/kconfig-language.txt.
-
-
-		Chapter 11: Data structures
+\section{Data structures}
 
 Data structures that have visibility outside the single-threaded
 environment they are created and destroyed in should always have
 reference counts.  In the kernel, garbage collection doesn't exist (and
 outside the kernel garbage collection is slow and inefficient), which
-means that you absolutely _have_ to reference count all your uses.
+means that you absolutely \_have\_ to reference count all your uses.
 
 Reference counting means that you can avoid locking, and allows multiple
 users to have access to the data structure in parallel - and not having
 to worry about the structure suddenly going away from under them just
 because they slept or did something else for a while.
 
-Note that locking is _not_ a replacement for reference counting.
+Note that locking is \_not\_ a replacement for reference counting.
 Locking is used to keep data structures coherent, while reference
 counting is a memory management technique.  Usually both are needed, and
 they are not to be confused with each other.
@@ -611,18 +677,20 @@ the number of subclass users, and decrements the global count just once
 when the subclass count goes to zero.
 
 Examples of this kind of "multi-level-reference-counting" can be found in
-memory management ("struct mm_struct": mm_users and mm_count), and in
-filesystem code ("struct super_block": s_count and s_active).
+memory management ("struct mm\_struct": mm\_users and mm\_count), and in
+filesystem code ("struct super\_block": s\_count and s\_active).
 
 Remember: if another thread can find your data structure, and you don't
 have a reference count on it, you almost certainly have a bug.
 
 
-		Chapter 12: Macros, Enums and RTL
+\section{Macros and Enums}
 
 Names of macros defining constants and labels in enums are capitalized.
 
+\begin{verbatim}
 	#define CONSTANT 0x12345
+\end{verbatim}
 
 Enums are preferred when defining several related constants.
 
@@ -633,103 +701,95 @@ Generally, inline functions are preferable to macros resembling functions.
 
 Macros with multiple statements should be enclosed in a do - while block:
 
+\begin{verbatim}
 	#define macrofun(a, b, c) 			\
 		do {					\
 			if (a == 5)			\
-				do_this(b, c);		\
+				do\_this(b, c);		\
 		} while (0)
+\end{verbatim}
 
 Things to avoid when using macros:
 
-1) macros that affect control flow:
+\begin{enumerate}
+\item macros that affect control flow:
 
+\begin{verbatim}
 	#define FOO(x)					\
 		do {					\
 			if (blah(x) < 0)		\
 				return -EBUGGERED;	\
 		} while(0)
+\end{verbatim}
 
-is a _very_ bad idea.  It looks like a function call but exits the "calling"
+is a \_very\_ bad idea.  It looks like a function call but exits the "calling"
 function; don't break the internal parsers of those who will read the code.
 
-2) macros that depend on having a local variable with a magic name:
+\item macros that depend on having a local variable with a magic name:
 
-	#define FOO(val) bar(index, val)
+	\#define FOO(val) bar(index, val)
 
 might look like a good thing, but it's confusing as hell when one reads the
 code and it's prone to breakage from seemingly innocent changes.
 
-3) macros with arguments that are used as l-values: FOO(x) = y; will
+\item macros with arguments that are used as l-values: FOO(x) = y; will
 bite you if somebody e.g. turns FOO into an inline function.
 
-4) forgetting about precedence: macros defining constants using expressions
+\item forgetting about precedence: macros defining constants using expressions
 must enclose the expression in parentheses. Beware of similar issues with
 macros using parameters.
 
+\begin{verbatim}
 	#define CONSTANT 0x4000
 	#define CONSTEXP (CONSTANT | 3)
+\end{verbatim}
 
-5) namespace collisions when defining local variables in macros resembling
+\item namespace collisions when defining local variables in macros resembling
 functions:
 
+\begin{verbatim}
 #define FOO(x)				\
 ({					\
 	typeof(x) ret;			\
-	ret = calc_ret(x);		\
+	ret = calc\_ret(x);		\
 	(ret);				\
 })
+\end{verbatim}
 
-ret is a common name for a local variable - __foo_ret is less likely
+\verb+ret+ is a common name for a local variable - \_\_foo\_ret is less likely
 to collide with an existing variable.
+\end{enumerate}
 
-The cpp manual deals with macros exhaustively. The gcc internals manual also
-covers RTL which is used frequently with assembly language in the kernel.
+\section{Printing messages}
 
-
-		Chapter 13: Printing kernel messages
-
-Kernel developers like to be seen as literate. Do mind the spelling
-of kernel messages to make a good impression. Do not use crippled
+VCN Bots developers like to be seen as literate. Do mind the spelling
+of messages to make a good impression. Do not use crippled
 words like "dont"; use "do not" or "don't" instead.  Make the messages
 concise, clear, and unambiguous.
 
-Kernel messages do not have to be terminated with a period.
+The messages do not have to be terminated with a period.
 
-Printing numbers in parentheses (%d) adds no value and should be avoided.
-
-There are a number of driver model diagnostic macros in <linux/device.h>
-which you should use to make sure messages are matched to the right device
-and driver, and are tagged with the right level:  dev_err(), dev_warn(),
-dev_info(), and so forth.  For messages that aren't associated with a
-particular device, <linux/printk.h> defines pr_notice(), pr_info(),
-pr_warn(), pr_err(), etc.
+Printing numbers in parentheses (\%d) adds no value and should be avoided.
 
 Coming up with good debugging messages can be quite a challenge; and once
 you have them, they can be a huge help for remote troubleshooting.  However
 debug message printing is handled differently than printing other non-debug
-messages.  While the other pr_XXX() functions print unconditionally,
-pr_debug() does not; it is compiled out by default, unless either DEBUG is
-defined or CONFIG_DYNAMIC_DEBUG is set.  That is true for dev_dbg() also,
-and a related convention uses VERBOSE_DEBUG to add dev_vdbg() messages to
+messages.  While the other pr\_XXX() functions print unconditionally,
+pr\_debug() does not; it is compiled out by default, unless either DEBUG is
+defined or CONFIG\_DYNAMIC\_DEBUG is set.  That is true for dev\_dbg() also,
+and a related convention uses VERBOSE\_DEBUG to add dev\_vdbg() messages to
 the ones already enabled by DEBUG.
 
-Many subsystems have Kconfig debug options to turn on -DDEBUG in the
-corresponding Makefile; in other cases specific files #define DEBUG.  And
-when a debug message should be unconditionally printed, such as if it is
-already inside a debug-related #ifdef section, printk(KERN_DEBUG ...) can be
-used.
+\section{Allocating memory}
 
-
-		Chapter 14: Allocating memory
-
-The kernel provides the following general purpose memory allocators:
-kmalloc(), kzalloc(), kmalloc_array(), kcalloc(), vmalloc(), and
-vzalloc().  Please refer to the API documentation for further information
-about them.
+VCN Bots provides the following general purpose memory allocators:
+\verb+vcn_malloc()+, \verb+vcn_calloc()+ and \verb+vc_realloc()+.
 
 The preferred form for passing a size of a struct is the following:
 
-	p = kmalloc(sizeof(*p), ...);
+\begin{verbatim}
+	p = vcn_malloc(sizeof(*p), ...);
+\end{verbatim}
 
 The alternative form where struct name is spelled out hurts readability and
 introduces an opportunity for a bug when the pointer variable type is changed
@@ -741,21 +801,25 @@ language.
 
 The preferred form for allocating an array is the following:
 
-	p = kmalloc_array(n, sizeof(...), ...);
+\begin{verbatim}
+	p = vcn_malloc\_array(n, sizeof(...), ...);
+\end{verbatim}
 
 The preferred form for allocating a zeroed array is the following:
 
-	p = kcalloc(n, sizeof(...), ...);
+\begin{verbatim}
+	p = vcn_calloc(n, sizeof(...), ...);
+\end{verbatim}
 
 Both forms check for overflow on the allocation size n * sizeof(...),
 and return NULL if that occurred.
 
 
-		Chapter 15: The inline disease
+\section{The inline disease}
 
 There appears to be a common misperception that gcc has a magic "make me
 faster" speedup option called "inline". While the use of inlines can be
-appropriate (for example as a means of replacing macros, see Chapter 12), it
+appropriate (for example as a means of replacing macros), it
 very often is not. Abundant use of the inline keyword leads to a much bigger
 kernel, which in turn slows the system as a whole down, due to a bigger
 icache footprint for the CPU and simply because there is less memory
@@ -768,7 +832,7 @@ than 3 lines of code in them. An exception to this rule are the cases where
 a parameter is known to be a compiletime constant, and as a result of this
 constantness you *know* the compiler will be able to optimize most of your
 function away at compile time. For a good example of this later case, see
-the kmalloc() inline function.
+the \verb+vcn_malloc()+ inline function.
 
 Often people argue that adding inline to functions that are static and used
 only once is always a win since there is no space tradeoff. While this is
@@ -778,7 +842,7 @@ appears outweighs the potential value of the hint that tells gcc to do
 something it would have done anyway.
 
 
-		Chapter 16: Function return values and names
+\section{Function return values and names}
 
 Functions can return values of many different kinds, and one of the
 most common is a value indicating whether the function succeeded or
@@ -796,9 +860,9 @@ convention:
 	the function should return an error-code integer.  If the name
 	is a predicate, the function should return a "succeeded" boolean.
 
-For example, "add work" is a command, and the add_work() function returns 0
+For example, "add work" is a command, and the add\_work() function returns 0
 for success or -EBUSY for failure.  In the same way, "PCI device present" is
-a predicate, and the pci_dev_present() function returns 1 if it succeeds in
+a predicate, and the pci\_dev\_present() function returns 1 if it succeeds in
 finding a matching device or 0 if it doesn't.
 
 All EXPORTed functions must respect this convention, and so should all
@@ -809,28 +873,32 @@ Functions whose return value is the actual result of a computation, rather
 than an indication of whether the computation succeeded, are not subject to
 this rule.  Generally they indicate failure by returning some out-of-range
 result.  Typical examples would be functions that return pointers; they use
-NULL or the ERR_PTR mechanism to report failure.
+NULL or the ERR\_PTR mechanism to report failure.
 
 
-		Chapter 17:  Don't re-invent the kernel macros
+\section{Don't re-invent the containers}
 
-The header file include/linux/kernel.h contains a number of macros that
+The header file include/vcn/container\_bot.h contains a number of macros that
 you should use, rather than explicitly coding some variant of them yourself.
 For example, if you need to calculate the length of an array, take advantage
 of the macro
 
-	#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+\begin{verbatim}
+	#define ARRAY\_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+\end{verbatim}
 
 Similarly, if you need to calculate the size of some structure member, use
 
-	#define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
+\begin{verbatim}
+	#define FIELD\_SIZEOF(t, f) (sizeof(((t*)0)->f))
+\end{verbatim}
 
 There are also min() and max() macros that do strict type checking if you
 need them.  Feel free to peruse that header file to see what else is already
 defined that you shouldn't reproduce in your code.
 
 
-		Chapter 18:  Editor modelines and other cruft
+\section{Editor modelines and other cruft}
 
 Some editors can interpret configuration information embedded in source files,
 indicated with special markers.  For example, emacs interprets lines marked
@@ -840,11 +908,13 @@ like this:
 
 Or like this:
 
+\begin{verbatim}
 	/*
 	Local Variables:
-	compile-command: "gcc -DMAGIC_DEBUG_FLAG foo.c"
+	compile-command: "gcc -DMAGIC\_DEBUG\_FLAG foo.c"
 	End:
 	*/
+\end{verbatim}
 
 Vim interprets markers that look like this:
 
@@ -856,42 +926,12 @@ includes markers for indentation and mode configuration.  People may use their
 own custom mode, or may have some other magic method for making indentation
 work correctly.
 
+\section{Conditional Compilation}
 
-		Chapter 19:  Inline assembly
-
-In architecture-specific code, you may need to use inline assembly to interface
-with CPU or platform functionality.  Don't hesitate to do so when necessary.
-However, don't use inline assembly gratuitously when C can do the job.  You can
-and should poke hardware from C when possible.
-
-Consider writing simple helper functions that wrap common bits of inline
-assembly, rather than repeatedly writing them with slight variations.  Remember
-that inline assembly can use C parameters.
-
-Large, non-trivial assembly functions should go in .S files, with corresponding
-C prototypes defined in C header files.  The C prototypes for assembly
-functions should use "asmlinkage".
-
-You may need to mark your asm statement as volatile, to prevent GCC from
-removing it if GCC doesn't notice any side effects.  You don't always need to
-do so, though, and doing so unnecessarily can limit optimization.
-
-When writing a single inline assembly statement containing multiple
-instructions, put each instruction on a separate line in a separate quoted
-string, and end each string except the last with \n\t to properly indent the
-next instruction in the assembly output:
-
-	asm ("magic %reg1, #42\n\t"
-	     "more_magic %reg2, %reg3"
-	     : /* outputs */ : /* inputs */ : /* clobbers */);
-
-
-		Chapter 20: Conditional Compilation
-
-Wherever possible, don't use preprocessor conditionals (#if, #ifdef) in .c
+Wherever possible, don't use preprocessor conditionals (\#if, \#ifdef) in .c
 files; doing so makes code harder to read and logic harder to follow.  Instead,
 use such conditionals in a header file defining functions for use in those .c
-files, providing no-op stub versions in the #else case, and then call those
+files, providing no-op stub versions in the \#else case, and then call those
 functions unconditionally from .c files.  The compiler will avoid generating
 any code for the stub calls, producing identical results, but the logic will
 remain easy to follow.
@@ -903,35 +943,39 @@ conditional to that function.
 
 If you have a function or variable which may potentially go unused in a
 particular configuration, and the compiler would warn about its definition
-going unused, mark the definition as __maybe_unused rather than wrapping it in
+going unused, mark the definition as \_\_maybe\_unused rather than wrapping it in
 a preprocessor conditional.  (However, if a function or variable *always* goes
 unused, delete it.)
 
-Within code, where possible, use the IS_ENABLED macro to convert a Kconfig
+Within code, where possible, use the IS\_ENABLED macro to convert a Kconfig
 symbol into a C boolean expression, and use it in a normal C conditional:
 
+\begin{verbatim}
 	if (IS_ENABLED(CONFIG_SOMETHING)) {
 		...
 	}
+\end{verbatim}
 
 The compiler will constant-fold the conditional away, and include or exclude
-the block of code just as with an #ifdef, so this will not add any runtime
+the block of code just as with an \#ifdef, so this will not add any runtime
 overhead.  However, this approach still allows the C compiler to see the code
 inside the block, and check it for correctness (syntax, types, symbol
-references, etc).  Thus, you still have to use an #ifdef if the code inside the
+references, etc).  Thus, you still have to use an \#ifdef if the code inside the
 block references symbols that will not exist if the condition is not met.
 
-At the end of any non-trivial #if or #ifdef block (more than a few lines),
-place a comment after the #endif on the same line, noting the conditional
+At the end of any non-trivial \#if or \#ifdef block (more than a few lines),
+place a comment after the \#endif on the same line, noting the conditional
 expression used.  For instance:
 
+\begin{verbatim}
 	#ifdef CONFIG_SOMETHING
 	...
 	#endif /* CONFIG_SOMETHING */
+\end{verbatim}
 
 
-		Appendix I: References
-
+\section*{Appendix I: References}
+\addcontentsline{toc}{section}{Appendix I: References}
 The C Programming Language, Second Edition
 by Brian W. Kernighan and Dennis M. Ritchie.
 Prentice Hall, Inc., 1988.
@@ -944,12 +988,13 @@ Addison-Wesley, Inc., 1999.
 ISBN 0-201-61586-X.
 URL: http://cm.bell-labs.com/cm/cs/tpop/
 
-GNU manuals - where in compliance with K&R and this text - for cpp, gcc,
+GNU manuals - where in compliance with \verb+K&R+ and this text - for cpp, gcc,
 gcc internals and indent, all available from http://www.gnu.org/manual/
 
 WG14 is the international standardization working group for the programming
 language C, URL: http://www.open-std.org/JTC1/SC22/WG14/
 
 Kernel CodingStyle, by greg@kroah.com at OLS 2002:
-http://www.kroah.com/linux/talks/ols_2002_kernel_codingstyle_talk/html/
+http://www.kroah.com/linux/talks/ols\_2002\_kernel\_codingstyle\_talk/html/
 
+\end{document}

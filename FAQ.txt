@@ -2,5 +2,5 @@ Frequently Asked Questions
 -------------------------
 
 Why does the model can not be meshed?
- Use the function vcn_model_verify_consistence(...) to check if the
+ Use the function vcn_model_verify_consistence() to check if the
  model is consistent.

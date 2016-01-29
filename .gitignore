@@ -1,3 +1,9 @@
+# System temporary files
+*.*~
+
+# Main build directory
+build/*
+
 # Object files
 *.o
 *.ko
@@ -30,3 +36,9 @@
 
 # Debug files
 *.dSYM/
+
+# Tex auxiliary files
+*.aux
+*.log
+*.out
+*.idx

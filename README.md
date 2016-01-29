@@ -1,19 +1,25 @@
-VCN_Bots
+VCN Bots
 ========
 
-Valuable Numerical Computations.
+Validated Numerical Computations.
 ---------------------------------
-A numerical bot is a tool to perform a specific numerical task, such as meshing a geometric model, solving a system of equations or finding the best labeling of a graph. VCN Bots is an ecosystem of numerical bots.
+A numerical bot is an automatized tool to perform related numerical task.
+For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes,
+Voronoi diagrams, etc. and the Eigen Bot is a linear algebra library, which includes
+special routines for sparse systems.
+VCN Bots is an ecosystem of numerical bots.
 
 Compilation
 ----------
 1. Create a 'build' directory inside this directory.
-2. Go to the 'build' directory and execute ONLY one of the following commands:
-   a) cmake -DCMAKE_BUILD_TYPE=Debug ../
-   b) cmake -DCMAKE_BUILD_TYPE=Release ../
+2. Go to the 'build' directory and execute the following command:
+        cmake -DCMAKE_BUILD_TYPE=Release ../
+   (You must have cmake installed)
 3. Execute 'make'.
+
 
 Contact
 --------
 Victor E. Cardoso
-victorc@cimat.mx
+Email: victorc@cimat.mx
+Twitter: @victore_cardoso
