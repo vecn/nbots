@@ -179,7 +179,8 @@ static bool check_get_delaunay_grid(void)
 {
 	int N = 12;
 	double *vertices = get_grid(N, N, 10.0);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N * N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N * N, vertices);
 	free(vertices);
 	int N_squares = POW2(N - 1);
 	bool N_trg_is_ok = (2 * N_squares == vcn_mesh_get_N_trg(mesh));
@@ -194,7 +195,8 @@ static bool check_get_delaunay_hexagonal_grid(void)
 {
 	int N = 12;
 	double *vertices = get_hexagonal_grid(N, N, 10.0);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N * N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N * N, vertices);
 	free(vertices);
 	int N_boundary_trg = 0;
 	if (N > 1)
@@ -262,7 +264,8 @@ static bool check_get_delaunay_collinear(void)
 {
 	int N = 100;
 	double *vertices = get_collinear(N);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	bool N_trg_is_ok = (0 == vcn_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (0 == vcn_mesh_get_N_edg(mesh));
@@ -274,7 +277,8 @@ static bool check_get_delaunay_quasi_collinear(void)
 {
 	int N = 100;
 	double *vertices = get_quasi_collinear(N);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
@@ -290,7 +294,8 @@ static bool check_get_delaunay_square(void)
 	int N_interior = 50;
 	int N = 4 * N_interior;
 	double *vertices = get_square(N_interior, 10.0);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
@@ -333,7 +338,8 @@ static bool all_trg_are_delaunay(vcn_mesh_t *mesh)
 static bool check_get_delaunay_polygon(int N, int N_centers)
 {
 	double *vertices = get_polygon(N, N_centers, 10);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N + N_centers, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N + N_centers, vertices);
 	free(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, N_centers);
 	int N_expected_edg = get_expected_edg_of_polygon(N, N_centers);
@@ -416,7 +422,8 @@ static bool check_get_delaunay_rings(int N_rings, int N_sides, int N_centers)
 {
 	int N = N_rings * N_sides + N_centers;
 	double *vertices = get_rings(N_rings, N_sides, N_centers, 10);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	int N_expected_trg =
 		get_expected_trg_of_polygonal_rings(N_rings, N_sides,
@@ -506,7 +513,8 @@ static bool check_get_delaunay_spiral(int Ns, int Np)
 {
 	int N = Ns * Np + 2;
 	double *vertices = get_spiral(Ns, Np);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_dewall_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	int N_min_trg = (Ns * Np + 1);
 	int N_min_edges = 2 * N_min_trg;

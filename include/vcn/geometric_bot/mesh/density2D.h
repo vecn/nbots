@@ -67,9 +67,9 @@ extern "C" {
 	 * @param[in] data image's data.
 	 */
 	uint32_t vcn_density_img_get_height
-					(const vcn_density_img_t *const data);
-	double vcn_density_img_get_density(const void *const density2D,
-					   const double x[2]);
+				(const vcn_density_img_t *const data);
+	double vcn_density_img_get_density(const double x[2],
+					   const void *const density2D_ptr);
 	/**
 	 * @brief Destroys the density image data.
 	 * @param[in] data image's data to be destroyed (memory free).

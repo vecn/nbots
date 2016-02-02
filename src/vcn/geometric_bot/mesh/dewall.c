@@ -136,10 +136,10 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 static void clear_search_vtx(search_vtx_t *search_vtx);
 static uint32_t dewall(vcn_mesh_t* mesh);
 
-vcn_mesh_t* vcn_dewall_get_delaunay(uint32_t N_vertices,
-				    const double *const vertices)
+void vcn_dewall_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
+			     const double *const vertices)
 {
-	vcn_mesh_t * restrict mesh = vcn_mesh_create();
+	vcn_mesh_clear(mesh);
 	if (0 < N_vertices) {
 		mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 		mesh->N_input_vtx = N_vertices;
@@ -158,7 +158,6 @@ vcn_mesh_t* vcn_dewall_get_delaunay(uint32_t N_vertices,
 		}
 		dewall(mesh);
 	}
-	return mesh;
 }
 
 static inline void mesh_init_disp_and_scale
@@ -689,7 +688,7 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 			vcn_container_insert(AFL, first_trg->s1);
 			vcn_container_insert(AFL, first_trg->s2);
 			vcn_container_insert(AFL, first_trg->s3);		
-			mesh->do_after_trg(mesh);
+			mesh->do_after_insert_trg(mesh);
 			trg_created = true;
 		} /* else [the points are collinear] */
 	} /* else [if all points are collinear]*/
@@ -719,7 +718,7 @@ static uint32_t triangulate_wall(vcn_mesh_t *mesh,
 			update_AFLs(trg, edge, AFL_alpha, AFL_1, AFL_2,
 				    axe, alpha);
 			n_trg_alpha += 1;
-			mesh->do_after_trg(mesh);
+			mesh->do_after_insert_trg(mesh);
 		}
 	}
 	return n_trg_alpha;

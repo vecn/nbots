@@ -115,10 +115,9 @@ static bool check_get_cdelaunay_twist_polygon(uint32_t N_sides)
 {
 	input_t input;
 	set_twist_polygon(&input, N_sides, 20);
-	vcn_mesh_t *mesh = vcn_mesh_get_constrained_delaunay(input.N_vtx,
-							     input.vertices,
-							     input.N_sgm,
-							     input.segments);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+					  input.N_sgm, input.segments);
 	int N_expected_trg = 3 * N_sides +
 		get_expected_trg_of_polygon(N_sides, 0);
 	int N_expected_edges = 5 * N_sides +
@@ -226,15 +225,13 @@ static inline void set_vertex(int id, double vertices[], double x, double y)
 	vertices[id*2+1] = y;
 }
 
-
 static bool check_get_cdelaunay_strips(int N)
 {
 	input_t input;
 	set_strips(&input, N, 10);
-	vcn_mesh_t *mesh = vcn_mesh_get_constrained_delaunay(input.N_vtx,
-							     input.vertices,
-							     input.N_sgm,
-							     input.segments);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+					  input.N_sgm, input.segments);
 	int N_boundary_trg = 0;
 	if (N > 1)
 		N_boundary_trg = (2*N - 3) / 2;
@@ -363,12 +360,11 @@ static bool check_get_cdelaunay_centipede(int N_pairs)
 {
 	input_t input;
 	set_centipede(&input, N_pairs);
-	vcn_mesh_t *mesh = vcn_mesh_get_constrained_delaunay(input.N_vtx,
-							     input.vertices,
-							     input.N_sgm,
-							     input.segments);
-	int N_expected_trg = /**/0;
-	int N_expected_edges = /**/0;
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+					  input.N_sgm, input.segments);
+	int N_expected_trg = 2 * N_pairs;
+	int N_expected_edges = 4 * N_pairs + 1;
 	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (N_expected_edges == vcn_mesh_get_N_edg(mesh));
 	bool all_cdelaunay = all_trg_are_cdelaunay(mesh, &input);
@@ -379,5 +375,19 @@ static bool check_get_cdelaunay_centipede(int N_pairs)
 
 static void set_centipede(input_t *input, uint32_t N_pairs)
 {
-	;/**/
+	input->N_vtx = 2 * N_pairs + 2;
+	input->N_sgm = 1;
+	input_alloc(input);
+	
+	double half_size = 20 + (N_pairs - 1)/2.0;
+	set_vertex(0, input->vertices, -half_size, 0);
+	set_vertex(1, input->vertices, half_size, 0);
+	for (uint32_t i = 0; i < N_pairs; i++) {
+		uint32_t id1 = 2 + (i * 2);
+		uint32_t id2 = 2 + (i*2+1);
+		double x = (double) i - (N_pairs - 1)/2.0;
+		set_vertex(id1, input->vertices, x, 1.0);
+		set_vertex(id2, input->vertices, x, -1.0);		
+	}
+	input_set_sgm(input, 0, 0, 1);
 }

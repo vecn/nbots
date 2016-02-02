@@ -17,12 +17,13 @@
 static void set_constraints(vcn_mesh_t *mesh,
 			    const uint32_t *const input_sgm,
 			    uint32_t N_input_sgm);
-
 static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 				     const msh_vtx_t *const v1,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id);
-
+static vcn_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
+						    const msh_vtx_t *const v1,
+						    const msh_vtx_t *const v2);
 static void spread_trg_adjacent_to_constrains
                   (vcn_mesh_t *const mesh,
 		   const vcn_container_t *const available_vtx,
@@ -56,15 +57,14 @@ static bool are_intersecting_edges(const vcn_mesh_t *const mesh,
 				   const msh_vtx_t *const v1, 
 				   const msh_vtx_t *const v2);
 
-vcn_mesh_t* vcn_mesh_get_constrained_delaunay(uint32_t N_vertices,
-					      const double *const vertices,
-					      uint32_t N_segments,
-					      const uint32_t *const segments)
+void vcn_mesh_get_constrained_delaunay(vcn_mesh_t *mesh,
+				       uint32_t N_vertices,
+				       const double *const vertices,
+				       uint32_t N_segments,
+				       const uint32_t *const segments)
 {
-	vcn_mesh_t *mesh = 
-		vcn_dewall_get_delaunay(N_vertices, vertices);
+	vcn_dewall_get_delaunay(mesh, N_vertices, vertices);
 	set_constraints(mesh, segments, N_segments);
-	return mesh;
 }
 
 static void set_constraints(vcn_mesh_t *mesh,
@@ -96,50 +96,51 @@ static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id)
 {
-	/* Remove triangles intersecting segment */
-	vcn_container_t* available_vtx =
-		vcn_container_create(VCN_CONTAINER_SORTED);
-	vcn_iterator_t* iter =
-		vcn_iterator_create();
+	vcn_container_t *vertices = remove_trg_intersecting_sgm(mesh, v1, v2);
+
+	if (vcn_container_is_not_empty(vertices)) {
+		msh_edge_t *sgm = mesh_insert_edge(mesh->ht_edge, v1, v2);
+		mesh->input_sgm[sgm_id] = sgm;
+		medge_set_as_subsgm(sgm, sgm_id, NULL, NULL);
+		/* Triangulate left side */
+		spread_trg_adjacent_to_constrains(mesh, vertices, sgm, true);
+		/* Triangulate right side */
+		spread_trg_adjacent_to_constrains(mesh, vertices, sgm, false);
+	}
+	vcn_container_destroy(vertices);
+}
+
+static vcn_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
+						    const msh_vtx_t *const v1,
+						    const msh_vtx_t *const v2)
+{
+	vcn_container_t *intersected_trg = 
+		vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_iterator_t *iter = vcn_iterator_create();
 	vcn_iterator_set_container(iter, mesh->ht_trg);
-	uint32_t intersected_triangles = 0;
 	while (vcn_iterator_has_more(iter)) {
-		/* (BIG OPPORTUNITY TO MAKE IT FAST) */
-		/* REFACTOR next line */
-		msh_trg_t* trg = (msh_trg_t*) vcn_iterator_get_next(iter);
+		const msh_trg_t* trg = vcn_iterator_get_next(iter);
 		if (vcn_utils2D_sgm_intersects_trg(trg->v1->x,
 						   trg->v2->x,
 						   trg->v3->x,
 						   v1->x, v2->x)) {
-			intersected_triangles ++;
-			vcn_container_insert(available_vtx, trg->v1);
-			vcn_container_insert(available_vtx, trg->v2);
-			vcn_container_insert(available_vtx, trg->v3);
-			mesh_substract_triangle(mesh, trg);
-			free(trg);
+			vcn_container_insert(intersected_trg, trg);
 		}
 	}
 	vcn_iterator_destroy(iter);
-	if (0 < intersected_triangles) {
-		/* Insert new segment */
-		msh_edge_t *sgm = mesh_insert_edge(mesh->ht_edge, v1, v2);
-     
-		mesh->input_sgm[sgm_id] = sgm;
-		medge_set_as_subsgm(sgm, sgm_id, NULL, NULL);
 
-		/* Create new triangulation */
-		/* Triangulate left side */
-		spread_trg_adjacent_to_constrains(mesh,
-						  available_vtx,
-						  sgm,
-						  true);
-		/* Triangulate right side */
-		spread_trg_adjacent_to_constrains(mesh,
-						  available_vtx,
-						  sgm,
-						  false);
+	vcn_container_t *vertices = 
+		vcn_container_create(VCN_CONTAINER_SORTED);
+	while (vcn_container_is_not_empty(intersected_trg)) {
+		msh_trg_t *trg = vcn_container_delete_first(intersected_trg);
+		vcn_container_insert(vertices, trg->v1);
+		vcn_container_insert(vertices, trg->v2);
+		vcn_container_insert(vertices, trg->v3);
+		mesh_substract_triangle(mesh, trg);
+		free(trg);
 	}
-	vcn_container_destroy(available_vtx);
+	vcn_container_destroy(intersected_trg);
+	return vertices;
 }
 
 static void spread_trg_adjacent_to_constrains
@@ -152,11 +153,9 @@ static void spread_trg_adjacent_to_constrains
 	msh_vtx_t* restrict v2 = (left_side)?sgm->v2:sgm->v1;
 
 	msh_trg_t* new_trg =
-		create_trg_constrained(mesh,
-				       available_vtx,
-				       sgm, v1);
+		create_trg_constrained(mesh, available_vtx, sgm, v1);
 	if (NULL != new_trg) {
-		mesh->do_after_trg(mesh);
+		mesh->do_after_insert_trg(mesh);
 
   		/* Process Counter Clock Wise segment */
 		msh_edge_t* nb_sgm = mtrg_get_CCW_edge(new_trg, sgm);

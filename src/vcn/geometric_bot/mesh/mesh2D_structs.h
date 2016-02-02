@@ -71,7 +71,21 @@ struct vcn_mesh_s {
 	double xdisp;
 	double ydisp;
 
-	void (*do_after_trg)(const vcn_mesh_t *const);
+	/* Size constraints */
+	uint32_t max_vtx;
+	uint32_t max_trg;
+
+	/* Geometric constrains */
+	double min_angle;
+	double max_edge_length;
+	double max_subsgm_length;
+
+	/* Density data */
+	double (*density)(const double x[2], const void *data);
+	const void *density_data;
+
+	void (*do_after_insert_trg)(const vcn_mesh_t *const);
+	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
 
 bool medge_is_subsgm(const msh_edge_t *const sgm);

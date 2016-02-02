@@ -33,6 +33,7 @@ set(mesh2D
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/density2D.c
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mesh2D_structs.c
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mesh2D.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ruppert.c
 #  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/modules2D/graph_generator.c
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/modules2D/pruner.c
 #  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/modules2D/extra_fem.c

@@ -48,11 +48,11 @@ target_link_libraries(vcn_bots
   vcn_graph_bot
   vcn_geometric_bot
   m 
-  ${CAIRO_LIBRARIES} # TEMPORAL
   )
 
 message("Configuring VCN Bots: Cairo Extension Library")
 add_library(vcn_bots-cairo SHARED
+  ${VCN_SOURCE_DIR}/vcn/geometric_bot/model/modules2D/exporter_cairo.c
   ${VCN_SOURCE_DIR}/vcn/geometric_bot/mesh/modules2D/exporter_cairo.c
 )
 target_link_libraries(vcn_bots-cairo ${CAIRO_LIBRARIES})

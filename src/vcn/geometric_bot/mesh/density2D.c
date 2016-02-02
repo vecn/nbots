@@ -26,14 +26,18 @@
    
 /******************** Private structures *****************************/
 
-struct vcn_density_img_s {
+typedef struct {
 	uint32_t width;
 	uint32_t height;
 	uint32_t comp_x_pixel;
+	uint8_t* pixels;
+} vcn_image_t;
+
+struct vcn_density_img_s {
+	vcn_image_t image;
 	double scale;
 	double xdisp, ydisp;
 	double max_density;
-	uint8_t* pixels;
 };
 
 vcn_density_img_t* vcn_density_img_create(const char* filename,
@@ -51,10 +55,10 @@ vcn_density_img_t* vcn_density_img_create(const char* filename,
 
 	/* Allocate structure */
 	vcn_density_img_t* data = malloc(sizeof(vcn_density_img_t));
-	data->pixels = pixels;
-	data->width = w;
-	data->height = h;
-	data->comp_x_pixel = n;
+	data->image.pixels = pixels;
+	data->image.width = w;
+	data->image.height = h;
+	data->image.comp_x_pixel = n;
 	data->scale = scale;
 	data->xdisp = xdisp;
 	data->ydisp = ydisp;
@@ -66,50 +70,50 @@ vcn_density_img_t* vcn_density_img_create(const char* filename,
 
 inline uint32_t vcn_density_img_get_width(const vcn_density_img_t *const data)
 {
-	return data->width;
+	return data->image.width;
 }
 
 inline uint32_t vcn_density_img_get_height(const vcn_density_img_t *const data)
 {
-	return data->height;
+	return data->image.height;
 }
 
-double vcn_density_img_get_density(const void *const density2D_ptr,
-				   const double x[2])
+double vcn_density_img_get_density(const double x[2],
+				   const void *const density2D_ptr)
 {
 	const vcn_density_img_t *const density2D = density2D_ptr;
 
 	/* Calculate pixel positions (Centered-Scaling and displacement) */
-	double c_aux = (x[0] - density2D->width / 2.0)  /
-		density2D->scale + density2D->width / 2.0;
-	double r_aux = (x[1] - density2D->height / 2.0) / 
-		density2D->scale + density2D->height / 2.0;
+	double c_aux = (x[0] - density2D->image.width / 2.0)  /
+		density2D->scale + density2D->image.width / 2.0;
+	double r_aux = (x[1] - density2D->image.height / 2.0) / 
+		density2D->scale + density2D->image.height / 2.0;
 	int c = (int)(c_aux - density2D->xdisp);
-	int r = density2D->height - 1 - (int)(r_aux - density2D->ydisp);
+	int r = density2D->image.height - 1 - (int)(r_aux - density2D->ydisp);
 
 	/* Check if the pixel coordinates are outside bounds */
-	if (r < 0 || r >= density2D->height || c < 0 || c >= density2D->width)
+	if (r < 0 || r >= density2D->image.height || c < 0 || c >= density2D->image.width)
 		return VCN_GEOMETRIC_TOL;
 
 	/* Get pixel */
 	uint8_t pixel_components[4];
-	for (uint8_t i = 0; i < density2D->comp_x_pixel; i++) {
-		uint32_t w = density2D->width * density2D->comp_x_pixel;
-		uint32_t col = c * density2D->comp_x_pixel;
-		pixel_components[i] = density2D->pixels[r * w + col + i];
+	for (uint8_t i = 0; i < density2D->image.comp_x_pixel; i++) {
+		uint32_t w = density2D->image.width * density2D->image.comp_x_pixel;
+		uint32_t col = c * density2D->image.comp_x_pixel;
+		pixel_components[i] = density2D->image.pixels[r * w + col + i];
 	}
 
 	double density;
-	if (density2D->comp_x_pixel == 1) {
+	if (density2D->image.comp_x_pixel == 1) {
 		/* Grey */
 		density = density2D->max_density * 
 			(1.0 - (1 + pixel_components[0]) / 256.0);
-	} else if (density2D->comp_x_pixel == 2) {
+	} else if (density2D->image.comp_x_pixel == 2) {
 		/* Grey and alpha */
 		double grey = (1 + pixel_components[0]) / 256.0;
 		double alpha = (1 + pixel_components[1]) / 256.0;
 		density = density2D->max_density * (1.0 - grey * alpha);
-	} else if(density2D->comp_x_pixel == 3) {
+	} else if(density2D->image.comp_x_pixel == 3) {
 		/* Red, green and blue */
 		double red = (1 + pixel_components[0]) / 256.0;
 		double green = (1 + pixel_components[1]) / 256.0;
@@ -129,6 +133,6 @@ double vcn_density_img_get_density(const void *const density2D_ptr,
 
 void vcn_density_img_destroy(vcn_density_img_t* data)
 {
-	stbi_image_free(data->pixels);
+	stbi_image_free(data->image.pixels);
 	free(data);
 }

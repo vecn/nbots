@@ -21,5 +21,5 @@ Compilation
 Contact
 --------
 Victor E. Cardoso
-Email: victorc@cimat.mx
-Twitter: @victore_cardoso
+- Email: victorc@cimat.mx
+- Twitter: @victore_cardoso
