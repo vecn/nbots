@@ -456,7 +456,6 @@ inline void vcn_container_destroy(vcn_container_t *container)
 inline void vcn_container_clear(vcn_container_t *container)
 {
   	container->clear(container->dst, container->fdst.destroy);
-	init_dst_functions(container);
 }
 
 void vcn_container_copy_to_array(const vcn_container_t *const cont_src,

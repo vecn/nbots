@@ -313,15 +313,15 @@ static bool check_get_delaunay_square(void)
 
 static bool check_get_delaunay_1000_cloud(void)
 {
+	const char *path =
+		"../tests/vcn/geometric_bot/mesh/dewall_UT_inputs/cloud_1000.vtx";
 	int N;
-	double *vertices = read_vertices("dewall_UT_inputs/cloud_1000.vtx", &N);
+	double *vertices = read_vertices(path, &N);
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_get_delaunay(mesh, N, vertices);
 	free(vertices);
-	int N_expected_trg = 0;
-	int N_expected_edg = 0;
-	printf("\nTRG: %i %i\n", vcn_mesh_get_N_trg(mesh),/* TEMPORAL */
-	       vcn_mesh_get_N_edg(mesh));/* TEMPORAL */
+	int N_expected_trg = 1968;
+	int N_expected_edg = 2967;
 	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (N_expected_edg == vcn_mesh_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
