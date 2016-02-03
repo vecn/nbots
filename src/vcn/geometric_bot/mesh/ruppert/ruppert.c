@@ -383,21 +383,20 @@ static inline msh_trg_t* hash_trg_remove_first
 static inline void hash_trg_remove(hash_trg_t *const restrict htrg,
 				   msh_trg_t *const restrict trg)
 {
-  if(trg->attr == NULL) return; /* It is not inserted */
+	if (NULL != trg->attr) {
+		double cr2se_ratio = *((uint32_t*)trg->attr) / 1e6;
+		uint32_t hash_key = (uint32_t) cr2se_ratio;
+		if (hash_key > 63)
+			hash_key = 63;
 
-  /* Calculate hash key */
-  double cr2se_ratio = ((uint64_t*)trg->attr)[0] / 1e6;
-  uint32_t hash_key = (uint32_t) cr2se_ratio;
-  if(hash_key > 63) hash_key = 63;
-  
-  /* Remove from AVL if the trg exist */
-  bool is_removed = vcn_container_delete(htrg->avl[hash_key], trg);
+		bool is_removed = vcn_container_delete(htrg->avl[hash_key], trg);
 
-  if (is_removed) {
-    htrg->length -= 1;
-    free(trg->attr);
-    trg->attr = NULL;
-  }
+		if (is_removed) {
+			htrg->length -= 1;
+			free(trg->attr);
+			trg->attr = NULL;
+		}
+	}
 }
 
 static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
@@ -552,7 +551,6 @@ static inline vcn_container_t* remove_encroached_triangles
 	      /* poor_quality_trg: NULL if not required */
 	      hash_trg_t *const restrict poor_quality_trg)
 {
-	/* Get encroached triangles */
 	vcn_container_t *const restrict encroached_trg =
 		get_encroached_triangles(first_trg_to_check, v);
 
@@ -576,6 +574,8 @@ static inline vcn_container_t* remove_encroached_triangles
 		if (NULL != big_trg)
 			remove_big_trg(big_trg, trg);
 
+		if (NULL != trg->attr)
+			free(trg->attr);
 		free(trg);
 	}
 	vcn_container_destroy(encroached_trg);
@@ -669,6 +669,7 @@ static inline void verify_new_encroachments
                              (vcn_mesh_t *const restrict mesh,
 			      const msh_vtx_t *const restrict v,
 			      vcn_container_t *const restrict l_new_trg,
+			      /* Could be NULL if not required */
 			      vcn_container_t *const restrict encroached_sgm,
 			      vcn_container_t *const restrict big_trg,
 			      hash_trg_t *const restrict poor_quality_trg)
@@ -678,7 +679,7 @@ static inline void verify_new_encroachments
 
 	while (vcn_container_is_not_empty(l_new_trg)) {
 		msh_trg_t* restrict trg = vcn_container_delete_first(l_new_trg);
-		if (encroached_sgm != NULL) {
+		if (NULL != encroached_sgm) {
 			msh_edge_t* restrict edge =
 				mtrg_get_opposite_edge(trg, v);
 			if (medge_is_subsgm(edge)) {
@@ -851,7 +852,7 @@ static inline msh_trg_t* remove_bigger_trg(vcn_container_t * restrict big_trg)
 static inline void remove_big_trg(vcn_container_t *big_trg, msh_trg_t *trg)
 {
 	if (NULL != trg->attr) {
-		if (NULL != vcn_container_delete(big_trg, trg)) {
+		if (trg == vcn_container_delete(big_trg, trg)) {
 			free(trg->attr);
 			trg->attr = NULL;
 		}
@@ -1123,8 +1124,8 @@ static inline vcn_container_t* get_subsgm_cluster
 
 static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
 {
-	return mesh->max_edge_length > VCN_GEOMETRIC_TOL ||
-		mesh->max_subsgm_length > VCN_GEOMETRIC_TOL;
+	return mesh->max_edge_length * mesh->scale > VCN_GEOMETRIC_TOL ||
+		mesh->max_subsgm_length * mesh->scale > VCN_GEOMETRIC_TOL;
 }
 
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,

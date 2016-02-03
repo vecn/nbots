@@ -29,7 +29,7 @@
 static void init_tasks(vcn_mesh_t *mesh);
 static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh);
 static void null_task(const vcn_mesh_t *const mesh);
-
+static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle);
 static void remove_triangles_propagate(vcn_mesh_t *const mesh,
 				       msh_trg_t* trg);
 
@@ -39,7 +39,7 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 
 static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model);
-static bool size_constrains_allow_refine(const vcn_mesh_t *const mesh);
+static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh);
 
 /* Compare functions */
 static int compare_sgmA_isSmallerThan_sgmB(const void *const sgmA, 
@@ -78,6 +78,8 @@ vcn_mesh_t* vcn_mesh_create(void)
 	vcn_container_set_key_generator(mesh->ht_trg, hash_key_trg);
 	vcn_container_set_destroyer(mesh->ht_trg, free);
 	mesh->scale = 1.0;
+
+	set_angle_constraint(mesh, VCN_MESH_MAX_ANGLE);
 
 	mesh->cr2se_ratio = 1e30;
 
@@ -150,27 +152,27 @@ void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
 	}
 }
 
-void vcn_mesh_set_size_constrain(vcn_mesh_t *mesh, int type, 
+void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type, 
 				 uint32_t value)
 {
 	switch (type) {
-	case VCN_MESH_SIZE_CONSTRAIN_MAX_VTX:
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
 		mesh->max_vtx = value;
 		break;
-	case VCN_MESH_SIZE_CONSTRAIN_MAX_TRG:
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
 		mesh->max_trg = value;
 		break;
 	}
 }
 
-uint32_t vcn_mesh_get_size_constrain(const vcn_mesh_t *mesh, int type)
+uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
 {
 	uint32_t val;
 	switch (type) {
-	case VCN_MESH_SIZE_CONSTRAIN_MAX_VTX:
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
 		val = mesh->max_vtx;
 		break;
-	case VCN_MESH_SIZE_CONSTRAIN_MAX_TRG:
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
 		val = mesh->max_trg;
 		break;
 	default:
@@ -179,34 +181,39 @@ uint32_t vcn_mesh_get_size_constrain(const vcn_mesh_t *mesh, int type)
 	return val;
 }
 
-void vcn_mesh_set_geometric_constrain(vcn_mesh_t *mesh, int type, 
+void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type, 
 				      double value)
 {
 	switch (type) {
-	case VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE:
-		mesh->min_angle = value;
-		mesh->cr2se_ratio = 1.0 / (2.0 * sin(value));
+	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
+		set_angle_constraint(mesh, value);
 		break;
-	case VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH:
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		mesh->max_edge_length = value;
 		break;
-	case VCN_MESH_GEOM_CONSTRAIN_MAX_SUBSGM_LENGTH:
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
 		mesh->max_subsgm_length = value;
 		break;
 	}
 }
 
-double vcn_mesh_get_geometric_constrain(const vcn_mesh_t *mesh, int type)
+static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle)
+{
+	mesh->min_angle = angle;
+	mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
+}
+
+double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
 {
 	double val;
 	switch (type) {
-	case VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE:
+	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
 		val = mesh->min_angle;
 		break;
-	case VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH:
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		val = mesh->max_edge_length;
 		break;
-	case VCN_MESH_GEOM_CONSTRAIN_MAX_SUBSGM_LENGTH:
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
 		val = mesh->max_subsgm_length;
 		break;
 	default:
@@ -741,7 +748,7 @@ void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
 	delete_trg_in_holes(mesh, model);
 	remove_concavities_triangles(mesh);
 	
-	if (size_constrains_allow_refine(mesh))
+	if (size_constraints_allow_refine(mesh))
 		vcn_mesh_refine(mesh);
 }
 
@@ -759,7 +766,7 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 	}
 }
 
-static inline bool size_constrains_allow_refine(const vcn_mesh_t *const mesh)
+static inline bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
 {
 	bool refine = false;
 	if (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||

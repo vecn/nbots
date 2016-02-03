@@ -15,14 +15,14 @@
 #define VCN_MESH_MAX_ANGLE (0.46163958715250017309)
 
 enum {
-	VCN_MESH_SIZE_CONSTRAIN_MAX_VTX,
-	VCN_MESH_SIZE_CONSTRAIN_MAX_TRG
+	VCN_MESH_SIZE_CONSTRAINT_MAX_VTX,
+	VCN_MESH_SIZE_CONSTRAINT_MAX_TRG
 };
 
 enum {
-	VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
-	VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
-	VCN_MESH_GEOM_CONSTRAIN_MAX_SUBSGM_LENGTH
+	VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+	VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+	VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH
 };
 
 enum {
@@ -49,12 +49,12 @@ void vcn_mesh_clear(vcn_mesh_t* mesh);
 void vcn_mesh_destroy(vcn_mesh_t* mesh);
 void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
 		       void (*task)(const vcn_mesh_t *const));
-void vcn_mesh_set_size_constrain(vcn_mesh_t *mesh, int type,
+void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
 				 uint32_t value);
-uint32_t vcn_mesh_get_size_constrain(const vcn_mesh_t *mesh, int type);
-void vcn_mesh_set_geometric_constrain(vcn_mesh_t *mesh, int type,
+uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type);
+void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
 				      double value);
-double vcn_mesh_get_geometric_constrain(const vcn_mesh_t *mesh,
+double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh,
 					int type);
 void vcn_mesh_set_density(vcn_mesh_t* mesh,
 			  double (*density)(const double x[2],
@@ -74,7 +74,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh);
 /**
  * @brief Creates a mesh from a Planar Straight Line Graph (PSLG, encoded
  * in the model) as exposed by Schewchuck:
- *    + Calculates the Constrained Delauany Triangulation from the PSLG.
+ *    + Calculates the Constrainted Delauany Triangulation from the PSLG.
  *    + Remove triangles from holes and concavities.
  *    + Delaunay Refinement (Circumcenter insertion of poor-quaility
  *      triangles). The internal routine is mesh_refine(), which
@@ -125,7 +125,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * <b> When and why Ruppert's algorithm works.</b> 2003
  *
  * @param[in] mesh The triangulation which is going to be refined, it
- * is assumed to be a Constrained Delaunay Triangulation.
+ * is assumed to be a Constrainted Delaunay Triangulation.
  *
  * @param[in] max_vtx Maximum number of vertices, which should be 
  * superior to the number of input vertices. Set zero for an undefined
@@ -149,7 +149,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * which must be greater than zero for all points.
  * @n
  * Small <b>local features</b> could produce finer meshes than those 
- * indicated by the density function (because the minimum angle constraint). 
+ * indicated by the density function (because the minimum angle constraintt). 
  * @n
  * The expected size of an edge is the inverse of the density.
  * @n
@@ -157,7 +157,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * + <b>NULL (or 0)</b>: No density defined, build the mesh with the minimum 
  *   number of triangles for a given minimum angle.
  *   <b>density_data</b> must be <b>NULL</b>.
- * + <b>VCN_DENSITY_CDT</b>: Used to build the Constrained Delaunay
+ * + <b>VCN_DENSITY_CDT</b>: Used to build the Constrainted Delaunay
  *   Triangulation (CDT) inside the domain. The CDT is the triangulation which
  *   maximizes the minimum angle of all the triangles, using only the input
  *   vertices.
@@ -169,7 +169,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  *   than max[0] because an input segment is also an edge (a greater value has
  *   not effect).
  *   If some max value equals zero then it is not considered, hence you can
- *   constrain only the subsegments size.
+ *   constraint only the subsegments size.
  * + <b>VCN_DENSITY_IMG</b>: The density is given by an image.
  *   <b>density_data</b> must be a pointer to <b>vcn_density_img_t</b>.
  *

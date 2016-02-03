@@ -4,15 +4,10 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "vcn/geometric_bot/utils2D.h"
-#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
-#include "vcn/geometric_bot/mesh/constrained_delaunay.h"
-
 #include "test_library.h"
 #include "test_add.h"
 
 #define INPUTS_DIR "../tests/vcn/geometric_bot/mesh/mesh2D_UT_inputs"
-
 
 #include  "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
@@ -23,10 +18,18 @@ static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
 }                                                             /* TEMPORAL */
 
-static bool check_generate_from_model_angle_constrain(void);
-static bool check_generate_from_model_length_constrain(void);
+static bool check_generate_from_model_angle_constraint(void);
+static bool check_generate_from_model_length_constraint(void);
 static bool check_generate_from_model_huge_scale(void);
 static bool check_generate_from_model_tiny_scale(void);
+static bool check_generate_from_model_simple_square(void);
+static bool check_generate_from_model_subsgm_constraint(void);
+static bool check_generate_from_model_small_local_feature(void);
+static bool check_generate_from_model_small_localf_v2(void);
+static bool check_generate_from_model_subsgm_const_v2(void);
+static bool check_generate_from_model_holes(void);
+static bool check_generate_from_model_small_angles(void);
+static bool check_generate_from_model_quasi_linear(void);
 
 static double density_func(const double *const x, const void * const data);
 
@@ -37,26 +40,39 @@ inline int vcn_test_get_driver_id(void)
 
 void vcn_test_load_tests(void *tests_ptr)
 {
-	vcn_test_add(tests_ptr, check_generate_from_model_angle_constrain,
-		     "Check generate_from_model() with angle constrain");
-	vcn_test_add(tests_ptr, check_generate_from_model_length_constrain,
-		     "Check generate_from_model() with length constrain");
+	vcn_test_add(tests_ptr, check_generate_from_model_angle_constraint,
+		     "Check generate_from_model() with angle constraint");
+	vcn_test_add(tests_ptr, check_generate_from_model_length_constraint,
+		     "Check generate_from_model() with length constraint");
 	vcn_test_add(tests_ptr, check_generate_from_model_huge_scale,
 		     "Check generate_from_model() with huge scale");
 	vcn_test_add(tests_ptr, check_generate_from_model_tiny_scale,
 		     "Check generate_from_model() with tiny scale");
+	vcn_test_add(tests_ptr, check_generate_from_model_simple_square,
+		     "Check generate_from_model() of simple square");
+	vcn_test_add(tests_ptr, check_generate_from_model_subsgm_constraint,
+		     "Check generate_from_model() with sub-segment constraint");
+	vcn_test_add(tests_ptr, check_generate_from_model_small_local_feature,
+		     "Check generate_from_model() with small local feature");
+	vcn_test_add(tests_ptr, check_generate_from_model_small_localf_v2,
+		     "Check generate_from_model() with small local feat. v2");
+	vcn_test_add(tests_ptr, check_generate_from_model_subsgm_const_v2,
+		     "Check generate_from_model() with sub-segment const. v2");
+	vcn_test_add(tests_ptr, check_generate_from_model_holes,
+		     "Check generate_from_model() with holes");
+	vcn_test_add(tests_ptr, check_generate_from_model_small_angles,
+		     "Check generate_from_model() with small angles");
+	vcn_test_add(tests_ptr, check_generate_from_model_quasi_linear,
+		     "Check generate_from_model() with quasi linear segments");
 }
 
-static bool check_generate_from_model_angle_constrain(void)
+static bool check_generate_from_model_angle_constraint(void)
 /* Test that the algorithm terminates */
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Triangle.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
-					 VCN_MESH_MAX_ANGLE);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
@@ -66,16 +82,13 @@ static bool check_generate_from_model_angle_constrain(void)
 	return trg_ok && edg_ok;
 }
 
-static bool check_generate_from_model_length_constrain(void)
+static bool check_generate_from_model_length_constraint(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(20, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 1.0);
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
-					 VCN_MESH_MAX_ANGLE);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	//printf("\nCIRCLE: %i %i\n", vcn_mesh_get_N_trg(mesh),/* TEMPORAL */
@@ -91,12 +104,9 @@ static bool check_generate_from_model_huge_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e13, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 1e12);
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
-					 VCN_MESH_MAX_ANGLE);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
@@ -110,12 +120,9 @@ static bool check_generate_from_model_tiny_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e-13, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 1e-14);
-	vcn_mesh_set_geometric_constrain(mesh,
-					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
-					 VCN_MESH_MAX_ANGLE);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
@@ -125,193 +132,174 @@ static bool check_generate_from_model_tiny_scale(void)
 	return trg_ok && edg_ok;
 }
 
-/**
- * @brief Test to generate a regular pattern in the mesh.
- */
-/*
-static vcn_mesh_t* test5(char* name, const char* input_dir)
+static bool check_generate_from_model_simple_square(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Square.psl", input_dir);
-  sprintf(name, "Square");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {0.5, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					 0.5);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test to mesh the boundary with finer segments .
- */
-/*
-static vcn_mesh_t* test6(char* name, const char* input_dir)
+static bool check_generate_from_model_subsgm_constraint(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Square.psl", input_dir);
-  sprintf(name, "Square with refined boundary");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {0.5, 0.05};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					 0.5);
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					 0.05);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test a rectangle with a single notch producing small
- * local feature zones.
- */
-/*
-static vcn_mesh_t* test7(char* name, const char* input_dir)
+static bool check_generate_from_model_small_local_feature(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Rectangle.psl", input_dir);
-  sprintf(name, "Rectangle with a notch");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {5.0, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Rectangle.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					 5.0);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test a rectangle with two notches producing small
- * local feature zones.
- */
-/*
-static vcn_mesh_t* test8(char* name, const char* input_dir)
+static bool check_generate_from_model_small_localf_v2(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Rectangle_with_two_nodges.psl", input_dir);
-  sprintf(name, "Rectangle with two notches");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {2.0, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Rectangle_with_two_nodges.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					 2.0);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test small boundary mesh refinement.
- */
-/*
-static vcn_mesh_t* test9(char* name, const char* input_dir)
+static bool check_generate_from_model_subsgm_const_v2(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Medieval_Ax.psl", input_dir);
-  sprintf(name, "Medieval Ax with refined boundary");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {5, 0.5};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 
-			       VCN_ANGLE_MAX, 
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Medieval_Ax.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					 0.5);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test small boundary mesh refinement with holes.
- */
-/*
-static vcn_mesh_t* test10(char* name, const char* input_dir)
+static bool check_generate_from_model_holes(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/CIMAT_Logo.psl", input_dir);
-  sprintf(name, "CIMAT Logo with refined boundary");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {2.0, 0.3};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/CIMAT_Logo.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					 0.3);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test small input angles.
- */
-/*
-static vcn_mesh_t* test11(char* name, const char* input_dir)
+static bool check_generate_from_model_small_angles(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Spokes.psl", input_dir);
-  sprintf(name, "Spokes (small angles)");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {10.0, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Spokes.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					 VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					 10);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test small input angles with fine boundaries.
- */
-/*
-static vcn_mesh_t* test12(char* name, const char* input_dir)
+static bool check_generate_from_model_quasi_linear(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Spokes.psl", input_dir);
-  sprintf(name, "Spokes with refined boundary");
-  vcn_model_t* model = vcn_model_load(input_name);
-  double max_edge[2] = {5.0, 2.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX, 
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	return false; /* TEMPORAL: Fails on delaunay */
+	char input_name[256];
+	sprintf(input_name, "%s/Short_cantilever.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
 
-/**
- * @brief Test a mesh with non-rect boundaries.
- */
-/*
-static vcn_mesh_t* test13(char* name, const char* input_dir)
+static bool check_generate_from_model_size_constraint(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Short_cantilever.psl", input_dir);
-  sprintf(name, "Short cantiliver");
-  vcn_model_t *model = vcn_model_load(input_name);
-  vcn_model_collapse_colinear_vertices(model, 0, NULL, 1e-3);
-  double max_edge[2] = {0.01, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     VCN_MESH_SIZE_CONSTRAINT_,
+				     8);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  8);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					  5);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
-
-/**
- * @brief Test a mesh with non-rect boundaries.
- */
-/*
 static vcn_mesh_t* test14(char* name, const char* input_dir)
 {
   char input_name[256];
