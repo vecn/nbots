@@ -31,7 +31,6 @@
 #include "vcn/geometric_bot/mesh/dewall.h"
 #include "vcn/geometric_bot/mesh/constrained_delaunay.h"
 #include "vcn/geometric_bot/mesh/mesh2D.h"
-#include "vcn/geometric_bot/mesh/ruppert.h"
 #include "vcn/geometric_bot/mesh/modules2D/graph_generator.h"
 #include "vcn/geometric_bot/mesh/modules2D/pruner.h"
 #include "vcn/geometric_bot/mesh/modules2D/extra_fem.h"

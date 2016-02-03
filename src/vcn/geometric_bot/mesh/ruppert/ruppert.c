@@ -8,10 +8,30 @@
 #include "vcn/container_bot.h"
 #include "vcn/geometric_bot/utils2D.h"
 #include "vcn/geometric_bot/mesh/mesh2D.h"
-#include "vcn/geometric_bot/mesh/ruppert.h"
 
-#include "mesh2D_structs.h"
+#include "../mesh2D_structs.h"
+#include "ruppert.h"
 
+#define _VCN_MAX_LH_TOLERATED (1.5)
+#define _VCN_MAX_GRADING_RATIO (27.0)
+#define _VCN_SUBSEGMENT_VTX ((void*)0x2)
+#define _VCN_CC_SHELL_UNIT (1e-3)
+typedef struct {
+	vcn_container_t* avl[64];
+	uint32_t length;
+} hash_trg_t;
+
+static hash_trg_t* hash_trg_create(void);
+static uint32_t hash_trg_length(const hash_trg_t *const htrg);
+static void hash_trg_insert(hash_trg_t *const htrg,
+				   msh_trg_t *const trg,
+				   double cr2se_ratio);
+static msh_trg_t* hash_trg_remove_first(hash_trg_t *const htrg);
+static void hash_trg_remove(hash_trg_t *const htrg,
+			    msh_trg_t *const trg);
+static void hash_trg_destroy(hash_trg_t *const htrg);
+
+static void reallocate_bins(vcn_mesh_t *const restrict mesh);
 static bool check_max_vtx(const vcn_mesh_t *const mesh);
 static bool check_max_trg(const vcn_mesh_t *const mesh);
 static bool is_encroached(const msh_edge_t *const sgm);
@@ -61,15 +81,10 @@ static void insert_midpoint(vcn_mesh_t *const mesh,
 			    msh_edge_t* subsgm[2],
 			    vcn_container_t *const l_new_trg);
 
-static void split_encroached_segments
-                                   (vcn_mesh_t *const mesh,
-				    vcn_container_t *const encroached_sgm,
-				    vcn_container_t *const big_trg,
-				    hash_trg_t *const poor_quality_trg,
-				    double cr2se_ratio,
-				    double (*density)(const void *const data,
-						      const double const x[2]),
-				    const void *const density_data);
+static void split_encroached_segments(vcn_mesh_t *const mesh,
+				      vcn_container_t *const encroached_sgm,
+				      vcn_container_t *const big_trg,
+				      hash_trg_t *const poor_quality_trg);
 						   
 static void verify_new_encroachments
                              (vcn_mesh_t *const mesh,
@@ -77,26 +92,20 @@ static void verify_new_encroachments
 			      vcn_container_t *const l_new_trg,
 			      vcn_container_t *const encroached_sgm,
 			      vcn_container_t *const big_trg,
-			      hash_trg_t *const poor_quality_trg,
-			      double cr2se_ratio,
-			      double (*density)(const void *const data,
-						const double const x[2]),
-			      const void *const density_data);
+			      hash_trg_t *const poor_quality_trg);
 
 static void initialize_encroached_sgm
                           (vcn_mesh_t *const mesh,
 			   vcn_container_t *const encroached_sgm);
 
-static void insert_big_trg
-                   (vcn_container_t *big_trg, msh_trg_t *trg, double big_ratio);
+static void insert_big_trg(vcn_container_t *big_trg, msh_trg_t *trg,
+			   double big_ratio);
 
 static msh_trg_t* remove_bigger_trg(vcn_container_t *big_trg);
 
-static void remove_big_trg
-                             (vcn_container_t *big_trg, msh_trg_t *trg);
+static void remove_big_trg(vcn_container_t *big_trg, msh_trg_t *trg);
 
-static void check_trg
-                          (msh_trg_t *const trg, vcn_mesh_t *const mesh,
+static void check_trg(msh_trg_t *const trg, vcn_mesh_t *const mesh,
 			   vcn_container_t *const big_trg,
 			   hash_trg_t *const poor_quality_trg,
 			   double cr2se_ratio,
@@ -107,11 +116,7 @@ static void check_trg
 static void initialize_big_and_poor_quality_trg
                           (vcn_mesh_t *const mesh,
 			   vcn_container_t *const big_trg,
-			   hash_trg_t *const poor_quality_trg,
-			   double cr2se_ratio,
-			   double (*density)(const void *const data,
-					     const double const x[2]),
-			   const void *const density_data);
+			   hash_trg_t *const poor_quality_trg);
 
 static msh_trg_t* get_trg_containing_circumcenter
                           (const vcn_mesh_t *const mesh,
@@ -139,17 +144,13 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 
 static bool medge_is_too_big(const vcn_mesh_t *const mesh,
 			     const msh_edge_t *const sgm,
-			     double (*density)(const void *const data,
-					       const double const x[2]),
-			     const void *const density_data,
 			     /* big_ratio can be NULL if not required */
 			     double *big_ratio);
+static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
+				    const msh_edge_t *const restrict sgm);
 
 static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    const msh_trg_t *const restrict trg,
-			     double (*density)(const void *const data,
-					       const double const x[2]),
-			    const void *const restrict density_data,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
@@ -174,28 +175,23 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	initialize_encroached_sgm(mesh, encroached_sgm);
 
 	/* Calculate max circumradius to shortest edge ratio allowed */
-	if (min_angle > VCN_ANGLE_MAX) {
-		if (max_vtx == 0) {
-			printf("WARNING in vcn_mesh_refine(): Setting max_vtx = 1000000 as\
-              guarantee to finish.\n");
-			/* Set a maximum because there are not guarantees to finish */
-			max_vtx = 1000000;
+	if (mesh->min_angle > VCN_ANGLE_MAX) {
+		if (0 == mesh->max_vtx) {
+			printf("WARNING in vcn_mesh_refine(): ");
+			printf("Setting max_vtx = 1000000 to");
+			printf("warranty finish.\n");
+			/* Set a max because there aren't guarantees to finish */
+			mesh->max_vtx = 1000000;
 		}
 	}
-	double cr2se_ratio = 1e30;
-	if (min_angle > 0.0)
-		cr2se_ratio = 1.0 / (2.0 * sin(min_angle));
 
 	/* Split encroached segments */
 	split_encroached_segments(mesh, encroached_sgm,
-				  big_trg, poor_quality_trg,
-				  1e30, NULL, NULL);
+				  big_trg, poor_quality_trg);
 
 	/* Initialize hash table with the poor quality triangles */
 	initialize_big_and_poor_quality_trg(mesh, big_trg,
-					    poor_quality_trg,
-					    cr2se_ratio,
-					    density, density_data);
+					    poor_quality_trg);
 	
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
@@ -238,7 +234,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 		/* Re-allocate hash tables if they are too small */
 		if (iter % 5000 == 0) {
 			if (vcn_bins2D_get_min_points_x_bin(mesh->ug_vtx) > 100)
-				mesh_reallocate_htables(mesh);
+				reallocate_bins(mesh);
 		}
 		iter ++;
 		/* Get next poor-quality triangle */
@@ -265,9 +261,8 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			insert_vertex(mesh, trg_containing_cc, cc, big_trg,
 				      poor_quality_trg, l_new_trg);
 
-			verify_new_encroachments(mesh, cc, l_new_trg, NULL, big_trg,
-						 poor_quality_trg, cr2se_ratio,
-						 density, density_data);
+			verify_new_encroachments(mesh, cc, l_new_trg, NULL,
+						 big_trg, poor_quality_trg);
 			vcn_container_destroy(l_new_trg);
 		} else {
 			/* Circumcenter rejected */
@@ -296,14 +291,124 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 	
 				/* Split encroached segments */
 				split_encroached_segments(mesh, encroached_sgm,
-							  big_trg, poor_quality_trg,
-							  cr2se_ratio,
-							  density,
-							  density_data);
+							  big_trg,
+							  poor_quality_trg);
 			}
 		}
 		vcn_container_destroy(sgm_encroached_by_cc);
 	}
+}
+
+static void reallocate_bins(vcn_mesh_t *const restrict mesh)
+{
+	double avg_points_x_bin = 
+		vcn_bins2D_get_length(mesh->ug_vtx) / 
+		vcn_bins2D_get_N_bins(mesh->ug_vtx);
+	double new_bin_size =
+		vcn_bins2D_get_size_of_bins(mesh->ug_vtx) /
+		sqrt(avg_points_x_bin);
+  
+	vcn_bins2D_t *vertices = vcn_bins2D_create(new_bin_size);
+	while (vcn_bins2D_is_not_empty(mesh->ug_vtx)) {
+		msh_vtx_t* vtx = vcn_bins2D_delete_first(mesh->ug_vtx);
+		vcn_bins2D_insert(vertices, vtx);
+	}
+	vcn_bins2D_destroy(mesh->ug_vtx);
+	mesh->ug_vtx = vertices;
+}
+static inline hash_trg_t* hash_trg_create(void)
+{
+	hash_trg_t* htrg = calloc(1, sizeof(hash_trg_t));
+	for (uint32_t i = 0; i < 64; i++) {
+		htrg->avl[i] = vcn_container_create(VCN_CONTAINER_SORTED);
+		/* REFACTOR
+		vcn_container_key_generator(htrg->avl[i], compare_trg_attr_uint64_t);
+		vcn_container_comparer(htrg->avl[i], );
+		*/
+	}
+	return htrg;
+}
+
+static inline uint32_t hash_trg_length(const hash_trg_t *const restrict htrg)
+{
+	return htrg->length;
+}
+
+static inline void hash_trg_insert(hash_trg_t *const restrict htrg,
+				   msh_trg_t *const restrict trg,
+				   double cr2se_ratio)
+{
+  if(trg->attr != NULL) return; /* It is already inserted */
+
+  /* Calculate hash key */
+  uint32_t hash_key = (uint32_t) cr2se_ratio;
+  if (hash_key > 63)
+    hash_key = 63;
+  
+  /* Set circumradius to shortest edge ratio as attribute */
+  uint64_t* attr = malloc(sizeof(uint64_t));
+  attr[0] = (uint64_t)(cr2se_ratio * 1e6);
+  trg->attr = attr;
+
+  /* Insert into the AVL */
+  bool is_inserted =
+    vcn_container_insert(htrg->avl[hash_key], trg);
+
+  if (is_inserted) {
+    htrg->length += 1;
+  } else {
+    free(trg->attr);
+    trg->attr = NULL;
+  }
+}
+
+static inline msh_trg_t* hash_trg_remove_first
+                         (hash_trg_t *const restrict htrg)
+{
+	for (int i = 63; i >= 0; i--) {
+		if (vcn_container_is_not_empty(htrg->avl[i])) {
+			htrg->length -= 1;
+			msh_trg_t* restrict trg = 
+				vcn_container_delete_first(htrg->avl[i]);
+			free(trg->attr);
+			trg->attr = NULL;
+			return trg;
+		}
+	}
+	return NULL;
+}
+
+static inline void hash_trg_remove(hash_trg_t *const restrict htrg,
+				   msh_trg_t *const restrict trg)
+{
+  if(trg->attr == NULL) return; /* It is not inserted */
+
+  /* Calculate hash key */
+  double cr2se_ratio = ((uint64_t*)trg->attr)[0] / 1e6;
+  uint32_t hash_key = (uint32_t) cr2se_ratio;
+  if(hash_key > 63) hash_key = 63;
+  
+  /* Remove from AVL if the trg exist */
+  bool is_removed = vcn_container_delete(htrg->avl[hash_key], trg);
+
+  if (is_removed) {
+    htrg->length -= 1;
+    free(trg->attr);
+    trg->attr = NULL;
+  }
+}
+
+static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
+{
+  for (uint32_t i = 0; i < 64; i++) {
+    while (vcn_container_is_not_empty(htrg->avl[i])) {
+      msh_trg_t* trg = vcn_container_delete_first(htrg->avl[i]);
+      free(trg->attr);
+      trg->attr = NULL;      
+    }
+    vcn_container_destroy(htrg->avl[i]);
+  }
+  free(htrg);
 }
 
 static inline bool check_max_vtx(const vcn_mesh_t *const restrict mesh)
@@ -564,28 +669,25 @@ static inline void verify_new_encroachments
 			      vcn_container_t *const restrict l_new_trg,
 			      vcn_container_t *const restrict encroached_sgm,
 			      vcn_container_t *const restrict big_trg,
-			      hash_trg_t *const restrict poor_quality_trg,
-			      double cr2se_ratio,
-			      double (*density)(const void *const data,
-						const double const x[2]),
-			      const void *const restrict density_data)
+			      hash_trg_t *const restrict poor_quality_trg)
 {
+	bool (*inside)(const double[2], const double[2], const double [2]) =
+		vcn_utils2D_pnt_lies_strictly_in_diametral_circle;
+
 	while (vcn_container_is_not_empty(l_new_trg)) {
 		msh_trg_t* restrict trg = vcn_container_delete_first(l_new_trg);
 		if (encroached_sgm != NULL) {
-			msh_edge_t* restrict edge = mtrg_get_opposite_edge(trg, v);
+			msh_edge_t* restrict edge =
+				mtrg_get_opposite_edge(trg, v);
 			if (medge_is_subsgm(edge)) {
-				if (vcn_utils2D_pnt_lies_strictly_in_diametral_circle(edge->v1->x,
-										      edge->v2->x,
-										      v->x)) {
-					vcn_container_insert(encroached_sgm, edge);
+				if (inside(edge->v1->x, edge->v2->x, v->x)) {
+					vcn_container_insert(encroached_sgm,
+							     edge);
 					continue;
 				}
 			}
-		}
-		
-		check_trg(trg, mesh, big_trg, poor_quality_trg,
-			  cr2se_ratio, density, density_data);
+		}		
+		check_trg(trg, mesh, big_trg, poor_quality_trg);
 	}
 }
 
@@ -681,11 +783,7 @@ static inline void split_encroached_segments
                              (vcn_mesh_t *const restrict mesh,
 			      vcn_container_t *const restrict encroached_sgm,
 			      vcn_container_t *const restrict big_trg,
-			      hash_trg_t *const restrict poor_quality_trg,
-			      double cr2se_ratio,
-			      double (*density)(const void *const data,
-						const double const x[2]),
-			      const void *const restrict density_data)
+			      hash_trg_t *const restrict poor_quality_trg)
 {
 	while (vcn_container_is_not_empty(encroached_sgm)) {
 		msh_edge_t* sgm = vcn_container_delete_first(encroached_sgm);
@@ -698,8 +796,7 @@ static inline void split_encroached_segments
 
 		/* Verify new encroachments */
 		verify_new_encroachments(mesh, v, l_new_trg, encroached_sgm,
-					 big_trg, poor_quality_trg, cr2se_ratio,
-					 density, density_data);
+					 big_trg, poor_quality_trg);
 		vcn_container_destroy(l_new_trg);
 
 		/* Check if the first subsegment is encroached */
@@ -755,8 +852,7 @@ static inline msh_trg_t* remove_bigger_trg(vcn_container_t * restrict big_trg)
 	return trg;  
 }
 
-static inline void remove_big_trg
-                             (vcn_container_t *big_trg, msh_trg_t *trg)
+static inline void remove_big_trg(vcn_container_t *big_trg, msh_trg_t *trg)
 {
 	if (NULL != trg->attr) {
 		if (NULL != vcn_container_delete(big_trg, trg)) {
@@ -766,46 +862,38 @@ static inline void remove_big_trg
 	}
 }
 
-static inline void check_trg
-                          (msh_trg_t *const restrict trg,
-			   vcn_mesh_t *const restrict mesh,
-			   vcn_container_t *const restrict big_trg,
-			   hash_trg_t *const restrict poor_quality_trg,
-			   double cr2se_ratio,
-			   double (*density)(const void *const data,
-					     const double const x[2]),
-			   const void *const restrict density_data)
+static inline void check_trg(msh_trg_t *const restrict trg,
+			     vcn_mesh_t *const restrict mesh,
+			     vcn_container_t *const restrict big_trg,
+			     hash_trg_t *const restrict poor_quality_trg)
 {
 	double big_ratio;
-	if (mtrg_is_too_big(mesh, trg, density, density_data, &big_ratio)) {
+	if (mtrg_is_too_big(mesh, trg, &big_ratio)) {
 		insert_big_trg(big_trg, trg, big_ratio);
 	} else {
-		if (cr2se_ratio > 1e3) 
-			return;
-		double trg_cr2se_ratio = vcn_utils2D_get_cr2se_ratio(trg->v1->x,
-								  trg->v2->x,
-								  trg->v3->x);
-		if (trg_cr2se_ratio > cr2se_ratio)
-			hash_trg_insert(poor_quality_trg, trg, trg_cr2se_ratio);
+		if (1e30 > mesh->cr2se_ratio) {
+			double trg_cr2se_ratio =
+				vcn_utils2D_get_cr2se_ratio(trg->v1->x,
+							    trg->v2->x,
+							    trg->v3->x);
+			if (trg_cr2se_ratio > mesh->cr2se_ratio)
+				hash_trg_insert(poor_quality_trg,
+						trg, trg_cr2se_ratio);
+		}
 	}
 }
 
 static void initialize_big_and_poor_quality_trg
                           (vcn_mesh_t *const restrict mesh,
 			   vcn_container_t *const restrict big_trg,
-			   hash_trg_t *const restrict poor_quality_trg,
-			   double cr2se_ratio,
-			   double (*density)(const void *const data,
-					     const double const x[2]),
-			   const void *const restrict density_data)
+			   hash_trg_t *const restrict poor_quality_trg)
 {
 	vcn_iterator_t *const restrict iter = vcn_iterator_create();
 	vcn_iterator_set_container(iter, mesh->ht_trg);
 	while (vcn_iterator_has_more(iter)) {
 		msh_trg_t *restrict trg =
 			(msh_trg_t*) vcn_iterator_get_next(iter);
-		check_trg(trg, mesh, big_trg, poor_quality_trg,
-			  cr2se_ratio, density, density_data);
+		check_trg(trg, mesh, big_trg, poor_quality_trg);
 	}
 	vcn_iterator_destroy(iter);
 }
@@ -899,9 +987,8 @@ static inline vcn_container_t* get_sgm_encroached_by_vertex
 	return encroached_sgm;
 }
 
-static inline bool split_is_permitted
-                          (const msh_edge_t *const restrict sgm,
-			   double d)
+static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
+				      double d)
 {
 	/* Check if the length is not a power of two */
 	double length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
@@ -1039,37 +1126,15 @@ static inline vcn_container_t* get_subsgm_cluster
 
 static bool medge_is_too_big(const vcn_mesh_t *const restrict mesh,
 			     const msh_edge_t *const restrict sgm,
-			     double (*density)(const void *const data,
-					       const double const x[2]),
-			     const void *const restrict density_data,
 			     /* big_ratio can be NULL if not required */
 			     double *big_ratio)
 {
 	/* Get length of the segment (scaled) */
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 
-	/* REFACTOR next line */
-	if (density == VCN_DENSITY_MAX) {
-		/* Constraint max values */
-		double* restrict data = (double*) density_data;
-		double edge_max = data[0] * mesh->scale;
-		if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
-			if (NULL != big_ratio)
-				*big_ratio = d;
-			return true;
-		}
-
-		if (medge_is_subsgm(sgm)) {
-			double sgm_max = data[1] * mesh->scale;
-			if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
-				if (NULL != big_ratio)
-					*big_ratio = d;
-				return true;
-			}
-		}
-		return false;
-	}
-	
+	if (density == VCN_DENSITY_MAX)
+		return edge_violates_constrain(mesh, sgm);
+	/* AQUI VOY */
 	/* REFACTOR next line */
 	if (density == VCN_DENSITY_IMG)
 		/* The density is given by an image */
@@ -1167,11 +1232,31 @@ static bool medge_is_too_big(const vcn_mesh_t *const restrict mesh,
 	return lh > _VCN_MAX_LH_TOLERATED;
 }
 
+static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
+				    const msh_edge_t *const restrict sgm)
+{
+		/* Constraint max values */
+		double* restrict data = (double*) density_data;
+		double edge_max = data[0] * mesh->scale;
+		if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
+			if (NULL != big_ratio)
+				*big_ratio = d;
+			return true;
+		}
+
+		if (medge_is_subsgm(sgm)) {
+			double sgm_max = data[1] * mesh->scale;
+			if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
+				if (NULL != big_ratio)
+					*big_ratio = d;
+				return true;
+			}
+		}
+		return false;
+}
+
 static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 				   const msh_trg_t *const restrict trg,
-				   double (*density)(const void *const data,
-						     const double const x[2]),
-				   const void *const restrict density_data,
 				   /* big_ratio could be NULL if not required */
 				   double *big_ratio)
 {
@@ -1180,9 +1265,9 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	if (NULL == density) 
 		return false;
 	/* Check if at least one of its edges is too big */
-	if (medge_is_too_big(mesh, trg->s1, density, density_data, big_ratio))
+	if (medge_is_too_big(mesh, trg->s1, big_ratio))
 		return true;
-	if (medge_is_too_big(mesh, trg->s2, density, density_data, big_ratio))
+	if (medge_is_too_big(mesh, trg->s2, big_ratio))
 		return true;
-	return medge_is_too_big(mesh, trg->s3, density, density_data, big_ratio);
+	return medge_is_too_big(mesh, trg->s3, big_ratio);
 }

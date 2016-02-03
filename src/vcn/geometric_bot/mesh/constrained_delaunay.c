@@ -63,7 +63,7 @@ void vcn_mesh_get_constrained_delaunay(vcn_mesh_t *mesh,
 				       uint32_t N_segments,
 				       const uint32_t *const segments)
 {
-	vcn_dewall_get_delaunay(mesh, N_vertices, vertices);
+	vcn_mesh_get_delaunay(mesh, N_vertices, vertices);
 	set_constraints(mesh, segments, N_segments);
 }
 

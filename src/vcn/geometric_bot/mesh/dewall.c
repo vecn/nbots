@@ -136,8 +136,8 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 static void clear_search_vtx(search_vtx_t *search_vtx);
 static uint32_t dewall(vcn_mesh_t* mesh);
 
-void vcn_dewall_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
-			     const double *const vertices)
+void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
+			   const double *const vertices)
 {
 	vcn_mesh_clear(mesh);
 	if (0 < N_vertices) {

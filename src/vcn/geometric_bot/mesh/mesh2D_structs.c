@@ -3,6 +3,8 @@
 #include <stdint.h>
 
 #include "vcn/math_bot.h"
+#include "vcn/container_bot/container.h"
+#include "vcn/container_bot/iterator.h"
 #include "vcn/geometric_bot/utils2D.h"
 #include "vcn/geometric_bot/mesh/density2D.h"
 #include "vcn/geometric_bot/mesh/mesh2D.h"
@@ -877,4 +879,24 @@ inline bool are_equal_edge(const void *const edge1_ptr,
 	const msh_edge_t *const edge1 = edge1_ptr;
 	const msh_edge_t *const edge2 = edge2_ptr;
 	return (edge1->v1 == edge2->v1) && (edge1->v2 == edge2->v2);
+}
+
+msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
+			   const msh_vtx_t *const restrict v)
+{
+	vcn_iterator_t *iter = vcn_iterator_create();
+	vcn_iterator_set_container(iter, mesh->ht_trg);
+	msh_trg_t *enveloping_trg = NULL;
+	while (vcn_iterator_has_more(iter)) {
+		const msh_trg_t *trg = vcn_iterator_get_next(iter);
+		if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
+							trg->v2->x,
+							trg->v3->x,
+							v->x)) {
+			enveloping_trg = (msh_trg_t*) trg;
+			break;
+		}
+	}
+	vcn_iterator_destroy(iter);
+	return enveloping_trg;
 }

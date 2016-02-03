@@ -77,6 +77,7 @@ struct vcn_mesh_s {
 
 	/* Geometric constrains */
 	double min_angle;
+	double cr2se;
 	double max_edge_length;
 	double max_subsgm_length;
 
@@ -84,6 +85,10 @@ struct vcn_mesh_s {
 	double (*density)(const double x[2], const void *data);
 	const void *density_data;
 
+	/* Refinement algorithm type */
+	int refiner_type;
+
+	/* Tasks functions */
 	void (*do_after_insert_trg)(const vcn_mesh_t *const);
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
@@ -171,5 +176,8 @@ void mesh_substract_triangle(vcn_mesh_t *const mesh,
 			     const msh_trg_t *const trg);
 uint32_t hash_key_edge(const void *const  edge_ptr);
 bool are_equal_edge(const void *const edge1_ptr, const void *const edge2_ptr);
+
+msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
+			  const msh_vtx_t *const v);
 
 #endif
