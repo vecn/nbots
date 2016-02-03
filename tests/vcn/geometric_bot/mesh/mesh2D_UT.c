@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -10,113 +11,124 @@
 #include "test_library.h"
 #include "test_add.h"
 
-static double* read_vertices(const char* filename, uint* N_vertices);
+#define INPUTS_DIR "../tests/vcn/geometric_bot/mesh/mesh2D_UT_inputs"
 
-static inline double density_func(const double *const x, 
-				  const void * const data)
+
+#include  "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
+static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
+static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
+{							      /* TEMPORAL */
+	char label[100];				      /* TEMPORAL */
+	sprintf(label, "TEMP_%02i.png", TEMPORAL_++);	      /* TEMPORAL */
+	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
+}                                                             /* TEMPORAL */
+
+static bool check_generate_from_model_angle_constrain(void);
+static bool check_generate_from_model_length_constrain(void);
+static bool check_generate_from_model_huge_scale(void);
+static bool check_generate_from_model_tiny_scale(void);
+
+static double density_func(const double *const x, const void * const data);
+
+inline int vcn_test_get_driver_id(void)
 {
-  return 10.0 * (1.0 + sin(x[0]) * cos(x[1]));
+	return VCN_DRIVER_UNIT_TEST;
 }
 
-static vcn_mesh_t* test1 (char* name, const char* input_dir);
-static vcn_mesh_t* test2 (char* name, const char* input_dir);
-static vcn_mesh_t* test3 (char* name, const char* input_dir);
-static vcn_mesh_t* test4 (char* name, const char* input_dir);
-static vcn_mesh_t* test5 (char* name, const char* input_dir);
-static vcn_mesh_t* test6 (char* name, const char* input_dir);
-static vcn_mesh_t* test7 (char* name, const char* input_dir);
-static vcn_mesh_t* test8 (char* name, const char* input_dir);
-static vcn_mesh_t* test9 (char* name, const char* input_dir);
-static vcn_mesh_t* test10(char* name, const char* input_dir);
-static vcn_mesh_t* test11(char* name, const char* input_dir);
-static vcn_mesh_t* test12(char* name, const char* input_dir);
-static vcn_mesh_t* test13(char* name, const char* input_dir);
-static vcn_mesh_t* test14(char* name, const char* input_dir);
-static vcn_mesh_t* test15(char* name, const char* input_dir);
-static vcn_mesh_t* test16(char* name, const char* input_dir);
-static vcn_mesh_t* test17(char* name, const char* input_dir);
-static vcn_mesh_t* test18(char* name, const char* input_dir);
-static vcn_mesh_t* test19(char* name, const char* input_dir);
-static vcn_mesh_t* test20(char* name, const char* input_dir);
-static vcn_mesh_t* test21(char* name, const char* input_dir);
-static vcn_mesh_t* test22(char* name, const char* input_dir);
-static vcn_mesh_t* test23(char* name, const char* input_dir);
-
-static const uint N_tests = 23;
-vcn_mesh_t* (*test[23])(char*, const char*) = 
-{test1, test2, test3, test4, test5, test6, test7, test8,
- test9, test10, test11, test12, test13, test14, test15,
- test16, test17, test18, test19, test20, test21, test22,
- test23};
-
-/**
- * @brief Test the response of the algorithm to small input angles.
- */
-static vcn_mesh_t* test1(char* name, const char* input_dir)
+void vcn_test_load_tests(void *tests_ptr)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Triangle.psl", input_dir);
-  sprintf(name, "Triangle with acute angle");
-  vcn_model_t *model = vcn_model_load(input_name);
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, VCN_ANGLE_MAX, NULL, NULL);
-  vcn_model_destroy(model);
-  return mesh;
+	vcn_test_add(tests_ptr, check_generate_from_model_angle_constrain,
+		     "Check generate_from_model() with angle constrain");
+	vcn_test_add(tests_ptr, check_generate_from_model_length_constrain,
+		     "Check generate_from_model() with length constrain");
+	vcn_test_add(tests_ptr, check_generate_from_model_huge_scale,
+		     "Check generate_from_model() with huge scale");
+	vcn_test_add(tests_ptr, check_generate_from_model_tiny_scale,
+		     "Check generate_from_model() with tiny scale");
 }
 
-/**
- * @brief Test the sensibility of the meshing algorithm to cocircularities.
- */
-static vcn_mesh_t* test2(char* name, const char* input_dir)
+static bool check_generate_from_model_angle_constrain(void)
+/* Test that the algorithm terminates */
 {
-  sprintf(name, "Circle");
-  vcn_model_t* model = vcn_model_create_polygon(20, 0, 0, 100);
-  double max_edge[2] = {0.3, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/Triangle.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
+					 VCN_MESH_MAX_ANGLE);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
 
-/**
- * @brief Test the sensibility to huge scale models (to detect numerical
- * errors).
- */
-static vcn_mesh_t* test3(char* name, const char* input_dir)
+static bool check_generate_from_model_length_constrain(void)
 {
-  sprintf(name, "Huge circle");
-  vcn_model_t* model = vcn_model_create_polygon(2e13, 0, 0, 100);
-  double max_edge[2] = {3e11, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX, 
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	vcn_model_t *model = vcn_model_create_polygon(20, 0, 0, 100);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+					 1.0);
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
+					 VCN_MESH_MAX_ANGLE);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	//printf("\nCIRCLE: %i %i\n", vcn_mesh_get_N_trg(mesh),/* TEMPORAL */
+	//     vcn_mesh_get_N_edg(mesh));                 /* TEMPORAL */
+	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
 
-/**
- * @brief  Test the sensibility to tiny scale models (to detect numerical
- * errors).
- */
-static vcn_mesh_t* test4(char* name, const char* input_dir)
+static bool check_generate_from_model_huge_scale(void)
 {
-  sprintf(name, "Tiny Circle");
-  vcn_model_t* model = vcn_model_create_polygon(2e-13, 0, 0, 100);
-  double max_edge[2] = {3e-15, 0.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-  return mesh;
+	vcn_model_t *model = vcn_model_create_polygon(2e13, 0, 0, 100);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+					 1e12);
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
+					 VCN_MESH_MAX_ANGLE);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
+}
+
+static bool check_generate_from_model_tiny_scale(void)
+{
+	vcn_model_t *model = vcn_model_create_polygon(2e-13, 0, 0, 100);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MAX_EDGE_LENGTH,
+					 1e-14);
+	vcn_mesh_set_geometric_constrain(mesh,
+					 VCN_MESH_GEOM_CONSTRAIN_MIN_ANGLE,
+					 VCN_MESH_MAX_ANGLE);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
 
 /**
  * @brief Test to generate a regular pattern in the mesh.
  */
+/*
 static vcn_mesh_t* test5(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -131,10 +143,12 @@ static vcn_mesh_t* test5(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test to mesh the boundary with finer segments .
  */
+/*
 static vcn_mesh_t* test6(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -149,11 +163,13 @@ static vcn_mesh_t* test6(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test a rectangle with a single notch producing small
  * local feature zones.
  */
+/*
 static vcn_mesh_t* test7(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -168,11 +184,13 @@ static vcn_mesh_t* test7(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test a rectangle with two notches producing small
  * local feature zones.
  */
+/*
 static vcn_mesh_t* test8(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -187,10 +205,12 @@ static vcn_mesh_t* test8(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test small boundary mesh refinement.
  */
+/*
 static vcn_mesh_t* test9(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -205,10 +225,12 @@ static vcn_mesh_t* test9(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test small boundary mesh refinement with holes.
  */
+/*
 static vcn_mesh_t* test10(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -223,10 +245,12 @@ static vcn_mesh_t* test10(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test small input angles.
  */
+/*
 static vcn_mesh_t* test11(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -241,10 +265,12 @@ static vcn_mesh_t* test11(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test small input angles with fine boundaries.
  */
+/*
 static vcn_mesh_t* test12(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -259,10 +285,12 @@ static vcn_mesh_t* test12(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test a mesh with non-rect boundaries.
  */
+/*
 static vcn_mesh_t* test13(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -278,10 +306,12 @@ static vcn_mesh_t* test13(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test a mesh with non-rect boundaries.
  */
+/*
 static vcn_mesh_t* test14(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -297,10 +327,12 @@ static vcn_mesh_t* test14(char* name, const char* input_dir)
     
   return mesh;
 }
+*/
 
 /**
  * @brief Test vcn_mesh_is_vtx_inside().
  */
+/*
 static vcn_mesh_t* test15(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -329,10 +361,12 @@ static vcn_mesh_t* test15(char* name, const char* input_dir)
   vcn_model_destroy(model);
   return mesh;
 }
+*/
 
 /**
  * @brief Test the density function.
  */
+/*
 static vcn_mesh_t* test16(char* name, const char* input_dir)
 {
   sprintf(name, "External density function");
@@ -345,14 +379,16 @@ static vcn_mesh_t* test16(char* name, const char* input_dir)
 
   return mesh;
 }
+*/
 
 /**
  * @brief Test the PNG format in a color picture.
  */
+/*
 static vcn_mesh_t* test17(char* name, const char* input_dir)
 {
   char input_name[256];
-  sprintf(input_name, "%s/eye_baw.jpg", input_dir);
+  sprintf(input_name, "%s/eye_raw.jpg", input_dir);
   sprintf(name, "Eye picture");
   vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
 						   0.0, 0.0, 0.2);
@@ -367,10 +403,12 @@ static vcn_mesh_t* test17(char* name, const char* input_dir)
 
   return mesh;
 }
+*/
 
 /**
  * @brief Test the JPEG format.
  */
+/*
 static vcn_mesh_t* test18(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -391,10 +429,12 @@ static vcn_mesh_t* test18(char* name, const char* input_dir)
 
   return mesh;
 }
+*/
 
 /**
  * @brief Test a grayscale PNG image.
  */
+/*
 static vcn_mesh_t* test19(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -414,10 +454,12 @@ static vcn_mesh_t* test19(char* name, const char* input_dir)
 
   return mesh;
 }
+*/
 
 /**
  * @brief Test JPG black and white image.
  */
+/*
 static vcn_mesh_t* test20(char* name, const char* input_dir)
 {
   char input_name[256];
@@ -437,35 +479,11 @@ static vcn_mesh_t* test20(char* name, const char* input_dir)
 
   return mesh;
 }
+*/
 
-/**
- * @brief Test Delaunay triangulation on a cloud of random points.
- */
-static vcn_mesh_t* test21(char* name, const char* input_dir)
-{
-  char input_name[256];
-  sprintf(input_name, "%s/Cloud.vtx", input_dir);
-  sprintf(name, "Cloud");
-  uint N_vertices;
-  double* vertices = read_vertices(input_name, &N_vertices);
-  if(vertices == NULL) return NULL;
-  vcn_mesh_t* mesh = vcn_mesh_create_Delaunay(N_vertices, vertices);
-  free(vertices);
-  return mesh;
-}
 
-/**
- * @brief Test performance of DT on a grid of 10 000 points.
- */
-static vcn_mesh_t* test22(char* name, const char* input_dir)
+static inline double density_func(const double *const x, 
+				  const void * const data)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Tiles.vtx", input_dir);
-  sprintf(name, "Tiles");
-  uint N_vertices;
-  double* vertices = read_vertices(input_name, &N_vertices);
-  if(vertices == NULL) return NULL;
-  vcn_mesh_t* mesh = vcn_mesh_create_Delaunay(N_vertices, vertices);
-  free(vertices);
-  return mesh;
+  return 10.0 * (1.0 + sin(x[0]) * cos(x[1]));
 }

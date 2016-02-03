@@ -12,7 +12,7 @@
  * a refined mesh with the maximum quality predicted by theory.
  * Minimum angle bound equivalent to 26.45 degrees.
  */
-#define VCN_ANGLE_MAX (0.46163958715250017309)
+#define VCN_MESH_MAX_ANGLE (0.46163958715250017309)
 
 enum {
 	VCN_MESH_SIZE_CONSTRAIN_MAX_VTX,
@@ -142,7 +142,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  *
  * @param[in] min_angle Minimum angle allowed in the triangulation (in 
  * radians).
- * This angle must be in the range of 0 and <b>VCN_ANGLE_MAX</b>,
+ * This angle must be in the range of 0 and <b>VCN_MESH_MAX_ANGLE</b>,
  * which corresponds to 26.45 degrees (0.4616 radians approx).
  *
  * @param[in] density Function to control the density of the triangulation,

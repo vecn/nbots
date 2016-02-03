@@ -13,6 +13,8 @@
 
 #define POW2(a) ((a)*(a))
 
+#define INPUTS_DIR "../tests/vcn/geometric_bot/mesh/dewall_UT_inputs"
+
 static bool check_get_delaunay_polygon_0_center(void);
 static bool check_get_delaunay_polygon_1_center(void);
 static bool check_get_delaunay_polygon_2_center(void);
@@ -313,10 +315,10 @@ static bool check_get_delaunay_square(void)
 
 static bool check_get_delaunay_1000_cloud(void)
 {
-	const char *path =
-		"../tests/vcn/geometric_bot/mesh/dewall_UT_inputs/cloud_1000.vtx";
+	char input_name[256];
+	sprintf(input_name, "%s/cloud_1000.vtx", INPUTS_DIR);
 	int N;
-	double *vertices = read_vertices(path, &N);
+	double *vertices = read_vertices(input_name, &N);
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_get_delaunay(mesh, N, vertices);
 	free(vertices);

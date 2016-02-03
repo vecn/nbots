@@ -42,11 +42,6 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 static bool size_constrains_allow_refine(const vcn_mesh_t *const mesh);
 
 /* Compare functions */
-static int compare_trg_attr_uint64_t(const void *const trgA,
-				     const void *const trgB);
-
-static int compare_deterministic_sgm(const void *const sgmA,
-				     const void *const sgmB);
 static int compare_sgmA_isSmallerThan_sgmB(const void *const sgmA, 
 					   const void *const sgmB);
 static int compare_sgmA_isTheSameThan_sgmB(const void *const  sgmA, 
@@ -327,51 +322,6 @@ static void remove_triangles_propagate
 			remove_triangles_propagate(mesh, nb_trg);
 	}
 	free(trg);
-}
-
-static inline int compare_trg_attr_uint64_t(const void *const trgA,
-					  const void *const trgB)
-{
-	register uint64_t a = *(uint64_t*)(((msh_trg_t*)trgA)->attr);
-	register uint64_t b = *(uint64_t*)(((msh_trg_t*)trgB)->attr);
-	if (a > b)
-		return 1;
-	else if (a < b)
-		return -1;  
-	return 0;
-}
-
-static inline int compare_deterministic_sgm
-                 (const void *const restrict sgmA,
-		  const void *const restrict sgmB)
-{
-	msh_edge_t *const restrict sA = (msh_edge_t*) sgmA;
-	msh_edge_t *const restrict sB = (msh_edge_t*) sgmB;
-	/* Compare x coordinate of vertex 1 */
-	if (sA->v1->x[0] -  sB->v1->x[0] > VCN_GEOMETRIC_TOL)
-		return 1;
-	else if (sB->v1->x[0] - sA->v1->x[0] > VCN_GEOMETRIC_TOL)
-		return -1;
-
-	/* Compare y coordinate of vertex 1 */
-	if (sA->v1->x[1] -  sB->v1->x[1] > VCN_GEOMETRIC_TOL)
-		return 1;
-	else if (sB->v1->x[1] - sA->v1->x[1] > VCN_GEOMETRIC_TOL)
-		return -1;
-
-	/* Compare x coordinate of vertex 2 */
-	if (sA->v2->x[0] - sB->v2->x[0] > VCN_GEOMETRIC_TOL)
-		return 1;
-	else if (sB->v2->x[0] - sA->v2->x[0] > VCN_GEOMETRIC_TOL)
-		return -1;
-
-	/* Compare y coordinate of vertex 2 */
-	if (sA->v2->x[1] - sB->v2->x[1] > VCN_GEOMETRIC_TOL)
-		return 1;
-	else if (sB->v2->x[1] - sA->v2->x[1] > VCN_GEOMETRIC_TOL)
-		return -1;
-  
-	return 0;
 }
 
 static inline int compare_sgmA_isSmallerThan_sgmB

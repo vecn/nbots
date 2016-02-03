@@ -22,6 +22,7 @@ typedef struct {
 	uint32_t length;
 } hash_trg_t;
 
+static inline uint32_t key_trg_attr(const void *const trg_ptr);
 static hash_trg_t* hash_trg_create(void);
 static uint32_t hash_trg_length(const hash_trg_t *const htrg);
 static void hash_trg_insert(hash_trg_t *const htrg,
@@ -139,10 +140,6 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			   vcn_container_t *big_trg,
 			   hash_trg_t *poor_quality_trg);
 
-static bool medge_is_too_big(const vcn_mesh_t *const mesh,
-			     const msh_edge_t *const sgm,
-			     /* big_ratio can be NULL if not required */
-			     double *big_ratio);
 static bool has_edge_length_constrained(const vcn_mesh_t *const mesh);
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
@@ -168,23 +165,19 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	/* Allocate data structures to allocate encroached elements */
 	vcn_container_t *restrict encroached_sgm =
 		vcn_container_create(VCN_CONTAINER_SORTED);
-	/* REFACTOR
-	   set_key_generator(compare_deterministic_sgm);
-	   set_comparer(...)
-	*/
+	vcn_container_set_key_generator(encroached_sgm, hash_key_edge);
+
 	vcn_container_t *restrict big_trg =
 		vcn_container_create(VCN_CONTAINER_SORTED);
-	/* REFACTOR
-	   set_key_generator(compare_trg_attr_uint64_t);
-	   set_comparer(...)
-	*/
+	vcn_container_set_key_generator(big_trg, key_trg_attr);
+
 	hash_trg_t *restrict poor_quality_trg = hash_trg_create();
 
 	/* Initialize FIFO with encroached segments */
 	initialize_encroached_sgm(mesh, encroached_sgm);
 
 	/* Calculate max circumradius to shortest edge ratio allowed */
-	if (mesh->min_angle > VCN_ANGLE_MAX) {
+	if (mesh->min_angle > VCN_MESH_MAX_ANGLE) {
 		if (0 == mesh->max_vtx) {
 			printf("WARNING in vcn_mesh_refine(): ");
 			printf("Setting max_vtx = 1000000 to");
@@ -210,6 +203,11 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	hash_trg_destroy(poor_quality_trg);
 }
 
+static inline uint32_t key_trg_attr(const void *const trg_ptr)
+{
+	const msh_trg_t *const trg = trg_ptr;
+	return *(uint32_t*)(trg->attr);
+}
 
 bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 {
@@ -329,10 +327,7 @@ static inline hash_trg_t* hash_trg_create(void)
 	hash_trg_t* htrg = calloc(1, sizeof(hash_trg_t));
 	for (uint32_t i = 0; i < 64; i++) {
 		htrg->avl[i] = vcn_container_create(VCN_CONTAINER_SORTED);
-		/* REFACTOR
-		vcn_container_key_generator(htrg->avl[i], compare_trg_attr_uint64_t);
-		vcn_container_comparer(htrg->avl[i], );
-		*/
+		vcn_container_set_key_generator(htrg->avl[i], key_trg_attr);
 	}
 	return htrg;
 }
@@ -346,28 +341,27 @@ static inline void hash_trg_insert(hash_trg_t *const restrict htrg,
 				   msh_trg_t *const restrict trg,
 				   double cr2se_ratio)
 {
-  if(trg->attr != NULL) return; /* It is already inserted */
-
-  /* Calculate hash key */
-  uint32_t hash_key = (uint32_t) cr2se_ratio;
-  if (hash_key > 63)
-    hash_key = 63;
+	if (NULL == trg->attr) {
+		/* It is not inserted */
+		uint32_t hash_key = (uint32_t) cr2se_ratio;
+		if (hash_key > 63)
+			hash_key = 63;
   
-  /* Set circumradius to shortest edge ratio as attribute */
-  uint64_t* attr = malloc(sizeof(uint64_t));
-  attr[0] = (uint64_t)(cr2se_ratio * 1e6);
-  trg->attr = attr;
+		/* Set circumradius to shortest edge ratio as attribute */
+		uint32_t* attr = malloc(sizeof(uint32_t));
+		attr[0] = (uint32_t)(cr2se_ratio * 1e6);
+		trg->attr = attr;
 
-  /* Insert into the AVL */
-  bool is_inserted =
-    vcn_container_insert(htrg->avl[hash_key], trg);
+		bool is_inserted =
+			vcn_container_insert(htrg->avl[hash_key], trg);
 
-  if (is_inserted) {
-    htrg->length += 1;
-  } else {
-    free(trg->attr);
-    trg->attr = NULL;
-  }
+		if (is_inserted) {
+			htrg->length += 1;
+		} else {
+			free(trg->attr);
+			trg->attr = NULL;
+		}
+	}
 }
 
 static inline msh_trg_t* hash_trg_remove_first
@@ -838,21 +832,15 @@ static inline void insert_big_trg
 			  msh_trg_t * restrict trg,
 			  double big_ratio)
 {
-	uint64_t *attr = malloc(sizeof(uint64_t));
-	*attr = (uint64_t) big_ratio;
+	uint32_t *attr = malloc(sizeof(uint32_t));
+	*attr = (uint32_t) (1e2 / big_ratio);
 	trg->attr = attr;
 	vcn_container_insert(big_trg, trg);
 }
 
 static inline msh_trg_t* remove_bigger_trg(vcn_container_t * restrict big_trg)
 {
-	int8_t status;
-	msh_trg_t *trg = vcn_container_do(big_trg, "delete_last", NULL, &status);
-	if (0 != status) {
-		printf("\nError: vcn_mesh_refine()\n");
-		printf("       in vcn_container_do(delete_last)\n");
-		exit(1);
-	}
+	msh_trg_t *trg = vcn_container_delete_first(big_trg);
 	if (NULL != trg) {
 		free(trg->attr);
 		trg->attr = NULL;
@@ -979,7 +967,8 @@ static inline vcn_container_t* get_sgm_encroached_by_vertex
 	vcn_container_destroy(encroached_trg);
 
 	/* Get encroached segments */
-	vcn_container_t *restrict encroached_sgm = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t *restrict encroached_sgm =
+		vcn_container_create(VCN_CONTAINER_QUEUE);
 	while (vcn_container_is_not_empty(segments)) {
 		msh_edge_t *const restrict sgm = 
 			vcn_container_delete_first(segments);
@@ -1132,23 +1121,10 @@ static inline vcn_container_t* get_subsgm_cluster
 	return cluster;
 }
 
-static bool medge_is_too_big(const vcn_mesh_t *const restrict mesh,
-			     const msh_edge_t *const restrict sgm,
-			     /* big_ratio can be NULL if not required */
-			     double *big_ratio)
-{
-	bool is_too_big = false;
-	if (has_edge_length_constrained(mesh))
-		is_too_big = edge_violates_constrain(mesh, sgm, big_ratio);
-	else
-		is_too_big = edge_greater_than_density(mesh, sgm, big_ratio);
-	return is_too_big;	
-}
-
 static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
 {
-	return fabs(mesh->max_edge_length) > VCN_GEOMETRIC_TOL ||
-		fabs(mesh->max_subsgm_length) > VCN_GEOMETRIC_TOL;
+	return mesh->max_edge_length > VCN_GEOMETRIC_TOL ||
+		mesh->max_subsgm_length > VCN_GEOMETRIC_TOL;
 }
 
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
@@ -1265,12 +1241,30 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 {
 	if(NULL != big_ratio)
 		*big_ratio = 1.0;
-	if (NULL == mesh->density) 
-		return false;
-	/* Check if at least one of its edges is too big */
-	if (medge_is_too_big(mesh, trg->s1, big_ratio))
-		return true;
-	if (medge_is_too_big(mesh, trg->s2, big_ratio))
-		return true;
-	return medge_is_too_big(mesh, trg->s3, big_ratio);
+	bool is_too_big = false;
+	if (has_edge_length_constrained(mesh)) {
+		is_too_big = edge_violates_constrain(mesh, trg->s1, big_ratio);
+		if (!is_too_big)
+			is_too_big = edge_violates_constrain(mesh, trg->s2,
+							     big_ratio);
+		if (!is_too_big)
+			is_too_big = edge_violates_constrain(mesh, trg->s3,
+							     big_ratio);
+	} else {
+		if (NULL != mesh->density) {
+			is_too_big = edge_greater_than_density(mesh, trg->s1,
+							       big_ratio);
+			if (!is_too_big)
+				is_too_big = 
+					edge_greater_than_density(mesh,
+								  trg->s2,
+								  big_ratio);
+			if (!is_too_big)
+				is_too_big = 
+					edge_greater_than_density(mesh,
+								  trg->s3,
+								  big_ratio);
+		}
+	}
+	return is_too_big;
 }

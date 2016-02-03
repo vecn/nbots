@@ -51,3 +51,11 @@ message("-- constrained_delaunay_UT")
 add_library(constrained_delaunay_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/constrained_delaunay_UT.c)
 target_link_libraries(constrained_delaunay_UT ${geometric_bot_libs})
+
+message("-- mesh2D_UT")
+add_library(mesh2D_UT MODULE
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mesh2D_UT.c)
+target_link_libraries(mesh2D_UT
+  ${geometric_bot_libs}
+  vcn_geometric_bot-cairo #TEMPORAL
+  )
