@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -36,6 +37,7 @@ static bool check_get_delaunay_20_spiral_6p(void);
 static bool check_get_delaunay_collinear(void);
 static bool check_get_delaunay_quasi_collinear(void);
 static bool check_get_delaunay_square(void);
+static bool check_get_delaunay_1000_cloud(void);
 
 static bool all_trg_are_delaunay(vcn_mesh_t *mesh);
 static bool check_get_delaunay_polygon(int N, int N_centers);
@@ -62,6 +64,7 @@ static void set_line_without_end_point(double *vertices, int N,
 				       double x1, double y1);
 static double* get_quasi_collinear(int N);
 static double* get_square(int N_interior, double size);
+static double* read_vertices(const char* filename, int* N_vertices);
 
 inline int vcn_test_get_driver_id(void)
 {
@@ -79,7 +82,7 @@ void vcn_test_load_tests(void *tests_ptr)
 	vcn_test_add(tests_ptr, check_get_delaunay_polygon_3_center,
 		     "Check get_delaunay() of polygon with 3 central points");
 	vcn_test_add(tests_ptr, check_get_delaunay_polygon_polycenter,
-		     "Check get_delaunay() of polygon with polygonal central points");
+		     "Check get_delaunay() of polygon with poly. center");
 	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings,
 		     "Check get_delaunay() of 2 polygonal rings");
 	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_1_center,
@@ -87,11 +90,11 @@ void vcn_test_load_tests(void *tests_ptr)
 	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_2_center,
 		     "Check get_delaunay() of 2 polygonal rings with 2 centers");
 	vcn_test_add(tests_ptr, check_get_delaunay_2_polygonal_rings_polycenter,
-		     "Check get_delaunay() of 2 polygonal rings with polygonal center");
+		     "Check get_delaunay() of 2 poly. rings with poly. center");
 	vcn_test_add(tests_ptr, check_get_delaunay_5_polygonal_rings_polycenter,
-		     "Check get_delaunay() of 5 polygonal rings with polygonal center");
+		     "Check get_delaunay() of 5 poly. rings with poly. center");
 	vcn_test_add(tests_ptr, check_get_delaunay_10_polygonal_rings_polycenter,
-		     "Check get_delaunay() of 10 polygonal rings with polygonal center");
+		     "Check get_delaunay() of 10 poly. rings with poly. center");
 	vcn_test_add(tests_ptr, check_get_delaunay_grid,
 		     "Check get_delaunay() of grid");
 	vcn_test_add(tests_ptr, check_get_delaunay_hexagonal_grid,
@@ -118,6 +121,8 @@ void vcn_test_load_tests(void *tests_ptr)
 		     "Check get_delaunay() of quasi-collinear points");
 	vcn_test_add(tests_ptr, check_get_delaunay_square,
 		     "Check get_delaunay() of square");
+	vcn_test_add(tests_ptr, check_get_delaunay_1000_cloud,
+		     "Check get_delaunay() of cloud with 1000 vertices");
 }
 
 static inline bool check_get_delaunay_polygon_0_center(void)
@@ -299,6 +304,24 @@ static bool check_get_delaunay_square(void)
 	free(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
+	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == vcn_mesh_get_N_edg(mesh));
+	bool all_delaunay = all_trg_are_delaunay(mesh);
+	vcn_mesh_destroy(mesh);
+	return N_trg_is_ok && N_edg_is_ok && all_delaunay;
+}
+
+static bool check_get_delaunay_1000_cloud(void)
+{
+	int N;
+	double *vertices = read_vertices("dewall_UT_inputs/cloud_1000.vtx", &N);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_get_delaunay(mesh, N, vertices);
+	free(vertices);
+	int N_expected_trg = 0;
+	int N_expected_edg = 0;
+	printf("\nTRG: %i %i\n", vcn_mesh_get_N_trg(mesh),/* TEMPORAL */
+	       vcn_mesh_get_N_edg(mesh));/* TEMPORAL */
 	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (N_expected_edg == vcn_mesh_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
@@ -601,5 +624,31 @@ static double* get_square(int N_interior, double size)
 	set_line_without_end_point(&(vertices[3*N_interior * 2]), N_interior, 
 				   -half_size, half_size,
 				   -half_size, -half_size);
+	return vertices;
+}
+
+static double* read_vertices(const char* filename, int* N_vertices)
+{
+	double *vertices = NULL;
+	*N_vertices = 0;
+	FILE* fp = fopen(filename, "r");
+	if (NULL != fp) {
+		if (1 == fscanf(fp, "%i", N_vertices)) {
+			if (0 < *N_vertices) {
+				vertices = malloc(*N_vertices * 2 * sizeof(*vertices));
+				for (uint32_t i = 0; i < *N_vertices; i++) {
+					if (2 != fscanf(fp, "%lf %lf",
+							&(vertices[i * 2]),
+							&(vertices[i*2+1]))) {
+						free(vertices);
+						vertices = NULL;
+						*N_vertices = 0;
+						break;
+					}
+				}
+			}
+		}
+		fclose(fp);
+	}
 	return vertices;
 }

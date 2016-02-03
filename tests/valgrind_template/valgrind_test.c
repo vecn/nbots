@@ -56,7 +56,8 @@ static bool check_get_delaunay_spiral(int Ns, int Np)
 {
 	int N = Ns * Np + 2;
 	double *vertices = get_spiral(Ns, Np);
-	vcn_mesh_t *mesh = vcn_dewall_get_delaunay(N, vertices);
+	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_get_delaunay(mesh, N, vertices);
 	free(vertices);
 	int N_min_trg = (Ns * Np + 1);
 	int N_min_edges = 2 * N_min_trg;

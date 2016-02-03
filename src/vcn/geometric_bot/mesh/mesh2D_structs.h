@@ -77,7 +77,7 @@ struct vcn_mesh_s {
 
 	/* Geometric constrains */
 	double min_angle;
-	double cr2se;
+	double cr2se_ratio;
 	double max_edge_length;
 	double max_subsgm_length;
 
@@ -176,8 +176,9 @@ void mesh_substract_triangle(vcn_mesh_t *const mesh,
 			     const msh_trg_t *const trg);
 uint32_t hash_key_edge(const void *const  edge_ptr);
 bool are_equal_edge(const void *const edge1_ptr, const void *const edge2_ptr);
-
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
 			  const msh_vtx_t *const v);
-
+void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
+				    const double *const internal,
+				    double external[2]);
 #endif

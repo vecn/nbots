@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "vcn/math_bot.h"
 #include "vcn/container_bot.h"
 #include "vcn/geometric_bot/utils2D.h"
 #include "vcn/geometric_bot/mesh/mesh2D.h"
@@ -107,11 +108,7 @@ static void remove_big_trg(vcn_container_t *big_trg, msh_trg_t *trg);
 
 static void check_trg(msh_trg_t *const trg, vcn_mesh_t *const mesh,
 			   vcn_container_t *const big_trg,
-			   hash_trg_t *const poor_quality_trg,
-			   double cr2se_ratio,
-			   double (*density)(const void *const data,
-					     const double const x[2]),
-			   const void *const density_data);
+			   hash_trg_t *const poor_quality_trg);
 
 static void initialize_big_and_poor_quality_trg
                           (vcn_mesh_t *const mesh,
@@ -146,9 +143,21 @@ static bool medge_is_too_big(const vcn_mesh_t *const mesh,
 			     const msh_edge_t *const sgm,
 			     /* big_ratio can be NULL if not required */
 			     double *big_ratio);
+static bool has_edge_length_constrained(const vcn_mesh_t *const mesh);
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
-				    const msh_edge_t *const restrict sgm);
-
+				    const msh_edge_t *const restrict sgm,
+				    /* big_ratio can be NULL if not required */
+				    double *big_ratio);
+static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
+				      const msh_edge_t *const restrict sgm,
+				      /* big_ratio can be NULL if not required */
+				      double *big_ratio);
+static double calculate_lh(const vcn_mesh_t *const restrict mesh,
+			   const msh_edge_t *const restrict sgm,
+			   double dist, int N_trapezoids);
+static double calculate_h(const vcn_mesh_t *const restrict mesh,
+			  const msh_edge_t *const restrict sgm,
+			  double t);
 static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    const msh_trg_t *const restrict trg,
 			    /* big_ratio could be NULL if not required */
@@ -278,7 +287,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 					vcn_container_delete_first(sgm_encroached_by_cc);
 				/* Insert segment in encroached list if the triangle is to big 
 				 * or if the split is permitted */
-				if (mtrg_is_too_big(mesh, trg, density, density_data, NULL))
+				if (mtrg_is_too_big(mesh, trg, NULL))
 					vcn_container_insert(encroached_sgm, sgm);
 				else if (split_is_permitted(sgm, d))
 					vcn_container_insert(encroached_sgm, sgm);
@@ -286,8 +295,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			/* Process encroached segments */
 			if (vcn_container_is_not_empty(encroached_sgm)) {
 				/* Put it back for another try */
-				check_trg(trg, mesh, big_trg, poor_quality_trg,
-					  cr2se_ratio, density, density_data);
+				check_trg(trg, mesh, big_trg, poor_quality_trg);
 	
 				/* Split encroached segments */
 				split_encroached_segments(mesh, encroached_sgm,
@@ -1129,130 +1137,125 @@ static bool medge_is_too_big(const vcn_mesh_t *const restrict mesh,
 			     /* big_ratio can be NULL if not required */
 			     double *big_ratio)
 {
-	/* Get length of the segment (scaled) */
-	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	bool is_too_big = false;
+	if (has_edge_length_constrained(mesh))
+		is_too_big = edge_violates_constrain(mesh, sgm, big_ratio);
+	else
+		is_too_big = edge_greater_than_density(mesh, sgm, big_ratio);
+	return is_too_big;	
+}
 
-	if (density == VCN_DENSITY_MAX)
-		return edge_violates_constrain(mesh, sgm);
-	/* AQUI VOY */
-	/* REFACTOR next line */
-	if (density == VCN_DENSITY_IMG)
-		/* The density is given by an image */
-		density = vcn_density_img_get_density;
-
-	/* Calculate adimensional length:
-	 *               
-	 *            1 _             x(t) = v1 + t * (v2-v1)
-	 *             |   1          e.g.
-	 *    lh = |s| | ----- dt,          x( 0 ) = v1
-	 *            _|  h(x)              x(0.5) = 0.5 * (v1 + v2)
-	 *            0                     x( 1 ) = v2
-	 *
-	 *    Where |s| is the length of the segment, v1 and v2 are
-	 *    the vertices forming such a segment, and h(·) = 1/density(·)
-	 *
-	 *    All the edges of the utopic perfect mesh should have lh = 1.
-	 *
-	 *    For convenience, we estimate
-	 *
-	 *                   1 _             x(t) = v1 + t * (v2-v1)
-	 *              /     |              e.g.
-	 *    lh =  1  /  |s| |  h(x) dt,          x( 0 ) = v1
-	 *            /      _|                    x(0.5) = 0.5 * (v1 + v2)
-	 *                   0                     x( 1 ) = v2
-	 */
-
-	/* Prevent of eternal running */
-	if (d < VCN_GEOMETRIC_TOL) {
-		if (NULL != big_ratio)
-			*big_ratio = VCN_GEOMETRIC_TOL;
-		return false;  
-	}
-
-	/* Scale distance */
-	d /= mesh->scale;
-
-	/* Integrate using one trapezoid */
-	double v1_extern[2];
-	mesh_get_extern_scale_and_disp(mesh, sgm->v1->x, v1_extern);
-	double density_1 = density(v1_extern, density_data);
-	if (density_1 < VCN_GEOMETRIC_TOL)
-		density_1 = VCN_GEOMETRIC_TOL;
-	double h1 = 1.0 / density_1;
-
-	double v2_extern[2];
-	mesh_get_extern_scale_and_disp(mesh, sgm->v2->x, v2_extern);
-	double density_2 = density(v2_extern, density_data);
-	if (density_2 < VCN_GEOMETRIC_TOL)
-		density_2 = VCN_GEOMETRIC_TOL;
-	double h2 = 1.0 / density_2;
-
-	if (h1 > _VCN_MAX_GRADING_RATIO * h2)
-		h1 = _VCN_MAX_GRADING_RATIO * h2;
-	else if (h2 > _VCN_MAX_GRADING_RATIO * h1)
-		h2 = _VCN_MAX_GRADING_RATIO * h1;
-
-	double lh = d * 2.0 / (h1 + h2);
-
-	if (lh > _VCN_MAX_LH_TOLERATED) {
-		if (NULL != big_ratio)
-			*big_ratio = lh;
-		return true;
-	}
-  
-	/* Integrate using two trapezoids */
-	double midpoint[2];
-	midpoint[0] = (sgm->v1->x[0] + sgm->v2->x[0]) / 2.0;
-	midpoint[1] = (sgm->v1->x[1] + sgm->v2->x[1]) / 2.0;
-
-	double mp_extern[2];
-	mesh_get_extern_scale_and_disp(mesh, midpoint, mp_extern);
-	double density_m = density(mp_extern, density_data);
-	if (density_m < VCN_GEOMETRIC_TOL)
-		density_m = VCN_GEOMETRIC_TOL;
-	double h_midpoint = 1.0 / density_m;
-
-	double min_h = h1;
-	if (h2 < h1)
-		min_h = h2;
-
-	if (h_midpoint > _VCN_MAX_GRADING_RATIO * min_h) {
-		h_midpoint = _VCN_MAX_GRADING_RATIO * min_h;
-	} else if (h_midpoint < min_h) {
-		if (h1 > _VCN_MAX_GRADING_RATIO * h_midpoint)
-			h1 = _VCN_MAX_GRADING_RATIO * h_midpoint;
-		if (h2 > _VCN_MAX_GRADING_RATIO * h_midpoint)
-			h2 = _VCN_MAX_GRADING_RATIO * h_midpoint;
-	}
-
-	lh = d * 4.0 / (h1 + 2.0 * h_midpoint + h2);
-	if (NULL != big_ratio)
-		*big_ratio = lh;
-
-	return lh > _VCN_MAX_LH_TOLERATED;
+static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
+{
+	return fabs(mesh->max_edge_length) > VCN_GEOMETRIC_TOL ||
+		fabs(mesh->max_subsgm_length) > VCN_GEOMETRIC_TOL;
 }
 
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
-				    const msh_edge_t *const restrict sgm)
+				    const msh_edge_t *const restrict sgm,
+				    /* big_ratio can be NULL if not required */
+				    double *big_ratio)
 {
-		/* Constraint max values */
-		double* restrict data = (double*) density_data;
-		double edge_max = data[0] * mesh->scale;
-		if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
+	bool violates_constrain = false;
+	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	double edge_max = mesh->max_edge_length * mesh->scale;
+	if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
+		if (NULL != big_ratio)
+			*big_ratio = d;
+		violates_constrain = true;
+	} else if (medge_is_subsgm(sgm)) {
+		double sgm_max = mesh->max_subsgm_length * mesh->scale;
+		if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
 			if (NULL != big_ratio)
 				*big_ratio = d;
-			return true;
+			violates_constrain = true;
 		}
+	}
+	return violates_constrain;
+}
 
-		if (medge_is_subsgm(sgm)) {
-			double sgm_max = data[1] * mesh->scale;
-			if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
-				if (NULL != big_ratio)
-					*big_ratio = d;
-				return true;
-			}
+static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
+				      const msh_edge_t *const restrict sgm,
+				      /* big_ratio can be NULL if not required */
+				      double *big_ratio)
+/* Calculate adimensional length:
+ *               
+ *            1 _             x(t) = v1 + t * (v2-v1)
+ *             |   1          e.g.
+ *    lh = |s| | ----- dt,          x( 0 ) = v1
+ *            _|  h(x)              x(0.5) = 0.5 * (v1 + v2)
+ *            0                     x( 1 ) = v2
+ *
+ *    Where |s| is the length of the segment, v1 and v2 are
+ *    the vertices forming such a segment, and h(·) = 1/density(·)
+ *
+ *    All the edges of the utopic perfect mesh should have lh = 1.
+ */
+{
+	bool is_greater;
+	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	if (VCN_GEOMETRIC_TOL > d) {
+		/* Prevent of eternal running */
+		if (NULL != big_ratio)
+			*big_ratio = VCN_GEOMETRIC_TOL;
+		is_greater = false;  
+	} else {
+		d /= mesh->scale;
+		double lh = calculate_lh(mesh, sgm, d, 1);
+		if (_VCN_MAX_LH_TOLERATED < lh) {
+			is_greater = true;
+		} else {
+			lh = calculate_lh(mesh, sgm, d, 2);
+			is_greater = (_VCN_MAX_LH_TOLERATED < lh);
 		}
-		return false;
+		if (NULL != big_ratio)
+			*big_ratio = lh;
+	}
+	return is_greater;
+}
+
+static double calculate_lh(const vcn_mesh_t *const restrict mesh,
+			   const msh_edge_t *const restrict sgm,
+			   double dist, int N_trapezoids)
+ /*    For convenience, we estimate using the trapezoidal rule
+ *
+ *                   1 _             x(t) = v1 + t * (v2-v1)
+ *                /  |              e.g.
+ *    lh =  |s|  /   |  h(x) dt,          x( 0 ) = v1
+ *              /   _|                    x(0.5) = 0.5 * (v1 + v2)
+ *                  0                     x( 1 ) = v2
+ */
+{
+	double width = 1.0 / N_trapezoids;
+	double integral = 0.0;
+	double h1 = calculate_h(mesh, sgm, 0);
+	for (int i = 0; i < N_trapezoids; i++) {
+		double t = (i + 1) * width;
+		double h2 = calculate_h(mesh, sgm, t);
+		if (h1 > _VCN_MAX_GRADING_RATIO * h2)
+			h1 = _VCN_MAX_GRADING_RATIO * h2;
+		else if (h2 > _VCN_MAX_GRADING_RATIO * h1)
+			h2 = _VCN_MAX_GRADING_RATIO * h1;
+		
+		integral += (h1 + h2);
+		h1 = h2;
+	}
+	return dist / (integral * width);
+}
+
+static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
+				 const msh_edge_t *const restrict sgm,
+				 double t)
+{
+	double vtx[2];
+	vtx[0] = (1 - t) * sgm->v1->x[0] + t * sgm->v2->x[0];
+	vtx[1] = (1 - t) * sgm->v1->x[1] + t * sgm->v2->x[1];
+	double vtx_scaled[2];
+	mesh_get_extern_scale_and_disp(mesh, vtx, vtx_scaled);
+	double density = mesh->density(vtx_scaled, mesh->density_data);
+	if (density < VCN_GEOMETRIC_TOL)
+		density = VCN_GEOMETRIC_TOL;
+	return 1.0 / density;
 }
 
 static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
@@ -1262,7 +1265,7 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 {
 	if(NULL != big_ratio)
 		*big_ratio = 1.0;
-	if (NULL == density) 
+	if (NULL == mesh->density) 
 		return false;
 	/* Check if at least one of its edges is too big */
 	if (medge_is_too_big(mesh, trg->s1, big_ratio))

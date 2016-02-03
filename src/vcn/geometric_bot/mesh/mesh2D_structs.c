@@ -11,18 +11,6 @@
 
 #include "mesh2D_structs.h"
 
-struct vcn_density_img_s {
-/* TEMPORAL: create accesors from density2D.h */
-	uint32_t width;
-	uint32_t height;
-	uint32_t comp_x_pixel;
-	double scale;
-	double xdisp, ydisp;
-	double max_density;
-	uint8_t* pixels;
-};
-
-
 static bool mesh_remove_edge
                        (vcn_container_t *const ht_edge,
 			const msh_vtx_t *const v1,
@@ -46,10 +34,7 @@ void medge_set_as_subsgm(msh_edge_t *const restrict sgm,
 		(input_sgm_attr_t*)calloc(1, sizeof(input_sgm_attr_t));
 	attr->idx = idx;
 	attr->prev = (msh_edge_t*)prev;
-	attr->next = (msh_edge_t*)next; /* Casting from const to non-const pointer
-					 * in order to link it to the double linked
-					 * list, but with the compromise to do not 
-					 * modify its value */
+	attr->next = (msh_edge_t*)next;
 	sgm_attr->data = attr;
 	attr->attr = sgm->attr;
 	sgm->attr = sgm_attr;
@@ -61,10 +46,6 @@ inline void medge_update_subsgm_next(msh_edge_t *const restrict sgm,
 	input_sgm_attr_t *const restrict attr = 
 		(input_sgm_attr_t*)((attr_t*)sgm->attr)->data; 
 	attr->next = (msh_edge_t*)next;
-	/* Casting from const to non-const pointer
-	 * in order to link it to the double linked
-	 * list, but with the compromise to do not 
-	 * modify its value */
 }
 
 inline void medge_update_subsgm_prev(msh_edge_t *const sgm, 
@@ -738,7 +719,6 @@ inline msh_edge_t* mesh_insert_edge(vcn_container_t *const ht_edge,
   
 	new_sgm->v1 = (msh_vtx_t*)v1;
 	new_sgm->v2 = (msh_vtx_t*)v2;
-
 	vcn_container_insert(ht_edge, new_sgm);
 	return new_sgm;
 }
@@ -899,4 +879,12 @@ msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 	}
 	vcn_iterator_destroy(iter);
 	return enveloping_trg;
+}
+
+inline void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
+					   const double internal[2],
+					   double external[2])
+{
+	external[0] = internal[0] / mesh->scale + mesh->xdisp;
+	external[1] = internal[1] / mesh->scale + mesh->ydisp;
 }

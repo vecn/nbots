@@ -25,22 +25,17 @@
 #include "../model/model2D_struct.h"
 #include "ruppert/ruppert.h"
 #include "mesh2D_structs.h"
-   
-static void mesh_get_extern_scale_and_disp
-                           (const vcn_mesh_t *const mesh,
-			    const double *const internal,
-			    double external[2]);
 
 static void init_tasks(vcn_mesh_t *mesh);
 static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh);
 static void null_task(const vcn_mesh_t *const mesh);
 
-static void remove_triangles_propagate
-                          (vcn_mesh_t *const mesh,
-			   msh_trg_t* trg);
+static void remove_triangles_propagate(vcn_mesh_t *const mesh,
+				       msh_trg_t* trg);
 
 static void remove_concavities_triangles(vcn_mesh_t* mesh);
-static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes, uint32_t N_holes);
+static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
+				   uint32_t N_holes);
 
 static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model);
@@ -81,8 +76,8 @@ vcn_mesh_t* vcn_mesh_create(void)
 
 	mesh->ht_edge = vcn_container_create(VCN_CONTAINER_HASH);
 	vcn_container_set_key_generator(mesh->ht_edge, hash_key_edge);
-	vcn_container_set_destroyer(mesh->ht_edge, free);
 	vcn_container_set_comparer(mesh->ht_edge, are_equal_edge);
+	vcn_container_set_destroyer(mesh->ht_edge, free);
 
 	mesh->ht_trg = vcn_container_create(VCN_CONTAINER_HASH);
 	vcn_container_set_key_generator(mesh->ht_trg, hash_key_trg);
@@ -247,15 +242,6 @@ inline int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh)
 inline bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh)
 {
 	return vcn_container_is_empty(mesh->ht_trg);
-}
-
-static inline void mesh_get_extern_scale_and_disp
-                           (const vcn_mesh_t *const mesh,
-			    const double internal[2],
-			    double external[2])
-{
-	external[0] = internal[0] / mesh->scale + mesh->xdisp;
-	external[1] = internal[1] / mesh->scale + mesh->ydisp;
 }
 
 bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
@@ -531,7 +517,8 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 	vcn_iterator_destroy(iter);
 }
 
-static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes, uint32_t N_holes)
+static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
+				   uint32_t N_holes)
 {
 	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
 	for (uint32_t i=0; i < N_holes; i++) {
@@ -585,18 +572,17 @@ bool vcn_mesh_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 
 vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 {
-	vcn_mesh_t* clone = malloc(sizeof(*clone));
+	vcn_mesh_t* clone = calloc(1, sizeof(*clone));
 
-	/* Copy scale and shift values to handle floating point error */
 	clone->scale = mesh->scale;
 	clone->xdisp = mesh->xdisp;
 	clone->ydisp = mesh->ydisp;
 
-	clone->max_vtx = mesh->vtx;
-	clone->max_trg = mesh->trg;
+	clone->max_vtx = mesh->max_vtx;
+	clone->max_trg = mesh->max_trg;
 	
 	clone->min_angle = mesh->min_angle;
-	clone->cr2se = mesh->cr2se_ratio;
+	clone->cr2se_ratio = mesh->cr2se_ratio;
 	clone->max_edge_length = mesh->max_edge_length;
 	clone->max_subsgm_length = mesh->max_subsgm_length;
 	
@@ -689,6 +675,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	/* Clone data structures and hash tables used to handle mesh */
 	clone->ht_trg = vcn_container_create(VCN_CONTAINER_HASH);
 	vcn_container_set_key_generator(clone->ht_trg, hash_key_trg);
+	vcn_container_set_destroyer(clone->ht_trg, free);
 	vcn_iterator_restart(trg_iter);
 	while (vcn_iterator_has_more(trg_iter)) {
 		const msh_trg_t *trg = vcn_iterator_get_next(trg_iter);
@@ -712,6 +699,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 	clone->ht_edge = vcn_container_create(VCN_CONTAINER_HASH);
 	vcn_container_set_key_generator(clone->ht_edge, hash_key_edge);
+	vcn_container_set_destroyer(clone->ht_edge, free);
 	vcn_container_set_comparer(clone->ht_edge, are_equal_edge);
 	vcn_iterator_restart(sgm_iter);
 	while (vcn_iterator_has_more(sgm_iter)) {
