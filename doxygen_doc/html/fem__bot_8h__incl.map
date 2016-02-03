@@ -1,6 +1,0 @@
-<map id="/home/victor/Documents/vcn_bots/include/vcn/fem_bot.h" name="/home/victor/Documents/vcn_bots/include/vcn/fem_bot.h">
-<area shape="rect" id="node3" href="$typedefs_8h_source.html" title="vcn/typedefs.h" alt="" coords="49,272,155,301"/>
-<area shape="rect" id="node7" href="$geometric__bot_8h.html" title="The geometric bot is a program used to generate tesselations, such as meshes suited for numerical int..." alt="" coords="21,117,159,147"/>
-<area shape="rect" id="node13" href="$sparse__bot_8h.html" title="The sparse bot is a set of solvers for symmetric and sparse matrices. There are fast matrix computati..." alt="" coords="183,117,306,147"/>
-<area shape="rect" id="node10" href="$graph__bot_8h.html" title="The graph bot is a set of numerical procedures to handle graphs, exahistively used in meshing procedu..." alt="" coords="93,195,207,224"/>
-</map>

@@ -42,3 +42,7 @@ build/*
 *.log
 *.out
 *.idx
+
+# Output of doxygen
+doxygen_doc/html/*
+doxygen_doc/latex/*

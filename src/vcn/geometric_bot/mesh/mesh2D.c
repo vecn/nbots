@@ -231,7 +231,10 @@ inline void vcn_mesh_set_density(vcn_mesh_t* mesh,
 
 inline void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type)
 {
-	mesh->refiner_type = type;
+	if (type >= 0 && type < VCN_MESH_REFINE_DEFAULT)
+		mesh->refiner_type = type;
+	else
+		mesh->refiner_type = VCN_MESH_REFINE_DEFAULT;
 }
 
 inline int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh)
@@ -550,6 +553,8 @@ void vcn_mesh_refine(vcn_mesh_t *restrict mesh)
 	case VCN_MESH_REFINE_CHEW:
 		printf("Chew refinement is not implemented yet\n");
 		break;
+	default:
+		vcn_ruppert_refine(mesh);
 	}
 }
 
@@ -565,7 +570,7 @@ bool vcn_mesh_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 		printf("Chew refinement is not implemented yet\n");
 		break;
 	default:
-		inserted = false;
+		inserted = vcn_ruppert_insert_vtx(mesh, vertex);
 	}
 	return inserted;
 }
@@ -794,7 +799,7 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model)
 {
 	if (0 < model->H) {
-		double* holes = calloc(2 * model->H, sizeof(*holes));
+		double *holes = calloc(2 * model->H, sizeof(*holes));
 		for (uint32_t i = 0; i < model->H; i++) {
 			holes[i * 2] = mesh->scale * (model->holes[i * 2] - mesh->xdisp);
 			holes[i*2+1] = mesh->scale * (model->holes[i*2+1] - mesh->ydisp);

@@ -384,36 +384,36 @@ inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
 
 inline msh_edge_t* mtrg_get_largest_edge(const msh_trg_t *const trg)
 {
-  /* This function assumes that the length is stored as an attribute */
-  msh_edge_t* sgm = trg->s1;
-  const double l1 = medge_get_computed_length(trg->s1);
-  const double l2 = medge_get_computed_length(trg->s2);
-  const double l3 = medge_get_computed_length(trg->s3);
-  if(l2 > l3){
-    if(l2 > l1)
-      sgm = trg->s2;
-  }else{
-    if(l3 > l1)
-      sgm = trg->s3;
-  }    
-  return sgm;
+	/* This function assumes that the length is stored as an attribute */
+	msh_edge_t* sgm = trg->s1;
+	const double l1 = medge_get_computed_length(trg->s1);
+	const double l2 = medge_get_computed_length(trg->s2);
+	const double l3 = medge_get_computed_length(trg->s3);
+	if (l2 > l3) {
+		if (l2 > l1)
+			sgm = trg->s2;
+	} else {
+		if (l3 > l1)
+			sgm = trg->s3;
+	}    
+	return sgm;
 }
 
 inline msh_edge_t* mtrg_get_shortest_edge(const msh_trg_t *const trg)
 {
-  /* This function assumes that the length is stored as an attribute */
-  msh_edge_t* sgm = trg->s1;
-  const double l1 = medge_get_computed_length(trg->s1);
-  const double l2 = medge_get_computed_length(trg->s2);
-  const double l3 = medge_get_computed_length(trg->s3);
-  if(l2 < l3){
-    if(l2 < l1)
-      sgm = trg->s2;
-  }else{
-    if(l3 < l1)
-      sgm = trg->s3;
-  }    
-  return sgm;
+	/* This function assumes that the length is stored as an attribute */
+	msh_edge_t* sgm = trg->s1;
+	const double l1 = medge_get_computed_length(trg->s1);
+	const double l2 = medge_get_computed_length(trg->s2);
+	const double l3 = medge_get_computed_length(trg->s3);
+	if (l2 < l3) {
+		if (l2 < l1)
+			sgm = trg->s2;
+	} else {
+		if (l3 < l1)
+			sgm = trg->s3;
+	}    
+	return sgm;
 }
 
 msh_vtx_t* mtrg_get_opposite_vertex_guided

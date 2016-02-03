@@ -1,6 +1,0 @@
-<map id="/home/victor/Documents/vcn_bots/include/vcn/graph_bot.h" name="/home/victor/Documents/vcn_bots/include/vcn/graph_bot.h">
-<area shape="rect" id="node3" href="$geometric__bot_8h.html" title="The geometric bot is a program used to generate tesselations, such as meshes suited for numerical int..." alt="" coords="195,117,360,181"/>
-<area shape="rect" id="node9" href="$sparse__bot_8h.html" title="The sparse bot is a set of solvers for symmetric and sparse matrices. There are fast matrix computati..." alt="" coords="5,117,171,181"/>
-<area shape="rect" id="node5" href="$fem__bot_8h.html" title="FEM bot will assemble the linear systems of well stablished FE problems, such as solid mechanics and ..." alt="" coords="5,229,171,293"/>
-<area shape="rect" id="node7" href="$geometric__bot-cairo_8h.html" title="Drawing functions using Cairo Graphics Library. " alt="" coords="195,229,360,293"/>
-</map>
