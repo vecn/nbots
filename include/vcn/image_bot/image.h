@@ -11,7 +11,7 @@ void vcn_image_read(vcn_image_t *img, const char* filename);
 uint32_t vcn_image_get_width(const vcn_image_t *const img);
 uint32_t vcn_image_get_height(const vcn_image_t *const img);
 uint8_t vcn_image_get_N_channels(const vcn_image_t *const img);
-void vcn_image_get_pixel(const vcn_image_t *const img,
-			 uint8_t pixel[]);
+void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
+			 uint32_t c,  uint8_t pixel[]);
 
 #endif

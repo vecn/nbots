@@ -1,8 +1,11 @@
-#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
 
+#include  "vcn/geometric_bot/model/model2D.h"
+#include  "vcn/geometric_bot/mesh/mesh2D.h"
 #include  "vcn/geometric_bot/mesh/modules2D/image_density.h"
 
 #include "test_library.h"
@@ -11,7 +14,19 @@
 #define INPUTS_DIR "../tests/vcn/geometric_bot/mesh/\
 modules2D/image_density_UT_inputs"
 
-static bool check_some(void);
+#include  "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
+static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
+static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
+{							      /* TEMPORAL */
+	char label[100];				      /* TEMPORAL */
+	sprintf(label, "TEMP_IMG_%02i.png", TEMPORAL_++);     /* TEMPORAL */
+	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
+}                                                             /* TEMPORAL */
+
+static bool check_set_img_density_jpg_eye(void);
+static bool check_set_img_density_jpg_gnome(void);
+static bool check_set_img_density_png_jolie(void);
+static bool check_set_img_density_jpg_hand(void);
 
 inline int vcn_test_get_driver_id(void)
 {
@@ -20,106 +35,101 @@ inline int vcn_test_get_driver_id(void)
 
 void vcn_test_load_tests(void *tests_ptr)
 {
-	vcn_test_add(tests_ptr, check_some,
-		     "Check some()");
+	vcn_test_add(tests_ptr, check_set_img_density_jpg_eye,
+		     "Check set_img_density() with a JPG of 'the eye'");
+	vcn_test_add(tests_ptr, check_set_img_density_jpg_gnome,
+		     "Check set_img_density() with a JPG of 'gnome logo'");
+	vcn_test_add(tests_ptr, check_set_img_density_png_jolie,
+		     "Check set_img_density() with a PNG of 'Angeline Jolie'");
+	vcn_test_add(tests_ptr, check_set_img_density_jpg_hand,
+		     "Check set_img_density() with a JPG of 'Hands'");
 }
 
-/**
- * @brief Test the PNG format in a color picture.
- */
-/*
-static vcn_mesh_t* test17(char* name, const char* input_dir)
+static bool check_set_img_density_jpg_eye(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/eye_raw.jpg", input_dir);
-  sprintf(name, "Eye picture");
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 0.2);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/eye_raw.jpg", INPUTS_DIR);
+	vcn_image_t *img = vcn_image_create();
+	vcn_image_read(img, input_name);	
+	vcn_model_t* model = 
+		vcn_model_create_rectangle(0.0, 0.0,
+					   vcn_image_get_width(img),
+					   vcn_image_get_height(img));
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_img_density(mesh, img, 0.05);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  0.2);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	vcn_mesh_clear_img_density(mesh);
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return false;
 }
-*/
 
-/**
- * @brief Test the JPEG format.
- */
-/*
-static vcn_mesh_t* test18(char* name, const char* input_dir)
+static bool check_set_img_density_jpg_gnome(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/gnome.jpg", input_dir);
-  sprintf(name, "Gnome logo");
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 1.0);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/gnome.jpg", INPUTS_DIR);
+	vcn_image_t *img = vcn_image_create();
+	vcn_image_read(img, input_name);	
+	vcn_model_t* model = 
+		vcn_model_create_rectangle(0.0, 0.0,
+					   vcn_image_get_width(img),
+					   vcn_image_get_height(img));
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_img_density(mesh, img, 0.5);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	vcn_mesh_clear_img_density(mesh);
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return false;
 }
-*/
 
-/**
- * @brief Test a grayscale PNG image.
- */
-/*
-static vcn_mesh_t* test19(char* name, const char* input_dir)
+static bool check_set_img_density_png_jolie(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/women.png", input_dir);
-  sprintf(name, "Women picture");
-
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 2.0);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/jolie.png", INPUTS_DIR);
+	vcn_image_t *img = vcn_image_create();
+	vcn_image_read(img, input_name);	
+	vcn_model_t* model = 
+		vcn_model_create_rectangle(0.0, 0.0,
+					   vcn_image_get_width(img),
+					   vcn_image_get_height(img));
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_img_density(mesh, img, 0.5);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  0.2);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	vcn_mesh_clear_img_density(mesh);
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return false;
 }
-*/
 
-/**
- * @brief Test JPG black and white image.
- */
-/*
-static vcn_mesh_t* test20(char* name, const char* input_dir)
+static bool check_set_img_density_jpg_hand(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/hand.jpg", input_dir);
-  sprintf(name, "Hand and baby hand");
-
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 0.2);
-  vcn_model_t* model =
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
+	char input_name[256];
+	sprintf(input_name, "%s/hand.jpg", INPUTS_DIR);
+	vcn_image_t *img = vcn_image_create();
+	vcn_image_read(img, input_name);	
+	vcn_model_t* model = 
+		vcn_model_create_rectangle(0.0, 0.0,
+					   vcn_image_get_width(img),
+					   vcn_image_get_height(img));
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_img_density(mesh, img, 0.05);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  0.2);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	vcn_mesh_clear_img_density(mesh);
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return false;
 }
-*/

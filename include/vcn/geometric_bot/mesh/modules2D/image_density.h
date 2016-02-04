@@ -5,7 +5,6 @@
 
 void vcn_mesh_set_img_density(vcn_mesh_t *mesh,
 			      const vcn_image_t *const img,
-			      double scale, double xdisp, double ydisp,
 			      double max_density);
 void vcn_mesh_clear_img_density(vcn_mesh_t *mesh);
 

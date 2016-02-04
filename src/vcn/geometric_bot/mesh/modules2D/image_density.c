@@ -12,13 +12,8 @@
 
 #include "../mesh2D_structs.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "ext/stb_image.h"
-
 typedef struct {
 	const vcn_image_t *img;
-	double scale;
-	double xdisp, ydisp;
 	double max_density;
 } img_density_data_t;
 
@@ -27,14 +22,10 @@ static double img_density(const double x[2],
 
 void vcn_mesh_set_img_density(vcn_mesh_t *mesh,
 			      const vcn_image_t *const img,
-			      double scale, double xdisp, double ydisp,
 			      double max_density)
 {
 	img_density_data_t *data = calloc(1, sizeof(*data));
 	data->img = img;
-	data->scale = scale;
-	data->xdisp = xdisp;
-	data->ydisp = ydisp;
 	data->max_density = max_density;
 	vcn_mesh_set_density(mesh, img_density, data);
 }
@@ -53,13 +44,13 @@ static double img_density(const double x[2],
 {
 	const img_density_data_t *const data = data_ptr;
 
-	/* Calculate pixel positions (Centered-Scaling and displacement) */
-	double c_aux = (x[0] - vcn_image_get_width(data->img) / 2.0)  /
-		data->scale + vcn_image_get_width(data->img) / 2.0;
-	double r_aux = (x[1] - vcn_image_get_height(data->img) / 2.0) / 
-		data->scale + vcn_image_get_height(data->img) / 2.0;
-	int c = (int)(c_aux - data->xdisp);
-	int r = vcn_image_get_height(data->img) - 1 - (int)(r_aux - data->ydisp);
+	/* Calculate pixel positions */
+	double c_aux = x[0] - vcn_image_get_width(data->img) / 2.0
+		+ vcn_image_get_width(data->img) / 2.0;
+	double r_aux = x[1] - vcn_image_get_height(data->img) / 2.0
+		+ vcn_image_get_height(data->img) / 2.0;
+	int c = (int)(c_aux);
+	int r = vcn_image_get_height(data->img) - 1 - (int)(r_aux);
 
 	/* Check if the pixel coordinates are outside bounds */
 	if (r < 0 || r >= vcn_image_get_height(data->img) ||
@@ -69,7 +60,7 @@ static double img_density(const double x[2],
 
 	/* Get pixel */
 	uint8_t pixel_components[4];
-	vcn_image_get_pixel(img, r, c, pixel_components);
+	vcn_image_get_pixel(data->img, r, c, pixel_components);
 
 	double density;
 	if (1 == vcn_image_get_N_channels(data->img)) {

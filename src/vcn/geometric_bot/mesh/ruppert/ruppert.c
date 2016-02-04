@@ -13,7 +13,7 @@
 #include "../mesh2D_structs.h"
 #include "ruppert.h"
 
-#define _VCN_MAX_LH_TOLERATED (1.5)
+#define _VCN_MAX_LH_TOLERATED (1.0)
 #define _VCN_MAX_GRADING_RATIO (27.0)
 #define _VCN_SUBSEGMENT_VTX ((void*)0x2)
 #define _VCN_CC_SHELL_UNIT (1e-3)
@@ -1217,7 +1217,7 @@ static double calculate_lh(const vcn_mesh_t *const restrict mesh,
 		integral += (h1 + h2);
 		h1 = h2;
 	}
-	return dist / (integral * width);
+	return 2 * dist / (integral * width);
 }
 
 static inline double calculate_h(const vcn_mesh_t *const restrict mesh,

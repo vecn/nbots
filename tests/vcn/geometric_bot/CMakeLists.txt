@@ -59,3 +59,11 @@ target_link_libraries(mesh2D_UT
   ${geometric_bot_libs}
   vcn_geometric_bot-cairo #TEMPORAL
   )
+
+message("-- image_density_UT")
+add_library(image_density_UT MODULE
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/modules2D/image_density_UT.c)
+target_link_libraries(image_density_UT
+  ${geometric_bot_libs}
+  vcn_geometric_bot-cairo #TEMPORAL
+)

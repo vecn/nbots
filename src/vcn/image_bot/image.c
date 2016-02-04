@@ -1,7 +1,11 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "vcn/image_bot/image.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "ext/stb_image.h"
 
 struct vcn_image_s {
 	uint32_t width;

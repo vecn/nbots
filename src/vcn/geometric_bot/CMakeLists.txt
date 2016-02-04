@@ -60,6 +60,7 @@ add_library(vcn_geometric_bot SHARED ${geometric_bot})
 target_link_libraries(vcn_geometric_bot
   vcn_eigen_bot
   vcn_graph_bot
+  vcn_image_bot
   m)
 
 
