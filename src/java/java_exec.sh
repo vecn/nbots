@@ -1,1 +1,0 @@
-java -Djava.library.path="../jni/:../../shared_libs/" Samples

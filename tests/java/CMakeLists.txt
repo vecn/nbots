@@ -1,0 +1,13 @@
+cmake_minimum_required (VERSION 2.8.6)
+project (VCN_Bots)
+
+find_package(Java)
+include(UseJava)
+
+message("Configuring Java Unit-Tests")
+
+message("-- TestGeometricBot")
+add_jar(TestGeometricBot
+  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/TestGeometricBot.java
+  INCLUDE_JARS VCNGeometricBot
+  ENTRY_POINT TestGeometricBot)

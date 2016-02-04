@@ -54,3 +54,4 @@ add_executable(valgrind_test
 target_link_libraries(valgrind_test vcn_bots)
 
 add_subdirectory(vcn)
+add_subdirectory(java)

@@ -6,7 +6,7 @@
  *
  */
 
-package mx.cimat.vcn;
+package mx.cimat.vcn.geometricBot;
 
 public class Box {
     protected float[] vA;

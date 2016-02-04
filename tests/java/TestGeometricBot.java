@@ -1,20 +1,6 @@
-/**
- * Geometric Bot Samples
- * 2011-2015 Victor Eduardo Cardoso Nungaray
- * Twitter: @victore_cardoso
- * email: victorc@cimat.mx
- *
- * License:
- * This piece of code is in the PUBLIC DOMAIN, if your government does not
- * recognizes such a dedication, then you are granted a perpetual and
- * irrevocable license to copy and modify this file however you want. This
- * does not imply any warranty.
- * Attributions and feedback are always welcome.
- */
+import mx.cimat.vcn.geometricBot.*;
 
-import mx.cimat.vcn.*;
-
-public class Samples {
+public class TestGeometricBot {
     public static void main(String[] args) {
 	sample1();
 	sample2();
@@ -53,7 +39,7 @@ public class Samples {
     }
     public static void sample5() {
 	/* Control the mesh density using an image */
-	Mesh mesh = GeometricBot.createMesh("sample5.jpg");
+	Mesh mesh = GeometricBot.createMesh("GeometricBotInputs/color_eye.jpg");
 	GeometricBotDraw.drawMesh(mesh, "sample5_mesh.png", 1000, 800);
     }
 }

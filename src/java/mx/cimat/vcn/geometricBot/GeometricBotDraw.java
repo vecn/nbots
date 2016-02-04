@@ -5,7 +5,7 @@
  * email: victorc@cimat.mx
  *
  */
-package mx.cimat.vcn;
+package mx.cimat.vcn.geometricBot;
 
 import java.awt.Color;
 import java.awt.Graphics2D;

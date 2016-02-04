@@ -24,6 +24,8 @@ if(${CMAKE_COMPILER_IS_GNUCXX})
 endif(${CMAKE_COMPILER_IS_GNUCXX}) 
 
 add_subdirectory(vcn)
+add_subdirectory(jni)
+add_subdirectory(java)
 
 message("Configuring VCN Math bot")
 add_library(vcn_math_bot SHARED

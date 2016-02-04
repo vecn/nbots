@@ -6,36 +6,38 @@
  *
  */
 
-package mx.cimat.vcn;
+package mx.cimat.vcn.geometricBot;
 
 public class GeometricBot {
     private GeometricBot() {}
 
     static {
 	System.loadLibrary("vcn_bots");
-	System.loadLibrary("jni_vcn_bots");
+	System.loadLibrary("vcn_geometric_bot-jni");
     }
-    private static native int JNICreateMesh(int NVtx, float vtx[], int NEdges, int edge[],
-					    int NHoles, float hole[],
-					    int maxNVtx, int maxNElem, float minAngle,
-					    float maxEdgeLength, float maxSgmLength,
-					    boolean includeEdges, boolean includeElements,
-					    boolean includeElemAdj, boolean includeInputVtx,
-					    boolean includeInputSgm,
-					    float meshVtx[][], int meshConnEdge[][],
-					    int meshConnMtx[][], int meshConnAdj[][],
-					    int meshModelVtx[][], int meshModelSgm[][][]);
+    private static native int JNICreateMesh
+	(int NVtx, float vtx[], int NEdges, int edge[],
+	 int NHoles, float hole[],
+	 int maxNVtx, int maxNElem, float minAngle,
+	 float maxEdgeLength, float maxSgmLength,
+	 boolean includeEdges, boolean includeElements,
+	 boolean includeElemAdj, boolean includeInputVtx,
+	 boolean includeInputSgm,
+	 float meshVtx[][], int meshConnEdge[][],
+	 int meshConnMtx[][], int meshConnAdj[][],
+	 int meshModelVtx[][], int meshModelSgm[][][]);
 
-    private static native int JNICreateMesh(int NVtx, float vtx[], int NEdges, int edge[],
-					    int NHoles, float hole[], String imageFile,
-					    int maxNVtx, int maxNElem, float minAngle,
-					    float scale, float xDisp, float yDisp,
-					    boolean includeEdges, boolean includeElements,
-					    boolean includeElemAdj, boolean includeInputVtx,
-					    boolean includeInputSgm,
-					    float meshVtx[][], int meshConnEdge[][],
-					    int meshConnMtx[][], int meshConnAdj[][],
-					    int meshModelVtx[][], int meshModelSgm[][][]);
+    private static native int JNICreateMesh
+	(int NVtx, float vtx[], int NEdges, int edge[],
+	 int NHoles, float hole[], String imageFile,
+	 int maxNVtx, int maxNElem, float minAngle,
+	 float scale, float xDisp, float yDisp,
+	 boolean includeEdges, boolean includeElements,
+	 boolean includeElemAdj, boolean includeInputVtx,
+	 boolean includeInputSgm,
+	 float meshVtx[][], int meshConnEdge[][],
+	 int meshConnMtx[][], int meshConnAdj[][],
+	 int meshModelVtx[][], int meshModelSgm[][][]);
 
     protected static Box getEnvelopingBox(float vertices[])
     {

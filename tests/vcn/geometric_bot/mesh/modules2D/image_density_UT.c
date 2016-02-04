@@ -63,6 +63,7 @@ static bool check_set_img_density_jpg_eye(void)
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
+	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 	return false;
@@ -83,6 +84,7 @@ static bool check_set_img_density_jpg_gnome(void)
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
+	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 	return false;
@@ -106,6 +108,7 @@ static bool check_set_img_density_png_jolie(void)
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
+	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 	return false;

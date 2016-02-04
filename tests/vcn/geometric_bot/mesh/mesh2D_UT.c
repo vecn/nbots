@@ -363,5 +363,5 @@ static bool check_set_density(void)
 static inline double density_func(const double *const x, 
 				  const void * const data)
 {
-  return 10.0 * (1.0 + sin(x[0]) * cos(x[1]));
+  return 3.0 * (1.0 + sin(x[0]) * cos(x[1]));
 }

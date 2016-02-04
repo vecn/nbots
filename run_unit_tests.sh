@@ -28,3 +28,10 @@ $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_iterator_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libdewall_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libconstrained_delaunay_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libmesh2D_UT.so
+
+echo "  Java binding for Geometric Bot"
+JAVA_TEST_DIR=tests/java
+JAVA_CP=src/java/VCNGeometricBot.jar:$JAVA_TEST_DIR/TestGeometricBot.jar
+JAVA_LP=src:src/jni
+java -Djava.library.path=$JAVA_LP -cp $JAVA_CP TestGeometricBot
+
