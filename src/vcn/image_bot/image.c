@@ -57,7 +57,9 @@ inline uint8_t vcn_image_get_N_channels(const vcn_image_t *const img)
 void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 			 uint32_t c, uint8_t pixel[])
 {
-	uint32_t w = img->width * img->comp_x_pixel;
-	uint32_t col = c * img->comp_x_pixel;
-	memcpy(pixel, &(img->pixels[r * w + col]), img->comp_x_pixel);
+	if (NULL != img->pixels) {
+		uint32_t w = img->width * img->comp_x_pixel;
+		uint32_t col = c * img->comp_x_pixel;
+		memcpy(pixel, &(img->pixels[r * w + col]), img->comp_x_pixel);
+	}
 }

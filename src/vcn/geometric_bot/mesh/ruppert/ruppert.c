@@ -14,9 +14,12 @@
 #include "ruppert.h"
 
 #define _VCN_MAX_LH_TOLERATED (1.0)
-#define _VCN_MAX_GRADING_RATIO (27.0)
+#define _VCN_MAX_GRADING_RATIO (10.0)
 #define _VCN_SUBSEGMENT_VTX ((void*)0x2)
 #define _VCN_CC_SHELL_UNIT (1e-3)
+
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 typedef struct {
 	vcn_container_t* avl[64];
 	uint32_t length;
@@ -194,7 +197,6 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	/* Initialize hash table with the poor quality triangles */
 	initialize_big_and_poor_quality_trg(mesh, big_trg,
 					    poor_quality_trg);
-	
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
@@ -262,15 +264,15 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			get_sgm_encroached_by_vertex(mesh, trg_containing_cc, cc);
 		if (vcn_container_is_empty(sgm_encroached_by_cc)) {
 			/* Circumcenter accepted */
-			vcn_container_t *restrict l_new_trg = 
+			vcn_container_t *restrict new_trg = 
 				vcn_container_create(VCN_CONTAINER_QUEUE);
 
 			insert_vertex(mesh, trg_containing_cc, cc, big_trg,
-				      poor_quality_trg, l_new_trg);
+				      poor_quality_trg, new_trg);
 
-			verify_new_encroachments(mesh, cc, l_new_trg, NULL,
+			verify_new_encroachments(mesh, cc, new_trg, NULL,
 						 big_trg, poor_quality_trg);
-			vcn_container_destroy(l_new_trg);
+			vcn_container_destroy(new_trg);
 		} else {
 			/* Circumcenter rejected */
 			free(cc);
@@ -1217,7 +1219,7 @@ static double calculate_lh(const vcn_mesh_t *const restrict mesh,
 		integral += (h1 + h2);
 		h1 = h2;
 	}
-	return 2 * dist / (integral * width);
+	return 2 * dist / (integral * width + VCN_GEOMETRIC_TOL);
 }
 
 static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
@@ -1230,9 +1232,7 @@ static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
 	double vtx_scaled[2];
 	mesh_get_extern_scale_and_disp(mesh, vtx, vtx_scaled);
 	double density = mesh->density(vtx_scaled, mesh->density_data);
-	if (density < VCN_GEOMETRIC_TOL)
-		density = VCN_GEOMETRIC_TOL;
-	return 1.0 / density;
+	return 1.0 / (density + VCN_GEOMETRIC_TOL);
 }
 
 static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,

@@ -39,7 +39,7 @@ public class TestGeometricBot {
     }
     public static void sample5() {
 	/* Control the mesh density using an image */
-	Mesh mesh = GeometricBot.createMesh("GeometricBotInputs/color_eye.jpg");
+	Mesh mesh = GeometricBot.createMesh("../tests/java/GeometricBotInputs/color_eye.jpg");
 	GeometricBotDraw.drawMesh(mesh, "sample5_mesh.png", 1000, 800);
     }
 }

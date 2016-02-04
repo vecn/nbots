@@ -12,11 +12,17 @@
 #include "vcn/geometric_bot.h"
 #include "geometric_bot.h"
 
+#include "../../vcn/geometric_bot/model/model2D_struct.h"
+
 static vcn_model_t* create_model_from_JNI(JNIEnv *env,
 					  jint N, jfloatArray jvertices,
 					  jint M, jintArray jedges,
 					  jint H, jfloatArray jholes);
 
+static void model_load_from_jtypes(vcn_model_t *model,
+				   jfloat vertices[], jint N_vertices,
+				   jint segments[], jint N_segments,
+				   jfloat holes[], jint N_holes);
 static int load_mesh_into_JNI
                (JNIEnv *env, jclass class,
 		const vcn_msh3trg_t *const msh3trg,
@@ -154,7 +160,7 @@ JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh
 	vcn_mesh_set_geometric_constraint(mesh,
 					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  min_angle);
-	vcn_mesh_set_img_density(mesh, img, 1e3);
+	vcn_mesh_set_img_density(mesh, img, 1e6);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
@@ -192,21 +198,45 @@ static vcn_model_t* create_model_from_JNI(JNIEnv *env,
 	jfloat *vertices = 
 		(*env)->GetFloatArrayElements(env, jvertices, NULL);
 
-	jint *edges_jint = (*env)->GetIntArrayElements(env, jedges, NULL);
-	uint32_t *edges = (uint32_t*) edges_jint; /* TEMPORAL */
+	jint *edges = (*env)->GetIntArrayElements(env, jedges, NULL);
 
 	jfloat *holes = NULL;
 	if (0 < H)
 		holes = (*env)->GetFloatArrayElements(env, jholes, NULL);
-	vcn_model_t *model =
-		vcn_model_load_from_farrays(vertices, N, edges, M, holes, H);
+	vcn_model_t *model = vcn_model_create();
+	model_load_from_jtypes(model, vertices, N, edges, M, holes, H);
 
 	(*env)->ReleaseFloatArrayElements(env, jvertices, vertices, JNI_ABORT);
-	(*env)->ReleaseIntArrayElements(env, jedges, edges_jint, JNI_ABORT);
+	(*env)->ReleaseIntArrayElements(env, jedges, edges, JNI_ABORT);
 	if (0 < H)
 		(*env)->ReleaseFloatArrayElements(env, jholes, holes, JNI_ABORT);
 
 	return model;
+}
+
+static void model_load_from_jtypes(vcn_model_t *model,
+				   jfloat vertices[], jint N_vertices,
+				   jint segments[], jint N_segments,
+				   jfloat holes[], jint N_holes)
+{
+	model->N = N_vertices;
+	model->M = N_segments;
+	model->H = N_holes;
+	if (0 < N_vertices) {
+		model_alloc_vertices(model);
+		for (int i = 0; i < 2 * N_vertices; i++)
+			model->vertex[i] = vertices[i];
+	}
+	if (0 < N_segments) {
+		model_alloc_edges(model);
+		for (int i = 0; i < 2 * N_segments; i++)
+			model->edge[i] = segments[i];
+	}
+	if (0 < N_holes ) {
+		model_alloc_holes(model);
+		for (uint32_t i = 0; i < 2 * N_holes; i++)
+			model->holes[i] = holes[i];
+	}	
 }
 
 static int load_mesh_into_JNI

@@ -364,6 +364,6 @@ public class GeometricBot {
 
     public static Mesh createMesh(String imageFile)
     {
-	return createMesh(imageFile, 15000, 0.1f);
+	return createMesh(imageFile, 3000, 0.2f);
     }
 }

@@ -37,9 +37,9 @@ extern "C" {
 	 * @param[in] N_holes Number of hole indicators.
 	 * @return The model if success, NULL if something goes wrong.
 	 */
-	vcn_model_t* vcn_model_load_from_arrays(double *vertices, uint32_t N_vertices,
-						uint32_t *segments, uint32_t N_segments,
-						double *holes, uint32_t N_holes);
+	vcn_model_t* vcn_model_load_from_arrays(double vertices[], uint32_t N_vertices,
+						uint32_t segments[], uint32_t N_segments,
+						double holes[], uint32_t N_holes);
 	/**
 	 * @brief Create model from input data with simple precision.
 	 * @param[in] vertices Concatenated coordinates of the vertices
@@ -53,9 +53,9 @@ extern "C" {
 	 * @param[in] N_holes Number of hole indicators.
 	 * @return The model if success, NULL if something goes wrong.
 	 */
-	vcn_model_t* vcn_model_load_from_farrays(float *vertices, uint32_t N_vertices,
-						 uint32_t *segments, uint32_t N_segments,
-						 float *holes, uint32_t N_holes);
+	vcn_model_t* vcn_model_load_from_farrays(float vertices[], uint32_t N_vertices,
+						 uint32_t segments[], uint32_t N_segments,
+						 float holes[], uint32_t N_holes);
 
 	/**
 	 * @brief Creates a geometry model of a rectangle.

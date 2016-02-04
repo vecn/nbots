@@ -65,28 +65,25 @@ static double img_density(const double x[2],
 	double density;
 	if (1 == vcn_image_get_N_channels(data->img)) {
 		/* Grey */
-		density = data->max_density * 
-			(1.0 - (1 + pixel_components[0]) / 256.0);
+		density = 1.0 - (1 + pixel_components[0]) / 256.0;
 	} else if (2 == vcn_image_get_N_channels(data->img)) {
 		/* Grey and alpha */
 		double grey = (1 + pixel_components[0]) / 256.0;
 		double alpha = (1 + pixel_components[1]) / 256.0;
-		density = data->max_density * (1.0 - grey * alpha);
+		density = 1.0 - grey * alpha;
 	} else if (3 == vcn_image_get_N_channels(data->img)) {
 		/* Red, green and blue */
 		double red = (1 + pixel_components[0]) / 256.0;
 		double green = (1 + pixel_components[1]) / 256.0;
 		double blue = (1 + pixel_components[2]) / 256.0;
-		density = data->max_density *
-			(1.0 - (red + green + blue) / 3.0);
+		density = 1.0 - (red + green + blue) / 3.0;
 	} else {
 		/* Red, green, blue and alpha */
 		double red = (1 + pixel_components[0]) / 256.0;
 		double green = (1 + pixel_components[1]) / 256.0;
 		double blue = (1 + pixel_components[2]) / 256.0;
 		double alpha = (1 + pixel_components[3]) / 256.0;
-		density =  data->max_density *
-			(1.0 - alpha * (red + green + blue) / 3.0);
+		density = 1.0 - alpha * (red + green + blue) / 3.0;
 	}
-	return density;
+	return data->max_density * density;
 }
