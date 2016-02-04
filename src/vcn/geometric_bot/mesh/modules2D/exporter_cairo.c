@@ -896,7 +896,7 @@ void vcn_mshpack_save_png(const vcn_mshpack_t *const restrict mshpack,
 			  cam.zoom * cam.center[0] + width/2.0,
 			  -cam.zoom * mshpack->centers[i*2+1] +
 			  cam.zoom * cam.center[1] + height/2.0,
-			  mshpack->radii[i] * cam.zoom, 0, 2*3.1415926536);
+			  mshpack->radii[i] * cam.zoom, 0, 2 * VCN_MATH_PI);
 		if (true) {
 			cairo_set_source_rgba(cr, 0.3, 0.5, 1.0, 0.35);
 			cairo_fill_preserve(cr);

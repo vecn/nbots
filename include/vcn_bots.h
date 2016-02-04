@@ -23,6 +23,7 @@ extern "C" {
 #include "vcn/container_bot.h"
 #include "vcn/graph_bot.h"
 #include "vcn/eigen_bot.h"
+#include "vcn/image_bot.h"
 #include "vcn/geometric_bot.h"
 #include "vcn/fem_bot.h"
 #include "vcn/visual_cat.h"

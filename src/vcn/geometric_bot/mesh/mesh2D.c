@@ -165,6 +165,18 @@ void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
 	}
 }
 
+void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type)
+{
+	switch (type) {
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
+		mesh->max_vtx = 0;
+		break;
+	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
+		mesh->max_trg = 0;
+		break;
+	}
+}
+
 uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
 {
 	uint32_t val;
@@ -197,10 +209,28 @@ void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
 	}
 }
 
+void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
+{
+	switch (type) {
+	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
+		set_angle_constraint(mesh, 0.0);
+		break;
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
+		mesh->max_edge_length = 0.0;
+		break;
+	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
+		mesh->max_subsgm_length = 0.0;
+		break;
+	}
+}
+
 static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle)
 {
 	mesh->min_angle = angle;
-	mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
+	if (0.0 < angle)
+		mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
+	else
+		mesh->cr2se_ratio = 1e6;
 }
 
 double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
@@ -229,6 +259,12 @@ inline void vcn_mesh_set_density(vcn_mesh_t* mesh,
 {
 	mesh->density = density;
 	mesh->density_data = density_data;
+}
+
+inline void vcn_mesh_unset_density(vcn_mesh_t* mesh)
+{
+	mesh->density = NULL;
+	mesh->density_data = NULL;
 }
 
 inline void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type)

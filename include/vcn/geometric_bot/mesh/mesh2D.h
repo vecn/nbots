@@ -50,16 +50,19 @@ void vcn_mesh_destroy(vcn_mesh_t* mesh);
 void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
 		       void (*task)(const vcn_mesh_t *const));
 void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
-				 uint32_t value);
+				  uint32_t value);
+void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type);
 uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type);
 void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
-				      double value);
+				       double value);
+void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type);
 double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh,
 					int type);
 void vcn_mesh_set_density(vcn_mesh_t* mesh,
 			  double (*density)(const double x[2],
 					    const void *data),
 			  const void *density_data);
+void vcn_mesh_unset_density(vcn_mesh_t* mesh);
 void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type);
 int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh);
 bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh);

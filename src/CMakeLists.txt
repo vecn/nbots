@@ -46,6 +46,7 @@ target_link_libraries(vcn_bots
   vcn_container_bot
   vcn_eigen_bot
   vcn_graph_bot
+  vcn_image_bot
   vcn_geometric_bot
   m 
   )

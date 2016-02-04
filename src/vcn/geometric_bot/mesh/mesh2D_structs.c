@@ -6,7 +6,6 @@
 #include "vcn/container_bot/container.h"
 #include "vcn/container_bot/iterator.h"
 #include "vcn/geometric_bot/utils2D.h"
-#include "vcn/geometric_bot/mesh/density2D.h"
 #include "vcn/geometric_bot/mesh/mesh2D.h"
 
 #include "mesh2D_structs.h"

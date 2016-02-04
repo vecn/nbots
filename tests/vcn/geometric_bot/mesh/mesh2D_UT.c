@@ -7,6 +7,9 @@
 #include "test_library.h"
 #include "test_add.h"
 
+#include  "vcn/math_bot.h"
+#include  "vcn/geometric_bot/mesh/mesh2D.h"
+
 #define INPUTS_DIR "../tests/vcn/geometric_bot/mesh/mesh2D_UT_inputs"
 
 #include  "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
@@ -30,6 +33,9 @@ static bool check_generate_from_model_subsgm_const_v2(void);
 static bool check_generate_from_model_holes(void);
 static bool check_generate_from_model_small_angles(void);
 static bool check_generate_from_model_quasi_linear(void);
+static bool check_generate_from_model_trg_constraint(void);
+static bool check_is_vtx_inside(void);
+static bool check_set_density(void);
 
 static double density_func(const double *const x, const void * const data);
 
@@ -64,6 +70,12 @@ void vcn_test_load_tests(void *tests_ptr)
 		     "Check generate_from_model() with small angles");
 	vcn_test_add(tests_ptr, check_generate_from_model_quasi_linear,
 		     "Check generate_from_model() with quasi linear segments");
+	vcn_test_add(tests_ptr, check_generate_from_model_trg_constraint,
+		     "Check generate_from_model() with triangles constraint");
+	vcn_test_add(tests_ptr, check_is_vtx_inside,
+		     "Check is_vtx_inside()");
+	vcn_test_add(tests_ptr, check_set_density,
+		     "Check set_density()");
 }
 
 static bool check_generate_from_model_angle_constraint(void)
@@ -277,15 +289,15 @@ static bool check_generate_from_model_quasi_linear(void)
 	return trg_ok && edg_ok;
 }
 
-static bool check_generate_from_model_size_constraint(void)
+static bool check_generate_from_model_trg_constraint(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_size_constraint(mesh,
-				     VCN_MESH_SIZE_CONSTRAINT_,
-				     8);
+				     VCN_MESH_SIZE_CONSTRAINT_MAX_TRG,
+				     3000);
 	vcn_mesh_set_geometric_constraint(mesh,
 					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  8);
@@ -300,175 +312,53 @@ static bool check_generate_from_model_size_constraint(void)
 	vcn_mesh_destroy(mesh);
 	return trg_ok && edg_ok;
 }
-static vcn_mesh_t* test14(char* name, const char* input_dir)
+
+static bool check_is_vtx_inside(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Zacatecas.psl", input_dir);
-  sprintf(name, "Zacatecas map");
-  vcn_model_t *model = vcn_model_load(input_name);
-  double max_edge[2] = {8.0, 5.0};
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 3000,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_MAX, max_edge);
-  vcn_model_destroy(model);
-    
-  return mesh;
-}
-*/
+	char input_name[256];
+	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
+	vcn_model_t *model = vcn_model_load(input_name);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_unset_geometric_constraint(mesh,
+					    VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE);
+	vcn_mesh_generate_from_model(mesh, model);
+	double box[4];
+	vcn_model_get_enveloping_box(model, box);
+	vcn_model_destroy(model);
 
-/**
- * @brief Test vcn_mesh_is_vtx_inside().
- */
-/*
-static vcn_mesh_t* test15(char* name, const char* input_dir)
+	double xstep = (box[2] - box[0]) / 49.0;
+	double ystep = (box[3] - box[1]) / 49.0;
+	for (int i = 0; i < 50; i++) {
+		for (int j = 0; j < 50; j++) {
+			double vtx[2];
+			vtx[0] = box[0] + i * xstep;
+			vtx[1] = box[1] + j * ystep;
+			if (vcn_mesh_is_vtx_inside(mesh, vtx))
+				vcn_mesh_insert_vtx(mesh, vtx);
+		}
+	}
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
+}
+
+static bool check_set_density(void)
 {
-  char input_name[256];
-  sprintf(input_name, "%s/Zacatecas.psl", input_dir);
-  sprintf(name, "Zacatecas map into a Grid");
-  vcn_model_t *model = vcn_model_load(input_name);
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_UNC,
-			       VCN_DENSITY_CDT, NULL);
-  vcn_mesh_t *mesh_CDT = vcn_mesh_clone(mesh);
-  double box[4];
-  vcn_model_get_enveloping_box(model, box);
-  double xstep = (box[2] - box[0]) / 49.0;
-  double ystep = (box[3] - box[1]) / 49.0;
-  for (register int i = 0; i < 50; i++) {
-    for (register int j = 0; j < 50; j++) {
-      double vtx[2];
-      vtx[0] = box[0] + i * xstep;
-      vtx[1] = box[1] + j * ystep;
-      if (vcn_mesh_is_vtx_inside(mesh_CDT, vtx))
-	vcn_mesh_insert_vertex(mesh, vtx);
-    }
-  }
-  vcn_mesh_destroy(mesh_CDT);
-  vcn_model_destroy(model);
-  return mesh;
+	vcn_model_t* model =
+		vcn_model_create_rectangle(-2 * VCN_MATH_PI, -2 * VCN_MATH_PI,
+					   2 * VCN_MATH_PI, 2 * VCN_MATH_PI);
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_density(mesh, density_func, NULL);
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
+	TEMPORAL(mesh); /* TEMPORAL */
+	vcn_mesh_destroy(mesh);
+	return trg_ok && edg_ok;
 }
-*/
-
-/**
- * @brief Test the density function.
- */
-/*
-static vcn_mesh_t* test16(char* name, const char* input_dir)
-{
-  sprintf(name, "External density function");
-  vcn_model_t* model = vcn_model_create_rectangle(-2.0 * M_PI, -2.0 * M_PI,
-						  2.0 * M_PI, 2.0 * M_PI);
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, VCN_ANGLE_MAX,
-			       density_func, NULL);
-  vcn_model_destroy(model);
-
-  return mesh;
-}
-*/
-
-/**
- * @brief Test the PNG format in a color picture.
- */
-/*
-static vcn_mesh_t* test17(char* name, const char* input_dir)
-{
-  char input_name[256];
-  sprintf(input_name, "%s/eye_raw.jpg", input_dir);
-  sprintf(name, "Eye picture");
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 0.2);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
-}
-*/
-
-/**
- * @brief Test the JPEG format.
- */
-/*
-static vcn_mesh_t* test18(char* name, const char* input_dir)
-{
-  char input_name[256];
-  sprintf(input_name, "%s/gnome.jpg", input_dir);
-  sprintf(name, "Gnome logo");
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 1.0);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0,
-			       VCN_ANGLE_MAX,
-			       VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
-}
-*/
-
-/**
- * @brief Test a grayscale PNG image.
- */
-/*
-static vcn_mesh_t* test19(char* name, const char* input_dir)
-{
-  char input_name[256];
-  sprintf(input_name, "%s/women.png", input_dir);
-  sprintf(name, "Women picture");
-
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 2.0);
-  vcn_model_t* model = 
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
-}
-*/
-
-/**
- * @brief Test JPG black and white image.
- */
-/*
-static vcn_mesh_t* test20(char* name, const char* input_dir)
-{
-  char input_name[256];
-  sprintf(input_name, "%s/hand.jpg", input_dir);
-  sprintf(name, "Hand and baby hand");
-
-  vcn_density_img_t* data = vcn_density_img_create(input_name, 1.0, 
-						   0.0, 0.0, 0.2);
-  vcn_model_t* model =
-    vcn_model_create_rectangle(0.0, 0.0,
-			       vcn_density_img_get_width(data),
-			       vcn_density_img_get_height(data));
-  vcn_mesh_t* mesh = 
-    vcn_mesh_create_from_model(model, 0, 0, 0.2, VCN_DENSITY_IMG, data);
-  vcn_model_destroy(model);
-  vcn_density_img_destroy(data);
-
-  return mesh;
-}
-*/
-
 
 static inline double density_func(const double *const x, 
 				  const void * const data)
