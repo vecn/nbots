@@ -17,7 +17,7 @@
 #include "vcn/eigen_bot.h"
 #include "vcn/container_bot.h"
 #include "vcn/graph_bot.h"
-#include "vcn/fem_bot.h"
+#include "vcn/pde_bot/finite_element/solid_mechanics/static_assembler2D.h"
 
 /************************ Structure definition ****************************/
 struct vcn_fem_elem_s{
