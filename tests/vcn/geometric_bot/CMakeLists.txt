@@ -9,6 +9,7 @@ if(${CMAKE_COMPILER_IS_GNUCXX})
   message("Additional default options were set for gcc.")
 endif(${CMAKE_COMPILER_IS_GNUCXX}) 
 
+message("==== TESTS OF GEOMETRIC BOT ====")
 
 message("Configuring Unit-Tests")
 
