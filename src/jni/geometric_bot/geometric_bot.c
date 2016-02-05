@@ -160,7 +160,7 @@ JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh
 	vcn_mesh_set_geometric_constraint(mesh,
 					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  min_angle);
-	vcn_mesh_set_img_density(mesh, img, 1e6);
+	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);

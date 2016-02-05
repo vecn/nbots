@@ -7,6 +7,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 set(JDK_INCLUDE 
   /opt/java/jdk1.8.0_51/include/
   /opt/java/jdk1.8.0_51/include/linux/
+  /usr/local/java/jdk1.8.0_51/include/
+  /usr/local/java/jdk1.8.0_51/include/linux/
 )
 
 include_directories(

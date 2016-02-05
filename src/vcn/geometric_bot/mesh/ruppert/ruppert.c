@@ -372,7 +372,7 @@ static inline msh_trg_t* hash_trg_remove_first
 	for (int i = 63; i >= 0; i--) {
 		if (vcn_container_is_not_empty(htrg->avl[i])) {
 			htrg->length -= 1;
-			msh_trg_t* restrict trg = 
+			msh_trg_t *trg = 
 				vcn_container_delete_first(htrg->avl[i]);
 			free(trg->attr);
 			trg->attr = NULL;
@@ -836,7 +836,7 @@ static inline void insert_big_trg
 			  double big_ratio)
 {
 	uint32_t *attr = malloc(sizeof(uint32_t));
-	*attr = (uint32_t) (1e2 / big_ratio);
+	*attr = (uint32_t) (1e2/big_ratio);
 	trg->attr = attr;
 	vcn_container_insert(big_trg, trg);
 }
@@ -1137,16 +1137,14 @@ static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 {
 	bool violates_constrain = false;
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	if (NULL != big_ratio)
+		*big_ratio = d;
 	double edge_max = mesh->max_edge_length * mesh->scale;
 	if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
-		if (NULL != big_ratio)
-			*big_ratio = d;
 		violates_constrain = true;
 	} else if (medge_is_subsgm(sgm)) {
 		double sgm_max = mesh->max_subsgm_length * mesh->scale;
 		if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
-			if (NULL != big_ratio)
-				*big_ratio = d;
 			violates_constrain = true;
 		}
 	}
@@ -1173,10 +1171,11 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 {
 	bool is_greater;
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	if (NULL != big_ratio)
+		*big_ratio = d;
+
 	if (VCN_GEOMETRIC_TOL > d) {
 		/* Prevent of eternal running */
-		if (NULL != big_ratio)
-			*big_ratio = VCN_GEOMETRIC_TOL;
 		is_greater = false;  
 	} else {
 		d /= mesh->scale;
@@ -1187,8 +1186,6 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 			lh = calculate_lh(mesh, sgm, d, 2);
 			is_greater = (_VCN_MAX_LH_TOLERATED < lh);
 		}
-		if (NULL != big_ratio)
-			*big_ratio = lh;
 	}
 	return is_greater;
 }
