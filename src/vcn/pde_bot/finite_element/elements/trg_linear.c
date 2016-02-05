@@ -1,3 +1,12 @@
+#include <stdlib.h>
+
+#include "vcn/pde_bot/finite_element/element.h"
+#include "vcn/pde_bot/finite_element/elements/trg_linear.h"
+
+#include "../element_struct.h"
+
+#define INV_3 (0.33333333333333333333333333333)
+
 static double N1(double psi, double eta);
 static double N2(double psi, double eta);
 static double N3(double psi, double eta);
@@ -8,42 +17,35 @@ static double dN2_deta(double psi, double eta);
 static double dN3_dpsi(double psi, double eta);
 static double dN3_deta(double psi, double eta);
 
-vcn_fem_elem_t* vcn_fem_elem_create_triangle(){
-	/* Triangular element of linear interpolation */
-	vcn_fem_elem_t* elemtype = (vcn_fem_elem_t*)
-		malloc(sizeof(vcn_fem_elem_t));
-	elemtype->N_nodes = 3;
-	elemtype->N_Gauss_points = 1;
+void vcn_fem_elem_init_trg_linear(vcn_fem_elem_t *elem)
+{
+	elem->N_nodes = 3;
+	elem->N_Gauss_points = 1;
 
-	elemtype->Ni = 
-		(double (**)(double, double))calloc(elemtype->N_nodes, sizeof(void*));
-	elemtype->dNi_dpsi = 
-		(double (**)(double, double))calloc(elemtype->N_nodes, sizeof(void*));
-	elemtype->dNi_deta = 
-		(double (**)(double, double))calloc(elemtype->N_nodes, sizeof(void*));  
-	elemtype->Ni[0] = N1;
-	elemtype->Ni[1] = N2;
-	elemtype->Ni[2] = N3;
-	elemtype->dNi_dpsi[0] = dN1_dpsi;
-	elemtype->dNi_dpsi[1] = dN2_dpsi;
-	elemtype->dNi_dpsi[2] = dN3_dpsi;
-	elemtype->dNi_deta[0] = dN1_deta;
-	elemtype->dNi_deta[1] = dN2_deta;
-	elemtype->dNi_deta[2] = dN3_deta;
+	elem->Ni = calloc(elem->N_nodes, sizeof(*(elem->Ni)));
+	elem->dNi_dpsi = calloc(elem->N_nodes,
+				    sizeof(*(elem->dNi_dpsi)));
+	elem->dNi_deta = calloc(elem->N_nodes,
+				    sizeof(*(elem->dNi_deta)));  
+	elem->Ni[0] = N1;
+	elem->Ni[1] = N2;
+	elem->Ni[2] = N3;
+	elem->dNi_dpsi[0] = dN1_dpsi;
+	elem->dNi_dpsi[1] = dN2_dpsi;
+	elem->dNi_dpsi[2] = dN3_dpsi;
+	elem->dNi_deta[0] = dN1_deta;
+	elem->dNi_deta[1] = dN2_deta;
+	elem->dNi_deta[2] = dN3_deta;
   
-	elemtype->psi = 
-		(double*)malloc(elemtype->N_Gauss_points*sizeof(double));
-	elemtype->eta = 
-		(double*)malloc(elemtype->N_Gauss_points*sizeof(double));
-	elemtype->gp_weight = 
-		(double*)malloc(elemtype->N_Gauss_points*sizeof(double));
+	elem->psi = malloc(elem->N_Gauss_points * sizeof(*(elem->psi)));
+	elem->eta = malloc(elem->N_Gauss_points * sizeof(*(elem->eta)));
+	elem->gp_weight = malloc(elem->N_Gauss_points *
+				 sizeof(*(elem->gp_weight)));
 
-	elemtype->psi[0] = 1.0/3.0;
-	elemtype->eta[0] = 1.0/3.0;
+	elem->psi[0] = INV_3;
+	elem->eta[0] = INV_3;
 
-	elemtype->gp_weight[0] = 0.5;
-
-	return elemtype;
+	elem->gp_weight[0] = 0.5;
 }
 
 static inline double N1(double psi, double eta){

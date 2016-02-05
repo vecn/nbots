@@ -1,4 +1,4 @@
-import mx.cimat.vcn.geometricBot.*;
+import vcn.geometricBot.*;
 
 public class TestGeometricBot {
     public static void main(String[] args) {

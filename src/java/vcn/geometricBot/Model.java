@@ -7,7 +7,7 @@
  *
  */
 
-package mx.cimat.vcn.geometricBot;
+package vcn.geometricBot;
 
 public class Model {
     protected float[] vertices;   /* Concatenated coordinates of vertices */

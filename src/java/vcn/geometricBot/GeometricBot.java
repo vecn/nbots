@@ -6,7 +6,7 @@
  *
  */
 
-package mx.cimat.vcn.geometricBot;
+package vcn.geometricBot;
 
 public class GeometricBot {
     private GeometricBot() {}

@@ -1,14 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-struct vcn_fem_elem_s {
-	uint32_t N_nodes;
-	uint32_t N_Gauss_points;
-	double *psi, *eta;          /* Normalized space coordinates of Gauss points */
-	double * gp_weight;         /* Integration weights of the Gauss points */
-	double (**Ni)(double psi, double eta);       /* Shape functions */
-	double (**dNi_dpsi)(double psi, double eta); /* Shape functions derivatives */
-	double (**dNi_deta)(double psi, double eta); /* Shape functions derivatives */
-};
+#include "vcn/pde_bot/finite_element/element.h"
+
+#include "../element_struct.h"
+
+vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id)
+{
+	vcn_fem_elem_t *elem = calloc(1, sizeof(*elem));
+	switch(id) {
+	case VCN_TRG_LINEAR:
+		vcn_fem_elem_init_trg_linear(elem);
+	default:
+		vcn_fem_elem_init_trg_linear(elem);
+	}
+	return elem;
+}
 
 void vcn_fem_elem_destroy(vcn_fem_elem_t* elemtype)
 {
@@ -21,18 +28,19 @@ void vcn_fem_elem_destroy(vcn_fem_elem_t* elemtype)
 	free(elemtype);
 }
 
-uint32_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elemtype)
+inline uint32_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elemtype)
 {
 	return elemtype->N_nodes;
 }
 
-void* vcn_fem_elem_get_ith_shape_function
-		(const vcn_fem_elem_t *const elemtype, uint32_t i)
+inline double vcn_fem_elem_eval_shape_function
+		(const vcn_fem_elem_t *const elemtype, uint32_t node_id,
+		 double psi, double eta)
 {
-	return elemtype->Ni[i];
+	return elemtype->Ni[i](psi, eta);
 }
 
-uint32_t vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node
+inline uint32_t vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node
 		(const vcn_fem_elem_t *const elemtype, uint32_t i)
 {
 	if (3 == elemtype->N_nodes && 
