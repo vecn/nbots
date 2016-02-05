@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.6)
 project (VCN_Bots)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../include)
 
 if(${CMAKE_COMPILER_IS_GNUCXX}) 
   set(CMAKE_C_FLAGS 
@@ -11,8 +11,10 @@ endif(${CMAKE_COMPILER_IS_GNUCXX})
 
 message("Configuring VCN PDE Bot - Finite Element")
 
-set(finite_element
-  ${CMAKE_CURRENT_SOURCE_DIR}/solid_mechanics/static_assembler2D.c
+add_library(vcn_pde_bot-fem OBJECT
+  ${CMAKE_CURRENT_SOURCE_DIR}/gaussp_to_nodes.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/element.c
 )
 
-add_library(vcn_pde_bot-fem OBJECT ${finite_element})
+add_subdirectory(elements)
+add_subdirectory(solid_mechanics)

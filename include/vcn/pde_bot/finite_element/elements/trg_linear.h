@@ -1,0 +1,6 @@
+#ifndef __VCN_PDE_BOT_FINITE_ELEMENT_ELEMENTS_TRG_LINEAR_H__
+#define __VCN_PDE_BOT_FINITE_ELEMENT_ELEMENTS_TRG_LINEAR_H__
+
+vcn_fem_elem_t* vcn_fem_elem_create_triangle();
+
+#endif

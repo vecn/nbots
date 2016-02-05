@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.6)
 project (VCN_Bots)
 
-add_subdirectory(finite_element)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../include)
 
 if(${CMAKE_COMPILER_IS_GNUCXX}) 
   set(CMAKE_C_FLAGS 
@@ -9,7 +9,7 @@ if(${CMAKE_COMPILER_IS_GNUCXX})
   message("Additional default options were set for gcc.")
 endif(${CMAKE_COMPILER_IS_GNUCXX}) 
 
-add_library(vcn_pde_bot OBJECT
-  ${CMAKE_CURRENT_SOURCE_DIR}/material.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions.c
-)
+add_library(vcn_pde_bot-fem-solid_mechanics OBJECT
+  ${CMAKE_CURRENT_SOURCE_DIR}/static_elasticity2D.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/static_damage2D.c
+ )
