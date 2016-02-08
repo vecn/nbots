@@ -5,6 +5,7 @@
 #include "vcn/pde_bot.h"
 
 #include "pde_bot.h"
+#include "../geometricBot/load_jMesh.h"
 
 static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 				      jobject jbCondVtx, jobject jbCondSgm);
@@ -35,8 +36,8 @@ static void set_holes_from_jModel(JNIEnv *env, float *holes,
 static jfloatArray jModel_getHolesRef(JNIEnv *env, jobject jmodel);
 static jobject jMeshResults_new(JNIEnv *env);
 
-static void cast_msh3trg_to_jmesh(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
-				  jobject jmesh);
+static void load_JMesh_from_msh3trg(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
+				    jobject jmesh);
 static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *displacement,
 				   const double *strain);
 
@@ -90,7 +91,7 @@ JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticEla
 					   "static_elasticity2D_UT.log");
 
 	jobject jmesh_results = jMeshResults_new(env);
-	cast_msh3trg_to_jmesh(env, msh3trg, jmesh_results);
+	load_jMesh_from_msh3trg(env, msh3trg, jmesh_results);
 	set_results_into_jmesh(env, jmesh_results, displacement, strain);
 
 	/* Free memory */
@@ -332,12 +333,6 @@ static jobject jMeshResults_new(JNIEnv *env)
 	jmethodID method_id = (*env)->GetMethodID(env, class, "<init>", "()V");
 	jobject instance = (*env)->NewObject(env, class, method_id);
 	return instance;
-
-}
-
-static void cast_msh3trg_to_jmesh(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
-				  jobject jmesh)
-{
 
 }
 

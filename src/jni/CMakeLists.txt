@@ -34,6 +34,7 @@ target_link_libraries(vcn_geometric_bot-jni
 
 message("Configuring JNI - PDE Bot")
 add_library(vcn_pde_bot-jni SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/load_jMesh.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pde_bot/pde_bot.c
   )
 target_link_libraries(vcn_pde_bot-jni
