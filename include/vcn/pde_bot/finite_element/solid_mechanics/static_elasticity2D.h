@@ -6,6 +6,10 @@
 #include "vcn/eigen_bot.h"
 #include "vcn/geometric_bot.h"
 
+#include "vcn/pde_bot/material.h"
+#include "vcn/pde_bot/boundary_conditions.h"
+#include "vcn/pde_bot/finite_element/element.h"
+
 int vcn_fem_compute_2D_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elemtype,

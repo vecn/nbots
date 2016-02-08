@@ -9,11 +9,11 @@ set(CMAKE_JNI_TARGET TRUE)
 message("Configuring (Java) VCNGeometricBot")
 
 set(geometricBot
-  ${CMAKE_CURRENT_SOURCE_DIR}/mx/cimat/vcn/geometricBot/Box.java
-  ${CMAKE_CURRENT_SOURCE_DIR}/mx/cimat/vcn/geometricBot/Mesh.java
-  ${CMAKE_CURRENT_SOURCE_DIR}/mx/cimat/vcn/geometricBot/Model.java
-  ${CMAKE_CURRENT_SOURCE_DIR}/mx/cimat/vcn/geometricBot/GeometricBot.java
-  ${CMAKE_CURRENT_SOURCE_DIR}/mx/cimat/vcn/geometricBot/GeometricBotDraw.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/Box.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/Mesh.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/Model.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/GeometricBot.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/GeometricBotDraw.java
   )
 
 set(LIB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR})

@@ -2,8 +2,9 @@
 #include <stdlib.h>
 
 #include "vcn/pde_bot/finite_element/element.h"
+#include "vcn/pde_bot/finite_element/elements/trg_linear.h"
 
-#include "../element_struct.h"
+#include "element_struct.h"
 
 vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id)
 {
@@ -37,7 +38,7 @@ inline double vcn_fem_elem_eval_shape_function
 		(const vcn_fem_elem_t *const elemtype, uint32_t node_id,
 		 double psi, double eta)
 {
-	return elemtype->Ni[i](psi, eta);
+	return elemtype->Ni[node_id](psi, eta);
 }
 
 inline uint32_t vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node

@@ -2,7 +2,7 @@
 #define __VCN_PDE_BOT_FINITE_ELEMENT_GAUSSP_TO_NODES_H__
 
 #include <stdint.h>
-#include "vcn/geometric_bot/mesh/elements/triangle.h"
+#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
 #include "vcn/pde_bot/finite_element/element.h"
 
 void vcn_fem_interpolate_from_Gauss_points_to_nodes

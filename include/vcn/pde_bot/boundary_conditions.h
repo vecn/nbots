@@ -1,6 +1,8 @@
 #ifndef __VCN_PDE_BOT_BOUNDARY_CONDITIONS_H__
 #define __VCN_PDE_BOT_BOUNDARY_CONDITIONS_H__
 
+#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
+
 typedef struct {
 	/* Boundary conditions */
 	uint8_t N_dof; /* Degrees of freedom */
@@ -26,7 +28,7 @@ typedef struct {
 	double *Neuman_on_sgm_val;
 } vcn_bcond_t;
 
-vcn_bcond_t* vcn_fem_bcond_create();
+vcn_bcond_t* vcn_fem_bcond_create(void);
 vcn_bcond_t* vcn_fem_bcond_clone(const vcn_bcond_t *const bconditions);
 vcn_bcond_t* vcn_fem_bcond_read(const char* filename);
 void vcn_fem_bcond_save(const vcn_bcond_t *const bconditions, 
@@ -38,7 +40,7 @@ void vcn_fem_bcond_destroy(vcn_bcond_t* bconditions);
 void vcn_fem_bcond_printf(const vcn_bcond_t* const bconditions);
 
 vcn_bcond_t* vcn_fem_bcond_create_from_model_to_mesh
-(const vcn_msh3trg_t *const msh3trg,
- const vcn_bcond_t *const bconditions);
+			(const vcn_msh3trg_t *const msh3trg,
+			 const vcn_bcond_t *const bconditions);
 
 #endif

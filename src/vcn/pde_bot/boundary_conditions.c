@@ -1,43 +1,57 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-vcn_bcond_t* vcn_fem_bcond_create(){
+#include "vcn/cfreader_cat.h"
+#include "vcn/geometric_bot/utils2D.h"
+#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
+#include "vcn/pde_bot/boundary_conditions.h"
+
+vcn_bcond_t* vcn_fem_bcond_create(void)
+{
 	vcn_bcond_t* bconditions =
 		(vcn_bcond_t*)calloc(1, sizeof(vcn_bcond_t));
 	return bconditions;
 }
 
-vcn_bcond_t* vcn_fem_bcond_clone(const vcn_bcond_t*const bconditions){
-	vcn_bcond_t* clone =
-		(vcn_bcond_t*)calloc(1, sizeof(vcn_bcond_t));
+inline vcn_bcond_t* vcn_fem_bcond_clone(const vcn_bcond_t*const bconditions)
+{
+	vcn_bcond_t *clone = calloc(1, sizeof(*clone));
 	vcn_fem_bcond_copy(clone, bconditions);
 	return clone;
 }
 
-vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
+vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
+{
 	vcn_bcond_t* bconditions =
 		(vcn_bcond_t*)calloc(1, sizeof(vcn_bcond_t));
   
 	/* Initialize custom format to read file */
 	vcn_cfreader_t* cfreader = vcn_cfreader_create(filename, "#");
-	if(cfreader == NULL){
+	if (cfreader == NULL) {
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
 	}
 	/* Read number of Dirichlet conditions upon vertices */
-	if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Dirichlet_on_vtx)) != 0){
+	if (vcn_cfreader_read_uint32_t(cfreader, 
+				       &(bconditions->N_Dirichlet_on_vtx)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
 	}
 	/* Allocate data to store Dirichlet Cnd. upon vertices */
 	bconditions->Dirichlet_on_vtx_idx = 
-		(uint32_t*)malloc(bconditions->N_Dirichlet_on_vtx * sizeof(uint32_t));
+		malloc(bconditions->N_Dirichlet_on_vtx * sizeof(uint32_t));
 	bconditions->Dirichlet_on_vtx_dof_mask =
-		(bool*)malloc(2 * bconditions->N_Dirichlet_on_vtx * sizeof(bool));
+		malloc(2 * bconditions->N_Dirichlet_on_vtx * sizeof(bool));
 	bconditions->Dirichlet_on_vtx_val =
-		(double*)calloc(2 * bconditions->N_Dirichlet_on_vtx, sizeof(double));
+		calloc(2 * bconditions->N_Dirichlet_on_vtx, sizeof(double));
 
 	/* Read number of Neuman conditions upon vertices */
-	if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Neuman_on_vtx)) != 0){
+	if (vcn_cfreader_read_uint32_t(cfreader,
+				       &(bconditions->N_Neuman_on_vtx)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
@@ -51,65 +65,66 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
 		(double*)calloc(2 * bconditions->N_Neuman_on_vtx, sizeof(double));
 
 	/* Read number of Dirichlet conditions upon segments */
-	if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Dirichlet_on_sgm)) != 0){
+	if (vcn_cfreader_read_uint32_t(cfreader,
+				       &(bconditions->N_Dirichlet_on_sgm)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
 	}
 	/* Allocate data to store Dirichlet Cnd. upon segments */
 	bconditions->Dirichlet_on_sgm_idx = 
-		(uint32_t*)malloc(bconditions->N_Dirichlet_on_sgm * sizeof(uint32_t));
+		malloc(bconditions->N_Dirichlet_on_sgm * sizeof(uint32_t));
 	bconditions->Dirichlet_on_sgm_dof_mask =
-		(bool*)malloc(2 * bconditions->N_Dirichlet_on_sgm * sizeof(bool));
+		malloc(2 * bconditions->N_Dirichlet_on_sgm * sizeof(bool));
 	bconditions->Dirichlet_on_sgm_val =
-		(double*)calloc(2 * bconditions->N_Dirichlet_on_sgm, sizeof(double));
+		calloc(2 * bconditions->N_Dirichlet_on_sgm, sizeof(double));
 
 	/* Read number of Neuman conditions upon segments */
-	if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Neuman_on_sgm)) != 0){
+	if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Neuman_on_sgm)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
 	}
 	/* Allocate data to store Neuman Cnd. upon vertices */
 	bconditions->Neuman_on_sgm_idx = 
-		(uint32_t*)malloc(bconditions->N_Neuman_on_sgm * sizeof(uint32_t));
+		malloc(bconditions->N_Neuman_on_sgm * sizeof(uint32_t));
 	bconditions->Neuman_on_sgm_dof_mask =
-		(bool*)malloc(2 * bconditions->N_Neuman_on_sgm * sizeof(bool));
+		malloc(2 * bconditions->N_Neuman_on_sgm * sizeof(bool));
 	bconditions->Neuman_on_sgm_val =
-		(double*)calloc(2 * bconditions->N_Neuman_on_sgm, sizeof(double));
+		calloc(2 * bconditions->N_Neuman_on_sgm, sizeof(double));
 
 	/* Read Dirichlet Cnd. upon vertices */
 	for(uint32_t i = 0; i < bconditions->N_Dirichlet_on_vtx; i++){
-		if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_vtx_idx[i])) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_vtx_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_vtx_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_vtx_dof_mask[i*2+1] = (aux == 1)?true:false;
 
-		if(bconditions->Dirichlet_on_vtx_dof_mask[i * 2]){
-			if(vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_vtx_val[i * 2])) != 0){
+		if (bconditions->Dirichlet_on_vtx_dof_mask[i * 2]) {
+			if (vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_vtx_val[i * 2])) != 0) {
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
 				return NULL;
 			}
 		}
 
-		if(bconditions->Dirichlet_on_vtx_dof_mask[i*2+1]){
-			if(vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_vtx_val[i*2+1])) != 0){
+		if (bconditions->Dirichlet_on_vtx_dof_mask[i*2+1]) {
+			if (vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_vtx_val[i*2+1])) != 0) {
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
 				return NULL;
@@ -118,37 +133,37 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
 	}
 
 	/* Read Neuman Cnd. upon vertices */
-	for(uint32_t i = 0; i < bconditions->N_Neuman_on_vtx; i++){
-		if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Neuman_on_vtx_idx[i])) != 0){
+	for (uint32_t i = 0; i < bconditions->N_Neuman_on_vtx; i++) {
+		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Neuman_on_vtx_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Neuman_on_vtx_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Neuman_on_vtx_dof_mask[i*2+1] = (aux == 1)?true:false;
 
-		if(bconditions->Neuman_on_vtx_dof_mask[i * 2]){
-			if(vcn_cfreader_read_double(cfreader, &(bconditions->Neuman_on_vtx_val[i * 2])) != 0){
+		if (bconditions->Neuman_on_vtx_dof_mask[i * 2]) {
+			if (vcn_cfreader_read_double(cfreader, &(bconditions->Neuman_on_vtx_val[i * 2])) != 0) {
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
 				return NULL;
 			}
 		}
 
-		if(bconditions->Neuman_on_vtx_dof_mask[i*2+1]){
-			if(vcn_cfreader_read_double(cfreader, &(bconditions->Neuman_on_vtx_val[i*2+1])) != 0){
+		if (bconditions->Neuman_on_vtx_dof_mask[i*2+1]) {
+			if (vcn_cfreader_read_double(cfreader, &(bconditions->Neuman_on_vtx_val[i*2+1])) != 0) {
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
 				return NULL;
@@ -157,28 +172,28 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
 	}
 
 	/* Read Dirichlet Cnd. upon segments */
-	for(uint32_t i = 0; i < bconditions->N_Dirichlet_on_sgm; i++){
-		if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_sgm_idx[i])) != 0){
+	for (uint32_t i = 0; i < bconditions->N_Dirichlet_on_sgm; i++) {
+		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_sgm_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_sgm_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_sgm_dof_mask[i*2+1] = (aux == 1)?true:false;
 
-		if(bconditions->Dirichlet_on_sgm_dof_mask[i * 2]){
+		if (bconditions->Dirichlet_on_sgm_dof_mask[i * 2]) {
 			if(vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_sgm_val[i * 2])) != 0){
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
@@ -186,8 +201,8 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
 			}
 		}
 
-		if(bconditions->Dirichlet_on_sgm_dof_mask[i*2+1]){
-			if(vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_sgm_val[i*2+1])) != 0){
+		if (bconditions->Dirichlet_on_sgm_dof_mask[i*2+1]) {
+			if (vcn_cfreader_read_double(cfreader, &(bconditions->Dirichlet_on_sgm_val[i*2+1])) != 0){
 				vcn_cfreader_destroy(cfreader);
 				vcn_fem_bcond_destroy(bconditions);
 				return NULL;
@@ -196,21 +211,22 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename){
 	}
 
 	/* Read Neuman Cnd. upon vertices */
-	for(uint32_t i = 0; i < bconditions->N_Neuman_on_sgm; i++){
-		if(vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Neuman_on_sgm_idx[i])) != 0){
+	for (uint32_t i = 0; i < bconditions->N_Neuman_on_sgm; i++) {
+		if (vcn_cfreader_read_uint32_t(cfreader,
+					       &(bconditions->Neuman_on_sgm_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Neuman_on_sgm_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if(vcn_cfreader_read_uint32_t(cfreader, &aux) != 0){
+		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;

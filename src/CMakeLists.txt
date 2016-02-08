@@ -37,13 +37,6 @@ add_library(vcn_statistics_bot SHARED
   ${VCN_SOURCE_DIR}/vcn/statistics_bot.c)
 target_link_libraries(vcn_statistics_bot m)
 
-set(PDE_BOT 
-  $<TARGET_OBJECTS:vcn_pde_bot>
-  $<TARGET_OBJECTS:vcn_pde_bot-fem>
-  $<TARGET_OBJECTS:vcn_pde_bot-fem-elements>
-  $<TARGET_OBJECTS:vcn_pde_bot-fem-solid_mechanics>
-)
-
 message("Configuring VCN Bots Library (ALL in one)")
 add_library(vcn_bots SHARED
   ${VCN_SOURCE_DIR}/vcn/math_bot.c
@@ -57,6 +50,7 @@ target_link_libraries(vcn_bots
   vcn_graph_bot
   vcn_image_bot
   vcn_geometric_bot
+  vcn_pde_bot
   m 
   )
 

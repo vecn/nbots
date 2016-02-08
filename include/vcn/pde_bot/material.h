@@ -3,7 +3,7 @@
 
 typedef struct vcn_fem_material_s vcn_fem_material_t;
 
-vcn_fem_material_t* vcn_fem_material_create();
+vcn_fem_material_t* vcn_fem_material_create(void);
 void vcn_fem_material_destroy(vcn_fem_material_t* mat);
 
 void vcn_fem_material_set_poisson_module(vcn_fem_material_t* mat, double pmodule);
@@ -19,8 +19,6 @@ double vcn_fem_material_get_density(const vcn_fem_material_t *const mat);
 double vcn_fem_material_get_fracture_energy(const vcn_fem_material_t *const mat);
 double vcn_fem_material_get_traction_limit_stress(const vcn_fem_material_t *const mat);
 double vcn_fem_material_get_compression_limit_stress(const vcn_fem_material_t *const mat);
-void* vcn_fem_material_get_damage_function(const vcn_fem_material_t *const mat);
-
 int vcn_fem_material_verify(vcn_fem_material_t* material);
 
 #endif

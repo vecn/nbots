@@ -1,4 +1,9 @@
-struct vcn_fem_material_s{
+#include <stdlib.h>
+#include <stdbool.h>
+
+#include "vcn/pde_bot/material.h"
+
+struct vcn_fem_material_s {
 	double poisson_module;
 	double elasticity_module;
 	double density;
@@ -16,10 +21,9 @@ struct vcn_fem_material_s{
 	double (*r0_damage)(const vcn_fem_material_t *const mat);
 };
 
-vcn_fem_material_t* vcn_fem_material_create(){
-	vcn_fem_material_t* mat = (vcn_fem_material_t*)calloc(1, sizeof(vcn_fem_material_t));
-	mat->damage = tension_truncated_damage; /* OPPORTUNITY: Dynamic assignment */
-	mat->r0_damage = tension_truncated_damage_r0;
+vcn_fem_material_t *vcn_fem_material_create(void)
+{
+	vcn_fem_material_t *mat = calloc(1, sizeof(*mat));
 	return mat;
 }
 
@@ -73,10 +77,6 @@ double vcn_fem_material_get_traction_limit_stress(const vcn_fem_material_t *cons
 
 double vcn_fem_material_get_compression_limit_stress(const vcn_fem_material_t *const mat){
 	return mat->compression_limit_stress;
-}
-
-void* vcn_fem_material_get_damage_function(const vcn_fem_material_t *const mat){
-	return mat->damage;
 }
 
 int vcn_fem_material_verify(vcn_fem_material_t* material){

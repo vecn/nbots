@@ -34,7 +34,6 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
  double thickness,
  vcn_fem_implicit_t* params,
  bool restore_computation, /* Restore computation after crash */
- vcn_fem_output_t* output,
  const char* logfile);
 
 

@@ -1,8 +1,13 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include "vcn/geometric_bot/mesh/elements/triangle.h"
+#include <string.h>
+
+#include "vcn/geometric_bot/utils2D.h"
+#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
 #include "vcn/pde_bot/finite_element/element.h"
 #include "vcn/pde_bot/finite_element/gaussp_to_nodes.h"
+
+#include "element_struct.h"
 
 void vcn_fem_interpolate_from_Gauss_points_to_nodes
 		(const vcn_msh3trg_t *const mesh, 
