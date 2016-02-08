@@ -9,5 +9,5 @@ message("Configuring Java Unit-Tests")
 message("-- TestGeometricBot")
 add_jar(TestGeometricBot
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/TestGeometricBot.java
-  INCLUDE_JARS VCNGeometricBot
+  INCLUDE_JARS GeometricBot
   ENTRY_POINT TestGeometricBot)

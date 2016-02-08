@@ -9,11 +9,9 @@
 #include "vcn/geometric_bot/mesh/elements2D/triangles.h"
 #include "vcn/pde_bot/boundary_conditions.h"
 
-vcn_bcond_t* vcn_fem_bcond_create(void)
+inline vcn_bcond_t* vcn_fem_bcond_create(void)
 {
-	vcn_bcond_t* bconditions =
-		(vcn_bcond_t*)calloc(1, sizeof(vcn_bcond_t));
-	return bconditions;
+	return calloc(1, sizeof(vcn_bcond_t));
 }
 
 inline vcn_bcond_t* vcn_fem_bcond_clone(const vcn_bcond_t*const bconditions)

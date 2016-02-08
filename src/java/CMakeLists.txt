@@ -16,8 +16,13 @@ set(geometricBot
   ${CMAKE_CURRENT_SOURCE_DIR}/vcn/geometricBot/GeometricBotDraw.java
   )
 
-set(LIB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+add_jar(GeometricBot SOURCES ${geometricBot})
 
-add_jar(VCNGeometricBot
-  SOURCES ${geometricBot})
-install_jar(VCNGeometricBot ${LIB_INSTALL_DIR}/VCNGeometricBot)
+set(pdeBot
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/pdeBot/Material.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/pdeBot/BoundaryConditions.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/pdeBot/finiteElement/MeshResults.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/vcn/pdeBot/finiteElement/solidMechanics/StaticElasticity2D.java
+  )
+
+add_jar(PdeBot SOURCES ${pdeBot})

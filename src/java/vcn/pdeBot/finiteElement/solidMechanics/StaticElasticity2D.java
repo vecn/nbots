@@ -1,5 +1,9 @@
 package vcn.pdeBot.finiteElement.solidMechanics;
 
+import vcn.pdeBot.*;
+import vcn.pdeBot.finiteElement.*;
+import vcn.geometricBot.Model;
+
 public class StaticElasticity2D {
     private StaticElasticity2D() {}
 
@@ -8,16 +12,8 @@ public class StaticElasticity2D {
 	System.loadLibrary("vcn_pde_bot-jni");
     }
     
-    private static native int JNISolve(Model model, Material material,
-				       BoundaryCond bCond,
-				       bool enablePlaneStress,
-				       double thickness,
-				       MeshResults results,
-				       Mesh mesh);
-
-    public static MeshResults solve(Model model, Material material,
-				    BoundaryCond bCond_vtx,
-				    BoundaryCond bCond_sgm,
-				    double thickness);
-			     
+    private static native MeshResults solve(Model model, Material material,
+					    BoundaryConditions bCondVtx,
+					    BoundaryConditions bCondSgm,
+					    double thickness);			     
 }
