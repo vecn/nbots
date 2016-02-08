@@ -55,4 +55,9 @@ public class Model {
     {
 	return edges;
     }
+
+    public float[] getHolesRef()
+    {
+	return vertices;
+    }
 }

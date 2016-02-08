@@ -564,11 +564,11 @@ can't be readed.\n");
 		return NULL;
 	}
 
-	/* Create domain's modeletry structure */
-	vcn_model_t* model = vcn_model_load_from_arrays(
-		model_vtx, N_model_vtx,
-		model_sgm, N_model_sgm,
-		model_holes, N_model_holes);
+	vcn_model_t* model = vcn_model_create();
+	vcn_model_load_from_arrays(model,
+				   model_vtx, N_model_vtx,
+				   model_sgm, N_model_sgm,
+				   model_holes, N_model_holes);
 	/* Free memory */
 	vcn_cfreader_destroy(cfreader);
 	free(model_vtx);

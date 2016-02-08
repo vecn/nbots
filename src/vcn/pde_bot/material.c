@@ -4,8 +4,8 @@
 #include "vcn/pde_bot/material.h"
 
 struct vcn_fem_material_s {
+	double elasticity_module;/* TEMPORAL: Modulus instead of module */
 	double poisson_module;
-	double elasticity_module;
 	double density;
 	double fracture_energy;
 	double traction_limit_stress;

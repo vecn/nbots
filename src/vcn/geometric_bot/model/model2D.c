@@ -79,11 +79,11 @@ vcn_model_t* vcn_model_load(const char* filename)
 	return model;
 }
 
-vcn_model_t* vcn_model_load_from_arrays(double vertices[], uint32_t N_vertices,
-					uint32_t segments[], uint32_t N_segments,
-					double holes[], uint32_t N_holes)
+void vcn_model_load_from_arrays(vcn_model_t *model,
+				double vertices[], uint32_t N_vertices,
+				uint32_t segments[], uint32_t N_segments,
+				double holes[], uint32_t N_holes)
 {
-	vcn_model_t* model = vcn_model_create();
 	model->N = N_vertices;
 	model->M = N_segments;
 	model->H = N_holes;
@@ -102,14 +102,13 @@ vcn_model_t* vcn_model_load_from_arrays(double vertices[], uint32_t N_vertices,
 		memcpy(model->holes, holes,
 		       2 * N_holes * sizeof(*(model->holes)));
 	}
-	return model;
 }
 
-vcn_model_t* vcn_model_load_from_farrays(float vertices[], uint32_t N_vertices,
-					 uint32_t segments[], uint32_t N_segments,
-					 float holes[], uint32_t N_holes)
+void vcn_model_load_from_farrays(vcn_model_t *model,
+				 float vertices[], uint32_t N_vertices,
+				 uint32_t segments[], uint32_t N_segments,
+				 float holes[], uint32_t N_holes)
 {
-	vcn_model_t* model = vcn_model_create();
 	model->N = N_vertices;
 	model->M = N_segments;
 	model->H = N_holes;
@@ -128,7 +127,6 @@ vcn_model_t* vcn_model_load_from_farrays(float vertices[], uint32_t N_vertices,
 		for (uint32_t i = 0; i < 2 * N_holes; i++)
 			model->holes[i] = holes[i];
 	}
-	return model;
 }
 
 vcn_model_t* vcn_model_create_rectangle(double x_min, double y_min,
