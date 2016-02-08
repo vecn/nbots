@@ -26,9 +26,9 @@ void pipeline_compute_strain
 			 const vcn_fem_material_t *const material);
 
 void pipeline_compute_main_stress(double *stress, 
-					 double *main_stress,
-					 uint32_t N_elements,
-					 const vcn_fem_elem_t *const elemtype);
+				  double *main_stress,
+				  uint32_t N_elements,
+				  const vcn_fem_elem_t *const elemtype);
 
 void pipeline_compute_error_on_elements
 			(double* error,

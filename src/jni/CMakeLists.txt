@@ -37,5 +37,7 @@ add_library(vcn_pde_bot-jni SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/pde_bot/pde_bot.c
   )
 target_link_libraries(vcn_pde_bot-jni
+  vcn_eigen_bot
+  vcn_geometric_bot
   vcn_pde_bot
   m)

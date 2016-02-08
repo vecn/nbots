@@ -47,7 +47,7 @@ add_library(vcn_bots SHARED
   ${VCN_SOURCE_DIR}/vcn/math_bot.c
   ${VCN_SOURCE_DIR}/vcn/statistics_bot.c
 )
-target_link_libraries(vcn_bots
+target_link_libraries(vcn_bots LINK_INTERFACE_LIBRARIES
   vcn_cfreader_bot
   vcn_container_bot
   vcn_eigen_bot

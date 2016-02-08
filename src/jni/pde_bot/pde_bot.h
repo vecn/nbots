@@ -17,7 +17,7 @@
  * Signature: (Lvcn/geometricBot/Model;Lvcn/pdeBot/Material;Lvcn/pdeBot/BoundaryConditions;Lvcn/pdeBot/BoundaryConditions;D)Lvcn/pdeBot/finiteElement/MeshResults;
  */
 JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
-		(JNIEnv *env, jclass class, jobject model, jobject material,
-		 jobject bCondVtx, jobject bCondSgm, jdouble thickness);
+		(JNIEnv *env, jclass jclass, jobject jmodel, jobject jmaterial,
+		 jobject jbCondVtx, jobject jbCondSgm, jdouble jthickness);
 
 #endif

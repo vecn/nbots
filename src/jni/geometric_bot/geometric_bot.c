@@ -57,7 +57,7 @@ static int load_input_sgm_into_JNI(JNIEnv *env,
 				   const vcn_msh3trg_t *const msh3trg,
 				   jobjectArray jmesh_input_sgm);
 
-JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,
@@ -116,7 +116,7 @@ JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh
 	return 0;
 }
 
-JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,
