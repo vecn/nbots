@@ -23,8 +23,7 @@ inline vcn_bcond_t* vcn_fem_bcond_clone(const vcn_bcond_t*const bconditions)
 
 vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 {
-	vcn_bcond_t* bconditions =
-		(vcn_bcond_t*)calloc(1, sizeof(vcn_bcond_t));
+	vcn_bcond_t* bconditions = calloc(1, sizeof(*bconditions));
   
 	/* Initialize custom format to read file */
 	vcn_cfreader_t* cfreader = vcn_cfreader_create(filename, "#");

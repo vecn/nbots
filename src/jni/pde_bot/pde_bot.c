@@ -5,18 +5,21 @@
 
 #include "pde_bot.h"
 
-static void get_bconditions_from_java(vcn_bcond_t *bcond,
-				      jobject jbCondVtx,
-				      jobject jbCondSgm);
+static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
+				      jobject jbCondVtx, jobject jbCondSgm);
 
-static void get_material_from_java(vcn_fem_material_t *material,
+static jint jBoundaryConditions_get_N(JNIEnv *env, jobject jBoundaryConditions);
+
+static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 				   jobject jmaterial);
 
-static void get_model_from_java(vcn_model_t *model, jobject jmodel);
+static void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel);
 
-static void cast_msh3trg_to_jmesh(const vcn_msh3trg_t *const msh3trg,
+static jobject jMeshResults_new(JNIEnv *env);
+
+static void cast_msh3trg_to_jmesh(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
 				  jobject jmesh);
-static void set_results_into_jmesh(jobject jmesh, const double *displacement,
+static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *displacement,
 				   const double *strain);
 
 /*
@@ -30,13 +33,13 @@ JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticEla
 {
 	/* Read optimization parameters */
 	vcn_bcond_t* bconditions = vcn_fem_bcond_create();
-	get_bconditions_from_java(bconditions, jbCondVtx, jbCondSgm);
+	get_bconditions_from_java(env, bconditions, jbCondVtx, jbCondSgm);
 	
 	vcn_fem_material_t* material = vcn_fem_material_create();
-	get_material_from_java(material, jmaterial);
+	get_material_from_java(env, material, jmaterial);
 	
 	vcn_model_t* model = vcn_model_create();
-	get_model_from_java(model, jmodel);
+	get_model_from_java(env, model, jmodel);
 
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -68,10 +71,9 @@ JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticEla
 					   strain,
 					   "static_elasticity2D_UT.log");
 
-	
-	jobject jmesh_results;
-	cast_msh3trg_to_jmesh(msh3trg, jmesh_results);
-	set_results_into_jmesh(jmesh_results, displacement, strain);
+	jobject jmesh_results = jMeshResults_new(env);
+	cast_msh3trg_to_jmesh(env, msh3trg, jmesh_results);
+	set_results_into_jmesh(env, jmesh_results, displacement, strain);
 
 	/* Free memory */
 	vcn_fem_bcond_destroy(bconditions);
@@ -85,31 +87,48 @@ JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticEla
 	return jmesh_results;
 }
 
-static void get_bconditions_from_java(vcn_bcond_t *bcond,
-				      jobject jbCondVtx,
-				      jobject jbCondSgm)
+static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
+				      jobject jbCondVtx, jobject jbCondSgm)
 {
-
+	bcond->N_Dirichlet_on_vtx = jBoundaryConditions_get_N(env, jbCondVtx);
 }
 
-static void get_material_from_java(vcn_fem_material_t *material,
+static jint jBoundaryConditions_get_N(JNIEnv *env, jobject jBoundaryConditions)
+{
+	jclass class = (*env)->GetObjectClass(env, jBoundaryConditions);
+	jmethodID method_id = (*env)->GetMethodID(env, class, "getN", "()I");
+	jint N = (*env)->CallIntMethod(env, jBoundaryConditions, method_id);
+	return N;
+}
+
+static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 				   jobject jmaterial)
 {
 
 }
 
-static void get_model_from_java(vcn_model_t *model, jobject jmodel)
+static void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel)
 {
 
 }
 
-static void cast_msh3trg_to_jmesh(const vcn_msh3trg_t *const msh3trg,
+static jobject jMeshResults_new(JNIEnv *env)
+{
+	jclass class =
+		(*env)->FindClass(env, "Lvcn/pdeBot/finiteElement/MeshResults;");
+	jmethodID method_id = (*env)->GetMethodID(env, class, "<init>", "()V");
+	jobject instance = (*env)->NewObject(env, class, method_id);
+	return instance;
+
+}
+
+static void cast_msh3trg_to_jmesh(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
 				  jobject jmesh)
 {
 
 }
 
-static void set_results_into_jmesh(jobject jmesh, const double *displacement,
+static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *displacement,
 				   const double *strain)
 {
 

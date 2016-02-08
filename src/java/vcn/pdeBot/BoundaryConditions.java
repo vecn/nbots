@@ -14,5 +14,8 @@ public class BoundaryConditions {
     }
     public boolean isNewmann() {
 	return type == BCType.NEWMANN;
-    }    
+    }
+    public int getN() {
+	return N;
+    }
 }
