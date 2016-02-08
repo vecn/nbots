@@ -12,8 +12,8 @@ public class StaticElasticity2D {
 	System.loadLibrary("vcn_pde_bot-jni");
     }
     
-    private static native MeshResults solve(Model model, Material material,
-					    BoundaryConditions bCondVtx,
-					    BoundaryConditions bCondSgm,
-					    double thickness);			     
+    public static native MeshResults solve(Model model, Material material,
+					   BoundaryConditions bCondVtx,
+					   BoundaryConditions bCondSgm,
+					   double thickness);			     
 }

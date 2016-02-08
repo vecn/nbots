@@ -11,3 +11,9 @@ add_jar(TestGeometricBot
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/TestGeometricBot.java
   INCLUDE_JARS GeometricBot
   ENTRY_POINT TestGeometricBot)
+
+message("-- TestPdeBot")
+add_jar(TestPdeBot
+  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/TestPdeBot.java
+  INCLUDE_JARS PdeBot GeometricBot
+  ENTRY_POINT TestPdeBot)

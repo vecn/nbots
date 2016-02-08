@@ -1,24 +1,24 @@
 /**
  * This file is directly associated with the class
- *   mx.cimat.vcn.GeometricBot
+ *   vcn.geometricBot.GeometricBot
  *
  * This file was generated using javah:
- *   javah mx.cimat.vcn.GeometricBot
+ *   javah vcn.geometricBot.GeometricBot
  */
 
 
-#ifndef __JNI_VCN_GEOMETRIC_BOT__
-#define __JNI_VCN_GEOMETRIC_BOT__
+#ifndef __JNI_VCN_GEOMETRIC_BOT_H__
+#define __JNI_VCN_GEOMETRIC_BOT_H__
 
 #include <jni.h>
 
 /*
- * Class:     mx_cimat_vcn_GeometricBot
+ * Class:     vcn_geometricBot_GeometricBot
  * Method:    JNICreateMesh
  * Signature: (I[FI[II[FIIFFFZZZZZ[[F[[I[[I[[I[[I[[[I)I
  */
 
-JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,
@@ -33,12 +33,12 @@ JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh
 		 jobjectArray mesh_input_vtx, jobjectArray mesh_input_sgm);
 
 /*
- * Class:     mx_cimat_vcn_GeometricBot
+ * Class:     vcn_geometricBot_GeometricBot
  * Method:    JNICreateMesh
  * Signature: (I[FI[II[FLjava/lang/String;IIFFFFZZZZZ[[F[[I[[I[[I[[I[[[I)I
  */
 
-JNIEXPORT jint JNICALL Java_mx_cimat_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,
