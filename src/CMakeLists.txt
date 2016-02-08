@@ -37,14 +37,18 @@ add_library(vcn_statistics_bot SHARED
   ${VCN_SOURCE_DIR}/vcn/statistics_bot.c)
 target_link_libraries(vcn_statistics_bot m)
 
+message("Configuring VCN Customized File Bot")
+add_library(vcn_cfreader_bot SHARED
+  ${VCN_SOURCE_DIR}/vcn/cfreader_cat.c
+)
+
 message("Configuring VCN Bots Library (ALL in one)")
 add_library(vcn_bots SHARED
   ${VCN_SOURCE_DIR}/vcn/math_bot.c
   ${VCN_SOURCE_DIR}/vcn/statistics_bot.c
-  ${VCN_SOURCE_DIR}/vcn/cfreader_cat.c
-  ${PDE_BOT}
 )
 target_link_libraries(vcn_bots
+  vcn_cfreader_bot
   vcn_container_bot
   vcn_eigen_bot
   vcn_graph_bot

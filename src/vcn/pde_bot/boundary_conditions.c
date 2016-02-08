@@ -481,8 +481,7 @@ vcn_bcond_t* vcn_fem_bcond_create_from_model_to_mesh
  * conditions on the mesh. The conditions are placed on the nodes.
  */
 {
-	vcn_bcond_t* bmeshcond = 
-		(vcn_bcond_t*) calloc(1, sizeof(vcn_bcond_t));
+	vcn_bcond_t* bmeshcond = calloc(1, sizeof(*bmeshcond));
 
 	bmeshcond->N_dof = bcond_on_model->N_dof;
 	/***** Get Dirichlet conditions *****/
@@ -490,22 +489,23 @@ vcn_bcond_t* vcn_fem_bcond_create_from_model_to_mesh
 	/* Set Dirichlet conditions on vertices forming the segments with 
 	 * the original conditions.
 	 */
-	for(uint32_t i=0; i < bcond_on_model->N_Dirichlet_on_sgm; i++){
+	for (uint32_t i = 0; i < bcond_on_model->N_Dirichlet_on_sgm; i++) {
 		uint32_t geom_idx = bcond_on_model->Dirichlet_on_sgm_idx[i];
-		if(msh3trg->N_subsgm_x_inputsgm[geom_idx] == 0) continue;
+		if (0 == msh3trg->N_subsgm_x_inputsgm[geom_idx])
+			continue;
 		bmeshcond->N_Dirichlet_on_vtx += 
 			msh3trg->N_subsgm_x_inputsgm[geom_idx] + 1;
 	}
 	/* Allocate Dirichlet conditions */
 	if(bmeshcond->N_Dirichlet_on_vtx > 0){
 		bmeshcond->Dirichlet_on_vtx_idx =
-			(uint32_t*)calloc(bmeshcond->N_Dirichlet_on_vtx,
+			calloc(bmeshcond->N_Dirichlet_on_vtx,
 					  sizeof(uint32_t));
 		bmeshcond->Dirichlet_on_vtx_dof_mask =
-			(bool*)malloc(bmeshcond->N_dof * bmeshcond->N_Dirichlet_on_vtx *
+			malloc(bmeshcond->N_dof * bmeshcond->N_Dirichlet_on_vtx *
 				      sizeof(bool));
 		bmeshcond->Dirichlet_on_vtx_val =
-			(double*)malloc(bmeshcond->N_dof * bmeshcond->N_Dirichlet_on_vtx *
+			malloc(bmeshcond->N_dof * bmeshcond->N_Dirichlet_on_vtx *
 					sizeof(double));
 
 		/* Set Dirichlet conditions on vertices */

@@ -16,6 +16,8 @@
 
 #define INPUTS_DIR "../tests/vcn/pde_bot/finite_element/solid_mechanics/static_elasticity2D_UT_inputs"
 
+#include "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
+
 static bool check_static_elasticity2D(void);
 
 vcn_model_t* read_initial_conditions(
@@ -67,19 +69,19 @@ static bool check_static_elasticity2D(void)
 		vcn_fem_bcond_destroy(bconditions);
 		vcn_fem_material_destroy(material);
 		printf("Error: Reading Input file.\n");
-		return 1;
+		return false;
 	}
 
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh,
+					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  0.1);
 	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_save_png(mesh, "TEMPORAL.png", 1000, 800);/* TEMPORAL */
 	vcn_msh3trg_t* delaunay = 
-		vcn_mesh_get_msh3trg(mesh, true, true, true, false, NULL);
+		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
-
-	/* Write logfile */
-	printf("Mesh nodes: %i\n", delaunay->N_vertices);
-	printf("Mesh elements: %i\n", delaunay->N_triangles);
 
 	vcn_bcond_t* bmeshcond =
 		vcn_fem_bcond_create_from_model_to_mesh(delaunay, bconditions);
@@ -123,9 +125,7 @@ static bool check_static_elasticity2D(void)
 	vcn_fem_elem_destroy(elemtype);
 	free(displacement);
 	free(strain);
-
-	/* Successful exit */
-	return 0;
+	return false;
 }
 
 vcn_model_t* read_initial_conditions(
