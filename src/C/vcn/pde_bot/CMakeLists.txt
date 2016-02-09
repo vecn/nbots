@@ -1,12 +1,6 @@
 cmake_minimum_required (VERSION 2.8.6)
 project (VCN_Bots)
 
-if(${CMAKE_COMPILER_IS_GNUCXX}) 
-  set(CMAKE_C_FLAGS 
-    "${CMAKE_C_FLAGS} -std=c11 -funroll-loops -ffast-math -Wall -pedantic -O3 -fopenmp")
-  message("Additional default options were set for gcc.")
-endif(${CMAKE_COMPILER_IS_GNUCXX}) 
-
 set(pde_bot
   ${CMAKE_CURRENT_SOURCE_DIR}/material.c
   ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions.c
@@ -19,3 +13,12 @@ set(pde_bot
 )
 
 add_library(vcn_pde_bot SHARED ${pde_bot})
+
+
+include_directories(${CAIRO_INCLUDE_DIRS})
+add_library(vcn_pde_bot-cairo SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/finite_element/modules/exporter_cairo.c)
+target_link_libraries(vcn_pde_bot-cairo
+  vcn_pde_bot
+  ${CAIRO_LIBRARIES}
+  m)

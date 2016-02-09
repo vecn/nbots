@@ -6,12 +6,13 @@
  * @n @@victore_cardoso
  */
 
-#ifndef __VCN_PDE_BOT_FINITE_ELEMENT_H__
-#define __VCN_PDE_BOT_FINITE_ELEMENT_H__
+#ifndef __NBOTS_PDE_BOT_FINITE_ELEMENT_H__
+#define __NBOTS_PDE_BOT_FINITE_ELEMENT_H__
 
 #include "vcn/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "vcn/pde_bot/finite_element/element.h"
 #include "vcn/pde_bot/finite_element/elements/trg_linear.h"
+#include "vcn/pde_bot/finite_element/modules/exporter_cairo.h"
 #include "vcn/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 #include "vcn/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
 
