@@ -30,6 +30,10 @@ $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libconstrained_delaunay_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libmesh2D_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libimage_density_UT.so
 
+echo "  PDE Bot"
+GEOMETRIC_BOT_TESTS_DIR=tests/vcn/pde_bot
+$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/finite_element/libstatic_elasticity2D_UT.so
+
 echo "  Java binding for Geometric Bot"
 JAVA_TEST_DIR=tests/java
 JAVA_CP=src/java/GeometricBot.jar:src/java/PdeBot.jar

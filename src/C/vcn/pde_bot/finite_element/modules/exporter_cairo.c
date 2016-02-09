@@ -7,14 +7,10 @@
 #include <cairo-ps.h>
 
 #include "vcn/math_bot.h"
+#include "vcn/visual_cat.h"
 #include "vcn/container_bot.h"
 #include "vcn/geometric_bot.h"
 #include "vcn/pde_bot/finite_element/modules/exporter_cairo.h"
-
-#include "../../../geometric_bot/mesh/mesh2D_structs.h"
-
-static double _VCN_COLOR_BLACK[3] = {0.0, 0.0, 0.0};
-static double _VCN_COLOR_BLUE[3] = {0.0, 0.0, 1.0};
 
 typedef struct {
 	double center[2];
@@ -23,35 +19,101 @@ typedef struct {
 
 static void set_center_and_zoom(camera_t *cam, double box[4],
 				double width, double height);
-static void draw_triangles(cairo_t *const cr,
-			   const vcn_container_t *const ht_trg,
-			   int width, int height,
-			   const camera_t *const cam,
-			   bool fill_triangles,
-			   double rgba_bg[4], double rgb_fg[3]);
-static void draw_input_vertices(cairo_t *const cr,
-				uint32_t N_vertices,
-				msh_vtx_t **vertices,
-				int width, int height,
-				const camera_t *const cam,
-				bool include_numbering,
-				double rgb_bg[3], double rgb_fg[3]);
-static void draw_input_segments(cairo_t *const cr,
-				uint32_t N_input_segments,
-				msh_edge_t **segments,
-				int width, int height,
-				const camera_t *const cam,
-				double rgb[3]);
-static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
-				 cairo_t *cr, int width, int height,
-				 const camera_t *const cam);
-static double msh_vtx_get_x(const void *const vtx_ptr);
-static double msh_vtx_get_y(const void *const vtx_ptr);
-static void set_camera(camera_t *cam, const vcn_mesh_t *const mesh,
-		       int width, int height);
+static void set_camera_vtx(double v_dest[2], const double v_src[2],
+			   camera_t *cam, double width, double height);
+static void set_color_pattern(cairo_t *cr, const vcn_palette_t *palette,
+			      const double v1[2], const double v2[2],
+			      const double v3[2]);
 
-static inline void set_center_and_zoom(camera_t *cam, double box[4],
-				       double width, double height)
+void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
+		     const double *results,
+		     const char* filename,
+		     int width, int height)
+{
+
+	/* Compute cam->center and cam->zoom */
+	double box[4];
+	vcn_utils2D_get_enveloping_box_from_subset(msh3trg->N_input_vertices,
+						   msh3trg->input_vertices,
+						   msh3trg->vertices,
+						   2 * sizeof(*(msh3trg->vertices)),
+						   vcn_utils2D_get_x_from_darray,
+						   vcn_utils2D_get_y_from_darray,
+						   box);
+
+	camera_t cam;
+	set_center_and_zoom(&cam, box, width, height);
+
+	/* Create drawable surface and cairo context */
+	cairo_surface_t* surface =
+		cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+	cairo_t *const restrict cr = cairo_create(surface);
+
+	/* Draw background */
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_paint(cr);
+
+	/* Draw triangles */
+	cairo_set_line_width(cr, 0.5);
+	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
+		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
+		uint32_t n3 = msh3trg->vertices_forming_triangles[i*3+2];
+		double v1[2];
+		set_camera_vtx(v1, &(msh3trg->vertices[n1*2]), &cam,
+			       width, height);
+		double v2[2];
+		set_camera_vtx(v2, &(msh3trg->vertices[n2*2]), &cam,
+			       width, height);
+		double v3[2];
+		set_camera_vtx(v2, &(msh3trg->vertices[n3*2]), &cam,
+			       width, height);
+		cairo_move_to(cr, v1[0], v1[1]);
+		cairo_line_to(cr, v2[0], v2[1]);
+		cairo_line_to(cr, v3[0], v3[1]);
+		cairo_close_path(cr);
+
+		set_color_pattern(cr, &cam, width, height, v1, v2, v3);
+		cairo_fill_preserve(cr);
+
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		cairo_stroke(cr);
+	}
+
+	/* Draw input segments */
+	cairo_set_source_rgb(cr, 0.9, 0.0, 0.8);
+
+	cairo_set_line_width(cr, 1.0);
+	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
+		if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
+			continue;
+
+		uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
+		cairo_move_to(cr, 
+			      cam.zoom * msh3trg->vertices[n1 * 2] -
+			      cam.zoom * cam.center[0] + width / 2.0,
+			      -cam.zoom * msh3trg->vertices[n1*2+1] +
+			      cam.zoom * cam.center[1] + height / 2.0);
+		for (uint32_t j = 0; j < msh3trg->N_subsgm_x_inputsgm[i]; j++) {
+			uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j+1];
+			cairo_line_to(cr, 
+				      cam.zoom * msh3trg->vertices[n2 * 2] -
+				      cam.zoom * cam.center[0] + width/2.0,
+				      -cam.zoom * msh3trg->vertices[n2*2+1] +
+				      cam.zoom * cam.center[1] + height/2.0);
+		}
+		cairo_stroke(cr);
+	}
+
+	/* Write file */
+	cairo_surface_write_to_png(surface, filename);
+	/* Free cairo structures */
+	cairo_destroy(cr);
+	cairo_surface_destroy(surface);
+}
+
+static void set_center_and_zoom(camera_t *cam, double box[4],
+				double width, double height)
 {
 	cam->center[0] = (box[0] + box[2]) / 2.0;
 	cam->center[1] = (box[1] + box[3]) / 2.0;
@@ -61,242 +123,38 @@ static inline void set_center_and_zoom(camera_t *cam, double box[4],
 	cam->zoom *= 0.9;
 }
 
-static void draw_triangles(cairo_t *const cr,
-			   const vcn_container_t *const ht_trg,
-			   int width, int height,
-			   const camera_t *const cam,
-			   bool fill_triangles,
-			   double rgba_bg[4], double rgb_fg[3])
+static void set_camera_vtx(double v_dest[2], const double v_src[2],
+			   camera_t *cam, double width, double height)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, ht_trg);
-	while (vcn_iterator_has_more(iter)) {
-		const msh_trg_t* trg = vcn_iterator_get_next(iter);
-		cairo_move_to(cr, 
-			      cam->zoom * trg->v1->x[0] - 
-			      cam->zoom * cam->center[0] + width / 2.0,
-			      -cam->zoom * trg->v1->x[1] +
-			      cam->zoom * cam->center[1] + height / 2.0);
-		cairo_line_to(cr, 
-			      cam->zoom * trg->v2->x[0] -
-			      cam->zoom * cam->center[0] + width / 2.0,
-			      -cam->zoom * trg->v2->x[1] +
-			      cam->zoom * cam->center[1] + height / 2.0);
-		cairo_line_to(cr, 
-			      cam->zoom * trg->v3->x[0] -
-			      cam->zoom * cam->center[0] + width / 2.0,
-			      -cam->zoom * trg->v3->x[1] +
-			      cam->zoom * cam->center[1] + height / 2.0);
-		cairo_close_path(cr);
-		if (fill_triangles) {
-			cairo_set_source_rgba(cr, rgba_bg[0],
-					      rgba_bg[1], rgba_bg[2],
-					      rgba_bg[3]);
-			cairo_fill_preserve(cr);
-		}
-		cairo_set_source_rgb(cr, rgb_fg[0], rgb_fg[1], rgb_fg[2]);
-		cairo_stroke(cr);
-	}
-	vcn_iterator_destroy(iter);
+	v_dest[0] = cam->zoom * (v_src[0] - cam->center[0]) + width/2.0;
+	v_dest[1] = -cam->zoom * (v_dest[1] - cam->center[1]) + height/2.0;
 }
 
-static void draw_input_vertices(cairo_t *const restrict cr,
-				uint32_t N_vertices,
-				msh_vtx_t **vertices,
-				int width, int height,
-				const camera_t *const cam,
-				bool include_numbering,
-				double rgb_bg[3], double rgb_fg[3])
+static void set_color_pattern(cairo_t *cr, const vcn_palette_t *palette,
+			      const double v1[2], const double v2[2],
+			      const double v3[2])
 {
-	for (uint32_t i = 0; i < N_vertices; i++) {
-		cairo_set_source_rgb(cr, rgb_bg[0], rgb_bg[1], rgb_bg[2]);
+	cairo_pattern_t *pat = cairo_pattern_create_mesh();
+	cairo_mesh_pattern_begin_patch(pat);
+	cairo_mesh_pattern_move_to(pat, v1[0], v1[1]);
+	cairo_mesh_pattern_line_to(pat, v2[0], v2[1]);
+	cairo_mesh_pattern_line_to(pat, v3[0], v3[1]);
+	
+	uint8_t rgb[3];
+	vcn_palette_get_colour(palette, val, rgb);
+	cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 
+						rgb[0]/255.0f, 
+						rgb[1]/255.0f, 
+						rgb[2]/255.0f);
+	cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 
+						rgb[0]/255.0f,
+						rgb[1]/255.0f, 
+						rgb[2]/255.0f);
+	cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 
+						rgb[0]/255.0f, 
+						rgb[1]/255.0f,
+						rgb[2]/255.0f);
+	cairo_mesh_pattern_end_patch(pat);
 
-		cairo_move_to(cr,
-			      cam->zoom * vertices[i]->x[0] - 
-			      cam->zoom * cam->center[0] + width / 2.0 + 3.0,
-			      -cam->zoom * vertices[i]->x[1] + cam->zoom * cam->center[1] +
-			      height / 2.0);
-		cairo_arc(cr,
-			  cam->zoom * vertices[i]->x[0] - 
-			  cam->zoom * cam->center[0] + width / 2.0,
-			  -cam->zoom * vertices[i]->x[1] + cam->zoom * cam->center[1] +
-			  height / 2.0, 3.0, 0.0, 2.0 * VCN_MATH_PI);
-		cairo_fill(cr);
-
-		/* Draw labels */
-		if (include_numbering) {
-			cairo_set_source_rgb(cr, rgb_fg[0],
-					     rgb_fg[1], rgb_fg[2]);
-
-			/* Show id */
-			char str_id[5];
-			sprintf(str_id, "%i", i);
-			cairo_select_font_face(cr, "Sans",
-					       CAIRO_FONT_SLANT_NORMAL,
-					       CAIRO_FONT_WEIGHT_NORMAL);
-			cairo_set_font_size(cr, 9);
-			cairo_move_to(cr, 
-				      cam->zoom * vertices[i]->x[0] - 
-				      cam->zoom * cam->center[0] + width/2.0 + 4.0,
-				      -cam->zoom * vertices[i]->x[1] + 
-				      cam->zoom * cam->center[1] + height/2.0 - 1.0);
-			cairo_show_text(cr, str_id);
-		}
-	}
-}
-
-static void draw_input_segments(cairo_t *const cr,
-				uint32_t N_input_segments,
-				msh_edge_t **segments,
-				int width, int height,
-				const camera_t *const cam,
-				double rgb[3])
-{
-	cairo_set_source_rgb(cr, rgb[0], rgb[1], rgb[2]);
-	cairo_set_line_width(cr, 0.75);
-	for (uint32_t i = 0; i < N_input_segments; i++) {
-		if (NULL == segments[i])
-			continue;
-
-		msh_edge_t* sgm = segments[i];
-
-		cairo_move_to(cr, 
-			      cam->zoom * sgm->v1->x[0] - cam->zoom * cam->center[0] +
-			      width/2.0,
-			      -cam->zoom * sgm->v1->x[1] + cam->zoom * cam->center[1] +
-			      height/2.0);
-		msh_vtx_t* vtx = sgm->v2;
-		while (NULL != sgm) {
-			cairo_line_to(cr, 
-				      cam->zoom * vtx->x[0] - cam->zoom * cam->center[0] +
-				      width/2.0,
-				      -cam->zoom * vtx->x[1] + cam->zoom * cam->center[1] +
-				      height/2.0);
-			msh_edge_t* prev_sgm = sgm;
-			sgm = medge_subsgm_next(sgm);
-			if (NULL != sgm) {
-				if (sgm->v1 == vtx) {
-					vtx = sgm->v2;
-				} else {
-					if ((sgm->v1 == prev_sgm->v2) ||
-					    (sgm->v1 == prev_sgm->v1))
-						vtx = sgm->v2;
-					else
-						vtx = sgm->v1;
-				}
-			} else {
-				break;
-			}
-		}
-		cairo_stroke(cr);
-	}
-}
-
-static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
-				 cairo_t* cr, int width, int height,
-				 const camera_t *const cam)
-{
-	/* Draw background */
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_paint(cr);
-
-	/* Set back-ground and fore-ground colors */
-	double rgba_bg[4] = {0.1, 0.1, 1.0, 0.5};
-
-	/* Draw triangles */
-	cairo_set_line_width(cr, 0.5);
-	draw_triangles(cr, mesh->ht_trg, width, height,
-		       cam, true, rgba_bg, 
-		       _VCN_COLOR_BLUE);
-
-	/* Draw input segments */
-	if (true) {
-		double rgb_segments[3] = {1.0, 0.0, 0.8};
-		draw_input_segments(cr, mesh->N_input_sgm, mesh->input_sgm,
-				    width, height, cam, rgb_segments);
-	}
-	/* Draw input vertices */
-	if (true) {
-		draw_input_vertices(cr, mesh->N_input_vtx, mesh->input_vtx,
-				    width, height, cam, false,
-				    _VCN_COLOR_BLUE, _VCN_COLOR_BLACK);
-	}
-}
-
-static inline double msh_vtx_get_x(const void *const vtx_ptr)
-{
-	const msh_vtx_t *const *vtx = vtx_ptr;
-	return (*vtx)->x[0];
-}
-
-static inline double msh_vtx_get_y(const void *const vtx_ptr)
-{
-	const msh_vtx_t *const *vtx = vtx_ptr;
-	return (*vtx)->x[1];
-}
-
-void nb_fem_save_png(const vcn_mesh_t *const restrict mesh,
-		     const double *results,
-		     const char* filename,
-		     int width, int height)
-{
-	cairo_surface_t* surface =
-		cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 
-					   width, height);
-	cairo_t* cr = cairo_create(surface);
-
-	camera_t cam;
-	set_camera(&cam, mesh, width, height);
-
-	mesh_draw_with_cairo(mesh, cr, width, height, &cam);
-
-	cairo_surface_write_to_png(surface, filename);
-
-	cairo_destroy(cr);
-	cairo_surface_destroy(surface);
-}
-
-static void set_camera(camera_t *cam, const vcn_mesh_t *const mesh,
-		       int width, int height)
-{
-	double box[4];
-	vcn_utils2D_get_enveloping_box(mesh->N_input_vtx, mesh->input_vtx,
-				       sizeof(*(mesh->input_vtx)),
-				       msh_vtx_get_x, msh_vtx_get_y,
-				       box);
-	set_center_and_zoom(cam, box, width, height);
-}
-
-void nb_fem_save_eps(const vcn_mesh_t *const mesh,
-		     const double *results,
-		     const char* filename,
-		     int width, int height)
-{
-	/* Create drawable surface and cairo context */
-	cairo_surface_t* surface = 
-		cairo_ps_surface_create (filename, width, height);
-	cairo_ps_surface_set_eps(surface, 1 /* TRUE from cairo_bool_t*/);
-
-	cairo_t* cr = cairo_create(surface);
-
-	/* Initialize Post script */
-	cairo_ps_surface_dsc_begin_page_setup(surface);
-
-	if(height < width)
-		cairo_ps_surface_dsc_comment(surface,
-					     "%%PageOrientation: Portrait");
-	else
-		cairo_ps_surface_dsc_comment(surface,
-					     "%%PageOrientation: Landscape");
-
-	camera_t cam;
-	set_camera(&cam, mesh, width, height);
-
-	mesh_draw_with_cairo(mesh, cr, width, height, &cam);
-
-	cairo_surface_show_page(surface);/* Show post-script */
-
-	cairo_destroy(cr);
-	cairo_surface_finish(surface);
-	cairo_surface_destroy(surface);
+	cairo_set_source(cr, pat);
 }

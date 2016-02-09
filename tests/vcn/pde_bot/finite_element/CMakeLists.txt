@@ -14,13 +14,14 @@ message(" ==  FINITE ELEMENT  ==")
 message("Configuring Unit-Tests")
 
 message("-- solid_mechanics/static_elasticity2D_UT")
-add_library(static_elasticity_UT MODULE
+add_library(static_elasticity2D_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/solid_mechanics/static_elasticity2D_UT.c)
-target_link_libraries(static_elasticity_UT
+target_link_libraries(static_elasticity2D_UT
   vcn_test_add
   vcn_cfreader_bot
   vcn_container_bot
   vcn_geometric_bot
   vcn_pde_bot
   vcn_geometric_bot-cairo #TEMPORAL
+  vcn_pde_bot-cairo #TEMPORAL
   m)

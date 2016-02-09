@@ -17,30 +17,25 @@
 #ifndef __VCN_VISUAL_CAT_H__
 #define __VCN_VISUAL_CAT_H__
 
-#define VCN_PALETTE_RAINBOW (100)
-#define VCN_PALETTE_SUNSET   (101)
-#define VCN_PALETTE_FRENCH  (102)
+enum {
+	VCN_PALETTE_RAINBOW,
+	VCN_PALETTE_SUNSET,
+	VCN_PALETTE_FRENCH
+};
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct vcn_palette_s vcn_palette_t;
 
-  typedef struct vcn_palette_s vcn_palette_t;
-
-  vcn_palette_t* vcn_palette_create();
-  vcn_palette_t* vcn_palette_create_preset(int palette_id);
-  void vcn_palette_destroy(vcn_palette_t* palette);
-  void vcn_palette_clear(vcn_palette_t* palette);
-  void vcn_palette_add_colour(vcn_palette_t* palette, float tic,
+vcn_palette_t* vcn_palette_create();
+vcn_palette_t* vcn_palette_create_preset(int palette_id);
+void vcn_palette_destroy(vcn_palette_t* palette);
+void vcn_palette_clear(vcn_palette_t* palette);
+void vcn_palette_add_colour(vcn_palette_t* palette, float tic,
 			    uint8_t r, uint8_t g, uint8_t b);
-  void vcn_palette_get_colour(const vcn_palette_t *const palette,
-			      float factor,
-			      uint8_t rgb[3]);
+void vcn_palette_get_colour(const vcn_palette_t *const palette,
+			    float factor,
+			    uint8_t rgb[3]);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

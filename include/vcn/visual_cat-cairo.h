@@ -20,17 +20,9 @@
 #include <cairo.h>
 #include "vcn/visual_cat.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-  void vcn_palette_draw_in_cairo(cairo_t *cr, 
-				 const vcn_palette_t *const palette,
-				 float x, float y, float w, float h,
-				 float border, double min_v, double max_v);
-
-#ifdef __cplusplus
-}
-#endif
+void vcn_palette_draw_in_cairo(cairo_t *cr, 
+			       const vcn_palette_t *const palette,
+			       float x, float y, float w, float h,
+			       float border, double min_v, double max_v);
 
 #endif

@@ -5,12 +5,7 @@
 #include <stdbool.h>
 #include "vcn/geometric_bot.h"
 
-void nb_fem_save_png(const vcn_mesh_t *const mesh,
-		     const double *results,
-		     const char* filename,
-		     int width, int height);
-
-void nb_fem_save_eps(const vcn_mesh_t *const mesh,
+void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 		     const double *results,
 		     const char* filename,
 		     int width, int height);

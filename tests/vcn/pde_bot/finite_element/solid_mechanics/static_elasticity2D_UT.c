@@ -17,9 +17,13 @@
 #define INPUTS_DIR "../tests/vcn/pde_bot/finite_element/solid_mechanics/static_elasticity2D_UT_inputs"
 
 #include "vcn/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
+#include "vcn/pde_bot/finite_element/modules/exporter_cairo.h" /* TEMPORAL */
+
+#define POW2(a) ((a)*(a))
 
 static bool check_static_elasticity2D(void);
 
+static double* get_total_disp(uint32_t N, const double *displacement);
 vcn_model_t* read_initial_conditions(
 	const char* filename,
 	vcn_bcond_t* bconditions,  /* Output */
@@ -58,7 +62,7 @@ static bool check_static_elasticity2D(void)
 	double thickness;
 
 	char input[255];
-	sprintf(input, "%s/beam_fixed_on_sides.in", INPUTS_DIR);
+	sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
 	vcn_model_t* model = 
 		read_initial_conditions(input, bconditions, 
 					material,
@@ -105,16 +109,10 @@ static bool check_static_elasticity2D(void)
 					   strain,
 					   "static_elasticity2D_UT.log");
 
-	output_save_dma("static_elasticity2D_UT.out",
-			"Victor Eduardo Cardoso Nungaray",
-			"Benchmark of SMFEM",
-			false,
-			delaunay->N_vertices,
-			delaunay->vertices,
-			delaunay->N_triangles,
-			delaunay->vertices_forming_triangles,
-			displacement,
-			strain);
+	double *total_disp = get_total_disp(delaunay->N_vertices,
+					    displacement);
+	
+	nb_fem_save_png(delaunay, total_disp, "TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
 
 	/* Free memory */
 	vcn_fem_bcond_destroy(bconditions);
@@ -128,6 +126,16 @@ static bool check_static_elasticity2D(void)
 	return false;
 }
 
+
+static double* get_total_disp(uint32_t N, const double *displacement)
+{
+	double *total_disp = malloc(N * sizeof(*total_disp));
+	for (uint32_t i = 0; i < N; i++)
+		total_disp[i] = sqrt(POW2(displacement[i * 2]) +
+				     POW2(displacement[i*2+1]));
+	return total_disp;	
+}
+
 vcn_model_t* read_initial_conditions(
                    const char* filename,
 		   vcn_bcond_t* bconditions, /* Output */
@@ -139,8 +147,10 @@ vcn_model_t* read_initial_conditions(
 
 	/* Initialize custom format to read file */
 	vcn_cfreader_t* cfreader = vcn_cfreader_create(filename, "#");
-	if (NULL == cfreader)
+	if (NULL == cfreader) {
+		printf("Error: File could not be opened.\n");
 		return NULL;
+	}
 	/* Read modele vertices */
 	uint32_t N_model_vtx = 0;
 	if(vcn_cfreader_read_uint32_t(cfreader, &N_model_vtx) != 0){
