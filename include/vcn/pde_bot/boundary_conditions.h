@@ -4,6 +4,7 @@
 #include "vcn/geometric_bot/mesh/elements2D/triangles.h"
 
 typedef struct {
+	/* TEMPORAL: Change Neuman for Neumann */
 	/* Boundary conditions */
 	uint8_t N_dof; /* Degrees of freedom */
 	/* Dirichlet conditions on vertices */

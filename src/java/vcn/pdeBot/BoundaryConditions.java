@@ -14,7 +14,7 @@ public class BoundaryConditions {
 	return type == BCType.DIRICHLET;
     }
     public boolean isNewmann() {
-	return type == BCType.NEWMANN;
+	return type == BCType.NEUMANN;
     }
     public int getN() {
 	return N;
@@ -27,5 +27,10 @@ public class BoundaryConditions {
     }
     public double[] getValuesRef() {
 	return val;
+    }
+    public void set(int id[], char dof[], double val[]) {
+	this.id = id;
+	this.dof = dof;
+	this.val = val;
     }
 }
