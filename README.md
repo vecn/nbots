@@ -3,11 +3,12 @@ Numerical Bots
 
 Introduction
 ------------
-A numerical bot is an automatic tool to perform related numerical task.
+A numerical bot is an automatic tool to perform several related numerical tasks.
 For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes,
-Voronoi diagrams, etc. and the Eigen Bot is a linear algebra library, which includes
-special routines for sparse systems.
-VCN Bots is an ecosystem of numerical bots.
+Voronoi diagrams, Alpha-shapes, Convex-Hulls, etc. and the Eigen Bot is a linear algebra
+library, which includes special routines for sparse systems.
+
+The project nbots is a self-contained ecosystem of numerical bots.
 
 Compilation
 -----------
