@@ -5,13 +5,15 @@
 #include "vcn/pde_bot.h"
 
 #include "pde_bot.h"
-#include "../geometricBot/load_jMesh.h"
+#include "../geometric_bot/load_jMesh.h"
+#include "../geometric_bot/jModel.h"
 
 static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 				      jobject jbCondVtx, jobject jbCondSgm);
 
 static jint jBoundaryConditions_getN(JNIEnv *env, jobject jBoundaryConditions);
-static jintArray jBoundaryConditions_getIdsRef(JNIEnv *env, jobject jBoundaryConditions);
+static jintArray jBoundaryConditions_getIdsRef(JNIEnv *env,
+					       jobject jBoundaryConditions);
 static jcharArray jBoundaryConditions_getDofRef
 			(JNIEnv *env, jobject jBoundaryConditions);
 static jdoubleArray jBoundaryConditions_getValuesRef
@@ -21,24 +23,9 @@ static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 				   jobject jmaterial);
 static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jmaterial);
 static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial);
-static void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel);
-static jint jModel_getNVertices(JNIEnv *env, jobject jmodel);
-static jint jModel_getNEdges(JNIEnv *env, jobject jmodel);
-static jint jModel_getNHoles(JNIEnv *env, jobject jmodel);
-static void set_vertices_from_jModel(JNIEnv *env, float *vertices,
-				     jint N, jobject jmodel);
-static jfloatArray jModel_getVerticesRef(JNIEnv *env, jobject jmodel);
-static void set_segments_from_jModel(JNIEnv *env, uint32_t *segments,
-				     jint N, jobject jmodel);
-static jintArray jModel_getEdgesRef(JNIEnv *env, jobject jmodel);
-static void set_holes_from_jModel(JNIEnv *env, float *holes,
-				  jint N, jobject jmodel);
-static jfloatArray jModel_getHolesRef(JNIEnv *env, jobject jmodel);
 static jobject jMeshResults_new(JNIEnv *env);
-
-static void load_JMesh_from_msh3trg(JNIEnv *env, const vcn_msh3trg_t *const msh3trg,
-				    jobject jmesh);
-static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *displacement,
+static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
+				   const double *displacement,
 				   const double *strain);
 
 /*
@@ -46,7 +33,8 @@ static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *dis
  * Method:    solve
  * Signature: (Lvcn/geometricBot/Model;Lvcn/pdeBot/Material;Lvcn/pdeBot/BoundaryConditions;Lvcn/pdeBot/BoundaryConditions;D)Lvcn/pdeBot/finiteElement/MeshResults;
  */
-JNIEXPORT jobject JNICALL Java_vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
+JNIEXPORT jobject JNICALL
+Java_vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		(JNIEnv *env, jclass class, jobject jmodel, jobject jmaterial,
 		 jobject jbCondVtx, jobject jbCondSgm, jdouble jthickness)
 {
@@ -136,7 +124,8 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 	bc_val = (*env)->GetDoubleArrayElements(env, jbc_val, NULL);
 	for (int i = 0; i < bcond->N_Dirichlet_on_sgm; i++) {
 		bcond->Dirichlet_on_sgm_idx[i] = bc_idx[i];
-		set_bc_dof(&(bcond->Dirichlet_on_sgm_dof_mask[i * 2]), bc_dof[i]);
+		set_bc_dof(&(bcond->Dirichlet_on_sgm_dof_mask[i * 2]),
+			   bc_dof[i]);
 		bcond->Dirichlet_on_sgm_val[i * 2] = bc_val[i * 2];
 		bcond->Dirichlet_on_sgm_val[i*2+1] = bc_val[i*2+1];
 	}
@@ -153,27 +142,36 @@ static jint jBoundaryConditions_getN(JNIEnv *env, jobject jBoundaryConditions)
 	return N;
 }
 
-static jintArray jBoundaryConditions_getIdsRef(JNIEnv *env, jobject jBoundaryConditions)
+static jintArray jBoundaryConditions_getIdsRef(JNIEnv *env,
+					       jobject jBoundaryConditions)
 {
 	jclass class = (*env)->GetObjectClass(env, jBoundaryConditions);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getIdsRef", "()[I");
-	jintArray idsRef = (*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
+	jmethodID method_id = 
+		(*env)->GetMethodID(env, class, "getIdsRef", "()[I");
+	jintArray idsRef =
+		(*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
 	return idsRef;
 }
 
-static jcharArray jBoundaryConditions_getDofRef(JNIEnv *env, jobject jBoundaryConditions)
+static jcharArray jBoundaryConditions_getDofRef(JNIEnv *env,
+						jobject jBoundaryConditions)
 {
 	jclass class = (*env)->GetObjectClass(env, jBoundaryConditions);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getDofRef", "()[C");
-	jcharArray dofRef = (*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
+	jmethodID method_id =
+		(*env)->GetMethodID(env, class, "getDofRef", "()[C");
+	jcharArray dofRef =
+		(*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
 	return dofRef;
 }
 
-static jdoubleArray jBoundaryConditions_getValuesRef(JNIEnv *env, jobject jBoundaryConditions)
+static jdoubleArray jBoundaryConditions_getValuesRef(JNIEnv *env,
+						     jobject jBoundaryConditions)
 {
 	jclass class = (*env)->GetObjectClass(env, jBoundaryConditions);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getValuesRef", "()[D");
-	jdoubleArray valuesRef = (*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
+	jmethodID method_id =
+		(*env)->GetMethodID(env, class, "getValuesRef", "()[D");
+	jdoubleArray valuesRef =
+		(*env)->CallObjectMethod(env, jBoundaryConditions, method_id);
 	return valuesRef;
 }
 
@@ -210,7 +208,8 @@ static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jmaterial)
 {
 	jclass class = (*env)->GetObjectClass(env, jmaterial);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getPoissonModulus", "()D");
+	jmethodID method_id = 
+		(*env)->GetMethodID(env, class, "getPoissonModulus", "()D");
 	jdouble poisson_modulus =
 		(*env)->CallDoubleMethod(env, jmaterial, method_id);
 	return poisson_modulus;
@@ -219,112 +218,12 @@ static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jmaterial)
 static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial)
 {
 	jclass class = (*env)->GetObjectClass(env, jmaterial);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getYoungModulus", "()D");
+	jmethodID method_id =
+		(*env)->GetMethodID(env, class, "getYoungModulus", "()D");
 	jdouble young_modulus =
 		(*env)->CallDoubleMethod(env, jmaterial, method_id);
 	return young_modulus;
 }
-
-static void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel)
-{
-	jint N_vtx = jModel_getNVertices(env, jmodel);
-	jint N_sgm = jModel_getNEdges(env, jmodel);
-	jint N_holes = jModel_getNHoles(env, jmodel);
-	float *vertices = malloc(2 * N_vtx * sizeof(*vertices));
-	set_vertices_from_jModel(env, vertices, N_vtx, jmodel);
-	uint32_t *segments = malloc(2 * N_sgm * sizeof(*segments));
-	set_segments_from_jModel(env, segments, N_sgm, jmodel);
-	float *holes = malloc(2 * N_holes * sizeof(*holes));
-	set_holes_from_jModel(env, holes, N_holes, jmodel);
-
-	vcn_model_load_from_farrays(model, vertices, N_vtx,
-				    segments, N_sgm, holes, N_holes);
-	free(vertices);
-	free(segments);
-	free(holes);
-}
-
-static jint jModel_getNVertices(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getNVertices", "()I");
-	jint N = (*env)->CallIntMethod(env, jmodel, method_id);
-	return N;
-}
-
-static jint jModel_getNEdges(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getNEdges", "()I");
-	jint N = (*env)->CallIntMethod(env, jmodel, method_id);
-	return N;
-}
-
-static jint jModel_getNHoles(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getNHoles", "()I");
-	jint N = (*env)->CallIntMethod(env, jmodel, method_id);
-	return N;
-}
-
-static void set_vertices_from_jModel(JNIEnv *env, float *vertices, jint N,
-				     jobject jmodel)
-{
-	jfloatArray jvertices = jModel_getVerticesRef(env, jmodel);
-	jfloat *fvertices =
-		(*env)->GetFloatArrayElements(env, jvertices, NULL);
-	for (int i = 0; i < 2 * N; i++)
-		vertices[i] = fvertices[i];
-	(*env)->ReleaseFloatArrayElements(env, jvertices, fvertices, JNI_ABORT);
-}
-
-static jfloatArray jModel_getVerticesRef(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getVerticesRef", "()[F");
-	jfloatArray ref = (*env)->CallObjectMethod(env, jmodel, method_id);
-	return ref;	
-}
-
-static void set_segments_from_jModel(JNIEnv *env, uint32_t *segments, jint N,
-				     jobject jmodel)
-{
-	jintArray jsegments = jModel_getEdgesRef(env, jmodel);
-	jint *jedges =
-		(*env)->GetIntArrayElements(env, jsegments, NULL);
-	for (int i = 0; i < 2 * N; i++)
-		segments[i] = jedges[i];
-	(*env)->ReleaseIntArrayElements(env, jsegments, jedges, JNI_ABORT);
-}
-
-static jintArray jModel_getEdgesRef(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getEdgesRef", "()[I");
-	jintArray ref = (*env)->CallObjectMethod(env, jmodel, method_id);
-	return ref;	
-}
-
-static void set_holes_from_jModel(JNIEnv *env, float *holes, jint N,
-				  jobject jmodel)
-{
-	jfloatArray jholes = jModel_getHolesRef(env, jmodel);
-	jfloat *fholes =
-		(*env)->GetFloatArrayElements(env, jholes, NULL);
-	for (int i = 0; i < 2 * N; i++)
-		holes[i] = fholes[i];
-	(*env)->ReleaseFloatArrayElements(env, jholes, fholes, JNI_ABORT);
-}
-
-static jfloatArray jModel_getHolesRef(JNIEnv *env, jobject jmodel)
-{
-	jclass class = (*env)->GetObjectClass(env, jmodel);
-	jmethodID method_id = (*env)->GetMethodID(env, class, "getHolesRef", "()[F");
-	jfloatArray ref = (*env)->CallObjectMethod(env, jmodel, method_id);
-	return ref;	
-}
-
 
 static jobject jMeshResults_new(JNIEnv *env)
 {
@@ -336,8 +235,9 @@ static jobject jMeshResults_new(JNIEnv *env)
 
 }
 
-static void set_results_into_jmesh(JNIEnv *env, jobject jmesh, const double *displacement,
+static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
+				   const double *displacement,
 				   const double *strain)
 {
-
+	
 }

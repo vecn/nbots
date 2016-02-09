@@ -33,9 +33,7 @@ public class Mesh {
 	modelVtx = null;
 	modelSgm = null;
     }
-
-
-    /* Public methods */
+    
     public int getNVertices()
     {
 	if (null == vertices)
@@ -60,7 +58,7 @@ public class Mesh {
 	else
 	    return connMtx.length / 3;
     }
-
+    
     public float[] getVerticesRef()
     {
 	return vertices;

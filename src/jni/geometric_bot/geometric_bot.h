@@ -14,11 +14,22 @@
 
 /*
  * Class:     vcn_geometricBot_GeometricBot
+ * Method:    generateMesh
+ * Signature: (Lvcn/geometricBot/Model;)Lvcn/geometricBot/Mesh;
+ */
+
+JNIEXPORT jobject JNICALL
+Java_vcn_geometricBot_GeometricBot_generateMesh
+		(JNIEnv *env, jclass class, jobject jModel);
+
+/*
+ * Class:     vcn_geometricBot_GeometricBot
  * Method:    JNICreateMesh
  * Signature: (I[FI[II[FIIFFFZZZZZ[[F[[I[[I[[I[[I[[[I)I
  */
 
-JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL
+Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,
@@ -38,7 +49,8 @@ JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3
  * Signature: (I[FI[II[FLjava/lang/String;IIFFFFZZZZZ[[F[[I[[I[[I[[I[[[I)I
  */
 
-JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL
+Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,

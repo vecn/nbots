@@ -15,6 +15,8 @@ public class GeometricBot {
 	System.loadLibrary("vcn_bots");
 	System.loadLibrary("vcn_geometric_bot-jni");
     }
+    
+    public static native Mesh generateMesh(Model model);
     private static native int JNICreateMesh
 	(int NVtx, float vtx[], int NEdges, int edge[],
 	 int NHoles, float hole[],

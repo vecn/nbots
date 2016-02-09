@@ -14,6 +14,9 @@
 
 #include "../../vcn/geometric_bot/model/model2D_struct.h"
 
+#include "jModel.h"
+#include "load_jMesh.h"
+
 static vcn_model_t* create_model_from_JNI(JNIEnv *env,
 					  jint N, jfloatArray jvertices,
 					  jint M, jintArray jedges,
@@ -57,7 +60,29 @@ static int load_input_sgm_into_JNI(JNIEnv *env,
 				   const vcn_msh3trg_t *const msh3trg,
 				   jobjectArray jmesh_input_sgm);
 
-JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jobject JNICALL
+Java_vcn_geometricBot_GeometricBot_generateMesh
+		(JNIEnv *env, jclass class, jobject jModel)
+{
+	vcn_model_t* model = vcn_model_create();
+	get_model_from_java(env, model, jModel);
+
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_generate_from_model(mesh, model);
+	vcn_model_destroy(model);
+
+	vcn_msh3trg_t* msh3trg = 
+		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
+	vcn_mesh_destroy(mesh);
+
+	jobject jMesh = jMesh_new(env);
+	load_jMesh_from_msh3trg(env, msh3trg, jMesh);
+	vcn_msh3trg_destroy(msh3trg);
+	return jMesh;
+}
+
+JNIEXPORT jint JNICALL
+Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,
@@ -116,7 +141,8 @@ JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3
 	return 0;
 }
 
-JNIEXPORT jint JNICALL Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+JNIEXPORT jint JNICALL
+Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,

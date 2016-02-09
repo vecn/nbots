@@ -13,7 +13,7 @@ public class TestGeometricBot {
 	 * where the minimum angle permitted is 26.45 degrees.
 	 */
 	Model model = GeometricBot.getCircle(0.0f, 0.0f, 1.0f, 0.1f);
-	Mesh mesh = GeometricBot.createMesh(model);
+	Mesh mesh = GeometricBot.generateMesh(model);
 	GeometricBotDraw.drawMesh(mesh, "sample1_mesh.png", 1000, 800);
     }
     public static void sample2() {
