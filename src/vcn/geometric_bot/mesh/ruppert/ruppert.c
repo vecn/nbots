@@ -146,11 +146,9 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 static bool has_edge_length_constrained(const vcn_mesh_t *const mesh);
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
-				    /* big_ratio can be NULL if not required */
 				    double *big_ratio);
 static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 				      const msh_edge_t *const restrict sgm,
-				      /* big_ratio can be NULL if not required */
 				      double *big_ratio);
 static double calculate_lh(const vcn_mesh_t *const restrict mesh,
 			   const msh_edge_t *const restrict sgm,
@@ -1132,13 +1130,11 @@ static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
 
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
-				    /* big_ratio can be NULL if not required */
 				    double *big_ratio)
 {
 	bool violates_constrain = false;
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
-	if (NULL != big_ratio)
-		*big_ratio = d;
+	*big_ratio = d;
 	double edge_max = mesh->max_edge_length * mesh->scale;
 	if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
 		violates_constrain = true;
@@ -1153,7 +1149,6 @@ static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 
 static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 				      const msh_edge_t *const restrict sgm,
-				      /* big_ratio can be NULL if not required */
 				      double *big_ratio)
 /* Calculate adimensional length:
  *               
@@ -1171,9 +1166,6 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 {
 	bool is_greater;
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
-	if (NULL != big_ratio)
-		*big_ratio = d;
-
 	if (VCN_GEOMETRIC_TOL > d) {
 		/* Prevent of eternal running */
 		is_greater = false;  
@@ -1186,6 +1178,7 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 			lh = calculate_lh(mesh, sgm, d, 2);
 			is_greater = (_VCN_MAX_LH_TOLERATED < lh);
 		}
+		*big_ratio = lh;
 	}
 	return is_greater;
 }
@@ -1237,32 +1230,34 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 				   /* big_ratio could be NULL if not required */
 				   double *big_ratio)
 {
-	if(NULL != big_ratio)
-		*big_ratio = 1.0;
+	double size_ratio = 1.0;
 	bool is_too_big = false;
 	if (has_edge_length_constrained(mesh)) {
-		is_too_big = edge_violates_constrain(mesh, trg->s1, big_ratio);
+		is_too_big = edge_violates_constrain(mesh, trg->s1, &size_ratio);
 		if (!is_too_big)
 			is_too_big = edge_violates_constrain(mesh, trg->s2,
-							     big_ratio);
+							     &size_ratio);
 		if (!is_too_big)
 			is_too_big = edge_violates_constrain(mesh, trg->s3,
-							     big_ratio);
-	} else {
+							     &size_ratio);
+	}
+	if (!is_too_big) {
 		if (NULL != mesh->density) {
 			is_too_big = edge_greater_than_density(mesh, trg->s1,
-							       big_ratio);
+							       &size_ratio);
 			if (!is_too_big)
 				is_too_big = 
 					edge_greater_than_density(mesh,
 								  trg->s2,
-								  big_ratio);
+								  &size_ratio);
 			if (!is_too_big)
 				is_too_big = 
 					edge_greater_than_density(mesh,
 								  trg->s3,
-								  big_ratio);
+								  &size_ratio);
 		}
 	}
+	if(NULL != big_ratio)
+		*big_ratio = size_ratio;
 	return is_too_big;
 }

@@ -28,6 +28,7 @@ $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_iterator_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libdewall_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libconstrained_delaunay_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libmesh2D_UT.so
+$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libimage_density_UT.so
 
 echo "  Java binding for Geometric Bot"
 JAVA_TEST_DIR=tests/java

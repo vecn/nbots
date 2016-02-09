@@ -81,8 +81,6 @@ vcn_mesh_t* vcn_mesh_create(void)
 
 	set_angle_constraint(mesh, VCN_MESH_MAX_ANGLE);
 
-	mesh->cr2se_ratio = 1e30;
-
 	init_tasks(mesh);
 
 	mesh->refiner_type = VCN_MESH_REFINE_RUPPERT;
