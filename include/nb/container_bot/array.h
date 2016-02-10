@@ -1,4 +1,3 @@
-
 /**
  * @file array.h
  * @brief Simple math routines.
@@ -6,73 +5,65 @@
  * @n @@victore_cardoso
  */
 
-#ifndef __VCN_CONTAINER_BOT_ARRAY_H__
-#define __VCN_CONTAINER_BOT_ARRAY_H__
+#ifndef __NB_CONTAINER_BOT_ARRAY_H__
+#define __NB_CONTAINER_BOT_ARRAY_H__
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-	void* vcn_array_get(const void *const base, uint16_t type_size,
-			    uint32_t i);
-	void vcn_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size);
-	void vcn_qsort(void *base, uint32_t N, uint16_t type_size,
-		       int8_t (*compare)(const void *const,
-					 const void *const));
-	void vcn_qsort_wd(void *base, uint32_t N, uint16_t type_size,
-			  int8_t (*compare)(const void *const,
-					    const void *const,
-					    const void *const data),
-			  const void *const data);
-	uint32_t vcn_array_get_min_id(const void *const array, uint32_t N,
-				      uint16_t type_size,
-				      int8_t (*compare)(const void *const,
-							const void *const));
-	uint32_t vcn_array_get_min_id_wd(const void *const array,
-					 uint32_t N,
-					 uint16_t type_size,
-					 int8_t (*compare)(const void *const,
-							   const void *const,
-							   const void *const d),
-					 const void *const data);
-	uint32_t vcn_array_get_max_id(const void *const array, uint32_t N,
-				      uint16_t type_size,
-				      int8_t (*compare)(const void *const,
-							const void *const));
-	uint32_t vcn_array_get_max_id_wd(const void *const array, uint32_t N,
-					 uint16_t type_size,
-					 int8_t (*compare)(const void *const,
-							   const void *const,
-							   const void *const d),
-					 const void *const data);
-	void vcn_array_get_min_max_ids(const void *const array, uint32_t N,
-				       uint16_t type_size,
-				       int8_t (*compare)(const void *const,
-							 const void *const),
-				       uint32_t *min, uint32_t *max);
-	void vcn_array_get_min_max_ids_wd(const void *const array, uint32_t N,
-					  uint16_t type_size,
-					  int8_t (*compare)(const void *const,
-							    const void *const,
-							    const void *const d),
-					  const void *const data,
-					  uint32_t *min, uint32_t *max);
-	int8_t vcn_compare_char(const void *const a, const void *const b);
-	int8_t vcn_compare_float(const void *const a, const void *const b);
-	int8_t vcn_compare_double(const void *const a, const void *const b);
-	int8_t vcn_compare_int8(const void *const a, const void *const b);
-	int8_t vcn_compare_int16(const void *const a, const void *const b);
-	int8_t vcn_compare_int32(const void *const a, const void *const b);
-	int8_t vcn_compare_int64(const void *const a, const void *const b);
-	int8_t vcn_compare_uint8(const void *const a, const void *const b);
-	int8_t vcn_compare_uint16(const void *const a, const void *const b);
-	int8_t vcn_compare_uint32(const void *const a, const void *const b);
-	int8_t vcn_compare_uint64(const void *const a, const void *const b);
-
-#ifdef __cplusplus
-}
-#endif
+void* vcn_array_get(const void *const base, uint16_t type_size,
+		    uint32_t i);
+void vcn_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size);
+void vcn_qsort(void *base, uint32_t N, uint16_t type_size,
+	       int8_t (*compare)(const void *const,
+				 const void *const));
+void vcn_qsort_wd(void *base, uint32_t N, uint16_t type_size,
+		  int8_t (*compare)(const void *const,
+				    const void *const,
+				    const void *const data),
+		  const void *const data);
+uint32_t vcn_array_get_min_id(const void *const array, uint32_t N,
+			      uint16_t type_size,
+			      int8_t (*compare)(const void *const,
+						const void *const));
+uint32_t vcn_array_get_min_id_wd(const void *const array,
+				 uint32_t N,
+				 uint16_t type_size,
+				 int8_t (*compare)(const void *const,
+						   const void *const,
+						   const void *const d),
+				 const void *const data);
+uint32_t vcn_array_get_max_id(const void *const array, uint32_t N,
+			      uint16_t type_size,
+			      int8_t (*compare)(const void *const,
+						const void *const));
+uint32_t vcn_array_get_max_id_wd(const void *const array, uint32_t N,
+				 uint16_t type_size,
+				 int8_t (*compare)(const void *const,
+						   const void *const,
+						   const void *const d),
+				 const void *const data);
+void vcn_array_get_min_max_ids(const void *const array, uint32_t N,
+			       uint16_t type_size,
+			       int8_t (*compare)(const void *const,
+						 const void *const),
+			       uint32_t *min, uint32_t *max);
+void vcn_array_get_min_max_ids_wd(const void *const array, uint32_t N,
+				  uint16_t type_size,
+				  int8_t (*compare)(const void *const,
+						    const void *const,
+						    const void *const d),
+				  const void *const data,
+				  uint32_t *min, uint32_t *max);
+int8_t vcn_compare_char(const void *const a, const void *const b);
+int8_t vcn_compare_float(const void *const a, const void *const b);
+int8_t vcn_compare_double(const void *const a, const void *const b);
+int8_t vcn_compare_int8(const void *const a, const void *const b);
+int8_t vcn_compare_int16(const void *const a, const void *const b);
+int8_t vcn_compare_int32(const void *const a, const void *const b);
+int8_t vcn_compare_int64(const void *const a, const void *const b);
+int8_t vcn_compare_uint8(const void *const a, const void *const b);
+int8_t vcn_compare_uint16(const void *const a, const void *const b);
+int8_t vcn_compare_uint32(const void *const a, const void *const b);
+int8_t vcn_compare_uint64(const void *const a, const void *const b);
 
 #endif

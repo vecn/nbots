@@ -7,29 +7,20 @@
  * @date 10 August 2015
  */
 
-#ifndef __VCN_STATISTICS_BOT_H__
-#define __VCN_STATISTICS_BOT_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef __NB_STATISTICS_BOT_H__
+#define __NB_STATISTICS_BOT_H__
 
 #include <stdint.h>
-
 	
-	uint32_t vcn_statistics_get_seed(void);
-	uint32_t vcn_statistics_lcg(uint32_t seed);
-	void vcn_statistics_random_permutation(uint32_t N, void *base, 
-					       uint16_t type_size);
-	void vcn_statistics_runif(int n, double min, double max,
-				  double *const out, uint64_t *const seed);
+uint32_t vcn_statistics_get_seed(void);
+uint32_t vcn_statistics_lcg(uint32_t seed);
+void vcn_statistics_random_permutation(uint32_t N, void *base, 
+				       uint16_t type_size);
+void vcn_statistics_runif(int n, double min, double max,
+			  double *const out, uint64_t *const seed);
 
-	void vcn_statistics_rnorm(int n, double mean, double var,
-				  double *const out, uint64_t *const seed1,
-				  uint64_t *const seed2);
-
-#ifdef __cplusplus
-}
-#endif
+void vcn_statistics_rnorm(int n, double mean, double var,
+			  double *const out, uint64_t *const seed1,
+			  uint64_t *const seed2);
 
 #endif

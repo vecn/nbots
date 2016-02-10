@@ -7,10 +7,8 @@
  * @date December 8, 2015
  */
 
-#ifndef __cplusplus /* Do not use with C++ */
-
-#ifndef __VCN_EXCEPTIONS_H__
-#define __VCN_EXCEPTIONS_H__
+#ifndef __NB_EXCEPTIONS_H__
+#define __NB_EXCEPTIONS_H__
 
 #include <setjmp.h>
 
@@ -30,7 +28,5 @@ void vcn_exception_clear_alloc(vcn_exception_t *exception);
 
 
 void* vcn_exception_try_USE_MACRO_INSTEAD_OF_THIS(vcn_exception_t *exception);
-
-#endif
 
 #endif
