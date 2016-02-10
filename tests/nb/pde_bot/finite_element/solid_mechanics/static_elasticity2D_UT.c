@@ -7,7 +7,6 @@
 
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
-#include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
@@ -64,8 +63,7 @@ static bool check_static_elasticity2D(void)
 	double thickness;
 
 	char input[255];
-	//sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
-	sprintf(input, "%s/beam_cantilever.txt", INPUTS_DIR);
+	sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
 	int read_status =
 		read_initial_conditions(input, model, bcond, material,
 					&enable_plane_stress_analysis,
@@ -78,15 +76,12 @@ static bool check_static_elasticity2D(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					  0.4);
+					  0.1);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_mesh_save_png(mesh, "TEMPORAL.png", 1000, 800);/* TEMPORAL */
 	vcn_msh3trg_t* delaunay = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
-
-	vcn_bcond_t* bmeshcond =
-		vcn_fem_bcond_create_from_model_to_mesh(delaunay, bcond);
 
 	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
@@ -97,15 +92,12 @@ static bool check_static_elasticity2D(void)
 		malloc(delaunay->N_triangles * 3 * sizeof(*strain));
 
 	int status_fem =
-		vcn_fem_compute_2D_Solid_Mechanics(delaunay, elemtype, material,
-						   bmeshcond,
+		vcn_fem_compute_2D_Solid_Mechanics(delaunay, elemtype,
+						   material, bcond,
 						   false, NULL,
-						   vcn_sparse_solve_Cholesky,
 						   enable_plane_stress_analysis,
-						   thickness,
-						   1, NULL,
-						   displacement,
-						   strain,
+						   thickness, NULL,
+						   displacement, strain,
 						   "static_elasticity2D_UT.log");
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
@@ -117,7 +109,6 @@ static bool check_static_elasticity2D(void)
 
 	free(total_disp);
 CLEANUP_FEM:
-	vcn_fem_bcond_destroy(bmeshcond);
 	vcn_msh3trg_destroy(delaunay);
 	vcn_fem_elem_destroy(elemtype);
 	free(displacement);
@@ -133,9 +124,11 @@ CLEANUP_INPUT:
 static double* get_total_disp(uint32_t N, const double *displacement)
 {
 	double *total_disp = malloc(N * sizeof(*total_disp));
-	for (uint32_t i = 0; i < N; i++)
+	for (uint32_t i = 0; i < N; i++) {
 		total_disp[i] = sqrt(POW2(displacement[i * 2]) +
 				     POW2(displacement[i*2+1]));
+	}
+	
 	return total_disp;	
 }
 

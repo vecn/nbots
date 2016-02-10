@@ -41,7 +41,6 @@ add_library(nb_pde_bot-jni SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/pde_bot/pde_bot.c
   )
 target_link_libraries(nb_pde_bot-jni
-  nb_eigen_bot
   nb_geometric_bot
   nb_pde_bot
   m)

@@ -9,7 +9,7 @@ typedef enum {
 	NB_TRG_LINEAR,
 } vcn_elem_id;
 
-vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id);
+vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id type);
 void vcn_fem_elem_destroy(vcn_fem_elem_t* elemtype);
 uint32_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elemtype);
 double vcn_fem_elem_eval_shape_function

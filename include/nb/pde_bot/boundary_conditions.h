@@ -40,8 +40,4 @@ void vcn_fem_bcond_clear(vcn_bcond_t* bconditions);
 void vcn_fem_bcond_destroy(vcn_bcond_t* bconditions);
 void vcn_fem_bcond_printf(const vcn_bcond_t* const bconditions);
 
-vcn_bcond_t* vcn_fem_bcond_create_from_model_to_mesh
-			(const vcn_msh3trg_t *const msh3trg,
-			 const vcn_bcond_t *const bconditions);
-
 #endif

@@ -12,7 +12,6 @@
 
 #include "../mesh2D_structs.h"
 
-static uint32_t key_uint(const void *const uint_ptr);
 static uint32_t itrg_get_right_triangle
                          (const vcn_msh3trg_t *const delaunay, 
 			  const bool *const enabled_elements,
@@ -141,15 +140,13 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 {
 	vcn_graph_t *graph = calloc(1, sizeof(*graph));
 	graph->N = msh3trg->N_vertices;
-	graph->N_adj = calloc(graph->N, sizeof(uint32_t));
-	graph->adj = calloc(graph->N, sizeof(uint32_t*));
+	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
+	graph->adj = calloc(graph->N, sizeof(*(graph->adj)));
 
 	/* Connectivity Matrix stored in container */
 	vcn_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
-	for (uint32_t i = 0; i < graph->N; i++) {
+	for (uint32_t i = 0; i < graph->N; i++)
 		l_nodal_CM[i] = vcn_container_create(NB_CONTAINER_SORTED);
-		vcn_container_set_key_generator(l_nodal_CM[i], key_uint);
-	}
   
 	for (uint32_t k = 0; k < msh3trg->N_triangles; k++) {
 		for (uint32_t i = 0; i < 2; i++) {
@@ -189,11 +186,6 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 	}
 	free(l_nodal_CM);
 	return graph;
-}
-
-static inline uint32_t key_uint(const void *const uint_ptr)
-{
-	return *((uint32_t*)uint_ptr);
 }
 
 vcn_graph_t* vcn_msh3trg_create_elem_graph

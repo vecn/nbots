@@ -2,18 +2,21 @@
 #include <stdlib.h>
 
 #include "nb/pde_bot/finite_element/element.h"
-#include "nb/pde_bot/finite_element/elements/trg_linear.h"
 
 #include "element_struct.h"
+#include "elements/trg_linear.h"
 
-vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id)
+vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id type)
 {
 	vcn_fem_elem_t *elem = calloc(1, sizeof(*elem));
-	switch(id) {
+	elem->type = type;
+	switch(type) {
 	case NB_TRG_LINEAR:
-		vcn_fem_elem_init_trg_linear(elem);
+		trg_linear_init(elem);
+		break;
 	default:
-		vcn_fem_elem_init_trg_linear(elem);
+		trg_linear_init(elem);
+		elem->type = NB_TRG_LINEAR;
 	}
 	return elem;
 }
@@ -44,18 +47,5 @@ inline double vcn_fem_elem_eval_shape_function
 inline uint32_t vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node
 		(const vcn_fem_elem_t *const elemtype, uint32_t i)
 {
-	if (3 == elemtype->N_nodes && 
-	    1 == elemtype->N_Gauss_points){
-		/* Triangle of linear interpolation
-		 *              o
-		 *             / \
-		 *            / * \    <---- Gauss Point
-		 *           /_____\
-		 *          o       o  <---- Nodes
-		 */
-		return 0;
-	}
-	printf("FEM Error: Unknown element type with %i nodes and %i Gauss points.\n",
-	       elemtype->N_nodes, elemtype->N_Gauss_points);
-	return 0;
+	return elemtype->get_closest_GP_to_ith_node(i);
 }

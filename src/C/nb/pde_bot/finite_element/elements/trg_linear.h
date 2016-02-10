@@ -3,6 +3,6 @@
 
 #include "nb/pde_bot/finite_element/element.h"
 
-void vcn_fem_elem_init_trg_linear(vcn_fem_elem_t *elem);
+void trg_linear_init(vcn_fem_elem_t *elem);
 
 #endif

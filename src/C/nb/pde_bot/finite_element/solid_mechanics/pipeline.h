@@ -1,7 +1,7 @@
 #ifndef __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 #define __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 
-void pipeline_assemble_system
+int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
 		 const vcn_fem_elem_t *const elemtype,
@@ -10,7 +10,7 @@ void pipeline_assemble_system
 		 double gravity[2],
 		 bool enable_plane_stress,
 		 double thickness,
-		 bool* elements_enabled /* NULL to enable all */);
+		 const bool* elements_enabled /* NULL to enable all */);
 
 void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
 				      vcn_sparse_t* K,

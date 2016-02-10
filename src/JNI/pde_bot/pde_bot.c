@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 
@@ -71,9 +70,6 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
 
-	vcn_bcond_t* bmeshcond =
-		vcn_fem_bcond_create_from_model_to_mesh(msh3trg, bconditions);
-
 	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
@@ -83,12 +79,9 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		malloc(msh3trg->N_triangles * 3 * sizeof(*strain));
 
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
-					   bmeshcond, false, NULL,
-					   vcn_sparse_solve_Cholesky, 1,
-					   jthickness,
-					   2, NULL,
-					   displacement,
-					   strain,
+					   bconditions, false, NULL, 1,
+					   jthickness, NULL,
+					   displacement, strain,
 					   "static_elasticity2D_UT.log");
 
 	jobject jmesh_results = jMeshResults_new(env);
@@ -98,7 +91,6 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 
 	/* Free memory */
 	vcn_fem_bcond_destroy(bconditions);
-	vcn_fem_bcond_destroy(bmeshcond);
 	vcn_model_destroy(model);
 	vcn_msh3trg_destroy(msh3trg);
 	vcn_fem_material_destroy(material);

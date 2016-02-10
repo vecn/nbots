@@ -21,39 +21,39 @@
 
 #define POW2(a) ((a)*(a))
 
+static int solver(const vcn_sparse_t *const A,
+		  const double *const b, double* x);
+
 int vcn_fem_compute_2D_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
-			 const vcn_bcond_t *const bmeshcond,
+			 const vcn_bcond_t *const bcond,
 			 char enable_self_weight,
 			 double gravity[2],
-			 int (*solver)(const vcn_sparse_t *const A,
-				       const double *const b,
-				       double* x, uint32_t omp_threads),
 			 bool enable_plane_stress,
 			 double thickness,
-			 uint32_t omp_parallel_threads,
-			 bool* elements_enabled, /* NULL to enable all */
-			 double * displacement, /* Output */
-			 double * strain,       /* Output */
+			 const bool *elements_enabled, /* NULL to enable all */
+			 double *displacement, /* Output */
+			 double *strain,       /* Output */
 			 const char* logfile    /* NULL if not required */)
 /* The output vectors must be allocated before start:
  *     > displacement:  2 * N_vertices (size of double)
  *     >       strain:  3 * N_vertices (size of double)
  */
 {
+	int status = 1;
 	if (NULL != logfile) {
 		FILE *log = fopen(logfile, "w");
 		fprintf(log, "FINITE ELEMENT\n");
 		fprintf(log, "    > SOLID MECHANICS\n");
-		fprintf(log, "        > 2D STATIC ELASTICITY\n");
+		fprintf(log, "        > 2D STATIC ELASTICITY\n\n");
 		fclose(log);
 	}
 
 	/*********************************************************************/
 	/****************** 1) Assemble system *******************************/
-	/**********************************************************************/
+	/*********************************************************************/
 	/* Allocate global Stiffness Matrix and Force Vector */
 	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
@@ -61,27 +61,31 @@ int vcn_fem_compute_2D_Solid_Mechanics
 
 	double* F = calloc(2 * mesh->N_vertices, sizeof(*F));
 	/* Allocate elemental Stiffness Matrix and Force Vector */
-	pipeline_assemble_system(K, NULL, F,
-				 mesh,
-				 elemtype,
-				 material,
-				 enable_self_weight,
-				 gravity,
-				 enable_plane_stress,
-				 thickness,
-				 elements_enabled);
+	int status_assemble =
+		pipeline_assemble_system(K, NULL, F, mesh, elemtype, material,
+					 enable_self_weight, gravity,
+					 enable_plane_stress, thickness,
+					 elements_enabled);
+	if (0 != status_assemble) {
+		if (NULL != logfile) {
+			FILE* log = fopen(logfile, "a");
+			fprintf(log, "Assemble system fails (Code: %i).\n",
+				status_assemble);
+			fclose(log);
+		}
+		goto CLEANUP_LINEAR_SYSTEM;
+	}
 
 	/*********************************************************************/
 	/**************** 2) Set boundary conditions *************************/
 	/*********************************************************************/
-	pipeline_set_boundary_conditions(mesh, K, F, bmeshcond, thickness, 1.0);
+	pipeline_set_boundary_conditions(mesh, K, F, bcond, thickness, 1.0);
 
 	/**********************************************************************/
 	/************* 3) Solve system (to compute displacements) *************/
 	/**********************************************************************/
   
-	char solver_status = solver(K, F, displacement, omp_parallel_threads);
-    
+	int solver_status = solver(K, F, displacement);
 	/* Display failure info in logfile */
 	if (0 != solver_status) {
 		if (NULL != logfile) {
@@ -89,34 +93,43 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			fprintf(log, "Solver fails (Code: %i).\n", solver_status);
 			fclose(log);
 		}
-		vcn_sparse_destroy(K);
-		free(F);
-		return 1;
+		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	vcn_sparse_destroy(K);
-	free(F);
 	/********************************************************************/
 	/********************* 4) Compute Strain            *****************/
 	/*********************       >  S = B u             *****************/
 	/********************************************************************/
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
 				enable_plane_stress, material);
-	/* Successful exit */
-	return 0;
+	
+	status = 0;
+CLEANUP_LINEAR_SYSTEM:
+	vcn_sparse_destroy(K);
+	free(F);
+	return status;
+}
+
+static inline int solver(const vcn_sparse_t *const A,
+			 const double *const b, double* x)
+{
+	return vcn_sparse_solve_CG_precond_Jacobi(A, b, x,
+						  vcn_sparse_get_size(A),
+						  1e-8, NULL, NULL, 1);
 }
 
 void vcn_fem_compute_stress_from_strain
-(uint32_t N_elements,
- uint32_t* elements_connectivity_matrix, 
- const vcn_fem_elem_t *const elemtype,
- const vcn_fem_material_t *const material,
- bool enable_plane_stress,
- double* strain,
- uint32_t omp_parallel_threads,
- bool* elements_enabled /* NULL to enable all */,
- double* stress /* Output */){
+			(uint32_t N_elements,
+			 uint32_t* elements_connectivity_matrix, 
+			 const vcn_fem_elem_t *const elemtype,
+			 const vcn_fem_material_t *const material,
+			 bool enable_plane_stress,
+			 double* strain,
+			 const bool* elements_enabled /* NULL to enable all */,
+			 double* stress /* Output */)
+{
 	/* Compute stress from element strain */
+	uint32_t omp_parallel_threads = 1;
 #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
 	for(uint32_t i = 0; i < N_elements; i++){
 		/* Get material properties */

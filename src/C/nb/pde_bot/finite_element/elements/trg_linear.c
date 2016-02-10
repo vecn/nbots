@@ -1,9 +1,8 @@
 #include <stdlib.h>
-
-#include "nb/pde_bot/finite_element/element.h"
-#include "nb/pde_bot/finite_element/elements/trg_linear.h"
+#include <stdint.h>
 
 #include "../element_struct.h"
+#include "trg_linear.h"
 
 #define INV_3 (0.33333333333333333333333333333)
 
@@ -16,8 +15,9 @@ static double dN2_dpsi(double psi, double eta);
 static double dN2_deta(double psi, double eta);
 static double dN3_dpsi(double psi, double eta);
 static double dN3_deta(double psi, double eta);
+static uint32_t get_closest_GP_to_ith_node(uint32_t i);
 
-void vcn_fem_elem_init_trg_linear(vcn_fem_elem_t *elem)
+void trg_linear_init(vcn_fem_elem_t *elem)
 {
 	elem->N_nodes = 3;
 	elem->N_Gauss_points = 1;
@@ -46,40 +46,56 @@ void vcn_fem_elem_init_trg_linear(vcn_fem_elem_t *elem)
 	elem->eta[0] = INV_3;
 
 	elem->gp_weight[0] = 0.5;
+
+	elem->get_closest_GP_to_ith_node = get_closest_GP_to_ith_node;
 }
 
-static inline double N1(double psi, double eta){
+static inline double N1(double psi, double eta)
+{
 	return 1.0 - psi - eta;
 }
 
-static inline double N2(double psi, double eta){
+static inline double N2(double psi, double eta)
+{
 	return psi;
 }
 
-static inline double N3(double psi, double eta){
+static inline double N3(double psi, double eta)
+{
 	return eta;
 }
 
-static inline double dN1_dpsi(double psi, double eta){
+static inline double dN1_dpsi(double psi, double eta)
+{
 	return -1.0;
 }
 
-static inline double dN1_deta(double psi, double eta){
+static inline double dN1_deta(double psi, double eta)
+{
 	return -1.0;
 }
 
-static inline double dN2_dpsi(double psi, double eta){
+static inline double dN2_dpsi(double psi, double eta)
+{
 	return 1.0;
 }
 
-static inline double dN2_deta(double psi, double eta){
+static inline double dN2_deta(double psi, double eta)
+{
 	return 0.0;
 }
 
-static inline double dN3_dpsi(double psi, double eta){
+static inline double dN3_dpsi(double psi, double eta)
+{
 	return 0.0;
 }
 
-static inline double dN3_deta(double psi, double eta){
+static inline double dN3_deta(double psi, double eta)
+{
 	return 1.0;
+}
+
+static inline uint32_t get_closest_GP_to_ith_node(uint32_t i)
+{
+	return 0;
 }
