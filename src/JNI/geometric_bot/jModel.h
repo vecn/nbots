@@ -3,7 +3,7 @@
 
 #include <jni.h>
 
-#include "vcn/geometric_bot/model/model2D.h"
+#include "nb/geometric_bot/model/model2D.h"
 
 void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel);
 

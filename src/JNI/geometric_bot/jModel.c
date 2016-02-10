@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <jni.h>
 
-#include "vcn/geometric_bot/model/model2D.h"
+#include "nb/geometric_bot/model/model2D.h"
 
 #include "jModel.h"
 

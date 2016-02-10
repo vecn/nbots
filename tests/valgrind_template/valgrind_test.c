@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "vcn_bots.h"
+#include "nbots.h"
 
 static bool all_trg_are_delaunay(vcn_mesh_t *mesh);
 static bool check_get_delaunay_spiral(int Ns, int Np);

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-project (VCN_Bots)
+project (Numerical_Bots)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
   "${CMAKE_CURRENT_SOURCE_DIR}/../../CMake/Modules")
@@ -25,23 +25,23 @@ endif(${CMAKE_COMPILER_IS_GNUCXX})
 message("Configuring Java Native Interface (JNI)")
 
 message("Configuring JNI - Geometric Bot")
-add_library(vcn_geometric_bot-jni SHARED
+add_library(nb_geometric_bot-jni SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/load_jMesh.c
   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/jModel.c
   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/geometric_bot.c
   )
-target_link_libraries(vcn_geometric_bot-jni
-  vcn_geometric_bot
+target_link_libraries(nb_geometric_bot-jni
+  nb_geometric_bot
   m)
 
 message("Configuring JNI - PDE Bot")
-add_library(vcn_pde_bot-jni SHARED
+add_library(nb_pde_bot-jni SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/load_jMesh.c
   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/jModel.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pde_bot/pde_bot.c
   )
-target_link_libraries(vcn_pde_bot-jni
-  vcn_eigen_bot
-  vcn_geometric_bot
-  vcn_pde_bot
+target_link_libraries(nb_pde_bot-jni
+  nb_eigen_bot
+  nb_geometric_bot
+  nb_pde_bot
   m)

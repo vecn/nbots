@@ -1,4 +1,4 @@
-import vcn.geometricBot.*;
+import nb.geometricBot.*;
 
 public class TestGeometricBot {
     public static void main(String[] args) {

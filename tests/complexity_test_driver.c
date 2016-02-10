@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "vcn/container_bot/array.h"
+#include "nb/container_bot/array.h"
 
 #include "complexity_funcs.h"
 #include "test.h"

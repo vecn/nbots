@@ -1,7 +1,7 @@
-import vcn.geometricBot.*;
-import vcn.pdeBot.*;
-import vcn.pdeBot.finiteElement.*;
-import vcn.pdeBot.finiteElement.solidMechanics.*;
+import nb.geometricBot.*;
+import nb.pdeBot.*;
+import nb.pdeBot.finiteElement.*;
+import nb.pdeBot.finiteElement.solidMechanics.*;
 
 public class TestPdeBot {
     public static void main(String[] args) {

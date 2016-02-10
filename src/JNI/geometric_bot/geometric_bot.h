@@ -7,29 +7,29 @@
  */
 
 
-#ifndef __JNI_VCN_GEOMETRIC_BOT_H__
-#define __JNI_VCN_GEOMETRIC_BOT_H__
+#ifndef __JNI_NB_GEOMETRIC_BOT_H__
+#define __JNI_NB_GEOMETRIC_BOT_H__
 
 #include <jni.h>
 
 /*
- * Class:     vcn_geometricBot_GeometricBot
+ * Class:     nb_geometricBot_GeometricBot
  * Method:    generateMesh
- * Signature: (Lvcn/geometricBot/Model;)Lvcn/geometricBot/Mesh;
+ * Signature: (Lnb/geometricBot/Model;)Lnb/geometricBot/Mesh;
  */
 
 JNIEXPORT jobject JNICALL
-Java_vcn_geometricBot_GeometricBot_generateMesh
+Java_nb_geometricBot_GeometricBot_generateMesh
 		(JNIEnv *env, jclass class, jobject jModel);
 
 /*
- * Class:     vcn_geometricBot_GeometricBot
+ * Class:     nb_geometricBot_GeometricBot
  * Method:    JNICreateMesh
  * Signature: (I[FI[II[FIIFFFZZZZZ[[F[[I[[I[[I[[I[[[I)I
  */
 
 JNIEXPORT jint JNICALL
-Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,
@@ -50,7 +50,7 @@ Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_
  */
 
 JNIEXPORT jint JNICALL
-Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
 		(JNIEnv *env, jclass class,
 		 jint N, jfloatArray vertices,
 		 jint M, jintArray edges,

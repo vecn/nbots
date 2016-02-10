@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-project (VCN_Bots)
+project (Numerical_Bots)
 
 if(${CMAKE_COMPILER_IS_GNUCXX}) 
   set(CMAKE_C_FLAGS 
@@ -10,9 +10,9 @@ endif(${CMAKE_COMPILER_IS_GNUCXX})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/)
 
 set(launcher_libs
-  vcn_exceptions 
-  vcn_statistics_bot
-  vcn_math_bot
+  nb_exceptions 
+  nb_statistics_bot
+  nb_math_bot
   dl m
 )
 
@@ -40,18 +40,18 @@ add_executable(launch_complexity_tests
   ${CMAKE_CURRENT_SOURCE_DIR}/run_tests.c)
 target_link_libraries(launch_complexity_tests ${launcher_libs} test)
 
-message("Configuring vcn_test_add()")
-add_library(vcn_test_add SHARED
+message("Configuring nb_test_add()")
+add_library(nb_test_add SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/test.c
   ${CMAKE_CURRENT_SOURCE_DIR}/test_add.c
 )
-target_link_libraries(vcn_test_add vcn_container_bot test)
+target_link_libraries(nb_test_add nb_container_bot test)
 
 message("Configuring Complexity-Tests launcher.")
 add_executable(valgrind_test
   ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_template/valgrind_test.c
   )
-target_link_libraries(valgrind_test vcn_bots)
+target_link_libraries(valgrind_test nb_bots)
 
-add_subdirectory(vcn)
+add_subdirectory(nb)
 add_subdirectory(java)

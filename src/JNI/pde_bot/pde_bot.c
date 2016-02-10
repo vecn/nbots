@@ -1,8 +1,8 @@
 #include <stdlib.h>
 
-#include "vcn/eigen_bot.h"
-#include "vcn/geometric_bot.h"
-#include "vcn/pde_bot.h"
+#include "nb/eigen_bot.h"
+#include "nb/geometric_bot.h"
+#include "nb/pde_bot.h"
 
 #include "pde_bot.h"
 #include "../geometric_bot/load_jMesh.h"
@@ -40,10 +40,10 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
 /*
  * Class:     vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
  * Method:    solve
- * Signature: (Lvcn/geometricBot/Model;Lvcn/pdeBot/Material;Lvcn/pdeBot/BoundaryConditions;Lvcn/pdeBot/BoundaryConditions;Lvcn/pdeBot/BoundaryConditions;Lvcn/pdeBot/BoundaryConditions;D)Lvcn/pdeBot/finiteElement/MeshResults;
+ * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;D)Lnb/pdeBot/finiteElement/MeshResults;
  */
 JNIEXPORT jobject JNICALL
-Java_vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
+Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		(JNIEnv *env, jclass class, jobject jmodel, jobject jmaterial,
 		 jobject jBCDirichletVtx, jobject jBCNeumannVtx,
 		 jobject jBCDirichletSgm, jobject jBCNeumannSgm,
@@ -333,7 +333,7 @@ static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial)
 static jobject jMeshResults_new(JNIEnv *env)
 {
 	jclass class =
-		(*env)->FindClass(env, "Lvcn/pdeBot/finiteElement/MeshResults;");
+		(*env)->FindClass(env, "Lnb/pdeBot/finiteElement/MeshResults;");
 	jmethodID method_id = (*env)->GetMethodID(env, class, "<init>", "()V");
 	jobject instance = (*env)->NewObject(env, class, method_id);
 	return instance;

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-project (VCN_Bots)
+project (Numerical_Bots)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
   "${CMAKE_CURRENT_SOURCE_DIR}/../../CMake/Modules")
@@ -10,7 +10,7 @@ find_package(Cairo)
 message("Finding OpenMP...")
 find_package(OpenMP)
 
-set(VCN_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
@@ -23,55 +23,55 @@ if(${CMAKE_COMPILER_IS_GNUCXX})
   message("Additional default options were set for gcc.")
 endif(${CMAKE_COMPILER_IS_GNUCXX}) 
 
-add_subdirectory(vcn)
+add_subdirectory(nb)
 
 message("Configuring Math bot")
-add_library(vcn_math_bot SHARED
-  ${VCN_SOURCE_DIR}/vcn/math_bot.c)
-target_link_libraries(vcn_math_bot m)
+add_library(nb_math_bot SHARED
+  ${NB_SOURCE_DIR}/nb/math_bot.c)
+target_link_libraries(nb_math_bot m)
 
 message("Configuring Statistics bot")
-add_library(vcn_statistics_bot SHARED
-  ${VCN_SOURCE_DIR}/vcn/statistics_bot.c)
-target_link_libraries(vcn_statistics_bot m)
+add_library(nb_statistics_bot SHARED
+  ${NB_SOURCE_DIR}/nb/statistics_bot.c)
+target_link_libraries(nb_statistics_bot m)
 
 message("Configuring TextFile Bot")
-add_library(vcn_cfreader_bot SHARED
-  ${VCN_SOURCE_DIR}/vcn/cfreader_cat.c
+add_library(nb_cfreader_bot SHARED
+  ${NB_SOURCE_DIR}/nb/cfreader_cat.c
 )
 
 message("Configuring Drawing Bot")
-add_library(vcn_drawing_bot SHARED
-  ${VCN_SOURCE_DIR}/vcn/visual_cat.c
+add_library(nb_drawing_bot SHARED
+  ${NB_SOURCE_DIR}/nb/visual_cat.c
 )
 
-message("Configuring VCN Bots Library (ALL in one)")
-add_library(vcn_bots SHARED
-  ${VCN_SOURCE_DIR}/vcn/math_bot.c
-  ${VCN_SOURCE_DIR}/vcn/statistics_bot.c
+message("Configuring NB Bots Library (ALL in one)")
+add_library(nb_bots SHARED
+  ${NB_SOURCE_DIR}/nb/math_bot.c
+  ${NB_SOURCE_DIR}/nb/statistics_bot.c
 )
-target_link_libraries(vcn_bots LINK_INTERFACE_LIBRARIES
-  vcn_cfreader_bot
-  vcn_container_bot
-  vcn_eigen_bot
-  vcn_graph_bot
-  vcn_image_bot
-  vcn_geometric_bot
-  vcn_pde_bot
+target_link_libraries(nb_bots LINK_INTERFACE_LIBRARIES
+  nb_cfreader_bot
+  nb_container_bot
+  nb_eigen_bot
+  nb_graph_bot
+  nb_image_bot
+  nb_geometric_bot
+  nb_pde_bot
   m 
   )
 
-message("Configuring VCN Bots: Cairo Extension Library")
-add_library(vcn_bots-cairo SHARED
-  ${VCN_SOURCE_DIR}/vcn/geometric_bot/model/modules2D/exporter_cairo.c
-  ${VCN_SOURCE_DIR}/vcn/geometric_bot/mesh/modules2D/exporter_cairo.c
+message("Configuring NB Bots: Cairo Extension Library")
+add_library(nb_bots-cairo SHARED
+  ${NB_SOURCE_DIR}/nb/geometric_bot/model/modules2D/exporter_cairo.c
+  ${NB_SOURCE_DIR}/nb/geometric_bot/mesh/modules2D/exporter_cairo.c
 )
-target_link_libraries(vcn_bots-cairo ${CAIRO_LIBRARIES}
-  vcn_pde_bot-cairo
+target_link_libraries(nb_bots-cairo ${CAIRO_LIBRARIES}
+  nb_pde_bot-cairo
   )
 
-message("Configuring VCN Exceptions")
-add_library(vcn_exceptions SHARED
-  ${VCN_SOURCE_DIR}/vcn/exceptions.c
+message("Configuring NB Exceptions")
+add_library(nb_exceptions SHARED
+  ${NB_SOURCE_DIR}/nb/exceptions.c
 )
-target_link_libraries(vcn_exceptions vcn_container_bot)
+target_link_libraries(nb_exceptions nb_container_bot)

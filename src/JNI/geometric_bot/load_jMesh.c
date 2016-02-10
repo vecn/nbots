@@ -1,6 +1,6 @@
 #include <jni.h>
 
-#include "vcn/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/geometric_bot/mesh/elements2D/triangles.h"
 
 static void load_vertices_into_JNI(JNIEnv *env,
 				   const vcn_msh3trg_t *const restrict msh3trg,
@@ -24,7 +24,7 @@ static void load_input_sgm_into_JNI(JNIEnv *env,
 
 jobject jMesh_new(JNIEnv *env)
 {
-	jclass class = (*env)->FindClass(env, "Lvcn/geometricBot/Mesh;");
+	jclass class = (*env)->FindClass(env, "Lnb/geometricBot/Mesh;");
 	jmethodID method_id = (*env)->GetMethodID(env, class, "<init>", "()V");
 	jobject instance = (*env)->NewObject(env, class, method_id);
 	return instance;

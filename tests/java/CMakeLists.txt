@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-project (VCN_Bots)
+project (Numerical_Bots)
 
 find_package(Java)
 include(UseJava)

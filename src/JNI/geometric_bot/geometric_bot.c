@@ -8,11 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include "vcn/image_bot.h"
-#include "vcn/geometric_bot.h"
+#include "nb/image_bot.h"
+#include "nb/geometric_bot.h"
 #include "geometric_bot.h"
 
-#include "../../C/vcn/geometric_bot/model/model2D_struct.h"
+#include "../../C/nb/geometric_bot/model/model2D_struct.h"
 
 #include "jModel.h"
 #include "load_jMesh.h"
@@ -61,7 +61,7 @@ static int load_input_sgm_into_JNI(JNIEnv *env,
 				   jobjectArray jmesh_input_sgm);
 
 JNIEXPORT jobject JNICALL
-Java_vcn_geometricBot_GeometricBot_generateMesh
+Java_nb_geometricBot_GeometricBot_generateMesh
 		(JNIEnv *env, jclass class, jobject jModel)
 {
 	vcn_model_t* model = vcn_model_create();
@@ -82,7 +82,7 @@ Java_vcn_geometricBot_GeometricBot_generateMesh
 }
 
 JNIEXPORT jint JNICALL
-Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,
@@ -142,7 +142,7 @@ Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_
 }
 
 JNIEXPORT jint JNICALL
-Java_vcn_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
+Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2IIFFFFZZZZZ_3_3F_3_3I_3_3I_3_3I_3_3I_3_3_3I
                       (JNIEnv *env, jclass class,
 		       jint N, jfloatArray vertices,
 		       jint M, jintArray edges,

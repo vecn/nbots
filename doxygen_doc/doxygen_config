@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "VCN Bots"
+PROJECT_NAME           = "Numerical Bots"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -754,7 +754,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../include/ ../include/vcn/ ../include/vcn/container_bot/ ../include/vcn/eigen_bot/ ../include/vcn/graph_bot/ ../include/vcn/image_bot/ ../include/vcn/geometric_bot/ ../include/vcn/geometric_bot/model/ ../include/vcn/geometric_bot/mesh/ ../include/vcn/geometric_bot/knn/ ../include/vcn/geometric_bot/model/modules2D ../include/vcn/geometric_bot/mesh/modules2D ../include/vcn/geometric_bot/mesh/elements2D
+INPUT                  = ../include/ ../include/nb/ ../include/nb/container_bot/ ../include/nb/eigen_bot/ ../include/nb/graph_bot/ ../include/nb/image_bot/ ../include/nb/geometric_bot/ ../include/nb/geometric_bot/model/ ../include/nb/geometric_bot/mesh/ ../include/nb/geometric_bot/knn/ ../include/nb/geometric_bot/model/modules2D ../include/nb/geometric_bot/mesh/modules2D ../include/nb/geometric_bot/mesh/elements2D
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

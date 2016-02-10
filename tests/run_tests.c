@@ -9,9 +9,9 @@
 #include <dlfcn.h>  /* POSIX */
 #include <signal.h> /* POSIX */
 
-#include "vcn/container_bot/container.h"
-#include "vcn/statistics_bot.h"
-#include "vcn/exceptions.h"
+#include "nb/container_bot/container.h"
+#include "nb/statistics_bot.h"
+#include "nb/exceptions.h"
 
 #include "test.h"
 #include "test_driver.h"
