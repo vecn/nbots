@@ -64,7 +64,8 @@ static bool check_static_elasticity2D(void)
 	double thickness;
 
 	char input[255];
-	sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
+	//sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
+	sprintf(input, "%s/beam_cantilever.txt", INPUTS_DIR);
 	int read_status =
 		read_initial_conditions(input, model, bcond, material,
 					&enable_plane_stress_analysis,
@@ -77,7 +78,7 @@ static bool check_static_elasticity2D(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
 					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					  0.5);
+					  0.4);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_mesh_save_png(mesh, "TEMPORAL.png", 1000, 800);/* TEMPORAL */
 	vcn_msh3trg_t* delaunay = 

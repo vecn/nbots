@@ -12,11 +12,12 @@ void pipeline_assemble_system
 		 double thickness,
 		 bool* elements_enabled /* NULL to enable all */);
 
-void pipeline_set_boundary_conditions(vcn_sparse_t* K,
-					     double* F, 
-					     const vcn_bcond_t *const bmeshcond, 
-					     double thickness,
-					     double factor);
+void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
+				      vcn_sparse_t* K,
+				      double* F, 
+				      const vcn_bcond_t *const bmeshcond, 
+				      double thickness,
+				      double factor);
 void pipeline_compute_strain
 			(double *strain,
 			 const vcn_msh3trg_t *const mesh,

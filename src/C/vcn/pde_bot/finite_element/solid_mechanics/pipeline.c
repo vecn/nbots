@@ -21,6 +21,28 @@
 
 #define POW2(a) ((a)*(a))
 
+static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
+				  vcn_sparse_t* K,
+				  double* F, 
+				  const vcn_bcond_t *const bmeshcond, 
+				  double thickness,
+				  double factor);
+static void set_bcond_neumann_vtx(vcn_sparse_t* K,
+				  double* F, 
+				  const vcn_bcond_t *const bmeshcond, 
+				  double thickness,
+				  double factor);
+static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
+				    vcn_sparse_t* K,
+				    double* F, 
+				    const vcn_bcond_t *const bmeshcond, 
+				    double thickness,
+				    double factor);
+static void set_bcond_dirichlet_vtx(vcn_sparse_t* K,
+				    double* F, 
+				    const vcn_bcond_t *const bmeshcond, 
+				    double thickness,
+				    double factor);
 void pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
@@ -78,12 +100,12 @@ void pipeline_assemble_system
 		double d33 = E/(2.0*(1.0+v));
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
-		double* dNi_dx = (double*)malloc(elemtype->N_nodes*sizeof(double));
-		double* dNi_dy = (double*)malloc(elemtype->N_nodes*sizeof(double));
+		double* dNi_dx = malloc(elemtype->N_nodes * sizeof(double));
+		double* dNi_dy = malloc(elemtype->N_nodes * sizeof(double));
 		/* Compute constitutive matrix */
 		double fx = 0.0;
 		double fy = 0.0;
-		if(enable_self_weight){
+		if (enable_self_weight) {
 			fx = gravity[0] * vcn_fem_material_get_density(material);
 			fy = gravity[1] * vcn_fem_material_get_density(material);
 		}
@@ -106,7 +128,7 @@ void pipeline_assemble_system
 			double dy_dpsi = 0.0;
 			double dx_deta = 0.0;
 			double dy_deta = 0.0;
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
+			for (uint32_t i = 0; i < elemtype->N_nodes; i++) {
 				uint32_t inode = mesh->vertices_forming_triangles[k * elemtype->N_nodes + i];
 				double xi = mesh->vertices[inode * 2];
 				double yi = mesh->vertices[inode*2+1];
@@ -123,7 +145,8 @@ void pipeline_assemble_system
 			/* Compute Jacobian inverse and determinant */
 			double detJ = dx_dpsi*dy_deta - dy_dpsi*dx_deta;
 			/* Check if the element is distorted */
-			if(detJ < 0) N_negative_jacobians += 1;
+			if(detJ < 0)
+				N_negative_jacobians += 1;
       
 			double Jinv[4];
 			Jinv[0] =  dy_deta/detJ;
@@ -221,31 +244,110 @@ void pipeline_assemble_system
 	free(Fe);
 }
 
-void pipeline_set_boundary_conditions(vcn_sparse_t* K,
+void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
+				      vcn_sparse_t* K,
 				      double* F, 
 				      const vcn_bcond_t *const bmeshcond, 
 				      double thickness,
 				      double factor)
-/* We assume that all the conditions are placed on the mesh nodes */
 {
-	for (uint32_t i = 0; i < bmeshcond->N_Neuman_on_vtx; i++) {
-		for(uint32_t j=0; j < bmeshcond->N_dof; j++){
-			if(!bmeshcond->Neuman_on_vtx_dof_mask[i * bmeshcond->N_dof + j])
-				continue;
-			F[bmeshcond->Neuman_on_vtx_idx[i] * bmeshcond->N_dof + j] += factor *
-				bmeshcond->Neuman_on_vtx_val[i * bmeshcond->N_dof + j];
+	set_bcond_neumann_sgm(msh3trg, K, F, bmeshcond, thickness, factor);
+	set_bcond_neumann_vtx(K, F, bmeshcond, thickness, factor);
+	set_bcond_dirichlet_sgm(msh3trg, K, F, bmeshcond, thickness, factor);
+	set_bcond_dirichlet_vtx(K, F, bmeshcond, thickness, factor);
+}
+
+static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
+				  vcn_sparse_t* K,
+				  double* F, 
+				  const vcn_bcond_t *const bmeshcond, 
+				  double thickness,
+				  double factor)
+{
+	for (uint32_t k = 0; k < bmeshcond->N_Neuman_on_sgm; k++) {
+		uint32_t N = msh3trg->N_subsgm_x_inputsgm[k] + 1;
+		for (uint32_t i = 0; i < N; i++) {
+			uint32_t mesh_id = msh3trg->meshvtx_x_inputsgm[k][i];
+			for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
+				uint32_t id = k * bmeshcond->N_dof + j;
+				if (bmeshcond->Neuman_on_sgm_dof_mask[id]) {
+					uint32_t mtx_id = mesh_id *
+						bmeshcond->N_dof + j;
+					F[mtx_id] += factor * 
+						bmeshcond->Neuman_on_sgm_val[id] /
+						N;
+				}
+			}
 		}
 	}
+}
 
-	/* Set Dirichlet conditions (Displacements in the Solid Mechanics context)  */
-	for(uint32_t i=0; i < bmeshcond->N_Dirichlet_on_vtx; i++){
-		for(uint32_t k=0; k < bmeshcond->N_dof; k++){
-			if(!bmeshcond->Dirichlet_on_vtx_dof_mask[i * bmeshcond->N_dof + k])
-				continue;
-			uint32_t idx = bmeshcond->Dirichlet_on_vtx_idx[i] * bmeshcond->N_dof + k;
-			double value = factor *
-				bmeshcond->Dirichlet_on_vtx_val[i * bmeshcond->N_dof + k];
-			vcn_sparse_set_Dirichlet_condition(K, F, idx, value);
+static void set_bcond_neumann_vtx(vcn_sparse_t* K,
+				  double* F, 
+				  const vcn_bcond_t *const bmeshcond, 
+				  double thickness,
+				  double factor)
+{
+	for (uint32_t i = 0; i < bmeshcond->N_Neuman_on_vtx; i++) {
+		uint32_t mesh_id = bmeshcond->Neuman_on_vtx_idx[i];
+		for(uint32_t j = 0; j < bmeshcond->N_dof; j++){
+			uint32_t id = i * bmeshcond->N_dof + j;
+			if(bmeshcond->Neuman_on_vtx_dof_mask[id]) {
+				uint32_t mtx_id = mesh_id *
+					bmeshcond->N_dof + j;
+				F[mtx_id] += factor * 
+					bmeshcond->Neuman_on_vtx_val[id];
+			}
+		}
+	}
+}
+
+static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
+				    vcn_sparse_t* K,
+				    double* F, 
+				    const vcn_bcond_t *const bmeshcond, 
+				    double thickness,
+				    double factor)
+{
+	for (uint32_t k = 0; k < bmeshcond->N_Dirichlet_on_sgm; k++) {
+		uint32_t N = msh3trg->N_subsgm_x_inputsgm[k] + 1;
+		for (uint32_t i = 0; i < N; i++) {
+			uint32_t mesh_id = msh3trg->meshvtx_x_inputsgm[k][i];
+			for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
+				uint32_t id = k * bmeshcond->N_dof + j;
+				if (bmeshcond->Dirichlet_on_sgm_dof_mask[id]) {
+					uint32_t mtx_id = mesh_id *
+						bmeshcond->N_dof + j;
+					double value = factor *
+						bmeshcond->Dirichlet_on_sgm_val[id];
+					vcn_sparse_set_Dirichlet_condition(K, F,
+									   mtx_id,
+									   value);
+				}
+			}
+		}
+	}
+}
+
+static void set_bcond_dirichlet_vtx(vcn_sparse_t* K,
+				    double* F, 
+				    const vcn_bcond_t *const bmeshcond, 
+				    double thickness,
+				    double factor)
+{
+	for (uint32_t i = 0; i < bmeshcond->N_Dirichlet_on_vtx; i++) {
+		uint32_t mesh_id = bmeshcond->Dirichlet_on_vtx_idx[i];
+		for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
+			uint32_t id = i * bmeshcond->N_dof + j;
+			if (bmeshcond->Dirichlet_on_vtx_dof_mask[id]) {
+				uint32_t mtx_id = mesh_id *
+					bmeshcond->N_dof + j;
+				double value = factor *
+					bmeshcond->Dirichlet_on_vtx_val[id];
+				vcn_sparse_set_Dirichlet_condition(K, F,
+								   mtx_id,
+								   value);
+			}
 		}
 	}
 }

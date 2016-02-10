@@ -26,15 +26,16 @@
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 0						#
+ 2						#
+# Displacement conditions definition            #
+  0 1 1 0 0                                     #
+  3 1 1 0 0                                     #
 # Num of load conditions over vertices:		#
  1						#
 # Load conditions definition                    #
- 2 0 1  -2e7	      				#
+ 1 0 1  -2e7	      				#
 # Num of displacement conditions over lines:    #
- 1                                              #
-# Displacement conditions definition            #
- 3 1 1  0.0 0.0					#
+ 0                                              #
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
@@ -42,9 +43,9 @@
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0.2						#
+ 0.29						#
 # Elasticity module				#
- 2e7	                                        #
+ 2e11	                                        #
 # Fracture energy (J/m^2 -> kg/s^2)             #
  113                                            #
 # Compression limit stress                      #

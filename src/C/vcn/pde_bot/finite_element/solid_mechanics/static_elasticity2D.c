@@ -74,7 +74,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	/*********************************************************************/
 	/**************** 2) Set boundary conditions *************************/
 	/*********************************************************************/
-	pipeline_set_boundary_conditions(K, F, bmeshcond, thickness, 1.0);
+	pipeline_set_boundary_conditions(mesh, K, F, bmeshcond, thickness, 1.0);
 
 	/**********************************************************************/
 	/************* 3) Solve system (to compute displacements) *************/

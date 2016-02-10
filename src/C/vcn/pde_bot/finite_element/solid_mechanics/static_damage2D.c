@@ -333,16 +333,16 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/********* > Assemble system **********************/
 			/**************************************************/
 			DMG_pipeline_assemble_system(K, NULL, F,
-						 mesh,
-						 elemtype,
-						 material,
-						 enable_self_weight,
-						 gravity,
-						 enable_plane_stress,
-						 thickness,
-						 true, /* Enable computing damage */
-						 damage,
-						 NULL);
+						     mesh,
+						     elemtype,
+						     material,
+						     enable_self_weight,
+						     gravity,
+						     enable_plane_stress,
+						     thickness,
+						     true, /* Enable computing damage */
+						     damage,
+						     NULL);
 
 			/*****************************************/
 			/****** > Set boundary conditions ********/
@@ -351,7 +351,9 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			pipeline_set_boundary_conditions(K, F, bmeshcond, thickness, condition_factor);
+			pipeline_set_boundary_conditions(mesh, K, F, bmeshcond,
+							 thickness,
+							 condition_factor);
 
 			/*******************************************/
 			/******* > Verify residual *****************/

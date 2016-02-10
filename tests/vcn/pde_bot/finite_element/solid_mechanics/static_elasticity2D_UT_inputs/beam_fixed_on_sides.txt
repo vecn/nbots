@@ -45,7 +45,7 @@
 # Poisson module				#
  0.2						#
 # Elasticity module				#
- 2e7	                                        #
+ 2e11	                                        #
 # Fracture energy (J/m^2 -> kg/s^2)             #
  113                                            #
 # Compression limit stress                      #
