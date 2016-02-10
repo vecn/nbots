@@ -119,8 +119,8 @@ static vcn_container_t *create_without_dst(int8_t id)
 {
 	vcn_container_t *container = calloc(1, sizeof(*container));
 	container->id = id;
-	if (id >= VCN_CONTAINER_NULL)
-		container->id = VCN_CONTAINER_NULL;
+	if (id >= NB_CONTAINER_NULL)
+		container->id = NB_CONTAINER_NULL;
 	init_dst_functions(container);
 	set_functions(container, id);
 	return container;
@@ -137,19 +137,19 @@ static void init_dst_functions(vcn_container_t *container)
 static void set_functions(vcn_container_t *container, int8_t id)
 {
 	switch (id) {
-	case VCN_CONTAINER_QUEUE:
+	case NB_CONTAINER_QUEUE:
 		container_set_queue(container);
 		break;
-	case VCN_CONTAINER_STACK:
+	case NB_CONTAINER_STACK:
 		container_set_stack(container);
 		break;
-	case VCN_CONTAINER_SORTED:
+	case NB_CONTAINER_SORTED:
 		container_set_avl(container);
 		break;
-	case VCN_CONTAINER_HEAP:
+	case NB_CONTAINER_HEAP:
 		container_set_heap(container);
 		break;
-	case VCN_CONTAINER_HASH:
+	case NB_CONTAINER_HASH:
 		container_set_htable(container);
 		break;
 	default:
@@ -405,14 +405,14 @@ void vcn_container_cast(vcn_container_t* container, int8_t new_id)
 static inline bool casting_is_valid(int8_t id1, int8_t id2)
 {
 	return id1 != id2 && 
-		id1 < VCN_CONTAINER_NULL &&
-		id2 < VCN_CONTAINER_NULL;
+		id1 < NB_CONTAINER_NULL &&
+		id2 < NB_CONTAINER_NULL;
 }
 
 static inline bool is_cast_between_QUEUE_and_STACK(int8_t id1, int8_t id2)
 {
-	return (id1 == VCN_CONTAINER_QUEUE && id2 == VCN_CONTAINER_STACK) ||
-		(id1 == VCN_CONTAINER_STACK && id2 == VCN_CONTAINER_QUEUE);
+	return (id1 == NB_CONTAINER_QUEUE && id2 == NB_CONTAINER_STACK) ||
+		(id1 == NB_CONTAINER_STACK && id2 == NB_CONTAINER_QUEUE);
 }
 
 static void cast_container(vcn_container_t* container, int8_t new_id)
@@ -561,13 +561,13 @@ void* vcn_container_do(vcn_container_t *container, const char* func,
 {
 	void *out = NULL;
 	switch (container->id) {
-	case VCN_CONTAINER_QUEUE:
+	case NB_CONTAINER_QUEUE:
 		out = queue_do(container, func, data, status);
 		break;
-	case VCN_CONTAINER_SORTED:
+	case NB_CONTAINER_SORTED:
 		out = sorted_do(container, func, data, status);
 		break;
-	case VCN_CONTAINER_HASH:
+	case NB_CONTAINER_HASH:
 		out = hash_do(container, func, data, status);
 		break;
 	default:

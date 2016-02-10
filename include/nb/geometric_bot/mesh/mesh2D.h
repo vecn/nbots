@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_MESH_MESH2D_H__
-#define __VCN_GEOMETRIC_BOT_MESH_MESH2D_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_MESH2D_H__
+#define __NB_GEOMETRIC_BOT_MESH_MESH2D_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,28 +12,28 @@
  * a refined mesh with the maximum quality predicted by theory.
  * Minimum angle bound equivalent to 26.45 degrees.
  */
-#define VCN_MESH_MAX_ANGLE (0.46163958715250017309)
+#define NB_MESH_MAX_ANGLE (0.46163958715250017309)
 
 enum {
-	VCN_MESH_SIZE_CONSTRAINT_MAX_VTX,
-	VCN_MESH_SIZE_CONSTRAINT_MAX_TRG
+	NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+	NB_MESH_SIZE_CONSTRAINT_MAX_TRG
 };
 
 enum {
-	VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
-	VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-	VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH
+	NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+	NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+	NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH
 };
 
 enum {
-	VCN_MESH_TASK_AFTER_INSERT_TRG,
-	VCN_MESH_TASK_AFTER_INSERT_VTX
+	NB_MESH_TASK_AFTER_INSERT_TRG,
+	NB_MESH_TASK_AFTER_INSERT_VTX
 };
 
 enum {
-	VCN_MESH_REFINE_RUPPERT,
-	VCN_MESH_REFINE_CHEW,
-	VCN_MESH_REFINE_DEFAULT
+	NB_MESH_REFINE_RUPPERT,
+	NB_MESH_REFINE_CHEW,
+	NB_MESH_REFINE_DEFAULT
 };
 
 /**
@@ -145,7 +145,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  *
  * @param[in] min_angle Minimum angle allowed in the triangulation (in 
  * radians).
- * This angle must be in the range of 0 and <b>VCN_MESH_MAX_ANGLE</b>,
+ * This angle must be in the range of 0 and <b>NB_MESH_MAX_ANGLE</b>,
  * which corresponds to 26.45 degrees (0.4616 radians approx).
  *
  * @param[in] density Function to control the density of the triangulation,
@@ -160,11 +160,11 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * + <b>NULL (or 0)</b>: No density defined, build the mesh with the minimum 
  *   number of triangles for a given minimum angle.
  *   <b>density_data</b> must be <b>NULL</b>.
- * + <b>VCN_DENSITY_CDT</b>: Used to build the Constrainted Delaunay
+ * + <b>NB_DENSITY_CDT</b>: Used to build the Constrainted Delaunay
  *   Triangulation (CDT) inside the domain. The CDT is the triangulation which
  *   maximizes the minimum angle of all the triangles, using only the input
  *   vertices.
- * + <b>VCN_DENSITY_MAX</b>: Used to define maximum size of edges and input
+ * + <b>NB_DENSITY_MAX</b>: Used to define maximum size of edges and input
  *   subsegments.
  *   <b>density_data</b> must be an array <b>'double max[2]'</b>, which
  *   defines the maximum edge length into max[0] and the maximum subsegment
@@ -173,7 +173,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  *   not effect).
  *   If some max value equals zero then it is not considered, hence you can
  *   constraint only the subsegments size.
- * + <b>VCN_DENSITY_IMG</b>: The density is given by an image.
+ * + <b>NB_DENSITY_IMG</b>: The density is given by an image.
  *   <b>density_data</b> must be a pointer to <b>vcn_density_img_t</b>.
  *
  * @param[in] density_data Data used to estimate the density. It is given

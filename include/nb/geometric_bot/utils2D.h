@@ -4,10 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define VCN_PI (3.14159265359)
-#define VCN_PHI (1.61803398875)
-#define VCN_GEOMETRIC_TOL (1.5e-8)
-#define VCN_GEOMETRIC_TOL_POW2 (2.25e-16)
+#define NB_PI (3.14159265359)
+#define NB_PHI (1.61803398875)
+#define NB_GEOMETRIC_TOL (1.5e-8)
+#define NB_GEOMETRIC_TOL_POW2 (2.25e-16)
 
 double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr);
 double vcn_utils2D_get_y_from_darray(const void *const vtx_ptr);

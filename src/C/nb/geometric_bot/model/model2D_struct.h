@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_MODEL_MODEL2D_STRUCT_H__
-#define __VCN_GEOMETRIC_BOT_MODEL_MODEL2D_STRUCT_H__
+#ifndef __NB_GEOMETRIC_BOT_MODEL_MODEL2D_STRUCT_H__
+#define __NB_GEOMETRIC_BOT_MODEL_MODEL2D_STRUCT_H__
 
 #include <stdint.h>
 #include "nb/geometric_bot/model/model2D.h"

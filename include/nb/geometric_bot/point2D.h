@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_POINT2D_H__
-#define __VCN_GEOMETRIC_BOT_POINT2D_H__
+#ifndef __NB_GEOMETRIC_BOT_POINT2D_H__
+#define __NB_GEOMETRIC_BOT_POINT2D_H__
 
 #include <stdint.h>
 #include <stdbool.h>

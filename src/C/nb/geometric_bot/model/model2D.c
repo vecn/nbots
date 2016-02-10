@@ -167,7 +167,7 @@ vcn_model_t* vcn_model_create_polygon(double radius,
 				      uint32_t N_sides)
 {
 	vcn_model_t *model = vcn_model_create();
-	double angle_step = (VCN_MATH_PI * 2.0) / N_sides;
+	double angle_step = (NB_MATH_PI * 2.0) / N_sides;
 	model->N = N_sides;
 	model->M = N_sides;
 	model_alloc_vertices(model);
@@ -187,7 +187,7 @@ vcn_model_t* vcn_model_create_circle(double radius,
 				     double y_center,
 				     double side_length)
 {
-	double perimeter = 2.0 * VCN_MATH_PI * radius;
+	double perimeter = 2.0 * NB_MATH_PI * radius;
 	uint32_t n = (uint32_t) (perimeter / side_length + 0.5);
 	if (10 > n)
 		n = 10;
@@ -635,7 +635,7 @@ uint32_t vcn_model_get_vertex_id(const vcn_model_t *const model, double* vtx)
 {
 	uint32_t id = model->N;
 	for (uint32_t i = 0; i < model->N; i++) {
-		if (vcn_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < VCN_GEOMETRIC_TOL_POW2) {
+		if (vcn_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 			id = i;
 			break;
 		}
@@ -662,19 +662,19 @@ uint32_t vcn_model_get_edge_id(const vcn_model_t *const model, double* edge_vert
 		uint32_t id2 = model->edge[i*2+1];
 		if (vcn_utils2D_get_dist2(edge_vertices, 
 				 &(model->vertex[id1 * 2])) <
-		    VCN_GEOMETRIC_TOL_POW2) {
+		    NB_GEOMETRIC_TOL_POW2) {
 			if (vcn_utils2D_get_dist2(&(edge_vertices[2]), 
 					 &(model->vertex[id2*2])) <
-			    VCN_GEOMETRIC_TOL_POW2) {
+			    NB_GEOMETRIC_TOL_POW2) {
 				id = i;
 				break;
 			}
 		} else if (vcn_utils2D_get_dist2(edge_vertices, 
 					&(model->vertex[id2 * 2])) <
-			   VCN_GEOMETRIC_TOL_POW2){
+			   NB_GEOMETRIC_TOL_POW2){
 			if (vcn_utils2D_get_dist2(&(edge_vertices[2]), 
 					 &(model->vertex[id1*2])) <
-			    VCN_GEOMETRIC_TOL_POW2) {
+			    NB_GEOMETRIC_TOL_POW2) {
 				id = i;
 				break;
 			}

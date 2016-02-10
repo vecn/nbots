@@ -1,5 +1,5 @@
-#ifndef __VCN_HTABLE_ITERATOR_H__
-#define __VCN_HTABLE_ITERATOR_H__
+#ifndef __NB_HTABLE_ITERATOR_H__
+#define __NB_HTABLE_ITERATOR_H__
 
 #include <stdbool.h>
 

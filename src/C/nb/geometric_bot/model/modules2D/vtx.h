@@ -1,5 +1,5 @@
-#ifndef __VCN_MODEL2D_VTX_H__
-#define __VCN_MODEL2D_VTX_H__
+#ifndef __NB_MODEL2D_VTX_H__
+#define __NB_MODEL2D_VTX_H__
 
 #include <stdint.h>
 #include <stdbool.h>

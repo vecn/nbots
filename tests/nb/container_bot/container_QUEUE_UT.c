@@ -1,4 +1,4 @@
-#define CONTAINER_ID VCN_CONTAINER_QUEUE
+#define CONTAINER_ID NB_CONTAINER_QUEUE
 #define N_ITEMS 200
 #include "container_TEMPLATE_UT.c"
 

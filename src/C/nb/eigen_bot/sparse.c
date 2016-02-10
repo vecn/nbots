@@ -2220,10 +2220,10 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
   /* LU Decomposition in case of LU Solver */
   vcn_sparse_t *L = NULL;
   vcn_sparse_t *U = NULL;
-  if (solver_type == VCN_SOLVER_CHK) {
+  if (solver_type == NB_SOLVER_CHK) {
     vcn_sparse_alloc_LU(A, &L, &U);
     vcn_sparse_decompose_Cholesky(A, L, U, omp_parallel_threads);
-  } else if (solver_type == VCN_SOLVER_LUD) {
+  } else if (solver_type == NB_SOLVER_LUD) {
     vcn_sparse_alloc_LU(A, &L, &U);
     vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
   }
@@ -2241,9 +2241,9 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
     double rnorm2_diff = 1;
     while(rnorm2 > POW2(tolerance) && rnorm2_diff > POW2(tolerance)){
       /* Step 1 */
-      if (solver_type == VCN_SOLVER_CHK || solver_type == VCN_SOLVER_LUD)
+      if (solver_type == NB_SOLVER_CHK || solver_type == NB_SOLVER_LUD)
 	vcn_sparse_solve_LU(L, U, _eigenvecs[i], p);
-      else if (solver_type == VCN_SOLVER_CGJ)
+      else if (solver_type == NB_SOLVER_CGJ)
 	vcn_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p, 
 				       vcn_sparse_get_size(A)*10, 1e-3, 
 				       NULL, NULL,
@@ -2301,7 +2301,7 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
       vcn_sparse_add(A_ptr_copy, c, c, mu);  /* A = M + mu*I */
     
   /* Destroy LU decomposition */
-  if (solver_type == VCN_SOLVER_CHK || solver_type == VCN_SOLVER_LUD) {
+  if (solver_type == NB_SOLVER_CHK || solver_type == NB_SOLVER_LUD) {
     vcn_sparse_destroy(U);
     vcn_sparse_destroy(L);
   }

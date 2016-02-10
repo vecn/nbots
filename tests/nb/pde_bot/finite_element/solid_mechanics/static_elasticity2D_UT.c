@@ -46,7 +46,7 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)
@@ -77,7 +77,7 @@ static bool check_static_elasticity2D(void)
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.4);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_mesh_save_png(mesh, "TEMPORAL.png", 1000, 800);/* TEMPORAL */
@@ -89,7 +89,7 @@ static bool check_static_elasticity2D(void)
 		vcn_fem_bcond_create_from_model_to_mesh(delaunay, bcond);
 
 	/* FEM Analysis */
-	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(VCN_TRG_LINEAR);
+	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	double* displacement = 
 		malloc(delaunay->N_vertices * 2 * sizeof(*displacement));

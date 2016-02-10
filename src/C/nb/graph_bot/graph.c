@@ -122,7 +122,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
  */
 {
 	/* Allocate AVL to minimize */
-	vcn_container_t* minimum_degree = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* minimum_degree = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR next lines
 	   set_key_generator(compare_degree);
 	*/
@@ -138,7 +138,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 	uint32_t* N_super_variable =
 		calloc(graph->N, sizeof(*N_super_variable));
 	for (uint32_t i = 0; i < graph->N; i++) {
-		adj_variables[i] = vcn_container_create(VCN_CONTAINER_QUEUE);
+		adj_variables[i] = vcn_container_create(NB_CONTAINER_QUEUE);
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
 			vcn_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
 		adj_elements[i] = calloc(6, sizeof(*(adj_elements[i])));
@@ -252,7 +252,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 		
 		/* Supervariables detection */
 		vcn_container_t* hash_supervariables =
-			vcn_container_create(VCN_CONTAINER_HASH);
+			vcn_container_create(NB_CONTAINER_HASH);
 		vcn_container_set_key_generator(hash_supervariables,
 						hash_function_supervariables);
 		
@@ -415,7 +415,7 @@ static vcn_container_t* get_collisions(vcn_container_t *hash)
 	if (0 != status) {
 		printf("\nERROR: vcn_container_do()\n");
 		printf("       using 'get_collisions'\n");
-		printf("       exclusive of VCN_CONTAINER_HASH\n");
+		printf("       exclusive of NB_CONTAINER_HASH\n");
 		exit(1);
 	}
 	return collisions;
@@ -425,7 +425,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 /* TEMPORAL: Reuse code, very similar to AMD */
 {
 	/* Allocate AVL to minimize */
-	vcn_container_t* minimum_degree = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* minimum_degree = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR next lines
 	vcn_container_set_key_generator(compare_degree);
 	*/
@@ -440,7 +440,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 	void*** super_variable = malloc(graph->N * sizeof(*super_variable));
 	uint32_t* N_super_variable = calloc(graph->N, sizeof(*N_super_variable));
 	for (uint32_t i = 0; i < graph->N; i++) {
-		adj_variables[i] = vcn_container_create(VCN_CONTAINER_QUEUE);
+		adj_variables[i] = vcn_container_create(NB_CONTAINER_QUEUE);
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
 			vcn_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
 		adj_elements[i] = calloc(6, sizeof(*adj_elements[i]));
@@ -542,7 +542,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 		
 		/* Supervariables detection */
 		vcn_container_t* hash_supervariables =
-			vcn_container_create(VCN_CONTAINER_HASH);
+			vcn_container_create(NB_CONTAINER_HASH);
 		vcn_container_set_key_generator(hash_supervariables,
 						hash_function_supervariables);
 		
@@ -800,7 +800,7 @@ static uint32_t* sb_partition(const vcn_graph_t *const __restrict graph,
 	eigen_vecs[1] = malloc(graph->N * sizeof(*eigen_vecs[1]));
 
 	int iter; /* TEMPORAL: Unused */
-	vcn_sparse_eigen_ipower(B, VCN_SOLVER_LUD,
+	vcn_sparse_eigen_ipower(B, NB_SOLVER_LUD,
 				2, 0.0, eigen_vecs, eigen_vals,
 				&iter, 1e-8, 1);
 	vcn_sparse_destroy(B);

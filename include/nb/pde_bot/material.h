@@ -1,5 +1,5 @@
-#ifndef __VCN_PDE_BOT_MATERIAL_H__
-#define __VCN_PDE_BOT_MATERIAL_H__
+#ifndef __NB_PDE_BOT_MATERIAL_H__
+#define __NB_PDE_BOT_MATERIAL_H__
 
 typedef struct vcn_fem_material_s vcn_fem_material_t;
 

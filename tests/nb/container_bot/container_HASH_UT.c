@@ -1,4 +1,4 @@
-#define CONTAINER_ID VCN_CONTAINER_HASH
+#define CONTAINER_ID NB_CONTAINER_HASH
 #define N_ITEMS 200
 #include "container_TEMPLATE_UT.c"
 
@@ -42,7 +42,7 @@ static bool check_realloc_if_max_load(void)
 
 static bool check_get_size(void)
 {
-	vcn_container_t *cnt = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t *cnt = vcn_container_create(NB_CONTAINER_HASH);
 	int8_t status;
 	uint32_t *size_ptr = vcn_container_do(cnt, "get_size", NULL, &status);
 	uint32_t size = 0;
@@ -56,7 +56,7 @@ static bool check_get_size(void)
 
 static bool check_get_N_collisions(void)
 {
-	vcn_container_t *cnt = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t *cnt = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(cnt, small_hash_key);
 	vcn_container_set_destroyer(cnt, free);
 	for (int i = 0; i < 100; i++) {
@@ -77,7 +77,7 @@ static bool check_get_N_collisions(void)
 
 static bool check_get_collisions(void)
 {
-	vcn_container_t *cnt = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t *cnt = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(cnt, small_hash_key);
 	vcn_container_set_destroyer(cnt, free);
 	for (int i = 0; i < 100; i++) {

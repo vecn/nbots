@@ -1,5 +1,5 @@
-#ifndef __VCN_MESH2D_POLYGONS_STRUCT_H__
-#define __VCN_MESH2D_POLYGONS_STRUCT_H__
+#ifndef __NB_MESH2D_POLYGONS_STRUCT_H__
+#define __NB_MESH2D_POLYGONS_STRUCT_H__
 
 /**
  * @brief Read-only mesh structure storing the Voronoi graph, which

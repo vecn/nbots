@@ -7,7 +7,7 @@
 
 int vcn_test_get_driver_type(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_do_before_tests(void)

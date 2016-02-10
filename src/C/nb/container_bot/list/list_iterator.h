@@ -1,5 +1,5 @@
-#ifndef __VCN_LIST_ITERATOR_H__
-#define __VCN_LIST_ITERATOR_H__
+#ifndef __NB_LIST_ITERATOR_H__
+#define __NB_LIST_ITERATOR_H__
 
 #include <stdbool.h>
 

@@ -64,7 +64,7 @@ static const char* cfunc_get_label(cfunc_t *cfunc);
 
 int vcn_test_get_driver_type(void)
 {
-	return VCN_DRIVER_COMPLEXITY_TEST;
+	return NB_DRIVER_COMPLEXITY_TEST;
 }
 
 void vcn_test_do_before_tests(void)

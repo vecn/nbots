@@ -55,7 +55,7 @@ static void set_centipede(input_t *input, uint32_t N_pairs);
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)
@@ -191,7 +191,7 @@ static void set_polygon(int N, double r, double vertices[])
 	if (1 == N) {
 		set_vertex(0, vertices, 0, 0);
 	} else if (1 < N) {
-		double angle_step = (VCN_PI * 2.0) / N;
+		double angle_step = (NB_PI * 2.0) / N;
 		for (uint32_t i = 0; i < N; i++) {
 			double a = i * angle_step;
 			set_vertex(i, vertices, r * cos(a), r * sin(a));

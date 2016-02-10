@@ -69,21 +69,21 @@ vcn_mesh_t* vcn_mesh_create(void)
 	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
 
-	mesh->ht_edge = vcn_container_create(VCN_CONTAINER_HASH);
+	mesh->ht_edge = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(mesh->ht_edge, hash_key_edge);
 	vcn_container_set_comparer(mesh->ht_edge, are_equal_edge);
 	vcn_container_set_destroyer(mesh->ht_edge, free);
 
-	mesh->ht_trg = vcn_container_create(VCN_CONTAINER_HASH);
+	mesh->ht_trg = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(mesh->ht_trg, hash_key_trg);
 	vcn_container_set_destroyer(mesh->ht_trg, free);
 	mesh->scale = 1.0;
 
-	set_angle_constraint(mesh, VCN_MESH_MAX_ANGLE);
+	set_angle_constraint(mesh, NB_MESH_MAX_ANGLE);
 
 	init_tasks(mesh);
 
-	mesh->refiner_type = VCN_MESH_REFINE_RUPPERT;
+	mesh->refiner_type = NB_MESH_REFINE_RUPPERT;
 	return mesh;
 }
 
@@ -141,10 +141,10 @@ void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
 		       void (*task)(const vcn_mesh_t *const))
 {
 	switch (type) {
-	case VCN_MESH_TASK_AFTER_INSERT_TRG:
+	case NB_MESH_TASK_AFTER_INSERT_TRG:
 		mesh->do_after_insert_trg = task;
 		break;
-	case VCN_MESH_TASK_AFTER_INSERT_VTX:
+	case NB_MESH_TASK_AFTER_INSERT_VTX:
 		mesh->do_after_insert_vtx = task;
 		break;
 	}
@@ -154,10 +154,10 @@ void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
 				 uint32_t value)
 {
 	switch (type) {
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_VTX:
 		mesh->max_vtx = value;
 		break;
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_TRG:
 		mesh->max_trg = value;
 		break;
 	}
@@ -166,10 +166,10 @@ void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
 void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type)
 {
 	switch (type) {
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_VTX:
 		mesh->max_vtx = 0;
 		break;
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_TRG:
 		mesh->max_trg = 0;
 		break;
 	}
@@ -179,10 +179,10 @@ uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
 {
 	uint32_t val;
 	switch (type) {
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_VTX:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_VTX:
 		val = mesh->max_vtx;
 		break;
-	case VCN_MESH_SIZE_CONSTRAINT_MAX_TRG:
+	case NB_MESH_SIZE_CONSTRAINT_MAX_TRG:
 		val = mesh->max_trg;
 		break;
 	default:
@@ -195,13 +195,13 @@ void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
 				      double value)
 {
 	switch (type) {
-	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
+	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
 		set_angle_constraint(mesh, value);
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		mesh->max_edge_length = value;
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
 		mesh->max_subsgm_length = value;
 		break;
 	}
@@ -210,13 +210,13 @@ void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
 void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
 {
 	switch (type) {
-	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
+	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
 		set_angle_constraint(mesh, 0.0);
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		mesh->max_edge_length = 0.0;
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
 		mesh->max_subsgm_length = 0.0;
 		break;
 	}
@@ -235,13 +235,13 @@ double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
 {
 	double val;
 	switch (type) {
-	case VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
+	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
 		val = mesh->min_angle;
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		val = mesh->max_edge_length;
 		break;
-	case VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
+	case NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
 		val = mesh->max_subsgm_length;
 		break;
 	default:
@@ -267,10 +267,10 @@ inline void vcn_mesh_unset_density(vcn_mesh_t* mesh)
 
 inline void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type)
 {
-	if (type >= 0 && type < VCN_MESH_REFINE_DEFAULT)
+	if (type >= 0 && type < NB_MESH_REFINE_DEFAULT)
 		mesh->refiner_type = type;
 	else
-		mesh->refiner_type = VCN_MESH_REFINE_DEFAULT;
+		mesh->refiner_type = NB_MESH_REFINE_DEFAULT;
 }
 
 inline int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh)
@@ -458,7 +458,7 @@ static inline int compare_vtx(const void* const vtxA,
 {
 	msh_vtx_t* vA = (msh_vtx_t*) vtxA;
 	msh_vtx_t* vB = (msh_vtx_t*) vtxB;
-	if (vcn_utils2D_get_dist2(vA->x, vB->x) < VCN_GEOMETRIC_TOL)
+	if (vcn_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL)
 		return 0;
 	return 1;
 }
@@ -538,10 +538,10 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 void vcn_mesh_refine(vcn_mesh_t *restrict mesh)
 {
 	switch (mesh->refiner_type) {
-	case VCN_MESH_REFINE_RUPPERT:
+	case NB_MESH_REFINE_RUPPERT:
 		vcn_ruppert_refine(mesh);
 		break;
-	case VCN_MESH_REFINE_CHEW:
+	case NB_MESH_REFINE_CHEW:
 		printf("Chew refinement is not implemented yet\n");
 		break;
 	default:
@@ -553,10 +553,10 @@ bool vcn_mesh_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 {
 	bool inserted;
 	switch (mesh->refiner_type) {
-	case VCN_MESH_REFINE_RUPPERT:
+	case NB_MESH_REFINE_RUPPERT:
 		inserted = vcn_ruppert_insert_vtx(mesh, vertex);
 		break;
-	case VCN_MESH_REFINE_CHEW:
+	case NB_MESH_REFINE_CHEW:
 		inserted = false;
 		printf("Chew refinement is not implemented yet\n");
 		break;
@@ -669,7 +669,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 
 	/* Clone data structures and hash tables used to handle mesh */
-	clone->ht_trg = vcn_container_create(VCN_CONTAINER_HASH);
+	clone->ht_trg = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(clone->ht_trg, hash_key_trg);
 	vcn_container_set_destroyer(clone->ht_trg, free);
 	vcn_iterator_restart(trg_iter);
@@ -693,7 +693,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 			trg_clone->t3 = triangles[((uint32_t*)((void**)trg->t3->attr)[0])[0]];
 		vcn_container_insert(clone->ht_trg, trg_clone);
 	}
-	clone->ht_edge = vcn_container_create(VCN_CONTAINER_HASH);
+	clone->ht_edge = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(clone->ht_edge, hash_key_edge);
 	vcn_container_set_destroyer(clone->ht_edge, free);
 	vcn_container_set_comparer(clone->ht_edge, are_equal_edge);

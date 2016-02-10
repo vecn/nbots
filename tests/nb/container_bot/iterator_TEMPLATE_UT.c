@@ -4,7 +4,7 @@
  * "CONTAINER_ID" and "N_ITEMS".
  *
  * Example:
- *  #define CONTAINER_ID VCN_CONTAINER_QUEUE
+ *  #define CONTAINER_ID NB_CONTAINER_QUEUE
  *  #define N_ITEMS 1000
  *  #include "iterator_TEMPLATE_UT.c"
  */
@@ -34,7 +34,7 @@ static bool are_equal(const void *const a, const void *const b);
 
 inline int TEMPLATE_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void TEMPLATE_load_tests(void *tests_ptr)

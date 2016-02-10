@@ -1,5 +1,5 @@
-#ifndef __VCN_COMPLEXITY_FUNCTIONS_H__
-#define __VCN_COMPLEXITY_FUNCTIONS_H__
+#ifndef __NB_COMPLEXITY_FUNCTIONS_H__
+#define __NB_COMPLEXITY_FUNCTIONS_H__
 
 double eval_1(double x, double coeff);
 double eval_logn(double x, double coeff);

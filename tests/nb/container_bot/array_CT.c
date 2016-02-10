@@ -36,7 +36,7 @@ static int8_t compare_fnc(const void *const a,
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_COMPLEXITY_TEST;
+	return NB_DRIVER_COMPLEXITY_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)

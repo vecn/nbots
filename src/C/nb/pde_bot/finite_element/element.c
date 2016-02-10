@@ -10,7 +10,7 @@ vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id)
 {
 	vcn_fem_elem_t *elem = calloc(1, sizeof(*elem));
 	switch(id) {
-	case VCN_TRG_LINEAR:
+	case NB_TRG_LINEAR:
 		vcn_fem_elem_init_trg_linear(elem);
 	default:
 		vcn_fem_elem_init_trg_linear(elem);

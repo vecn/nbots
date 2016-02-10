@@ -238,7 +238,7 @@ inline double vcn_utils2D_get_trg_quality(const double t1[2],
 					  const double t3[2])
 {
 	double B = vcn_utils2D_get_cr2se_ratio(t1, t2, t3);
-	return VCN_MATH_INV_SQRT3/B;
+	return NB_MATH_INV_SQRT3/B;
 }
 
 double vcn_utils2D_get_min_trg_edge(const double t1[2],
@@ -342,7 +342,7 @@ bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
 	/* Return 1 if the segments are strictly intersected */
 	const double denominator = 
 		((b2[1]-b1[1])*(a2[0]-a1[0]) - (b2[0]-b1[0])*(a2[1]-a1[1]));
-	if (fabs(denominator) < VCN_GEOMETRIC_TOL) {
+	if (fabs(denominator) < NB_GEOMETRIC_TOL) {
 		/* Lines are parallel (or coincident) */
 		if (status != NULL) 
 			status[0] = 3;
@@ -355,13 +355,13 @@ bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
 			   (a2[1]-a1[1])*(a1[0]-b1[0])) /
 		denominator;
 	/* There aren't intersection */
-	if (ua < - VCN_GEOMETRIC_TOL || ua > 1 + VCN_GEOMETRIC_TOL) {
+	if (ua < - NB_GEOMETRIC_TOL || ua > 1 + NB_GEOMETRIC_TOL) {
 		if (status != NULL) 
 			status[0] = 1;
 		return false;
 	}
 
-	if (ub < - VCN_GEOMETRIC_TOL || ub > 1 + VCN_GEOMETRIC_TOL) {
+	if (ub < - NB_GEOMETRIC_TOL || ub > 1 + NB_GEOMETRIC_TOL) {
 		if (status != NULL)
 			status[0] = 1;
 		return false;
@@ -376,26 +376,26 @@ bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
 		intersection[1] = p[1];
 	}
 
-	if (fabs(p[0]-a1[0]) < VCN_GEOMETRIC_TOL &&
-	    fabs(p[1]-a1[1]) < VCN_GEOMETRIC_TOL) {
+	if (fabs(p[0]-a1[0]) < NB_GEOMETRIC_TOL &&
+	    fabs(p[1]-a1[1]) < NB_GEOMETRIC_TOL) {
 		if (status != NULL)
 			status[0] = 4;
 		return false;
 	}
-	if (fabs(p[0]-a2[0]) < VCN_GEOMETRIC_TOL &&
-	    fabs(p[1]-a2[1]) < VCN_GEOMETRIC_TOL) {
+	if (fabs(p[0]-a2[0]) < NB_GEOMETRIC_TOL &&
+	    fabs(p[1]-a2[1]) < NB_GEOMETRIC_TOL) {
 		if (status != NULL)
 			status[0] = 5;
 		return false;
 	}
-	if (fabs(p[0]-b1[0]) < VCN_GEOMETRIC_TOL &&
-	    fabs(p[1]-b1[1]) < VCN_GEOMETRIC_TOL) {
+	if (fabs(p[0]-b1[0]) < NB_GEOMETRIC_TOL &&
+	    fabs(p[1]-b1[1]) < NB_GEOMETRIC_TOL) {
 		if(status != NULL)
 			status[0] = 6;
 		return false;
 	}
-	if (fabs(p[0]-b2[0]) < VCN_GEOMETRIC_TOL &&
-	    fabs(p[1]-b2[1]) < VCN_GEOMETRIC_TOL) {
+	if (fabs(p[0]-b2[0]) < NB_GEOMETRIC_TOL &&
+	    fabs(p[1]-b2[1]) < NB_GEOMETRIC_TOL) {
 		if (status != NULL)
 			status[0] = 7;
 		return false;
@@ -427,39 +427,39 @@ inline bool vcn_utils2D_sgm_intersects_circle(const double circumcenter[2],
 	double p[2];
 	vcn_utils2D_get_closest_pnt_to_sgm(s1, s2, circumcenter, p);
 	return (POW2(radius) - vcn_utils2D_get_dist2(circumcenter, p) >
-		VCN_GEOMETRIC_TOL);
+		NB_GEOMETRIC_TOL);
 }
 
 bool vcn_utils2D_pnt_lies_on_sgm(const double s1[2],
 				 const double s2[2],
 				 const double p[2])
 {  
-	if (fabs(s1[0] - s2[0]) > VCN_GEOMETRIC_TOL &&
-	    fabs(s1[1] - s2[1]) > VCN_GEOMETRIC_TOL) {
+	if (fabs(s1[0] - s2[0]) > NB_GEOMETRIC_TOL &&
+	    fabs(s1[1] - s2[1]) > NB_GEOMETRIC_TOL) {
 		double wx = (p[0] - s2[0]) / (s1[0] - s2[0]);
 		double wy = (p[1] - s2[1]) / (s1[1] - s2[1]);
 
-		if (wx > 1.0 - VCN_GEOMETRIC_TOL)
+		if (wx > 1.0 - NB_GEOMETRIC_TOL)
 			return false;
-		if (wx < VCN_GEOMETRIC_TOL) 
+		if (wx < NB_GEOMETRIC_TOL) 
 			return false;
-		if (fabs(wx - wy) > VCN_GEOMETRIC_TOL)
+		if (fabs(wx - wy) > NB_GEOMETRIC_TOL)
 			return false;
-	} else if (fabs(s1[0] - s2[0]) > VCN_GEOMETRIC_TOL) {
+	} else if (fabs(s1[0] - s2[0]) > NB_GEOMETRIC_TOL) {
 		double wx = (p[0] - s2[0]) / (s1[0] - s2[0]);      
-		if (wx > 1.0 - VCN_GEOMETRIC_TOL)
+		if (wx > 1.0 - NB_GEOMETRIC_TOL)
 			return false;
-		if (wx < VCN_GEOMETRIC_TOL)
+		if (wx < NB_GEOMETRIC_TOL)
 			return false;
-		if (fabs(p[1] - s2[1]) > VCN_GEOMETRIC_TOL)
+		if (fabs(p[1] - s2[1]) > NB_GEOMETRIC_TOL)
 			return false;
 	} else {
 		double wy = (p[1] - s2[1]) / (s1[1] - s2[1]);      
-		if (wy > 1.0 - VCN_GEOMETRIC_TOL)
+		if (wy > 1.0 - NB_GEOMETRIC_TOL)
 			return false;
-		if (wy < VCN_GEOMETRIC_TOL) 
+		if (wy < NB_GEOMETRIC_TOL) 
 			return false;
-		if (fabs(p[0] - s2[0]) > VCN_GEOMETRIC_TOL)
+		if (fabs(p[0] - s2[0]) > NB_GEOMETRIC_TOL)
 			return false;
 	}
 	return true;
@@ -484,9 +484,9 @@ bool vcn_utils2D_pnt_lies_in_trg(const double t1[2],
 	const double side_edge3 = (t3[0]-p[0])*(t1[1]-p[1]) -
 		(t3[1]-p[1])*(t1[0]-p[0]);
 
-	return (side_edge1 > -VCN_GEOMETRIC_TOL &&
-		side_edge2 > -VCN_GEOMETRIC_TOL &&
-		side_edge3 > -VCN_GEOMETRIC_TOL);
+	return (side_edge1 > -NB_GEOMETRIC_TOL &&
+		side_edge2 > -NB_GEOMETRIC_TOL &&
+		side_edge3 > -NB_GEOMETRIC_TOL);
 }
 
 bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
@@ -507,9 +507,9 @@ bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
 		(t2[1]-p[1])*(t3[0]-p[0]);
 	const double side_edge3 = (t3[0]-p[0])*(t1[1]-p[1]) -
 		(t3[1]-p[1])*(t1[0]-p[0]);
-	return (side_edge1 > VCN_GEOMETRIC_TOL &&
-		side_edge2 > VCN_GEOMETRIC_TOL &&
-		side_edge3 > VCN_GEOMETRIC_TOL);
+	return (side_edge1 > NB_GEOMETRIC_TOL &&
+		side_edge2 > NB_GEOMETRIC_TOL &&
+		side_edge3 > NB_GEOMETRIC_TOL);
 }
 
 inline bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle
@@ -517,7 +517,7 @@ inline bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle
 					 const double s2[2],
 					 const double p[2])
 {
-	return -VCN_GEOMETRIC_TOL >
+	return -NB_GEOMETRIC_TOL >
 		(s1[0] - p[0]) * (s2[0] - p[0]) +
 		(s1[1] - p[1]) * (s2[1] - p[1]);
 }
@@ -548,7 +548,7 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 	const double det = d1 + d2 + d3 - d4 - d5 - d6;
 
 	/* Verify sentence */
-	return (det > VCN_GEOMETRIC_TOL);
+	return (det > NB_GEOMETRIC_TOL);
 }
 
 bool vcn_utils2D_pnt_lies_in_box(const double box[4],

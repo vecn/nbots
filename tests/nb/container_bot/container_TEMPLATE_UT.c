@@ -4,7 +4,7 @@
  * "CONTAINER_ID" and "N_ITEMS".
  *
  * Example:
- *  #define CONTAINER_ID VCN_CONTAINER_QUEUE
+ *  #define CONTAINER_ID NB_CONTAINER_QUEUE
  *  #define N_ITEMS 1000
  *  #include "container_TEMPLATE_UT.c"
  */
@@ -66,7 +66,7 @@ static bool first_is_ok(int32_t *val);
 
 inline int TEMPLATE_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void TEMPLATE_load_tests(void *tests_ptr)
@@ -165,52 +165,52 @@ static bool check_clone(void)
 
 static inline bool check_merge_with_QUEUE(void)
 {
-	return check_merge_with(VCN_CONTAINER_QUEUE);
+	return check_merge_with(NB_CONTAINER_QUEUE);
 }
 
 static inline bool check_merge_with_STACK(void)
 {
-	return check_merge_with(VCN_CONTAINER_STACK);
+	return check_merge_with(NB_CONTAINER_STACK);
 }
 
 static inline bool check_merge_with_SORTED(void)
 {
-	return check_merge_with(VCN_CONTAINER_SORTED);
+	return check_merge_with(NB_CONTAINER_SORTED);
 }
 
 static inline bool check_merge_with_HEAP(void)
 {
-	return check_merge_with(VCN_CONTAINER_HEAP);
+	return check_merge_with(NB_CONTAINER_HEAP);
 }
 
 static inline bool check_merge_with_HASH(void)
 {
-	return check_merge_with(VCN_CONTAINER_HASH);
+	return check_merge_with(NB_CONTAINER_HASH);
 }
 
 static inline bool check_cast_to_QUEUE(void)
 {
-	return check_cast_to(VCN_CONTAINER_QUEUE);
+	return check_cast_to(NB_CONTAINER_QUEUE);
 }
 
 static inline bool check_cast_to_STACK(void)
 {
-	return check_cast_to(VCN_CONTAINER_STACK);
+	return check_cast_to(NB_CONTAINER_STACK);
 }
 
 static inline bool check_cast_to_SORTED(void)
 {
-	return check_cast_to(VCN_CONTAINER_SORTED);
+	return check_cast_to(NB_CONTAINER_SORTED);
 }
 
 static inline bool check_cast_to_HEAP(void)
 {
-	return check_cast_to(VCN_CONTAINER_HEAP);
+	return check_cast_to(NB_CONTAINER_HEAP);
 }
 
 static inline bool check_cast_to_HASH(void)
 {
-	return check_cast_to(VCN_CONTAINER_HASH);
+	return check_cast_to(NB_CONTAINER_HASH);
 }
 
 static bool check_cast_to_array(void)
@@ -538,19 +538,19 @@ static bool first_is_ok(int32_t *val)
 {
 	bool is_ok;
 	switch (CONTAINER_ID) {
-	case VCN_CONTAINER_QUEUE:
+	case NB_CONTAINER_QUEUE:
 		is_ok = (1 == *val);
 		break;
-	case VCN_CONTAINER_STACK:
+	case NB_CONTAINER_STACK:
 		is_ok = (N_ITEMS == *val);
 		break;
-	case VCN_CONTAINER_SORTED:
+	case NB_CONTAINER_SORTED:
 		is_ok = (1 == *val);
 		break;
-	case VCN_CONTAINER_HEAP:
+	case NB_CONTAINER_HEAP:
 		is_ok = (1 == *val);
 		break;
-	case VCN_CONTAINER_HASH:
+	case NB_CONTAINER_HASH:
 		is_ok = (NULL != val);
 		break;
 	default:

@@ -13,10 +13,10 @@
 #include "../mesh2D_structs.h"
 #include "ruppert.h"
 
-#define _VCN_MAX_LH_TOLERATED (1.0)
-#define _VCN_MAX_GRADING_RATIO (10.0)
-#define _VCN_SUBSEGMENT_VTX ((void*)0x2)
-#define _VCN_CC_SHELL_UNIT (1e-3)
+#define _NB_MAX_LH_TOLERATED (1.0)
+#define _NB_MAX_GRADING_RATIO (10.0)
+#define _NB_SUBSEGMENT_VTX ((void*)0x2)
+#define _NB_CC_SHELL_UNIT (1e-3)
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -165,11 +165,11 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
 	vcn_container_t *restrict encroached_sgm =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_set_key_generator(encroached_sgm, hash_key_edge);
 
 	vcn_container_t *restrict big_trg =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_set_key_generator(big_trg, key_trg_attr);
 
 	hash_trg_t *restrict poor_quality_trg = hash_trg_create();
@@ -178,7 +178,7 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	initialize_encroached_sgm(mesh, encroached_sgm);
 
 	/* Calculate max circumradius to shortest edge ratio allowed */
-	if (mesh->min_angle > VCN_MESH_MAX_ANGLE) {
+	if (mesh->min_angle > NB_MESH_MAX_ANGLE) {
 		if (0 == mesh->max_vtx) {
 			printf("WARNING in vcn_mesh_refine(): ");
 			printf("Setting max_vtx = 1000000 to");
@@ -263,7 +263,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 		if (vcn_container_is_empty(sgm_encroached_by_cc)) {
 			/* Circumcenter accepted */
 			vcn_container_t *restrict new_trg = 
-				vcn_container_create(VCN_CONTAINER_QUEUE);
+				vcn_container_create(NB_CONTAINER_QUEUE);
 
 			insert_vertex(mesh, trg_containing_cc, cc, big_trg,
 				      poor_quality_trg, new_trg);
@@ -326,7 +326,7 @@ static inline hash_trg_t* hash_trg_create(void)
 {
 	hash_trg_t* htrg = calloc(1, sizeof(hash_trg_t));
 	for (uint32_t i = 0; i < 64; i++) {
-		htrg->avl[i] = vcn_container_create(VCN_CONTAINER_SORTED);
+		htrg->avl[i] = vcn_container_create(NB_CONTAINER_SORTED);
 		vcn_container_set_key_generator(htrg->avl[i], key_trg_attr);
 	}
 	return htrg;
@@ -458,30 +458,30 @@ static inline msh_vtx_t* get_midpoint
 {
 	/* Calculate the new vertex (using concentric shells) */
 	msh_vtx_t *v = (msh_vtx_t*) vcn_point2D_create();
-	v->attr = _VCN_SUBSEGMENT_VTX; 
+	v->attr = _NB_SUBSEGMENT_VTX; 
   
 	/* Use midpoint */
 	v->x[0] = 0.5 * (sgm->v1->x[0] + sgm->v2->x[0]);
 	v->x[1] = 0.5 * (sgm->v1->x[1] + sgm->v2->x[1]);
 
-	if (sgm->v1->attr != _VCN_INPUT_VTX && sgm->v2->attr != _VCN_INPUT_VTX)
+	if (sgm->v1->attr != _NB_INPUT_VTX && sgm->v2->attr != _NB_INPUT_VTX)
 		return v;
   
 	/* Use the input vertex, stored in v1,  as the centroid of the 
 	 * concentric shells */
 	msh_vtx_t* v1 = sgm->v1;
 	msh_vtx_t* v2 = sgm->v2;
-	if (sgm->v1->attr != _VCN_INPUT_VTX) {
+	if (sgm->v1->attr != _NB_INPUT_VTX) {
 		v1 = sgm->v2;
 		v2 = sgm->v1;
 	}
 
 	/* Use concentric shells */
 	double length = vcn_utils2D_get_dist(v->x, v1->x);
-	double k_real = vcn_math_log2(length / _VCN_CC_SHELL_UNIT);
+	double k_real = vcn_math_log2(length / _NB_CC_SHELL_UNIT);
 	int k_int = (int)((k_real > 0)?(k_real + 0.5):(k_real - 0.5));
 	/* factor = UNIT * 2^k / (2.0 * length) */
-	double factor = _VCN_CC_SHELL_UNIT * pow(2.0, k_int - 1.0) / length;
+	double factor = _NB_CC_SHELL_UNIT * pow(2.0, k_int - 1.0) / length;
 	v->x[0] = v1->x[0] * (1.0 - factor) + v2->x[0] * factor;
 	v->x[1] = v1->x[1] * (1.0 - factor) + v2->x[1] * factor;
 	return v;
@@ -493,11 +493,11 @@ static inline vcn_container_t* get_encroached_triangles
 {
 	/* Search encroached triangles */
 	vcn_container_t *encroached_trg =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_t *const restrict unencroached_trg =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_t *const restrict processing_trg =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
   
 	vcn_container_insert(processing_trg, first_trg_to_check);
 
@@ -555,7 +555,7 @@ static inline vcn_container_t* remove_encroached_triangles
 		get_encroached_triangles(first_trg_to_check, v);
 
 	/* Destroy encroached triangles */
-	vcn_container_t *orfan_vtx = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t *orfan_vtx = vcn_container_create(NB_CONTAINER_SORTED);
 	while (vcn_container_is_not_empty(encroached_trg)) {
 		msh_trg_t *const restrict trg =
 			vcn_container_delete_first(encroached_trg);
@@ -591,7 +591,7 @@ static inline msh_vtx_t* retrg_fan_get_next_trg
 			   const msh_vtx_t *const v2){
   double reference_angle = atan2(v2->x[1] - v1->x[1],
 				 v2->x[0] - v1->x[0]);
-  double min_angle = VCN_MATH_PI;
+  double min_angle = NB_MATH_PI;
   uint32_t i3 = *N_orfan_vtx;
   for (uint32_t i = 0; i < *N_orfan_vtx; i++) {
     if (v2 == orfan_vtx[i])
@@ -600,7 +600,7 @@ static inline msh_vtx_t* retrg_fan_get_next_trg
 			 orfan_vtx[i]->x[0] - v1->x[0]);
     double angle_diff = angle - reference_angle;
     if (angle_diff < 0.0)
-      angle_diff += 2.0 * VCN_MATH_PI;
+      angle_diff += 2.0 * NB_MATH_PI;
     if (angle_diff < min_angle) {
       i3 = i;
       min_angle = angle_diff;
@@ -792,7 +792,7 @@ static inline void split_encroached_segments
 		msh_edge_t* sgm = vcn_container_delete_first(encroached_sgm);
 		msh_vtx_t *v = get_midpoint(sgm);
 		/* Split the segment */
-		vcn_container_t* l_new_trg = vcn_container_create(VCN_CONTAINER_QUEUE);
+		vcn_container_t* l_new_trg = vcn_container_create(NB_CONTAINER_QUEUE);
 		msh_edge_t* subsgm[2];
 		insert_midpoint(mesh, sgm, v, big_trg, poor_quality_trg,
 				subsgm, l_new_trg);
@@ -953,7 +953,7 @@ static inline vcn_container_t* get_sgm_encroached_by_vertex
 
 	/* Get segments */
 	vcn_container_t *const restrict segments =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	while (vcn_container_is_not_empty(encroached_trg)) {
 		msh_trg_t *const restrict trg = 
 			vcn_container_delete_first(encroached_trg);
@@ -969,7 +969,7 @@ static inline vcn_container_t* get_sgm_encroached_by_vertex
 
 	/* Get encroached segments */
 	vcn_container_t *restrict encroached_sgm =
-		vcn_container_create(VCN_CONTAINER_QUEUE);
+		vcn_container_create(NB_CONTAINER_QUEUE);
 	while (vcn_container_is_not_empty(segments)) {
 		msh_edge_t *const restrict sgm = 
 			vcn_container_delete_first(segments);
@@ -990,10 +990,10 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 {
 	/* Check if the length is not a power of two */
 	double length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
-	double k_real = vcn_math_log2(length / _VCN_CC_SHELL_UNIT);
+	double k_real = vcn_math_log2(length / _NB_CC_SHELL_UNIT);
 	int k_int = (int)((k_real > 0)?(k_real + 0.5):(k_real - 0.5));
-	double shell_length = _VCN_CC_SHELL_UNIT * pow(2.0, k_int);
-	if (fabs(length - shell_length) > VCN_GEOMETRIC_TOL)
+	double shell_length = _NB_CC_SHELL_UNIT * pow(2.0, k_int);
+	if (fabs(length - shell_length) > NB_GEOMETRIC_TOL)
 		return true;
 
 	/* Get subsegment clusters */
@@ -1034,7 +1034,7 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 			continue;
 		double length_aux = vcn_utils2D_get_dist(cluster_sgm->v1->x,
 					     cluster_sgm->v2->x);
-		if (length - length_aux > VCN_GEOMETRIC_TOL) {
+		if (length - length_aux > NB_GEOMETRIC_TOL) {
 			vcn_container_destroy(cluster);
 			return true;
 		}
@@ -1043,7 +1043,7 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
   
 	/* No new edge will be shorter than shortest existing edge */
 	double r_min = length * sin(smallest_angle / 2.0);
-	return r_min >= d + VCN_GEOMETRIC_TOL;
+	return r_min >= d + NB_GEOMETRIC_TOL;
 }
 
 static inline vcn_container_t* get_subsgm_cluster 
@@ -1052,8 +1052,8 @@ static inline vcn_container_t* get_subsgm_cluster
 			   double* smallest_angle)
 {
 	/* Create cluster */
-	vcn_container_t* cluster = vcn_container_create(VCN_CONTAINER_SORTED);
-	*smallest_angle = VCN_MATH_PI;
+	vcn_container_t* cluster = vcn_container_create(NB_CONTAINER_SORTED);
+	*smallest_angle = NB_MATH_PI;
 
 	/* Get subsegments from the left */
 	msh_vtx_t* v2 = (sgm->v1 == vtx)? sgm->v2: sgm->v1;
@@ -1068,10 +1068,10 @@ static inline vcn_container_t* get_subsgm_cluster
 		/* Calculate angle between segments */
 		double angle = angle_next - angle_prev;
 		if (angle < 0.0)
-			angle += 2.0 * VCN_MATH_PI;
+			angle += 2.0 * NB_MATH_PI;
     
 		/* If the angle is lower than 60 degrees, add to cluster */
-		if (angle < VCN_MATH_PI / 3.0) {
+		if (angle < NB_MATH_PI / 3.0) {
 			vcn_container_insert(cluster, sgm_next);
 			/* Get smallest angle */
 			if (angle < *smallest_angle)
@@ -1097,10 +1097,10 @@ static inline vcn_container_t* get_subsgm_cluster
 		/* Calculate angle between segments */
 		double angle = angle_prev - angle_next;
 		if(angle < 0.0)
-			angle += 2.0 * VCN_MATH_PI;
+			angle += 2.0 * NB_MATH_PI;
     
 		/* If the angle is lower than 60 degrees, add to cluster */
-		if (angle < VCN_MATH_PI / 3.0) {
+		if (angle < NB_MATH_PI / 3.0) {
 			vcn_container_insert(cluster, sgm_next);
 			/* Get smallest angle */
 			if (angle < *smallest_angle)
@@ -1124,8 +1124,8 @@ static inline vcn_container_t* get_subsgm_cluster
 
 static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
 {
-	return mesh->max_edge_length * mesh->scale > VCN_GEOMETRIC_TOL ||
-		mesh->max_subsgm_length * mesh->scale > VCN_GEOMETRIC_TOL;
+	return mesh->max_edge_length * mesh->scale > NB_GEOMETRIC_TOL ||
+		mesh->max_subsgm_length * mesh->scale > NB_GEOMETRIC_TOL;
 }
 
 static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
@@ -1136,11 +1136,11 @@ static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	*big_ratio = d;
 	double edge_max = mesh->max_edge_length * mesh->scale;
-	if (edge_max > VCN_GEOMETRIC_TOL && edge_max < d) {
+	if (edge_max > NB_GEOMETRIC_TOL && edge_max < d) {
 		violates_constrain = true;
 	} else if (medge_is_subsgm(sgm)) {
 		double sgm_max = mesh->max_subsgm_length * mesh->scale;
-		if (sgm_max > VCN_GEOMETRIC_TOL && sgm_max < d) {
+		if (sgm_max > NB_GEOMETRIC_TOL && sgm_max < d) {
 			violates_constrain = true;
 		}
 	}
@@ -1166,17 +1166,17 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 {
 	bool is_greater;
 	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
-	if (VCN_GEOMETRIC_TOL > d) {
+	if (NB_GEOMETRIC_TOL > d) {
 		/* Prevent of eternal running */
 		is_greater = false;  
 	} else {
 		d /= mesh->scale;
 		double lh = calculate_lh(mesh, sgm, d, 1);
-		if (_VCN_MAX_LH_TOLERATED < lh) {
+		if (_NB_MAX_LH_TOLERATED < lh) {
 			is_greater = true;
 		} else {
 			lh = calculate_lh(mesh, sgm, d, 2);
-			is_greater = (_VCN_MAX_LH_TOLERATED < lh);
+			is_greater = (_NB_MAX_LH_TOLERATED < lh);
 		}
 		*big_ratio = lh;
 	}
@@ -1201,15 +1201,15 @@ static double calculate_lh(const vcn_mesh_t *const restrict mesh,
 	for (int i = 0; i < N_trapezoids; i++) {
 		double t = (i + 1) * width;
 		double h2 = calculate_h(mesh, sgm, t);
-		if (h1 > _VCN_MAX_GRADING_RATIO * h2)
-			h1 = _VCN_MAX_GRADING_RATIO * h2;
-		else if (h2 > _VCN_MAX_GRADING_RATIO * h1)
-			h2 = _VCN_MAX_GRADING_RATIO * h1;
+		if (h1 > _NB_MAX_GRADING_RATIO * h2)
+			h1 = _NB_MAX_GRADING_RATIO * h2;
+		else if (h2 > _NB_MAX_GRADING_RATIO * h1)
+			h2 = _NB_MAX_GRADING_RATIO * h1;
 		
 		integral += (h1 + h2);
 		h1 = h2;
 	}
-	return 2 * dist / (integral * width + VCN_GEOMETRIC_TOL);
+	return 2 * dist / (integral * width + NB_GEOMETRIC_TOL);
 }
 
 static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
@@ -1222,7 +1222,7 @@ static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
 	double vtx_scaled[2];
 	mesh_get_extern_scale_and_disp(mesh, vtx, vtx_scaled);
 	double density = mesh->density(vtx_scaled, mesh->density_data);
-	return 1.0 / (density + VCN_GEOMETRIC_TOL);
+	return 1.0 / (density + NB_GEOMETRIC_TOL);
 }
 
 static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,

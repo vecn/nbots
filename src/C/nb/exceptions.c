@@ -52,7 +52,7 @@ void vcn_exception_set_alloc(vcn_exception_t *exception,
 {
 	vcn_container_t *list = exception->memory_handler;
 	if (NULL == list) {
-		list = vcn_container_create(VCN_CONTAINER_QUEUE);
+		list = vcn_container_create(NB_CONTAINER_QUEUE);
 		exception->memory_handler = list;
 	}
 	void** alloc_and_free = malloc(2 * sizeof(*alloc_and_free));

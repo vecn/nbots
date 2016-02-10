@@ -98,7 +98,7 @@ static void draw_vertices(cairo_t *const restrict cr,
 			  zoom * vertices[i * 2] - zoom * center[0] +
 			  width / 2.0,
 			  -zoom * vertices[i*2+1] + zoom * center[1] +
-			  height / 2.0, 3.0, 0.0, 2.0 * VCN_MATH_PI);
+			  height / 2.0, 3.0, 0.0, 2.0 * NB_MATH_PI);
 		cairo_fill(cr);
 
 		/* Draw labels */
@@ -139,7 +139,7 @@ static void draw_holes(cairo_t *const restrict cr,
 			  width / 2.0,
 			  -zoom * holes[i*2+1] + zoom * center[1] +
 			  height / 2.0, 
-			  3.0, 0.0, 2.0 * VCN_MATH_PI);
+			  3.0, 0.0, 2.0 * NB_MATH_PI);
 		cairo_fill(cr);
 	}
 }

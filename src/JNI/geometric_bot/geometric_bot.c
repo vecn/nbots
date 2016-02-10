@@ -100,18 +100,18 @@ Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FIIFFFZZZZZ_3_3F_3_3
 		create_model_from_JNI(env, N, vertices, M, edges, H, holes);
 
 	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh, VCN_MESH_SIZE_CONSTRAINT_MAX_VTX,
+	vcn_mesh_set_size_constraint(mesh, NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     max_vtx);
-	vcn_mesh_set_size_constraint(mesh, VCN_MESH_SIZE_CONSTRAINT_MAX_TRG,
+	vcn_mesh_set_size_constraint(mesh, NB_MESH_SIZE_CONSTRAINT_MAX_TRG,
 				     max_trg);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  min_angle);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  max_edge_length);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
 					  max_sgm_length);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
@@ -179,12 +179,12 @@ Java_nb_geometricBot_GeometricBot_JNICreateMesh__I_3FI_3II_3FLjava_lang_String_2
 	(*env)->ReleaseStringUTFChars(env, jimage_file, image_file);
 
 	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh, VCN_MESH_SIZE_CONSTRAINT_MAX_VTX,
+	vcn_mesh_set_size_constraint(mesh, NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     max_vtx);
-	vcn_mesh_set_size_constraint(mesh, VCN_MESH_SIZE_CONSTRAINT_MAX_TRG,
+	vcn_mesh_set_size_constraint(mesh, NB_MESH_SIZE_CONSTRAINT_MAX_TRG,
 				     max_trg);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  min_angle);
 	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_generate_from_model(mesh, model);

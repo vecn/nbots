@@ -15,12 +15,12 @@
 typedef struct vcn_container_s vcn_container_t;
 
 enum {
-  VCN_CONTAINER_QUEUE,
-  VCN_CONTAINER_STACK,
-  VCN_CONTAINER_SORTED,
-  VCN_CONTAINER_HEAP,
-  VCN_CONTAINER_HASH,
-  VCN_CONTAINER_NULL
+  NB_CONTAINER_QUEUE,
+  NB_CONTAINER_STACK,
+  NB_CONTAINER_SORTED,
+  NB_CONTAINER_HEAP,
+  NB_CONTAINER_HASH,
+  NB_CONTAINER_NULL
 };
   
 vcn_container_t* vcn_container_create(int8_t id);

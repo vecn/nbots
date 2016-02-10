@@ -61,7 +61,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 
 vcn_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 {
-	vcn_container_t* wires = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* wires = vcn_container_create(NB_CONTAINER_QUEUE);
 	char* mask_wired = calloc(model->M, 1);
 	for (uint32_t i = 0; i < model->M; i++) {
 		if (0 == mask_wired[i])
@@ -76,7 +76,7 @@ static void build_wire(const vcn_model_t *const model,
 		       uint32_t edge_id)
 {
 	mask_wired[edge_id] = 1;
-	vcn_container_t* new_wire = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* new_wire = vcn_container_create(NB_CONTAINER_QUEUE);
 	uint32_t* edge = malloc(2 * sizeof(*edge));
 	edge[0] = GET_1_EDGE_VTX(model, edge_id);
 	edge[1] = GET_2_EDGE_VTX(model, edge_id);
@@ -528,13 +528,13 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	char* mask_vtx_to_remove = calloc(model->N, 1);
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (v1 == model->N) {
-			if (vcn_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < VCN_GEOMETRIC_TOL_POW2) {
+			if (vcn_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 				v1 = i;
 				continue;
 			}
 		}
 		if (v2 == model->N) {
-			if (vcn_utils2D_get_dist2(vtx2, &(model->vertex[i*2])) < VCN_GEOMETRIC_TOL_POW2) {
+			if (vcn_utils2D_get_dist2(vtx2, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 				v2 = i;
 				continue;
 			}

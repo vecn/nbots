@@ -1,5 +1,5 @@
-#ifndef __VCN_IMAGE_BOT_IMAGE_H__
-#define __VCN_IMAGE_BOT_IMAGE_H__
+#ifndef __NB_IMAGE_BOT_IMAGE_H__
+#define __NB_IMAGE_BOT_IMAGE_H__
 
 #include <stdint.h>
 

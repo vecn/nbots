@@ -16,8 +16,8 @@ static vcn_mshpack_t* spack_create(uint32_t N_spheres)
 
 static inline bool spack_vtx_is_from_input(msh_vtx_t *vtx)
 {
-	return (((void**)vtx->attr)[1] == _VCN_INPUT_VTX) ||
-		(((void**)vtx->attr)[1] == _VCN_SUBSEGMENT_VTX);
+	return (((void**)vtx->attr)[1] == _NB_INPUT_VTX) ||
+		(((void**)vtx->attr)[1] == _NB_SUBSEGMENT_VTX);
 }
 
 static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
@@ -260,11 +260,11 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	/* TEMPORAL: Verify when to update adjacencies (Bean case) */
 	uint32_t max_super_iter = vcn_math_max(1, iterations/max_optim_iter +
 					       ((iterations%max_optim_iter > 0)?1:0));
-	while (global_min > VCN_GEOMETRIC_TOL && super_k < max_super_iter) {
+	while (global_min > NB_GEOMETRIC_TOL && super_k < max_super_iter) {
 		super_k ++;
 		uint32_t k = 0;
 		uint32_t optim_k = 0;
-		while (global_min > VCN_GEOMETRIC_TOL && optim_k < max_optim_iter) {
+		while (global_min > NB_GEOMETRIC_TOL && optim_k < max_optim_iter) {
 			optim_k ++;
 			/* Reset global Hessian and Independent vector */
 			memset(Bk, 0, 3 * spack->N_spheres * sizeof(double));
@@ -300,7 +300,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		vcn_container_t** new_adj = malloc(spack->N_spheres * sizeof(*new_adj));
 		for (uint32_t i = 0; i < spack->N_spheres; i++) {
 			double gap_factor = 1.5;
-			new_adj[i] = vcn_container_create(VCN_CONTAINER_QUEUE);
+			new_adj[i] = vcn_container_create(NB_CONTAINER_QUEUE);
 			/* Add current adjacencies close enough */
 			for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
 				uint32_t j_id = spack->adj[i][j];
@@ -511,7 +511,7 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 	 double porosity_factor,     /* Porosity percentage [0,1] */
 	 uint32_t* (*labeling)(const vcn_graph_t *const))
 {
-	if (labeling == VCN_LABELING_AMD)
+	if (labeling == NB_LABELING_AMD)
 		labeling = labeling_amd;
 
 	uint32_t N_spheres =  /* Casting mesh to non-const */
@@ -524,7 +524,7 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 
 	vcn_mshpack_t* spack = spack_create(N_spheres);
 
-	vcn_container_t* segments = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* segments = vcn_container_create(NB_CONTAINER_QUEUE);
 
 	spack_assemble_adjacencies(mesh, spack, segments);
 
@@ -585,8 +585,8 @@ static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
 		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		int* id = malloc(sizeof(*id));
 		void** attr = malloc(2 * sizeof(*attr));
-		if (vtx->attr != _VCN_INPUT_VTX &&
-		    vtx->attr != _VCN_SUBSEGMENT_VTX)
+		if (vtx->attr != _NB_INPUT_VTX &&
+		    vtx->attr != _NB_SUBSEGMENT_VTX)
 			id[0] = N_steiner ++; /* Numeration for steiner points */
 		else
 			id[0] = N_input ++; /* Numeration for fixed nodes in the boundary */

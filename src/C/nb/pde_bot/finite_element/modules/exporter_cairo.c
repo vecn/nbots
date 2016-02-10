@@ -58,7 +58,7 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_paint(cr);
 
-	vcn_palette_t *palette = vcn_palette_create_preset(VCN_PALETTE_RAINBOW);
+	vcn_palette_t *palette = vcn_palette_create_preset(NB_PALETTE_RAINBOW);
 
 	uint32_t min_id;
 	uint32_t max_id;

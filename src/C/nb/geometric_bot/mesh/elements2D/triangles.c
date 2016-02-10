@@ -147,7 +147,7 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 	/* Connectivity Matrix stored in container */
 	vcn_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
 	for (uint32_t i = 0; i < graph->N; i++) {
-		l_nodal_CM[i] = vcn_container_create(VCN_CONTAINER_SORTED);
+		l_nodal_CM[i] = vcn_container_create(NB_CONTAINER_SORTED);
 		vcn_container_set_key_generator(l_nodal_CM[i], key_uint);
 	}
   

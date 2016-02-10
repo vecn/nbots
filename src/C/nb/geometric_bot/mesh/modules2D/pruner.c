@@ -11,7 +11,7 @@
 
 #include "../mesh2D_structs.h"
 
-#define _VCN_SUBSEGMENT_VTX ((void*)0x2)
+#define _NB_SUBSEGMENT_VTX ((void*)0x2)
 
 #define POW2(a) ((a)*(a))
 
@@ -22,7 +22,7 @@ static double colorize_infected_triangles(msh_trg_t* trg_infected,
 double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
-	vcn_container_t* areas = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* areas = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR
 	   vcn_container_key_generator(areas, compare_area1_isGreaterThan_area2);
 	   vcn_container_comparer(areas, ...);
@@ -37,7 +37,7 @@ double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 				continue;
 		}
 		vcn_container_t* area_trg =
-			vcn_container_create(VCN_CONTAINER_SORTED);
+			vcn_container_create(NB_CONTAINER_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = (void**)malloc(2 * sizeof(*obj));
@@ -188,7 +188,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 {
 	/* TEMPORAL (Repeated code): 
 	 * Unify with code of vcn_mesh_get_centroid_of_subareas() */
-	vcn_container_t* areas = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* areas = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR 
 	   vcn_container_set_key_generator(areas, compare_area1_isGreaterThan_area2);
 	   vcn_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
@@ -203,7 +203,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 				continue;
 		}
 		vcn_container_t* area_trg = 
-			vcn_container_create(VCN_CONTAINER_SORTED);
+			vcn_container_create(NB_CONTAINER_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = malloc(2 * sizeof(*obj));
@@ -316,7 +316,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 				     double* area_removed)
 {
-	vcn_container_t* areas = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* areas = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR
 	 * vcn_container_set_key_generator(compare_area1_isGreaterThan_area2);
 	 * vcn_container_set_comparer(..)
@@ -331,7 +331,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 				continue;
 		}
 		vcn_container_t* area_trg = 
-			vcn_container_create(VCN_CONTAINER_SORTED);
+			vcn_container_create(NB_CONTAINER_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = malloc(2 * sizeof(*obj));
@@ -390,7 +390,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
 				       double* area_removed)
 {
-	vcn_container_t* areas = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* areas = vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR
 	   vcn_container_set_key_generator(compare_area1_isGreaterThan_area2);
 	   vcn_container_set_comparer();
@@ -405,7 +405,7 @@ double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
 				continue;
 		}
 		vcn_container_t* area_trg = 
-			vcn_container_create(VCN_CONTAINER_SORTED);
+			vcn_container_create(NB_CONTAINER_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, false);
 		void** obj = malloc(2*sizeof(*obj));
@@ -506,7 +506,7 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh
 
 uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 {
-	vcn_container_t* useful_vtx = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* useful_vtx = vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_iterator_t* iter = vcn_iterator_create();
 	vcn_iterator_set_container(iter, mesh->ht_trg);
 	while (vcn_iterator_has_more(iter)) {
@@ -525,8 +525,8 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(bins2D_iter);
 		if(!vcn_container_exist(useful_vtx, vtx)){
 			vcn_bins2D_delete(mesh->ug_vtx, vtx);
-			if (_VCN_INPUT_VTX == vtx->attr ||
-			    _VCN_SUBSEGMENT_VTX == vtx->attr) {
+			if (_NB_INPUT_VTX == vtx->attr ||
+			    _NB_SUBSEGMENT_VTX == vtx->attr) {
 				for (uint32_t i=0; i < mesh->N_input_vtx; i++) {
 					if (vtx == mesh->input_vtx[i]) {
 						mesh->input_vtx[i] = NULL;

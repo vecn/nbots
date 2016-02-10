@@ -1,5 +1,5 @@
-#ifndef __VCN_AVL_TREE_H__
-#define __VCN_AVL_TREE_H__
+#ifndef __NB_AVL_TREE_H__
+#define __NB_AVL_TREE_H__
 
 #include <stdbool.h>
 #include <stdint.h>

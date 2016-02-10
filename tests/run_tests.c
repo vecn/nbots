@@ -144,7 +144,7 @@ static bool process_library_or_throw_exception(vcn_exception_t *exception,
 	void (*load_tests)(vcn_container_t*);
 	load_tests = get_loader_or_throw_exception(exception, lib);
 
-	vcn_container_t *tests = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t *tests = vcn_container_create(NB_CONTAINER_QUEUE);
 	vcn_exception_set_alloc(exception, tests, destroy_tests);
 	load_tests(tests);
 

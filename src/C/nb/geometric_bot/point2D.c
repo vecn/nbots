@@ -18,5 +18,5 @@ inline bool vcn_point2D_are_equal(const void *const p1_ptr,
 {
 	const vcn_point2D_t *const p1 = p1_ptr;
 	const vcn_point2D_t *const p2 = p2_ptr;
-	return vcn_utils2D_get_dist(p1->x, p2->x) < VCN_GEOMETRIC_TOL_POW2;
+	return vcn_utils2D_get_dist(p1->x, p2->x) < NB_GEOMETRIC_TOL_POW2;
 }

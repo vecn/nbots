@@ -1,5 +1,5 @@
-#ifndef __VCN_TEST_DRIVER_H__
-#define __VCN_TEST_DRIVER_H__
+#ifndef __NB_TEST_DRIVER_H__
+#define __NB_TEST_DRIVER_H__
 
 #include <stdbool.h>
 #include "test.h"

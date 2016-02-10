@@ -83,12 +83,12 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 	scale_and_displace(model2, scale, xdisp, ydisp);
 
 	/* Insert segments and vertices */
-	vcn_container_t* ht_vtx = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t* ht_vtx = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(ht_vtx, vtx_hash_key);
 	vcn_container_set_comparer(ht_vtx, vtx_are_equal);
 	vcn_container_set_destroyer(ht_vtx, vtx_destroy);
 
-	vcn_container_t* avl_sgm = vcn_container_create(VCN_CONTAINER_SORTED);
+	vcn_container_t* avl_sgm = vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_set_key_generator(avl_sgm, edge_key_by_length);
 	vcn_container_set_comparer(avl_sgm, edge_are_equal);
 	vcn_container_set_destroyer(avl_sgm, edge_destroy);
@@ -275,7 +275,7 @@ static vcn_container_t* search_intersections(vcn_model_t *model1,
 	edge_t** edges1 = insert_edges_and_vtx(model1, vertices, edges, false);
 	edge_t** edges2 = insert_edges_and_vtx(model2, vertices, edges, true);
 	vcn_container_t *intersections =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_set_key_generator(intersections, intersection_pack_key);
 	for (uint32_t i = 0; i < model1->M; i++) {
 		for (uint32_t j = 0; j < model2->M; j++) {
@@ -386,7 +386,7 @@ static void** get_intersection_pack(const edge_t *const sgm1,
 						 sgm1->v2->x,
 						 sgm2->v1->x);
 		/* Check if them are parallel */
-		if(fabs(area) < VCN_GEOMETRIC_TOL){
+		if(fabs(area) < NB_GEOMETRIC_TOL){
 			/* Collineal segments */
 			double length1 = edge_get_length(sgm1);
 			double length2 = edge_get_length(sgm2);
@@ -399,7 +399,7 @@ static void** get_intersection_pack(const edge_t *const sgm1,
 			max_dist = MAX(dist_1A_2A, max_dist);
 
 			/* Check if they are intersected */
-			if(max_dist - (length1 + length2) >= -VCN_GEOMETRIC_TOL){
+			if(max_dist - (length1 + length2) >= -NB_GEOMETRIC_TOL){
 				free(intersection);
 				return NULL;
 			}
@@ -470,7 +470,7 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 		edge_t* sgm1 = ipack[1];
 		edge_t* sgm2 = ipack[2];
 		if (0 == status) {
-			vcn_container_t* sgm_intersect_aux = vcn_container_create(VCN_CONTAINER_QUEUE);
+			vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
 			/* Segments intersecting */
 			vtx_t* vtx = vtx_create();
 			memcpy(vtx->x, intersection, 2 * sizeof(double));
@@ -596,9 +596,9 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 			max_dist = MAX(dist_1A_2B, max_dist);
 			max_dist = MAX(dist_1A_2A, max_dist);
 			/* Verify type of intersection segments */
-			if (MAX(length1, length2) - max_dist < -VCN_GEOMETRIC_TOL) {
+			if (MAX(length1, length2) - max_dist < -NB_GEOMETRIC_TOL) {
 				/* Intersected by one side */
-				vcn_container_t* sgm_intersect_aux = vcn_container_create(VCN_CONTAINER_QUEUE);
+				vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
 				vcn_container_delete(avl_sgm, sgm1);
 				vcn_container_delete(avl_sgm, sgm2);
 
@@ -737,7 +737,7 @@ static void remove_short_segments(vcn_container_t* avl_sgm,
 		/* TEMPORAL: This must be faster */
 		edge_t* sgm = vcn_container_delete_first(avl_sgm);
 		double length = edge_get_length(sgm);
-		if (length >= MAX(min_length_x_segment, VCN_GEOMETRIC_TOL)) {
+		if (length >= MAX(min_length_x_segment, NB_GEOMETRIC_TOL)) {
 			vcn_container_insert(avl_sgm, sgm);
 			break;
 		}
@@ -746,7 +746,7 @@ static void remove_short_segments(vcn_container_t* avl_sgm,
 		vcn_container_delete(ht_vtx, sgm->v2);
 		vtx_t* vtx = sgm->v1;
 
-		vcn_container_t* list_sgm = vcn_container_create(VCN_CONTAINER_QUEUE);
+		vcn_container_t* list_sgm = vcn_container_create(NB_CONTAINER_QUEUE);
 		vcn_iterator_t* avl_subiter = vcn_iterator_create();
 		vcn_iterator_set_container(avl_subiter, avl_sgm);
 		while (vcn_iterator_has_more(avl_subiter)) {
@@ -799,7 +799,7 @@ static void remove_short_segments(vcn_container_t* avl_sgm,
 static vcn_container_t* search_intersections_in_edges(vcn_container_t *edges)
 {
 	vcn_container_t *intersections = 
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	vcn_container_set_key_generator(intersections, intersection_pack_key);
   
 	vcn_iterator_t* iter = vcn_iterator_create();
@@ -833,7 +833,7 @@ static void set_as_initial_vtx_in_edges(vcn_container_t *edges)
 
 static void delete_unused_vertices(vcn_container_t *vertices)
 {
-	vcn_container_t *to_delete = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t *to_delete = vcn_container_create(NB_CONTAINER_QUEUE);
 	vcn_iterator_t *iter = vcn_iterator_create();
 	vcn_iterator_set_container(iter, vertices);
 	while (vcn_iterator_has_more(iter)) {
@@ -918,7 +918,7 @@ static void split_segment_by_vertex(vcn_container_t* avl_sgm,
 	if (NULL != existing_new_sgm)
 		edge_destroy(new_sgm);
 	
-	vcn_container_t* sgm_intersect_aux = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
   
 	void** jpack = search_intersection_pack_with_sgm(sgm_intersect, sgm);
 	while (NULL != jpack) {

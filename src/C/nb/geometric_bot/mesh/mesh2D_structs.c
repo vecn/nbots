@@ -308,7 +308,7 @@ void mtrg_set_quality_and_size(msh_trg_t *const restrict trg)
      medge_get_computed_length(trg->s3))/(2.0 * area2);
   const msh_edge_t* min_sgm = mtrg_get_shortest_edge(trg);
   const double min_length = medge_get_computed_length(min_sgm);
-  data[0] = VCN_MATH_INV_SQRT3 * (min_length/circumradius);
+  data[0] = NB_MATH_INV_SQRT3 * (min_length/circumradius);
 
   /* Calculate area */
   data[1] = 0.5 * area2;

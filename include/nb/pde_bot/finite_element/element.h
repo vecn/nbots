@@ -1,12 +1,12 @@
-#ifndef __VCN_PDE_BOT_FINITE_ELEMENT_ELEMENT_H__
-#define __VCN_PDE_BOT_FINITE_ELEMENT_ELEMENT_H__
+#ifndef __NB_PDE_BOT_FINITE_ELEMENT_ELEMENT_H__
+#define __NB_PDE_BOT_FINITE_ELEMENT_ELEMENT_H__
 
 #include <stdint.h>
 
 typedef struct vcn_fem_elem_s vcn_fem_elem_t;
 
 typedef enum {
-	VCN_TRG_LINEAR,
+	NB_TRG_LINEAR,
 } vcn_elem_id;
 
 vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id id);

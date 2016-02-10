@@ -78,8 +78,8 @@ static double* get_spiral(int Ns, int Np)
 	for (int i = 0; i < Ns; i++)  {
 		int first_id = 1 + i * Np;
 		set_spiral(Np, r, angle, &(vertices[first_id * 2]));
-		r += 0.75 * r * VCN_PHI;
-		angle += 1.5 * VCN_PI;
+		r += 0.75 * r * NB_PHI;
+		angle += 1.5 * NB_PI;
 	}
 	set_vertex(N - 1, vertices, r * cos(angle), r * sin(angle));
 	return vertices;
@@ -88,8 +88,8 @@ static double* get_spiral(int Ns, int Np)
 static void set_spiral(int Np, double init_r,
 		       double init_angle, double vertices[])
 {
-	double angle_step = (VCN_PI * 1.5) / Np;
-	double r_step = (0.75 * init_r * VCN_PHI) / Np;
+	double angle_step = (NB_PI * 1.5) / Np;
+	double r_step = (0.75 * init_r * NB_PHI) / Np;
 	for (uint32_t i = 0; i < Np; i++) {
 		double angle = init_angle + i * angle_step;
 		double r = init_r + i * r_step;

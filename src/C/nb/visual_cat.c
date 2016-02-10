@@ -34,13 +34,13 @@ vcn_palette_t* vcn_palette_create(){
 
 vcn_palette_t* vcn_palette_create_preset(int palette_id)
 {
-  if (VCN_PALETTE_RAINBOW == palette_id)
+  if (NB_PALETTE_RAINBOW == palette_id)
     return palette_get_rainbow();
   
-  if (VCN_PALETTE_SUNSET == palette_id)
+  if (NB_PALETTE_SUNSET == palette_id)
     return palette_get_sunset();
 
-  if (VCN_PALETTE_FRENCH == palette_id)
+  if (NB_PALETTE_FRENCH == palette_id)
     return palette_get_french();
 
   return NULL;

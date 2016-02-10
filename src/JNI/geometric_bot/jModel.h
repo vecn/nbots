@@ -1,5 +1,5 @@
-#ifndef __JNI_VCN_GEOMETRIC_BOT_JMODEL_H__
-#define __JNI_VCN_GEOMETRIC_BOT_JMODEL_H__
+#ifndef __JNI_NB_GEOMETRIC_BOT_JMODEL_H__
+#define __JNI_NB_GEOMETRIC_BOT_JMODEL_H__
 
 #include <jni.h>
 

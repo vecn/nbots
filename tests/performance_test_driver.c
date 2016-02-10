@@ -11,7 +11,7 @@ static void show_performance_of_test(char *label, double sec);
 
 inline int vcn_test_get_driver_type(void)
 {
-	return VCN_DRIVER_PERFORMANCE_TEST;
+	return NB_DRIVER_PERFORMANCE_TEST;
 }
 
 void vcn_test_do_before_tests(void)

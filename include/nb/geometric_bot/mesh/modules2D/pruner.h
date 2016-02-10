@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
-#define __VCN_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
+#define __NB_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
 
 /**
  * @brief Calculates the pseudo-centroid of the sub-areas in the mesh.

@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_MESH_DEWALL_H__
-#define __VCN_GEOMETRIC_BOT_MESH_DEWALL_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_DEWALL_H__
+#define __NB_GEOMETRIC_BOT_MESH_DEWALL_H__
 
 #include "nb/geometric_bot/mesh/mesh2D.h"
 

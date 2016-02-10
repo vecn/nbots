@@ -1,4 +1,4 @@
-#define CONTAINER_ID VCN_CONTAINER_HASH
+#define CONTAINER_ID NB_CONTAINER_HASH
 #include "container_TEMPLATE_CT.c"
 
 inline int vcn_test_get_driver_id(void)

@@ -83,19 +83,19 @@ void vcn_iterator_set_container(vcn_iterator_t *iter,
 {
 	void *dst = vcn_container_get_dst(container);
 	switch (vcn_container_get_id(container)) {
-	case VCN_CONTAINER_QUEUE:
+	case NB_CONTAINER_QUEUE:
 		iterator_set_queue(iter, dst);
 		break;
-	case VCN_CONTAINER_STACK:
+	case NB_CONTAINER_STACK:
 		iterator_set_stack(iter, dst);
 		break;
-	case VCN_CONTAINER_SORTED:
+	case NB_CONTAINER_SORTED:
 		iterator_set_avl(iter, dst);
 		break;
-	case VCN_CONTAINER_HEAP:
+	case NB_CONTAINER_HEAP:
 		iterator_set_heap(iter, dst);
 		break;
-	case VCN_CONTAINER_HASH:
+	case NB_CONTAINER_HASH:
 		iterator_set_htable(iter, dst);
 		break;
 	default:

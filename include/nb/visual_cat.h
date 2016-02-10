@@ -14,13 +14,13 @@
  * @date September 9, 2015
  */
 
-#ifndef __VCN_VISUAL_CAT_H__
-#define __VCN_VISUAL_CAT_H__
+#ifndef __NB_VISUAL_CAT_H__
+#define __NB_VISUAL_CAT_H__
 
 enum {
-	VCN_PALETTE_RAINBOW,
-	VCN_PALETTE_SUNSET,
-	VCN_PALETTE_FRENCH
+	NB_PALETTE_RAINBOW,
+	NB_PALETTE_SUNSET,
+	NB_PALETTE_FRENCH
 };
 
 #include <stdint.h>

@@ -153,7 +153,7 @@ vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
 {
 	vcn_bins2D_t* bins2D = calloc(1, sizeof(vcn_bins2D_t));
 	bins2D->size_of_bins = size_of_bins;
-	bins2D->bins = vcn_container_create(VCN_CONTAINER_HASH);
+	bins2D->bins = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(bins2D->bins, bin_hash_key);
 	vcn_container_set_comparer(bins2D->bins, bin_are_equal);
 	vcn_container_set_destroyer(bins2D->bins, bin_destroy);
@@ -220,7 +220,7 @@ void vcn_bins2D_insert(vcn_bins2D_t *const restrict bins2D,
 		bin = calloc(1, sizeof(bin2D_t));
 		bin->x = key_bin.x;
 		bin->y = key_bin.y;
-		bin->points = vcn_container_create(VCN_CONTAINER_QUEUE);
+		bin->points = vcn_container_create(NB_CONTAINER_QUEUE);
 		vcn_container_set_comparer(bin->points, vcn_point2D_are_equal);
 		vcn_container_insert(bins2D->bins, bin);
 	}
@@ -321,7 +321,7 @@ static inline vcn_container_t* get_bins_block
 			      int substract_block[4]
 			      /* NULL if not required */)
 {
-	vcn_container_t* bins_block = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* bins_block = vcn_container_create(NB_CONTAINER_QUEUE);
 	if (vcn_container_get_length(bins) < 
 	    (add_block[2] - add_block[0]) * (add_block[3] - add_block[1])) {
 		/* Iterate cells in the hash table */
@@ -389,7 +389,7 @@ static inline vcn_container_t* knn_get_layer_bins
 	int ybin = get_bin_coord(p->x[1], bins2D->size_of_bins);
 
 	/* Create list to store the bins of the layer */
-	vcn_container_t* layer_bins = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* layer_bins = vcn_container_create(NB_CONTAINER_QUEUE);
 
 	if (0 == layer) {
 		bin2D_t* bin = get_bin(bins2D->bins, xbin, ybin);
@@ -674,7 +674,7 @@ static inline bool is_in_half_side(const vcn_point2D_t *const restrict p1,
 				   const vcn_point2D_t *const restrict p)
 {
 	double sign = vcn_utils2D_get_2x_trg_area(p1->x, p2->x, p->x);
-	return (sign >= VCN_GEOMETRIC_TOL);
+	return (sign >= NB_GEOMETRIC_TOL);
 }
 
 static inline bool is_inside_circle(const circle_t *const circle,
@@ -700,8 +700,8 @@ vcn_container_t* vcn_bins2D_get_candidate_points_to_min_delaunay
 	 *                     Segment ---|>|\|1|2|3|
 	 *                                | | |·|2|3|
 	 */
-	vcn_container_t *vertices = vcn_container_create(VCN_CONTAINER_QUEUE);
-	vcn_container_t *outside_vtx = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t *vertices = vcn_container_create(NB_CONTAINER_QUEUE);
+	vcn_container_t *outside_vtx = vcn_container_create(NB_CONTAINER_QUEUE);
 	bool have_points = half_side_have_points(bins2D, p1, p2);
 	int layer = 0;
 	while (vcn_container_is_empty(vertices) && have_points) {
@@ -772,7 +772,7 @@ vcn_container_t* vcn_bins2D_get_points_inside_circle
 					 double center[2],
 					 double radius)
 {
-	vcn_container_t* output = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* output = vcn_container_create(NB_CONTAINER_QUEUE);
 	/* Get block */
 	int block[4];
 	block[0] = get_bin_coord(center[0] - radius, bins2D->size_of_bins);
@@ -790,7 +790,7 @@ vcn_container_t* vcn_bins2D_get_points_inside_circle
 		while (vcn_iterator_has_more(iter)) {
 			const vcn_point2D_t *p = vcn_iterator_get_next(iter);
 			double dist2 = vcn_utils2D_get_dist2(p->x, center);
-			if (POW2(radius) - dist2 > VCN_GEOMETRIC_TOL_POW2)
+			if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2)
 				vcn_container_insert(output, p);
 		}
 		vcn_iterator_destroy(iter);
@@ -822,7 +822,7 @@ bool vcn_bins2D_are_points_inside_circle
 			while (vcn_iterator_has_more(iter)) {
 				const vcn_point2D_t *p = vcn_iterator_get_next(iter);
 				double dist2 = vcn_utils2D_get_dist2(p->x, center);
-				if (POW2(radius) - dist2 > VCN_GEOMETRIC_TOL_POW2) {
+				if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2) {
 					vcn_iterator_destroy(iter);
 					return true;
 				}

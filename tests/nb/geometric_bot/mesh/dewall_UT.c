@@ -70,7 +70,7 @@ static double* read_vertices(const char* filename, int* N_vertices);
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)
@@ -429,7 +429,7 @@ static void set_polygon(int N, double r, double vertices[])
 	if (1 == N) {
 		set_vertex(0, vertices, 0, 0);
 	} else if (1 < N) {
-		double angle_step = (VCN_PI * 2.0) / N;
+		double angle_step = (NB_PI * 2.0) / N;
 		for (uint32_t i = 0; i < N; i++) {
 			double a = i * angle_step;
 			set_vertex(i, vertices, r * cos(a), r * sin(a));
@@ -560,8 +560,8 @@ static double* get_spiral(int Ns, int Np)
 	for (int i = 0; i < Ns; i++)  {
 		int first_id = 1 + i * Np;
 		set_spiral(Np, r, angle, &(vertices[first_id * 2]));
-		r += 0.75 * r * VCN_PHI;
-		angle += 1.5 * VCN_PI;
+		r += 0.75 * r * NB_PHI;
+		angle += 1.5 * NB_PI;
 	}
 	set_vertex(N - 1, vertices, r * cos(angle), r * sin(angle));
 	return vertices;
@@ -570,8 +570,8 @@ static double* get_spiral(int Ns, int Np)
 static void set_spiral(int Np, double init_r,
 		       double init_angle, double vertices[])
 {
-	double angle_step = (VCN_PI * 1.5) / Np;
-	double r_step = (0.75 * init_r * VCN_PHI) / Np;
+	double angle_step = (NB_PI * 1.5) / Np;
+	double r_step = (0.75 * init_r * NB_PHI) / Np;
 	for (uint32_t i = 0; i < Np; i++) {
 		double angle = init_angle + i * angle_step;
 		double r = init_r + i * r_step;

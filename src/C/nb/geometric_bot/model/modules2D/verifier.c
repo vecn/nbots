@@ -69,7 +69,7 @@ bool vcn_model_have_repeated_vertices(const vcn_model_t *const model,
 		for(uint32_t j = i+1; j < model->N; j++) {
 			double dist = vcn_utils2D_get_dist2(GET_PVTX(model, i),
 						   GET_PVTX(model, j));
-			if (dist < VCN_GEOMETRIC_TOL) {
+			if (dist < NB_GEOMETRIC_TOL) {
 				if (NULL != repeated_ids) {
 					repeated_ids[0] = i;
 					repeated_ids[1] = j;
@@ -180,7 +180,7 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 									 GET_PVTX(model, v2),
 									 GET_PVTX(model, v3));
 					/* Check if them are parallel */
-					if (fabs(area) < VCN_GEOMETRIC_TOL) {
+					if (fabs(area) < NB_GEOMETRIC_TOL) {
 						/* Collineal segments */
 						double length1 = vcn_utils2D_get_dist(GET_PVTX(model, v1),
 									  GET_PVTX(model, v2));
@@ -191,35 +191,35 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 						max_dist = MAX(max_dist, dist_1A_2A);
 						/* Check if they are intersected */
 						if(max_dist - (length1 + length2) < 
-						   -VCN_GEOMETRIC_TOL)
+						   -NB_GEOMETRIC_TOL)
 							are_intersecting = true;
 					}
 				}
 				if (status == 4) {
 					/* Segments intersecting on sgm1->v1 */
-					if(dist_1A_2A > VCN_GEOMETRIC_TOL &&
-					   dist_1A_2B > VCN_GEOMETRIC_TOL)
+					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
+					   dist_1A_2B > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
 				if (status == 5) {
 					/* Segments intersecting on sgm1->v2 */
-					if(dist_1B_2A > VCN_GEOMETRIC_TOL &&
-					   dist_1B_2B > VCN_GEOMETRIC_TOL)
+					if(dist_1B_2A > NB_GEOMETRIC_TOL &&
+					   dist_1B_2B > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
 				if (status == 6) {
 					/* Segments intersecting on sgm2->v1 */
-					if(dist_1A_2A > VCN_GEOMETRIC_TOL &&
-					   dist_1B_2A > VCN_GEOMETRIC_TOL)
+					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
+					   dist_1B_2A > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
 				if (status == 7) {
 					/* Segments intersecting on sgm2->v2 */
-					if(dist_1A_2B > VCN_GEOMETRIC_TOL &&
-					   dist_1B_2B > VCN_GEOMETRIC_TOL)
+					if(dist_1A_2B > NB_GEOMETRIC_TOL &&
+					   dist_1B_2B > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 			}
@@ -257,7 +257,7 @@ bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 			double y3 = model->vertex[j*2+1];
 			double a1 = (x2-x3)/(x2-x1);
 			double a2 = (y2-y3)/(y2-y1);
-			if (fabs(a1-a2) < VCN_GEOMETRIC_TOL) {
+			if (fabs(a1-a2) < NB_GEOMETRIC_TOL) {
 				if (a1 > 0 && a1 < 1) {
 					if (NULL != ids_edge_and_vtx) {
 						ids_edge_and_vtx[0] = i; /* Edge id */

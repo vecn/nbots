@@ -1,10 +1,10 @@
-#ifndef __VCN_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
-#define __VCN_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
+#define __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
 
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 
-#define _VCN_INPUT_VTX ((void*)0x1)
+#define _NB_INPUT_VTX ((void*)0x1)
 
 typedef vcn_point2D_t msh_vtx_t;
 typedef struct msh_edge_s msh_edge_t;

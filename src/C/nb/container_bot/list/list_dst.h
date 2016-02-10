@@ -1,5 +1,5 @@
-#ifndef __VCN_LIST_DST_H__
-#define __VCN_LIST_DST_H__
+#ifndef __NB_LIST_DST_H__
+#define __NB_LIST_DST_H__
 
 #include <stdbool.h>
 #include <stdint.h>

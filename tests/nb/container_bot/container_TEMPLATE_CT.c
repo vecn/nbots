@@ -4,7 +4,7 @@
  * "CONTAINER_ID".
  *
  * Example:
- *  #define CONTAINER_ID VCN_CONTAINER_QUEUE
+ *  #define CONTAINER_ID NB_CONTAINER_QUEUE
  *  #include "container_TEMPLATE_CT.c"
  */
 
@@ -56,7 +56,7 @@ static bool are_equal_int32(const void *const a, const void *const b);
 
 inline int TEMPLATE_get_driver_id(void)
 {
-	return VCN_DRIVER_COMPLEXITY_TEST;
+	return NB_DRIVER_COMPLEXITY_TEST;
 }
 
 void TEMPLATE_load_tests(void *tests_ptr)
@@ -134,27 +134,27 @@ static bool run_merge(void *data)
 
 static inline bool run_cast_to_QUEUE(void *data)
 {
-	return run_cast_to(data, VCN_CONTAINER_QUEUE);
+	return run_cast_to(data, NB_CONTAINER_QUEUE);
 }
 
 static inline bool run_cast_to_STACK(void *data)
 {
-	return run_cast_to(data, VCN_CONTAINER_STACK);
+	return run_cast_to(data, NB_CONTAINER_STACK);
 }
 
 static inline bool run_cast_to_SORTED(void *data)
 {
-	return run_cast_to(data, VCN_CONTAINER_SORTED);
+	return run_cast_to(data, NB_CONTAINER_SORTED);
 }
 
 static inline bool run_cast_to_HEAP(void *data)
 {
-	return run_cast_to(data, VCN_CONTAINER_HEAP);
+	return run_cast_to(data, NB_CONTAINER_HEAP);
 }
 
 static inline bool run_cast_to_HASH(void *data)
 {
-	return run_cast_to(data, VCN_CONTAINER_HASH);
+	return run_cast_to(data, NB_CONTAINER_HASH);
 }
 
 static bool run_clear(void *data)
@@ -294,27 +294,27 @@ static void destroy_merge_data(void *data)
 
 static inline void* init_merge_with_QUEUE(void *init_data)
 {
-	return init_merge_with(init_data, VCN_CONTAINER_QUEUE);
+	return init_merge_with(init_data, NB_CONTAINER_QUEUE);
 }
 
 static inline void* init_merge_with_STACK(void *init_data)
 {
-	return init_merge_with(init_data, VCN_CONTAINER_STACK);
+	return init_merge_with(init_data, NB_CONTAINER_STACK);
 }
 
 static inline void* init_merge_with_SORTED(void *init_data)
 {
-	return init_merge_with(init_data, VCN_CONTAINER_SORTED);
+	return init_merge_with(init_data, NB_CONTAINER_SORTED);
 }
 
 static inline void* init_merge_with_HEAP(void *init_data)
 {
-	return init_merge_with(init_data, VCN_CONTAINER_HEAP);
+	return init_merge_with(init_data, NB_CONTAINER_HEAP);
 }
 
 static inline void* init_merge_with_HASH(void *init_data)
 {
-	return init_merge_with(init_data, VCN_CONTAINER_HASH);
+	return init_merge_with(init_data, NB_CONTAINER_HASH);
 }
 
 static void* init_cast_data(void *init_data)

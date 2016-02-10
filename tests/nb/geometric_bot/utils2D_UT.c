@@ -74,7 +74,7 @@ static bool check_pnt_lies_in_box_false(void);
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)

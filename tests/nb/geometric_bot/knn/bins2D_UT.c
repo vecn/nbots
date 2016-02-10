@@ -69,7 +69,7 @@ static bool all_inside_circle(const vcn_container_t *const cnt,
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)

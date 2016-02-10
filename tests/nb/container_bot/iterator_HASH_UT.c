@@ -1,4 +1,4 @@
-#define CONTAINER_ID VCN_CONTAINER_HASH
+#define CONTAINER_ID NB_CONTAINER_HASH
 #define N_ITEMS 5000
 #include "iterator_TEMPLATE_UT.c"
 

@@ -1,5 +1,5 @@
-#ifndef __VCN_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_STRUCT_H__
-#define __VCN_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_STRUCT_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_STRUCT_H__
+#define __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_STRUCT_H__
 
 #define vcn_msh3trg_get_1st_vtx_id_of_trg(msh3trg, trg_id)\
   ((msh3trg)->vertices_forming_triangles[(trg_id) * 3])

@@ -1,5 +1,5 @@
-#ifndef __VCN_LIST_NODE_H__
-#define __VCN_LIST_NODE_H__
+#ifndef __NB_LIST_NODE_H__
+#define __NB_LIST_NODE_H__
 
 typedef struct node_s node_t;
 

@@ -132,7 +132,7 @@ inline double vcn_math_harmonic_avg(double a, double b)
 
 inline double vcn_math_log2(double arg)
 {
-	return log(arg) / VCN_MATH_LOG2;
+	return log(arg) / NB_MATH_LOG2;
 }
 
 vcn_Gauss_Legendre_table_t* vcn_GLtable_create(uint32_t N_points)

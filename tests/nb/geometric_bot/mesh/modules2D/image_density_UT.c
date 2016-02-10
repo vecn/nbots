@@ -31,7 +31,7 @@ static bool check_set_img_density_jpg_size_const(void);
 
 inline int vcn_test_get_driver_id(void)
 {
-	return VCN_DRIVER_UNIT_TEST;
+	return NB_DRIVER_UNIT_TEST;
 }
 
 void vcn_test_load_tests(void *tests_ptr)
@@ -61,7 +61,7 @@ static bool check_set_img_density_jpg_eye(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
@@ -106,7 +106,7 @@ static bool check_set_img_density_png_jolie(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
@@ -130,7 +130,7 @@ static bool check_set_img_density_jpg_hand(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
@@ -153,10 +153,10 @@ static bool check_set_img_density_jpg_size_const(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_img_density(mesh, img, 0.0);
 	vcn_mesh_set_size_constraint(mesh,
-				     VCN_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     3000);
 	vcn_mesh_set_geometric_constraint(mesh,
-					  VCN_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
+					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);

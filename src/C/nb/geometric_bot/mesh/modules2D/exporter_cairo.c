@@ -13,8 +13,8 @@
 
 #include "../mesh2D_structs.h"
 
-static double _VCN_COLOR_BLACK[3] = {0.0, 0.0, 0.0};
-static double _VCN_COLOR_BLUE[3] = {0.0, 0.0, 1.0};
+static double _NB_COLOR_BLACK[3] = {0.0, 0.0, 0.0};
+static double _NB_COLOR_BLUE[3] = {0.0, 0.0, 1.0};
 
 typedef struct {
 	double center[2];
@@ -151,7 +151,7 @@ static void draw_input_vertices(cairo_t *const restrict cr,
 			  cam->zoom * vertices[i]->x[0] - 
 			  cam->zoom * cam->center[0] + width / 2.0,
 			  -cam->zoom * vertices[i]->x[1] + cam->zoom * cam->center[1] +
-			  height / 2.0, 3.0, 0.0, 2.0 * VCN_MATH_PI);
+			  height / 2.0, 3.0, 0.0, 2.0 * NB_MATH_PI);
 		cairo_fill(cr);
 
 		/* Draw labels */
@@ -267,7 +267,7 @@ static void draw_polygons(cairo_t *const restrict cr, uint32_t N_polygons,
 			  cam->zoom * cam->center[0] + width/2.0,
 			  -cam->zoom * centroids[i*2+1] +
 			  cam->zoom * cam->center[1] + 
-			  height/2.0, 2, 0, 2 * VCN_MATH_PI);
+			  height/2.0, 2, 0, 2 * NB_MATH_PI);
 		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 		cairo_fill(cr);
 	}
@@ -288,7 +288,7 @@ static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
 	cairo_set_line_width(cr, 0.5);
 	draw_triangles(cr, mesh->ht_trg, width, height,
 		       cam, true, rgba_bg, 
-		       _VCN_COLOR_BLUE);
+		       _NB_COLOR_BLUE);
 
 	/* Draw input segments */
 	if (true) {
@@ -300,7 +300,7 @@ static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
 	if (true) {
 		draw_input_vertices(cr, mesh->N_input_vtx, mesh->input_vtx,
 				    width, height, cam, false,
-				    _VCN_COLOR_BLUE, _VCN_COLOR_BLACK);
+				    _NB_COLOR_BLUE, _NB_COLOR_BLACK);
 	}
 }
 
@@ -398,7 +398,7 @@ static void draw_vertices_halos(cairo_t *cr,
 			  cam->zoom * cam->center[0] + width / 2.0,
 			  -cam->zoom * vertices[i]->x[1] + 
 			  cam->zoom * cam->center[1] +
-			  height / 2.0, 5, 0.0, 2.0 * VCN_MATH_PI);
+			  height / 2.0, 5, 0.0, 2.0 * NB_MATH_PI);
 		cairo_stroke(cr);
 	}
 }
@@ -896,7 +896,7 @@ void vcn_mshpack_save_png(const vcn_mshpack_t *const restrict mshpack,
 			  cam.zoom * cam.center[0] + width/2.0,
 			  -cam.zoom * mshpack->centers[i*2+1] +
 			  cam.zoom * cam.center[1] + height/2.0,
-			  mshpack->radii[i] * cam.zoom, 0, 2 * VCN_MATH_PI);
+			  mshpack->radii[i] * cam.zoom, 0, 2 * NB_MATH_PI);
 		if (true) {
 			cairo_set_source_rgba(cr, 0.3, 0.5, 1.0, 0.35);
 			cairo_fill_preserve(cr);

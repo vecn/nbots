@@ -1,5 +1,5 @@
-#ifndef __VCN_AVL_DST_H__
-#define __VCN_AVL_DST_H__
+#ifndef __NB_AVL_DST_H__
+#define __NB_AVL_DST_H__
 
 #include <stdbool.h>
 #include <stdint.h>

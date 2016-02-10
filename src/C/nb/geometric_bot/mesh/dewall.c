@@ -149,7 +149,7 @@ void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
 		for (uint32_t i = 0; i < N_vertices; i++) {
 			msh_vtx_t* vtx = calloc(1, sizeof(*vtx));
 			mesh->input_vtx[i] = vtx;
-			vtx->attr = _VCN_INPUT_VTX;
+			vtx->attr = _NB_INPUT_VTX;
 			vtx->x[0] = mesh->scale *
 				(vertices[i * 2] - mesh->xdisp);
 			vtx->x[1] = mesh->scale *
@@ -255,7 +255,7 @@ static double swap_vtx_if_minimize_delaunay_distance
 				       msh_vtx_t** v3, double min_dist,
 				       msh_vtx_t *vtx, double dist)
 {
-	if (fabs(dist - min_dist) < VCN_GEOMETRIC_TOL) {
+	if (fabs(dist - min_dist) < NB_GEOMETRIC_TOL) {
 		min_dist = handle_cocircularity(edges, v1, v2, v3,
 						min_dist, vtx, dist);
 	} else {
@@ -375,7 +375,7 @@ static bool is_3rd_vtx_in_half_side(const msh_vtx_t *const restrict v1,
 				    const msh_vtx_t *const restrict v3)
 {
 	double sign = vcn_utils2D_get_2x_trg_area(v1->x, v2->x, v3->x);
-	return (sign >= VCN_GEOMETRIC_TOL);
+	return (sign >= NB_GEOMETRIC_TOL);
 }
 
 static msh_vtx_t* get_3rd_vtx_using_bins(const vcn_container_t *const edges,
@@ -498,11 +498,11 @@ static uint32_t dewall_recursion
 	}
 
 	/* Initialize Action face lists */
-	vcn_container_t* AFL_alpha = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t* AFL_alpha = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(AFL_alpha, hash_key_edge);
-	vcn_container_t* AFL_1 = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t* AFL_1 = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(AFL_1, hash_key_edge);
-	vcn_container_t* AFL_2 = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t* AFL_2 = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(AFL_2, hash_key_edge);
 
 	/* Redistribute segments from the main AFL to the three AFLs */
@@ -651,7 +651,7 @@ static inline bool not_space_for_alpha(msh_vtx_t **vertices, uint32_t i,
 				       int8_t axe)
 {
 	return (vertices[i]->x[axe] - vertices[i-1]->x[axe])
-		< VCN_GEOMETRIC_TOL;
+		< NB_GEOMETRIC_TOL;
 }
 
 static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
@@ -747,7 +747,7 @@ static uint32_t dewall(vcn_mesh_t* mesh)
 	msh_vtx_t **vertices =  calloc(mesh->N_input_vtx, sizeof(*vertices));
 	memcpy(vertices, mesh->input_vtx, 
 	       mesh->N_input_vtx * sizeof(*vertices));
-	vcn_container_t* AFL = vcn_container_create(VCN_CONTAINER_HASH);
+	vcn_container_t* AFL = vcn_container_create(NB_CONTAINER_HASH);
 	vcn_container_set_key_generator(AFL, hash_key_edge);
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
 					  vertices, 0, AFL);

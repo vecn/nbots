@@ -1,5 +1,5 @@
-#ifndef __VCN_TEST_LIBRARY_H__
-#define __VCN_TEST_LIBRARY_H__
+#ifndef __NB_TEST_LIBRARY_H__
+#define __NB_TEST_LIBRARY_H__
 
 #include "test_driver_types.h"
 

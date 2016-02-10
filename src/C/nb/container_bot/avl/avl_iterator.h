@@ -1,5 +1,5 @@
-#ifndef __VCN_AVL_ITERATOR_H__
-#define __VCN_AVL_ITERATOR_H__
+#ifndef __NB_AVL_ITERATOR_H__
+#define __NB_AVL_ITERATOR_H__
 
 #include <stdbool.h>
 

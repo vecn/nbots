@@ -1,4 +1,4 @@
-#define CONTAINER_ID VCN_CONTAINER_SORTED
+#define CONTAINER_ID NB_CONTAINER_SORTED
 #define N_ITEMS 200
 #include "container_TEMPLATE_UT.c"
 

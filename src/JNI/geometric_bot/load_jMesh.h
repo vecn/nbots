@@ -1,5 +1,5 @@
-#ifndef __JNI_VCN_GEOMETRIC_BOT_LOAD_JMESH_H__
-#define __JNI_VCN_GEOMETRIC_BOT_LOAD_JMESH_H__
+#ifndef __JNI_NB_GEOMETRIC_BOT_LOAD_JMESH_H__
+#define __JNI_NB_GEOMETRIC_BOT_LOAD_JMESH_H__
 
 #include <jni.h>
 

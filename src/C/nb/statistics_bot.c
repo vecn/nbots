@@ -73,10 +73,10 @@ void vcn_statistics_rnorm(int n, double mean, double var,
 	vcn_statistics_runif(m, 0.0, 1.0, V, seed2);
 	for (uint32_t i = 0; i < m; i++) {
 		out[i*2] = mean + sqrt(-2.0 * log(U[i])) * 
-			cos(2.0 * VCN_MATH_PI * V[i]) * var;
+			cos(2.0 * NB_MATH_PI * V[i]) * var;
 		if (i*2+1 < n) 
 			out[i*2+1] = mean + sqrt(-2 * log(V[i])) * 
-				sin(2.0 * VCN_MATH_PI * U[i]) * var;
+				sin(2.0 * NB_MATH_PI * U[i]) * var;
 	}
 	free(U);
 	free(V);

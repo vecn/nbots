@@ -74,7 +74,7 @@ static double img_density(const double x[2],
 	/* Check if the pixel coordinates are outside bounds */
 	if (r < 0 || r >= vcn_image_get_height(data->img) ||
 	    c < 0 || c >= vcn_image_get_width(data->img)) {
-		return VCN_GEOMETRIC_TOL;
+		return NB_GEOMETRIC_TOL;
 	}
 
 	/* Get pixel */

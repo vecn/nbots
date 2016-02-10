@@ -115,7 +115,7 @@ static vcn_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 						    const msh_vtx_t *const v2)
 {
 	vcn_container_t *intersected_trg = 
-		vcn_container_create(VCN_CONTAINER_QUEUE);
+		vcn_container_create(NB_CONTAINER_QUEUE);
 	vcn_iterator_t *iter = vcn_iterator_create();
 	vcn_iterator_set_container(iter, mesh->ht_trg);
 	while (vcn_iterator_has_more(iter)) {
@@ -130,7 +130,7 @@ static vcn_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 	vcn_iterator_destroy(iter);
 
 	vcn_container_t *vertices = 
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	while (vcn_container_is_not_empty(intersected_trg)) {
 		msh_trg_t *trg = vcn_container_delete_first(intersected_trg);
 		vcn_container_insert(vertices, trg->v1);
@@ -208,7 +208,7 @@ static msh_trg_t* create_trg_constrained
     
 		/* Check for positive area */
 		const double Sk = vcn_utils2D_get_2x_trg_area(v1->x, v2->x, v3->x);
-		if (Sk < VCN_GEOMETRIC_TOL)
+		if (Sk < NB_GEOMETRIC_TOL)
 			continue;
 
 		/* Check if the segments already have a triangle */
@@ -228,14 +228,14 @@ static msh_trg_t* create_trg_constrained
 		const double circumradius = (L1*L2*L3)/(2.0*Sk);
     
 		/* Select the vertex with the minimum circumradius */
-		if (!vtx_found || min_circumradius > circumradius-VCN_GEOMETRIC_TOL) {
+		if (!vtx_found || min_circumradius > circumradius-NB_GEOMETRIC_TOL) {
 			/* Check if the triangle accomplish the Delaunay condition */
 			if (!trg_is_constrained(mesh,
 									    v1, v2, v3,
 									    vertices))
 				continue;
 			/* Check if there are not intersections with segments */
-			if (min_circumradius < circumradius + VCN_GEOMETRIC_TOL) {
+			if (min_circumradius < circumradius + NB_GEOMETRIC_TOL) {
 				if (are_intersecting_edges(mesh, v1, v3))
 					continue;
 				if (are_intersecting_edges(mesh, v2, v3))

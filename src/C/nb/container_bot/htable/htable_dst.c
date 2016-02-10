@@ -314,7 +314,7 @@ uint32_t htable_get_N_collisions(const void *const htable_ptr)
 vcn_container_t* htable_get_collisions(const void *const htable_ptr)
 {
 	const htable_t *const htable = htable_ptr;
-	vcn_container_t* cnt = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t* cnt = vcn_container_create(NB_CONTAINER_QUEUE);
  	for (uint32_t i = 0; i < htable->size; i++) {
 		void *rows = htable->rows[i];
 		if (NULL != rows) {
@@ -330,7 +330,7 @@ vcn_container_t* htable_get_collisions(const void *const htable_ptr)
 
 static vcn_container_t* get_container_from_list(const void *const list)
 {
-	vcn_container_t *items = vcn_container_create(VCN_CONTAINER_QUEUE);
+	vcn_container_t *items = vcn_container_create(NB_CONTAINER_QUEUE);
 	void *iter = list_iter_create();
 	list_iter_set_dst(iter, list);
 	while (list_iter_has_more(iter)) {

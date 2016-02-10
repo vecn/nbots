@@ -25,17 +25,17 @@
   /**
    * @brief LU decomposition.
    */
-#define VCN_SOLVER_LUD (1) 
+#define NB_SOLVER_LUD (1) 
 
   /**
    * @brief Cholesky decomposition.
    */
-#define VCN_SOLVER_CHK (2)
+#define NB_SOLVER_CHK (2)
 
   /**
    * @brief Conjugate Gradient preconditioned with Jacobi
    */
-#define VCN_SOLVER_CGJ (3)
+#define NB_SOLVER_CGJ (3)
 
 
 /**
