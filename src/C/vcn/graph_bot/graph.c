@@ -48,7 +48,7 @@ static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val)
 
 vcn_graph_t* vcn_graph_create(void)
 {
-	return calloc(1, sizeof(vcn_graph_t));/* REFACTOR */
+	return calloc(1, sizeof(vcn_graph_t));
 }
 
 vcn_graph_t* vcn_graph_get_subgraph(const vcn_graph_t *const graph,

@@ -25,19 +25,24 @@ endif(${CMAKE_COMPILER_IS_GNUCXX})
 
 add_subdirectory(vcn)
 
-message("Configuring VCN Math bot")
+message("Configuring Math bot")
 add_library(vcn_math_bot SHARED
   ${VCN_SOURCE_DIR}/vcn/math_bot.c)
 target_link_libraries(vcn_math_bot m)
 
-message("Configuring VCN Statistics bot")
+message("Configuring Statistics bot")
 add_library(vcn_statistics_bot SHARED
   ${VCN_SOURCE_DIR}/vcn/statistics_bot.c)
 target_link_libraries(vcn_statistics_bot m)
 
-message("Configuring VCN Customized File Bot")
+message("Configuring TextFile Bot")
 add_library(vcn_cfreader_bot SHARED
   ${VCN_SOURCE_DIR}/vcn/cfreader_cat.c
+)
+
+message("Configuring Drawing Bot")
+add_library(vcn_drawing_bot SHARED
+  ${VCN_SOURCE_DIR}/vcn/visual_cat.c
 )
 
 message("Configuring VCN Bots Library (ALL in one)")

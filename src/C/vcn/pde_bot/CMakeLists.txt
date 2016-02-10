@@ -20,5 +20,6 @@ add_library(vcn_pde_bot-cairo SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/finite_element/modules/exporter_cairo.c)
 target_link_libraries(vcn_pde_bot-cairo
   vcn_pde_bot
+  vcn_drawing_bot
   ${CAIRO_LIBRARIES}
   m)

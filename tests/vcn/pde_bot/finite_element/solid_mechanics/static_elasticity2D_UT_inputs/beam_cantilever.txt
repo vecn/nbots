@@ -28,16 +28,15 @@
 # Num displacement conditions over vertices:    #
  0						#
 # Num of load conditions over vertices:		#
- 0						#
+ 1						#
+# Load conditions definition                    #
+ 2 0 1  -2e7	      				#
 # Num of displacement conditions over lines:    #
- 2                                              #
+ 1                                              #
 # Displacement conditions definition            #
- 1 1 1  0.0 0.0	      				#
  3 1 1  0.0 0.0					#
 # Num of load conditions over lines:            #
- 1                                              #
-# Neuman conditions definition                  #
- 2 0 1  -2e7	      				#
+ 0                                              #
 #-----------------------------------------------#
 
 

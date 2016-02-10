@@ -12,11 +12,12 @@
 
 #include "../mesh2D_structs.h"
 
-static inline uint32_t itrg_get_right_triangle
+static uint32_t key_uint(const void *const uint_ptr);
+static uint32_t itrg_get_right_triangle
                          (const vcn_msh3trg_t *const delaunay, 
 			  const bool *const enabled_elements,
 			  uint32_t itrg, uint32_t ivtx);
-static inline uint32_t itrg_get_left_triangle
+static uint32_t itrg_get_left_triangle
                          (const vcn_msh3trg_t *const delaunay,
 			  const bool *const enabled_elements,
 			  uint32_t itrg, uint32_t ivtx);
@@ -140,26 +141,23 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 {
 	vcn_graph_t *graph = calloc(1, sizeof(*graph));
 	graph->N = msh3trg->N_vertices;
-	graph->N_adj = (uint32_t*) calloc(graph->N, sizeof(uint32_t));
-	graph->adj = (uint32_t**) calloc(graph->N, sizeof(uint32_t*));
+	graph->N_adj = calloc(graph->N, sizeof(uint32_t));
+	graph->adj = calloc(graph->N, sizeof(uint32_t*));
 
-	/* Connectivity Matrix stored in AVLs */
+	/* Connectivity Matrix stored in container */
 	vcn_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
 	for (uint32_t i = 0; i < graph->N; i++) {
 		l_nodal_CM[i] = vcn_container_create(VCN_CONTAINER_SORTED);
-		/* REFACTOR 
-		   set_key_generator(vcn_compare_uint32_t);
-		   set_comparer();
-		*/
+		vcn_container_set_key_generator(l_nodal_CM[i], key_uint);
 	}
   
 	for (uint32_t k = 0; k < msh3trg->N_triangles; k++) {
 		for (uint32_t i = 0; i < 2; i++) {
-			for (uint32_t j=i+1; j < 3; j++) {
-				uint32_t* inode = (uint32_t*)malloc(sizeof(uint32_t));
-				uint32_t* jnode = (uint32_t*)malloc(sizeof(uint32_t));
-				inode[0] = msh3trg->vertices_forming_triangles[k * 3 + i];
-				jnode[0] = msh3trg->vertices_forming_triangles[k * 3 + j];
+			for (uint32_t j = i+1; j < 3; j++) {
+				uint32_t* inode = malloc(sizeof(*inode));
+				uint32_t* jnode = malloc(sizeof(*jnode));
+				*inode = msh3trg->vertices_forming_triangles[k * 3 + i];
+				*jnode = msh3trg->vertices_forming_triangles[k * 3 + j];
 				uint32_t length1 = vcn_container_get_length(l_nodal_CM[inode[0]]);
 				uint32_t length2 = vcn_container_get_length(l_nodal_CM[jnode[0]]);
 				if (vcn_container_exist(l_nodal_CM[inode[0]], jnode) == NULL)
@@ -178,55 +176,71 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 	}
 	for (uint32_t i = 0; i < graph->N; i++) {
 		graph->N_adj[i] = vcn_container_get_length(l_nodal_CM[i]);
-		graph->adj[i] = (uint32_t*)malloc(graph->N_adj[i] * sizeof(uint32_t));
+		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
     
-		vcn_iterator_t* iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, l_nodal_CM[i]);
 		int j = 0;
-		while (vcn_iterator_has_more(iter)) {
-			uint32_t* inode = (uint32_t*)vcn_iterator_get_next(iter);
-			graph->adj[i][j++] = inode[0];
+		while (vcn_container_is_not_empty(l_nodal_CM[i])) {
+			uint32_t* inode = 
+				vcn_container_delete_first(l_nodal_CM[i]);
+			graph->adj[i][j++] = *inode;
+			free(inode);
 		}
-		vcn_iterator_destroy(iter);
-		vcn_container_set_destroyer(l_nodal_CM[i], free);
 		vcn_container_destroy(l_nodal_CM[i]);
 	}
 	free(l_nodal_CM);
 	return graph;
 }
 
+static inline uint32_t key_uint(const void *const uint_ptr)
+{
+	return *((uint32_t*)uint_ptr);
+}
+
 vcn_graph_t* vcn_msh3trg_create_elem_graph
                 (const vcn_msh3trg_t *const restrict msh3trg)
 {
-  if(msh3trg->triangles_sharing_sides == NULL)
-    return NULL;
+	if (NULL == msh3trg->triangles_sharing_sides)
+		return NULL;
 
-  vcn_graph_t* graph = calloc(1, sizeof(vcn_graph_t));
+	vcn_graph_t* graph = calloc(1, sizeof(vcn_graph_t));
 
-  graph->N = msh3trg->N_triangles;
-  graph->N_adj = (uint32_t*) calloc(graph->N, sizeof(uint32_t));
-  graph->adj = (uint32_t**) malloc(graph->N * sizeof(uint32_t*));
-  for (uint32_t i = 0; i < graph->N; i++) {
-    graph->N_adj[i] = 0;
-    if (msh3trg->triangles_sharing_sides[i * 3] < msh3trg->N_triangles)
-      graph->N_adj[i] += 1;      
-    if (msh3trg->triangles_sharing_sides[i*3+1] < msh3trg->N_triangles)
-      graph->N_adj[i] += 1;
-    if (msh3trg->triangles_sharing_sides[i*3+2] < msh3trg->N_triangles)
-      graph->N_adj[i] += 1;
+	graph->N = msh3trg->N_triangles;
+	graph->N_adj = (uint32_t*) calloc(graph->N, sizeof(uint32_t));
+	graph->adj = (uint32_t**) malloc(graph->N * sizeof(uint32_t*));
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->N_adj[i] = 0;
+		if (msh3trg->triangles_sharing_sides[i * 3] <
+		    msh3trg->N_triangles)
+			graph->N_adj[i] += 1;      
+
+		if (msh3trg->triangles_sharing_sides[i*3+1] <
+		    msh3trg->N_triangles)
+			graph->N_adj[i] += 1;
+
+		if (msh3trg->triangles_sharing_sides[i*3+2] <
+		    msh3trg->N_triangles)
+			graph->N_adj[i] += 1;
   }
 
-  for (uint32_t i = 0; i < graph->N; i++) {
-    graph->adj[i] = (uint32_t*) malloc(graph->N_adj[i] * sizeof(uint32_t));
-    uint32_t cnt = 0;
-    if (msh3trg->triangles_sharing_sides[i * 3] < msh3trg->N_triangles)
-      graph->adj[i][cnt++] = msh3trg->triangles_sharing_sides[i * 3];
-    if (msh3trg->triangles_sharing_sides[i*3+1] < msh3trg->N_triangles)
-      graph->adj[i][cnt++] = msh3trg->triangles_sharing_sides[i*3+1];
-    if (msh3trg->triangles_sharing_sides[i*3+2] < msh3trg->N_triangles)
-      graph->adj[i][cnt++] = msh3trg->triangles_sharing_sides[i*3+2];
-  }
-  return graph;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
+		uint32_t cnt = 0;
+		if (msh3trg->triangles_sharing_sides[i * 3] <
+		    msh3trg->N_triangles)
+			graph->adj[i][cnt++] = 
+				msh3trg->triangles_sharing_sides[i * 3];
+
+		if (msh3trg->triangles_sharing_sides[i*3+1] <
+		    msh3trg->N_triangles)
+			graph->adj[i][cnt++] =
+				msh3trg->triangles_sharing_sides[i*3+1];
+		
+		if (msh3trg->triangles_sharing_sides[i*3+2] <
+		    msh3trg->N_triangles)
+			graph->adj[i][cnt++] =
+				msh3trg->triangles_sharing_sides[i*3+2];
+	}
+	return graph;
 }
 
 vcn_msh3trg_t* vcn_mesh_get_msh3trg

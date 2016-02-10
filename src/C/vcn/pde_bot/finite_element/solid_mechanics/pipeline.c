@@ -228,9 +228,7 @@ void pipeline_set_boundary_conditions(vcn_sparse_t* K,
 				      double factor)
 /* We assume that all the conditions are placed on the mesh nodes */
 {
-	/* OPPORTUNITY: Use libre_evaluator to eval time functions */
-	/* Set Neuman conditions on vertices (Loads in the Solid Mechanics context) */
-	for(uint32_t i=0; i < bmeshcond->N_Neuman_on_vtx; i++){
+	for (uint32_t i = 0; i < bmeshcond->N_Neuman_on_vtx; i++) {
 		for(uint32_t j=0; j < bmeshcond->N_dof; j++){
 			if(!bmeshcond->Neuman_on_vtx_dof_mask[i * bmeshcond->N_dof + j])
 				continue;

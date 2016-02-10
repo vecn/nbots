@@ -90,7 +90,7 @@ char vcn_cfreader_read_int(vcn_cfreader_t* cfreader, int* val)
   return 0;
 }
 
-char vcn_cfreader_read_uint32_t(vcn_cfreader_t* cfreader, uint32_t* val)
+char vcn_cfreader_read_uint(vcn_cfreader_t *cfreader, unsigned int *val)
 {
   if (strlen(cfreader->line) == 0)
     vcn_cfreader_next_line(cfreader);

@@ -32,8 +32,8 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 		return NULL;
 	}
 	/* Read number of Dirichlet conditions upon vertices */
-	if (vcn_cfreader_read_uint32_t(cfreader, 
-				       &(bconditions->N_Dirichlet_on_vtx)) != 0) {
+	if (vcn_cfreader_read_uint(cfreader, 
+				   &(bconditions->N_Dirichlet_on_vtx)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
@@ -47,8 +47,8 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 		calloc(2 * bconditions->N_Dirichlet_on_vtx, sizeof(double));
 
 	/* Read number of Neuman conditions upon vertices */
-	if (vcn_cfreader_read_uint32_t(cfreader,
-				       &(bconditions->N_Neuman_on_vtx)) != 0) {
+	if (vcn_cfreader_read_uint(cfreader,
+				   &(bconditions->N_Neuman_on_vtx)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
@@ -62,7 +62,7 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 		(double*)calloc(2 * bconditions->N_Neuman_on_vtx, sizeof(double));
 
 	/* Read number of Dirichlet conditions upon segments */
-	if (vcn_cfreader_read_uint32_t(cfreader,
+	if (vcn_cfreader_read_uint(cfreader,
 				       &(bconditions->N_Dirichlet_on_sgm)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
@@ -77,7 +77,7 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 		calloc(2 * bconditions->N_Dirichlet_on_sgm, sizeof(double));
 
 	/* Read number of Neuman conditions upon segments */
-	if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->N_Neuman_on_sgm)) != 0) {
+	if (vcn_cfreader_read_uint(cfreader, &(bconditions->N_Neuman_on_sgm)) != 0) {
 		vcn_cfreader_destroy(cfreader);
 		vcn_fem_bcond_destroy(bconditions);
 		return NULL;
@@ -92,20 +92,20 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 
 	/* Read Dirichlet Cnd. upon vertices */
 	for(uint32_t i = 0; i < bconditions->N_Dirichlet_on_vtx; i++){
-		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_vtx_idx[i])) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &(bconditions->Dirichlet_on_vtx_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_vtx_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
@@ -131,20 +131,20 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 
 	/* Read Neuman Cnd. upon vertices */
 	for (uint32_t i = 0; i < bconditions->N_Neuman_on_vtx; i++) {
-		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Neuman_on_vtx_idx[i])) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &(bconditions->Neuman_on_vtx_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Neuman_on_vtx_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
@@ -170,20 +170,20 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 
 	/* Read Dirichlet Cnd. upon segments */
 	for (uint32_t i = 0; i < bconditions->N_Dirichlet_on_sgm; i++) {
-		if (vcn_cfreader_read_uint32_t(cfreader, &(bconditions->Dirichlet_on_sgm_idx[i])) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &(bconditions->Dirichlet_on_sgm_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Dirichlet_on_sgm_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
@@ -209,21 +209,21 @@ vcn_bcond_t* vcn_fem_bcond_read(const char* filename)
 
 	/* Read Neuman Cnd. upon vertices */
 	for (uint32_t i = 0; i < bconditions->N_Neuman_on_sgm; i++) {
-		if (vcn_cfreader_read_uint32_t(cfreader,
+		if (vcn_cfreader_read_uint(cfreader,
 					       &(bconditions->Neuman_on_sgm_idx[i])) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		uint32_t aux;
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;
 		}
 		bconditions->Neuman_on_sgm_dof_mask[i * 2] = (aux == 1)?true:false;
 
-		if (vcn_cfreader_read_uint32_t(cfreader, &aux) != 0) {
+		if (vcn_cfreader_read_uint(cfreader, &aux) != 0) {
 			vcn_cfreader_destroy(cfreader);
 			vcn_fem_bcond_destroy(bconditions);
 			return NULL;

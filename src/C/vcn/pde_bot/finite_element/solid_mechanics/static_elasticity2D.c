@@ -44,20 +44,22 @@ int vcn_fem_compute_2D_Solid_Mechanics
  */
 {
 	if (NULL != logfile) {
-		FILE *log = fopen(logfile, "a");
-		fprintf(log, "Bidimensional elastic Solid Mechanics Solver using FEM\n");
+		FILE *log = fopen(logfile, "w");
+		fprintf(log, "FINITE ELEMENT\n");
+		fprintf(log, "    > SOLID MECHANICS\n");
+		fprintf(log, "        > 2D STATIC ELASTICITY\n");
 		fclose(log);
 	}
 
-	/****************************************************************************/
-	/********************** 1) Assemble system **********************************/
-	/****************************************************************************/
+	/*********************************************************************/
+	/****************** 1) Assemble system *******************************/
+	/**********************************************************************/
 	/* Allocate global Stiffness Matrix and Force Vector */
 	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	vcn_graph_destroy(graph);
 
-	double* F = (double*)calloc(2 * mesh->N_vertices, sizeof(double));
+	double* F = calloc(2 * mesh->N_vertices, sizeof(*F));
 	/* Allocate elemental Stiffness Matrix and Force Vector */
 	pipeline_assemble_system(K, NULL, F,
 				 mesh,
@@ -68,20 +70,21 @@ int vcn_fem_compute_2D_Solid_Mechanics
 				 enable_plane_stress,
 				 thickness,
 				 elements_enabled);
-	/*****************************************************************************/
-	/********************** 2) Set boundary conditions ***************************/
-	/*****************************************************************************/
+
+	/*********************************************************************/
+	/**************** 2) Set boundary conditions *************************/
+	/*********************************************************************/
 	pipeline_set_boundary_conditions(K, F, bmeshcond, thickness, 1.0);
 
-	/*****************************************************************************/
-	/**************** 3) Solve system (to compute displacements) *****************/
-	/*****************************************************************************/
+	/**********************************************************************/
+	/************* 3) Solve system (to compute displacements) *************/
+	/**********************************************************************/
   
 	char solver_status = solver(K, F, displacement, omp_parallel_threads);
     
 	/* Display failure info in logfile */
-	if(solver_status != 0){
-		if(logfile != NULL){
+	if (0 != solver_status) {
+		if (NULL != logfile) {
 			FILE* log = fopen(logfile, "a");
 			fprintf(log, "Solver fails (Code: %i).\n", solver_status);
 			fclose(log);
@@ -93,10 +96,10 @@ int vcn_fem_compute_2D_Solid_Mechanics
 
 	vcn_sparse_destroy(K);
 	free(F);
-	/*****************************************************************************/
-	/********************* 4) Compute Strain            **************************/
-	/*********************       >  S = B u             **************************/
-	/*****************************************************************************/
+	/********************************************************************/
+	/********************* 4) Compute Strain            *****************/
+	/*********************       >  S = B u             *****************/
+	/********************************************************************/
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
 				enable_plane_stress, material);
 	/* Successful exit */

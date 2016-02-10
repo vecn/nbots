@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "vcn/visual_cat.h"
 
@@ -17,9 +18,9 @@ struct vcn_palette_s{
    *   |_____|________|__________|
    *   0    0.25     0.57        1  <- Tics
    */
-  uchar ntics;   /* Number of tics */
+  uint8_t ntics;   /* Number of tics */
   float* tics;   /* Sorted tics in [0,1] */
-  uchar* rgb;    /* RGB Colors definition */
+  uint8_t* rgb;    /* RGB Colors definition */
 };
 
 static vcn_palette_t* palette_get_rainbow();
@@ -64,14 +65,14 @@ void vcn_palette_clear(vcn_palette_t *palette){
 }
 
 void vcn_palette_add_colour(vcn_palette_t* palette, float tic,
-                      uchar r, uchar g, uchar b){
+                      uint8_t r, uint8_t g, uint8_t b){
   if(tic < 0) tic = 0;
   if(tic > 1) tic = 1;
   if(palette->ntics == 0){
     /* Insert first color */
     palette->tics = (float*)malloc(sizeof(float));
     palette->tics[0] = tic;
-    palette->rgb = (uchar*)malloc(3);
+    palette->rgb = (uint8_t*)malloc(3);
     palette->rgb[0] = r;
     palette->rgb[1] = g;
     palette->rgb[2] = b;
@@ -79,26 +80,26 @@ void vcn_palette_add_colour(vcn_palette_t* palette, float tic,
   }else{
     /* Create a new space */
     float* tics = (float*)malloc(palette->ntics*sizeof(float));
-    uchar* rgb = (uchar*)malloc(palette->ntics*3);
+    uint8_t* rgb = (uint8_t*)malloc(palette->ntics*3);
     memcpy(tics, palette->tics, palette->ntics*sizeof(float));
     memcpy(rgb, palette->rgb, palette->ntics*3);
     free(palette->tics);
     free(palette->rgb);
     palette->ntics += 1;
     palette->tics = (float*)malloc(palette->ntics*sizeof(float));
-    palette->rgb = (uchar*)malloc(palette->ntics*3);
+    palette->rgb = (uint8_t*)malloc(palette->ntics*3);
     memcpy(palette->tics, tics, (palette->ntics-1)*sizeof(float));
     memcpy(palette->rgb, rgb, (palette->ntics-1)*3);
     free(rgb);
     free(tics);
     /* Insert new color */
     palette->tics[palette->ntics-1] = 2;
-    for(uint i=0; i<palette->ntics; i++){
+    for(uint32_t i=0; i<palette->ntics; i++){
       if(tic < palette->tics[i]){
         float aux1 = tic;
         tic = palette->tics[i];
         palette->tics[i] = aux1;
-        uchar aux2[3] = {r, g, b};
+        uint8_t aux2[3] = {r, g, b};
         r = palette->rgb[i * 3];
         g = palette->rgb[i*3+1];
         b = palette->rgb[i*3+2];
@@ -112,14 +113,14 @@ void vcn_palette_add_colour(vcn_palette_t* palette, float tic,
 
 void vcn_palette_get_colour(const vcn_palette_t *const palette,
 			    float factor,
-			    uchar rgb[3])
+			    uint8_t rgb[3])
 {
   if (factor <= palette->tics[0]) {
     memcpy(rgb, palette->rgb, 3);
   } else if (factor >= palette->tics[palette->ntics-1]) {
     memcpy(rgb, &(palette->rgb[(palette->ntics-1)*3]), 3);
   } else {
-    uint i = 1;
+    uint32_t i = 1;
     while(factor > palette->tics[i])
       i++;
     float w1 = (palette->tics[i]-factor)/(palette->tics[i]-palette->tics[i-1]);

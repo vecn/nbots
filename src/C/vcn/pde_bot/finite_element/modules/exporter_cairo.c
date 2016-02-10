@@ -21,9 +21,13 @@ static void set_center_and_zoom(camera_t *cam, double box[4],
 				double width, double height);
 static void set_camera_vtx(double v_dest[2], const double v_src[2],
 			   camera_t *cam, double width, double height);
-static void set_color_pattern(cairo_t *cr, const vcn_palette_t *palette,
-			      const double v1[2], const double v2[2],
-			      const double v3[2]);
+static void set_pattern_patch(cairo_pattern_t *pat, const double v1[2],
+			      const double v2[2], const double v3[2]);
+static void set_pattern_color(cairo_pattern_t *pat,
+			      const vcn_palette_t *palette,
+			      const double *results,
+			      uint32_t min_id, uint32_t max_id,
+			      uint32_t id1, uint32_t id2, uint32_t id3);
 
 void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 		     const double *results,
@@ -33,13 +37,14 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 
 	/* Compute cam->center and cam->zoom */
 	double box[4];
-	vcn_utils2D_get_enveloping_box_from_subset(msh3trg->N_input_vertices,
-						   msh3trg->input_vertices,
-						   msh3trg->vertices,
-						   2 * sizeof(*(msh3trg->vertices)),
-						   vcn_utils2D_get_x_from_darray,
-						   vcn_utils2D_get_y_from_darray,
-						   box);
+	vcn_utils2D_get_enveloping_box_from_subset
+		(msh3trg->N_input_vertices,
+		 msh3trg->input_vertices,
+		 msh3trg->vertices,
+		 2 * sizeof(*(msh3trg->vertices)),
+		 vcn_utils2D_get_x_from_darray,
+		 vcn_utils2D_get_y_from_darray,
+		 box);
 
 	camera_t cam;
 	set_center_and_zoom(&cam, box, width, height);
@@ -52,6 +57,13 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 	/* Draw background */
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_paint(cr);
+
+	vcn_palette_t *palette = vcn_palette_create_preset(VCN_PALETTE_RAINBOW);
+
+	uint32_t min_id;
+	uint32_t max_id;
+	vcn_array_get_min_max_ids(results, msh3trg->N_vertices, sizeof(*results),
+				  vcn_compare_double, &min_id, &max_id);
 
 	/* Draw triangles */
 	cairo_set_line_width(cr, 0.5);
@@ -66,15 +78,21 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 		set_camera_vtx(v2, &(msh3trg->vertices[n2*2]), &cam,
 			       width, height);
 		double v3[2];
-		set_camera_vtx(v2, &(msh3trg->vertices[n3*2]), &cam,
+		set_camera_vtx(v3, &(msh3trg->vertices[n3*2]), &cam,
 			       width, height);
 		cairo_move_to(cr, v1[0], v1[1]);
 		cairo_line_to(cr, v2[0], v2[1]);
 		cairo_line_to(cr, v3[0], v3[1]);
 		cairo_close_path(cr);
 
-		set_color_pattern(cr, &cam, width, height, v1, v2, v3);
+		cairo_pattern_t *pat = cairo_pattern_create_mesh();
+		set_pattern_patch(pat, v1, v2, v3);
+		set_pattern_color(pat, palette, results,
+				  min_id, max_id, n1, n2, n3);
+		cairo_mesh_pattern_end_patch(pat);
+		cairo_set_source(cr, pat);
 		cairo_fill_preserve(cr);
+		cairo_pattern_destroy(pat);
 
 		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 		cairo_stroke(cr);
@@ -127,34 +145,42 @@ static void set_camera_vtx(double v_dest[2], const double v_src[2],
 			   camera_t *cam, double width, double height)
 {
 	v_dest[0] = cam->zoom * (v_src[0] - cam->center[0]) + width/2.0;
-	v_dest[1] = -cam->zoom * (v_dest[1] - cam->center[1]) + height/2.0;
+	v_dest[1] = -cam->zoom * (v_src[1] - cam->center[1]) + height/2.0;
 }
 
-static void set_color_pattern(cairo_t *cr, const vcn_palette_t *palette,
-			      const double v1[2], const double v2[2],
-			      const double v3[2])
+static void set_pattern_patch(cairo_pattern_t *pat, const double v1[2],
+			      const double v2[2], const double v3[2])
 {
-	cairo_pattern_t *pat = cairo_pattern_create_mesh();
 	cairo_mesh_pattern_begin_patch(pat);
 	cairo_mesh_pattern_move_to(pat, v1[0], v1[1]);
 	cairo_mesh_pattern_line_to(pat, v2[0], v2[1]);
 	cairo_mesh_pattern_line_to(pat, v3[0], v3[1]);
-	
+}
+
+static void set_pattern_color(cairo_pattern_t *pat,
+			      const vcn_palette_t *palette,
+			      const double *results,
+			      uint32_t min_id, uint32_t max_id,
+			      uint32_t id1, uint32_t id2, uint32_t id3)
+{
+	double results_range = results[max_id] - results[min_id];
 	uint8_t rgb[3];
+	double val = (results[id1] - results[min_id]) / results_range;
 	vcn_palette_get_colour(palette, val, rgb);
 	cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 
 						rgb[0]/255.0f, 
 						rgb[1]/255.0f, 
 						rgb[2]/255.0f);
+	val = (results[id2] - results[min_id]) / results_range;
+	vcn_palette_get_colour(palette, val, rgb);
 	cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 
 						rgb[0]/255.0f,
 						rgb[1]/255.0f, 
 						rgb[2]/255.0f);
+	val = (results[id3] - results[min_id]) / results_range;
+	vcn_palette_get_colour(palette, val, rgb);
 	cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 
 						rgb[0]/255.0f, 
 						rgb[1]/255.0f,
 						rgb[2]/255.0f);
-	cairo_mesh_pattern_end_patch(pat);
-
-	cairo_set_source(cr, pat);
 }
