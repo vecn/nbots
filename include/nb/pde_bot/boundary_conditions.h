@@ -4,29 +4,20 @@
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 
 typedef struct {
+	uint32_t N;
+	uint32_t *id;
+	bool *dof_mask;
+	double *val;
+} bc_data_t;
+
+typedef struct {
 	/* TEMPORAL: Change Neuman for Neumann */
 	/* Boundary conditions */
 	uint8_t N_dof; /* Degrees of freedom */
-	/* Dirichlet conditions on vertices */
-	uint32_t N_Dirichlet_on_vtx;
-	uint32_t *Dirichlet_on_vtx_idx;
-	bool *Dirichlet_on_vtx_dof_mask;
-	double *Dirichlet_on_vtx_val;
-	/* Neuman conditions on vertices */
-	uint32_t N_Neuman_on_vtx;
-	uint32_t *Neuman_on_vtx_idx;
-	bool *Neuman_on_vtx_dof_mask;
-	double *Neuman_on_vtx_val;
-	/* Dirichlet conditions on segments */
-	uint32_t N_Dirichlet_on_sgm;
-	uint32_t *Dirichlet_on_sgm_idx;
-	bool*Dirichlet_on_sgm_dof_mask;
-	double *Dirichlet_on_sgm_val;
-	/* Neuman conditions on segments */
-	uint32_t N_Neuman_on_sgm;
-	uint32_t *Neuman_on_sgm_idx;
-	bool *Neuman_on_sgm_dof_mask;
-	double *Neuman_on_sgm_val;
+	bc_data_t dirichlet_on_vtx;
+	bc_data_t neumann_on_vtx;
+	bc_data_t dirichlet_on_sgm;
+	bc_data_t neumann_on_sgm;
 } vcn_bcond_t;
 
 vcn_bcond_t* vcn_fem_bcond_create(void);
