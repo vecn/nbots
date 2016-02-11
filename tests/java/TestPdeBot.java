@@ -25,7 +25,7 @@ public class TestPdeBot {
 	    StaticElasticity2D.solve(model, material,
 				     DirichletVtx, NewmannVtx,
 				     DirichletSgm, NewmannSgm,
-				     1.0);
+				     1.0, 200);
     }
     private static BoundaryConditions getDirichletVtx() {
 	BoundaryConditions BC = new BoundaryConditions(BCType.DIRICHLET);

@@ -8,7 +8,6 @@ public class StaticElasticity2D {
     private StaticElasticity2D() {}
 
     static {
-	System.loadLibrary("nb_bots");
 	System.loadLibrary("nb_pde_bot-jni");
     }
     
@@ -17,5 +16,5 @@ public class StaticElasticity2D {
 					   BoundaryConditions NeumannVtx,
 					   BoundaryConditions DirichletSgm,
 					   BoundaryConditions NeumannSgm,
-					   double thickness);
+					   double thickness, int N_nodes);
 }

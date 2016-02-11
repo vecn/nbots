@@ -39,14 +39,14 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
 /*
  * Class:     vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
  * Method:    solve
- * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;D)Lnb/pdeBot/finiteElement/MeshResults;
+ * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;DI)Lnb/pdeBot/finiteElement/MeshResults;
  */
 JNIEXPORT jobject JNICALL
 Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		(JNIEnv *env, jclass class, jobject jmodel, jobject jmaterial,
 		 jobject jBCDirichletVtx, jobject jBCNeumannVtx,
 		 jobject jBCDirichletSgm, jobject jBCNeumannSgm,
-		 jdouble jthickness)
+		 jdouble jthickness, jint jN_nodes)
 {
 	/* Read optimization parameters */
 	vcn_bcond_t* bconditions = vcn_fem_bcond_create();
@@ -62,9 +62,12 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     jN_nodes);
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					  0.1);
+					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_msh3trg_t* msh3trg = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
