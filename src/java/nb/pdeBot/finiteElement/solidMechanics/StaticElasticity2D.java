@@ -8,7 +8,6 @@ public class StaticElasticity2D {
     private StaticElasticity2D() {}
 
     static {
-	System.loadLibrary("nb_bots");
 	System.loadLibrary("nb_pde_bot-jni");
     }
     

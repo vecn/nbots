@@ -12,7 +12,6 @@ public class GeometricBot {
     private GeometricBot() {}
 
     static {
-	System.loadLibrary("nb_bots");
 	System.loadLibrary("nb_geometric_bot-jni");
     }
     
