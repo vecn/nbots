@@ -1,0 +1,29 @@
+NBots Standard
+==============
+
+Opaque structures (Objects)
+---------------------------
+
+An opaque structure is an object-like implementation for some data type, and
+it must be defined into the following two files:
+
+  1: nb/[botname]/[type].h
+  2: nb/[botname]/[type].c
+
+where [botname] is the directory containing all the files of such a bot, and
+[type] can be any data type name.
+
+All opaque structures of NBots must have defined the following functions:
+
+  1: For user-memory usage:
+
+    1.1: uint16_t nb_[type]_get_memsize(void);
+    1.2: void nb_[type]_init(void *[type]);
+    1.3: void nb_[type]_copy(void *[type], const void);
+    1.4: void nb_[type]_clear(void *[type]);
+
+  2: For dynamic-memory usage:
+
+    2.1: void* nb_[type]_create(void);
+    2.2: void* nb_[type]_clone(void);
+    2.3: void nb_[type]_destroy(void *);
