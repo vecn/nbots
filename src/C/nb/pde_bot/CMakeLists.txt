@@ -1,9 +1,15 @@
 cmake_minimum_required (VERSION 2.8.6)
 project (Numerical_Bots)
 
+set(boundary_conditions
+  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bc_atom.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bcond.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bcond_iterator.c
+)
+
 set(pde_bot
   ${CMAKE_CURRENT_SOURCE_DIR}/material.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions.c
+  ${boundary_conditions}
   ${CMAKE_CURRENT_SOURCE_DIR}/finite_element/element.c
   ${CMAKE_CURRENT_SOURCE_DIR}/finite_element/gaussp_to_nodes.c
   ${CMAKE_CURRENT_SOURCE_DIR}/finite_element/elements/trg_linear.c
