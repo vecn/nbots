@@ -4,7 +4,7 @@ project (Numerical_Bots)
 set(boundary_conditions
   ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bc_atom.c
   ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bcond.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bcond_iterator.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/boundary_conditions/bcond_iter.c
 )
 
 set(pde_bot

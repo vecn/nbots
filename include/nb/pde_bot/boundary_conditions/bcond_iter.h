@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "vcn/pde_bot/boundary_conditions.h"
+#include "vcn/pde_bot/boundary_conditions/bcond.h"
 
 typedef struct nb_bc_iterator_s nb_bc_iterator_t;
 
