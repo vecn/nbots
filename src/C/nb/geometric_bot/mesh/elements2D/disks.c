@@ -1,3 +1,26 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <math.h>
+
+#include "nb/container_bot.h"
+#include "nb/eigen_bot.h"
+#include "nb/geometric_bot/utils2D.h"
+#include "nb/geometric_bot/knn/bins2D.h"
+#include "nb/geometric_bot/knn/bins2D_iterator.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/elements2D/disks.h"
+
+#include "../mesh2D_structs.h"
+
+#define POW2(a) ((a)*(a))
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+#define _NB_SUBSEGMENT_VTX ((void*)0x2) /* REFACTOR (Taken from ruppert.c) */
+
 static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh);
 
 static vcn_mshpack_t* spack_create(uint32_t N_spheres)
@@ -14,7 +37,7 @@ static vcn_mshpack_t* spack_create(uint32_t N_spheres)
 	return spack;
 }
 
-static inline bool spack_vtx_is_from_input(msh_vtx_t *vtx)
+static inline bool spack_vtx_is_from_input(const msh_vtx_t *vtx)
 {
 	return (((void**)vtx->attr)[1] == _NB_INPUT_VTX) ||
 		(((void**)vtx->attr)[1] == _NB_SUBSEGMENT_VTX);
@@ -86,7 +109,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 	vcn_iterator_t* sgm_iter = vcn_iterator_create();
 	vcn_iterator_set_container(sgm_iter, segments);
 	while (vcn_iterator_has_more(sgm_iter)) {
-		uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);    
+		const uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);    
 		if(sgm_struct[2] < spack->N_spheres)
 			/* Does not consider the nodes on the boundary */
 			continue;
@@ -114,25 +137,25 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 	vcn_iterator_t* sgm_iter = vcn_iterator_create();
 	vcn_iterator_set_container(sgm_iter, segments);
 	while (vcn_iterator_has_more(sgm_iter)) {
-		uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);
+		const uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);
 		if (sgm_struct[2] == N_spheres  /* inner/inner segment */) {
 			/* Process as inner segment */
 			int id1 = sgm_struct[0];
 			int id2 = sgm_struct[1];
 			/* Compute link function */
 			double diff = 
-				vcn_math_pow2(Xk[id1 * 3] - Xk[id2 * 3]) +
-				vcn_math_pow2(Xk[id1*3+1] - Xk[id2*3+1]) -
-				vcn_math_pow2(gamma * (Xk[id1*3+2] + Xk[id2*3+2]));
-			double phi_ij =  vcn_math_pow2(diff);
+				POW2(Xk[id1 * 3] - Xk[id2 * 3]) +
+				POW2(Xk[id1*3+1] - Xk[id2*3+1]) -
+				POW2(gamma * (Xk[id1*3+2] + Xk[id2*3+2]));
+			double phi_ij =  POW2(diff);
 			global_min += phi_ij;
 			/* Compute link gradient */
 			gl[0] = 4 * diff * (Xk[id1 * 3] - Xk[id2 * 3]);
 			gl[1] = 4 * diff * (Xk[id1*3+1] - Xk[id2*3+1]);
-			gl[2] = -4 * vcn_math_pow2(gamma) * diff * (Xk[id1*3+2] + Xk[id2*3+2]);
+			gl[2] = -4 * POW2(gamma) * diff * (Xk[id1*3+2] + Xk[id2*3+2]);
 			gl[3] = 4 * diff * (Xk[id2 * 3] - Xk[id1 * 3]);
 			gl[4] = 4 * diff * (Xk[id2*3+1] - Xk[id1*3+1]);
-			gl[5] = -4 * vcn_math_pow2(gamma) * diff * (Xk[id1*3+2] + Xk[id2*3+2]);
+			gl[5] = -4 * POW2(gamma) * diff * (Xk[id1*3+2] + Xk[id2*3+2]);
 			/* Store global indices */
 			int idx[6];
 			idx[0] = id1 * 3;
@@ -159,7 +182,7 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 			int k2 = sgm_struct[1];
 			normal[0] = -(Xb[k2*2+1]-Xb[k1*2+1]);
 			normal[1] =   Xb[k2 * 2]-Xb[k1 * 2];
-			double normalizer = sqrt(vcn_math_pow2(normal[0])+vcn_math_pow2(normal[1]));
+			double normalizer = sqrt(POW2(normal[0])+POW2(normal[1]));
 			normal[0] /= normalizer;
 			normal[1] /= normalizer;
 			int id = sgm_struct[2];
@@ -167,8 +190,8 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 			double d_ik = 
 				normal[0]*(Xb[k1 * 2] - Xk[id * 3]) + 
 				normal[1]*(Xb[k1*2+1] - Xk[id*3+1]);
-			double diff = vcn_math_pow2(d_ik) - vcn_math_pow2(Xk[id*3+2]);
-			double phi_ik = vcn_math_pow2(diff);
+			double diff = POW2(d_ik) - POW2(Xk[id*3+2]);
+			double phi_ik = POW2(diff);
 			global_min += phi_ik;
 			/* Compute boundary gradient */
 			gl[0] = -4 * diff * d_ik * normal[0];
@@ -195,6 +218,14 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 	return global_min;
 }
 
+static inline bool compare_id(const void* const ptrA,
+			      const void* const ptrB)
+{
+	uint32_t* A = (uint32_t*) ptrA;
+	uint32_t* B = (uint32_t*) ptrB;
+	return (A[0] == B[0]);
+}
+
 static void spack_optimize(const vcn_mesh_t *const mesh,
 			   vcn_mshpack_t *spack, 
 			   vcn_container_t *segments,
@@ -215,7 +246,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* ivtx = vcn_bins2D_iter_get_next(iter);
+		const msh_vtx_t* ivtx = vcn_bins2D_iter_get_next(iter);
 		void** iattr = (void**)ivtx->attr;
 		/* Get ID */
 		int id = *((int*)iattr[0]);
@@ -236,7 +267,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		double radii = 0.0;
 		for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
 			uint32_t j_id = spack->adj[i][j];
-			radii += (0.5/gamma) * get_dist(&(Xk[i*3]), &(Xk[j_id*3]));
+			radii += (0.5/gamma) * vcn_utils2D_get_dist(&(Xk[i*3]), &(Xk[j_id*3]));
 		}
 		radii /= spack->N_adj[i];
 		Xk[i*3+2] = radii; /* Initial ratio */
@@ -256,9 +287,9 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	uint32_t super_k = 0;
 
 	/* Start iterations */
-	uint32_t max_optim_iter = vcn_math_min(iterations, 1);
+	uint32_t max_optim_iter = MIN(iterations, 1);
 	/* TEMPORAL: Verify when to update adjacencies (Bean case) */
-	uint32_t max_super_iter = vcn_math_max(1, iterations/max_optim_iter +
+	uint32_t max_super_iter = MAX(1, iterations/max_optim_iter +
 					       ((iterations%max_optim_iter > 0)?1:0));
 	while (global_min > NB_GEOMETRIC_TOL && super_k < max_super_iter) {
 		super_k ++;
@@ -301,11 +332,12 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		for (uint32_t i = 0; i < spack->N_spheres; i++) {
 			double gap_factor = 1.5;
 			new_adj[i] = vcn_container_create(NB_CONTAINER_QUEUE);
+			vcn_container_set_comparer(new_adj[i], compare_id);
 			/* Add current adjacencies close enough */
 			for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
 				uint32_t j_id = spack->adj[i][j];
-				if (get_distPow2(&(Xk[i*3]), &(Xk[j_id*3])) <
-				    vcn_math_pow2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
+				if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[j_id*3])) <
+				    POW2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
 					uint32_t* id = malloc(sizeof(*id));
 					id[0] = j_id;
 					vcn_container_insert(new_adj[i], id);
@@ -320,10 +352,10 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 					uint32_t k_id = spack->adj[j_id][k];
 					if(k_id == i)
 						continue;
-					if (vcn_container_exist(new_adj[i], &k_id, compare_id) != NULL)
+					if (NULL != vcn_container_exist(new_adj[i], &k_id))
 						continue;
-					if (get_distPow2(&(Xk[i*3]), &(Xk[k_id*3])) <
-					    vcn_math_pow2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
+					if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
+					    POW2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
 						uint32_t* id = malloc(sizeof(*id));
 						id[0] = k_id;
 						vcn_container_insert(new_adj[i], id);
@@ -409,7 +441,7 @@ static uint32_t spack_porosity(vcn_mshpack_t *spack,
 			if (i % id_divisor_porosity != 0 ||
 			    i/id_divisor_porosity >= N_removed_by_porosity) {
 				uint32_t id = 
-					i - vcn_math_min(i/id_divisor_porosity+1, N_removed_by_porosity);
+					i - MIN(i/id_divisor_porosity+1, N_removed_by_porosity);
 				adj[id] = spack->adj[i];
 				N_adj[id] = spack->N_adj[i];
 				uint32_t j = 0;
@@ -431,7 +463,7 @@ static uint32_t spack_porosity(vcn_mshpack_t *spack,
 						adj[id] = local_adj;
 					} else {
 						adj[id][j] = j_id - 
-							vcn_math_min(j_id/id_divisor_porosity+1, N_removed_by_porosity);
+							MIN(j_id/id_divisor_porosity+1, N_removed_by_porosity);
 						j++;
 					}
 				}
@@ -455,29 +487,29 @@ static uint32_t spack_porosity(vcn_mshpack_t *spack,
 }
 
 static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
-			       vcn_mshpack_t *spack,
-			       double *Xk,
-			       uint32_t N_removed_by_porosity)
+					vcn_mshpack_t *spack,
+					double *Xk,
+					uint32_t N_removed_by_porosity)
 {
 	uint32_t id_divisor_porosity = spack->N_spheres / N_removed_by_porosity;
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		void** attr = (void**)vtx->attr;
 		int id = *((int*)attr[0]);
 		if (spack_vtx_is_from_input(vtx))
 			continue;
 		if (id % id_divisor_porosity != 0 ||
 		    id / id_divisor_porosity >= N_removed_by_porosity) {
-		  uint32_t id_corrected = id - 
-		    vcn_math_min(id/id_divisor_porosity + 1, N_removed_by_porosity);
-		  /* Export centroids */
-		  spack->centers[id_corrected * 2] = 
-		    Xk[id * 3]/mesh->scale + mesh->xdisp;
-		  spack->centers[id_corrected*2+1] = 
-		    Xk[id*3+1]/mesh->scale + mesh->ydisp;
-		  spack->radii[id_corrected] = Xk[id*3+2] / mesh->scale;
+			uint32_t id_corrected = id - 
+				MIN(id/id_divisor_porosity + 1, N_removed_by_porosity);
+			/* Export centroids */
+			spack->centers[id_corrected * 2] = 
+				Xk[id * 3]/mesh->scale + mesh->xdisp;
+			spack->centers[id_corrected*2+1] = 
+				Xk[id*3+1]/mesh->scale + mesh->ydisp;
+			spack->radii[id_corrected] = Xk[id*3+2] / mesh->scale;
 		}
 	}
 	vcn_bins2D_iter_destroy(iter);
@@ -491,7 +523,7 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		void** attr = (void**)vtx->attr;
 		int id = *((int*)attr[0]);
 		if (spack_vtx_is_from_input(vtx))
@@ -503,6 +535,22 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_destroy(iter);
 }
 
+static void mesh_free_vtx_ids(vcn_mesh_t *mesh)
+/* REFACTOR: taken from triangle.c */
+{
+	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+		void** attr = vtx->attr;
+		vtx->attr = attr[1];
+		free(attr[0]);
+		free(attr);
+	}
+	vcn_bins2D_iter_destroy(iter);
+}
+
+
 vcn_mshpack_t* vcn_mesh_get_mshpack
         (const vcn_mesh_t *const mesh,
 	 bool include_adjacencies,
@@ -511,9 +559,6 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 	 double porosity_factor,     /* Porosity percentage [0,1] */
 	 uint32_t* (*labeling)(const vcn_graph_t *const))
 {
-	if (labeling == NB_LABELING_AMD)
-		labeling = labeling_amd;
-
 	uint32_t N_spheres =  /* Casting mesh to non-const */
 		mesh_alloc_input_and_steiner_vtx_ids((vcn_mesh_t*)mesh);
 
@@ -582,7 +627,7 @@ static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
 		int* id = malloc(sizeof(*id));
 		void** attr = malloc(2 * sizeof(*attr));
 		if (vtx->attr != _NB_INPUT_VTX &&
@@ -598,7 +643,8 @@ static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
 	if (N_steiner == 0) {
 		vcn_bins2D_iter_restart(iter);
 		while (vcn_bins2D_iter_has_more(iter)) {
-			msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+			msh_vtx_t* vtx = (msh_vtx_t*)
+				vcn_bins2D_iter_get_next(iter);
 			void** attr = (void**)vtx->attr;
 			vtx->attr = attr[1];
 			free(attr[0]);

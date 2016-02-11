@@ -11,7 +11,7 @@
 
 #include "../mesh2D_structs.h"
 
-#define _NB_SUBSEGMENT_VTX ((void*)0x2)
+#define _NB_SUBSEGMENT_VTX ((void*)0x2) /* REFACTOR: Taken from ruppert.c */
 
 #define POW2(a) ((a)*(a))
 

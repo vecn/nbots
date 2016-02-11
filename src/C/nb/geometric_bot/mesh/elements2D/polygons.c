@@ -1,3 +1,24 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <math.h>
+
+#include "nb/container_bot.h"
+#include "nb/geometric_bot/point2D.h"
+#include "nb/geometric_bot/utils2D.h"
+#include "nb/geometric_bot/knn/bins2D.h"
+#include "nb/geometric_bot/knn/bins2D_iterator.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/dewall.h"
+#include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
+#include "nb/geometric_bot/mesh/elements2D/polygons.h"
+
+#include "../mesh2D_structs.h"
+
+#define POW2(a) ((a)*(a))
+
 typedef struct {
 	msh_edge_t* sgm;
 	msh_vtx_t* v1;
@@ -16,8 +37,8 @@ static void voronoi_get_patched_circumcenter(double* v1,
 static vcn_container_t* voronoi_get_boundary_segments_with_vertices
                                         (const vcn_mesh_t* const mesh);
 		
-static int voronoi_vtx_compare(const void* const A,
-			       const void *const B);
+static bool voronoi_vtx_are_equal(const void* const A,
+				  const void *const B);
 
 static inline int compare_voronoi_sgm(const void *const sgmA, 
 				      const void *const sgmB);
@@ -30,18 +51,15 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 				 const vcn_container_t *const avl_boundary_sgm,
 				 uint32_t max_iter);
 
-vcn_mshpoly_t* vcn_mesh_get_mshpoly
-        (const vcn_mesh_t *const mesh,
-	 bool include_adjacencies,
-	 bool central_voronoi,
-	 uint32_t central_voronoi_max_iter,
-	 /* NULL for a constant density */
-	 double (*central_voronoi_density)(double*),
-	 uint32_t* (*labeling)(const vcn_graph_t *const))
+vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
+				    bool include_adjacencies,
+				    bool central_voronoi,
+				    uint32_t central_voronoi_max_iter,
+				    /* NULL for a constant density */
+				    double (*central_voronoi_density)(double*),
+				    uint32_t* (*labeling)
+				    		(const vcn_graph_t *const))
 {
-	if (labeling == VCN_LABELING_AMD)
-		labeling = labeling_amd;
-
 	/* Allocate Voronoi mesh */
 	vcn_mshpoly_t* voronoi = calloc(1, sizeof(*voronoi));
 
@@ -60,16 +78,72 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 	uint32_t N_vertices = vcn_bins2D_get_length(aux_mesh->ug_vtx);
 	msh_vtx_t** vertices =  malloc(2 * voronoi->N_polygons *
 				       sizeof(*vertices));
+	uint32_t N_segments = vcn_container_get_length(aux_mesh->ht_edge);
+	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
+	uint32_t N_triangles = vcn_container_get_length(aux_mesh->ht_trg);
+	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
+
+	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(iter, aux_mesh->ug_vtx);
+	int i = 0;
+	while (vcn_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+		/* Allocate the ID */
+		void **attr = malloc(2 * sizeof(*attr));
+		uint32_t *id = malloc(sizeof(*id));
+		id[0] = i++;
+		attr[0] = id;
+		attr[1] = vtx->attr;
+		vtx->attr = attr;
+	}
+	vcn_iterator_t *sgm_iter = vcn_iterator_create();
+	vcn_iterator_set_container(sgm_iter, aux_mesh->ht_edge);
+	i = 0;
+	while (vcn_iterator_has_more(sgm_iter)) {
+		msh_edge_t* sgm = (msh_edge_t*)vcn_iterator_get_next(sgm_iter);
+		segments[i++] = sgm;
+	}
+	vcn_iterator_destroy(sgm_iter);
+
+	vcn_iterator_t *trg_iter = vcn_iterator_create();
+	vcn_iterator_set_container(trg_iter, aux_mesh->ht_trg);
+	i = 0;
+	while (vcn_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(trg_iter);
+		/* Allocate the ID */
+		void **attr = malloc(2 * sizeof(*attr));
+		uint32_t *id = malloc(sizeof(*id));
+		id[0] = i;
+		attr[0] = id;
+		attr[1] = trg->attr;
+		trg->attr = attr;
+		/* Put the triangle into the array */
+		triangles[i++] = trg;
+	}
+	vcn_iterator_destroy(trg_iter);
+
+	uint32_t *perm = NULL; /* Dummy initialization */
+	if (NULL != labeling) {
+		vcn_graph_t *graph = vcn_mesh_create_vtx_graph(mesh);
+		perm = labeling(graph);
+		vcn_graph_destroy(graph);
+	}
+
+	/* Allocate Voronoi data */
+	voronoi->N_polygons = N_vertices;
+	voronoi->centroids = 
+		malloc(2 * voronoi->N_polygons * sizeof(*(voronoi->centroids)));
 	voronoi->N_vertices_forming_polygons =
 		calloc(voronoi->N_polygons,
 		       sizeof(*(voronoi->N_vertices_forming_polygons)));
 	voronoi->vertices_forming_polygons =
-		malloc(voronoi->N_polygons * sizeof(*(voronoi->vertices_forming_polygons)));
+		malloc(voronoi->N_polygons * 
+		       sizeof(*(voronoi->vertices_forming_polygons)));
 
 	/* Set the vertices into the array */
 	vcn_bins2D_iter_restart(iter);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+		msh_vtx_t* vtx = (msh_vtx_t*)vcn_bins2D_iter_get_next(iter);
 		uint32_t* id = (uint32_t*)((void**)vtx->attr)[0];
 		if (NULL != labeling)
 			id[0] = perm[id[0]];
@@ -79,7 +153,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 	vcn_bins2D_iter_destroy(iter);
 
 	/* Free permutation vector used for labeling */
-	if(NULL != labeling)
+	if (NULL != labeling)
 		free(perm);
 
 	/* Compute vertices of polygons which lies on the boundary */
@@ -101,13 +175,13 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 	/* Array with the nodes conforming each Voronoi polygon */
 	vcn_container_t** node_x_vtx = malloc(N_vertices * sizeof(*node_x_vtx));
 	for (uint32_t i = 0; i < N_vertices; i++)
-		node_x_vtx[i] = vcn_container_create(VCN_CONTAINER_QUEUE);
+		node_x_vtx[i] = vcn_container_create(NB_CONTAINER_STACK);
 
 	/* Array to store the circumcenter of the triangles */
 	vcn_point2D_t** trg_center = calloc(N_triangles, sizeof(*trg_center));
 
 	/* Relate the triangle with its vertices */  
-	for (i = 0; i < N_triangles; i++) {
+	for (uint32_t i = 0; i < N_triangles; i++) {
 		msh_trg_t* trg = triangles[i];
 		trg_x_vtx[((uint32_t*)((void**)trg->v1->attr)[0])[0]] = trg;
 		trg_x_vtx[((uint32_t*)((void**)trg->v2->attr)[0])[0]] = trg;
@@ -117,7 +191,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 
 	/* Compute vertices of polygons */
 	vcn_bins2D_t* voronoi_vtx = vcn_bins2D_create(1.0);
-	for (i=0; i < voronoi->N_polygons; i++) {
+	for (uint32_t i = 0; i < voronoi->N_polygons; i++) {
 		msh_trg_t* first_trg = trg_x_vtx[i];
 		/* Check if the flower is complete */
 		msh_trg_t* trg = first_trg;
@@ -230,7 +304,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 						vcn_point2D_destroy(circumcenter_cpy);
 					trg_center[trg_id[0]] = circumcenter;
 				}
-				if(!vcn_container_exist(node_x_vtx[i], trg_center[trg_id[0]], NULL))
+				if(!vcn_container_exist(node_x_vtx[i], trg_center[trg_id[0]]))
 					vcn_container_insert(node_x_vtx[i], trg_center[trg_id[0]]);
 			} else {
 				if (!bsgm->vtx_inserted[0]) {
@@ -276,7 +350,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 				} else if (bsgm->N_vertices == 2) {
 					/* Case 2 */
 					uint32_t* last_trg_id = (uint32_t*)((void**)last_trg->attr)[0];
-					vcn_point2D_t* last_vtx = vcn_container_delete_last(node_x_vtx[i]);
+					vcn_point2D_t* last_vtx = vcn_container_delete_first(node_x_vtx[i]);
 					vcn_bins2D_delete(voronoi_vtx, last_vtx);
 					free(trg_center[last_trg_id[0]]);
 					trg_center[last_trg_id[0]] = NULL;
@@ -296,7 +370,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 	voronoi->N_vertices = vcn_bins2D_get_length(voronoi_vtx);
 	voronoi->vertices = malloc(2 * voronoi->N_vertices * sizeof(*(voronoi->vertices)));
 	uint32_t vtx_counter = 0;
-	for (i=0; i < voronoi->N_polygons; i++) {
+	for (uint32_t i=0; i < voronoi->N_polygons; i++) {
 		/* Store centroids */
 		voronoi->centroids[i * 2] = 
 			vertices[i]->x[0]/aux_mesh->scale + aux_mesh->xdisp;
@@ -336,7 +410,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 		voronoi->adjacencies = 
 			malloc(N_vertices * sizeof(*(voronoi->adjacencies)));
   
-		for (i = 0; i < N_segments; i++) {
+		for (uint32_t i = 0; i < N_segments; i++) {
 			msh_edge_t* sgm = segments[i];
 			uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
 			uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
@@ -344,7 +418,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 			voronoi->N_adjacencies[idx2] += 1;
 		}
 
-		for (i = 0; i < N_vertices; i++)
+		for (uint32_t i = 0; i < N_vertices; i++)
 			voronoi->adjacencies[i] =
 				malloc(voronoi->N_adjacencies[i] * 
 				       sizeof(*(voronoi->adjacencies[i])));
@@ -352,7 +426,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 		uint32_t* adj_matrix_next_idx = calloc(N_vertices,
 						       sizeof(*adj_matrix_next_idx));
 
-		for (i = 0; i < N_segments; i++) {
+		for (uint32_t i = 0; i < N_segments; i++) {
 			msh_edge_t* sgm = segments[i];
 			uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
 			uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
@@ -372,7 +446,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 	vcn_container_set_destroyer(avl_boundary_sgm, free);
 	vcn_container_destroy(avl_boundary_sgm);
 
-	for (i = 0; i < N_vertices; i++) {
+	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = vertices[i];
 		void** attr = (void**)vtx->attr;
 		vtx->attr = attr[1];
@@ -380,7 +454,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly
 		free(attr);
 	}
 
-	for (i = 0; i < N_triangles; i++) {
+	for (uint32_t i = 0; i < N_triangles; i++) {
 		msh_trg_t* trg = triangles[i];
 		void** attr = (void**)trg->attr;
 		trg->attr = attr[1];
@@ -431,7 +505,7 @@ static inline int compare_voronoi_sgm(const void *const sgmA,
 static vcn_point2D_t* voronoi_insert_global(vcn_bins2D_t* bins, vcn_point2D_t* point)
 {
 	if(vcn_bins2D_are_points_inside_circle(bins, point->x, 
-					       2.0 * VCN_GEOMETRIC_TOL)) {
+					       2.0 * NB_GEOMETRIC_TOL)) {
 		vcn_point2D_t* point_out = NULL;
 		double dist;
 		vcn_bins2D_get_knn(bins, point, 1, &point_out, &dist);
@@ -447,9 +521,9 @@ static void voronoi_get_patched_circumcenter(double* v1,
 					     /* Output */
 					     double* circumcenter){
   /* Patch for bad quality triangles (Almost in boundaries) */
-  double l1 = get_dist(v1, v2);
-  double l2 = get_dist(v2, v3);
-  double l3 = get_dist(v3, v1);
+  double l1 = vcn_utils2D_get_dist(v1, v2);
+  double l2 = vcn_utils2D_get_dist(v2, v3);
+  double l3 = vcn_utils2D_get_dist(v3, v1);
   double* sv1 = v3;
   double* sv2 = v1;
   double cond;
@@ -474,7 +548,7 @@ static void voronoi_get_patched_circumcenter(double* v1,
     circumcenter[0] = (sv1[0] + sv2[0]) * 0.5;
     circumcenter[1] = (sv1[1] + sv2[1]) * 0.5;	      
   }else{
-    get_circumcenter(v1, v2, v3,
+    vcn_utils2D_get_circumcenter(v1, v2, v3,
 		     circumcenter);
   }
 }
@@ -484,7 +558,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 {
 	/* The size must not be zero if there are not input segments */
 	vcn_container_t* avl_boundary_sgm =
-		vcn_container_create(VCN_CONTAINER_SORTED);
+		vcn_container_create(NB_CONTAINER_SORTED);
 	/* REFACTOR
 	vcn_container_set_key_generator(compare_voronoi_sgm);
 	vcn_container_set_comparer();
@@ -514,21 +588,21 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 				trg = sgm->t1;
 			}
 			vcn_point2D_t* circumcenter = vcn_point2D_create();
-			get_circumcenter(trg->v1->x,
+			vcn_utils2D_get_circumcenter(trg->v1->x,
 					 trg->v2->x,
 					 trg->v3->x,
 					 circumcenter->x);
 			double area_test;
 			if (sgm->t1 == trg)
-				area_test = get_2triangle_area(sgm->v1->x,
+				area_test = vcn_utils2D_get_2x_trg_area(sgm->v1->x,
 							       sgm->v2->x,
 							       circumcenter->x);
 			else
-				area_test = get_2triangle_area(sgm->v2->x,
+				area_test = vcn_utils2D_get_2x_trg_area(sgm->v2->x,
 							       sgm->v1->x,
 							       circumcenter->x);
             
-			if (area_test > VCN_GEOMETRIC_TOL) {
+			if (area_test > NB_GEOMETRIC_TOL) {
 				/* Case 1: The circumcenter is inside the boundary */
 				bsgm->N_vertices = 1;
 				circumcenter->x[0] = (sgm->v1->x[0] +
@@ -550,7 +624,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 						    sgm_v3->x[0])/2.0;
 					half1[1] = (sgm->v1->x[1] +
 						    sgm_v3->x[1])/2.0;
-					does_the_segments_are_intersected
+					vcn_utils2D_are_sgm_intersected
 						(half1, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
 						 v1->x, NULL);
@@ -559,7 +633,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 						    sgm_v3->x[0])/2.0;
 					half2[1] = (sgm->v2->x[1] +
 						    sgm_v3->x[1])/2.0;
-					does_the_segments_are_intersected
+					vcn_utils2D_are_sgm_intersected
 						(half2, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
 						 v2->x, NULL);
@@ -572,7 +646,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 						    sgm_v3->x[0])/2.0;
 					half1[1] = (sgm->v2->x[1] +
 						    sgm_v3->x[1])/2.0;
-					does_the_segments_are_intersected
+					vcn_utils2D_are_sgm_intersected
 						(half1, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
 						 v1->x, NULL);
@@ -581,7 +655,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 						    sgm_v3->x[0])/2.0;
 					half2[1] = (sgm->v1->x[1] +
 						    sgm_v3->x[1])/2.0;
-					does_the_segments_are_intersected
+					vcn_utils2D_are_sgm_intersected
 						(half2, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
 						 v2->x, NULL);
@@ -599,14 +673,13 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 }
 
 
-static int voronoi_vtx_compare(const void* const A,
-			       const void *const B){
-  double* a = (double*)A;
-  double* b = (double*)B;
-  if(fabs(a[0] - b[0]) < VCN_GEOMETRIC_TOL &&
-     fabs(a[1] - b[1]) < VCN_GEOMETRIC_TOL)
-    return 0;
-  return 1;
+static bool voronoi_vtx_are_equal(const void *const A,
+				  const void *const B)
+{
+	const double *const a = A;
+	const double *const b = B;
+	return (fabs(a[0] - b[0]) < NB_GEOMETRIC_TOL &&
+		fabs(a[1] - b[1]) < NB_GEOMETRIC_TOL);
 }
 
 static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
@@ -621,7 +694,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = vertices[i];
 		void** attr = malloc(2 * sizeof(*attr));
-		attr[0] = vcn_container_create(VCN_CONTAINER_QUEUE);
+		attr[0] = vcn_container_create(NB_CONTAINER_QUEUE);
 		attr[1] = vtx->attr;
 		vtx->attr = attr;
 	}
@@ -655,7 +728,8 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			msh_vtx_t* vtx = vertices[i];
       
 			/* Get vertices to calculate center of mass */
-			vcn_container_t* l_vtx = vcn_container_create(VCN_CONTAINER_QUEUE);
+			vcn_container_t* l_vtx = vcn_container_create(NB_CONTAINER_QUEUE);
+			vcn_container_set_comparer(l_vtx, voronoi_vtx_are_equal);
 			vcn_container_insert(l_vtx, vtx->x);
 			vcn_container_t* list = (vcn_container_t*)((void**)vtx->attr)[0];
 			vcn_iterator_t* liter = vcn_iterator_create();
@@ -675,9 +749,9 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
 					if (bsgm->N_vertices == 2) {
 						/* Case 2, opposite side */
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x, voronoi_vtx_compare))
+						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x))
 							vcn_container_insert(l_vtx, bsgm->vertices[0]->x);
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[1]->x, voronoi_vtx_compare))
+						if (!vcn_container_exist(l_vtx, bsgm->vertices[1]->x))
 							vcn_container_insert(l_vtx, bsgm->vertices[1]->x);
 					}
 				}
@@ -689,10 +763,10 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 					voronoi_boundary_sgm_t* bsgm =
 						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
 					/* Add centroid to case 1 and 2 */
-					if (!vcn_container_exist(l_vtx, bsgm->v1->x, voronoi_vtx_compare))
+					if (!vcn_container_exist(l_vtx, bsgm->v1->x))
 						vcn_container_insert(l_vtx, bsgm->v1->x);
 					if (bsgm->N_vertices > 0) {
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x, voronoi_vtx_compare))
+						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x))
 							vcn_container_insert(l_vtx, bsgm->vertices[0]->x);
 					}
 				}
@@ -708,13 +782,13 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						msh_vtx_t* bvtx = bsgm->vertices[0];
 						if (bsgm->N_vertices == 2)
 							bvtx = bsgm->vertices[1];
-						if (!vcn_container_exist(l_vtx, bvtx->x, voronoi_vtx_compare))
+						if (!vcn_container_exist(l_vtx, bvtx->x))
 							vcn_container_insert(l_vtx, bvtx->x);
 					}
 				}
 	
 				/* Always consider the circumcenter to compute the center of mass */
-				if (!vcn_container_exist(l_vtx, circumcenter, voronoi_vtx_compare))
+				if (!vcn_container_exist(l_vtx, circumcenter))
 					vcn_container_insert(l_vtx, circumcenter);
 			}
 			vcn_iterator_destroy(liter);
@@ -733,8 +807,9 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			vcn_iterator_destroy(liter);
 			vcn_container_destroy(l_vtx);
       			
-			vcn_mesh_t* mesh_center_of_mass = 
-				vcn_mesh_create_Delaunay(id, internal_vtx);
+			vcn_mesh_t* mesh_center_of_mass = vcn_mesh_create(); 
+			vcn_mesh_get_delaunay(mesh_center_of_mass, id,
+					      internal_vtx);
 
 			free(internal_vtx);
 
@@ -768,7 +843,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						(trg_v1[1] * d1 + trg_v2[1] * d2 + trg_v3[1] * d3) / density_sum;
 				}
 	
-				double area = 0.5 * get_2triangle_area(trg_v1, trg_v2, trg_v3);
+				double area = 0.5 * vcn_utils2D_get_2x_trg_area(trg_v1, trg_v2, trg_v3);
 				if (NULL == density) {
 					next_x[0] += area * trg_center[0];
 					next_x[1] += area * trg_center[1];
@@ -787,8 +862,8 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			next_x[1] /= normalizer;
 
 			/* Calculate norm for the stop criterion */
-			norm2 += vcn_math_pow2(next_x[0] - vtx->x[0]) + 
-				vcn_math_pow2(next_x[1] - vtx->x[1]);
+			norm2 += POW2(next_x[0] - vtx->x[0]) + 
+				POW2(next_x[1] - vtx->x[1]);
       			
 			/* Update position */
 			memcpy(vtx->x, next_x, 2 * sizeof(*next_x));
@@ -798,7 +873,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 		k++;
 		printf("min(voronoi): %e     (%i/%i) \r", norm2, k, max_iter); /* TEMPORAL */
 		fflush(stdout);                                                /* TEMPORAL */
-		if (norm2 < VCN_GEOMETRIC_TOL)
+		if (norm2 < NB_GEOMETRIC_TOL)
 			break;
 		if (k > max_iter)
 			break;
@@ -807,16 +882,16 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 		for (uint32_t i = 0; i < N_triangles; i++) {
 			msh_trg_t* trg = triangles[i];
 			double center[2];
-			get_circumcenter(trg->v1->x,
+			vcn_utils2D_get_circumcenter(trg->v1->x,
 					 trg->v2->x,
 					 trg->v3->x,
 					 center);
-			double radii = get_distPow2(trg->v1->x, center);
+			double radii = vcn_utils2D_get_dist(trg->v1->x, center);
 			bool flipped =  false;
 			if (trg->t1 != NULL) {
 				if (!medge_is_subsgm(trg->s1)) {
 					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t1, trg->s1);
-					if (radii - get_distPow2(vtx->x, center) > VCN_GEOMETRIC_TOL) {
+					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
 						msh_edge_t* shared_sgm = trg->s1;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;
@@ -841,7 +916,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			if (NULL != trg->t2 && !flipped){
 				if (!medge_is_subsgm(trg->s2)) {
 					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t2, trg->s2);
-					if (radii - get_distPow2(vtx->x, center) > VCN_GEOMETRIC_TOL) {
+					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
 						msh_edge_t* shared_sgm = trg->s2;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;
@@ -866,7 +941,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			if (NULL != trg->t3 && !flipped) {
 				if (!medge_is_subsgm(trg->s3)) {
 					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t3, trg->s3);
-					if (radii - get_distPow2(vtx->x, center) > VCN_GEOMETRIC_TOL) {
+					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
 						msh_edge_t* shared_sgm = trg->s3;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;

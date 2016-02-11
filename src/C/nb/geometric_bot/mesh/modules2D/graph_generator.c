@@ -1,8 +1,17 @@
+#include <stdlib.h>
+#include <stdint.h>
+
+#include "nb/container_bot.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
+
+#include "../mesh2D_structs.h"
+
 vcn_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const restrict mesh)
 {
-	vcn_graph_t* graph = (vcn_graph_t*) calloc(1, sizeof(vcn_graph_t));
+	vcn_graph_t* graph = calloc(1, sizeof(*graph));
 
-	graph->N = vcn_bins2D_length(mesh->ug_vtx);
+	graph->N = vcn_bins2D_get_length(mesh->ug_vtx);
 	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
 	graph->adj = malloc(graph->N * sizeof(*(graph->adj)));
 	vcn_iterator_t* iter = vcn_iterator_create();
