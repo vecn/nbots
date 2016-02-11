@@ -1,5 +1,5 @@
 # System temporary files
-*.*~
+*~
 
 # Main build directory
 build/*
