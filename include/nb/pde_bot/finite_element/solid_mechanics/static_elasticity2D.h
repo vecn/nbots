@@ -21,8 +21,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double thickness,
 			 const bool* elements_enabled, /* NULL to enable all */
 			 double* displacement, /* Output */
-			 double* strain,       /* Output */
-			 const char* logfile /* NULL if not required */);
+			 double* strain       /* Output */);
 
 void vcn_fem_compute_stress_from_strain
 			(uint32_t N_elements,

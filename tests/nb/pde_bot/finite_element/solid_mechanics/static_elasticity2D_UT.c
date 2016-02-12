@@ -100,8 +100,7 @@ static bool check_static_elasticity2D(void)
 						   false, NULL,
 						   enable_plane_stress_analysis,
 						   thickness, NULL,
-						   displacement, strain,
-						   "static_elasticity2D_UT.log");
+						   displacement, strain);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
 	

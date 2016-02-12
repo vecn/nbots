@@ -35,22 +35,13 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double thickness,
 			 const bool *elements_enabled, /* NULL to enable all */
 			 double *displacement, /* Output */
-			 double *strain,       /* Output */
-			 const char* logfile    /* NULL if not required */)
+			 double *strain       /* Output */)
 /* The output vectors must be allocated before start:
  *     > displacement:  2 * N_vertices (size of double)
  *     >       strain:  3 * N_vertices (size of double)
  */
 {
 	int status = 1;
-	if (NULL != logfile) {
-		FILE *log = fopen(logfile, "w");
-		fprintf(log, "FINITE ELEMENT\n");
-		fprintf(log, "    > SOLID MECHANICS\n");
-		fprintf(log, "        > 2D STATIC ELASTICITY\n\n");
-		fclose(log);
-	}
-
 	/*********************************************************************/
 	/****************** 1) Assemble system *******************************/
 	/*********************************************************************/
@@ -66,15 +57,8 @@ int vcn_fem_compute_2D_Solid_Mechanics
 					 enable_self_weight, gravity,
 					 enable_plane_stress, thickness,
 					 elements_enabled);
-	if (0 != status_assemble) {
-		if (NULL != logfile) {
-			FILE* log = fopen(logfile, "a");
-			fprintf(log, "Assemble system fails (Code: %i).\n",
-				status_assemble);
-			fclose(log);
-		}
+	if (0 != status_assemble)
 		goto CLEANUP_LINEAR_SYSTEM;
-	}
 
 	/*********************************************************************/
 	/**************** 2) Set boundary conditions *************************/
@@ -86,15 +70,8 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	/**********************************************************************/
   
 	int solver_status = solver(K, F, displacement);
-	/* Display failure info in logfile */
-	if (0 != solver_status) {
-		if (NULL != logfile) {
-			FILE* log = fopen(logfile, "a");
-			fprintf(log, "Solver fails (Code: %i).\n", solver_status);
-			fclose(log);
-		}
+	if (0 != solver_status)
 		goto CLEANUP_LINEAR_SYSTEM;
-	}
 
 	/********************************************************************/
 	/********************* 4) Compute Strain            *****************/

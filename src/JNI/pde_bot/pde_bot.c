@@ -86,8 +86,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
 					   bconditions, false, NULL, 1,
 					   jthickness, NULL,
-					   displacement, strain,
-					   "static_elasticity2D_UT.log");
+					   displacement, strain);
 
 	jobject jmesh_results = jMeshResults_new(env);
 	load_jMesh_from_msh3trg(env, msh3trg, jmesh_results);
