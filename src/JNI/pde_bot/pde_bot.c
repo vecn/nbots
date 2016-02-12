@@ -127,6 +127,16 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 			jBoundaryConditions_getValuesRef(env, jBCDirichletVtx);
 		jdouble *bc_val =
 			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
+		
+		bcond->Dirichlet_on_vtx_idx =
+		  malloc(bcond->N_Dirichlet_on_vtx *
+			 sizeof(*(bcond->Dirichlet_on_vtx_idx)));
+		bcond->Dirichlet_on_vtx_dof_mask =
+		  malloc(bcond->N_Dirichlet_on_vtx * 2 *
+			 sizeof(*(bcond->Dirichlet_on_vtx_dof_mask)));
+		bcond->Dirichlet_on_vtx_val =
+		  malloc(bcond->N_Dirichlet_on_vtx * 2 *
+			 sizeof(*(bcond->Dirichlet_on_vtx_val)));
 		for (int i = 0; i < bcond->N_Dirichlet_on_vtx; i++) {
 			bcond->Dirichlet_on_vtx_idx[i] = bc_idx[i];
 			set_bc_dof(&(bcond->Dirichlet_on_vtx_dof_mask[i * 2]),
@@ -158,6 +168,15 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 			jBoundaryConditions_getValuesRef(env, jBCNeumannVtx);
 		jdouble *bc_val =
 			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
+		bcond->Neuman_on_vtx_idx =
+		  malloc(bcond->N_Neuman_on_vtx *
+			 sizeof(*(bcond->Neuman_on_vtx_idx)));
+		bcond->Neuman_on_vtx_dof_mask =
+		  malloc(bcond->N_Neuman_on_vtx * 2 *
+			 sizeof(*(bcond->Neuman_on_vtx_dof_mask)));
+		bcond->Neuman_on_vtx_val =
+		  malloc(bcond->N_Neuman_on_vtx * 2 *
+			 sizeof(*(bcond->Neuman_on_vtx_val)));
 		for (int i = 0; i < bcond->N_Neuman_on_vtx; i++) {
 			bcond->Neuman_on_vtx_idx[i] = bc_idx[i];
 			set_bc_dof(&(bcond->Neuman_on_vtx_dof_mask[i * 2]),
@@ -189,6 +208,15 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 			jBoundaryConditions_getValuesRef(env, jBCDirichletSgm);
 		jdouble *bc_val =
 			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
+		bcond->Dirichlet_on_sgm_idx =
+		  malloc(bcond->N_Dirichlet_on_sgm *
+			 sizeof(*(bcond->Dirichlet_on_sgm_idx)));
+		bcond->Dirichlet_on_sgm_dof_mask =
+		  malloc(bcond->N_Dirichlet_on_sgm * 2 *
+			 sizeof(*(bcond->Dirichlet_on_sgm_dof_mask)));
+		bcond->Dirichlet_on_sgm_val =
+		  malloc(bcond->N_Dirichlet_on_sgm * 2 *
+			 sizeof(*(bcond->Dirichlet_on_sgm_val)));
 		for (int i = 0; i < bcond->N_Dirichlet_on_sgm; i++) {
 			bcond->Dirichlet_on_sgm_idx[i] = bc_idx[i];
 			set_bc_dof(&(bcond->Dirichlet_on_sgm_dof_mask[i * 2]),
@@ -206,7 +234,7 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 	
 	/* Neumann on Segments */
 	bcond->N_Neuman_on_sgm =
-		jBoundaryConditions_getN(env, jBCNeumannSgm);
+	  jBoundaryConditions_getN(env, jBCNeumannSgm);
 	if (0 < bcond->N_Neuman_on_sgm) {
 		jintArray jbc_idx =
 			jBoundaryConditions_getIdsRef(env, jBCNeumannSgm);
@@ -220,6 +248,15 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 			jBoundaryConditions_getValuesRef(env, jBCNeumannSgm);
 		jdouble *bc_val =
 			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
+		bcond->Neuman_on_sgm_idx =
+		  malloc(bcond->N_Neuman_on_sgm *
+			 sizeof(*(bcond->Neuman_on_sgm_idx)));
+		bcond->Neuman_on_sgm_dof_mask =
+		  malloc(bcond->N_Neuman_on_sgm * 2 *
+			 sizeof(*(bcond->Neuman_on_sgm_dof_mask)));
+		bcond->Neuman_on_sgm_val =
+		  malloc(bcond->N_Neuman_on_sgm * 2 *
+			 sizeof(*(bcond->Neuman_on_sgm_val)));
 		for (int i = 0; i < bcond->N_Neuman_on_sgm; i++) {
 			bcond->Neuman_on_sgm_idx[i] = bc_idx[i];
 			set_bc_dof(&(bcond->Neuman_on_sgm_dof_mask[i * 2]),

@@ -26,6 +26,7 @@ public class TestPdeBot {
 				     DirichletVtx, NewmannVtx,
 				     DirichletSgm, NewmannSgm,
 				     1.0, 200);
+	MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
     }
     private static BoundaryConditions getDirichletVtx() {
 	BoundaryConditions BC = new BoundaryConditions(BCType.DIRICHLET);

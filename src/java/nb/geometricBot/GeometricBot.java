@@ -40,7 +40,7 @@ public class GeometricBot {
 	 int meshConnMtx[][], int meshConnAdj[][],
 	 int meshModelVtx[][], int meshModelSgm[][][]);
 
-    protected static Box getEnvelopingBox(float vertices[])
+    public static Box getEnvelopingBox(float vertices[])
     {
 	float xMin = vertices[0];
 	float yMin = vertices[1];
@@ -62,7 +62,8 @@ public class GeometricBot {
 	return new Box(xMin, yMin, xMax, yMax);
     }
 
-    protected static float getCenterAndZoom(int width, int height, Box box, float center[])
+    public static float getCenterAndZoom(int width, int height, 
+					 Box box, float center[])
     {
 	if(null == box)
 	    return 0.0f;

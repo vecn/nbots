@@ -2,7 +2,6 @@ package nb.pdeBot;
 
 public class BoundaryConditions {
     protected BCType type;
-    protected int N;
     protected int id[];
     protected char dof[]; /* 'x', 'y' or 'a' */
     protected double val[];
@@ -17,7 +16,10 @@ public class BoundaryConditions {
 	return type == BCType.NEUMANN;
     }
     public int getN() {
-	return N;
+	if (null == id)
+	    return 0;
+	else
+	    return id.length;
     }
     public int[] getIdsRef() {
 	return id;
