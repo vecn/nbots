@@ -332,7 +332,7 @@ static void set_bc_dof(bool enabled[2], jchar dof)
 	default:
 		enabled[0] = false;
 		enabled[1] = false;
-	}	
+	}
 }
 
 static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,

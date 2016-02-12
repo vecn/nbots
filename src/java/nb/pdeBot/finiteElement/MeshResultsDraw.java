@@ -58,13 +58,17 @@ public class MeshResultsDraw {
 				int width, int height, float center[], 
 				float zoom)
     {
-	float min = mesh.displacement[0];
-	float max = mesh.displacement[0];
+	float d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
+				   Math.pow(mesh.displacement[1], 2));
+	float min = d;
+	float max = d;
 	for (int i = 1; i < mesh.getNVertices(); i++) {
-	    if (min > mesh.displacement[i])
-		min = mesh.displacement[i];
-	    if (max < mesh.displacement[i])
-		max = mesh.displacement[i];
+	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
+				 Math.pow(mesh.displacement[i*2+1], 2));
+	    if (min > d)
+		min = d;
+	    if (max < d)
+		max = d;
 	}
 
 	for (int i = 0; i < mesh.getNElements(); i++) {
@@ -98,9 +102,13 @@ public class MeshResultsDraw {
 	int id1 = mesh.getConnMtxRef()[i * 3];
 	int id2 = mesh.getConnMtxRef()[i*3+1];
 	int id3 = mesh.getConnMtxRef()[i*3+2];
-	float disp = 0.33f * (mesh.displacement[id1] +
-			     mesh.displacement[id2] +
-			     mesh.displacement[id3]);
+	float d1 = (float)Math.sqrt(Math.pow(mesh.displacement[id1 * 2], 2) +
+				    Math.pow(mesh.displacement[id1*2+1], 2));
+	float d2 = (float)Math.sqrt(Math.pow(mesh.displacement[id2 * 2], 2) +
+				    Math.pow(mesh.displacement[id2*2+1], 2));
+	float d3 = (float)Math.sqrt(Math.pow(mesh.displacement[id3 * 2], 2) +
+				    Math.pow(mesh.displacement[id3*2+1], 2));
+	float disp = 0.33f * (d1 + d2 + d3);
 	float factor = (disp - min) / (max - min);
 	return new Color(factor, 0, factor);
     }
