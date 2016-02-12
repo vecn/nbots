@@ -389,7 +389,7 @@ static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
 		(*env)->GetObjectClass(env, jmesh);
 	jfieldID field_id = 
 		(*env)->GetFieldID(env, class, "displacement", "[F");
-	jintArray jdisplacement =
+	jfloatArray jdisplacement =
 		(*env)->NewFloatArray(env, 2 * N);
 	jfloat *fdisp =
 		(*env)->GetFloatArrayElements(env, jdisplacement, NULL);
@@ -408,12 +408,12 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
 		(*env)->GetObjectClass(env, jmesh);
 	jfieldID field_id = 
 		(*env)->GetFieldID(env, class, "strain", "[F");
-	jintArray jstrain =
-		(*env)->NewFloatArray(env, 2 * N);
+	jfloatArray jstrain =
+		(*env)->NewFloatArray(env, 3 * N);
 	jfloat *fstrain =
 		(*env)->GetFloatArrayElements(env, jstrain, NULL);
 
-	for (uint32_t i = 0; i < 2 * N; i++)
+	for (uint32_t i = 0; i < 3 * N; i++)
 		fstrain[i] = strain[i];
 	(*env)->ReleaseFloatArrayElements(env, jstrain, fstrain, 0);
 	(*env)->SetObjectField(env, jmesh, field_id, jstrain);
