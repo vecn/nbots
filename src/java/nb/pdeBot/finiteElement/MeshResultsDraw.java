@@ -70,25 +70,29 @@ public class MeshResultsDraw {
 	    if (max < d)
 		max = d;
 	}
+	double scale = 1/max;
 
 	for (int i = 0; i < mesh.getNElements(); i++) {
 	    int id1 = mesh.getConnMtxRef()[i * 3];
 	    int id2 = mesh.getConnMtxRef()[i*3+1];
 	    int id3 = mesh.getConnMtxRef()[i*3+2];
+	    double[] v1 = new double[2];
+	    v1[0] = mesh.getVerticesRef()[id1 * 2] + scale * mesh.displacement[id1 * 2];
+	    v1[1] = mesh.getVerticesRef()[id1*2+1] + scale * mesh.displacement[id1*2+1];
+	    double[] v2 = new double[2];
+	    v2[0] = mesh.getVerticesRef()[id2 * 2] + scale * mesh.displacement[id2 * 2];
+	    v2[1] = mesh.getVerticesRef()[id2*2+1] + scale * mesh.displacement[id2*2+1];
+	    double[] v3 = new double[2];
+	    v3[0] = mesh.getVerticesRef()[id3 * 2] + scale * mesh.displacement[id3 * 2];
+	    v3[1] = mesh.getVerticesRef()[id3*2+1] + scale * mesh.displacement[id3*2+1];
 	    int[] x = new int[3];
 	    int[] y = new int[3];
-	    x[0] = (int)(zoom * mesh.getVerticesRef()[id1 * 2] - 
-			 zoom * center[0] + width / 2.0f);
-	    x[1] = (int)(zoom * mesh.getVerticesRef()[id2 * 2] -
-			 zoom * center[0] + width / 2.0f);
-	    x[2] = (int)(zoom * mesh.getVerticesRef()[id3 * 2] -
-			 zoom * center[0] + width / 2.0f);
-	    y[0] = (int)(zoom * mesh.getVerticesRef()[id1*2+1] -
-			 zoom * center[1] + height / 2.0f);
-	    y[1] = (int)(zoom * mesh.getVerticesRef()[id2*2+1] -
-			 zoom * center[1] + height / 2.0f);
-	    y[2] = (int)(zoom * mesh.getVerticesRef()[id3*2+1] -
-			 zoom * center[1] + height / 2.0f);
+	    x[0] = (int)(zoom * v1[0] - zoom * center[0] + width / 2.0f);
+	    x[1] = (int)(zoom * v2[0] - zoom * center[0] + width / 2.0f);
+	    x[2] = (int)(zoom * v3[0] - zoom * center[0] + width / 2.0f);
+	    y[0] = (int)(zoom * v1[1] - zoom * center[1] + height / 2.0f);
+	    y[1] = (int)(zoom * v2[1] - zoom * center[1] + height / 2.0f);
+	    y[2] = (int)(zoom * v3[1] - zoom * center[1] + height / 2.0f);
 	    Color trgColor = getTrgColor(mesh, i, min, max);
 	    g2.setColor(trgColor);
 	    g2.fillPolygon(x, y, 3);

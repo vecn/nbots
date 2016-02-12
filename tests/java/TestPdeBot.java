@@ -32,8 +32,8 @@ public class TestPdeBot {
 	BoundaryConditions BC = new BoundaryConditions(BCType.DIRICHLET);
 	int ids[] = new int[3];
 	ids[0] = 0;
-	ids[1] = 3;
-	ids[2] = 2;
+	ids[1] = 2;
+	ids[2] = 3;
 	
 	char dof[] = new char[3];
 	dof[0] = 'x';

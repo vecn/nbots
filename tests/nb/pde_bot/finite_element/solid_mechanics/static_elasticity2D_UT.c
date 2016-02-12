@@ -63,7 +63,7 @@ static bool check_static_elasticity2D(void)
 	double thickness;
 
 	char input[255];
-	sprintf(input, "%s/beam_fixed_on_sides.txt", INPUTS_DIR);
+	sprintf(input, "%s/beam_cantilever.txt", INPUTS_DIR);
 	int read_status =
 		read_initial_conditions(input, model, bcond, material,
 					&enable_plane_stress_analysis,

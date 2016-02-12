@@ -70,6 +70,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	/**********************************************************************/
   
 	int solver_status = solver(K, F, displacement);
+	//printf("STATUS: %i\n", solver_status);/* PROBLEM HERE IN JAVA */
 	if (0 != solver_status)
 		goto CLEANUP_LINEAR_SYSTEM;
 
