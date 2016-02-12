@@ -108,8 +108,8 @@ public class MeshResultsDraw {
 				    Math.pow(mesh.displacement[id2*2+1], 2));
 	float d3 = (float)Math.sqrt(Math.pow(mesh.displacement[id3 * 2], 2) +
 				    Math.pow(mesh.displacement[id3*2+1], 2));
-	float disp = 0.33f * (d1 + d2 + d3);
+	float disp = (float)((d1 + d2 + d3)/3.0);
 	float factor = (disp - min) / (max - min);
-	return new Color(factor, 0, factor);
+	return new Color(factor, factor, factor);
     }
 }

@@ -28,7 +28,7 @@ static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial);
 static jobject jMeshResults_new(JNIEnv *env);
 static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
 				   const double *displacement,
-				   const double *strain, jint N);
+				   const double *strain, jint N_vtx, jint N_trg);
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
 						 const double *displacement,
 						 jint N);
@@ -91,7 +91,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	jobject jmesh_results = jMeshResults_new(env);
 	load_jMesh_from_msh3trg(env, msh3trg, jmesh_results);
 	set_results_into_jmesh(env, jmesh_results, displacement, strain,
-			       msh3trg->N_vertices);
+			       msh3trg->N_vertices, msh3trg->N_triangles);
 
 	/* Free memory */
 	vcn_fem_bcond_destroy(bconditions);
@@ -366,7 +366,7 @@ static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial)
 static jobject jMeshResults_new(JNIEnv *env)
 {
 	jclass class =
-		(*env)->FindClass(env, "Lnb/pdeBot/finiteElement/MeshResults;");
+		(*env)->FindClass(env, "nb/pdeBot/finiteElement/MeshResults");
 	jmethodID method_id = (*env)->GetMethodID(env, class, "<init>", "()V");
 	jobject instance = (*env)->NewObject(env, class, method_id);
 	return instance;
@@ -375,10 +375,10 @@ static jobject jMeshResults_new(JNIEnv *env)
 
 static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
 				   const double *displacement,
-				   const double *strain, jint N)
+				   const double *strain, jint N_vtx, jint N_trg)
 {
-	load_displacements_into_jMeshResults(env, jmesh, displacement, N);
-	load_strain_into_jMeshResults(env, jmesh, strain, N);
+	load_displacements_into_jMeshResults(env, jmesh, displacement, N_vtx);
+	load_strain_into_jMeshResults(env, jmesh, strain, N_trg);
 }
 
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
