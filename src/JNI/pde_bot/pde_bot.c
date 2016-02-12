@@ -84,7 +84,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		malloc(msh3trg->N_triangles * 3 * sizeof(*strain));
 
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
-					   bconditions, false, NULL, 1,
+					   bconditions, false, NULL, true,
 					   jthickness, NULL,
 					   displacement, strain);
 
@@ -110,6 +110,7 @@ static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
 				      jobject jBCDirichletSgm,
 				      jobject jBCNeumannSgm)
 {
+	bcond->N_dof = 2;
 	/* Dirichlet on vertices */
 	bcond->N_Dirichlet_on_vtx =
 		jBoundaryConditions_getN(env, jBCDirichletVtx);

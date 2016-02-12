@@ -9,23 +9,23 @@ public class TestPdeBot {
     }
     public static void test1() {
 	Model model = GeometricBot.getRect(-3, 0, 3, 1);
-	Material material = new Material(2.11e11, 0.3);
+	Material material = new Material(2e11, 0.29);
 	BoundaryConditions DirichletVtx = getDirichletVtx();
 
-	BoundaryConditions NewmannVtx = 
+	BoundaryConditions NeumannVtx = 
 	    new BoundaryConditions(BCType.NEUMANN);
 
 	BoundaryConditions DirichletSgm =
 	    new BoundaryConditions(BCType.DIRICHLET);
 
-	BoundaryConditions NewmannSgm =
+	BoundaryConditions NeumannSgm =
 	    new BoundaryConditions(BCType.NEUMANN);
 
 	MeshResults mesh =
 	    StaticElasticity2D.solve(model, material,
-				     DirichletVtx, NewmannVtx,
-				     DirichletSgm, NewmannSgm,
-				     1.0, 200);
+				     DirichletVtx, NeumannVtx,
+				     DirichletSgm, NeumannSgm,
+				     0.1, 200);
 	MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
     }
     private static BoundaryConditions getDirichletVtx() {

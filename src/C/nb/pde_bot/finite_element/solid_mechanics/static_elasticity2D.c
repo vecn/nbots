@@ -36,22 +36,14 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 const bool *elements_enabled, /* NULL to enable all */
 			 double *displacement, /* Output */
 			 double *strain       /* Output */)
-/* The output vectors must be allocated before start:
- *     > displacement:  2 * N_vertices (size of double)
- *     >       strain:  3 * N_vertices (size of double)
- */
 {
 	int status = 1;
-	/*********************************************************************/
-	/****************** 1) Assemble system *******************************/
-	/*********************************************************************/
-	/* Allocate global Stiffness Matrix and Force Vector */
 	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	vcn_graph_destroy(graph);
 
 	double* F = calloc(2 * mesh->N_vertices, sizeof(*F));
-	/* Allocate elemental Stiffness Matrix and Force Vector */
+
 	int status_assemble =
 		pipeline_assemble_system(K, NULL, F, mesh, elemtype, material,
 					 enable_self_weight, gravity,
@@ -60,24 +52,13 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	if (0 != status_assemble)
 		goto CLEANUP_LINEAR_SYSTEM;
 
-	/*********************************************************************/
-	/**************** 2) Set boundary conditions *************************/
-	/*********************************************************************/
 	pipeline_set_boundary_conditions(mesh, K, F, bcond, thickness, 1.0);
 
-	/**********************************************************************/
-	/************* 3) Solve system (to compute displacements) *************/
-	/**********************************************************************/
   
 	int solver_status = solver(K, F, displacement);
-	//printf("STATUS: %i\n", solver_status);/* PROBLEM HERE IN JAVA */
 	if (0 != solver_status)
 		goto CLEANUP_LINEAR_SYSTEM;
 
-	/********************************************************************/
-	/********************* 4) Compute Strain            *****************/
-	/*********************       >  S = B u             *****************/
-	/********************************************************************/
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
 				enable_plane_stress, material);
 	
