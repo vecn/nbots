@@ -7,8 +7,8 @@
  * @date 14 August 2015
  */
 
-#ifndef __NB_CFREADER_H__
-#define __NB_CFREADER_H__
+#ifndef __NB_CFREADER_BOT_H__
+#define __NB_CFREADER_BOT_H__
 
 #include <stdbool.h>
 

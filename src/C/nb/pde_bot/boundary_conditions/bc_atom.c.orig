@@ -4,6 +4,8 @@
 
 #include "bc_atom.h"
 
+<<<<<<< HEAD
+=======
 inline uint16_t bc_atom_get_memsize(uint8_t N_dof)
 {
 	uint16_t size = sizeof(*bc);
@@ -12,6 +14,7 @@ inline uint16_t bc_atom_get_memsize(uint8_t N_dof)
 	return size + N_dof * (size_mask + size_val);
 }
 
+>>>>>>> 0a4b4219cfcc0385e64339b520a04ee71c142a2a
 bc_atom_t* bc_atom_create(uint8_t N_dof)
 {
 	uint16_t size = sizeof(bc_atom_t);
@@ -23,15 +26,31 @@ bc_atom_t* bc_atom_create(uint8_t N_dof)
 	bc->val = memblock + size + N_dof * size_mask;
 }
 
+<<<<<<< HEAD
+bc_atom_t* bc_atom_clone(const void *const bc_ptr, uint8_t N_dof)
+{
+	const bc_atom_t *const bc = bc_ptr;
+	uint16_t size = sizeof(*bc);
+	uint16_t size_mask = sizeof(*(bc->mask));
+	uint16_t size_val = sizeof(*(bc->val));
+	uint16_t total_size = size + N_dof * (size_mask + size_val);
+=======
 inline bc_atom_t* bc_atom_clone(const void *const bc_ptr, uint8_t N_dof)
 {
 	const bc_atom_t *const bc = bc_ptr;
 	uint16_t total_size = bc_atom_get_memsize(N_dof);
+>>>>>>> 0a4b4219cfcc0385e64339b520a04ee71c142a2a
 	char *bc_clone = calloc(total_size, 1);
 	memcpy(bc_clone, (void*)bc, total_size);
 
 }
 
+<<<<<<< HEAD
+void bc_atom_destroy(void *bc_ptr)
+{
+	free(bc);
+}
+=======
 inline void bc_atom_destroy(void *bc_ptr)
 {
 	free(bc);
@@ -45,3 +64,4 @@ inline void bc_atom_set_data(bc_atom_t *bc,uint32_t elem_id,
 	memcpy(bc->mask, dof_mask, bcond->N_dof * sizeof(*(bc->mask)));
 	memcpy(bc->val, value, bcond->N_dof * sizeof(*(bc->val)));
 }
+>>>>>>> 0a4b4219cfcc0385e64339b520a04ee71c142a2a
