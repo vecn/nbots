@@ -7,6 +7,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
 #include "bc_atom.h"
+#include "bc_get_container.h"
 
 #define CONTAINER_ID NB_CONTAINER_QUEUE
 
@@ -28,12 +29,11 @@ static void* malloc_bcond(void);
 static int read_conditions(vcn_container_t *cnt, uint8_t N_dof,
 			   vcn_cfreader_t *cfreader);
 
-static void push_dirichlet(nb_bcond_t *bcond,
-			   nb_bcond_where type_elem, uint32_t elem_id,
-			   const bool dof_mask[], const double value[]);
-static void push_neumann(nb_bcond_t *bcond,
-			 nb_bcond_where type_elem, uint32_t elem_id,
-			 const bool dof_mask[], const double value[]);
+static vcn_containre_t* get_dirichlet_container(nb_bcond_t *bcond,
+						nb_bcond_where type_elem);
+static vcn_containre_t* get_neumann_container(nb_bcond_t *bcond,
+					      nb_bcond_where type_elem);
+
 
 uint16_t nb_bcond_get_memsize(uint8_t N_dof)
 {
@@ -205,48 +205,63 @@ void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 		   nb_bcond_where type_elem, uint32_t elem_id,
 		   const bool dof_mask[], const double value[])
 {
+	vcn_container_t *container = 
+		nb_bcond_get_container(bcond, type_id, type_elem);
+	if (NULL != container) {
+		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
+		bc_atom_set_data(bc, elem_id, dof_mask, value);
+		vcn_container_insert(container, bc);
+	}
+}
+
+vcn_container_t *nb_bcond_get_container(const nb_bcond_t *const bcond,
+					nb_bcond_id type_id,
+					nb_bcond_where type_elem)
+{
+	vcn_container_t *container;
 	switch (type_id) {
 	case NB_DIRICHLET:
-		push_dirichlet(bcond, type_elem, elem_id, dof_mask, value);
+		container = get_dirichlet_container(bcond, type_elem);
 		break;
 	case NB_NEUMANN:
-		push_neumann(bcond, type_elem, elem_id, dof_mask, value);
+		container = get_neumann_container(bcond, type_elem);
 		break;
+	default:
+		container = NULL;
 	}
+	return container;
 }
 
-static void push_dirichlet(nb_bcond_t *bcond,
-			   nb_bcond_where type_elem, uint32_t elem_id,
-			   const bool dof_mask[], const double value[])
+static vcn_container_t* get_dirichlet_container(nb_bcond_t *bcond,
+						nb_bcond_where type_elem)
 {
+	vcn_container_t *container;
 	switch (type_elem) {
 	case NB_BC_ON_POINT:
-		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value);
-		vcn_container_insert(bcond->dirichlet_vtx, bc);
+		container = bcond->dirichlet_vtx;
 		break;
 	case NB_BC_ON_SEGMENT:
-		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value);
-		vcn_container_insert(bcond->dirichlet_sgm, bc);
+		container = bcond->dirichlet_sgm;
 		break;
+	default:
+		container = NULL;
 	}
+	return container;
 }
 
-static void push_neumann(nb_bcond_t *bcond,
-			 nb_bcond_where type_elem, uint32_t elem_id,
-			 const bool dof_mask[], const double value[])
+static vcn_container_t* get_neumann_container(nb_bcond_t *bcond,
+					      nb_bcond_where type_elem)
 {
+	vcn_container_t *container;
 	switch (type_elem) {
 	case NB_BC_ON_POINT:
-		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value);
-		vcn_container_insert(bcond->neumann_vtx, bc);
+		container = bcond->neumann_vtx;
 		break;
 	case NB_BC_ON_SEGMENT:
-		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value);
-		vcn_container_insert(bcond->neumann_sgm, bc);
+		container = bcond->neumann_sgm;
 		break;
+	default:
+		container = NULL;
 	}
+	return container;
 }

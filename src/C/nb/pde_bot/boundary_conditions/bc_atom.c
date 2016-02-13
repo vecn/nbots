@@ -12,7 +12,7 @@ inline uint16_t bc_atom_get_memsize(uint8_t N_dof)
 	return size + N_dof * (size_mask + size_val);
 }
 
-bc_atom_t* bc_atom_create(uint8_t N_dof)
+void* bc_atom_create(uint8_t N_dof)
 {
 	uint16_t size = sizeof(bc_atom_t);
 	uint16_t size_mask = sizeof(*(bc->mask));
@@ -23,7 +23,7 @@ bc_atom_t* bc_atom_create(uint8_t N_dof)
 	bc->val = memblock + size + N_dof * size_mask;
 }
 
-inline bc_atom_t* bc_atom_clone(const void *const bc_ptr, uint8_t N_dof)
+inline void* bc_atom_clone(const void *const bc_ptr, uint8_t N_dof)
 {
 	const bc_atom_t *const bc = bc_ptr;
 	uint16_t total_size = bc_atom_get_memsize(N_dof);
