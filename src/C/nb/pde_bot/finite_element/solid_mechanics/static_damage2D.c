@@ -7,7 +7,8 @@
 
 #include "nb/eigen_bot.h"
 #include "nb/pde_bot/material.h"
-#include "nb/pde_bot/boundary_conditions.h"
+#include "nb/pde_bot/boundary_conditions/bcond.h"
+#include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
@@ -249,7 +250,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
-			 const vcn_bcond_t *const bmeshcond,
+			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
 			 double gravity[2],
 			 bool enable_Cholesky_solver,
@@ -351,7 +352,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			pipeline_set_boundary_conditions(mesh, K, F, bmeshcond,
+			pipeline_set_boundary_conditions(mesh, K, F, bcond,
 							 thickness,
 							 condition_factor);
 

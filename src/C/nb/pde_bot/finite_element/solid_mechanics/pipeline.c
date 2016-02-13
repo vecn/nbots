@@ -11,7 +11,8 @@
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/pde_bot/material.h"
-#include "nb/pde_bot/boundary_conditions.h"
+#include "nb/pde_bot/boundary_conditions/bcond.h"
+#include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
@@ -23,30 +24,27 @@
 
 static bool elem_is_enabled(const bool *elements_enabled, uint32_t id);
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
-			     const vcn_msh3trg_t *mesh,
-			     const vcn_fem_material_t *material,
-			     bool is_enabled,
-			     bool enable_plane_stress,
-			     double thickness,
-			     bool enable_self_weight,
-			     double gravity[2],
-			     vcn_sparse_t *K,
-			     double *M, double *F);
+			    const vcn_msh3trg_t *mesh,
+			    const vcn_fem_material_t *material,
+			    bool is_enabled, bool enable_plane_stress,
+			    double thickness, bool enable_self_weight,
+			    double gravity[2],
+			    vcn_sparse_t *K, double *M, double *F);
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
-				  const vcn_bcond_t *const bmeshcond, 
+				  const nb_bcond_t *const bcond, 
 				  double thickness, double factor);
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
-				  const vcn_bcond_t *const bmeshcond, 
+				  const nb_bcond_t *const bcond, 
 				  double thickness, double factor);
 static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
-				    const vcn_bcond_t *const bmeshcond, 
+				    const nb_bcond_t *const bcond, 
 				    double thickness, double factor);
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
-				    const vcn_bcond_t *const bmeshcond, 
+				    const nb_bcond_t *const bcond, 
 				    double thickness, double factor);
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
@@ -93,15 +91,12 @@ static inline bool elem_is_enabled(const bool *elements_enabled, uint32_t id)
 }
 
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
-			     const vcn_msh3trg_t *mesh,
-			     const vcn_fem_material_t *material,
-			     bool is_enabled,
-			     bool enable_plane_stress,
-			     double thickness,
-			     bool enable_self_weight,
-			     double gravity[2],
-			     vcn_sparse_t *K,
-			     double *M, double *F)
+			    const vcn_msh3trg_t *mesh,
+			    const vcn_fem_material_t *material,
+			    bool is_enabled, bool enable_plane_stress,
+			    double thickness, bool enable_self_weight,
+			    double gravity[2],
+			    vcn_sparse_t *K, double *M, double *F)
 {
 	int status = 1;
 	/* Get material properties */
@@ -271,117 +266,139 @@ CLEANUP:
 }
 
 void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
-				      vcn_sparse_t* K,
-				      double* F, 
-				      const vcn_bcond_t *const bmeshcond, 
+				      vcn_sparse_t* K, double* F, 
+				      const nb_bcond_t *const bcond, 
 				      double thickness,
 				      double factor)
 {
-	set_bcond_neumann_sgm(msh3trg, K, F, bmeshcond, thickness, factor);
-	set_bcond_neumann_vtx(msh3trg, K, F, bmeshcond, thickness, factor);
-	set_bcond_dirichlet_sgm(msh3trg, K, F, bmeshcond, thickness, factor);
-	set_bcond_dirichlet_vtx(msh3trg, K, F, bmeshcond, thickness, factor);
+	set_bcond_neumann_sgm(msh3trg, K, F, bcond, thickness, factor);
+	set_bcond_neumann_vtx(msh3trg, K, F, bcond, thickness, factor);
+	set_bcond_dirichlet_sgm(msh3trg, K, F, bcond, thickness, factor);
+	set_bcond_dirichlet_vtx(msh3trg, K, F, bcond, thickness, factor);
 }
 
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K,
 				  double* F, 
-				  const vcn_bcond_t *const bmeshcond, 
+				  const nb_bcond_t *const bcond, 
 				  double thickness,
 				  double factor)
 {
-	for (uint32_t k = 0; k < bmeshcond->N_Neuman_on_sgm; k++) {
-		uint32_t model_id = bmeshcond->Neuman_on_sgm_idx[k];
+	uint16_t size = nb_bcond_iter_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
+				     NB_BC_ON_SEGMENT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t N = msh3trg->N_subsgm_x_inputsgm[model_id] + 1;
 		for (uint32_t i = 0; i < N; i++) {
-			uint32_t mesh_id = msh3trg->meshvtx_x_inputsgm[model_id][i];
-			for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
-				uint32_t id = k * bmeshcond->N_dof + j;
-				if (bmeshcond->Neuman_on_sgm_dof_mask[id]) {
+			uint32_t mesh_id = 
+				msh3trg->meshvtx_x_inputsgm[model_id][i];
+			for (uint32_t j = 0; j < bcond->N_dof; j++) {
+				bool mask = nb_bcond_iter_get_mask(iter, j);
+				double val = nb_bcond_iter_get_val(iter, j);
+				if (mask) {
 					uint32_t mtx_id = mesh_id *
-						bmeshcond->N_dof + j;
-					F[mtx_id] += factor * 
-						bmeshcond->Neuman_on_sgm_val[id] /
-						N;
+						bcond->N_dof + j;
+					F[mtx_id] += factor * (val / N);
 				}
 			}
 		}
 	}
+	nb_bcond_iter_clear(iter);
 }
 
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K,
 				  double* F, 
-				  const vcn_bcond_t *const bmeshcond, 
+				  const nb_bcond_t *const bcond, 
 				  double thickness,
 				  double factor)
 {
-	for (uint32_t i = 0; i < bmeshcond->N_Neuman_on_vtx; i++) {
-		uint32_t model_id = bmeshcond->Neuman_on_vtx_idx[i];
+	uint16_t size = nb_bcond_iter_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
+				     NB_BC_ON_POINT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		for(uint32_t j = 0; j < bmeshcond->N_dof; j++){
-			uint32_t id = i * bmeshcond->N_dof + j;
-			if(bmeshcond->Neuman_on_vtx_dof_mask[id]) {
-				uint32_t mtx_id = mesh_id *
-					bmeshcond->N_dof + j;
-				F[mtx_id] += factor * 
-					bmeshcond->Neuman_on_vtx_val[id];
+		for (uint32_t j = 0; j < bcond->N_dof; j++) {
+			bool mask = nb_bcond_iter_get_mask(iter, j);
+			double val = nb_bcond_iter_get_val(iter, j);
+			if (mask) {
+				uint32_t mtx_id = mesh_id * bcond->N_dof + j;
+				F[mtx_id] += factor * val;
 			}
 		}
 	}
+	nb_bcond_iter_clear(iter);
 }
 
 static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K,
 				    double* F, 
-				    const vcn_bcond_t *const bmeshcond, 
+				    const nb_bcond_t *const bcond, 
 				    double thickness,
 				    double factor)
 {
-	for (uint32_t k = 0; k < bmeshcond->N_Dirichlet_on_sgm; k++) {
-		uint32_t model_id = bmeshcond->Dirichlet_on_sgm_idx[k];
+	uint16_t size = nb_bcond_iter_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
+				     NB_BC_ON_SEGMENT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t N = msh3trg->N_subsgm_x_inputsgm[model_id] + 1;
 		for (uint32_t i = 0; i < N; i++) {
-			uint32_t mesh_id = msh3trg->meshvtx_x_inputsgm[model_id][i];
-			for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
-				uint32_t id = k * bmeshcond->N_dof + j;
-				if (bmeshcond->Dirichlet_on_sgm_dof_mask[id]) {
+			uint32_t mesh_id = 
+				msh3trg->meshvtx_x_inputsgm[model_id][i];
+			for (uint32_t j = 0; j < bcond->N_dof; j++) {
+				bool mask = nb_bcond_iter_get_mask(iter, j);
+				double val = nb_bcond_iter_get_val(iter, j);
+				if (mask) {
 					uint32_t mtx_id = mesh_id *
-						bmeshcond->N_dof + j;
-					double value = factor *
-						bmeshcond->Dirichlet_on_sgm_val[id];
-					vcn_sparse_set_Dirichlet_condition(K, F,
-									   mtx_id,
-									   value);
+						bcond->N_dof + j;
+					vcn_sparse_set_Dirichlet_condition
+						(K, F, mtx_id, factor * val);
 				}
 			}
 		}
 	}
+	nb_bcond_iter_clear(iter);
 }
 
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K,
 				    double* F, 
-				    const vcn_bcond_t *const bmeshcond, 
+				    const nb_bcond_t *const bcond, 
 				    double thickness,
 				    double factor)
 {
-	for (uint32_t i = 0; i < bmeshcond->N_Dirichlet_on_vtx; i++) {
-		uint32_t model_id = bmeshcond->Dirichlet_on_vtx_idx[i];
+	uint16_t size = nb_bcond_iter_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
+				     NB_BC_ON_POINT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		for (uint32_t j = 0; j < bmeshcond->N_dof; j++) {
-			uint32_t id = i * bmeshcond->N_dof + j;
-			if (bmeshcond->Dirichlet_on_vtx_dof_mask[id]) {
-				uint32_t mtx_id = mesh_id *
-					bmeshcond->N_dof + j;
-				double value = factor *
-					bmeshcond->Dirichlet_on_vtx_val[id];
-				vcn_sparse_set_Dirichlet_condition(K, F,
-								   mtx_id,
-								   value);
+		for (uint32_t j = 0; j < bcond->N_dof; j++) {
+			bool mask = nb_bcond_iter_get_mask(iter, j);
+			double val = nb_bcond_iter_get_val(iter, j);
+			if (mask) {
+				uint32_t mtx_id = mesh_id * bcond->N_dof + j;
+				vcn_sparse_set_Dirichlet_condition
+					(K, F, mtx_id, factor * val);
 			}
 		}
 	}
+	nb_bcond_iter_clear(iter);
 }
 
 void pipeline_compute_strain(double *strain,

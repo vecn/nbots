@@ -3,18 +3,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
 
 #include "nb/pde_bot/material.h"
-#include "nb/pde_bot/boundary_conditions.h"
+#include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
 
 int vcn_fem_compute_2D_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
-			 const vcn_bcond_t *const bmeshcond,
+			 const nb_bcond_t *const bcond,
 			 char enable_self_weight,
 			 double gravity[2],
 			 bool enable_plane_stress,
