@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "list/list_iterator.h"
@@ -16,9 +17,14 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
-struct vcn_iterator_s {
+struct nb_iterator_s {
 	void *dst_iter;
-	void* (*clone)(const void *const);
+	uint16_t (*get_memsize)(void);
+	void (*init)(void*);
+	void (*copy)(void*, const void*);
+	void (*clear)(void*);
+	void* (*create)(void);
+	void* (*clone)(const void *);
 	void (*destroy)(void*);
 	void (*restart)(void*);
 	const void* (*get_next)(void*);
@@ -31,13 +37,13 @@ static void null_restart(void *iter);
 static const void* null_get_next(void *iter);
 static bool null_has_more(const void *const iter);
 
-static void iterator_set_queue(vcn_iterator_t *iter, const void *const queue);
-static void iterator_set_stack(vcn_iterator_t *iter, const void *const stack);
-static void iterator_set_avl(vcn_iterator_t *iter, const void *const avl);
-static void iterator_set_htable(vcn_iterator_t *iter, const void *const htable);
-static void iterator_set_heap(vcn_iterator_t *iter, const void *const heap);
+static void iterator_set_queue(nb_iterator_t *iter, const void *const queue);
+static void iterator_set_stack(nb_iterator_t *iter, const void *const stack);
+static void iterator_set_avl(nb_iterator_t *iter, const void *const avl);
+static void iterator_set_htable(nb_iterator_t *iter, const void *const htable);
+static void iterator_set_heap(nb_iterator_t *iter, const void *const heap);
 
-void vcn_iterator_init(vcn_iterator_t *iter)
+void nb_iterator_init(nb_iterator_t *iter)
 {
 	iter->clone = null_clone;
 	iter->destroy = null_destroy;
@@ -46,10 +52,10 @@ void vcn_iterator_init(vcn_iterator_t *iter)
 	iter->has_more = null_has_more;
 }
 
-vcn_iterator_t* vcn_iterator_create(void)
+nb_iterator_t* nb_iterator_create(void)
 {
-	vcn_iterator_t *iter = calloc(1, sizeof(*iter));
-	vcn_iterator_init(iter);
+	nb_iterator_t *iter = calloc(1, sizeof(*iter));
+	nb_iterator_init(iter);
 	return iter;
 }
 
@@ -78,24 +84,24 @@ static inline bool null_has_more(const void *const iter)
 	return false;
 }
 
-void vcn_iterator_set_container(vcn_iterator_t *iter,
-				const vcn_container_t *const container)
+void nb_iterator_set_container(nb_iterator_t *iter,
+				const nb_container_t *const container)
 {
-	void *dst = vcn_container_get_dst(container);
-	switch (vcn_container_get_id(container)) {
-	case NB_CONTAINER_QUEUE:
+	void *dst = nb_container_get_dst(container);
+	switch (nb_container_get_id(container)) {
+	case NB_QUEUE:
 		iterator_set_queue(iter, dst);
 		break;
-	case NB_CONTAINER_STACK:
+	case NB_STACK:
 		iterator_set_stack(iter, dst);
 		break;
-	case NB_CONTAINER_SORTED:
+	case NB_SORTED:
 		iterator_set_avl(iter, dst);
 		break;
-	case NB_CONTAINER_HEAP:
+	case NB_HEAP:
 		iterator_set_heap(iter, dst);
 		break;
-	case NB_CONTAINER_HASH:
+	case NB_HASH:
 		iterator_set_htable(iter, dst);
 		break;
 	default:
@@ -103,7 +109,7 @@ void vcn_iterator_set_container(vcn_iterator_t *iter,
 	}
 }
 
-static void iterator_set_queue(vcn_iterator_t *iter, const void *const queue)
+static void iterator_set_queue(nb_iterator_t *iter, const void *const queue)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
@@ -118,7 +124,7 @@ static void iterator_set_queue(vcn_iterator_t *iter, const void *const queue)
 	iter->has_more = list_iter_has_more;
 }
 
-static void iterator_set_stack(vcn_iterator_t *iter, const void *const stack)
+static void iterator_set_stack(nb_iterator_t *iter, const void *const stack)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
@@ -133,7 +139,7 @@ static void iterator_set_stack(vcn_iterator_t *iter, const void *const stack)
 	iter->has_more = list_iter_has_more;
 }
 
-static void iterator_set_avl(vcn_iterator_t *iter, const void *const avl)
+static void iterator_set_avl(nb_iterator_t *iter, const void *const avl)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
@@ -148,7 +154,7 @@ static void iterator_set_avl(vcn_iterator_t *iter, const void *const avl)
 	iter->has_more = avl_iter_has_more;
 }
 
-static void iterator_set_htable(vcn_iterator_t *iter, const void *const htable)
+static void iterator_set_htable(nb_iterator_t *iter, const void *const htable)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
@@ -163,7 +169,7 @@ static void iterator_set_htable(vcn_iterator_t *iter, const void *const htable)
 	iter->has_more = htable_iter_has_more;
 }
 
-static void iterator_set_heap(vcn_iterator_t *iter, const void *const heap)
+static void iterator_set_heap(nb_iterator_t *iter, const void *const heap)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
@@ -178,9 +184,9 @@ static void iterator_set_heap(vcn_iterator_t *iter, const void *const heap)
 	iter->has_more = heap_iter_has_more;
 }
 
-vcn_iterator_t* vcn_iterator_clone(const vcn_iterator_t *const restrict iter)
+nb_iterator_t* nb_iterator_clone(const nb_iterator_t *const restrict iter)
 {
-	vcn_iterator_t *clone = malloc(sizeof(*clone));
+	nb_iterator_t *clone = malloc(sizeof(*clone));
 	clone->dst_iter = iter->clone(iter->dst_iter);
 
 	clone->clone = iter->clone;
@@ -191,24 +197,24 @@ vcn_iterator_t* vcn_iterator_clone(const vcn_iterator_t *const restrict iter)
 	return clone;
 }
 
-inline void vcn_iterator_destroy(vcn_iterator_t *iter)
+inline void nb_iterator_destroy(nb_iterator_t *iter)
 {
 	if (NULL != iter->dst_iter)
 		iter->destroy(iter->dst_iter);
 	free(iter);
 }
 
-inline void vcn_iterator_restart(vcn_iterator_t *iter)
+inline void nb_iterator_restart(nb_iterator_t *iter)
 {
 	iter->restart(iter->dst_iter);
 }
 
-inline const void* vcn_iterator_get_next(vcn_iterator_t *iter)
+inline const void* nb_iterator_get_next(nb_iterator_t *iter)
 {
 	return iter->get_next(iter->dst_iter);
 }
 
-inline bool vcn_iterator_has_more(const vcn_iterator_t *const iter)
+inline bool nb_iterator_has_more(const nb_iterator_t *const iter)
 {
 	return iter->has_more(iter->dst_iter);
 }
