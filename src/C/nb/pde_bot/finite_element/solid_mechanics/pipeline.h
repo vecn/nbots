@@ -1,6 +1,12 @@
 #ifndef __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 #define __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 
+#include "nb/eigen_bot.h"
+#include "nb/geometric_bot.h"
+#include "nb/pde_bot/material.h"
+#include "nb/pde_bot/boundary_conditions/bcond.h"
+#include "nb/pde_bot/finite_element/element.h"
+
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
@@ -15,7 +21,7 @@ int pipeline_assemble_system
 void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
 				      vcn_sparse_t* K,
 				      double* F, 
-				      const vcn_bcond_t *const bmeshcond, 
+				      const nb_bcond_t *const bcond, 
 				      double thickness,
 				      double factor);
 void pipeline_compute_strain

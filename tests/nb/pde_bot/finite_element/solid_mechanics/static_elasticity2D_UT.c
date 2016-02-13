@@ -27,17 +27,11 @@ static double* get_total_disp(uint32_t N, const double *displacement);
 static int read_initial_conditions
 		(const char* filename,
 		 vcn_model_t *model,
-		 vcn_bcond_t* bcond,
+		 nb_bcond_t* bcond,
 		 vcn_fem_material_t* mat,
 		 char* enable_plane_stress_analysis,
 		 double *thickness);
 static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model);
-static int read_boundary_conditions(vcn_cfreader_t *cfreader,
-				     vcn_bcond_t *bcond);
-static void read_dirichlet_on_vtx(vcn_cfreader_t *cfreader,
-				  vcn_bcond_t *bcond);
-static void read_bcond_row(vcn_cfreader_t *cfreader,
-			   vcn_bcond_t *bcond, uint32_t id);
 static int read_material(vcn_cfreader_t *cfreader, vcn_fem_material_t *mat);
 static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 				     char* enable_plane_stress_analysis,
@@ -57,7 +51,9 @@ void vcn_test_load_tests(void *tests_ptr)
 static bool check_static_elasticity2D(void)
 {
 	vcn_model_t* model = vcn_model_create();
-	vcn_bcond_t* bcond = vcn_fem_bcond_create();
+	uint16_t bcond_size = nb_bcond_get_memsize(2);
+	nb_bcond_t *bcond = alloca(bcond_size);
+	nb_bcond_init(bcond, 2);
 	vcn_fem_material_t* material = vcn_fem_material_create();
 	char enable_plane_stress_analysis = 1;
 	double thickness;
@@ -117,7 +113,7 @@ CLEANUP_FEM:
 	free(strain);
 CLEANUP_INPUT:
 	vcn_model_destroy(model);
-	vcn_fem_bcond_destroy(bcond);
+	nb_bcond_clear(bcond);
 	vcn_fem_material_destroy(material);
 	return false;
 }
@@ -137,7 +133,7 @@ static double* get_total_disp(uint32_t N, const double *displacement)
 static int read_initial_conditions
 		(const char* filename,
 		 vcn_model_t *model,
-		 vcn_bcond_t* bcond,
+		 nb_bcond_t* bcond,
 		 vcn_fem_material_t* mat,
 		 char* enable_plane_stress_analysis,
 		 double *thickness)
@@ -155,7 +151,7 @@ static int read_initial_conditions
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_boundary_conditions(cfreader, bcond)) {
+	if (0 != nb_bcond_read(bcond, cfreader)) {
 		printf("\nERROR: Boundary C. contain errors in %s.\n",
 		       filename);
 		goto EXIT;
@@ -237,220 +233,6 @@ EXIT:
 	return status;
 }
 
-static int read_boundary_conditions(vcn_cfreader_t *cfreader,
-				    vcn_bcond_t *bcond)
-{
-	bcond->N_dof = 2;
-	read_dirichlet_on_vtx(cfreader, bcond);
-	
-	/* Read Neuman conditions upon vertices */
-	if (vcn_cfreader_read_uint(cfreader, &(bcond->N_Neuman_on_vtx)) != 0) {
-		vcn_cfreader_destroy(cfreader);
-		printf("Error: The 'number of Neuman conditions on \n");
-		printf("       vertices' can not be readed.\n");
-		return 1;
-	}
-	if (bcond->N_Neuman_on_vtx > 0) {
-		bcond->Neuman_on_vtx_idx = 
-			malloc(bcond->N_Neuman_on_vtx * sizeof(uint32_t));
-		bcond->Neuman_on_vtx_dof_mask =
-			calloc(bcond->N_dof * 
-			       bcond->N_Neuman_on_vtx, sizeof(bool));
-		bcond->Neuman_on_vtx_val =
-			calloc(bcond->N_dof * 
-			       bcond->N_Neuman_on_vtx, 
-			       sizeof(double));
-	}
-	for (uint32_t i = 0; i < bcond->N_Neuman_on_vtx; i++) {
-		/* Read vertex id of Neuman condition */
-		if(vcn_cfreader_read_uint(cfreader,
-					      &(bcond->Neuman_on_vtx_idx[i])) != 0) {
-			vcn_cfreader_destroy(cfreader);
-			printf("Error: Can't read 'vertex index' of Neuman conditions. \n");
-			return 1;
-		}
-		/* Read mask of Neuman conditions */
-		for (uint32_t j = 0; j < bcond->N_dof; j++){
-			int mask;
-			if(vcn_cfreader_read_int(cfreader, &mask) != 0){
-				vcn_cfreader_destroy(cfreader);
-				printf("Error: Can't read 'DoF mask' of Neuman conditions. \n");
-				return 1;
-			}
-			bcond->Neuman_on_vtx_dof_mask
-				[i * bcond->N_dof + j] = (mask==1)?true:false;
-		}
-		/* Read Neuman condition components */
-		for (uint32_t j = 0; j < bcond->N_dof; j++){
-			if (bcond->Neuman_on_vtx_dof_mask
-			   [i * bcond->N_dof + j]) {
-				if (vcn_cfreader_read_double(cfreader,
-							     &(bcond->Neuman_on_vtx_val[i * bcond->N_dof + j])) != 0) {
-					vcn_cfreader_destroy(cfreader);
-					printf("Error: Can't read 'values' of Neuman conditions. \n");
-					return 1;
-				}
-			}
-		}
-	}
-
-	/* Read Dirichlet conditions upon segments */
-	if (vcn_cfreader_read_uint(cfreader, &(bcond->N_Dirichlet_on_sgm)) != 0) {
-		vcn_cfreader_destroy(cfreader);
-		printf("Error: The 'number of Dirichlet conditions on \n");
-		printf("       segments' can not be readed.\n");
-		return 1;
-	}
-	if (bcond->N_Dirichlet_on_sgm > 0) {
-		bcond->Dirichlet_on_sgm_idx = 
-			malloc(bcond->N_Dirichlet_on_sgm * sizeof(uint32_t));
-		bcond->Dirichlet_on_sgm_dof_mask =
-			calloc(bcond->N_dof * 
-			       bcond->N_Dirichlet_on_sgm, sizeof(bool));
-		bcond->Dirichlet_on_sgm_val =
-			calloc(bcond->N_dof * 
-			       bcond->N_Dirichlet_on_sgm, 
-			       sizeof(double));
-	}
-	for (uint32_t i = 0; i < bcond->N_Dirichlet_on_sgm; i++) {
-		/* Read vertex id of Dirichlet condition */
-		if(vcn_cfreader_read_uint(cfreader,
-					      &(bcond->Dirichlet_on_sgm_idx[i])) != 0) {
-			vcn_cfreader_destroy(cfreader);
-			printf("Error: Can't read 'segment index' of Dirichlet conditions. \n");
-			return 1;
-		}
-		/* Read mask of Dirichlet conditions */
-		for (uint32_t j = 0; j < bcond->N_dof; j++){
-			int mask;
-			if (vcn_cfreader_read_int(cfreader, &mask) != 0) {
-				vcn_cfreader_destroy(cfreader);
-				printf("Error: Can't read 'DoF mask' of Dirichlet conditions. \n");
-				return 1;
-			}
-			bcond->Dirichlet_on_sgm_dof_mask
-				[i * bcond->N_dof + j] = (mask==1)?true:false;
-		}
-		/* Read Dirichlet condition components */
-		for (uint32_t j = 0; j < bcond->N_dof; j++) {
-			if (bcond->Dirichlet_on_sgm_dof_mask
-			    [i * bcond->N_dof + j]) {
-				if(vcn_cfreader_read_double(cfreader,
-							&(bcond->Dirichlet_on_sgm_val[i * bcond->N_dof + j])) != 0) {
-					vcn_cfreader_destroy(cfreader);
-					printf("Error: Can't read 'values' of Dirichlet conditions. \n");
-					return 1;
-				}
-			}
-		}
-	}
-
-	/* Read Neuman conditions upon segments */
-	if (vcn_cfreader_read_uint(cfreader, &(bcond->N_Neuman_on_sgm)) != 0) {
-		vcn_cfreader_destroy(cfreader);
-		printf("Error: The 'number of Neuman conditions on \n");
-		printf("       segments' can not be readed.\n");
-		return 1;
-	}
-	if (bcond->N_Neuman_on_sgm > 0) {
-		bcond->Neuman_on_sgm_idx = 
-			malloc(bcond->N_Neuman_on_sgm * sizeof(uint32_t));
-		bcond->Neuman_on_sgm_dof_mask =
-			calloc(bcond->N_dof * 
-			       bcond->N_Neuman_on_sgm, sizeof(bool));
-		bcond->Neuman_on_sgm_val =
-			calloc(bcond->N_dof * 
-			       bcond->N_Neuman_on_sgm, 
-			       sizeof(double));
-	}
-	for (uint32_t i = 0; i < bcond->N_Neuman_on_sgm; i++) {
-		/* Read vertex id of Neuman condition */
-		if (vcn_cfreader_read_uint(cfreader,
-				       &(bcond->Neuman_on_sgm_idx[i])) != 0) {
-			vcn_cfreader_destroy(cfreader);
-			printf("Error: Can't read 'segment index' of Neuman conditions. \n");
-			return 1;
-		}
-		/* Read mask of Neuman conditions */
-		for (uint32_t j = 0; j < bcond->N_dof; j++) {
-			int mask;
-			if (vcn_cfreader_read_int(cfreader, &mask) != 0) {
-				vcn_cfreader_destroy(cfreader);
-				printf("Error: Can't read 'DoF mask' of Neuman conditions. \n");
-				return 1;
-			}
-			bcond->Neuman_on_sgm_dof_mask
-				[i * bcond->N_dof + j] = (mask==1)?true:false;
-		}
-		/* Read Neuman condition components */
-		for (uint32_t j = 0; j < bcond->N_dof; j++) {
-			if (bcond->Neuman_on_sgm_dof_mask
-			    [i * bcond->N_dof + j]) {
-				if(vcn_cfreader_read_double(cfreader,
-							&(bcond->Neuman_on_sgm_val[i * bcond->N_dof + j])) != 0) {
-					vcn_cfreader_destroy(cfreader);
-					printf("Error: Can't read 'values' of Neuman conditions. \n");
-					return 1;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-static void read_dirichlet_on_vtx(vcn_cfreader_t *cfreader,
-				  vcn_bcond_t *bcond)
-{
-	if (0 != vcn_cfreader_read_uint(cfreader,
-					&(bcond->N_Dirichlet_on_vtx)))
-		goto EXIT;
-
-	if (0 < bcond->N_Dirichlet_on_vtx) {
-		bcond->Dirichlet_on_vtx_idx = 
-			malloc(bcond->N_Dirichlet_on_vtx *
-			       sizeof(*(bcond->Dirichlet_on_vtx_idx)));
-		bcond->Dirichlet_on_vtx_dof_mask =
-			calloc(bcond->N_dof * bcond->N_Dirichlet_on_vtx,
-			       sizeof(*(bcond->Dirichlet_on_vtx_dof_mask)));
-		bcond->Dirichlet_on_vtx_val =
-			calloc(bcond->N_dof * bcond->N_Dirichlet_on_vtx, 
-			       sizeof(*(bcond->Dirichlet_on_vtx_val)));
-		for (uint32_t i = 0; i < bcond->N_Dirichlet_on_vtx; i++)
-			read_bcond_row(cfreader, bcond, i);
-	}
-EXIT:
-	return;
-}
-
-static void read_bcond_row(vcn_cfreader_t *cfreader,
-			   vcn_bcond_t *bcond, uint32_t id)
-{
-	/* Read vertex id  */
-	uint32_t elem_id;
-	if(0 != vcn_cfreader_read_uint(cfreader, &elem_id))
-		goto EXIT;
-	bcond->Dirichlet_on_vtx_idx[id] = elem_id;
-	/* Read mask */
-	for (uint32_t j = 0; j < bcond->N_dof; j++) {
-		int mask;
-		if (0 != vcn_cfreader_read_int(cfreader, &mask))
-			goto EXIT;
-				
-		bcond->Dirichlet_on_vtx_dof_mask[id * bcond->N_dof + j] =
-			(mask == 1);
-	}
-	/* Read components */
-	for (uint32_t j = 0; j < bcond->N_dof; j++) {
-		if (bcond->Dirichlet_on_vtx_dof_mask[id * bcond->N_dof + j]) {
-			double val;
-			if (0 != vcn_cfreader_read_double(cfreader, &val))
-				goto EXIT;
-			bcond->Dirichlet_on_vtx_val[id * bcond->N_dof + j] = val;
-		}
-	}
-EXIT:
-	return;
-}
 
 static int read_material(vcn_cfreader_t *cfreader, vcn_fem_material_t *mat)
 {

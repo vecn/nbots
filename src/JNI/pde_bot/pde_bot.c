@@ -7,11 +7,15 @@
 #include "../geometric_bot/load_jMesh.h"
 #include "../geometric_bot/jModel.h"
 
-static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
+static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
 				      jobject jBCDirichletVtx,
 				      jobject jBCNeumannVtx,
 				      jobject jBCDirichletSgm,
 				      jobject jBCNeumannSgm);
+static void set_jBoundaryCondition_into_bcond(JNIEnv *env, nb_bcond_t *bcond,
+					      jobject jBCDirichletVtx,
+					      nb_bcond_id bc_type,
+					      nb_bcond_where bc_where);
 
 static jint jBoundaryConditions_getN(JNIEnv *env, jobject jBoundaryConditions);
 static jintArray jBoundaryConditions_getIdsRef(JNIEnv *env,
@@ -49,8 +53,10 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		 jdouble jthickness, jint jN_nodes)
 {
 	/* Read optimization parameters */
-	vcn_bcond_t* bconditions = vcn_fem_bcond_create();
-	get_bconditions_from_java(env, bconditions,
+	uint16_t bcond_size = nb_bcond_get_memsize(2);
+	nb_bcond_t* bcond = alloca(bcond_size);
+	nb_bcond_init(bcond, 2);
+	get_bconditions_from_java(env, bcond,
 				  jBCDirichletVtx, jBCNeumannVtx,
 				  jBCDirichletSgm, jBCNeumannSgm);
 	
@@ -84,7 +90,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 		malloc(msh3trg->N_triangles * 3 * sizeof(*strain));
 
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
-					   bconditions, false, NULL, true,
+					   bcond, false, NULL, true,
 					   jthickness, NULL,
 					   displacement, strain);
 
@@ -93,8 +99,8 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	set_results_into_jmesh(env, jmesh_results, displacement, strain,
 			       msh3trg->N_vertices, msh3trg->N_triangles);
 
-	/* Free memory */
-	vcn_fem_bcond_destroy(bconditions);
+	vcn_fem_bcond_clear(bcond);
+
 	vcn_model_destroy(model);
 	vcn_msh3trg_destroy(msh3trg);
 	vcn_fem_material_destroy(material);
@@ -104,165 +110,51 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	return jmesh_results;
 }
 
-static void get_bconditions_from_java(JNIEnv *env, vcn_bcond_t *bcond,
+static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
 				      jobject jBCDirichletVtx,
 				      jobject jBCNeumannVtx,
 				      jobject jBCDirichletSgm,
 				      jobject jBCNeumannSgm)
 {
-	bcond->N_dof = 2;
-	/* Dirichlet on vertices */
-	bcond->N_Dirichlet_on_vtx =
-		jBoundaryConditions_getN(env, jBCDirichletVtx);
-	if (0 < bcond->N_Dirichlet_on_vtx) {
+	set_jBoundaryCondition_into_bcond(env, bcond, jBCDirichletVtx,
+					  NB_DIRICHLET, NB_BC_ON_POINT);
+	set_jBoundaryCondition_into_bcond(env, bcond, jBCNeumannVtx,
+					  NB_NEUMANN, NB_BC_ON_POINT);
+	set_jBoundaryCondition_into_bcond(env, bcond, jBCDirichletSgm,
+					  NB_DIRICHLET, NB_BC_ON_SEGMENT);
+	set_jBoundaryCondition_into_bcond(env, bcond, jBCNeumannSgm,
+					  NB_NEUMANN, NB_BC_ON_SEGMENT);
+}
+
+static void set_jBoundaryCondition_into_bcond(JNIEnv *env, nb_bcond_t *bcond,
+					      jobject jBoundaryCondition,
+					      nb_bcond_id bc_type,
+					      nb_bcond_where bc_where)
+{
+	uint32_t N = jBoundaryConditions_getN(env, jBoundaryCondition);
+	if (0 < N) {
 		jintArray jbc_idx =
-			jBoundaryConditions_getIdsRef(env, jBCDirichletVtx);
+			jBoundaryConditions_getIdsRef(env, jBoundaryCondition);
 		jint *bc_idx =
 			(*env)->GetIntArrayElements(env, jbc_idx, NULL);
 		jcharArray jbc_dof = 
-			jBoundaryConditions_getDofRef(env, jBCDirichletVtx);
+			jBoundaryConditions_getDofRef(env, jBoundaryCondition);
 		jchar *bc_dof =
 			(*env)->GetCharArrayElements(env, jbc_dof, NULL);
 		jdoubleArray jbc_val =
-			jBoundaryConditions_getValuesRef(env, jBCDirichletVtx);
+			jBoundaryConditions_getValuesRef(env,
+							 jBoundaryCondition);
 		jdouble *bc_val =
 			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
 		
-		bcond->Dirichlet_on_vtx_idx =
-		  malloc(bcond->N_Dirichlet_on_vtx *
-			 sizeof(*(bcond->Dirichlet_on_vtx_idx)));
-		bcond->Dirichlet_on_vtx_dof_mask =
-		  malloc(bcond->N_Dirichlet_on_vtx * 2 *
-			 sizeof(*(bcond->Dirichlet_on_vtx_dof_mask)));
-		bcond->Dirichlet_on_vtx_val =
-		  malloc(bcond->N_Dirichlet_on_vtx * 2 *
-			 sizeof(*(bcond->Dirichlet_on_vtx_val)));
-		for (int i = 0; i < bcond->N_Dirichlet_on_vtx; i++) {
-			bcond->Dirichlet_on_vtx_idx[i] = bc_idx[i];
-			set_bc_dof(&(bcond->Dirichlet_on_vtx_dof_mask[i * 2]),
-				   bc_dof[i]);
-			bcond->Dirichlet_on_vtx_val[i * 2] = bc_val[i * 2];
-			bcond->Dirichlet_on_vtx_val[i*2+1] = bc_val[i*2+1];
-		}
-		(*env)->ReleaseIntArrayElements(env, jbc_idx,
-						bc_idx, JNI_ABORT);
-		(*env)->ReleaseCharArrayElements(env, jbc_dof,
-						 bc_dof, JNI_ABORT);
-		(*env)->ReleaseDoubleArrayElements(env, jbc_val,
-						   bc_val, JNI_ABORT);
-	}
-	
-	/* Neumann on vertices */
-	bcond->N_Neuman_on_vtx =
-		jBoundaryConditions_getN(env, jBCNeumannVtx);
-	if (0 < bcond->N_Neuman_on_vtx) {
-		jintArray jbc_idx =
-			jBoundaryConditions_getIdsRef(env, jBCNeumannVtx);
-		jint *bc_idx =
-			(*env)->GetIntArrayElements(env, jbc_idx, NULL);
-		jcharArray jbc_dof = 
-			jBoundaryConditions_getDofRef(env, jBCNeumannVtx);
-		jchar *bc_dof =
-			(*env)->GetCharArrayElements(env, jbc_dof, NULL);
-		jdoubleArray jbc_val =
-			jBoundaryConditions_getValuesRef(env, jBCNeumannVtx);
-		jdouble *bc_val =
-			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
-		bcond->Neuman_on_vtx_idx =
-		  malloc(bcond->N_Neuman_on_vtx *
-			 sizeof(*(bcond->Neuman_on_vtx_idx)));
-		bcond->Neuman_on_vtx_dof_mask =
-		  malloc(bcond->N_Neuman_on_vtx * 2 *
-			 sizeof(*(bcond->Neuman_on_vtx_dof_mask)));
-		bcond->Neuman_on_vtx_val =
-		  malloc(bcond->N_Neuman_on_vtx * 2 *
-			 sizeof(*(bcond->Neuman_on_vtx_val)));
-		for (int i = 0; i < bcond->N_Neuman_on_vtx; i++) {
-			bcond->Neuman_on_vtx_idx[i] = bc_idx[i];
-			set_bc_dof(&(bcond->Neuman_on_vtx_dof_mask[i * 2]),
-				   bc_dof[i]);
-			bcond->Neuman_on_vtx_val[i * 2] = bc_val[i * 2];
-			bcond->Neuman_on_vtx_val[i*2+1] = bc_val[i*2+1];
-		}
-		(*env)->ReleaseIntArrayElements(env, jbc_idx,
-						bc_idx, JNI_ABORT);
-		(*env)->ReleaseCharArrayElements(env, jbc_dof,
-						 bc_dof, JNI_ABORT);
-		(*env)->ReleaseDoubleArrayElements(env, jbc_val,
-						   bc_val, JNI_ABORT);
-	}
-
-	/* Dirichlet on Segments */
-	bcond->N_Dirichlet_on_sgm =
-		jBoundaryConditions_getN(env, jBCDirichletSgm);
-	if (0 < bcond->N_Dirichlet_on_sgm) {
-		jintArray jbc_idx =
-			jBoundaryConditions_getIdsRef(env, jBCDirichletSgm);
-		jint *bc_idx =
-			(*env)->GetIntArrayElements(env, jbc_idx, NULL);
-		jcharArray jbc_dof =
-			jBoundaryConditions_getDofRef(env, jBCDirichletSgm);
-		jchar *bc_dof =
-			(*env)->GetCharArrayElements(env, jbc_dof, NULL);
-		jdoubleArray jbc_val =
-			jBoundaryConditions_getValuesRef(env, jBCDirichletSgm);
-		jdouble *bc_val =
-			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
-		bcond->Dirichlet_on_sgm_idx =
-		  malloc(bcond->N_Dirichlet_on_sgm *
-			 sizeof(*(bcond->Dirichlet_on_sgm_idx)));
-		bcond->Dirichlet_on_sgm_dof_mask =
-		  malloc(bcond->N_Dirichlet_on_sgm * 2 *
-			 sizeof(*(bcond->Dirichlet_on_sgm_dof_mask)));
-		bcond->Dirichlet_on_sgm_val =
-		  malloc(bcond->N_Dirichlet_on_sgm * 2 *
-			 sizeof(*(bcond->Dirichlet_on_sgm_val)));
-		for (int i = 0; i < bcond->N_Dirichlet_on_sgm; i++) {
-			bcond->Dirichlet_on_sgm_idx[i] = bc_idx[i];
-			set_bc_dof(&(bcond->Dirichlet_on_sgm_dof_mask[i * 2]),
-				   bc_dof[i]);
-			bcond->Dirichlet_on_sgm_val[i * 2] = bc_val[i * 2];
-			bcond->Dirichlet_on_sgm_val[i*2+1] = bc_val[i*2+1];
-		}
-		(*env)->ReleaseIntArrayElements(env, jbc_idx,
-						bc_idx, JNI_ABORT);
-		(*env)->ReleaseCharArrayElements(env, jbc_dof,
-						 bc_dof, JNI_ABORT);
-		(*env)->ReleaseDoubleArrayElements(env, jbc_val,
-						   bc_val, JNI_ABORT);
-	}
-	
-	/* Neumann on Segments */
-	bcond->N_Neuman_on_sgm =
-	  jBoundaryConditions_getN(env, jBCNeumannSgm);
-	if (0 < bcond->N_Neuman_on_sgm) {
-		jintArray jbc_idx =
-			jBoundaryConditions_getIdsRef(env, jBCNeumannSgm);
-		jint *bc_idx =
-			(*env)->GetIntArrayElements(env, jbc_idx, NULL);
-		jcharArray jbc_dof =
-			jBoundaryConditions_getDofRef(env, jBCNeumannSgm);
-		jchar *bc_dof =
-			(*env)->GetCharArrayElements(env, jbc_dof, NULL);
-		jdoubleArray jbc_val =
-			jBoundaryConditions_getValuesRef(env, jBCNeumannSgm);
-		jdouble *bc_val =
-			(*env)->GetDoubleArrayElements(env, jbc_val, NULL);
-		bcond->Neuman_on_sgm_idx =
-		  malloc(bcond->N_Neuman_on_sgm *
-			 sizeof(*(bcond->Neuman_on_sgm_idx)));
-		bcond->Neuman_on_sgm_dof_mask =
-		  malloc(bcond->N_Neuman_on_sgm * 2 *
-			 sizeof(*(bcond->Neuman_on_sgm_dof_mask)));
-		bcond->Neuman_on_sgm_val =
-		  malloc(bcond->N_Neuman_on_sgm * 2 *
-			 sizeof(*(bcond->Neuman_on_sgm_val)));
-		for (int i = 0; i < bcond->N_Neuman_on_sgm; i++) {
-			bcond->Neuman_on_sgm_idx[i] = bc_idx[i];
-			set_bc_dof(&(bcond->Neuman_on_sgm_dof_mask[i * 2]),
-				   bc_dof[i]);
-			bcond->Neuman_on_sgm_val[i * 2] = bc_val[i * 2];
-			bcond->Neuman_on_sgm_val[i*2+1] = bc_val[i*2+1];
+		for (int i = 0; i < N; i++) {
+			bool mask[2];
+			set_bc_dof(mask, bc_dof[i]);
+			double val[2];
+			val[0] = bc_val[i * 2];
+			val[1] = bc_val[i*2+1];
+			nb_bcond_push(bcond, bc_type, bc_where,
+				      bc_idx[i], mask, val);
 		}
 		(*env)->ReleaseIntArrayElements(env, jbc_idx,
 						bc_idx, JNI_ABORT);

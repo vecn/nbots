@@ -99,11 +99,11 @@ inline uint32_t nb_bcond_iter_get_id(const nb_bcond_iter_t *iter)
 inline bool nb_bcond_iter_get_mask(const nb_bcond_iter_t *iter,
 				   uint8_t dof_id)
 {
-	return iter->bc->mask;
+	return iter->bc->mask[dof_id];
 }
 
 inline double nb_bcond_iter_get_val(const nb_bcond_iter_t *iter,
 				    uint8_t dof_id)
 {
-	return iter->bc->value;
+	return iter->bc->value[dof_id];
 }
