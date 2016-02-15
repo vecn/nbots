@@ -266,11 +266,10 @@ static htree_t* get_parent(const htree_t *const restrict tree)
 
 htree_t* htree_containing_val(htree_t *tree, const void *const val,
 			      uint32_t (*key)(const void *const),
-			      bool (*are_equal)(const void *const,
-						const void *const))
+			      int8_t (*compare)(const void*, const void*))
 {
 	htree_t *tree_with_val = NULL;
-	if (are_equal(tree->val, val)) {
+	if (0 == compare(tree->val, val)) {
 		tree_with_val = tree;
 	} else {
 		uint32_t key_val = key(val);
@@ -280,7 +279,7 @@ htree_t* htree_containing_val(htree_t *tree, const void *const val,
 			if (NULL != left_tree) {
 				tree_with_val = htree_containing_val(left_tree,
 								     val, key,
-								     are_equal);
+								     compare);
 			}
 		}
 		if (NULL == tree_with_val) {
@@ -288,7 +287,7 @@ htree_t* htree_containing_val(htree_t *tree, const void *const val,
 			if (NULL != right_tree) {
 				tree_with_val = htree_containing_val(right_tree,
 								     val, key,
-								     are_equal);
+								     compare);
 			}
 		}
 	}

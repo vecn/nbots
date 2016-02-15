@@ -132,14 +132,6 @@ void queue_merge(void *queue1_ptr, void *queue2_ptr,
 	}
 }
 
-inline bool queue_insert_first(void *queue_ptr, const void *val,
-			      uint32_t (*key)(const void*))
-{
-	queue_t *queue = queue_ptr;
-	insert_node_as_starting(queue, val);
-	return true;
-}
-
 static inline void insert_node_as_starting(queue_t *restrict queue,
 					   const void *const restrict val)
 {
@@ -234,12 +226,12 @@ static node_t* exist_node(const queue_t *const queue, const void *val,
 {
 	node_t *first = get_first(queue);
 	node_t *existing_node = NULL;
-	if (compare(first->val, val)) {
+	if (0 == compare(first->val, val)) {
 		existing_node = first;
 	} else {
 		node_t *iter = first->next;
 		while (iter != first) {
-			if (compare(iter->val, val)) {
+			if (0 == compare(iter->val, val)) {
 				existing_node = iter;
 				break;
 			}
@@ -256,7 +248,7 @@ void* queue_delete(void *queue_ptr, const void *val,
 	queue_t *queue = queue_ptr;
 	void *deleted_val = NULL;
 	if (is_not_empty(queue)) {
-		node_t *node = exist_node(queue, val, are_equal);
+		node_t *node = exist_node(queue, val, compare);
 		if (NULL != node) {
 			unlink_node(queue, node);
 			deleted_val = node->val;

@@ -12,31 +12,78 @@
 
 #include "avl_tree.h"
 #include "avl_dst.h"
-
-typedef struct {
-	uint32_t length;
-	tree_t* root;
-} avl_t;
+#include "avl_struct.h"
 
 static bool is_not_empty(const avl_t *const avl);
+static void* malloc_avl(void);
 static void null_destroy(void *val);
 static void* delete_root(avl_t *avl);
 
-inline void* avl_create(void)
+uint16_t avl_get_memsize(void)
 {
-	return calloc(1, sizeof(avl_t));
+	return sizeof(avl_t);
+}
+
+void avl_init(void *avl_ptr)
+{
+	avl_t *avl = avl_ptr;
+	avl->length = 0;
+	avl->root = NULL;
+}
+
+void avl_copy(void *avl_ptr, const void *src_avl_ptr,
+	      void* (*clone)(const void*))
+{
+	avl_t *avl = avl_ptr;
+	const avl_t *src_avl = src_avl_ptr;
+	if (is_not_empty(src_avl_ptr)) {
+		avl->length = src_avl->length;
+		avl->root = tree_clone(avl->root, clone);
+	}
+}
+
+static inline bool is_not_empty(const avl_t *const restrict avl)
+{
+	return (NULL != avl->root);
+}
+
+void avl_clear(void *avl_ptr,
+	       void (*destroy)(void*))
+{
+	avl_t *avl = avl_ptr;
+	if (is_not_empty(avl)) {
+		tree_destroy_recursively(avl->root, destroy);
+		avl->root = NULL;
+		avl->length = 0;
+	}	
+}
+
+void* avl_create(void)
+{
+	void *avl = malloc_avl();
+	avl_init(avl);
+	return avl;
+}
+
+static inline void* malloc_avl(void)
+{
+	uint16_t size = avl_get_memsize();
+	return malloc(size);
 }
 
 void* avl_clone(const void *const avl_ptr,
-		void* (*clone)(const void *const))
+		void* (*clone)(const void*))
 {
-	const avl_t *const restrict avl = avl_ptr;
-	avl_t *avl_clone = avl_create();
-	if (is_not_empty(avl)) {
-		avl_clone->root = tree_clone(avl->root, clone);
-		avl_clone->length = avl->length;
-	}
-	return avl_clone;
+	void *avl = malloc_avl();
+	avl_copy(avl, avl_ptr, clone);
+	return avl;	
+}
+
+void avl_destroy(void *avl_ptr,
+		    void (*destroy)(void*))
+{
+	avl_clear(avl_ptr, destroy);
+	free(avl_ptr);
 }
 
 void avl_merge(void *avl1_ptr, void *avl2_ptr,
@@ -47,29 +94,6 @@ void avl_merge(void *avl1_ptr, void *avl2_ptr,
 	while (is_not_empty(avl2)) {
 		void *val = avl_delete_first(avl2, key);
 		avl_insert(avl1, val, key);
-	}
-}
-
-static inline bool is_not_empty(const avl_t *const restrict avl)
-{
-	return (NULL != avl->root);
-}
-
-inline void avl_destroy(void *avl_ptr,
-			void (*destroy)(void*))
-{
-	avl_clear(avl_ptr, destroy);
-	free(avl_ptr);
-}
-
-inline void avl_clear(void *avl_ptr,
-		      void (*destroy)(void*))
-{
-	avl_t *avl = avl_ptr;
-	if (is_not_empty(avl)) {
-		tree_destroy_recursively(avl->root, destroy);
-		avl->root = NULL;
-		avl->length = 0;
 	}
 }
 
@@ -137,29 +161,29 @@ static inline void null_destroy(void *val)
   ; /* Null statement */
 }
 
-void* avl_exist(const void *const avl_ptr, const void *const val,
-		uint32_t (*key)(const void *const),
-		bool (*are_equal)(const void *const, const void *const))
+void* avl_exist(const void *const avl_ptr, const void *val,
+		uint32_t (*key)(const void*),
+		int8_t (*compare)(const void*, const void*))
 {
 	const avl_t *const restrict avl = avl_ptr;
 	void *existing_val = NULL;
 	if (is_not_empty(avl))
-		existing_val = tree_exist(avl->root, val, key, are_equal);
+		existing_val = tree_exist(avl->root, val, key, compare);
 	return existing_val;
 }
 
 void* avl_delete(void *avl_ptr, const void *const val,
-		 uint32_t (*key)(const void *const),
-		 bool (*are_equal)(const void *const, const void *const))
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*))
 {
 	avl_t *avl = avl_ptr;
 	void *deleted_val = NULL;
-	if(is_not_empty(avl)) {
-		if(are_equal(avl->root->val, val))
+	if (is_not_empty(avl)) {
+		if (0 == compare(avl->root->val, val))
 			deleted_val = delete_root(avl);
 		else
 			deleted_val = tree_delete(avl->root, val, 
-						  key, are_equal);
+						  key, compare);
 	}
 	if (NULL != deleted_val)
 		avl->length -= 1;
@@ -193,10 +217,4 @@ inline bool avl_is_empty(const void *const avl_ptr)
 inline bool avl_is_not_empty(const void *const restrict avl_ptr)
 {
 	return is_not_empty(avl_ptr);
-}
-
-inline const void* avl_get_iterator_start(const void *const avl_ptr)
-{
-	const avl_t *const restrict avl = avl_ptr;
-	return avl->root;
 }

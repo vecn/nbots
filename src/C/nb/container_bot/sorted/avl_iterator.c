@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #include "avl_tree.h"
-#include "avl_dst.h"
+#include "avl_struct.h"
 #include "avl_iterator.h"
 
 typedef struct {
@@ -22,19 +22,75 @@ typedef struct {
 	tree_t* tree;
 } iter_t;
 
+static void* malloc_iter(void);
 static void jump_to_most_left(iter_t *iter);
 static void jump_to_parent(iter_t *iter);
 static void jump_to_next(iter_t *iter);
 
-inline void* avl_iter_create(void)
+inline uint16_t avl_iter_get_memsize(void)
 {
-	return calloc(1, sizeof(iter_t));
+	return sizeof(iter_t);
 }
 
-void avl_iter_set_dst(void *iter_ptr, const void *const avl_ptr)
+inline void avl_iter_init(void *iter_ptr)
+{
+	memset(iter_ptr, 0, avl_iter_get_memsize());
+}
+
+void avl_iter_copy(void *iter_ptr, const void *src_iter_ptr)
+{
+	iter_t *iter = iter_ptr;
+	const iter_t *src_iter = src_iter_ptr;
+	iter->root = src_iter->root;
+	iter->tree = src_iter->tree;
+	iter->parent_id = src_iter->parent_id;
+	iter->N_parent = src_iter->N_parent;
+	if (0 < iter->N_parent) {
+		iter->parent =
+			malloc(iter->N_parent * sizeof(*(iter->parent)));
+		memcpy(iter->parent, src_iter->parent, 
+		       iter->N_parent * sizeof(*(iter->parent)));
+	}
+}
+
+void avl_iter_clear(void *iter_ptr)
+{
+	iter_t *iter = iter_ptr;
+	if (iter->N_parent > 0)
+       		free(iter->parent);
+}
+
+inline void* avl_iter_create(void)
+{
+	void *iter = malloc_iter();
+	avl_iter_init(iter);
+	return iter;
+}
+
+static inline void* malloc_iter(void)
+{
+	uint16_t size = avl_iter_get_memsize();
+	return malloc(size);
+}
+
+inline void* avl_iter_clone(const void *iter_ptr)
+{
+	void *iter = malloc_iter();
+	avl_iter_copy(iter, iter_ptr);
+	return iter;
+}
+
+inline void avl_iter_destroy(void *iter_ptr)
+{
+	avl_iter_clear(iter_ptr);
+	free(iter_ptr);
+}
+
+void avl_iter_set_dst(void *iter_ptr, const void *avl_ptr)
 {
   	iter_t *iter = iter_ptr;
-	iter->root = avl_get_iterator_start(avl_ptr);
+	const avl_t *avl = avl_ptr;
+	iter->root = avl->root;
 	iter->tree = (tree_t*) iter->root;
 	if (NULL != iter->root) {
 		iter->N_parent = tree_get_height(iter->root);
@@ -50,30 +106,6 @@ static void jump_to_most_left(iter_t *iter)
 		iter->parent_id += 1;
 		iter->tree = iter->tree->left;
 	}
-}
-
-void* avl_iter_clone(const void *const iter_ptr)
-{
-  	const iter_t *const restrict iter = iter_ptr;
-	iter_t* clone = calloc(1, sizeof(iter_t));
-	clone->root = iter->root;
-	clone->tree = iter->tree;
-	clone->parent_id = iter->parent_id;
-	clone->N_parent = iter->N_parent;
-	if (clone->N_parent > 0) {
-		clone->parent = calloc(clone->N_parent, sizeof(tree_t*));
-		memcpy(clone->parent, iter->parent, 
-		       clone->N_parent * sizeof(tree_t*));
-	}
-	return clone;
-}
-
-void avl_iter_destroy(void *iter_ptr)
-{
-	iter_t *iter = iter_ptr;
-	if (iter->N_parent > 0)
-       		free(iter->parent);
-	free(iter);
 }
 
 void avl_iter_restart(void *iter_ptr)

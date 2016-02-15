@@ -1,5 +1,5 @@
-#ifndef __NB_HEAP_TREE_H__
-#define __NB_HEAP_TREE_H__
+#ifndef __NB_NB_CONTAINER_BOT_HEAP_HEAP_TREE_H__
+#define __NB_NB_CONTAINER_BOT_HEAP_HEAP_TREE_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,8 +26,7 @@ htree_t* htree_delete_and_get_new_root(htree_t *root,
 				       uint32_t (*key)(const void *const));
 htree_t* htree_containing_val(htree_t *tree, const void *const val,
 			      uint32_t (*key)(const void *const),
-			      bool (*are_equal)(const void *const,
-						const void *const));
+			      int8_t (*compare)(const void*, const void*));
 void htree_delete(htree_t *tree,
 		  uint32_t (*key)(const void *const));
 

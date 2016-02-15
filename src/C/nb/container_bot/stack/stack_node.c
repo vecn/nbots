@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "queue_node.h"
+#include "stack_node.h"
 
 inline node_t* node_create(void)
 {

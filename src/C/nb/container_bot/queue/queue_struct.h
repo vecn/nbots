@@ -1,5 +1,7 @@
-#ifnedf __NB_CONTAINER_BOT_QUEUE_STRUCT_H__
-#define __NB_CONTAINER_BOT_QUEUE_STRUCT_H__
+#ifndef __NB_CONTAINER_BOT_QUEUE_QUEUE_STRUCT_H__
+#define __NB_CONTAINER_BOT_QUEUE_QUEUE_STRUCT_H__
+
+#include <stdint.h>
 
 typedef struct {
 	/* Circular linked list */

@@ -4,11 +4,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct nb_container_s {
-	nb_container_type type;
-	void *dst;
-	dst_functions fdst;
-	uint16_t (*get_memsize)(void);
+typedef struct {
+	uint32_t (*key)(const void*); 
+	void (*destroy)(void*);
+	int8_t (*compare)(const void*, const void*);
+	void* (*clone)(const void*);
+} value_operators;
+
+typedef struct {
 	void (*init)(void*);
 	void (*copy)(void*, const void*,
 		     void* (*clone)(const void*));
@@ -34,7 +37,14 @@ struct nb_container_s {
 			int8_t (*compare)(const void*, const void*));
 	uint32_t (*get_length)(const void*);
 	bool (*is_empty)(const void*);
-	bool (*is_not_empty)(const void*);
+	bool (*is_not_empty)(const void*);	
+} container_binding;
+
+struct nb_container_s {
+	nb_container_type type;
+	void *cnt;
+	value_operators op;
+	container_binding b;
 };
 
 #endif

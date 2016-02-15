@@ -24,8 +24,8 @@ add_library(stack_container SHARED
 
 add_library(sorted_container SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/sorted/avl_tree.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/sorted_dst.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/sorted_iterator.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/avl_dst.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/avl_iterator.c
 )
 
 add_library(heap_container SHARED
@@ -39,7 +39,16 @@ add_library(hash_container SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/hash/hash_iterator.c
 )
 
-set(container_bot
+set(bindings
+  ${CMAKE_CURRENT_SOURCE_DIR}/queue/binding.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/stack/binding.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/binding.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/heap/binding.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/hash/binding.c
+)
+
+set(container_bot  
+  ${bindings}
   ${CMAKE_CURRENT_SOURCE_DIR}/array.c
   ${CMAKE_CURRENT_SOURCE_DIR}/container.c
   ${CMAKE_CURRENT_SOURCE_DIR}/iterator.c

@@ -12,32 +12,75 @@
 
 #include "heap_tree.h"
 #include "heap_dst.h"
+#include "heap_struct.h"
 
-typedef struct {
-	/* Pairing heap (Half-ordered binary tree) */
-	uint32_t length;
-	htree_t* root;
-} heap_t;
-
+static void* malloc_heap(void);
 static htree_t* cut_root(heap_t *heap);
 static bool is_not_empty(const heap_t *const heap);
 
-inline void* heap_create(void)
+inline uint16_t heap_get_memsize(void)
 {
-	return calloc(1, sizeof(heap_t));
+	return sizeof(heap_t);
+}
+
+void heap_init(void *heap_ptr)
+{
+	heap_t *heap = heap_ptr;
+	heap->length = 0;
+	heap->root = NULL;
+}
+
+void heap_copy(void *heap_ptr, const void *src_heap_ptr,
+	       void* (*clone)(const void*))
+{
+	const heap_t *src_heap = src_heap_ptr;
+	if (is_not_empty(src_heap)) {
+		heap_t *heap = heap_ptr;
+		heap->root = htree_clone(src_heap->root, clone);
+		heap->length = src_heap->length;
+	}
+}
+
+
+void heap_clear(void *heap_ptr,
+		void (*destroy)(void*))
+{
+	heap_t *heap = heap_ptr;
+	if (is_not_empty(heap)) {
+		htree_destroy_recursively(heap->root, destroy);
+		heap->root = NULL;
+		heap->length = 0;
+	}
+}
+
+void* heap_create(void)
+{
+	void *heap = malloc_heap();
+	heap_init(heap);
+	return heap;
+}
+
+static void* malloc_heap(void)
+{
+	uint16_t size = sizeof(heap_t);
+	return malloc(size);
 }
 
 void* heap_clone(const void *const heap_ptr,
-		 void* (*clone)(const void *const))
+		 void* (*clone)(const void*))
 {
-	const heap_t *const restrict heap = heap_ptr;
-	heap_t *hc = heap_create();
-	if (is_not_empty(heap)) {
-		hc->root = htree_clone(heap->root, clone);
-		hc->length = heap->length;
-	}
-	return hc;
+	void *heap = malloc_heap();
+	heap_copy(heap, heap_ptr, clone);
+	return heap;
 }
+
+inline void heap_destroy(void *heap_ptr,
+			 void (*destroy)(void*))
+{
+	heap_clear(heap_ptr, destroy);
+	free(heap_ptr);
+}
+
 
 void heap_merge(void *heap1_ptr, void *heap2_ptr,
 		uint32_t (*key)(const void *const))
@@ -58,25 +101,6 @@ static inline htree_t* cut_root(heap_t *restrict heap)
 	heap->root = NULL;
 	return root;
 }
-
-inline void heap_destroy(void *heap_ptr,
-			 void (*destroy)(void*))
-{
-	heap_clear(heap_ptr, destroy);
-	free(heap_ptr);
-}
-
-void heap_clear(void *heap_ptr,
-		void (*destroy)(void*))
-{
-	heap_t *heap = heap_ptr;
-	if (is_not_empty(heap)) {
-		htree_destroy_recursively(heap->root, destroy);
-		heap->root = NULL;
-		heap->length = 0;
-	}
-}
-
 static inline bool is_not_empty(const heap_t *const restrict heap)
 {
 	return (NULL != heap->root);
@@ -119,30 +143,30 @@ void* heap_delete_first(void *heap_ptr,
 }
 
 
-void* heap_exist(const void *const heap_ptr, const void *const val,
-		 uint32_t (*key)(const void *const),
-		 bool (*are_equal)(const void *const, const void *const))
+void* heap_exist(const void *const heap_ptr, const void *val,
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*))
 {
 	const heap_t *const heap = heap_ptr;
 	void *existing_val = NULL;
 	if (is_not_empty(heap)) {
 		htree_t *tree = htree_containing_val(heap->root, val,
-						     key, are_equal);
+						     key, compare);
 		if (NULL != tree)
 			existing_val = tree->val;
 	}
 	return existing_val;
 }
 
-void* heap_delete(void *heap_ptr, const void *const val,
-		  uint32_t (*key)(const void *const),
-		  bool (*are_equal)(const void *const, const void *const))
+void* heap_delete(void *heap_ptr, const void *val,
+		  uint32_t (*key)(const void*),
+		  int8_t (*compare)(const void*, const void*))
 {
 	heap_t *heap = heap_ptr;
 	void *deleted_val = NULL;
 	if (is_not_empty(heap)) {
 		htree_t *tree = htree_containing_val(heap->root, val,
-						     key, are_equal);
+						     key, compare);
 		if (NULL != tree) {
 			deleted_val = tree->val;
 			htree_delete(tree, key);
@@ -167,10 +191,4 @@ inline bool heap_is_empty(const void *const heap_ptr)
 inline bool heap_is_not_empty(const void *const heap_ptr)
 {
 	return is_not_empty(heap_ptr);
-}
-
-inline const void* heap_get_iterator_start(const void *const heap_ptr)
-{
-	const heap_t *const restrict heap = heap_ptr;
-	return heap->root;
 }

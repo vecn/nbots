@@ -26,14 +26,12 @@ static void replace_with_left(tree_t *tree);
 static tree_t* unlink_most_right(tree_t* tree);
 static void replace_with_most_left_of_right(tree_t* tree);
 static void replace_with_right(tree_t *tree);
-static void* delete_from_left(tree_t *tree, const void *const val,
-			      uint32_t (*key)(const void *const),
-			      bool (*are_equal)(const void *const,
-						const void *const));
-static void* delete_from_right(tree_t *tree, const void *const val,
-			       uint32_t (*key)(const void *const),
-			       bool (*are_equal)(const void *const,
-						 const void *const));
+static void* delete_from_left(tree_t *tree, const void *val,
+			      uint32_t (*key)(const void*),
+			      int8_t (*compare)(const void*, const void*));
+static void* delete_from_right(tree_t *tree, const void *val,
+			       uint32_t (*key)(const void*),
+			       int8_t (*compare)(const void*, const void*));
 static void* delete_left(tree_t *tree);
 static void* delete_right(tree_t *tree);
 
@@ -72,25 +70,25 @@ tree_t* tree_clone(const tree_t *const restrict tree,
 }
 
 
-void* tree_exist(const tree_t *const restrict tree,
-		 const void *const restrict val,
-		 uint32_t (*key)(const void *const),
-		 bool (*are_equal)(const void *const, const void *const))
+void* tree_exist(const tree_t *const restrict tree,  const void *val,
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*))
 {
 	void *existing_val = NULL;
-	if (are_equal(tree->val, val)) {
+	int8_t comparison = compare(tree->val, val);
+	if (0 == comparison) {
 		existing_val = tree->val;
 	} else {
 		uint32_t keys[2];
 		get_keys(val, tree->val, key, keys);
-		if (keys[0] < keys[1]) {
+		if (comparison < 0) {
 			if (NULL != tree->left)
 				existing_val = tree_exist(tree->left, val,
-							  key, are_equal);
-		} else if (keys[0] > keys[1]) {
+							  key, compare);
+		} else {
 			if (NULL != tree->right)
 				existing_val = tree_exist(tree->right, val,
-							  key, are_equal);
+							  key, compare);
 		}
 	}
 	return existing_val;
@@ -367,18 +365,16 @@ static void replace_with_right(tree_t *tree)
 	self_balance(tree);
 }
 
-void* tree_delete(tree_t *tree, const void *const val,
-		  uint32_t (*key)(const void *const),
-		  bool (*are_equal)(const void *const, const void *const))
+void* tree_delete(tree_t *tree, const void *val,
+		  uint32_t (*key)(const void*),
+		  int8_t (*compare)(const void*, const void*))
 {
-	uint32_t keys[2];
-	get_keys(val, tree->val, key, keys);
-
+	int8_t comparison = compare(val, tree->val);
 	void *deleted_val = NULL;
-	if (keys[0] < keys[1])
-		deleted_val = delete_from_left(tree, val, key, are_equal);
+	if (comparison < 0)
+		deleted_val = delete_from_left(tree, val, key, compare);
 	else
-		deleted_val = delete_from_right(tree, val, key, are_equal);
+		deleted_val = delete_from_right(tree, val, key, compare);
 
 	if (NULL != deleted_val) {
 		update_height(tree);
@@ -388,33 +384,31 @@ void* tree_delete(tree_t *tree, const void *const val,
 }
 
 static void* delete_from_left(tree_t *tree, const void *const val,
-			      uint32_t (*key)(const void *const),
-			      bool (*are_equal)(const void *const,
-						const void *const))
+			      uint32_t (*key)(const void*),
+			      int8_t (*compare)(const void*, const void*))
 {
 	void *deleted_val = NULL;
 	if (NULL != tree->left) {
-		if (are_equal(tree->left->val, val))
+		if (0 == compare(tree->left->val, val))
 			deleted_val = delete_left(tree);
 		else
 			deleted_val = tree_delete(tree->left, val,
-						  key, are_equal);
+						  key, compare);
 	}
 	return deleted_val;
 }
 
 static void* delete_from_right(tree_t *tree, const void *const val,
-			       uint32_t (*key)(const void *const),
-			       bool (*are_equal)(const void *const,
-						 const void *const))
+			       uint32_t (*key)(const void*),
+			       int8_t (*compare)(const void*, const void*))
 {
 	void *deleted_val = NULL;
 	if (NULL != tree->right) {
-		if (are_equal(tree->right->val, val))
+		if (0 == compare(tree->right->val, val))
 		        deleted_val = delete_right(tree);
 		else
 			deleted_val = tree_delete(tree->right, val,
-						  key, are_equal);
+						  key, compare);
 	}
 	return deleted_val;
 }

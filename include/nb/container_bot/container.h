@@ -33,7 +33,7 @@ void nb_container_destroy(void *container_ptr);
 
 void nb_container_merge(nb_container_t *main,
 			 nb_container_t *to_clear);
-void nb_container_cast(nb_container_t *container, int8_t new_id);
+void nb_container_cast(nb_container_t *container, nb_container_type new_type);
 void** nb_container_cast_to_array(nb_container_t *container);
 void nb_container_copy_to_array(const nb_container_t *const cont_src,
 				 void **array_dest);

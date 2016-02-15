@@ -9,10 +9,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "list/list_iterator.h"
-#include "avl/avl_iterator.h"
-#include "htable/htable_iterator.h"
-#include "heap/heap_iterator.h"
+#include "queue/binding.h"
+#include "stack/binging.h"
+#include "sorted/binding.h"
+#include "heap/binding.h"
+#include "hash/binding.h"
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
@@ -21,9 +22,7 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-struct nb_iterator_s {
-	void *dst_iter;
-	uint16_t (*get_memsize)(void);
+typedef struct {
 	void (*init)(void*);
 	void (*copy)(void*, const void*);
 	void (*clear)(void*);
@@ -34,6 +33,11 @@ struct nb_iterator_s {
 	const void* (*get_next)(void*);
 	bool (*has_more)(const void *);
 	void (*set_dst)(void*, const void*)
+} iter_binding;
+
+struct nb_iterator_s {
+	void *internal;
+	iter_binding b;
 };
 
 static uint16_t dst_iter_get_max_memsize(void);
@@ -70,20 +74,20 @@ static uint16_t dst_iter_get_memsize(void)
 void nb_iterator_init(void *iter_ptr)
 {
 	nb_iterator_t *iter = iter_ptr;
-	iter->get_memsize = null_get_memsize;
-	iter->init = null_init;
-	iter->copy = null_copy;
-	iter->clear = null_clear;
-	iter->create = null_create;
-	iter->clone = null_clone;
-	iter->destroy = null_destroy;
-	iter->restart = null_restart;
-	iter->get_next = null_get_next;
-	iter->has_more = null_has_more;
-	iter->set_dst = null_set_dst;
+	iter->b.get_memsize = null_get_memsize;
+	iter->b.init = null_init;
+	iter->b.copy = null_copy;
+	iter->b.clear = null_clear;
+	iter->b.create = null_create;
+	iter->b.clone = null_clone;
+	iter->b.destroy = null_destroy;
+	iter->b.restart = null_restart;
+	iter->b.get_next = null_get_next;
+	iter->b.has_more = null_has_more;
+	iter->b.set_dst = null_set_dst;
 
 	char *memblock = iter_ptr;
-	iter->dst_iter = memblock + sizeof(nb_iterator_t);
+	iter->internal = memblock + sizeof(nb_iterator_t);
 }
 
 static uint16_t null_get_memsize(void)
@@ -146,28 +150,28 @@ void nb_iterator_copy(void *iter_ptr, const void *src_iter_ptr)
 	nb_iterator_t *iter = iter_ptr;
 	const nb_iterator_t *src_iter = src_iter_ptr;
 	copy_handlers(iter, src_iter);
-	iter->copy(iter->dst_iter, src_iter->dst_iter);
+	iter->copy(iter->internal, src_iter->internal);
 }
 
 static void copy_handlers(nb_iterator_t *iter, const nb_iterator_t *src_iter)
 {
-	iter->get_memsize = src_iter->get_memsize;
-	iter->init = src_iter->init;
-	iter->copy = src_iter->copy;
-	iter->clear = src_iter->clear;
-	iter->create = src_iter->create;
-	iter->clone = src_iter->clone;
-	iter->destroy = src_iter->destroy;
-	iter->restart = src_iter->restart;
-	iter->get_next = src_iter->get_next;
-	iter->has_more = src_iter->has_more;
+	iter->b.get_memsize = src_iter->b.get_memsize;
+	iter->b.init = src_iter->b.init;
+	iter->b.copy = src_iter->b.copy;
+	iter->b.clear = src_iter->b.clear;
+	iter->b.create = src_iter->b.create;
+	iter->b.clone = src_iter->b.clone;
+	iter->b.destroy = src_iter->b.destroy;
+	iter->b.restart = src_iter->b.restart;
+	iter->b.get_next = src_iter->b.get_next;
+	iter->b.has_more = src_iter->b.has_more;
 }
 
 inline void nb_iterator_clear(void* iter_ptr)
 {
 	nb_iterator_t *iter = iter_ptr;
-	if (NULL != iter->dst_iter)
-		iter->clear(iter->dst_iter);
+	if (NULL != iter->internal)
+		iter->b.clear(iter->internal);
 }
 
 inline void* nb_iterator_create(void)
@@ -218,21 +222,21 @@ void nb_iterator_set_container(nb_iterator_t *iter,
 		hash_iterator_set_handlers(iter);
 		break;
 	}
-	iter->init(iter->dst_iter);
-	iter->set_dst(iter->dst_iter, container->dst);
+	iter->b.init(iter->internal);
+	iter->b.set_dst(iter->internal, container->cnt);
 }
 
 inline void nb_iterator_restart(nb_iterator_t *iter)
 {
-	iter->restart(iter->dst_iter);
+	iter->b.restart(iter->internal);
 }
 
 inline const void* nb_iterator_get_next(nb_iterator_t *iter)
 {
-	return iter->get_next(iter->dst_iter);
+	return iter->b.get_next(iter->internal);
 }
 
 inline bool nb_iterator_has_more(const nb_iterator_t *const iter)
 {
-	return iter->has_more(iter->dst_iter);
+	return iter->b.has_more(iter->internal);
 }
