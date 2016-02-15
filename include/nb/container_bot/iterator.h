@@ -24,7 +24,7 @@ void* nb_iterator_clone(const void *iter_ptr);
 void nb_iterator_destroy(void *iter_ptr);
 
 void nb_iterator_set_container(nb_iterator_t *iter,
-				const nb_container_t *const container);
+			       const nb_container_t *const container);
 void nb_iterator_restart(nb_iterator_t *iter);
 const void* nb_iterator_get_next(nb_iterator_t *iter);
 bool nb_iterator_has_more(const nb_iterator_t *const iter);

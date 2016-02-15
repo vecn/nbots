@@ -35,20 +35,18 @@ void nb_container_merge(nb_container_t *main,
 			 nb_container_t *to_clear);
 void nb_container_cast(nb_container_t *container, int8_t new_id);
 void** nb_container_cast_to_array(nb_container_t *container);
-void nb_container_clear(nb_container_t *container);
 void nb_container_copy_to_array(const nb_container_t *const cont_src,
 				 void **array_dest);
 void nb_container_set_key_generator(nb_container_t *container,
-				     uint32_t (*key)(const void *const));
+				     uint32_t (*key)(const void*));
 void nb_container_set_destroyer(nb_container_t *container,
 				 void (*destroy)(void*));
 void nb_container_set_comparer(nb_container_t *container,
-				bool (*are_equal)(const void *const, 
-						  const void *const));
+			       int8_t (*compare)(const void*, 
+						 const void*));
 void nb_container_set_cloner(nb_container_t *container,
-			      void* (*clone)(const void *const));
-bool nb_container_insert(nb_container_t *container,
-			  const void *const val);
+			      void* (*clone)(const void*));
+bool nb_container_insert(nb_container_t *container, const void *val);
 void nb_container_insert_array(nb_container_t *container, 
 				uint32_t N, void **array);
 void* nb_container_get_first(const nb_container_t *const container);
@@ -61,9 +59,8 @@ uint32_t nb_container_get_length
 			(const nb_container_t *const container);
 bool nb_container_is_empty(const nb_container_t *const container);
 bool nb_container_is_not_empty(const nb_container_t *const container);
-int8_t nb_container_get_id(const nb_container_t *const container);
+nb_container_type nb_container_get_type(const nb_container_t *const container);
 void* nb_container_do(nb_container_t *container, const char* func,
 		       void *data, int8_t *status);
-void* nb_container_get_dst(const nb_container_t *const container);
 
 #endif

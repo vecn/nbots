@@ -10,16 +10,22 @@ if(${CMAKE_COMPILER_IS_GNUCXX})
 endif(${CMAKE_COMPILER_IS_GNUCXX}) 
 
 message("Configuring NB Container Bot")
-add_library(list_container SHARED
-  ${CMAKE_CURRENT_SOURCE_DIR}/list/list_node.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/list/list_dst.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/list/list_iterator.c
+add_library(queue_container SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/queue/queue_node.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/queue/queue_dst.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/queue/queue_iterator.c
 )
 
-add_library(avl_container SHARED
-  ${CMAKE_CURRENT_SOURCE_DIR}/avl/avl_tree.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/avl/avl_dst.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/avl/avl_iterator.c
+add_library(stack_container SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/stack/stack_node.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/stack/stack_dst.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/stack/stack_iterator.c
+)
+
+add_library(sorted_container SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/avl_tree.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/sorted_dst.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/sorted/sorted_iterator.c
 )
 
 add_library(heap_container SHARED
@@ -28,9 +34,9 @@ add_library(heap_container SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/heap/heap_iterator.c
 )
 
-add_library(htable_container SHARED
-  ${CMAKE_CURRENT_SOURCE_DIR}/htable/htable_dst.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/htable/htable_iterator.c
+add_library(hash_container SHARED
+  ${CMAKE_CURRENT_SOURCE_DIR}/hash/hash_dst.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/hash/hash_iterator.c
 )
 
 set(container_bot
@@ -41,9 +47,10 @@ set(container_bot
 
 add_library(nb_container_bot  SHARED ${container_bot})
 target_link_libraries(nb_container_bot LINK_INTERFACE_LIBRARIES
-  list_container
-  avl_container
+  queue_container
+  stack_container
+  sorted_container
   heap_container
-  htable_container
+  hash_container
 )
   

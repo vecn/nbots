@@ -1,5 +1,5 @@
 /******************************************************************************
- *   List iterator                                                           *
+ *   Queue iterator                                                           *
  *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
  *   Twitter: @victore_cardoso                                                *
  *   email: victorc@cimat.mx                                                  *
@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "list_node.h"
-#include "list_dst.h"
-#include "list_iterator.h"
+#include "queue_node.h"
+#include "queue_dst.h"
+#include "queue_iterator.h"
 
 typedef struct {
 	bool is_init;
@@ -18,22 +18,24 @@ typedef struct {
 	const node_t *start;
 } iter_t;
 
-inline void* list_iter_create(void)
+inline void* queue_iter_create(void)
 {
 	return calloc(1, sizeof(iter_t));
 }
 
-void list_iter_set_dst(void *iter_ptr, const void *const list_ptr)
+void queue_iter_set_dst(void *iter_ptr, const void *const queue_ptr)
 {
 	iter_t *iter = iter_ptr;
-	if (NULL != list_ptr)
-		iter->start = list_get_iterator_start(list_ptr);
-	else
+	if (NULL != queue_ptr) {
+		const queue_t* queue = queue_ptr;
+		iter->start = queue->end->next;
+	} else {
 		iter->start = NULL;
-	list_iter_restart(iter);
+	}
+	queue_iter_restart(iter);
 }
 
-void* list_iter_clone(const void *const iter_ptr)
+void* queue_iter_clone(const void *const iter_ptr)
 {
 	const iter_t *const restrict iter = iter_ptr;
 	iter_t *const restrict clone = calloc(1, sizeof(*clone));
@@ -43,19 +45,19 @@ void* list_iter_clone(const void *const iter_ptr)
 	return clone;
 }
 
-inline void list_iter_destroy(void *iter_ptr)
+inline void queue_iter_destroy(void *iter_ptr)
 {
 	free(iter_ptr);
 }
 
-inline void list_iter_restart(void* iter_ptr)
+inline void queue_iter_restart(void* iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	iter->node = (node_t*) iter->start;
 	iter->is_init = (NULL != iter->start);
 }
 
-const void* list_iter_get_next(void *iter_ptr)
+const void* queue_iter_get_next(void *iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	void *val = NULL;
@@ -67,7 +69,7 @@ const void* list_iter_get_next(void *iter_ptr)
 	return val;
 }
 
-inline bool list_iter_has_more(const void *const iter_ptr)
+inline bool queue_iter_has_more(const void *const iter_ptr)
 {
 	const iter_t *const restrict iter = iter_ptr;
 	return (iter->start != iter->node) || iter->is_init;
