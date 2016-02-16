@@ -25,7 +25,8 @@ typedef struct {
 	uint32_t length;
 } hash_trg_t;
 
-
+static inline int8_t compare_edge_size(const void *const edge1_ptr,
+				       const void *const edge2_ptr);
 static int8_t compare_trg_attr(const void *const trg1_ptr,
 			       const void *const trg2_ptr);
 static hash_trg_t* hash_trg_create(void);
@@ -168,7 +169,7 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	/* Allocate data structures to allocate encroached elements */
 	nb_container_t *restrict encroached_sgm =
 		nb_container_create(NB_SORTED);
-	nb_container_set_comparer(encroached_sgm, compare_edge);
+	nb_container_set_comparer(encroached_sgm, compare_edge_size);
 
 	nb_container_t *restrict big_trg = nb_container_create(NB_SORTED);
 	nb_container_set_comparer(big_trg, compare_trg_attr);
@@ -204,20 +205,51 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	hash_trg_destroy(poor_quality_trg);
 }
 
+static inline int8_t compare_edge_size(const void *const edge1_ptr,
+				       const void *const edge2_ptr)
+{
+	const msh_edge_t *const edge1 = edge1_ptr;
+	const msh_edge_t *const edge2 = edge2_ptr;
+	uint32_t a1 = (uint32_t)
+		(vcn_utils2D_get_dist2(edge1->v1->x, edge1->v2->x) * 1e6);
+	uint32_t a2 = (uint32_t)
+		(vcn_utils2D_get_dist2(edge2->v1->x, edge2->v2->x) * 1e6);
+	int8_t out;
+	if (a1 > a2) {
+		out = -1;
+	} else if (a1 < a2) {
+		out = 1;
+	} else {
+		if (edge1 < edge2)
+			out = -1;
+		else if (edge1 > edge2)
+			out = 1;
+		else
+			out = 0;
+	}
+	return out;
+}
+
 static inline int8_t compare_trg_attr(const void *const trg1_ptr,
 				      const void *const trg2_ptr)
 {
 	const msh_trg_t *const trg1 = trg1_ptr;
 	const msh_trg_t *const trg2 = trg2_ptr;
-	uint32_t  a1 = *(uint32_t*)(trg1->attr);
-	uint32_t  a2 = *(uint32_t*)(trg2->attr);
+	uint32_t a1 = *(uint32_t*)(trg1->attr);
+	uint32_t a2 = *(uint32_t*)(trg2->attr);
 	int8_t out;
-	if (a1 < a2)
+	if (a1 > a2) {
 		out = -1;
-	else if (a1 > a2)
+	} else if (a1 < a2) {
 		out = 1;
-	else
-		out = 0;
+	} else {
+		if (trg1 < trg2)
+			out = -1;
+		else if (trg1 > trg2)
+			out = 1;
+		else
+			out = 0;
+	}
 	return out;
 }
 
@@ -297,9 +329,15 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 					nb_container_delete_first(sgm_encroached_by_cc);
 				/* Insert segment in encroached list if the triangle is to big 
 				 * or if the split is permitted */
-				if (mtrg_is_too_big(mesh, trg, NULL))
-					nb_container_insert(encroached_sgm, sgm);
+				bool is_encroached;
+				if (mtrg_is_too_big(mesh, trg, NULL))		
+					is_encroached = true;
 				else if (split_is_permitted(sgm, d))
+					is_encroached = true;
+				else
+					is_encroached = false;
+
+				if (is_encroached)
 					nb_container_insert(encroached_sgm, sgm);
 			}
 			/* Process encroached segments */
@@ -361,7 +399,7 @@ static inline void hash_trg_insert(hash_trg_t *const restrict htrg,
   
 		/* Set circumradius to shortest edge ratio as attribute */
 		uint32_t* attr = malloc(sizeof(uint32_t));
-		attr[0] = (uint32_t)(cr2se_ratio * 1e6);
+		*attr = (uint32_t)(cr2se_ratio * 1e6);
 		trg->attr = attr;
 
 		bool is_inserted =
@@ -846,7 +884,7 @@ static inline void insert_big_trg
 			  double big_ratio)
 {
 	uint32_t *attr = malloc(sizeof(uint32_t));
-	*attr = (uint32_t) (1e2/big_ratio);
+	*attr = (uint32_t) (big_ratio * 1e6);
 	trg->attr = attr;
 	nb_container_insert(big_trg, trg);
 }

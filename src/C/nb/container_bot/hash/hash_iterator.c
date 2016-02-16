@@ -45,12 +45,9 @@ void hash_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->row_iter = queue_iter_clone(src_iter->row_iter);
 }
 
-void hash_iter_clear(void *iter_ptr)
+void hash_iter_finish(void *iter_ptr)
 {
-	iter_t *iter = iter_ptr;
-	if (NULL != iter->row_iter)
-		queue_iter_destroy(iter->row_iter);
-	memset(iter, 0, sizeof(iter_t));
+	hash_iter_clear(iter_ptr);
 }
 
 void* hash_iter_create(void)
@@ -75,8 +72,16 @@ void* hash_iter_clone(const void *iter_ptr)
 
 void hash_iter_destroy(void *iter_ptr)
 {
-	hash_iter_clear(iter_ptr);
+	hash_iter_finish(iter_ptr);
 	free(iter_ptr);
+}
+
+void hash_iter_clear(void *iter_ptr)
+{
+	iter_t *iter = iter_ptr;
+	if (NULL != iter->row_iter)
+		queue_iter_destroy(iter->row_iter);
+	memset(iter, 0, sizeof(iter_t));
 }
 
 void hash_iter_set_dst(void *iter_ptr, const void *hash_ptr)

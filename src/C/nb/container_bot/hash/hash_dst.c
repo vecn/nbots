@@ -70,8 +70,6 @@ void hash_copy(void *hash_ptr, const void *src_hash_ptr,
 	hash->max_load_factor = src_hash->max_load_factor;
 	hash->size = src_hash->size;
 	hash->length = src_hash->length;
-	if (NULL != hash->rows)
-		free(hash->rows);
 	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
 	clone_lists(hash, src_hash, clone);
 }
@@ -85,12 +83,15 @@ static void clone_lists(hash_t *hash, const hash_t *const src_hash,
 	}
 }
 
-void hash_clear(void* hash_ptr,
-		void (*destroy)(void*))
+void hash_finish(void *hash_ptr,
+		 void (*destroy)(void*))
 {
+	hash_clear(hash_ptr, destroy);
 	hash_t* hash = hash_ptr;
-	hash->length = 0;
-	clear_rows(hash, destroy);
+	if (NULL != hash->rows) {
+		free(hash->rows);
+		hash->rows = NULL;
+	}	
 }
 
 static void clear_rows(hash_t *hash,
@@ -102,17 +103,6 @@ static void clear_rows(hash_t *hash,
 			hash->rows[i] = NULL;
 		}
 	}
-}
-
-void hash_finish(void *hash_ptr,
-		 void (*destroy)(void*))
-{
-	hash_t* hash = hash_ptr;
-	if (NULL != hash->rows) {
-		clear_rows(hash, destroy);
-		free(hash->rows);
-		hash->rows = NULL;
-	}	
 }
 
 inline void* hash_create(void)
@@ -142,6 +132,15 @@ void hash_destroy(void* hash_ptr,
 	hash_t *hash = hash_ptr;
 	hash_finish(hash, destroy);
 	free(hash);
+}
+
+void hash_clear(void* hash_ptr,
+		void (*destroy)(void*))
+{
+	hash_t* hash = hash_ptr;
+	hash->length = 0;
+	if (NULL != hash->rows)
+		clear_rows(hash, destroy);
 }
 
 void hash_merge(void *hash1_ptr, void *hash2_ptr,

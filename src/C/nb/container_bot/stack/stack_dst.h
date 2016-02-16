@@ -8,13 +8,15 @@ uint16_t stack_get_memsize(void);
 void stack_init(void *stack_ptr);
 void stack_copy(void *stack_ptr, const void *src_stack_ptr,
 		void* (*clone)(const void*));
-void stack_clear(void *stack_ptr,
-		 void (*destroy)(void*));
+void stack_finish(void *stack_ptr,
+		  void (*destroy)(void*));
 void* stack_create(void);
 void* stack_clone(const void *const stack_ptr,
 		 void* (*clone)(const void*));
 void stack_destroy(void *stack_ptr,
 		  void (*destroy)(void*));
+void stack_clear(void *stack_ptr,
+		 void (*destroy)(void*));
 void stack_merge(void *list1_ptr, void *list2_ptr,
 		 uint32_t (*key)(const void*),
 		 int8_t (*compare)(const void*, const void*));

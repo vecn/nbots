@@ -8,13 +8,15 @@ uint16_t heap_get_memsize(void);
 void heap_init(void *heap_ptr);
 void heap_copy(void *heap_ptr, const void *src_heap_ptr,
 	       void* (*clone)(const void*));
-void heap_clear(void *heap_ptr,
-		void (*destroy)(void*));
+void heap_finish(void *heap_ptr,
+		 void (*destroy)(void*));
 void* heap_create(void);
 void* heap_clone(const void *const heap_ptr,
 		 void* (*clone)(const void*));
 void heap_destroy(void *heap_ptr,
 		  void (*destroy)(void*));
+void heap_clear(void *heap_ptr,
+		void (*destroy)(void*));
 void heap_merge(void *heap1_ptr, void *heap2_ptr,
 		uint32_t (*key)(const void*),
 		int8_t (*compare)(const void*, const void*));

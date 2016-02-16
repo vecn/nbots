@@ -13,9 +13,10 @@ void sorted_set_handlers(nb_container_t *container)
 {
 	container->b.init = avl_init;
 	container->b.copy = avl_copy;
-	container->b.clear = avl_clear;
+	container->b.finish = avl_finish;
 	container->b.clone = avl_clone;
 	container->b.destroy = avl_destroy;
+	container->b.clear = avl_clear;
 	container->b.merge = avl_merge;
 	container->b.insert = avl_insert;
 	container->b.get_first = avl_get_first;
@@ -31,10 +32,11 @@ void sorted_iterator_set_handlers(nb_iterator_t *iter)
 {
 	iter->b.init = avl_iter_init;
 	iter->b.copy = avl_iter_copy;
-	iter->b.clear = avl_iter_clear;
+	iter->b.finish = avl_iter_finish;
 	iter->b.create = avl_iter_create;
 	iter->b.clone = avl_iter_clone;
 	iter->b.destroy = avl_iter_destroy;
+	iter->b.clear = avl_iter_clear;
 	iter->b.restart = avl_iter_restart;
 	iter->b.get_next = avl_iter_get_next;
 	iter->b.has_more = avl_iter_has_more;

@@ -13,9 +13,10 @@ void queue_set_handlers(nb_container_t *container)
 {
 	container->b.init = queue_init;
 	container->b.copy = queue_copy;
-	container->b.clear = queue_clear;
+	container->b.finish = queue_finish;
 	container->b.clone = queue_clone;
 	container->b.destroy = queue_destroy;
+	container->b.clear = queue_clear;
 	container->b.merge = queue_merge;
 	container->b.insert = queue_insert;
 	container->b.get_first = queue_get_first;
@@ -31,10 +32,11 @@ void queue_iterator_set_handlers(nb_iterator_t *iter)
 {
 	iter->b.init = queue_iter_init;
 	iter->b.copy = queue_iter_copy;
-	iter->b.clear = queue_iter_clear;
+	iter->b.finish = queue_iter_finish;
 	iter->b.create = queue_iter_create;
 	iter->b.clone = queue_iter_clone;
 	iter->b.destroy = queue_iter_destroy;
+	iter->b.clear = queue_iter_clear;
 	iter->b.restart = queue_iter_restart;
 	iter->b.get_next = queue_iter_get_next;
 	iter->b.has_more = queue_iter_has_more;

@@ -13,9 +13,10 @@ void heap_set_handlers(nb_container_t *container)
 {
 	container->b.init = heap_init;
 	container->b.copy = heap_copy;
-	container->b.clear = heap_clear;
+	container->b.finish = heap_finish;
 	container->b.clone = heap_clone;
 	container->b.destroy = heap_destroy;
+	container->b.clear = heap_clear;
 	container->b.merge = heap_merge;
 	container->b.insert = heap_insert;
 	container->b.get_first = heap_get_first;
@@ -31,10 +32,11 @@ void heap_iterator_set_handlers(nb_iterator_t *iter)
 {
 	iter->b.init = heap_iter_init;
 	iter->b.copy = heap_iter_copy;
-	iter->b.clear = heap_iter_clear;
+	iter->b.finish = heap_iter_finish;
 	iter->b.create = heap_iter_create;
 	iter->b.clone = heap_iter_clone;
 	iter->b.destroy = heap_iter_destroy;
+	iter->b.clear = heap_iter_clear;
 	iter->b.restart = heap_iter_restart;
 	iter->b.get_next = heap_iter_get_next;
 	iter->b.has_more = heap_iter_has_more;

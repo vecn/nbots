@@ -36,10 +36,13 @@ void avl_copy(void *avl_ptr, const void *src_avl_ptr,
 {
 	avl_t *avl = avl_ptr;
 	const avl_t *src_avl = src_avl_ptr;
-	if (is_not_empty(src_avl_ptr)) {
-		avl->length = src_avl->length;
+	
+	avl->length = src_avl->length;
+	
+	if (is_not_empty(src_avl_ptr))
 		avl->root = tree_clone(src_avl->root, clone);
-	}
+	else
+		avl->root = NULL;
 }
 
 static inline bool is_not_empty(const avl_t *const restrict avl)
@@ -47,18 +50,13 @@ static inline bool is_not_empty(const avl_t *const restrict avl)
 	return (NULL != avl->root);
 }
 
-void avl_clear(void *avl_ptr,
-	       void (*destroy)(void*))
+inline void avl_finish(void *avl_ptr,
+		       void (*destroy)(void*))
 {
-	avl_t *avl = avl_ptr;
-	if (is_not_empty(avl)) {
-		tree_destroy_recursively(avl->root, destroy);
-		avl->root = NULL;
-		avl->length = 0;
-	}	
+	avl_clear(avl_ptr, destroy);
 }
 
-void* avl_create(void)
+inline void* avl_create(void)
 {
 	void *avl = malloc_avl();
 	avl_init(avl);
@@ -75,16 +73,26 @@ void* avl_clone(const void *const avl_ptr,
 		void* (*clone)(const void*))
 {
 	void *avl = malloc_avl();
-	avl_init(avl);
 	avl_copy(avl, avl_ptr, clone);
 	return avl;	
 }
 
-void avl_destroy(void *avl_ptr,
-		 void (*destroy)(void*))
+inline void avl_destroy(void *avl_ptr,
+			void (*destroy)(void*))
 {
-	avl_clear(avl_ptr, destroy);
+	avl_finish(avl_ptr, destroy);
 	free(avl_ptr);
+}
+
+void avl_clear(void *avl_ptr,
+	       void (*destroy)(void*))
+{
+	avl_t *avl = avl_ptr;
+	if (is_not_empty(avl)) {
+		tree_destroy_recursively(avl->root, destroy);
+		avl->root = NULL;
+		avl->length = 0;
+	}	
 }
 
 void avl_merge(void *avl1_ptr, void *avl2_ptr,

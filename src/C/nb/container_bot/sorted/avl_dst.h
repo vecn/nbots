@@ -8,13 +8,15 @@ uint16_t avl_get_memsize(void);
 void avl_init(void *avl_ptr);
 void avl_copy(void *avl_ptr, const void *src_avl_ptr,
 	      void* (*clone)(const void*));
-void avl_clear(void *avl_ptr,
-	       void (*destroy)(void*));
+void avl_finish(void *avl_ptr,
+		void (*destroy)(void*));
 void* avl_create(void);
 void* avl_clone(const void *const avl_ptr,
 		void* (*clone)(const void*));
 void avl_destroy(void *avl_ptr,
 		 void (*destroy)(void*));
+void avl_clear(void *avl_ptr,
+	       void (*destroy)(void*));
 void avl_merge(void *avl1_ptr, void *avl2_ptr,
 	       uint32_t (*key)(const void*),
 	       int8_t (*compare)(const void*, const void*));

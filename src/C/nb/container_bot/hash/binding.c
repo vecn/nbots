@@ -13,9 +13,10 @@ void hash_set_handlers(nb_container_t *container)
 {
 	container->b.init = hash_init;
 	container->b.copy = hash_copy;
-	container->b.clear = hash_clear;
+	container->b.finish = hash_finish;
 	container->b.clone = hash_clone;
 	container->b.destroy = hash_destroy;
+	container->b.clear = hash_clear;
 	container->b.merge = hash_merge;
 	container->b.insert = hash_insert;
 	container->b.get_first = hash_get_first;
@@ -31,10 +32,11 @@ void hash_iterator_set_handlers(nb_iterator_t *iter)
 {
 	iter->b.init = hash_iter_init;
 	iter->b.copy = hash_iter_copy;
-	iter->b.clear = hash_iter_clear;
+	iter->b.finish = hash_iter_finish;
 	iter->b.create = hash_iter_create;
 	iter->b.clone = hash_iter_clone;
 	iter->b.destroy = hash_iter_destroy;
+	iter->b.clear = hash_iter_clear;
 	iter->b.restart = hash_iter_restart;
 	iter->b.get_next = hash_iter_get_next;
 	iter->b.has_more = hash_iter_has_more;

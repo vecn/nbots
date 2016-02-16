@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <alloca.h>
 
 #include "queue/binding.h"
 #include "stack/binding.h"
@@ -23,7 +22,7 @@
 #include "container_struct.h"
 
 static uint16_t dst_get_memsize(nb_container_type type);
-static void init_dst_functions(nb_container_t *container);
+static void init_val_operators(nb_container_t *container);
 static uint32_t key_ptr(const void *ptr);
 static void destroy_null(void* ptr);
 static int8_t compare_ptr(const void *p1, const void *p2);
@@ -32,8 +31,6 @@ static void set_functions(nb_container_t *container,
 			  nb_container_type type);
 static void copy_val_operators(nb_container_t *dest,
 			       const nb_container_t *const src);
-static void copy_different_type(nb_container_t *dest,
-				const nb_container_t *const src);
 static void *malloc_container(nb_container_type type);
 
 static bool is_the_same_dst(const nb_container_t *const c1,
@@ -77,19 +74,19 @@ void nb_container_init(void *container_ptr, nb_container_type type){
 	nb_container_t *container = container_ptr;
 	container->type = type;
 	if (type >= NB_NULL) {
-		container->type = NB_NULL;
+		container->type = NB_QUEUE;
 	}
 	uint16_t size = sizeof(nb_container_t);
 	char *memblock = container_ptr;
 	container->cnt = memblock + size;
 
-	init_dst_functions(container);
+	init_val_operators(container);
 	set_functions(container, type);
 	container->b.init(container->cnt);
 }
 
 
-static void init_dst_functions(nb_container_t *container)
+static void init_val_operators(nb_container_t *container)
 {
 	container->op.key = key_ptr;
 	container->op.destroy = destroy_null;
@@ -153,12 +150,17 @@ void nb_container_copy(void *container_ptr, const void *src_container_ptr)
 {
 	nb_container_t *container = container_ptr;
 	const nb_container_t *src_container = src_container_ptr;
+	
+	container->type = src_container->type;
+
+	uint16_t size = sizeof(nb_container_t);
+	char *memblock = container_ptr;
+	container->cnt = memblock + size;
+
 	copy_val_operators(container, src_container);
-	if (container->type == src_container->type)
-		container->b.copy(container->cnt, src_container->cnt,
-				  src_container->op.clone);
-	else
-		copy_different_type(container, src_container);
+	set_functions(container, src_container->type);
+	container->b.copy(container->cnt, src_container->cnt,
+			  src_container->op.clone);
 }
 
 static void copy_val_operators(nb_container_t *dest,
@@ -170,25 +172,10 @@ static void copy_val_operators(nb_container_t *dest,
 	dest->op.clone = src->op.clone;
 }
 
-static void copy_different_type(nb_container_t *dest,
-				const nb_container_t *const src)
-{
-	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
-	nb_iterator_init(iter);
-	nb_iterator_set_container(iter, src);
-	while (nb_iterator_has_more(iter)) {
-		const void *val = nb_iterator_get_next(iter);
-		void *cloned_val = src->op.clone(val);
-		nb_container_insert(dest, cloned_val);
-	}
-	nb_iterator_clear(iter);
-}
-
-inline void nb_container_clear(void* container_ptr)
+inline void nb_container_finish(void* container_ptr)
 {
 	nb_container_t *container = container_ptr;
-	container->b.clear(container->cnt, container->op.destroy);
+	container->b.finish(container->cnt, container->op.destroy);
 }
 
 inline void* nb_container_create(nb_container_type type)
@@ -208,15 +195,20 @@ inline void* nb_container_clone(const void *container_ptr)
 {
 	nb_container_type type = nb_container_get_type(container_ptr);
 	void *container = malloc_container(type);
-	nb_container_init(container, type);
 	nb_container_copy(container, container_ptr);
 	return container;
 }
 
 inline void nb_container_destroy(void *container_ptr)
 {
-	nb_container_clear(container_ptr);
+	nb_container_finish(container_ptr);
 	free(container_ptr);
+}
+
+inline void nb_container_clear(void* container_ptr)
+{
+	nb_container_t *container = container_ptr;
+	container->b.clear(container->cnt, container->op.destroy);
 }
 
 inline void nb_container_merge(nb_container_t *main, 

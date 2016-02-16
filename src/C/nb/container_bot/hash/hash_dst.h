@@ -10,13 +10,15 @@ uint16_t hash_get_memsize(void);
 void hash_init(void *hash_ptr);
 void hash_copy(void *hash_ptr, const void *src_hash_ptr,
 	       void* (*clone)(const void *const));
-void hash_clear(void *hash_ptr,
-		void (*destroy)(void*));
+void hash_finish(void *hash_ptr,
+		 void (*destroy)(void*));
 void* hash_create(void);
 void* hash_clone(const void *const hash_ptr,
 		 void* (*clone)(const void *const));
 void hash_destroy(void *hash_ptr,
 		  void (*destroy)(void*));
+void hash_clear(void *hash_ptr,
+		void (*destroy)(void*));
 void hash_merge(void *hash1_ptr, void *hash2_ptr,
 		uint32_t (*key)(const void*),
 	       int8_t (*compare)(const void*, const void*));

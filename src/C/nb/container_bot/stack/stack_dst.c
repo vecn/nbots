@@ -42,10 +42,11 @@ void stack_copy(void *stack_ptr, const void *src_stack_ptr,
 	stack_t *stack = stack_ptr;
 	const stack_t *src_stack = src_stack_ptr;
 	
+	stack->length = src_stack->length;
+
 	if (is_not_empty(src_stack)) {
-		stack->length = src_stack->length;
 		node_t *end = node_clone(src_stack->end, clone);
-		stack->end = end; 
+		stack->end = end;
 
 		node_t *iter = get_first(src_stack);
 		do {
@@ -55,6 +56,8 @@ void stack_copy(void *stack_ptr, const void *src_stack_ptr,
 			iter = iter->next;
 		} while (iter != src_stack->end);
 		end->next = stack->end;
+	} else {
+		stack->end = NULL;
 	}
 }
 
@@ -69,21 +72,10 @@ static inline node_t* get_first(const stack_t *const restrict stack)
 	return stack->end->next;
 }
 
-void stack_clear(void *stack_ptr,
-		 void (*destroy)(void*))
+inline void stack_finish(void *stack_ptr,
+			 void (*destroy)(void*))
 {
-	stack_t *stack = stack_ptr;
-	if (is_not_empty(stack)) {
-		node_t* iter = get_first(stack);
-		stack->end->next = NULL;
-		while (NULL != iter) {
-			node_t* to_destroy = iter;
-			iter = iter->next;
-			node_destroy(to_destroy, destroy);
-		}
-		stack->length = 0;
-		stack->end = NULL;
-	}
+	stack_clear(stack_ptr, destroy);
 }
 
 inline void* stack_create(void)
@@ -103,7 +95,6 @@ inline void* stack_clone(const void *const stack_ptr,
 			 void* (*clone)(const void*))
 {
 	void *stack = malloc_stack();
-	stack_init(stack);
 	stack_copy(stack, stack_ptr, clone);
 	return stack;
 }
@@ -111,8 +102,25 @@ inline void* stack_clone(const void *const stack_ptr,
 inline void stack_destroy(void *stack_ptr,
 		  void (*destroy)(void*))
 {
-	stack_clear(stack_ptr, destroy);
+	stack_finish(stack_ptr, destroy);
 	free(stack_ptr);
+}
+
+void stack_clear(void *stack_ptr,
+		 void (*destroy)(void*))
+{
+	stack_t *stack = stack_ptr;
+	if (is_not_empty(stack)) {
+		node_t* iter = get_first(stack);
+		stack->end->next = NULL;
+		while (NULL != iter) {
+			node_t* to_destroy = iter;
+			iter = iter->next;
+			node_destroy(to_destroy, destroy);
+		}
+		stack->length = 0;
+		stack->end = NULL;
+	}
 }
 
 void stack_merge(void *stack1_ptr, void *stack2_ptr,

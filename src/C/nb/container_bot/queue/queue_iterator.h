@@ -7,10 +7,11 @@
 uint16_t queue_iter_get_memsize(void);
 void queue_iter_init(void *iter_ptr);
 void queue_iter_copy(void *iter_ptr, const void *src_iter_ptr);
-void queue_iter_clear(void *iter_ptr);
+void queue_iter_finish(void *iter_ptr);
 void* queue_iter_create(void);
 void* queue_iter_clone(const void *const iter_ptr);
 void queue_iter_destroy(void *iter_ptr);
+void queue_iter_clear(void *iter_ptr);
 
 void queue_iter_set_dst(void *iter_ptr, const void *const queue_ptr);
 void queue_iter_restart(void *iter_ptr);

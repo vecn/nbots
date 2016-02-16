@@ -41,9 +41,10 @@ void queue_copy(void *queue_ptr, const void *src_queue_ptr,
 {
 	queue_t *queue = queue_ptr;
 	const queue_t *src_queue = src_queue_ptr;
-	
+
+	queue->length = src_queue->length;
+
 	if (is_not_empty(src_queue)) {
-		queue->length = src_queue->length;
 		node_t *end = node_clone(src_queue->end, clone);
 		queue->end = end; 
 
@@ -55,6 +56,8 @@ void queue_copy(void *queue_ptr, const void *src_queue_ptr,
 			iter = iter->next;
 		} while (iter != src_queue->end);
 		end->next = queue->end;
+	} else {
+		queue->end = NULL;
 	}
 }
 
@@ -69,21 +72,10 @@ static inline node_t* get_first(const queue_t *const restrict queue)
 	return queue->end->next;
 }
 
-void queue_clear(void *queue_ptr,
-		 void (*destroy)(void*))
+inline void queue_finish(void *queue_ptr,
+			 void (*destroy)(void*))
 {
-	queue_t *queue = queue_ptr;
-	if (is_not_empty(queue)) {
-		node_t* iter = get_first(queue);
-		queue->end->next = NULL;
-		while (NULL != iter) {
-			node_t* to_destroy = iter;
-			iter = iter->next;
-			node_destroy(to_destroy, destroy);
-		}
-		queue->length = 0;
-		queue->end = NULL;
-	}
+	queue_clear(queue_ptr, destroy);
 }
 
 inline void* queue_create(void)
@@ -103,7 +95,6 @@ inline void* queue_clone(const void *const queue_ptr,
 			 void* (*clone)(const void*))
 {
 	void *queue = malloc_queue();
-	queue_init(queue);
 	queue_copy(queue, queue_ptr, clone);
 	return queue;
 }
@@ -111,8 +102,25 @@ inline void* queue_clone(const void *const queue_ptr,
 inline void queue_destroy(void *queue_ptr,
 		  void (*destroy)(void*))
 {
-	queue_clear(queue_ptr, destroy);
+	queue_finish(queue_ptr, destroy);
 	free(queue_ptr);
+}
+
+void queue_clear(void *queue_ptr,
+		 void (*destroy)(void*))
+{
+	queue_t *queue = queue_ptr;
+	if (is_not_empty(queue)) {
+		node_t* iter = get_first(queue);
+		queue->end->next = NULL;
+		while (NULL != iter) {
+			node_t* to_destroy = iter;
+			iter = iter->next;
+			node_destroy(to_destroy, destroy);
+		}
+		queue->length = 0;
+		queue->end = NULL;
+	}
 }
 
 void queue_merge(void *queue1_ptr, void *queue2_ptr,

@@ -8,13 +8,15 @@ uint16_t queue_get_memsize(void);
 void queue_init(void *queue_ptr);
 void queue_copy(void *queue_ptr, const void *src_queue_ptr,
 		void* (*clone)(const void*));
-void queue_clear(void *queue_ptr,
-		 void (*destroy)(void*));
+void queue_finish(void *queue_ptr,
+		  void (*destroy)(void*));
 void* queue_create(void);
 void* queue_clone(const void *const queue_ptr,
 		 void* (*clone)(const void*));
 void queue_destroy(void *queue_ptr,
 		  void (*destroy)(void*));
+void queue_clear(void *queue_ptr,
+		 void (*destroy)(void*));
 void queue_merge(void *list1_ptr, void *list2_ptr,
 		 uint32_t (*key)(const void*),
 	       int8_t (*compare)(const void*, const void*));

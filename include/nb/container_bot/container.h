@@ -26,10 +26,11 @@ typedef enum {
 uint16_t nb_container_get_memsize(nb_container_type type);
 void nb_container_init(void *container_ptr, nb_container_type type);
 void nb_container_copy(void *container_ptr, const void *src_container_ptr);
-void nb_container_clear(void* container_ptr);
+void nb_container_finish(void* container_ptr);
 void* nb_container_create(nb_container_type type);
 void* nb_container_clone(const void *container_ptr);
 void nb_container_destroy(void *container_ptr);
+void nb_container_clear(void* container_ptr);
 
 void nb_container_merge(nb_container_t *main,
 			 nb_container_t *to_clear);

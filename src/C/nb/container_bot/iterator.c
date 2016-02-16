@@ -26,10 +26,11 @@
 static uint16_t dst_iter_get_max_memsize(void);
 static void null_init(void *iter);
 static void null_copy(void *iter, const void *src_iter);
-static void null_clear(void *iter);
+static void null_finish(void *iter);
 static void* null_create(void);
 static void* null_clone(const void *iter);
 static void null_destroy(void *iter);
+static void null_clear(void *iter);
 static void null_restart(void *iter);
 static const void* null_get_next(void *iter);
 static bool null_has_more(const void *const iter);
@@ -58,10 +59,11 @@ void nb_iterator_init(void *iter_ptr)
 	nb_iterator_t *iter = iter_ptr;
 	iter->b.init = null_init;
 	iter->b.copy = null_copy;
-	iter->b.clear = null_clear;
+	iter->b.finish = null_finish;
 	iter->b.create = null_create;
 	iter->b.clone = null_clone;
 	iter->b.destroy = null_destroy;
+	iter->b.clear = null_clear;
 	iter->b.restart = null_restart;
 	iter->b.get_next = null_get_next;
 	iter->b.has_more = null_has_more;
@@ -81,7 +83,7 @@ static void null_copy(void *iter, const void *src_iter)
 	; /* Null statement */
 }
 
-static void null_clear(void *iter)
+static void null_finish(void *iter)
 {
 	; /* Null statement */
 }
@@ -91,27 +93,32 @@ static void* null_create(void)
 	return NULL;
 }
 
-static inline void* null_clone(const void *const iter)
+static void* null_clone(const void *const iter)
 {
 	return NULL;
 }
 
-static inline void null_destroy(void *iter)
+static void null_destroy(void *iter)
 {
 	; /* Null statement */
 }
 
-static inline void null_restart(void *iter)
+static void null_clear(void *iter)
+{
+	; /* Null statement */
+}
+
+static void null_restart(void *iter)
 {
 	; /*  Null statement */
 }
 
-static inline const void* null_get_next(void *iter)
+static const void* null_get_next(void *iter)
 {
 	return NULL;
 }
 
-static inline bool null_has_more(const void *const iter)
+static bool null_has_more(const void *const iter)
 {
 	return false;
 }
@@ -126,6 +133,10 @@ void nb_iterator_copy(void *iter_ptr, const void *src_iter_ptr)
 	nb_iterator_t *iter = iter_ptr;
 	const nb_iterator_t *src_iter = src_iter_ptr;
 	copy_handlers(iter, src_iter);
+
+	char *memblock = iter_ptr;
+	iter->internal = memblock + sizeof(nb_iterator_t);
+
 	iter->b.copy(iter->internal, src_iter->internal);
 }
 
@@ -133,20 +144,22 @@ static void copy_handlers(nb_iterator_t *iter, const nb_iterator_t *src_iter)
 {
 	iter->b.init = src_iter->b.init;
 	iter->b.copy = src_iter->b.copy;
-	iter->b.clear = src_iter->b.clear;
+	iter->b.finish = src_iter->b.finish;
 	iter->b.create = src_iter->b.create;
 	iter->b.clone = src_iter->b.clone;
 	iter->b.destroy = src_iter->b.destroy;
+	iter->b.clear = src_iter->b.clear;
 	iter->b.restart = src_iter->b.restart;
 	iter->b.get_next = src_iter->b.get_next;
 	iter->b.has_more = src_iter->b.has_more;
+	iter->b.set_dst = src_iter->b.set_dst;
 }
 
-inline void nb_iterator_clear(void* iter_ptr)
+inline void nb_iterator_finish(void* iter_ptr)
 {
 	nb_iterator_t *iter = iter_ptr;
 	if (NULL != iter->internal)
-		iter->b.clear(iter->internal);
+		iter->b.finish(iter->internal);
 }
 
 inline void* nb_iterator_create(void)
@@ -165,18 +178,22 @@ static inline void* malloc_iterator(void)
 inline void* nb_iterator_clone(const void *iter_ptr)
 {
 	void *iterator = malloc_iterator();
-	nb_iterator_init(iterator);
 	nb_iterator_copy(iterator, iter_ptr);
 	return iterator;
 }
 
 inline void nb_iterator_destroy(void *iter_ptr)
 {
-	nb_iterator_clear(iter_ptr);
+	nb_iterator_finish(iter_ptr);
 	free(iter_ptr);
 }
 
-
+inline void nb_iterator_clear(void* iter_ptr)
+{
+	nb_iterator_t *iter = iter_ptr;
+	if (NULL != iter->internal)
+		iter->b.clear(iter->internal);
+}
 
 void nb_iterator_set_container(nb_iterator_t *iter,
 				const nb_container_t *const container)

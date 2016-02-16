@@ -33,24 +33,21 @@ void heap_init(void *heap_ptr)
 void heap_copy(void *heap_ptr, const void *src_heap_ptr,
 	       void* (*clone)(const void*))
 {
+	heap_t *heap = heap_ptr;
 	const heap_t *src_heap = src_heap_ptr;
-	if (is_not_empty(src_heap)) {
-		heap_t *heap = heap_ptr;
+
+	heap->length = src_heap->length;
+
+	if (is_not_empty(src_heap))
 		heap->root = htree_clone(src_heap->root, clone);
-		heap->length = src_heap->length;
-	}
+	else
+		heap->root = NULL;
 }
 
-
-void heap_clear(void *heap_ptr,
-		void (*destroy)(void*))
+inline void heap_finish(void *heap_ptr,
+			void (*destroy)(void*))
 {
-	heap_t *heap = heap_ptr;
-	if (is_not_empty(heap)) {
-		htree_destroy_recursively(heap->root, destroy);
-		heap->root = NULL;
-		heap->length = 0;
-	}
+	heap_clear(heap_ptr, destroy);
 }
 
 void* heap_create(void)
@@ -70,7 +67,6 @@ void* heap_clone(const void *const heap_ptr,
 		 void* (*clone)(const void*))
 {
 	void *heap = malloc_heap();
-	heap_init(heap);
 	heap_copy(heap, heap_ptr, clone);
 	return heap;
 }
@@ -78,10 +74,20 @@ void* heap_clone(const void *const heap_ptr,
 inline void heap_destroy(void *heap_ptr,
 			 void (*destroy)(void*))
 {
-	heap_clear(heap_ptr, destroy);
+	heap_finish(heap_ptr, destroy);
 	free(heap_ptr);
 }
 
+void heap_clear(void *heap_ptr,
+		void (*destroy)(void*))
+{
+	heap_t *heap = heap_ptr;
+	if (is_not_empty(heap)) {
+		htree_destroy_recursively(heap->root, destroy);
+		heap->root = NULL;
+		heap->length = 0;
+	}
+}
 
 void heap_merge(void *heap1_ptr, void *heap2_ptr,
 		uint32_t (*key)(const void *const),

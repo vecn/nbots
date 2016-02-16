@@ -17,13 +17,15 @@ typedef struct {
 	void (*init)(void*);
 	void (*copy)(void*, const void*,
 		     void* (*clone)(const void*));
-	void (*clear)(void*,
-		      void (*destroy)(void*));
+	void (*finish)(void*,
+		       void (*destroy)(void*));
 	void* (*create)(void);
 	void* (*clone)(const void *,
 		       void* (*clone)(const void*));
 	void (*destroy)(void*,
 			void (*destroy)(void*));
+	void (*clear)(void*,
+		      void (*destroy)(void*));
 	void (*merge)(void*, void*,
 		      uint32_t (*key)(const void*),
 		      int8_t (*compare)(const void*, const void*));

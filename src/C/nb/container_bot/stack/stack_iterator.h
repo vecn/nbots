@@ -7,10 +7,11 @@
 uint16_t stack_iter_get_memsize(void);
 void stack_iter_init(void *iter_ptr);
 void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr);
-void stack_iter_clear(void *iter_ptr);
+void stack_iter_finish(void *iter_ptr);
 void* stack_iter_create(void);
 void* stack_iter_clone(const void *const iter_ptr);
 void stack_iter_destroy(void *iter_ptr);
+void stack_iter_clear(void *iter_ptr);
 
 void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr);
 void stack_iter_restart(void *iter_ptr);

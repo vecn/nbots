@@ -47,9 +47,9 @@ void heap_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->current = src_iter->current;
 }
 
-void heap_iter_clear(void *iter_ptr)
+inline void heap_iter_finish(void *iter_ptr)
 {
-	memset(iter_ptr, 0, heap_iter_get_memsize());
+	heap_iter_clear(iter_ptr);
 }
 
 inline void* heap_iter_create(void)
@@ -74,8 +74,13 @@ inline void* heap_iter_clone(const void *const iter_ptr)
 
 inline void heap_iter_destroy(void *iter_ptr)
 {
-	heap_iter_clear(iter_ptr);
+	heap_iter_finish(iter_ptr);
 	free(iter_ptr);
+}
+
+inline void heap_iter_clear(void *iter_ptr)
+{
+	memset(iter_ptr, 0, heap_iter_get_memsize());
 }
  
 void heap_iter_set_dst(void *iter_ptr, const void *heap_ptr)

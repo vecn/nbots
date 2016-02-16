@@ -50,14 +50,14 @@ void avl_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 			malloc(iter->N_parent * sizeof(*(iter->parent)));
 		memcpy(iter->parent, src_iter->parent, 
 		       iter->N_parent * sizeof(*(iter->parent)));
+	} else {
+		iter->parent = NULL;
 	}
 }
 
-void avl_iter_clear(void *iter_ptr)
+inline void avl_iter_finish(void *iter_ptr)
 {
-	iter_t *iter = iter_ptr;
-	if (iter->N_parent > 0)
-       		free(iter->parent);
+	avl_iter_clear(iter_ptr);
 }
 
 inline void* avl_iter_create(void)
@@ -82,8 +82,15 @@ inline void* avl_iter_clone(const void *iter_ptr)
 
 inline void avl_iter_destroy(void *iter_ptr)
 {
-	avl_iter_clear(iter_ptr);
+	avl_iter_finish(iter_ptr);
 	free(iter_ptr);
+}
+
+inline void avl_iter_clear(void *iter_ptr)
+{
+	iter_t *iter = iter_ptr;
+	if (iter->N_parent > 0)
+       		free(iter->parent);
 }
 
 void avl_iter_set_dst(void *iter_ptr, const void *avl_ptr)

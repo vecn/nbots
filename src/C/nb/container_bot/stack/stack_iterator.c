@@ -39,9 +39,9 @@ void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->is_init = src_iter->is_init;
 }
 
-inline void stack_iter_clear(void *iter_ptr)
+inline void stack_iter_finish(void *iter_ptr)
 {
-	memset(iter_ptr, 0, stack_iter_get_memsize());
+	stack_iter_clear(iter_ptr);
 }
 
 inline void* stack_iter_create(void)
@@ -66,7 +66,13 @@ inline void* stack_iter_clone(const void *const iter_ptr)
 
 inline void stack_iter_destroy(void *iter_ptr)
 {
+	stack_iter_finish(iter_ptr);
 	free(iter_ptr);
+}
+
+inline void stack_iter_clear(void *iter_ptr)
+{
+	memset(iter_ptr, 0, stack_iter_get_memsize());
 }
 
 void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr)

@@ -18,10 +18,11 @@ typedef struct nb_iterator_s nb_iterator_t;
 uint16_t nb_iterator_get_memsize(void);
 void nb_iterator_init(void *iter_ptr);
 void nb_iterator_copy(void *iter_ptr, const void *src_iter_ptr);
-void nb_iterator_clear(void* iter_ptr);
+void nb_iterator_finish(void* iter_ptr);
 void* nb_iterator_create(void);
 void* nb_iterator_clone(const void *iter_ptr);
 void nb_iterator_destroy(void *iter_ptr);
+void nb_iterator_clear(void* iter_ptr);
 
 void nb_iterator_set_container(nb_iterator_t *iter,
 			       const nb_container_t *const container);

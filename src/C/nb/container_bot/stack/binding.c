@@ -13,9 +13,10 @@ void stack_set_handlers(nb_container_t *container)
 {
 	container->b.init = stack_init;
 	container->b.copy = stack_copy;
-	container->b.clear = stack_clear;
+	container->b.finish = stack_finish;
 	container->b.clone = stack_clone;
 	container->b.destroy = stack_destroy;
+	container->b.clear = stack_clear;
 	container->b.merge = stack_merge;
 	container->b.insert = stack_insert;
 	container->b.get_first = stack_get_first;
@@ -31,10 +32,11 @@ void stack_iterator_set_handlers(nb_iterator_t *iter)
 {
 	iter->b.init = stack_iter_init;
 	iter->b.copy = stack_iter_copy;
-	iter->b.clear = stack_iter_clear;
+	iter->b.finish = stack_iter_finish;
 	iter->b.create = stack_iter_create;
 	iter->b.clone = stack_iter_clone;
 	iter->b.destroy = stack_iter_destroy;
+	iter->b.clear = stack_iter_clear;
 	iter->b.restart = stack_iter_restart;
 	iter->b.get_next = stack_iter_get_next;
 	iter->b.has_more = stack_iter_has_more;
