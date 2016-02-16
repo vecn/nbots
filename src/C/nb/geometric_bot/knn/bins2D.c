@@ -26,8 +26,8 @@ typedef struct {
 static int get_bin_coord(double x, double bin_size);
 static double get_bin_cartesian_coord(int x, double bin_size);
 static uint32_t bin_hash_key(const void *const bin_ptr);
-static bool bin_are_equal(const void* restrict bin1_ptr,
-				 const void* restrict bin2_ptr);
+static int8_t bin_compare(const void* restrict bin1_ptr,
+			  const void* restrict bin2_ptr);
 static void bin_destroy(void *bin_ptr);
 static void null_destroy(void *data);
 static bool null_filter(const vcn_point2D_t *const p_ref,
@@ -134,12 +134,12 @@ static inline uint32_t bin_hash_key(const void *const bin_ptr)
 		 (((bin->y != 0)?(bin->x/bin->y):(13))*83492791));
 }
 
-static inline bool bin_are_equal(const void* restrict bin1_ptr,
+static inline int8_t bin_compare(const void* restrict bin1_ptr,
 				 const void* restrict bin2_ptr)
 {
 	const bin2D_t *const restrict bin1 = bin1_ptr;
 	const bin2D_t *const restrict bin2 = bin2_ptr;
-	return (bin1->x == bin2->x) && (bin1->y == bin2->y);
+	return (bin1->x == bin2->x) && (bin1->y == bin2->y) ? 0:1;
 }
 
 static inline void bin_destroy(void *bin_ptr)
@@ -155,7 +155,7 @@ vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
 	bins2D->size_of_bins = size_of_bins;
 	bins2D->bins = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(bins2D->bins, bin_hash_key);
-	nb_container_set_comparer(bins2D->bins, bin_are_equal);
+	nb_container_set_comparer(bins2D->bins, bin_compare);
 	nb_container_set_destroyer(bins2D->bins, bin_destroy);
 	bins2D->destroy = (void(*)(void*)) vcn_point2D_destroy;
 	bins2D->destroy_attr = null_destroy;
@@ -221,7 +221,7 @@ void vcn_bins2D_insert(vcn_bins2D_t *const restrict bins2D,
 		bin->x = key_bin.x;
 		bin->y = key_bin.y;
 		bin->points = nb_container_create(NB_QUEUE);
-		nb_container_set_comparer(bin->points, vcn_point2D_are_equal);
+		nb_container_set_comparer(bin->points, vcn_point2D_compare);
 		nb_container_insert(bins2D->bins, bin);
 	}
 	nb_container_insert(bin->points, point);

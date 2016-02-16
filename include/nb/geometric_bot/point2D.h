@@ -12,7 +12,7 @@ typedef struct vcn_point2D_s {
 
 vcn_point2D_t*  vcn_point2D_create(void);
 void vcn_point2D_destroy(vcn_point2D_t* point);
-bool vcn_point2D_are_equal(const void *const p1_ptr,
+int8_t vcn_point2D_compare(const void *const p1_ptr,
 			   const void *const p2_ptr);
 
 #endif

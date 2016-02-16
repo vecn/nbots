@@ -27,7 +27,7 @@ inline uint16_t stack_iter_get_memsize(void)
 
 inline void stack_iter_init(void *iter_ptr)
 {
-	memset(iter_ptr, 0, stack_get_iter_memsize());
+	memset(iter_ptr, 0, stack_iter_get_memsize());
 }
 
 void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr)
@@ -41,7 +41,7 @@ void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 
 inline void stack_iter_clear(void *iter_ptr)
 {
-	memset(iter_ptr, 0, stack_get_iter_memsize());
+	memset(iter_ptr, 0, stack_iter_get_memsize());
 }
 
 inline void* stack_iter_create(void)

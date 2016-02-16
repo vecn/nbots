@@ -132,11 +132,11 @@ void queue_merge(void *queue1_ptr, void *queue2_ptr,
 	}
 }
 
-inline bool queue_insert_first(void *stack_ptr, const void *val,
+inline bool queue_insert_first(void *queue_ptr, const void *val,
 			       uint32_t (*key)(const void*))
 {
-	stack_t *stack = stack_ptr;
-	insert_node_as_starting(stack, val);
+	queue_t *queue = queue_ptr;
+	insert_node_as_starting(queue, val);
 	return true;
 }
 

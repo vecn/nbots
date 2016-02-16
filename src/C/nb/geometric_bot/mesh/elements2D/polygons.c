@@ -37,7 +37,7 @@ static void voronoi_get_patched_circumcenter(double* v1,
 static nb_container_t* voronoi_get_boundary_segments_with_vertices
                                         (const vcn_mesh_t* const mesh);
 		
-static bool voronoi_vtx_are_equal(const void* const A,
+static int8_t voronoi_vtx_compare(const void* const A,
 				  const void *const B);
 
 static inline int compare_voronoi_sgm(const void *const sgmA, 
@@ -673,13 +673,13 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 }
 
 
-static bool voronoi_vtx_are_equal(const void *const A,
+static int8_t voronoi_vtx_compare(const void *const A,
 				  const void *const B)
 {
 	const double *const a = A;
 	const double *const b = B;
-	return (fabs(a[0] - b[0]) < NB_GEOMETRIC_TOL &&
-		fabs(a[1] - b[1]) < NB_GEOMETRIC_TOL);
+	return ((fabs(a[0] - b[0]) < NB_GEOMETRIC_TOL &&
+		 fabs(a[1] - b[1]) < NB_GEOMETRIC_TOL)) ? 1:0;
 }
 
 static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
@@ -729,7 +729,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
       
 			/* Get vertices to calculate center of mass */
 			nb_container_t* l_vtx = nb_container_create(NB_QUEUE);
-			nb_container_set_comparer(l_vtx, voronoi_vtx_are_equal);
+			nb_container_set_comparer(l_vtx, voronoi_vtx_compare);
 			nb_container_insert(l_vtx, vtx->x);
 			nb_container_t* list = (nb_container_t*)((void**)vtx->attr)[0];
 			nb_iterator_t* liter = nb_iterator_create();

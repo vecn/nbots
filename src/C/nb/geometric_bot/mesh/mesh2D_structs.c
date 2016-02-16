@@ -852,12 +852,13 @@ inline uint32_t hash_key_edge(const void *const edge_ptr)
 				       edge->v1->x[1]:17.17))*83492791));
 }
 
-inline bool are_equal_edge(const void *const edge1_ptr,
+inline int8_t compare_edge(const void *const edge1_ptr,
 			   const void *const edge2_ptr)
 {
 	const msh_edge_t *const edge1 = edge1_ptr;
 	const msh_edge_t *const edge2 = edge2_ptr;
-	return (edge1->v1 == edge2->v1) && (edge1->v2 == edge2->v2);
+	return ((edge1->v1 == edge2->v1) && (edge1->v2 == edge2->v2)) ?
+	  0:1;
 }
 
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,

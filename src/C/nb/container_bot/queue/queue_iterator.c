@@ -27,7 +27,7 @@ inline uint16_t queue_iter_get_memsize(void)
 
 inline void queue_iter_init(void *iter_ptr)
 {
-	memset(iter_ptr, 0, queue_get_iter_memsize());
+	memset(iter_ptr, 0, queue_iter_get_memsize());
 }
 
 void queue_iter_copy(void *iter_ptr, const void *src_iter_ptr)
@@ -41,7 +41,7 @@ void queue_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 
 inline void queue_iter_clear(void *iter_ptr)
 {
-	memset(iter_ptr, 0, queue_get_iter_memsize());
+	memset(iter_ptr, 0, queue_iter_get_memsize());
 }
 
 inline void* queue_iter_create(void)

@@ -71,7 +71,7 @@ vcn_mesh_t* vcn_mesh_create(void)
 
 	mesh->ht_edge = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(mesh->ht_edge, hash_key_edge);
-	nb_container_set_comparer(mesh->ht_edge, are_equal_edge);
+	nb_container_set_comparer(mesh->ht_edge, compare_edge);
 	nb_container_set_destroyer(mesh->ht_edge, free);
 
 	mesh->ht_trg = nb_container_create(NB_HASH);
@@ -696,7 +696,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	clone->ht_edge = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(clone->ht_edge, hash_key_edge);
 	nb_container_set_destroyer(clone->ht_edge, free);
-	nb_container_set_comparer(clone->ht_edge, are_equal_edge);
+	nb_container_set_comparer(clone->ht_edge, compare_edge);
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
 		const msh_edge_t *sgm = nb_iterator_get_next(sgm_iter);
