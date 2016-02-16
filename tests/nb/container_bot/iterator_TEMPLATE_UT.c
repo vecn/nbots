@@ -19,9 +19,9 @@
 #include "test_add.h"
 
 static bool check_create(void);
-static bool check_set_container(void);
 static bool check_clone(void);
 static bool check_destroy(void);
+static bool check_set_container(void);
 static bool check_restart(void);
 static bool check_get_next(void);
 static bool check_has_more(void);
@@ -41,12 +41,12 @@ void TEMPLATE_load_tests(void *tests_ptr)
 {
 	vcn_test_add(tests_ptr, check_create,
 		     "Check create()");
-	vcn_test_add(tests_ptr, check_set_container,
-		     "Check set_container()");
 	vcn_test_add(tests_ptr, check_clone,
 		     "Check clone()");
 	vcn_test_add(tests_ptr, check_destroy,
 		     "Check destroy()");
+	vcn_test_add(tests_ptr, check_set_container,
+		     "Check set_container()");
 	vcn_test_add(tests_ptr, check_restart,
 		     "Check restart()");
 	vcn_test_add(tests_ptr, check_get_next,
@@ -63,17 +63,6 @@ static bool check_create(void)
 	bool is_ok = (NULL != iter);
 	if (is_ok)
 		nb_iterator_destroy(iter);
-	return is_ok;
-}
-
-static bool check_set_container(void)
-{
-	nb_container_t *cnt = get_container(N_ITEMS);
-	nb_iterator_t *iter = nb_iterator_create();
-	nb_iterator_set_container(iter, cnt);
-	bool is_ok = nb_iterator_has_more(iter);
-	nb_iterator_destroy(iter);
-	nb_container_destroy(cnt);
 	return is_ok;
 }
 
@@ -95,6 +84,17 @@ static bool check_destroy(void)
 	nb_iterator_t *iter = nb_iterator_create();
 	nb_iterator_destroy(iter);
 	return true;
+}
+
+static bool check_set_container(void)
+{
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	bool is_ok = nb_iterator_has_more(iter);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
+	return is_ok;
 }
 
 static bool check_restart(void)

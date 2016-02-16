@@ -20,14 +20,14 @@
 
 static bool check_create(void);
 static bool check_clone(void);
+static bool check_destroy(void);
+static bool check_clear(void);
 static bool check_merge_with_QUEUE(void);
 static bool check_merge_with_STACK(void);
 static bool check_merge_with_SORTED(void);
 static bool check_merge_with_HEAP(void);
 static bool check_merge_with_HASH(void);
 static bool check_cast_to_array(void);
-static bool check_destroy(void);
-static bool check_clear(void);
 static bool check_copy_to_array(void);
 static bool check_set_key_generator(void);
 static bool check_set_destroyer(void);
@@ -68,6 +68,10 @@ void TEMPLATE_load_tests(void *tests_ptr)
 		     "Check create()");
 	vcn_test_add(tests_ptr, check_clone,
 		     "Check clone()");
+	vcn_test_add(tests_ptr, check_destroy,
+		     "Check destroy()");
+	vcn_test_add(tests_ptr, check_clear,
+		     "Check clear()");
 	vcn_test_add(tests_ptr, check_merge_with_QUEUE,
 		     "Check merge() with QUEUE");
 	vcn_test_add(tests_ptr, check_merge_with_STACK,
@@ -80,10 +84,6 @@ void TEMPLATE_load_tests(void *tests_ptr)
 		     "Check merge() with HASH");
 	vcn_test_add(tests_ptr, check_cast_to_array,
 		     "Check cast_to_array()");
-	vcn_test_add(tests_ptr, check_destroy,
-		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_clear,
-		     "Check clear()");
 	vcn_test_add(tests_ptr, check_copy_to_array,
 		     "Check copy_to_array()");
 	vcn_test_add(tests_ptr, check_set_key_generator,
@@ -145,6 +145,24 @@ static bool check_clone(void)
 	return (N == length) && is_ok; 
 }
 
+static bool check_destroy(void)
+{
+	int N = N_ITEMS;
+	nb_container_t *cnt = get_container(N);
+	nb_container_destroy(cnt);
+	return true;
+}
+
+static bool check_clear(void)
+{
+	int N = N_ITEMS;
+	nb_container_t *cnt = get_container(N);
+	nb_container_clear(cnt);
+	bool is_empty = nb_container_is_empty(cnt);
+	nb_container_destroy(cnt);
+	return is_empty;
+}
+
 static inline bool check_merge_with_QUEUE(void)
 {
 	return check_merge_with(NB_QUEUE);
@@ -179,24 +197,6 @@ static bool check_cast_to_array(void)
 		free(array[i]);
 	free(array);
 	return true;
-}
-
-static bool check_destroy(void)
-{
-	int N = N_ITEMS;
-	nb_container_t *cnt = get_container(N);
-	nb_container_destroy(cnt);
-	return true;
-}
-
-static bool check_clear(void)
-{
-	int N = N_ITEMS;
-	nb_container_t *cnt = get_container(N);
-	nb_container_clear(cnt);
-	bool is_empty = nb_container_is_empty(cnt);
-	nb_container_destroy(cnt);
-	return is_empty;
 }
 
 static bool check_copy_to_array(void)
