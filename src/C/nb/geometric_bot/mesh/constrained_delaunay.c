@@ -114,8 +114,7 @@ static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 						    const msh_vtx_t *const v1,
 						    const msh_vtx_t *const v2)
 {
-	nb_container_t *intersected_trg = 
-		nb_container_create(NB_QUEUE);
+	nb_container_t *intersected_trg = nb_container_create(NB_QUEUE);
 	nb_iterator_t *iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -129,8 +128,7 @@ static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 	}
 	nb_iterator_destroy(iter);
 
-	nb_container_t *vertices = 
-		nb_container_create(NB_SORTED);
+	nb_container_t *vertices = nb_container_create(NB_SORTED);
 	while (nb_container_is_not_empty(intersected_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(intersected_trg);
 		nb_container_insert(vertices, trg->v1);

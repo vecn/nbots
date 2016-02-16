@@ -103,6 +103,7 @@ inline void* stack_clone(const void *const stack_ptr,
 			 void* (*clone)(const void*))
 {
 	void *stack = malloc_stack();
+	stack_init(stack);
 	stack_copy(stack, stack_ptr, clone);
 	return stack;
 }
@@ -115,7 +116,8 @@ inline void stack_destroy(void *stack_ptr,
 }
 
 void stack_merge(void *stack1_ptr, void *stack2_ptr,
-		 uint32_t (*key)(const void*))
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*))
 {
 	stack_t *stack1 = stack1_ptr;
 	stack_t *stack2 = stack2_ptr;
@@ -133,7 +135,8 @@ void stack_merge(void *stack1_ptr, void *stack2_ptr,
 }
 
 inline bool stack_insert(void *stack_ptr, const void *val,
-			 uint32_t (*key)(const void*))
+			 uint32_t (*key)(const void*),
+			 int8_t (*compare)(const void*, const void*))
 {
 	stack_t *stack = stack_ptr;
 	insert_node_as_starting(stack, val);

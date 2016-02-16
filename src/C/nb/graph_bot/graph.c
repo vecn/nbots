@@ -21,8 +21,8 @@
 
 static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val);
 static nb_container_t* get_collisions(nb_container_t *hash);
-static int compare_degree(const void *const A,
-			  const void *const B);
+static int8_t compare_degree(const void *const A,
+			     const void *const B);
 
 static int8_t compare_sb(const void *const A, const void *const B,
 			 const void *const data);
@@ -123,9 +123,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 {
 	/* Allocate AVL to minimize */
 	nb_container_t* minimum_degree = nb_container_create(NB_SORTED);
-	/* REFACTOR next lines
-	   set_key_generator(compare_degree);
-	*/
+	nb_container_set_comparer(minimum_degree, compare_degree);
 	/* List to store labeled nodes */
 	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
 
@@ -426,9 +424,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 {
 	/* Allocate AVL to minimize */
 	nb_container_t* minimum_degree = nb_container_create(NB_SORTED);
-	/* REFACTOR next lines
-	nb_container_set_key_generator(compare_degree);
-	*/
+	nb_container_set_comparer(minimum_degree, compare_degree);
 	/* List to store labeled nodes */
 	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
   
@@ -692,8 +688,8 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 	return perm;
 }
 
-static int compare_degree(const void *const A,
-			  const void *const B)
+static int8_t compare_degree(const void *const A,
+			     const void *const B)
 {
 	const int *const Ai = A;
 	const int *const Bi = B;

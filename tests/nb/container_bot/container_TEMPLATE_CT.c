@@ -22,11 +22,6 @@
 
 static bool run_clone(void *data);
 static bool run_merge(void *data);
-static bool run_cast_to_QUEUE(void *data);
-static bool run_cast_to_STACK(void *data);
-static bool run_cast_to_SORTED(void *data);
-static bool run_cast_to_HEAP(void *data);
-static bool run_cast_to_HASH(void *data);
 static bool run_clear(void *data);
 static bool run_insert(void *data);
 static bool run_get_first(void *data);
@@ -35,24 +30,20 @@ static bool run_exist(void *data);
 static bool run_delete(void *data);
 static bool run_get_length(void *data);
 
-static bool run_cast_to(void *data, int id);
-static void* init_container_by_id(int id, void *init_data);
+static void* init_container_by_type(nb_container_type type, void *init_data);
 static uint32_t keygen(const void *const val);
 static void* init_container(void *init_data);
 static void destroy_container(void *data);
 static void* clone_int8(const void *const a);
 static void* init_cnt_and_clone(void *init_data);
 static void destroy_cnt_and_clone(void *data);
-static void* init_merge_with(void *init_data, int id);
+static void* init_merge_with(void *init_data, nb_container_type type);
 static void destroy_merge_data(void *data);
 static void* init_merge_with_QUEUE(void *init_data);
 static void* init_merge_with_STACK(void *init_data);
 static void* init_merge_with_SORTED(void *init_data);
 static void* init_merge_with_HEAP(void *init_data);
 static void* init_merge_with_HASH(void *init_data);
-static void* init_cast_data(void *init_data);
-static void destroy_cast_data(void *data);
-static bool are_equal_int32(const void *const a, const void *const b);
 
 inline int TEMPLATE_get_driver_id(void)
 {
@@ -79,21 +70,6 @@ void TEMPLATE_load_tests(void *tests_ptr)
 	vcn_test_add_decomposed(tests_ptr, init_merge_with_HASH,
 				run_merge, destroy_merge_data,
 				"merge() with HASH");
-	vcn_test_add_decomposed(tests_ptr, init_cast_data,
-				run_cast_to_QUEUE, destroy_cast_data,
-				"cast() to QUEUE");
-	vcn_test_add_decomposed(tests_ptr, init_cast_data,
-				run_cast_to_STACK, destroy_cast_data,
-				"cast() to STACK");
-	vcn_test_add_decomposed(tests_ptr, init_cast_data,
-				run_cast_to_SORTED, destroy_cast_data,
-				"cast() to SORTED");
-	vcn_test_add_decomposed(tests_ptr, init_cast_data,
-				run_cast_to_HEAP, destroy_cast_data,
-				"cast() to HEAP");
-	vcn_test_add_decomposed(tests_ptr, init_cast_data,
-				run_cast_to_HASH, destroy_cast_data,
-				"cast() to HASH");
 	vcn_test_add_decomposed(tests_ptr, init_container,
 				run_clear, destroy_container,
 				"clear()");
@@ -132,31 +108,6 @@ static bool run_merge(void *data)
 	return true;
 }
 
-static inline bool run_cast_to_QUEUE(void *data)
-{
-	return run_cast_to(data, NB_QUEUE);
-}
-
-static inline bool run_cast_to_STACK(void *data)
-{
-	return run_cast_to(data, NB_STACK);
-}
-
-static inline bool run_cast_to_SORTED(void *data)
-{
-	return run_cast_to(data, NB_SORTED);
-}
-
-static inline bool run_cast_to_HEAP(void *data)
-{
-	return run_cast_to(data, NB_HEAP);
-}
-
-static inline bool run_cast_to_HASH(void *data)
-{
-	return run_cast_to(data, NB_HASH);
-}
-
 static bool run_clear(void *data)
 {
 	nb_container_clear(data);
@@ -191,7 +142,7 @@ static bool run_delete_first(void *data)
 static bool run_exist(void *data)
 {
 	int32_t to_find = 1;
-	nb_container_set_comparer(data, are_equal_int32);
+	nb_container_set_comparer(data, vcn_compare_int32);
 	nb_container_exist(data, &to_find);
 	return true;
 }
@@ -199,7 +150,7 @@ static bool run_exist(void *data)
 static bool run_delete(void *data)
 {
 	int32_t to_delete = 1;
-	nb_container_set_comparer(data, are_equal_int32);
+	nb_container_set_comparer(data, vcn_compare_int32);
 	int32_t *val = nb_container_delete(data, &to_delete);
 	bool is_ok = false;
 	if (NULL != val) {
@@ -216,16 +167,10 @@ static bool run_get_length(void *data)
 	return true;
 }
 
-static bool run_cast_to(void *data, int id)
-{
-	nb_container_cast(data, id);
-	return true;
-}
-
-static void* init_container_by_id(int id, void *init_data)
+static void* init_container_by_type(nb_container_type type, void *init_data)
 {
 	int N = *((int*)init_data);
-	nb_container_t *cnt = nb_container_create(id);
+	nb_container_t *cnt = nb_container_create(type);
 	nb_container_set_key_generator(cnt, keygen);
 	nb_container_set_destroyer(cnt, free);
 	int32_t seed = 1;
@@ -245,7 +190,7 @@ static inline uint32_t keygen(const void *const val)
 
 static inline void* init_container(void *init_data)
 {
-	return init_container_by_id(CONTAINER_ID, init_data);
+	return init_container_by_type(CONTAINER_ID, init_data);
 }
 
 static inline void destroy_container(void *data)
@@ -275,11 +220,11 @@ static void destroy_cnt_and_clone(void *data)
 	free(containers);
 }
 
-static void* init_merge_with(void *init_data, int id)
+static void* init_merge_with(void *init_data, nb_container_type type)
 {
 	void **containers = calloc(2, sizeof(*containers));
 	containers[0] = init_container(init_data);
-	containers[1] = init_container_by_id(id, init_data);
+	containers[1] = init_container_by_type(type, init_data);
 	return containers;
 }
 
@@ -315,20 +260,4 @@ static inline void* init_merge_with_HEAP(void *init_data)
 static inline void* init_merge_with_HASH(void *init_data)
 {
 	return init_merge_with(init_data, NB_HASH);
-}
-
-static void* init_cast_data(void *init_data)
-{
-	return init_container(init_data);
-}
-
-static void destroy_cast_data(void *data)
-{
-	nb_container_destroy(data);
-	free(data);
-}
-
-static inline bool are_equal_int32(const void *const a, const void *const b)
-{
-	return (0 == vcn_compare_int32(a, b));
 }

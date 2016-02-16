@@ -5,13 +5,14 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-static void get_keys(const void *const val1, const void *const val2,
-		     uint32_t (*key)(const void *const), uint32_t keys[2]);
-static uint32_t key_ptr(const void *const ptr);
+static int8_t compare_by_ptr_if_equal(const void *ptr1, const void *ptr2,
+				      int8_t (*compare)(const void*,
+							const void *));
+static int8_t compare_by_ptr(const void *ptr1, const void *ptr2);
 static bool insert_in_left(tree_t *tree, const void *const val,
-			   uint32_t (*key)(const void *const));
+			   int8_t (*compare)(const void*, const void*));
 static bool insert_in_right(tree_t *tree, const void *const val,
-			    uint32_t (*key)(const void *const));
+			    int8_t (*compare)(const void*, const void*));
 static void update_height(tree_t *tree);
 static void self_balance(tree_t *tree);
 static int get_balance(const tree_t *const tree);
@@ -27,10 +28,8 @@ static tree_t* unlink_most_right(tree_t* tree);
 static void replace_with_most_left_of_right(tree_t* tree);
 static void replace_with_right(tree_t *tree);
 static void* delete_from_left(tree_t *tree, const void *val,
-			      uint32_t (*key)(const void*),
 			      int8_t (*compare)(const void*, const void*));
 static void* delete_from_right(tree_t *tree, const void *val,
-			       uint32_t (*key)(const void*),
 			       int8_t (*compare)(const void*, const void*));
 static void* delete_left(tree_t *tree);
 static void* delete_right(tree_t *tree);
@@ -71,45 +70,46 @@ tree_t* tree_clone(const tree_t *const restrict tree,
 
 
 void* tree_exist(const tree_t *const restrict tree,  const void *val,
-		 uint32_t (*key)(const void*),
 		 int8_t (*compare)(const void*, const void*))
 {
 	void *existing_val = NULL;
-	int8_t comparison = compare(tree->val, val);
+	int8_t comparison = compare(val, tree->val);
 	if (0 == comparison) {
 		existing_val = tree->val;
 	} else {
-		uint32_t keys[2];
-		get_keys(val, tree->val, key, keys);
 		if (comparison < 0) {
 			if (NULL != tree->left)
 				existing_val = tree_exist(tree->left, val,
-							  key, compare);
+							  compare);
 		} else {
 			if (NULL != tree->right)
 				existing_val = tree_exist(tree->right, val,
-							  key, compare);
+							  compare);
 		}
 	}
 	return existing_val;
 }
 
-static void get_keys(const void *const val1, const void *const val2,
-		     uint32_t (*key)(const void *const), uint32_t keys[2])
+static int8_t compare_by_ptr_if_equal(const void *ptr1, const void *ptr2,
+				      int8_t (*compare)(const void*,
+							const void *))
 {
-	keys[0] = key(val1);
-	keys[1] = key(val2);
-
-	if (keys[0] == keys[1]) {
-		/* Key by pointer to support repeated elements */
-		keys[0] = key_ptr(val1);
-		keys[1] = key_ptr(val2);
-	}
+	int8_t comparison = compare(ptr1, ptr2);
+	if (0 == comparison)
+		comparison = compare_by_ptr(ptr1, ptr2);
+	return comparison;
 }
 
-static inline uint32_t key_ptr(const void *const restrict ptr)
+static int8_t compare_by_ptr(const void *ptr1, const void *ptr2)
 {
-	return (uint32_t)((uintptr_t)ptr);
+	int8_t out;
+	if (ptr1 < ptr2)
+		out = -1;
+	else if (ptr1 > ptr2)
+		out = 1;
+	else
+		out = 0;
+	return out;
 }
 
 inline bool tree_is_leaf(const tree_t *const restrict tree)
@@ -123,17 +123,15 @@ inline uint32_t tree_get_height(const tree_t *const restrict tree)
 }
 
 bool tree_insert(tree_t *restrict tree, const void *const restrict val,
-		 uint32_t (*key)(const void *const))
+		 int8_t (*compare)(const void*, const void*))
 {
-	uint32_t keys[2];
-	get_keys(val, tree->val, key, keys);
-  
-	bool success = false;
-	if (keys[0] != keys[1]) {
-		if (keys[0] < keys[1])
-			success = insert_in_left(tree, val, key);
-		else /* if (keys[0] > keys[1]) */
-			success = insert_in_right(tree, val, key);
+	int8_t comparison = compare_by_ptr_if_equal(val, tree->val, compare);
+  	bool success = false;
+	if (0 != comparison) {
+		if (0 > comparison)
+			success = insert_in_left(tree, val, compare);
+		else /* if (0 < comparison) */
+			success = insert_in_right(tree, val, compare);
 		update_height(tree);
 		self_balance(tree);
 	}
@@ -141,11 +139,11 @@ bool tree_insert(tree_t *restrict tree, const void *const restrict val,
 }
 
 static bool insert_in_left(tree_t *tree, const void *const restrict val,
-			   uint32_t (*key)(const void *const))
+			   int8_t (*compare)(const void*, const void*))
 {
 	bool success;
 	if (NULL != tree->left) {
-		success = tree_insert(tree->left, val, key);
+		success = tree_insert(tree->left, val, compare);
 	} else {
 		tree->left = tree_create_leaf(val);
 		success = true;
@@ -162,11 +160,11 @@ tree_t* tree_create_leaf(const void *const val)
 }
 
 static bool insert_in_right(tree_t *tree, const void *const restrict val,
-			    uint32_t (*key)(const void *const))
+			    int8_t (*compare)(const void*, const void*))
 {
 	bool success;
 	if (NULL != tree->right) {
-		success = tree_insert(tree->right, val, key);
+		success = tree_insert(tree->right, val, compare);
 	} else {
 		tree->right = tree_create_leaf(val);
 		success = true;
@@ -366,15 +364,14 @@ static void replace_with_right(tree_t *tree)
 }
 
 void* tree_delete(tree_t *tree, const void *val,
-		  uint32_t (*key)(const void*),
 		  int8_t (*compare)(const void*, const void*))
 {
-	int8_t comparison = compare(val, tree->val);
+	int8_t comparison = compare_by_ptr_if_equal(val, tree->val, compare);
 	void *deleted_val = NULL;
-	if (comparison < 0)
-		deleted_val = delete_from_left(tree, val, key, compare);
+	if (0 > comparison)
+		deleted_val = delete_from_left(tree, val, compare);
 	else
-		deleted_val = delete_from_right(tree, val, key, compare);
+		deleted_val = delete_from_right(tree, val, compare);
 
 	if (NULL != deleted_val) {
 		update_height(tree);
@@ -384,31 +381,31 @@ void* tree_delete(tree_t *tree, const void *val,
 }
 
 static void* delete_from_left(tree_t *tree, const void *const val,
-			      uint32_t (*key)(const void*),
 			      int8_t (*compare)(const void*, const void*))
 {
 	void *deleted_val = NULL;
 	if (NULL != tree->left) {
-		if (0 == compare(tree->left->val, val))
+		int8_t comparison = compare(tree->left->val, val);
+		if (0 == comparison)
 			deleted_val = delete_left(tree);
 		else
 			deleted_val = tree_delete(tree->left, val,
-						  key, compare);
+						  compare);
 	}
 	return deleted_val;
 }
 
 static void* delete_from_right(tree_t *tree, const void *const val,
-			       uint32_t (*key)(const void*),
 			       int8_t (*compare)(const void*, const void*))
 {
 	void *deleted_val = NULL;
 	if (NULL != tree->right) {
-		if (0 == compare(tree->right->val, val))
+		int8_t comparison = compare(tree->right->val, val);
+		if (0 == comparison)
 		        deleted_val = delete_right(tree);
 		else
 			deleted_val = tree_delete(tree->right, val,
-						  key, compare);
+						  compare);
 	}
 	return deleted_val;
 }

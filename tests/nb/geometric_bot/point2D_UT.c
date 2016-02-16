@@ -8,7 +8,7 @@
 
 static bool check_create(void);
 static bool check_destroy(void);
-static bool check_are_equal(void);
+static bool check_compare(void);
 
 inline int vcn_test_get_driver_id(void)
 {
@@ -21,8 +21,8 @@ void vcn_test_load_tests(void *tests_ptr)
 		     "Check create()");
 	vcn_test_add(tests_ptr, check_destroy,
 		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_are_equal,
-		     "Check are_equal()");
+	vcn_test_add(tests_ptr, check_compare,
+		     "Check compare()");
 }
 
 static bool check_create(void)
@@ -41,7 +41,7 @@ static bool check_destroy(void)
 	return true;
 }
 
-static bool check_are_equal(void)
+static bool check_compare(void)
 {
 	vcn_point2D_t p1;
 	vcn_point2D_t p2;
@@ -49,5 +49,5 @@ static bool check_are_equal(void)
 	p1.x[1] = 1.0 + 1e-16;
 	p2.x[0] = 1.0 - 1e-16;
 	p2.x[1] = 1.0 - 1e-16;
-	return vcn_point2D_are_equal(&p1, &p2);
+	return (0 == vcn_point2D_compare(&p1, &p2));
 }

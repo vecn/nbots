@@ -16,9 +16,11 @@ void* heap_clone(const void *const heap_ptr,
 void heap_destroy(void *heap_ptr,
 		  void (*destroy)(void*));
 void heap_merge(void *heap1_ptr, void *heap2_ptr,
-		uint32_t (*key)(const void *const));
-bool heap_insert(void *heap_ptr, const void *const val,
-		 uint32_t (*key)(const void *const));
+		uint32_t (*key)(const void*),
+		int8_t (*compare)(const void*, const void*));
+bool heap_insert(void *heap_ptr, const void *val,
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*));
 void* heap_get_first(const void *const heap);
 void* heap_delete_first(void *heap_ptr,
 			uint32_t (*key)(const void *const));

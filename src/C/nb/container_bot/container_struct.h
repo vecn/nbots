@@ -25,9 +25,11 @@ typedef struct {
 	void (*destroy)(void*,
 			void (*destroy)(void*));
 	void (*merge)(void*, void*,
-		      uint32_t (*key)(const void*));
+		      uint32_t (*key)(const void*),
+		      int8_t (*compare)(const void*, const void*));
 	bool (*insert)(void*, const void *const,
-		       uint32_t (*key)(const void*));
+		       uint32_t (*key)(const void*),
+		       int8_t (*compare)(const void*, const void*));
 	void* (*get_first)(const void* const);
 	void* (*delete_first)(void*,
 			      uint32_t (*key)(const void*));

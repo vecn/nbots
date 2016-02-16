@@ -16,13 +16,16 @@ void* queue_clone(const void *const queue_ptr,
 void queue_destroy(void *queue_ptr,
 		  void (*destroy)(void*));
 void queue_merge(void *list1_ptr, void *list2_ptr,
-		 uint32_t (*key)(const void*));
+		 uint32_t (*key)(const void*),
+	       int8_t (*compare)(const void*, const void*));
 void queue_clear(void *queue_ptr,
 		void (*destroy)(void*));
 bool queue_insert_first(void *queue_ptr, const void *val,
-			uint32_t (*key)(const void*));
+			uint32_t (*key)(const void*),
+			int8_t (*compare)(const void*, const void*));
 bool queue_insert(void *queue_ptr, const void *val,
-		  uint32_t (*key)(const void*));
+		  uint32_t (*key)(const void*),
+		  int8_t (*compare)(const void*, const void*));
 void* queue_get_first(const void *const list);
 void* queue_delete_first(void *queue_ptr,
 			uint32_t (*key)(const void*));

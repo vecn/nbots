@@ -38,7 +38,7 @@ void avl_copy(void *avl_ptr, const void *src_avl_ptr,
 	const avl_t *src_avl = src_avl_ptr;
 	if (is_not_empty(src_avl_ptr)) {
 		avl->length = src_avl->length;
-		avl->root = tree_clone(avl->root, clone);
+		avl->root = tree_clone(src_avl->root, clone);
 	}
 }
 
@@ -75,35 +75,38 @@ void* avl_clone(const void *const avl_ptr,
 		void* (*clone)(const void*))
 {
 	void *avl = malloc_avl();
+	avl_init(avl);
 	avl_copy(avl, avl_ptr, clone);
 	return avl;	
 }
 
 void avl_destroy(void *avl_ptr,
-		    void (*destroy)(void*))
+		 void (*destroy)(void*))
 {
 	avl_clear(avl_ptr, destroy);
 	free(avl_ptr);
 }
 
 void avl_merge(void *avl1_ptr, void *avl2_ptr,
-	       uint32_t (*key)(const void *const))
+	       uint32_t (*key)(const void *const),
+	       int8_t (*compare)(const void*, const void*))
 {
 	avl_t *avl1 = avl1_ptr;
 	avl_t *avl2 = avl2_ptr;
 	while (is_not_empty(avl2)) {
 		void *val = avl_delete_first(avl2, key);
-		avl_insert(avl1, val, key);
+		avl_insert(avl1, val, key, compare);
 	}
 }
 
 bool avl_insert(void *avl_ptr, const void *const restrict val,
-		uint32_t (*key)(const void *const))
+		uint32_t (*key)(const void *const),
+		int8_t (*compare)(const void*, const void*))
 {
 	avl_t *avl = avl_ptr;
 	bool success;
 	if (is_not_empty(avl)) {
-		success = tree_insert(avl->root, val, key);
+		success = tree_insert(avl->root, val, compare);
 	} else {
 		avl->root = tree_create_leaf(val);
 		success = true;
@@ -126,7 +129,8 @@ void* avl_get_first(const void *const avl_ptr)
 	return val;
 }
 
-void* avl_delete_first(void *avl_ptr, uint32_t (*key)(const void *const))
+void* avl_delete_first(void *avl_ptr,
+		       uint32_t (*key)(const void*))
 {
 	avl_t *avl = avl_ptr;
 	void *val = NULL;
@@ -141,7 +145,8 @@ void* avl_delete_first(void *avl_ptr, uint32_t (*key)(const void *const))
 	return val;
 }
 
-void* avl_delete_last(void *avl_ptr, uint32_t (*key)(const void *const))
+void* avl_delete_last(void *avl_ptr,
+		      uint32_t (*key)(const void*))
 {
 	avl_t *avl = avl_ptr;
 	void *val = NULL;
@@ -168,7 +173,7 @@ void* avl_exist(const void *const avl_ptr, const void *val,
 	const avl_t *const restrict avl = avl_ptr;
 	void *existing_val = NULL;
 	if (is_not_empty(avl))
-		existing_val = tree_exist(avl->root, val, key, compare);
+		existing_val = tree_exist(avl->root, val, compare);
 	return existing_val;
 }
 
@@ -183,7 +188,7 @@ void* avl_delete(void *avl_ptr, const void *const val,
 			deleted_val = delete_root(avl);
 		else
 			deleted_val = tree_delete(avl->root, val, 
-						  key, compare);
+						  compare);
 	}
 	if (NULL != deleted_val)
 		avl->length -= 1;

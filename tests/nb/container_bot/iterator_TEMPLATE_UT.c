@@ -30,7 +30,7 @@ static bool check_has_more_with_1_item(void);
 static nb_container_t* get_container(int N);
 static void insert_N_int32(nb_container_t *cnt, int N);
 static uint32_t keygen(const void *const val);
-static bool are_equal(const void *const a, const void *const b);
+static int8_t compare(const void *const a, const void *const b);
 
 inline int TEMPLATE_get_driver_id(void)
 {
@@ -160,6 +160,7 @@ static inline nb_container_t* get_container(int N)
 {
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
       	nb_container_set_key_generator(cnt, keygen);
+      	nb_container_set_comparer(cnt, compare);
       	nb_container_set_destroyer(cnt, free);
 	insert_N_int32(cnt, N);
 	return cnt;
@@ -179,9 +180,16 @@ static inline uint32_t keygen(const void *const val)
 	return (uint32_t) *((int32_t*)val);
 }
 
-static inline bool are_equal(const void *const a, const void *const b)
+static int8_t compare(const void *const a, const void *const b)
 {
 	int32_t a_val = *((int32_t*)a);
 	int32_t b_val = *((int32_t*)b);
-	return (a_val == b_val);
+	int8_t out;
+	if (a_val - b_val < 0)
+		out = -1;
+	else if (a_val - b_val > 0)
+		out = 1;
+	else
+		out = 0;
+	return out;
 }

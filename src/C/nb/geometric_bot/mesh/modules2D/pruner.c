@@ -19,14 +19,14 @@ static double colorize_infected_triangles(msh_trg_t* trg_infected,
 					  nb_container_t* l_infected_trg,
 					  bool blocking_with_input_segments);
 
+static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
+						const void *const  a2);
+
 double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
 	nb_container_t* areas = nb_container_create(NB_SORTED);
-	/* REFACTOR
-	   nb_container_key_generator(areas, compare_area1_isGreaterThan_area2);
-	   nb_container_comparer(areas, ...);
-	*/
+	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -36,8 +36,7 @@ double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 			if(attr->id == 0x19FEC7ED)
 				continue;
 		}
-		nb_container_t* area_trg =
-			nb_container_create(NB_SORTED);
+		nb_container_t* area_trg = nb_container_create(NB_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = (void**)malloc(2 * sizeof(*obj));
@@ -183,16 +182,29 @@ static double colorize_infected_triangles(msh_trg_t* trg_infected,
 	return area;
 }
 
+static int8_t compare_area1_isGreaterThan_area2
+                                (const void *const restrict a1,
+				 const void *const restrict a2)
+{
+	double area1_d = ((double*)((void**)a1)[0])[0];
+	double area2_d = ((double*)((void**)a2)[0])[0];
+	uint64_t area1 = (uint64_t)(1e8 * area1_d);
+	uint64_t area2 = (uint64_t)(1e8 * area2_d);
+	if (area2 < area1) 
+		return 1;
+	else if (area2 > area1)
+		return -1;
+	else
+		return 0;
+}
+
 double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 						  uint32_t* N_centroids)
 {
 	/* TEMPORAL (Repeated code): 
 	 * Unify with code of vcn_mesh_get_centroid_of_subareas() */
 	nb_container_t* areas = nb_container_create(NB_SORTED);
-	/* REFACTOR 
-	   nb_container_set_key_generator(areas, compare_area1_isGreaterThan_area2);
-	   nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	*/
+	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -202,8 +214,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 			if (attr->id == 0x19FEC7ED)
 				continue;
 		}
-		nb_container_t* area_trg = 
-			nb_container_create(NB_SORTED);
+		nb_container_t* area_trg = nb_container_create(NB_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = malloc(2 * sizeof(*obj));
@@ -317,10 +328,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 				     double* area_removed)
 {
 	nb_container_t* areas = nb_container_create(NB_SORTED);
-	/* REFACTOR
-	 * nb_container_set_key_generator(compare_area1_isGreaterThan_area2);
-	 * nb_container_set_comparer(..)
-	 */
+	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -330,8 +338,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 			if(attr->id == 0x19FEC7ED)
 				continue;
 		}
-		nb_container_t* area_trg = 
-			nb_container_create(NB_SORTED);
+		nb_container_t* area_trg = nb_container_create(NB_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, true);
 		void** obj = malloc(2 * sizeof(*obj));
@@ -391,10 +398,7 @@ double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
 				       double* area_removed)
 {
 	nb_container_t* areas = nb_container_create(NB_SORTED);
-	/* REFACTOR
-	   nb_container_set_key_generator(compare_area1_isGreaterThan_area2);
-	   nb_container_set_comparer();
-	*/
+	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while( nb_iterator_has_more(iter)) {
@@ -404,8 +408,7 @@ double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
 			if(attr->id == 0x19FEC7ED)
 				continue;
 		}
-		nb_container_t* area_trg = 
-			nb_container_create(NB_SORTED);
+		nb_container_t* area_trg = nb_container_create(NB_SORTED);
 		double* area = malloc(sizeof(*area));
 		area[0] = colorize_infected_triangles(trg, area_trg, false);
 		void** obj = malloc(2*sizeof(*obj));

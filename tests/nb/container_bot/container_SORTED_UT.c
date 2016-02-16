@@ -20,7 +20,7 @@ static bool check_delete_last(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
-	nb_container_set_key_generator(cnt, keygen);
+	nb_container_set_comparer(cnt, compare);
 	nb_container_set_destroyer(cnt, free);
 	for (int i = 0; i < N; i++) {
 		int *value = malloc(sizeof(*value));

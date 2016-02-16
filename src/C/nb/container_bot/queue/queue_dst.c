@@ -103,6 +103,7 @@ inline void* queue_clone(const void *const queue_ptr,
 			 void* (*clone)(const void*))
 {
 	void *queue = malloc_queue();
+	queue_init(queue);
 	queue_copy(queue, queue_ptr, clone);
 	return queue;
 }
@@ -115,7 +116,8 @@ inline void queue_destroy(void *queue_ptr,
 }
 
 void queue_merge(void *queue1_ptr, void *queue2_ptr,
-		 uint32_t (*key)(const void*))
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*))
 {
 	queue_t *queue1 = queue1_ptr;
 	queue_t *queue2 = queue2_ptr;
@@ -133,7 +135,8 @@ void queue_merge(void *queue1_ptr, void *queue2_ptr,
 }
 
 inline bool queue_insert_first(void *queue_ptr, const void *val,
-			       uint32_t (*key)(const void*))
+			       uint32_t (*key)(const void*),
+			       int8_t (*compare)(const void*, const void*))
 {
 	queue_t *queue = queue_ptr;
 	insert_node_as_starting(queue, val);
@@ -173,7 +176,8 @@ static inline void link_node(queue_t *restrict queue,
 }
 
 inline bool queue_insert(void *queue_ptr, const void *val,
-			 uint32_t (*key)(const void*))
+			 uint32_t (*key)(const void*),
+			 int8_t (*compare)(const void*, const void*))
 {
 	queue_t *queue = queue_ptr;
 	insert_node_as_starting(queue, val);

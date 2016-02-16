@@ -40,8 +40,8 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 static int8_t voronoi_vtx_compare(const void* const A,
 				  const void *const B);
 
-static inline int compare_voronoi_sgm(const void *const sgmA, 
-				      const void *const sgmB);
+static int8_t compare_voronoi_sgm(const void *const sgmA, 
+				  const void *const sgmB);
 
 static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 				 msh_edge_t** segments, uint32_t N_segments,
@@ -490,16 +490,19 @@ void vcn_mshpoly_destroy(vcn_mshpoly_t* voronoi)
 	free(voronoi);
 }
 
-static inline int compare_voronoi_sgm(const void *const sgmA, 
-				      const void *const sgmB)
+static int8_t compare_voronoi_sgm(const void *const sgmA, 
+				  const void *const sgmB)
 {
 	msh_edge_t* sA = ((voronoi_boundary_sgm_t*)sgmA)->sgm;
 	msh_edge_t* sB = ((voronoi_boundary_sgm_t*)sgmB)->sgm;
-	if (sA == sB)
-		return 0;
+	int8_t out;
+	if (sA < sB)
+		out = -1;
 	if (sA > sB)
-		return 1;
-	return -1;
+		out = 1;
+	else
+		out = 0;
+	return out;
 }
 
 static vcn_point2D_t* voronoi_insert_global(vcn_bins2D_t* bins, vcn_point2D_t* point)
@@ -557,12 +560,8 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 (const vcn_mesh_t* const mesh)
 {
 	/* The size must not be zero if there are not input segments */
-	nb_container_t* avl_boundary_sgm =
-		nb_container_create(NB_SORTED);
-	/* REFACTOR
-	nb_container_set_key_generator(compare_voronoi_sgm);
-	nb_container_set_comparer();
-	*/
+	nb_container_t* avl_boundary_sgm = nb_container_create(NB_SORTED);
+	nb_container_set_comparer(avl_boundary_sgm, compare_voronoi_sgm);
 	for (uint32_t i=0; i < mesh->N_input_sgm; i++) {
 		if (NULL == mesh->input_sgm[i])
 			continue;

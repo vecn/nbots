@@ -24,18 +24,23 @@ static void clear_rows(hash_t *hash,
 		       void (*destroy)(void*));
 static void* malloc_hash(void);
 static void check_realloc(hash_t *hash,
-			  uint32_t (*key)(const void *const));
+			  uint32_t (*key)(const void *const),
+			  int8_t (*compare)(const void*, const void*));
 static float get_load_factor(hash_t *hash);
 static void realloc_rows(hash_t *hash,
-			 uint32_t (*key)(const void *const));
+			 uint32_t (*key)(const void *const),
+			 int8_t (*compare)(const void*, const void*));
 static void reinsert_list(hash_t *hash, void *queue_ptr,
-			  uint32_t (*key)(const void *const));
+			  uint32_t (*key)(const void *const),
+			  int8_t (*compare)(const void*, const void*));
 static void insert(hash_t *hash, const void *const val,
-		   uint32_t (*key)(const void *const));
+		   uint32_t (*key)(const void *const),
+		   int8_t (*compare)(const void*, const void*));
 static uint32_t hash_key(const void *const val, uint32_t N,
 			 uint32_t (*key)(const void *const));
 static void merge_rows(hash_t *merge, hash_t *hash,
-		       uint32_t (*key)(const void *const));
+		       uint32_t (*key)(const void *const),
+		       int8_t (*compare)(const void*, const void*));
 static void null_destroy(void *val);
 static nb_container_t* get_container_from_list(const void *const list);
 
@@ -80,10 +85,12 @@ void hash_clear(void* hash_ptr,
 		void (*destroy)(void*))
 {
 	hash_t* hash = hash_ptr;
-	clear_rows(hash, destroy);
 	hash->length = 0;  
-	free(hash->rows);
-	hash->rows = NULL;
+	if (NULL != hash->rows) {
+		clear_rows(hash, destroy);
+		free(hash->rows);
+		hash->rows = NULL;
+	}
 }
 
 static void clear_rows(hash_t *hash,
@@ -114,6 +121,7 @@ inline void* hash_clone(const void *const hash_ptr,
 			void* (*clone)(const void*))
 {
 	hash_t *hash = malloc_hash();
+	hash_init(hash);
 	hash_copy(hash, hash_ptr, clone);
 	return hash;
 }
@@ -127,24 +135,26 @@ void hash_destroy(void* hash_ptr,
 }
 
 void hash_merge(void *hash1_ptr, void *hash2_ptr,
-		  uint32_t (*key)(const void *const))
+		uint32_t (*key)(const void*),
+		int8_t (*compare)(const void*, const void*))
 {
   	hash_t *hash1 = (hash_t*) hash1_ptr;
 	hash_t *hash2 = (hash_t*) hash2_ptr;
 	if (hash_is_not_empty(hash2)) {
 		hash1->length += hash2->length;
-		check_realloc(hash1, key);
-		merge_rows(hash1, hash2, key);
+		check_realloc(hash1, key, compare);
+		merge_rows(hash1, hash2, key, compare);
 		hash2->length = 0;
 	}
 }
 
 static void check_realloc(hash_t *hash,
-			  uint32_t (*key)(const void *const))
+			  uint32_t (*key)(const void *const),
+			  int8_t (*compare)(const void*, const void*))
 {
   	float load = get_load_factor(hash);
 	if (load > hash->max_load_factor)
-		realloc_rows(hash, key);
+	  realloc_rows(hash, key, compare);
 }
 
 static inline float get_load_factor(hash_t *hash)
@@ -153,7 +163,8 @@ static inline float get_load_factor(hash_t *hash)
 }
 
 static void realloc_rows(hash_t *hash,
-			 uint32_t (*key)(const void *const))
+			 uint32_t (*key)(const void *const),
+			 int8_t (*compare)(const void*, const void*))
 {
 	void **rows = hash->rows;
 	uint32_t N = hash->size;
@@ -162,28 +173,30 @@ static void realloc_rows(hash_t *hash,
 
 	for (uint32_t i = 0; i < N; i++) {
 		if (NULL != rows[i])
-			reinsert_list(hash, rows[i], key);
+		  reinsert_list(hash, rows[i], key, compare);
 	}
 	free(rows);
 }
 
 static void reinsert_list(hash_t *hash, void *queue_ptr,
-			  uint32_t (*key)(const void *const))
+			  uint32_t (*key)(const void *const),
+			  int8_t (*compare)(const void*, const void*))
 {
 	while (queue_is_not_empty(queue_ptr)) {
 		void *val = queue_delete_first(queue_ptr, key);
-		insert(hash, val, key);
+		insert(hash, val, key, compare);
 	}
 	queue_destroy(queue_ptr, null_destroy);
 }
 
 static void insert(hash_t *hash, const void *const val,
-		   uint32_t (*key)(const void *const))
+		   uint32_t (*key)(const void *const),
+		   int8_t (*compare)(const void*, const void*))
 {
 	uint32_t vkey = hash_key(val, hash->size, key);
 	if (NULL == hash->rows[vkey])
 		hash->rows[vkey] = queue_create();
-	queue_insert(hash->rows[vkey], val, key);
+	queue_insert(hash->rows[vkey], val, key, compare);
 }
 
 static uint32_t hash_key(const void *const val, uint32_t N,
@@ -193,23 +206,25 @@ static uint32_t hash_key(const void *const val, uint32_t N,
 }
 
 static inline void merge_rows(hash_t *merge, hash_t *hash,
-			      uint32_t (*key)(const void *const))
+			      uint32_t (*key)(const void *const),
+			      int8_t (*compare)(const void*, const void*))
 {
 	for (uint32_t i = 0; i < hash->size; i++) {
 		if (NULL != hash->rows[i]) {
-			reinsert_list(merge, hash->rows[i], key);
+		  reinsert_list(merge, hash->rows[i], key, compare);
 			hash->rows[i] = NULL;
 		}
 	}
 }
 
 bool hash_insert(void *hash_ptr, const void *const val,
-		   uint32_t (*key)(const void *const))
+		 uint32_t (*key)(const void *const),
+		 int8_t (*compare)(const void*, const void*))
 {
 	hash_t* hash = hash_ptr;
 	hash->length += 1;
-	check_realloc(hash, key);
-	insert(hash, val, key);
+	check_realloc(hash, key, compare);
+	insert(hash, val, key, compare);
 	return true;
 }
 

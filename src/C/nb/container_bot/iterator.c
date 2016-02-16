@@ -165,6 +165,7 @@ static inline void* malloc_iterator(void)
 inline void* nb_iterator_clone(const void *iter_ptr)
 {
 	void *iterator = malloc_iterator();
+	nb_iterator_init(iterator);
 	nb_iterator_copy(iterator, iter_ptr);
 	return iterator;
 }

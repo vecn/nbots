@@ -754,8 +754,8 @@ static void delaunay_set_inside_points_of_prev_layer
 				 nb_container_t* outside_vtx,
 				 const circle_t *const circle)
 {
-	int container_id = nb_container_get_id(outside_vtx);
-	nb_container_t *aux = nb_container_create(container_id);
+	nb_container_type type = nb_container_get_type(outside_vtx);
+	nb_container_t *aux = nb_container_create(type);
 	while (nb_container_is_not_empty(outside_vtx)) {
 		vcn_point2D_t *p = nb_container_delete_first(outside_vtx);
 		if (is_inside_circle(circle, p))

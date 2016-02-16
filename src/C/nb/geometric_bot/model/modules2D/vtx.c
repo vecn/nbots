@@ -42,13 +42,10 @@ inline uint32_t vtx_hash_key(const void *const  vertex)
 			  (int)(vtx->x[1] * 19349663));
 }
 
-bool vtx_are_equal(const void *const vtxA,
-			  const void *const vtxB)
+int8_t vtx_compare(const void *const vtxA, const void *const vtxB)
 {
 	const vtx_t *const vA = vtxA;
 	const vtx_t *const vB = vtxB;
-	bool are_equal = false;
-	if (vcn_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL)
-		are_equal = true;
-	return are_equal;
+	return (vcn_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL) ?
+	  0:1;
 }

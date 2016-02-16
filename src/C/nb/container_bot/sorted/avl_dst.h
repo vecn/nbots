@@ -16,11 +16,13 @@ void* avl_clone(const void *const avl_ptr,
 void avl_destroy(void *avl_ptr,
 		 void (*destroy)(void*));
 void avl_merge(void *avl1_ptr, void *avl2_ptr,
-	       uint32_t (*key)(const void*));
+	       uint32_t (*key)(const void*),
+	       int8_t (*compare)(const void*, const void*));
 void avl_clear(void *avl_ptr,
 	       void (*destroy)(void*));
 bool avl_insert(void *avl_ptr, const void *val,
-		uint32_t (*key)(const void*));
+		uint32_t (*key)(const void*),
+		int8_t (*compare)(const void*, const void*));
 void* avl_get_first(const void *const avl_ptr);
 void* avl_delete_first(void *avl_ptr,
 		       uint32_t (*key)(const void*));

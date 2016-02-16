@@ -70,6 +70,7 @@ void* heap_clone(const void *const heap_ptr,
 		 void* (*clone)(const void*))
 {
 	void *heap = malloc_heap();
+	heap_init(heap);
 	heap_copy(heap, heap_ptr, clone);
 	return heap;
 }
@@ -83,7 +84,8 @@ inline void heap_destroy(void *heap_ptr,
 
 
 void heap_merge(void *heap1_ptr, void *heap2_ptr,
-		uint32_t (*key)(const void *const))
+		uint32_t (*key)(const void *const),
+		int8_t (*compare)(const void*, const void*))
 {
 	heap_t *heap1 = heap1_ptr;
 	heap_t *heap2 = heap2_ptr;
@@ -107,7 +109,8 @@ static inline bool is_not_empty(const heap_t *const restrict heap)
 }
 
 bool heap_insert(void *heap_ptr, const void *const  val,
-		 uint32_t (*key)(const void *const))
+		 uint32_t (*key)(const void *const),
+		 int8_t (*compare)(const void*, const void*))
 {
 	heap_t *heap = heap_ptr;
 	htree_t* new_tree = htree_create();

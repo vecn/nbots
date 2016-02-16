@@ -18,9 +18,11 @@ void* hash_clone(const void *const hash_ptr,
 void hash_destroy(void *hash_ptr,
 		  void (*destroy)(void*));
 void hash_merge(void *hash1_ptr, void *hash2_ptr,
-		uint32_t (*key)(const void *const));
+		uint32_t (*key)(const void*),
+	       int8_t (*compare)(const void*, const void*));
 bool hash_insert(void *hash_ptr, const void *const val,
-		 uint32_t (*key)(const void *const));
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*));
 void* hash_get_first(const void *const hash_ptr);
 void* hash_delete_first(void *hash_ptr,
 			uint32_t (*key)(const void *const));

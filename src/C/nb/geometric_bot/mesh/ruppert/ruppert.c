@@ -25,7 +25,9 @@ typedef struct {
 	uint32_t length;
 } hash_trg_t;
 
-static inline uint32_t key_trg_attr(const void *const trg_ptr);
+
+static int8_t compare_trg_attr(const void *const trg1_ptr,
+			       const void *const trg2_ptr);
 static hash_trg_t* hash_trg_create(void);
 static uint32_t hash_trg_length(const hash_trg_t *const htrg);
 static void hash_trg_insert(hash_trg_t *const htrg,
@@ -166,11 +168,10 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	/* Allocate data structures to allocate encroached elements */
 	nb_container_t *restrict encroached_sgm =
 		nb_container_create(NB_SORTED);
-	nb_container_set_key_generator(encroached_sgm, hash_key_edge);
+	nb_container_set_comparer(encroached_sgm, compare_edge);
 
-	nb_container_t *restrict big_trg =
-		nb_container_create(NB_SORTED);
-	nb_container_set_key_generator(big_trg, key_trg_attr);
+	nb_container_t *restrict big_trg = nb_container_create(NB_SORTED);
+	nb_container_set_comparer(big_trg, compare_trg_attr);
 
 	hash_trg_t *restrict poor_quality_trg = hash_trg_create();
 
@@ -203,10 +204,21 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	hash_trg_destroy(poor_quality_trg);
 }
 
-static inline uint32_t key_trg_attr(const void *const trg_ptr)
+static inline int8_t compare_trg_attr(const void *const trg1_ptr,
+				      const void *const trg2_ptr)
 {
-	const msh_trg_t *const trg = trg_ptr;
-	return *(uint32_t*)(trg->attr);
+	const msh_trg_t *const trg1 = trg1_ptr;
+	const msh_trg_t *const trg2 = trg2_ptr;
+	uint32_t  a1 = *(uint32_t*)(trg1->attr);
+	uint32_t  a2 = *(uint32_t*)(trg2->attr);
+	int8_t out;
+	if (a1 < a2)
+		out = -1;
+	else if (a1 > a2)
+		out = 1;
+	else
+		out = 0;
+	return out;
 }
 
 bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
@@ -327,7 +339,7 @@ static inline hash_trg_t* hash_trg_create(void)
 	hash_trg_t* htrg = calloc(1, sizeof(hash_trg_t));
 	for (uint32_t i = 0; i < 64; i++) {
 		htrg->avl[i] = nb_container_create(NB_SORTED);
-		nb_container_set_key_generator(htrg->avl[i], key_trg_attr);
+		nb_container_set_comparer(htrg->avl[i], compare_trg_attr);
 	}
 	return htrg;
 }

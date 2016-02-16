@@ -218,12 +218,19 @@ static double spack_optimize_assemble_system(nb_container_t *segments,
 	return global_min;
 }
 
-static inline bool compare_id(const void* const ptrA,
-			      const void* const ptrB)
+static inline int8_t compare_id(const void* const ptrA,
+				const void* const ptrB)
 {
 	uint32_t* A = (uint32_t*) ptrA;
 	uint32_t* B = (uint32_t*) ptrB;
-	return (A[0] == B[0]);
+	int8_t out;
+	if (*A < *B)
+		out = -1;
+	else if (*A > *B)
+		out = 1;
+	else
+		out = 0;
+	return out;
 }
 
 static void spack_optimize(const vcn_mesh_t *const mesh,

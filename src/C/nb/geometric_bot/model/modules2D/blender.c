@@ -40,7 +40,8 @@ static edge_t** insert_edges_and_vtx(vcn_model_t *model,
 static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
 				      nb_container_t *vertices,
 				      uint32_t vtx_id);
-static uint32_t intersection_pack_key(const void* const pack);
+static int8_t intersection_pack_comparer(const void* const pack1,
+					 const void* const pack2);
 static edge_t* exist_edge_and_insert_if_not(nb_container_t* edges,
 					    edge_t* edge);
 static void** get_intersection_pack(const edge_t *const sgm1,
@@ -85,12 +86,11 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 	/* Insert segments and vertices */
 	nb_container_t* ht_vtx = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(ht_vtx, vtx_hash_key);
-	nb_container_set_comparer(ht_vtx, vtx_are_equal);
+	nb_container_set_comparer(ht_vtx, vtx_compare);
 	nb_container_set_destroyer(ht_vtx, vtx_destroy);
 
 	nb_container_t* avl_sgm = nb_container_create(NB_SORTED);
-	nb_container_set_key_generator(avl_sgm, edge_key_by_length);
-	nb_container_set_comparer(avl_sgm, edge_are_equal);
+	nb_container_set_comparer(avl_sgm, edge_compare);
 	nb_container_set_destroyer(avl_sgm, edge_destroy);
 	   
 	nb_container_t* sgm_intersect = search_intersections(model1, model2,
@@ -274,9 +274,8 @@ static nb_container_t* search_intersections(vcn_model_t *model1,
 {
 	edge_t** edges1 = insert_edges_and_vtx(model1, vertices, edges, false);
 	edge_t** edges2 = insert_edges_and_vtx(model2, vertices, edges, true);
-	nb_container_t *intersections =
-		nb_container_create(NB_SORTED);
-	nb_container_set_key_generator(intersections, intersection_pack_key);
+	nb_container_t *intersections =	nb_container_create(NB_SORTED);
+	nb_container_set_comparer(intersections, intersection_pack_comparer);
 	for (uint32_t i = 0; i < model1->M; i++) {
 		for (uint32_t j = 0; j < model2->M; j++) {
 			if (NULL != edges2[j]) {
@@ -342,15 +341,14 @@ static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
 	return vtx;
 }
 
-static inline uint32_t intersection_pack_key(const void* const pack)
-{
-	/* Since status = 3 means a parallel or coincident segments,
-	 * the priority to be processed must be high, because it could
-	 * dissapear by inserting another intersections. */
-  
-	void** p = (void**) pack;
-	int status = ((int*)p[0])[0];
-	return status;
+static int8_t intersection_pack_comparer(const void* const pack1,
+					 const void* const pack2)
+{  
+	void** p1 = (void**) pack1;
+	void** p2 = (void**) pack2;
+	int status1 = *((int*)p1[0]);
+	int status2 = *((int*)p2[0]);
+	return status1 - status2;
 }
 
 static inline edge_t* exist_edge_and_insert_if_not(nb_container_t* edges, 
@@ -445,7 +443,7 @@ static void** get_intersection_pack(const edge_t *const sgm1,
 	/* Create intersection pack */
 	void **intersection_pack = malloc(4 * sizeof((*intersection_pack)));
 	int *intersection_status = malloc(sizeof(*(intersection_status)));
-	intersection_status[0] = status;
+	*intersection_status = (status!=3) ? status:8;
 	intersection_pack[0] = intersection_status;
 	intersection_pack[1] = (edge_t*) sgm1;
 	intersection_pack[2] = (edge_t*) sgm2;
@@ -798,9 +796,8 @@ static void remove_short_segments(nb_container_t* avl_sgm,
 
 static nb_container_t* search_intersections_in_edges(nb_container_t *edges)
 {
-	nb_container_t *intersections = 
-		nb_container_create(NB_SORTED);
-	nb_container_set_key_generator(intersections, intersection_pack_key);
+	nb_container_t *intersections = nb_container_create(NB_SORTED);
+	nb_container_set_comparer(intersections, intersection_pack_comparer);
   
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, edges);

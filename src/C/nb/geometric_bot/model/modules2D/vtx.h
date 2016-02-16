@@ -17,7 +17,7 @@ uint32_t vtx_get_id(const vtx_t *const vtx);
 bool vtx_is_not_initial(const vtx_t *const vtx);
 void vtx_set_as_initial(vtx_t *vtx);
 uint32_t vtx_hash_key(const void *const  vertex);
-bool vtx_are_equal(const void *const vtxA,
+int8_t vtx_compare(const void *const vtxA,
 		   const void *const vtxB);
 
 #endif

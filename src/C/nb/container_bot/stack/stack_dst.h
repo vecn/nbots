@@ -16,11 +16,13 @@ void* stack_clone(const void *const stack_ptr,
 void stack_destroy(void *stack_ptr,
 		  void (*destroy)(void*));
 void stack_merge(void *list1_ptr, void *list2_ptr,
-		 uint32_t (*key)(const void*));
+		 uint32_t (*key)(const void*),
+		 int8_t (*compare)(const void*, const void*));
 void stack_clear(void *stack_ptr,
 		void (*destroy)(void*));
 bool stack_insert(void *stack_ptr, const void *val,
-		  uint32_t (*key)(const void*));
+		  uint32_t (*key)(const void*),
+		  int8_t (*compare)(const void*, const void*));
 void* stack_get_first(const void *const list);
 void* stack_delete_first(void *stack_ptr,
 			uint32_t (*key)(const void*));

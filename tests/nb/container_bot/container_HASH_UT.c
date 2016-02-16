@@ -101,7 +101,7 @@ static bool check_exist_if_not_with_collision(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
-	nb_container_set_comparer(cnt, are_equal);
+	nb_container_set_comparer(cnt, compare);
 	int8_t status;
 	uint32_t *size = nb_container_do(cnt, "get_size", NULL, &status);
 	int32_t to_find = *size + N_ITEMS; /* Not exist and key collides */

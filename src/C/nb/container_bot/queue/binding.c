@@ -47,7 +47,9 @@ void* queue_do(nb_container_t *container, const char* func,
 	*status = 0;
 	void *out = NULL;
 	if (0 == strcmp("insert_first", func)) {
-		queue_insert_first(container->cnt, data, container->op.key);
+	  queue_insert_first(container->cnt, data,
+			     container->op.key,
+			     container->op.compare);
 	} else {
 		*status = 2;
 	}

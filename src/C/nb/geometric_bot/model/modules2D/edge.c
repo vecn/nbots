@@ -37,7 +37,7 @@ inline uint32_t edge_key_by_length(const void *const edge_ptr)
 	return (uint32_t)(1e8 * edge_get_length(edge_ptr));
 }
 
-bool edge_are_equal(const void *const edge1_ptr, const void *const edge2_ptr)
+int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 {
 	const edge_t *const edge1 = edge1_ptr;
 	const edge_t *const edge2 = edge2_ptr;
@@ -45,6 +45,6 @@ bool edge_are_equal(const void *const edge1_ptr, const void *const edge2_ptr)
 	bool eq_e1v2_e2v2 = edge1->v2 == edge2->v2;
 	bool eq_e1v1_e2v2 = edge1->v1 == edge2->v2;
 	bool eq_e1v2_e2v1 = edge1->v2 == edge2->v1;
-	return (eq_e1v1_e2v1 && eq_e1v2_e2v2) ||
-		(eq_e1v1_e2v2 && eq_e1v2_e2v1);
+	return ((eq_e1v1_e2v1 && eq_e1v2_e2v2) ||
+		(eq_e1v1_e2v2 && eq_e1v2_e2v1)) ? 0:1;
 }

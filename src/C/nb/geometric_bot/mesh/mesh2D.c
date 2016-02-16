@@ -50,8 +50,6 @@ static int compare_trgA_isBetterThan_trgB(const void *const  trgA,
 					  const void *const  trgB);
 static int compare_trgA_isSmallerThan_trgB(const void *const  trgA,
 					   const void *const  trgB);
-static int compare_area1_isGreaterThan_area2(const void *const  a1,
-					     const void *const  a2);
 static int compare_id(const void* const ptrA,
 		      const void* const ptrB);
 static int compare_vtx(const void* const vtxA,
@@ -423,22 +421,6 @@ static inline int compare_trgA_isSmallerThan_trgB
 	else if (SB < SA)
 		return -1;  
 	return 0;
-}
-
-static inline int compare_area1_isGreaterThan_area2
-                                (const void *const restrict a1,
-				 const void *const restrict a2)
-{
-	double area1_d = ((double*)((void**)a1)[0])[0];
-	double area2_d = ((double*)((void**)a2)[0])[0];
-	uint64_t area1 = (uint64_t)(1e8 * area1_d);
-	uint64_t area2 = (uint64_t)(1e8 * area2_d);
-	if (area2 < area1) 
-		return 1;
-	else if (area2 > area1)
-		return -1;
-	else
-		return 0;
 }
 
 static inline int compare_id(const void* const ptrA,
