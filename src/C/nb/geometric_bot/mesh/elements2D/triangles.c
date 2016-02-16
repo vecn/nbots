@@ -144,9 +144,9 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 	graph->adj = calloc(graph->N, sizeof(*(graph->adj)));
 
 	/* Connectivity Matrix stored in container */
-	vcn_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
+	nb_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
 	for (uint32_t i = 0; i < graph->N; i++)
-		l_nodal_CM[i] = vcn_container_create(NB_CONTAINER_SORTED);
+		l_nodal_CM[i] = nb_container_create(NB_SORTED);
   
 	for (uint32_t k = 0; k < msh3trg->N_triangles; k++) {
 		for (uint32_t i = 0; i < 2; i++) {
@@ -155,16 +155,16 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 				uint32_t* jnode = malloc(sizeof(*jnode));
 				*inode = msh3trg->vertices_forming_triangles[k * 3 + i];
 				*jnode = msh3trg->vertices_forming_triangles[k * 3 + j];
-				uint32_t length1 = vcn_container_get_length(l_nodal_CM[inode[0]]);
-				uint32_t length2 = vcn_container_get_length(l_nodal_CM[jnode[0]]);
-				if (vcn_container_exist(l_nodal_CM[inode[0]], jnode) == NULL)
-					vcn_container_insert(l_nodal_CM[inode[0]], jnode);
-				if (vcn_container_exist(l_nodal_CM[jnode[0]], inode) == NULL)
-					vcn_container_insert(l_nodal_CM[jnode[0]], inode);
+				uint32_t length1 = nb_container_get_length(l_nodal_CM[inode[0]]);
+				uint32_t length2 = nb_container_get_length(l_nodal_CM[jnode[0]]);
+				if (nb_container_exist(l_nodal_CM[inode[0]], jnode) == NULL)
+					nb_container_insert(l_nodal_CM[inode[0]], jnode);
+				if (nb_container_exist(l_nodal_CM[jnode[0]], inode) == NULL)
+					nb_container_insert(l_nodal_CM[jnode[0]], inode);
 				bool free_j = false;
-				if (length1 == vcn_container_get_length(l_nodal_CM[inode[0]]))
+				if (length1 == nb_container_get_length(l_nodal_CM[inode[0]]))
 					free_j = true;
-				if (length2 == vcn_container_get_length(l_nodal_CM[jnode[0]]))
+				if (length2 == nb_container_get_length(l_nodal_CM[jnode[0]]))
 					free(inode);
 				if (free_j) 
 					free(jnode);
@@ -172,17 +172,17 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph
 		}
 	}
 	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = vcn_container_get_length(l_nodal_CM[i]);
+		graph->N_adj[i] = nb_container_get_length(l_nodal_CM[i]);
 		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
     
 		int j = 0;
-		while (vcn_container_is_not_empty(l_nodal_CM[i])) {
+		while (nb_container_is_not_empty(l_nodal_CM[i])) {
 			uint32_t* inode = 
-				vcn_container_delete_first(l_nodal_CM[i]);
+				nb_container_delete_first(l_nodal_CM[i]);
 			graph->adj[i][j++] = *inode;
 			free(inode);
 		}
-		vcn_container_destroy(l_nodal_CM[i]);
+		nb_container_destroy(l_nodal_CM[i]);
 	}
 	free(l_nodal_CM);
 	return graph;
@@ -251,7 +251,7 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 	if (include_edges)
 		mesh_2_msh3trg_cast_edges(mesh, msh3trg);
 
-	if(include_triangles && vcn_container_is_not_empty(mesh->ht_trg))
+	if(include_triangles && nb_container_is_not_empty(mesh->ht_trg))
 		mesh_2_msh3trg_cast_trg_and_alloc_id((vcn_mesh_t*)mesh, msh3trg, 
 						     include_neighbours);
 
@@ -436,19 +436,19 @@ static void mesh_2_msh3trg_cast_vertices(const vcn_mesh_t *const restrict mesh,
 static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const restrict mesh,
 				      vcn_msh3trg_t * restrict msh3trg)
 {
-	msh3trg->N_edges = vcn_container_get_length(mesh->ht_edge);
+	msh3trg->N_edges = nb_container_get_length(mesh->ht_edge);
 	msh3trg->edges = malloc(2 * msh3trg->N_edges * sizeof(*(msh3trg->edges)));
 
 	uint32_t i = 0;
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_edge);
-	while (vcn_iterator_has_more(iter)) {
-		msh_edge_t *edge = (msh_edge_t*) vcn_iterator_get_next(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
 		msh3trg->edges[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
 		msh3trg->edges[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
 		i += 1;
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
 static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict mesh,
@@ -458,10 +458,10 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 		malloc(3 * msh3trg->N_triangles *
 		       sizeof(*(msh3trg->triangles_sharing_sides)));
 
-    vcn_iterator_t* trg_iter =  vcn_iterator_create();
-    vcn_iterator_set_container(trg_iter, mesh->ht_trg);
-    while (vcn_iterator_has_more(trg_iter)) {
-	    msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(trg_iter);
+    nb_iterator_t* trg_iter =  nb_iterator_create();
+    nb_iterator_set_container(trg_iter, mesh->ht_trg);
+    while (nb_iterator_has_more(trg_iter)) {
+	    msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
 	    uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
 	    uint32_t id1 = msh3trg->N_triangles;
 	    if (NULL != trg->t1)
@@ -477,7 +477,7 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 	    msh3trg->triangles_sharing_sides[id*3+1] = id2;
 	    msh3trg->triangles_sharing_sides[id*3+2] = id3;
     }
-    vcn_iterator_destroy(trg_iter);
+    nb_iterator_destroy(trg_iter);
 }
 
 static void mesh_2_msh3trg_cast_trg_and_alloc_id
@@ -485,16 +485,16 @@ static void mesh_2_msh3trg_cast_trg_and_alloc_id
 				    vcn_msh3trg_t * restrict msh3trg,
 				    bool include_neighbours)
 {
-	msh3trg->N_triangles = vcn_container_get_length(mesh->ht_trg);
+	msh3trg->N_triangles = nb_container_get_length(mesh->ht_trg);
 	msh3trg->vertices_forming_triangles =
 		malloc(3 * msh3trg->N_triangles * 
 		       sizeof(*(msh3trg->vertices_forming_triangles)));
 
-	vcn_iterator_t* trg_iter = vcn_iterator_create();
-	vcn_iterator_set_container(trg_iter, mesh->ht_trg);
+	nb_iterator_t* trg_iter = nb_iterator_create();
+	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;
-	while (vcn_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(trg_iter);
+	while (nb_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
 		msh3trg->vertices_forming_triangles[i * 3] =
 			*((uint32_t*)((void**)trg->v1->attr)[0]);
 		msh3trg->vertices_forming_triangles[i*3+1] = 
@@ -511,7 +511,7 @@ static void mesh_2_msh3trg_cast_trg_and_alloc_id
 		}
 		i++;
 	}
-	vcn_iterator_destroy(trg_iter);
+	nb_iterator_destroy(trg_iter);
   
 	if(include_neighbours)
 		mesh_2_msh3trg_cast_trg_neighbours(mesh, msh3trg);
@@ -602,16 +602,16 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 
 static void mesh_2_msh3trg_free_trg_ids(vcn_mesh_t *restrict mesh)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_trg);
-	while (vcn_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
 		void** attr = (void**)trg->attr;
 		trg->attr = attr[1];
 		free(attr[0]);
 		free(attr);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
 static void mesh_alloc_vtx_ids(vcn_mesh_t * restrict mesh)

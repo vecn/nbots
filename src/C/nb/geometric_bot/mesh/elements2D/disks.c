@@ -45,12 +45,12 @@ static inline bool spack_vtx_is_from_input(const msh_vtx_t *vtx)
 
 static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 				       vcn_mshpack_t *spack,
-				       vcn_container_t *segments)
+				       nb_container_t *segments)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_edge);
-	while (vcn_iterator_has_more(iter)) {
-		msh_edge_t* sgm = (msh_edge_t*)vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		msh_edge_t* sgm = (msh_edge_t*)nb_iterator_get_next(iter);
 		if (spack_vtx_is_from_input(sgm->v1) != 
 		    spack_vtx_is_from_input(sgm->v2))
 			/* A != B : A XOR B (XOR Operator) */
@@ -78,7 +78,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 				continue;
 
 			uint32_t* sgm_struct = malloc(3 * sizeof(*sgm_struct));
-			vcn_container_insert(segments, sgm_struct);
+			nb_container_insert(segments, sgm_struct);
 
 			uint32_t idx_vtx = ((uint32_t*)((void**)vtx->attr)[0])[0];
 			sgm_struct[0] = idx1;
@@ -87,7 +87,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 			sgm_struct[2] = idx_vtx;
 		} else {
 			uint32_t* sgm_struct = malloc(3 * sizeof(*sgm_struct));
-			vcn_container_insert(segments, sgm_struct);
+			nb_container_insert(segments, sgm_struct);
 			
 			sgm_struct[0] = idx1;
 			sgm_struct[1] = idx2;
@@ -97,7 +97,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 			spack->N_adj[idx2] += 1;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 
 	for (uint32_t i=0; i < spack->N_spheres; i++)
 		spack->adj[i] = malloc(spack->N_adj[i] *
@@ -106,10 +106,10 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 	uint32_t* adj_matrix_next_idx = 
 		calloc(spack->N_spheres, sizeof(*adj_matrix_next_idx));
 
-	vcn_iterator_t* sgm_iter = vcn_iterator_create();
-	vcn_iterator_set_container(sgm_iter, segments);
-	while (vcn_iterator_has_more(sgm_iter)) {
-		const uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);    
+	nb_iterator_t* sgm_iter = nb_iterator_create();
+	nb_iterator_set_container(sgm_iter, segments);
+	while (nb_iterator_has_more(sgm_iter)) {
+		const uint32_t* sgm_struct = nb_iterator_get_next(sgm_iter);    
 		if(sgm_struct[2] < spack->N_spheres)
 			/* Does not consider the nodes on the boundary */
 			continue;
@@ -120,11 +120,11 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 		adj_matrix_next_idx[idx1] += 1;
 		adj_matrix_next_idx[idx2] += 1;
 	}
-	vcn_iterator_destroy(sgm_iter);
+	nb_iterator_destroy(sgm_iter);
 	free(adj_matrix_next_idx);
 }
 
-static double spack_optimize_assemble_system(vcn_container_t *segments,
+static double spack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
 					     vcn_sparse_t *Hk,
@@ -134,10 +134,10 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 {
 	double global_min = 0.0;
 	double gl[6];    /* Adjacence gradient */
-	vcn_iterator_t* sgm_iter = vcn_iterator_create();
-	vcn_iterator_set_container(sgm_iter, segments);
-	while (vcn_iterator_has_more(sgm_iter)) {
-		const uint32_t* sgm_struct = vcn_iterator_get_next(sgm_iter);
+	nb_iterator_t* sgm_iter = nb_iterator_create();
+	nb_iterator_set_container(sgm_iter, segments);
+	while (nb_iterator_has_more(sgm_iter)) {
+		const uint32_t* sgm_struct = nb_iterator_get_next(sgm_iter);
 		if (sgm_struct[2] == N_spheres  /* inner/inner segment */) {
 			/* Process as inner segment */
 			int id1 = sgm_struct[0];
@@ -214,7 +214,7 @@ static double spack_optimize_assemble_system(vcn_container_t *segments,
 			}
 		}
 	}
-	vcn_iterator_destroy(sgm_iter);
+	nb_iterator_destroy(sgm_iter);
 	return global_min;
 }
 
@@ -228,7 +228,7 @@ static inline bool compare_id(const void* const ptrA,
 
 static void spack_optimize(const vcn_mesh_t *const mesh,
 			   vcn_mshpack_t *spack, 
-			   vcn_container_t *segments,
+			   nb_container_t *segments,
 			   double *Xk,
 			   double overlapping_factor,
 			   uint32_t iterations)
@@ -328,11 +328,11 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		}
 		printf("                                                 \r"); /* TEMP */
 		bool change_adjacencies = false;
-		vcn_container_t** new_adj = malloc(spack->N_spheres * sizeof(*new_adj));
+		nb_container_t** new_adj = malloc(spack->N_spheres * sizeof(*new_adj));
 		for (uint32_t i = 0; i < spack->N_spheres; i++) {
 			double gap_factor = 1.5;
-			new_adj[i] = vcn_container_create(NB_CONTAINER_QUEUE);
-			vcn_container_set_comparer(new_adj[i], compare_id);
+			new_adj[i] = nb_container_create(NB_QUEUE);
+			nb_container_set_comparer(new_adj[i], compare_id);
 			/* Add current adjacencies close enough */
 			for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
 				uint32_t j_id = spack->adj[i][j];
@@ -340,7 +340,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 				    POW2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
 					uint32_t* id = malloc(sizeof(*id));
 					id[0] = j_id;
-					vcn_container_insert(new_adj[i], id);
+					nb_container_insert(new_adj[i], id);
 				} else {
 					change_adjacencies = true;
 				}
@@ -352,13 +352,13 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 					uint32_t k_id = spack->adj[j_id][k];
 					if(k_id == i)
 						continue;
-					if (NULL != vcn_container_exist(new_adj[i], &k_id))
+					if (NULL != nb_container_exist(new_adj[i], &k_id))
 						continue;
 					if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
 					    POW2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
 						uint32_t* id = malloc(sizeof(*id));
 						id[0] = k_id;
-						vcn_container_insert(new_adj[i], id);
+						nb_container_insert(new_adj[i], id);
 						change_adjacencies = true;
 					}
 				}
@@ -368,35 +368,35 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		/* Reallocate sparse matrix if a flip has been made */
 		if (change_adjacencies) {
 			/* Remove inner/inner segments */
-			vcn_iterator_t* sgm_iter = vcn_iterator_create();
-			vcn_iterator_set_container(sgm_iter, segments);
-			while (vcn_iterator_has_more(sgm_iter)) {
-				uint32_t* sgm_struct = (uint32_t*)vcn_iterator_get_next(sgm_iter);
+			nb_iterator_t* sgm_iter = nb_iterator_create();
+			nb_iterator_set_container(sgm_iter, segments);
+			while (nb_iterator_has_more(sgm_iter)) {
+				uint32_t* sgm_struct = (uint32_t*)nb_iterator_get_next(sgm_iter);
 				if (sgm_struct[2] ==  spack->N_spheres)
-					vcn_container_delete(segments, sgm_struct);
+					nb_container_delete(segments, sgm_struct);
 			}
-			vcn_iterator_destroy(sgm_iter);
+			nb_iterator_destroy(sgm_iter);
 
 			/* Reallocate adjacencies and insert new inner/inner segments */
 			for (uint32_t i = 0; i < spack->N_spheres; i++) {
 				free(spack->adj[i]);
-				spack->N_adj[i] = vcn_container_get_length(new_adj[i]);
+				spack->N_adj[i] = nb_container_get_length(new_adj[i]);
 				spack->adj[i] = malloc(spack->N_adj[i] * sizeof(*(spack->adj[i])));
 				uint32_t j = 0;
-				while (vcn_container_is_not_empty(new_adj[i])) {
-					uint32_t* id = vcn_container_delete_first(new_adj[i]);
+				while (nb_container_is_not_empty(new_adj[i])) {
+					uint32_t* id = nb_container_delete_first(new_adj[i]);
 					if (id[0] > i) {
 						uint32_t* sgm_struct =
 							malloc(3 * sizeof(*sgm_struct));
 						sgm_struct[0] = i;
 						sgm_struct[1] = id[0];
 						sgm_struct[2] = spack->N_spheres;
-						vcn_container_insert(segments, sgm_struct);
+						nb_container_insert(segments, sgm_struct);
 					}
 					spack->adj[i][j++] = id[0];
 					free(id);
 				}
-				vcn_container_destroy(new_adj[i]);
+				nb_container_destroy(new_adj[i]);
 			}
 			vcn_sparse_destroy(Hk);
 			
@@ -407,8 +407,8 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 			Hk = vcn_sparse_create(&graph, NULL, 3);
 		} else {
 			for (uint32_t i = 0; i < spack->N_spheres; i++) {
-				vcn_container_set_destroyer(new_adj[i], free);
-				vcn_container_destroy(new_adj[i]);
+				nb_container_set_destroyer(new_adj[i], free);
+				nb_container_destroy(new_adj[i]);
 			}
 		}
 		free(new_adj);
@@ -569,7 +569,7 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 
 	vcn_mshpack_t* spack = spack_create(N_spheres);
 
-	vcn_container_t* segments = vcn_container_create(NB_CONTAINER_QUEUE);
+	nb_container_t* segments = nb_container_create(NB_QUEUE);
 
 	spack_assemble_adjacencies(mesh, spack, segments);
 
@@ -591,8 +591,8 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 	
 	/* Free memory */
 	mesh_free_vtx_ids((vcn_mesh_t*)mesh); /* Casting mesh to non-const */
-	vcn_container_set_destroyer(segments, free);
-	vcn_container_destroy(segments);
+	nb_container_set_destroyer(segments, free);
+	nb_container_destroy(segments);
 	free(Xk);
 
 	return spack;

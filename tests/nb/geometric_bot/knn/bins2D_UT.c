@@ -48,22 +48,22 @@ static bool filter_with_data(const vcn_point2D_t *const p_ref,
 			     const vcn_point2D_t *const p,
 			     const void *const data);
 static bool contains_min_dd(const vcn_bins2D_t *const bins,
-			       const vcn_container_t *const cnt,
+			       const nb_container_t *const cnt,
 			       const vcn_point2D_t *const p1,
 			       const vcn_point2D_t *const p2);
-static bool all_in_half_space(const vcn_container_t *const cnt,
+static bool all_in_half_space(const nb_container_t *const cnt,
 			      const vcn_point2D_t *const p1,
 			      const vcn_point2D_t *const p2);
-static bool dont_include_edge_points(const vcn_container_t *const cnt,
+static bool dont_include_edge_points(const nb_container_t *const cnt,
 				     const vcn_point2D_t *const p1,
 				     const vcn_point2D_t *const p2);
-static double get_min_dd_in_container(const vcn_container_t *const cnt,
+static double get_min_dd_in_container(const nb_container_t *const cnt,
 				      const vcn_point2D_t *const p1,
 				      const vcn_point2D_t *const p2);
 static double get_min_dd_in_bins(const vcn_bins2D_t *const bins,
 				 const vcn_point2D_t *const p1,
 				 const vcn_point2D_t *const p2);
-static bool all_inside_circle(const vcn_container_t *const cnt,
+static bool all_inside_circle(const nb_container_t *const cnt,
 			      const double center[2],
 			      double radius);
 
@@ -281,16 +281,16 @@ static bool check_get_candidate_points_to_min_delaunay(void)
 	p1.x[1] = 1;
 	p2.x[0] = 1;
 	p2.x[1] = -1;
-	vcn_container_t *cnt = 
+	nb_container_t *cnt = 
 		vcn_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2);
-	bool is_ok = vcn_container_is_not_empty(cnt);
+	bool is_ok = nb_container_is_not_empty(cnt);
 	if (is_ok)
 		is_ok = is_ok && dont_include_edge_points(cnt, &p1, &p2);
 	if (is_ok)
 		is_ok = is_ok && all_in_half_space(cnt, &p1, &p2);
 	if (is_ok)
 		is_ok = is_ok && contains_min_dd(bins, cnt, &p1, &p2);
-	vcn_container_destroy(cnt);
+	nb_container_destroy(cnt);
 	vcn_bins2D_destroy(bins);
 	return is_ok;	
 }
@@ -301,11 +301,11 @@ static bool check_get_points_inside_circle(void)
 	vcn_bins2D_t *bins = get_bins(N);
 	double center[2] = {0, 0};
 	double radius = 10.0;
-	vcn_container_t *cnt = 
+	nb_container_t *cnt = 
 		vcn_bins2D_get_points_inside_circle(bins, center, radius);
-	bool is_ok = vcn_container_is_not_empty(cnt) &&
+	bool is_ok = nb_container_is_not_empty(cnt) &&
 		all_inside_circle(cnt, center, radius);
-	vcn_container_destroy(cnt);
+	nb_container_destroy(cnt);
 	vcn_bins2D_destroy(bins);
 	return is_ok;
 }
@@ -449,45 +449,45 @@ static inline bool filter_with_data(const vcn_point2D_t *const p_ref,
 	return (vcn_utils2D_get_dist(p_ref->x, p->x) > *((int*)data));
 }
 
-static bool all_in_half_space(const vcn_container_t *const cnt,
+static bool all_in_half_space(const nb_container_t *const cnt,
 			      const vcn_point2D_t *const p1,
 			      const vcn_point2D_t *const p2)
 {
 	bool is_ok = true;
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_point2D_t *p3 = vcn_iterator_get_next(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	while (nb_iterator_has_more(iter)) {
+		const vcn_point2D_t *p3 = nb_iterator_get_next(iter);
 		double area = vcn_utils2D_get_2x_trg_area(p1->x, p2->x, p3->x);
 		if (0 > area) {
 			is_ok = false;
 			break;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return is_ok;
 }
 
-static bool dont_include_edge_points(const vcn_container_t *const cnt,
+static bool dont_include_edge_points(const nb_container_t *const cnt,
 				     const vcn_point2D_t *const p1,
 				     const vcn_point2D_t *const p2)
 {
 	bool is_ok = true;
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_point2D_t *p3 = vcn_iterator_get_next(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	while (nb_iterator_has_more(iter)) {
+		const vcn_point2D_t *p3 = nb_iterator_get_next(iter);
 		if (p1 == p3 || p2 == p3) {
 			is_ok = false;
 			break;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return is_ok;
 }
 
 static bool contains_min_dd(const vcn_bins2D_t *const bins,
-			    const vcn_container_t *const cnt,
+			    const nb_container_t *const cnt,
 			    const vcn_point2D_t *const p1,
 			    const vcn_point2D_t *const p2)
 {
@@ -496,21 +496,21 @@ static bool contains_min_dd(const vcn_bins2D_t *const bins,
 	return min_dd <= min_dd_in_bins;
 }
 
-static double get_min_dd_in_container(const vcn_container_t *const cnt,
+static double get_min_dd_in_container(const nb_container_t *const cnt,
 				      const vcn_point2D_t *const p1,
 				      const vcn_point2D_t *const p2)
 {
 	double min_dd = 1e30;
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_point2D_t *p3 = vcn_iterator_get_next(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	while (nb_iterator_has_more(iter)) {
+		const vcn_point2D_t *p3 = nb_iterator_get_next(iter);
 		double min = vcn_utils2D_get_delaunay_dist(p1->x, p2->x,
 							   p3->x);
 		if (min < min_dd)
 			min_dd = min;
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return min_dd;
 }
 
@@ -541,21 +541,21 @@ static double get_min_dd_in_bins(const vcn_bins2D_t *const bins,
 	return min_dd;
 }
 
-static bool all_inside_circle(const vcn_container_t *const cnt,
+static bool all_inside_circle(const nb_container_t *const cnt,
 			      const double center[2],
 			      double radius)
 {
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
 	bool all_inside = true;
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_point2D_t *p = vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		const vcn_point2D_t *p = nb_iterator_get_next(iter);
 		double dist2 = vcn_utils2D_get_dist2(center, p->x);
 		if (POW2(radius) - dist2 < 0) {
 			all_inside = false;
 			break;
 		}		
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return all_inside;
 }

@@ -34,7 +34,7 @@ static void voronoi_get_patched_circumcenter(double* v1,
 					     double* v3,
 					     /* Output */
 					     double* circumcenter);
-static vcn_container_t* voronoi_get_boundary_segments_with_vertices
+static nb_container_t* voronoi_get_boundary_segments_with_vertices
                                         (const vcn_mesh_t* const mesh);
 		
 static bool voronoi_vtx_are_equal(const void* const A,
@@ -48,7 +48,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 				 msh_trg_t** triangles, uint32_t N_triangles,
 				 /* NULL for a constant density */
 				 double (*density)(double*),
-				 const vcn_container_t *const avl_boundary_sgm,
+				 const nb_container_t *const avl_boundary_sgm,
 				 uint32_t max_iter);
 
 vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
@@ -78,9 +78,9 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 	uint32_t N_vertices = vcn_bins2D_get_length(aux_mesh->ug_vtx);
 	msh_vtx_t** vertices =  malloc(2 * voronoi->N_polygons *
 				       sizeof(*vertices));
-	uint32_t N_segments = vcn_container_get_length(aux_mesh->ht_edge);
+	uint32_t N_segments = nb_container_get_length(aux_mesh->ht_edge);
 	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
-	uint32_t N_triangles = vcn_container_get_length(aux_mesh->ht_trg);
+	uint32_t N_triangles = nb_container_get_length(aux_mesh->ht_trg);
 	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
 
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
@@ -96,20 +96,20 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 		attr[1] = vtx->attr;
 		vtx->attr = attr;
 	}
-	vcn_iterator_t *sgm_iter = vcn_iterator_create();
-	vcn_iterator_set_container(sgm_iter, aux_mesh->ht_edge);
+	nb_iterator_t *sgm_iter = nb_iterator_create();
+	nb_iterator_set_container(sgm_iter, aux_mesh->ht_edge);
 	i = 0;
-	while (vcn_iterator_has_more(sgm_iter)) {
-		msh_edge_t* sgm = (msh_edge_t*)vcn_iterator_get_next(sgm_iter);
+	while (nb_iterator_has_more(sgm_iter)) {
+		msh_edge_t* sgm = (msh_edge_t*)nb_iterator_get_next(sgm_iter);
 		segments[i++] = sgm;
 	}
-	vcn_iterator_destroy(sgm_iter);
+	nb_iterator_destroy(sgm_iter);
 
-	vcn_iterator_t *trg_iter = vcn_iterator_create();
-	vcn_iterator_set_container(trg_iter, aux_mesh->ht_trg);
+	nb_iterator_t *trg_iter = nb_iterator_create();
+	nb_iterator_set_container(trg_iter, aux_mesh->ht_trg);
 	i = 0;
-	while (vcn_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(trg_iter);
+	while (nb_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
 		/* Allocate the ID */
 		void **attr = malloc(2 * sizeof(*attr));
 		uint32_t *id = malloc(sizeof(*id));
@@ -120,7 +120,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 		/* Put the triangle into the array */
 		triangles[i++] = trg;
 	}
-	vcn_iterator_destroy(trg_iter);
+	nb_iterator_destroy(trg_iter);
 
 	uint32_t *perm = NULL; /* Dummy initialization */
 	if (NULL != labeling) {
@@ -157,7 +157,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 		free(perm);
 
 	/* Compute vertices of polygons which lies on the boundary */
-	vcn_container_t* avl_boundary_sgm = 
+	nb_container_t* avl_boundary_sgm = 
 		voronoi_get_boundary_segments_with_vertices(aux_mesh);
 
 	/* Lloyd Iteration */
@@ -173,9 +173,9 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 	msh_trg_t** trg_x_vtx = calloc(N_vertices, sizeof(*trg_x_vtx));
 
 	/* Array with the nodes conforming each Voronoi polygon */
-	vcn_container_t** node_x_vtx = malloc(N_vertices * sizeof(*node_x_vtx));
+	nb_container_t** node_x_vtx = malloc(N_vertices * sizeof(*node_x_vtx));
 	for (uint32_t i = 0; i < N_vertices; i++)
-		node_x_vtx[i] = vcn_container_create(NB_CONTAINER_STACK);
+		node_x_vtx[i] = nb_container_create(NB_STACK);
 
 	/* Array to store the circumcenter of the triangles */
 	vcn_point2D_t** trg_center = calloc(N_triangles, sizeof(*trg_center));
@@ -219,7 +219,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 				voronoi_boundary_sgm_t aux_bsgm;
 				aux_bsgm.sgm = ext_sgm;
 				voronoi_boundary_sgm_t* bsgm =
-					vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+					nb_container_exist(avl_boundary_sgm, &aux_bsgm);
       
 				/* Insert centroid */
 				vcn_point2D_t *centroid = bsgm->v1;
@@ -227,14 +227,14 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 				centroid = voronoi_insert_global(voronoi_vtx, centroid_cpy);
 				if (centroid != centroid_cpy)
 					vcn_point2D_destroy(centroid_cpy);
-				vcn_container_insert(node_x_vtx[i], centroid);
+				nb_container_insert(node_x_vtx[i], centroid);
 				if (bsgm->N_vertices > 0) {
 					/* Case 1 & 2 */
 					if (!bsgm->vtx_inserted[0]) {
 						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
 						bsgm->vtx_inserted[0] = true;
 					}
-					vcn_container_insert(node_x_vtx[i], bsgm->vertices[0]);
+					nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
 					if (bsgm->N_vertices == 2) {
 						/* Case 2 */
 						/* Next triangle */
@@ -251,12 +251,12 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 							else if (first_trg->v3 == vertices[i])
 								corner_ext_sgm = first_trg->s2;
 							aux_bsgm.sgm = corner_ext_sgm;
-							bsgm = vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+							bsgm = nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 							if (!bsgm->vtx_inserted[0]) {
 								vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
 								bsgm->vtx_inserted[0] = true;
 							}
-							vcn_container_insert(node_x_vtx[i], bsgm->vertices[0]);
+							nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
 							continue; /* Iteration over Voronoi polygons */
 						} else {
 							first_trg = next_trg;
@@ -280,7 +280,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 					voronoi_boundary_sgm_t aux_bsgm;
 					aux_bsgm.sgm = op_sgm;
 					bsgm =
-						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 					if (bsgm->N_vertices == 0 || bsgm->N_vertices == 1)
 						insert_circumcenter_flag = true;
 				} else {
@@ -304,8 +304,8 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 						vcn_point2D_destroy(circumcenter_cpy);
 					trg_center[trg_id[0]] = circumcenter;
 				}
-				if(!vcn_container_exist(node_x_vtx[i], trg_center[trg_id[0]]))
-					vcn_container_insert(node_x_vtx[i], trg_center[trg_id[0]]);
+				if(!nb_container_exist(node_x_vtx[i], trg_center[trg_id[0]]))
+					nb_container_insert(node_x_vtx[i], trg_center[trg_id[0]]);
 			} else {
 				if (!bsgm->vtx_inserted[0]) {
 					vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
@@ -315,8 +315,8 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 					vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[1]);
 					bsgm->vtx_inserted[1] = true;
 				}
-				vcn_container_insert(node_x_vtx[i], bsgm->vertices[0]);
-				vcn_container_insert(node_x_vtx[i], bsgm->vertices[1]);
+				nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
+				nb_container_insert(node_x_vtx[i], bsgm->vertices[1]);
 			}
 
 			/* Next triangle */
@@ -338,7 +338,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 				voronoi_boundary_sgm_t aux_bsgm;
 				aux_bsgm.sgm = ext_sgm;
 				voronoi_boundary_sgm_t* bsgm =
-					vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+					nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 
 				if (bsgm->N_vertices == 1) {
 					/* Case 1 */
@@ -346,11 +346,11 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
 						bsgm->vtx_inserted[0] = true;
 					}
-					vcn_container_insert(node_x_vtx[i], bsgm->vertices[0]);
+					nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
 				} else if (bsgm->N_vertices == 2) {
 					/* Case 2 */
 					uint32_t* last_trg_id = (uint32_t*)((void**)last_trg->attr)[0];
-					vcn_point2D_t* last_vtx = vcn_container_delete_first(node_x_vtx[i]);
+					vcn_point2D_t* last_vtx = nb_container_delete_first(node_x_vtx[i]);
 					vcn_bins2D_delete(voronoi_vtx, last_vtx);
 					free(trg_center[last_trg_id[0]]);
 					trg_center[last_trg_id[0]] = NULL;
@@ -359,7 +359,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[1]);
 						bsgm->vtx_inserted[1] = true;
 					}
-					vcn_container_insert(node_x_vtx[i], bsgm->vertices[1]);
+					nb_container_insert(node_x_vtx[i], bsgm->vertices[1]);
 				}
 			}
 		}
@@ -377,12 +377,12 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 		voronoi->centroids[i*2+1] = 
 			vertices[i]->x[1]/aux_mesh->scale + aux_mesh->ydisp;
 		/* Store vertices (boundaries of polygons) */
-		voronoi->N_vertices_forming_polygons[i] = vcn_container_get_length(node_x_vtx[i]);
+		voronoi->N_vertices_forming_polygons[i] = nb_container_get_length(node_x_vtx[i]);
 		voronoi->vertices_forming_polygons[i] =
 			malloc(voronoi->N_vertices_forming_polygons[i] *
 			       sizeof(*(voronoi->vertices_forming_polygons[i])));
 		for (uint32_t j = 0; j < voronoi->N_vertices_forming_polygons[i]; j++) {
-			vcn_point2D_t* vtx = vcn_container_delete_first(node_x_vtx[i]);
+			vcn_point2D_t* vtx = nb_container_delete_first(node_x_vtx[i]);
 			uint32_t* id;
 			if (NULL == vtx->attr) {
 				id = malloc(sizeof(*id));
@@ -399,7 +399,7 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 			voronoi->vertices_forming_polygons[i][j] = id[0];
 		}
 		/* Free memory */
-		vcn_container_destroy(node_x_vtx[i]);
+		nb_container_destroy(node_x_vtx[i]);
 	}
 
 	/* Get adjacencies */
@@ -443,8 +443,8 @@ vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
 	free(trg_x_vtx);
 	vcn_bins2D_set_attribute_destroyer(voronoi_vtx, free);
 	vcn_bins2D_destroy(voronoi_vtx);
-	vcn_container_set_destroyer(avl_boundary_sgm, free);
-	vcn_container_destroy(avl_boundary_sgm);
+	nb_container_set_destroyer(avl_boundary_sgm, free);
+	nb_container_destroy(avl_boundary_sgm);
 
 	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = vertices[i];
@@ -553,15 +553,15 @@ static void voronoi_get_patched_circumcenter(double* v1,
   }
 }
 
-static vcn_container_t* voronoi_get_boundary_segments_with_vertices
+static nb_container_t* voronoi_get_boundary_segments_with_vertices
 (const vcn_mesh_t* const mesh)
 {
 	/* The size must not be zero if there are not input segments */
-	vcn_container_t* avl_boundary_sgm =
-		vcn_container_create(NB_CONTAINER_SORTED);
+	nb_container_t* avl_boundary_sgm =
+		nb_container_create(NB_SORTED);
 	/* REFACTOR
-	vcn_container_set_key_generator(compare_voronoi_sgm);
-	vcn_container_set_comparer();
+	nb_container_set_key_generator(compare_voronoi_sgm);
+	nb_container_set_comparer();
 	*/
 	for (uint32_t i=0; i < mesh->N_input_sgm; i++) {
 		if (NULL == mesh->input_sgm[i])
@@ -576,7 +576,7 @@ static vcn_container_t* voronoi_get_boundary_segments_with_vertices
 			voronoi_boundary_sgm_t* bsgm = calloc(1, sizeof(*bsgm));
 			bsgm->sgm = sgm;
 			bsgm->v1 = vcn_point2D_create();
-			vcn_container_insert(avl_boundary_sgm, bsgm);
+			nb_container_insert(avl_boundary_sgm, bsgm);
 			msh_trg_t* trg;
 			if (sgm->t1 == NULL) {
 				memcpy(bsgm->v1->x, sgm->v2->x,
@@ -687,14 +687,14 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 				 msh_trg_t** triangles, uint32_t N_triangles,
 				 /* NULL for a constant density */
 				 double (*density)(double*),
-				 const vcn_container_t *const avl_boundary_sgm,
+				 const nb_container_t *const avl_boundary_sgm,
 				 uint32_t max_iter)
 {
 	/* Initialize lists to store triangles connections */
 	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = vertices[i];
 		void** attr = malloc(2 * sizeof(*attr));
-		attr[0] = vcn_container_create(NB_CONTAINER_QUEUE);
+		attr[0] = nb_container_create(NB_QUEUE);
 		attr[1] = vtx->attr;
 		vtx->attr = attr;
 	}
@@ -714,9 +714,9 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						 circumcenter);
 
 		/* Set triangle to its vertices */
-		vcn_container_insert((vcn_container_t*)((void**)trg->v1->attr)[0], trg);
-		vcn_container_insert((vcn_container_t*)((void**)trg->v2->attr)[0], trg);
-		vcn_container_insert((vcn_container_t*)((void**)trg->v3->attr)[0], trg);
+		nb_container_insert((nb_container_t*)((void**)trg->v1->attr)[0], trg);
+		nb_container_insert((nb_container_t*)((void**)trg->v2->attr)[0], trg);
+		nb_container_insert((nb_container_t*)((void**)trg->v3->attr)[0], trg);
 	}
 	/* Lloyd's iteration */
 	double norm2 = 1e10;
@@ -728,14 +728,14 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 			msh_vtx_t* vtx = vertices[i];
       
 			/* Get vertices to calculate center of mass */
-			vcn_container_t* l_vtx = vcn_container_create(NB_CONTAINER_QUEUE);
-			vcn_container_set_comparer(l_vtx, voronoi_vtx_are_equal);
-			vcn_container_insert(l_vtx, vtx->x);
-			vcn_container_t* list = (vcn_container_t*)((void**)vtx->attr)[0];
-			vcn_iterator_t* liter = vcn_iterator_create();
-			vcn_iterator_set_container(liter, list);
-			while (vcn_iterator_has_more(liter)) {
-				msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(liter);
+			nb_container_t* l_vtx = nb_container_create(NB_QUEUE);
+			nb_container_set_comparer(l_vtx, voronoi_vtx_are_equal);
+			nb_container_insert(l_vtx, vtx->x);
+			nb_container_t* list = (nb_container_t*)((void**)vtx->attr)[0];
+			nb_iterator_t* liter = nb_iterator_create();
+			nb_iterator_set_container(liter, list);
+			while (nb_iterator_has_more(liter)) {
+				msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(liter);
 				double* circumcenter = (double*)((void**)trg->attr)[0];
 	
 				msh_edge_t* sgm_right = mtrg_get_right_edge(trg, vtx);
@@ -746,13 +746,13 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 					voronoi_boundary_sgm_t aux_bsgm;
 					aux_bsgm.sgm = sgm_opposite;
 					voronoi_boundary_sgm_t* bsgm =
-						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 					if (bsgm->N_vertices == 2) {
 						/* Case 2, opposite side */
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x))
-							vcn_container_insert(l_vtx, bsgm->vertices[0]->x);
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[1]->x))
-							vcn_container_insert(l_vtx, bsgm->vertices[1]->x);
+						if (!nb_container_exist(l_vtx, bsgm->vertices[0]->x))
+							nb_container_insert(l_vtx, bsgm->vertices[0]->x);
+						if (!nb_container_exist(l_vtx, bsgm->vertices[1]->x))
+							nb_container_insert(l_vtx, bsgm->vertices[1]->x);
 					}
 				}
 	
@@ -761,13 +761,13 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 					voronoi_boundary_sgm_t aux_bsgm;
 					aux_bsgm.sgm = sgm_right;
 					voronoi_boundary_sgm_t* bsgm =
-						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 					/* Add centroid to case 1 and 2 */
-					if (!vcn_container_exist(l_vtx, bsgm->v1->x))
-						vcn_container_insert(l_vtx, bsgm->v1->x);
+					if (!nb_container_exist(l_vtx, bsgm->v1->x))
+						nb_container_insert(l_vtx, bsgm->v1->x);
 					if (bsgm->N_vertices > 0) {
-						if (!vcn_container_exist(l_vtx, bsgm->vertices[0]->x))
-							vcn_container_insert(l_vtx, bsgm->vertices[0]->x);
+						if (!nb_container_exist(l_vtx, bsgm->vertices[0]->x))
+							nb_container_insert(l_vtx, bsgm->vertices[0]->x);
 					}
 				}
 				if (medge_is_subsgm(sgm_left) &&
@@ -775,37 +775,37 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 					voronoi_boundary_sgm_t aux_bsgm;
 					aux_bsgm.sgm = sgm_left;
 					voronoi_boundary_sgm_t* bsgm =
-						vcn_container_exist(avl_boundary_sgm, &aux_bsgm);
+						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
 	  
 					/* Case 1 and 2 */
 					if (bsgm->N_vertices > 0) {
 						msh_vtx_t* bvtx = bsgm->vertices[0];
 						if (bsgm->N_vertices == 2)
 							bvtx = bsgm->vertices[1];
-						if (!vcn_container_exist(l_vtx, bvtx->x))
-							vcn_container_insert(l_vtx, bvtx->x);
+						if (!nb_container_exist(l_vtx, bvtx->x))
+							nb_container_insert(l_vtx, bvtx->x);
 					}
 				}
 	
 				/* Always consider the circumcenter to compute the center of mass */
-				if (!vcn_container_exist(l_vtx, circumcenter))
-					vcn_container_insert(l_vtx, circumcenter);
+				if (!nb_container_exist(l_vtx, circumcenter))
+					nb_container_insert(l_vtx, circumcenter);
 			}
-			vcn_iterator_destroy(liter);
+			nb_iterator_destroy(liter);
 
 			/* Compute center of mass */
 			double* internal_vtx =
-				malloc(vcn_container_get_length(l_vtx) * 2 * sizeof(*internal_vtx));
+				malloc(nb_container_get_length(l_vtx) * 2 * sizeof(*internal_vtx));
 			uint32_t id = 0;
-			liter = vcn_iterator_create();
-			vcn_iterator_set_container(liter, l_vtx);
-			while (vcn_iterator_has_more(liter)) {
-				double* p = (double*)vcn_iterator_get_next(liter);
+			liter = nb_iterator_create();
+			nb_iterator_set_container(liter, l_vtx);
+			while (nb_iterator_has_more(liter)) {
+				double* p = (double*)nb_iterator_get_next(liter);
 				memcpy(&(internal_vtx[id*2]), p, 2*sizeof(double));
 				id++;
 			}
-			vcn_iterator_destroy(liter);
-			vcn_container_destroy(l_vtx);
+			nb_iterator_destroy(liter);
+			nb_container_destroy(l_vtx);
       			
 			vcn_mesh_t* mesh_center_of_mass = vcn_mesh_create(); 
 			vcn_mesh_get_delaunay(mesh_center_of_mass, id,
@@ -815,10 +815,10 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 
 			double next_x[2] = {0.0, 0.0};
 			double normalizer = 0.0;
-			vcn_iterator_t* trg_iter = vcn_iterator_create();
-			vcn_iterator_set_container(trg_iter, mesh_center_of_mass->ht_trg);
-			while (vcn_iterator_has_more(trg_iter)) {
-				msh_trg_t* trg = (msh_trg_t*)vcn_iterator_get_next(trg_iter);
+			nb_iterator_t* trg_iter = nb_iterator_create();
+			nb_iterator_set_container(trg_iter, mesh_center_of_mass->ht_trg);
+			while (nb_iterator_has_more(trg_iter)) {
+				msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
 				double trg_center[2];
 				double trg_v1[2];
 				trg_v1[0] = trg->v1->x[0]/mesh_center_of_mass->scale + mesh_center_of_mass->xdisp;
@@ -855,7 +855,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 					normalizer += area * density_center;
 				}
 			}
-			vcn_iterator_destroy(trg_iter);
+			nb_iterator_destroy(trg_iter);
 			vcn_mesh_destroy(mesh_center_of_mass);
       			
 			next_x[0] /= normalizer;
@@ -895,19 +895,19 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						msh_edge_t* shared_sgm = trg->s1;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;
-						vcn_container_t* list1 = (vcn_container_t*)((void**)shared_sgm->v1->attr)[0];
-						vcn_container_t* list2 = (vcn_container_t*)((void**)shared_sgm->v2->attr)[0];
-						vcn_container_t* list3 = (vcn_container_t*)
+						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
+						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
+						nb_container_t* list3 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						vcn_container_t* list4 = (vcn_container_t*)
+						nb_container_t* list4 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
 						/* Flip segment */
 						medge_flip_without_dealloc(shared_sgm);
 						/* Update triangular lists */
-						vcn_container_delete(list1, t1);
-						vcn_container_delete(list2, t2);
-						vcn_container_insert(list3, t2);
-						vcn_container_insert(list4, t1);
+						nb_container_delete(list1, t1);
+						nb_container_delete(list2, t2);
+						nb_container_insert(list3, t2);
+						nb_container_insert(list4, t1);
 
 						flipped = true;
 					}
@@ -920,19 +920,19 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						msh_edge_t* shared_sgm = trg->s2;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;
-						vcn_container_t* list1 = (vcn_container_t*)((void**)shared_sgm->v1->attr)[0];
-						vcn_container_t* list2 = (vcn_container_t*)((void**)shared_sgm->v2->attr)[0];
-						vcn_container_t* list3 = (vcn_container_t*)
+						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
+						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
+						nb_container_t* list3 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						vcn_container_t* list4 = (vcn_container_t*)
+						nb_container_t* list4 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
 						/* Flip segment */
 						medge_flip_without_dealloc(shared_sgm);
 						/* Update triangular lists */
-						vcn_container_delete(list1, t1);
-						vcn_container_delete(list2, t2);
-						vcn_container_insert(list3, t2);
-						vcn_container_insert(list4, t1);
+						nb_container_delete(list1, t1);
+						nb_container_delete(list2, t2);
+						nb_container_insert(list3, t2);
+						nb_container_insert(list4, t1);
 
 						flipped = true;
 					}
@@ -945,19 +945,19 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 						msh_edge_t* shared_sgm = trg->s3;
 						msh_trg_t* t1 = shared_sgm->t1;
 						msh_trg_t* t2 = shared_sgm->t2;
-						vcn_container_t* list1 = (vcn_container_t*)((void**)shared_sgm->v1->attr)[0];
-						vcn_container_t* list2 = (vcn_container_t*)((void**)shared_sgm->v2->attr)[0];
-						vcn_container_t* list3 = (vcn_container_t*)
+						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
+						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
+						nb_container_t* list3 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						vcn_container_t* list4 = (vcn_container_t*)
+						nb_container_t* list4 = (nb_container_t*)
 							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
 						/* Flip segment */
 						medge_flip_without_dealloc(shared_sgm);
 						/* Update triangular lists */
-						vcn_container_delete(list1, t1);
-						vcn_container_delete(list2, t2);
-						vcn_container_insert(list3, t2);
-						vcn_container_insert(list4, t1);
+						nb_container_delete(list1, t1);
+						nb_container_delete(list2, t2);
+						nb_container_insert(list3, t2);
+						nb_container_insert(list4, t1);
 					}
 				}
 			}
@@ -976,7 +976,7 @@ static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
 		msh_vtx_t* vtx = vertices[i];
 		void** attr = (void**)vtx->attr;
 		vtx->attr = attr[1];
-		vcn_container_destroy((vcn_container_t*)attr[0]);
+		nb_container_destroy((nb_container_t*)attr[0]);
 		free(attr);
 	}
 

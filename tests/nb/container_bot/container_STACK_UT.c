@@ -1,4 +1,4 @@
-#define CONTAINER_ID NB_CONTAINER_STACK
+#define CONTAINER_ID NB_STACK
 #define N_ITEMS 200
 #include "container_TEMPLATE_UT.c"
 

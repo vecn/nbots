@@ -1,6 +1,7 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
 #define __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
 
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 
@@ -63,8 +64,8 @@ struct vcn_mesh_s {
 				 * forming this input segment. */
 	/* Data structures to handle mesh */
 	vcn_bins2D_t* ug_vtx;       /* Grid to sort vertices */
-	vcn_container_t* ht_trg;   /* Hash table of triangles */
-	vcn_container_t* ht_edge;   /* Hash table of segments */
+	nb_container_t* ht_trg;   /* Hash table of triangles */
+	nb_container_t* ht_edge;   /* Hash table of segments */
 
 	/* Scale and shift values to handle floating point error */
 	double scale;
@@ -162,13 +163,13 @@ msh_edge_t* mtrg_get_CCW_edge(const msh_trg_t *const trg,
 			      const msh_edge_t *const edge);
 msh_edge_t* mtrg_get_CW_edge(const msh_trg_t *const trg,
 			     const msh_edge_t *const edge);
-msh_edge_t* mesh_insert_edge(vcn_container_t *const ht_edge,
+msh_edge_t* mesh_insert_edge(nb_container_t *const ht_edge,
 			     const msh_vtx_t *const v1, 
 			     const msh_vtx_t *const v2);
-msh_edge_t* mesh_exist_edge_guided(vcn_container_t *const ht_edge,
+msh_edge_t* mesh_exist_edge_guided(nb_container_t *const ht_edge,
 				   const msh_vtx_t *const v1,
 				   const msh_vtx_t *const v2);
-msh_edge_t* mesh_exist_edge(vcn_container_t *const ht_edge,
+msh_edge_t* mesh_exist_edge(nb_container_t *const ht_edge,
 			    const msh_vtx_t *const v1,
 			    const msh_vtx_t *const v2);
 void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg);

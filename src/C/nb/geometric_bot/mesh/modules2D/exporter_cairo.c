@@ -44,7 +44,7 @@ static void draw_triangle_partition_border(cairo_t *cr,
 					   double width, double height);
 static void scale_vtx(double vtx[2], double center[2], double zoom);
 static void draw_triangles(cairo_t *const cr,
-			   const vcn_container_t *const ht_trg,
+			   const nb_container_t *const ht_trg,
 			   int width, int height,
 			   const camera_t *const cam,
 			   bool fill_triangles,
@@ -93,16 +93,16 @@ static inline void set_center_and_zoom(camera_t *cam, double box[4],
 }
 
 static void draw_triangles(cairo_t *const cr,
-			   const vcn_container_t *const ht_trg,
+			   const nb_container_t *const ht_trg,
 			   int width, int height,
 			   const camera_t *const cam,
 			   bool fill_triangles,
 			   double rgba_bg[4], double rgb_fg[3])
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, ht_trg);
-	while (vcn_iterator_has_more(iter)) {
-		const msh_trg_t* trg = vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		cairo_move_to(cr, 
 			      cam->zoom * trg->v1->x[0] - 
 			      cam->zoom * cam->center[0] + width / 2.0,
@@ -128,7 +128,7 @@ static void draw_triangles(cairo_t *const cr,
 		cairo_set_source_rgb(cr, rgb_fg[0], rgb_fg[1], rgb_fg[2]);
 		cairo_stroke(cr);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
 static void draw_input_vertices(cairo_t *const restrict cr,

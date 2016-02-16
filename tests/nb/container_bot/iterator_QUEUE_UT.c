@@ -1,4 +1,4 @@
-#define CONTAINER_ID NB_CONTAINER_QUEUE
+#define CONTAINER_ID NB_QUEUE
 #define N_ITEMS 5000
 #include "iterator_TEMPLATE_UT.c"
 

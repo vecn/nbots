@@ -20,10 +20,10 @@
 #define POW2(a) ((a)*(a))
 
 static void build_wire(const vcn_model_t *const model,
-		       vcn_container_t *wires, char *mask_wired,
+		       nb_container_t *wires, char *mask_wired,
 		       uint32_t edge_id);
 static bool link_to_wire(const vcn_model_t *const model,
-			 char *mask_wired, vcn_container_t *wire,
+			 char *mask_wired, nb_container_t *wire,
 			 uint32_t edge_id, uint32_t *vstart,
 			 uint32_t *vfinish);
 static bool is_at_start(const vcn_model_t *const model,
@@ -33,23 +33,23 @@ static bool is_at_finish(const vcn_model_t *const model,
 static void link_at_start(const vcn_model_t *const model,
 			  uint32_t *edge,
 			  uint32_t edge_id, uint32_t vstart);
-static void insert_at_start(vcn_container_t *wire, const void *const val);
+static void insert_at_start(nb_container_t *wire, const void *const val);
 static uint32_t update_end_point(const vcn_model_t *const model,
 				 uint32_t edge_id, uint32_t end_point);
 static void link_at_finish(const vcn_model_t *const model,
 			   uint32_t *edge,
 			   uint32_t edge_id, uint32_t vfinish);
 static void remove_all_collinearities(const vcn_model_t *const model,
-				      const vcn_container_t *const wires,
+				      const nb_container_t *const wires,
 				      uint32_t N_fixed_vertices,
 				      uint32_t* fixed_vertices,
 				      double tolerance);
 static void remove_collinearities_of_wire(const vcn_model_t *const model,
-					  vcn_container_t *wire,
+					  nb_container_t *wire,
 					  uint32_t N_fixed_vertices,
 					  uint32_t* fixed_vertices,
 					  double tolerance);
-static bool collapse_wire(const vcn_model_t *const model, vcn_container_t* wire,
+static bool collapse_wire(const vcn_model_t *const model, nb_container_t* wire,
 			  uint32_t N_fixed_vertices,
 			  uint32_t* fixed_vertices,
 			  double tolerance);
@@ -59,9 +59,9 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 				   uint32_t* fixed_vertices,
 				   double tolerance);
 
-vcn_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
+nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 {
-	vcn_container_t* wires = vcn_container_create(NB_CONTAINER_QUEUE);
+	nb_container_t* wires = nb_container_create(NB_QUEUE);
 	char* mask_wired = calloc(model->M, 1);
 	for (uint32_t i = 0; i < model->M; i++) {
 		if (0 == mask_wired[i])
@@ -72,15 +72,15 @@ vcn_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 }
 
 static void build_wire(const vcn_model_t *const model,
-		       vcn_container_t *wires, char *mask_wired,
+		       nb_container_t *wires, char *mask_wired,
 		       uint32_t edge_id)
 {
 	mask_wired[edge_id] = 1;
-	vcn_container_t* new_wire = vcn_container_create(NB_CONTAINER_QUEUE);
+	nb_container_t* new_wire = nb_container_create(NB_QUEUE);
 	uint32_t* edge = malloc(2 * sizeof(*edge));
 	edge[0] = GET_1_EDGE_VTX(model, edge_id);
 	edge[1] = GET_2_EDGE_VTX(model, edge_id);
-	vcn_container_insert(new_wire, edge);
+	nb_container_insert(new_wire, edge);
 	uint32_t vstart = edge[0];
 	uint32_t vfinish = edge[1];
 	uint32_t j = 0;
@@ -94,11 +94,11 @@ static void build_wire(const vcn_model_t *const model,
 		else
 			j += 1;
 	}
-	vcn_container_insert(wires, new_wire);
+	nb_container_insert(wires, new_wire);
 }
 
 static bool link_to_wire(const vcn_model_t *const model,
-			 char *mask_wired, vcn_container_t *wire,
+			 char *mask_wired, nb_container_t *wire,
 			 uint32_t edge_id, uint32_t *vstart,
 			 uint32_t *vfinish)
 {
@@ -114,7 +114,7 @@ static bool link_to_wire(const vcn_model_t *const model,
 		mask_wired[edge_id] = 1;
 		uint32_t *edge = malloc(2 * sizeof(*edge));
 		link_at_finish(model, edge, edge_id, *vfinish);
-		vcn_container_insert(wire, edge);
+		nb_container_insert(wire, edge);
 		*vfinish = update_end_point(model, edge_id, *vfinish);
 		linked = true;
 	}
@@ -148,14 +148,14 @@ static inline void link_at_start(const vcn_model_t *const model,
 	}
 }
 
-static inline void insert_at_start(vcn_container_t *wire,
+static inline void insert_at_start(nb_container_t *wire,
 				   const void *const val)
 {
 	int8_t status;
-	vcn_container_do(wire, "insert_first", (void*) val, &status);
+	nb_container_do(wire, "insert_first", (void*) val, &status);
 	if (0 != status) {
 		printf("\nERROR in vcn_model_export_to_asymptote().\n");
-		printf("      in vcn_container_do().\n");
+		printf("      in nb_container_do().\n");
 		printf("      with function 'insert_first'.\n");
 		exit(1);
 	}
@@ -333,7 +333,7 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 					  uint32_t N_fixed_vertices,
 					  uint32_t* fixed_vertices,
 					  double tolerance){
-	vcn_container_t* wires = vcn_model_generate_wires(model);
+	nb_container_t* wires = vcn_model_generate_wires(model);
 
 	remove_all_collinearities(model, wires, N_fixed_vertices,
 				  fixed_vertices, tolerance);
@@ -343,15 +343,15 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	uint32_t N_vtx = 0;
 	char* mask_vtx = calloc(model->N, 1);
 	uint32_t* perm_vtx = calloc(model->N, sizeof(uint32_t));
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, wires);
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_container_t* wire = vcn_iterator_get_next(iter);
-		N_sgm += vcn_container_get_length(wire);    
-		vcn_iterator_t* subiter = vcn_iterator_create();
-		vcn_iterator_set_container(subiter, wire);
-		while (vcn_iterator_has_more(subiter)) {
-			const uint32_t* sgm = vcn_iterator_get_next(subiter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, wires);
+	while (nb_iterator_has_more(iter)) {
+		const nb_container_t* wire = nb_iterator_get_next(iter);
+		N_sgm += nb_container_get_length(wire);    
+		nb_iterator_t* subiter = nb_iterator_create();
+		nb_iterator_set_container(subiter, wire);
+		while (nb_iterator_has_more(subiter)) {
+			const uint32_t* sgm = nb_iterator_get_next(subiter);
 			if (!mask_vtx[sgm[0]]) {
 				mask_vtx[sgm[0]] = 1;
 				perm_vtx[sgm[0]] = N_vtx++;
@@ -361,19 +361,19 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 				perm_vtx[sgm[1]] = N_vtx++;
 			}
 		}
-		vcn_iterator_destroy(subiter);
+		nb_iterator_destroy(subiter);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 
 	/* Set new vertices and edges */
 	double* vertices = malloc(2 * N_vtx * sizeof(*vertices));
 	uint32_t* segments = malloc(2 * N_sgm * sizeof(*segments));
 
 	uint32_t isgm = 0;
-	while (vcn_container_is_not_empty(wires)) {
-		vcn_container_t* wire = vcn_container_delete_first(wires);
-		while (vcn_container_is_not_empty(wire)) {
-			uint32_t* sgm = vcn_container_delete_first(wire);
+	while (nb_container_is_not_empty(wires)) {
+		nb_container_t* wire = nb_container_delete_first(wires);
+		while (nb_container_is_not_empty(wire)) {
+			uint32_t* sgm = nb_container_delete_first(wire);
 			segments[isgm * 2] = perm_vtx[sgm[0]];
 			segments[isgm*2+1] = perm_vtx[sgm[1]];
 			isgm++;
@@ -384,7 +384,7 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 			       &(model->vertex[sgm[1] * 2]),
 			       2 * sizeof(double));
 		}
-		vcn_container_destroy(wire);
+		nb_container_destroy(wire);
 	}
 	free(perm_vtx);
 	free(mask_vtx);
@@ -398,28 +398,28 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	model->edge = segments;
 
 	/* Free memory */
-	vcn_container_destroy(wires);
+	nb_container_destroy(wires);
 }
 
 static void remove_all_collinearities(const vcn_model_t *const model,
-				      const vcn_container_t *const wires,
+				      const nb_container_t *const wires,
 				      uint32_t N_fixed_vertices,
 				      uint32_t* fixed_vertices,
 				      double tolerance)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, wires);
-	while (vcn_iterator_has_more(iter)) {
-		const vcn_container_t* wire = vcn_iterator_get_next(iter);
-		remove_collinearities_of_wire(model, (vcn_container_t*)wire,
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, wires);
+	while (nb_iterator_has_more(iter)) {
+		const nb_container_t* wire = nb_iterator_get_next(iter);
+		remove_collinearities_of_wire(model, (nb_container_t*)wire,
 					      N_fixed_vertices, fixed_vertices,
 					      tolerance);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
 static inline void remove_collinearities_of_wire(const vcn_model_t *const model,
-						 vcn_container_t *wire,
+						 nb_container_t *wire,
 						 uint32_t N_fixed_vertices,
 						 uint32_t* fixed_vertices,
 						 double tolerance)
@@ -431,28 +431,28 @@ static inline void remove_collinearities_of_wire(const vcn_model_t *const model,
 }
 
 static bool collapse_wire(const vcn_model_t *const model,
-			  vcn_container_t* wire,
+			  nb_container_t* wire,
 			  uint32_t N_fixed_vertices,
 			  uint32_t* fixed_vertices,
 			  double tolerance)
 {
-	vcn_container_t* clone = vcn_container_clone(wire);
-	vcn_container_clear(wire);
-	uint32_t* edge = vcn_container_delete_first(clone);
+	nb_container_t* clone = nb_container_clone(wire);
+	nb_container_clear(wire);
+	uint32_t* edge = nb_container_delete_first(clone);
 	bool collapsed = false;
-	while (vcn_container_is_not_empty(clone)) {
-		uint32_t* edge_next = vcn_container_delete_first(clone);
+	while (nb_container_is_not_empty(clone)) {
+		uint32_t* edge_next = nb_container_delete_first(clone);
 		collapsed = collapse_pair_of_edges(model, edge, edge_next,
 						   N_fixed_vertices,
 						   fixed_vertices,
 						   tolerance);
 		if (!collapsed) {
-			vcn_container_insert(wire, edge);
+			nb_container_insert(wire, edge);
 			edge = edge_next;
 		}
 	}
-	vcn_container_insert(wire, edge);
-	vcn_container_destroy(clone);
+	nb_container_insert(wire, edge);
+	nb_container_destroy(clone);
 	return collapsed;
 }
 

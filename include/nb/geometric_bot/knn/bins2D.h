@@ -37,12 +37,12 @@ void vcn_bins2D_set_filter(vcn_bins2D_t *bins2D,
 
 void vcn_bins2D_set_filter_data(vcn_bins2D_t *bins2D, const void *data);
 
-vcn_container_t* vcn_bins2D_get_candidate_points_to_min_delaunay
+nb_container_t* vcn_bins2D_get_candidate_points_to_min_delaunay
 (const vcn_bins2D_t *const bins2D,
  const vcn_point2D_t *const p1, 
  const vcn_point2D_t *const p2);
 
-vcn_container_t* vcn_bins2D_get_points_inside_circle
+nb_container_t* vcn_bins2D_get_points_inside_circle
 (const vcn_bins2D_t *const bins2D,
  double center[2],
  double radius);

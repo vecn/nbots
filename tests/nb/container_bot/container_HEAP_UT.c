@@ -1,4 +1,4 @@
-#define CONTAINER_ID NB_CONTAINER_HEAP
+#define CONTAINER_ID NB_HEAP
 #define N_ITEMS 200
 #include "container_TEMPLATE_UT.c"
 

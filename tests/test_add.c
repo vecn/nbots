@@ -5,7 +5,7 @@
 #include "test.h"
 #include "test_add.h"
 
-static void test_add(vcn_container_t *tests,
+static void test_add(nb_container_t *tests,
 		     void* (*init)(),
 		     bool (*run)(),
 		     void (*clear)(void*),
@@ -21,7 +21,7 @@ inline void vcn_test_add(void *tests_ptr,
 	test_add(tests_ptr, null_init, run, null_clear, label);
 }
 
-static void test_add(vcn_container_t *tests,
+static void test_add(nb_container_t *tests,
 		     void* (*init)(),
 		     bool (*run)(),
 		     void (*clear)(void*),
@@ -32,7 +32,7 @@ static void test_add(vcn_container_t *tests,
 	test->init = init;
 	test->run = run;
 	test->clear = clear;
-	vcn_container_insert(tests, test);
+	nb_container_insert(tests, test);
 }
 
 static inline void* null_init()

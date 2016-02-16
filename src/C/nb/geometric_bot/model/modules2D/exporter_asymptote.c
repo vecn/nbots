@@ -17,14 +17,14 @@
 #define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 
 static void write_in_file(FILE *fp, const vcn_model_t *const model,
-			  vcn_container_t *wires);
+			  nb_container_t *wires);
 
 
 void vcn_model_export_to_asymptote(const vcn_model_t *const model,
 				   const char* filename)
 {
 	
-	vcn_container_t* wires = vcn_model_generate_wires(model);
+	nb_container_t* wires = vcn_model_generate_wires(model);
 	
 	FILE* fp = fopen(filename, "w");
 	if (NULL != fp) {
@@ -33,24 +33,24 @@ void vcn_model_export_to_asymptote(const vcn_model_t *const model,
 	} else {
 		printf("ERROR: The file %s could not be created.\n", filename);
 	}
-	vcn_container_destroy(wires);
+	nb_container_destroy(wires);
 }
 
 static void write_in_file(FILE *fp, const vcn_model_t *const model,
-			  vcn_container_t *wires)
+			  nb_container_t *wires)
 {
 	fprintf(fp, "path[] modelContour()\n{\n");
 	fprintf(fp, "  return\n");
-	while (vcn_container_is_not_empty(wires)) {
-		vcn_container_t* wire = vcn_container_delete_first(wires);
-		while (vcn_container_is_not_empty(wire)) {
-			uint32_t* edge = vcn_container_delete_first(wire);
+	while (nb_container_is_not_empty(wires)) {
+		nb_container_t* wire = nb_container_delete_first(wires);
+		while (nb_container_is_not_empty(wire)) {
+			uint32_t* edge = nb_container_delete_first(wire);
 			double* v1 = GET_PVTX(model, edge[0]);
 			double* v2 = GET_PVTX(model, edge[1]);
 			fprintf(fp, "    (%lf, %lf)--(%lf, %lf)^^\n",
 				v1[0], v1[1], v2[0], v2[1]);
 		}
-		vcn_container_destroy(wire);
+		nb_container_destroy(wire);
 	}
 	fprintf(fp, "}\n");
 }

@@ -4,7 +4,7 @@
  * "CONTAINER_ID".
  *
  * Example:
- *  #define CONTAINER_ID NB_CONTAINER_QUEUE
+ *  #define CONTAINER_ID NB_QUEUE
  *  #include "container_TEMPLATE_CT.c"
  */
 
@@ -120,46 +120,46 @@ void TEMPLATE_load_tests(void *tests_ptr)
 static bool run_clone(void *data)
 {
 	void **containers = data;
-	vcn_container_set_cloner(containers[0], clone_int8);
-	containers[1] = vcn_container_clone(containers[0]);
+	nb_container_set_cloner(containers[0], clone_int8);
+	containers[1] = nb_container_clone(containers[0]);
 	return true;
 }
 
 static bool run_merge(void *data)
 {
 	void **containers = data;
-	vcn_container_merge(containers[0], containers[1]);
+	nb_container_merge(containers[0], containers[1]);
 	return true;
 }
 
 static inline bool run_cast_to_QUEUE(void *data)
 {
-	return run_cast_to(data, NB_CONTAINER_QUEUE);
+	return run_cast_to(data, NB_QUEUE);
 }
 
 static inline bool run_cast_to_STACK(void *data)
 {
-	return run_cast_to(data, NB_CONTAINER_STACK);
+	return run_cast_to(data, NB_STACK);
 }
 
 static inline bool run_cast_to_SORTED(void *data)
 {
-	return run_cast_to(data, NB_CONTAINER_SORTED);
+	return run_cast_to(data, NB_SORTED);
 }
 
 static inline bool run_cast_to_HEAP(void *data)
 {
-	return run_cast_to(data, NB_CONTAINER_HEAP);
+	return run_cast_to(data, NB_HEAP);
 }
 
 static inline bool run_cast_to_HASH(void *data)
 {
-	return run_cast_to(data, NB_CONTAINER_HASH);
+	return run_cast_to(data, NB_HASH);
 }
 
 static bool run_clear(void *data)
 {
-	vcn_container_clear(data);
+	nb_container_clear(data);
 	return true;
 }
 
@@ -167,19 +167,19 @@ static bool run_insert(void *data)
 {
 	int32_t *val = malloc(sizeof(*val));
 	*val = 1;
-	vcn_container_insert(data, val);
+	nb_container_insert(data, val);
 	return true;
 }
 
 static bool run_get_first(void *data)
 {
-	vcn_container_get_first(data);
+	nb_container_get_first(data);
 	return true;
 }
 
 static bool run_delete_first(void *data)
 {
-	void *val = vcn_container_delete_first(data);
+	void *val = nb_container_delete_first(data);
 	bool is_ok = false;
 	if (NULL != val) {
 		free(val);
@@ -191,16 +191,16 @@ static bool run_delete_first(void *data)
 static bool run_exist(void *data)
 {
 	int32_t to_find = 1;
-	vcn_container_set_comparer(data, are_equal_int32);
-	vcn_container_exist(data, &to_find);
+	nb_container_set_comparer(data, are_equal_int32);
+	nb_container_exist(data, &to_find);
 	return true;
 }
 
 static bool run_delete(void *data)
 {
 	int32_t to_delete = 1;
-	vcn_container_set_comparer(data, are_equal_int32);
-	int32_t *val = vcn_container_delete(data, &to_delete);
+	nb_container_set_comparer(data, are_equal_int32);
+	int32_t *val = nb_container_delete(data, &to_delete);
 	bool is_ok = false;
 	if (NULL != val) {
 		if (to_delete == *val)
@@ -212,28 +212,28 @@ static bool run_delete(void *data)
 
 static bool run_get_length(void *data)
 {
-	vcn_container_get_length(data);
+	nb_container_get_length(data);
 	return true;
 }
 
 static bool run_cast_to(void *data, int id)
 {
-	vcn_container_cast(data, id);
+	nb_container_cast(data, id);
 	return true;
 }
 
 static void* init_container_by_id(int id, void *init_data)
 {
 	int N = *((int*)init_data);
-	vcn_container_t *cnt = vcn_container_create(id);
-	vcn_container_set_key_generator(cnt, keygen);
-	vcn_container_set_destroyer(cnt, free);
+	nb_container_t *cnt = nb_container_create(id);
+	nb_container_set_key_generator(cnt, keygen);
+	nb_container_set_destroyer(cnt, free);
 	int32_t seed = 1;
 	for (int i = 0; i < N; i++) {
 		int32_t *val = malloc(sizeof(*val));
 		*val = seed;
 		seed = vcn_statistics_lcg(seed);
-		vcn_container_insert(cnt, val);
+		nb_container_insert(cnt, val);
 	}
 	return cnt;
 }
@@ -250,7 +250,7 @@ static inline void* init_container(void *init_data)
 
 static inline void destroy_container(void *data)
 {
-	vcn_container_destroy(data);
+	nb_container_destroy(data);
 }
 
 static inline void* clone_int8(const void *const a)
@@ -270,8 +270,8 @@ static void* init_cnt_and_clone(void *init_data)
 static void destroy_cnt_and_clone(void *data)
 {
 	void **containers = data;
-	vcn_container_destroy(containers[0]);
-	vcn_container_destroy(containers[1]);
+	nb_container_destroy(containers[0]);
+	nb_container_destroy(containers[1]);
 	free(containers);
 }
 
@@ -286,35 +286,35 @@ static void* init_merge_with(void *init_data, int id)
 static void destroy_merge_data(void *data)
 {
 	void **containers = data;
-	vcn_container_set_destroyer(containers[0], free);
-	vcn_container_destroy(containers[0]);
-	vcn_container_destroy(containers[1]);
+	nb_container_set_destroyer(containers[0], free);
+	nb_container_destroy(containers[0]);
+	nb_container_destroy(containers[1]);
 	free(containers);
 }
 
 static inline void* init_merge_with_QUEUE(void *init_data)
 {
-	return init_merge_with(init_data, NB_CONTAINER_QUEUE);
+	return init_merge_with(init_data, NB_QUEUE);
 }
 
 static inline void* init_merge_with_STACK(void *init_data)
 {
-	return init_merge_with(init_data, NB_CONTAINER_STACK);
+	return init_merge_with(init_data, NB_STACK);
 }
 
 static inline void* init_merge_with_SORTED(void *init_data)
 {
-	return init_merge_with(init_data, NB_CONTAINER_SORTED);
+	return init_merge_with(init_data, NB_SORTED);
 }
 
 static inline void* init_merge_with_HEAP(void *init_data)
 {
-	return init_merge_with(init_data, NB_CONTAINER_HEAP);
+	return init_merge_with(init_data, NB_HEAP);
 }
 
 static inline void* init_merge_with_HASH(void *init_data)
 {
-	return init_merge_with(init_data, NB_CONTAINER_HASH);
+	return init_merge_with(init_data, NB_HASH);
 }
 
 static void* init_cast_data(void *init_data)
@@ -324,7 +324,7 @@ static void* init_cast_data(void *init_data)
 
 static void destroy_cast_data(void *data)
 {
-	vcn_container_destroy(data);
+	nb_container_destroy(data);
 	free(data);
 }
 

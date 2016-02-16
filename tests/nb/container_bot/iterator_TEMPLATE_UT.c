@@ -4,7 +4,7 @@
  * "CONTAINER_ID" and "N_ITEMS".
  *
  * Example:
- *  #define CONTAINER_ID NB_CONTAINER_QUEUE
+ *  #define CONTAINER_ID NB_QUEUE
  *  #define N_ITEMS 1000
  *  #include "iterator_TEMPLATE_UT.c"
  */
@@ -27,8 +27,8 @@ static bool check_get_next(void);
 static bool check_has_more(void);
 static bool check_has_more_with_1_item(void);
 
-static vcn_container_t* get_container(int N);
-static void insert_N_int32(vcn_container_t *cnt, int N);
+static nb_container_t* get_container(int N);
+static void insert_N_int32(nb_container_t *cnt, int N);
 static uint32_t keygen(const void *const val);
 static bool are_equal(const void *const a, const void *const b);
 
@@ -59,118 +59,118 @@ void TEMPLATE_load_tests(void *tests_ptr)
 
 static bool check_create(void)
 {
-	vcn_iterator_t *iter = vcn_iterator_create();
+	nb_iterator_t *iter = nb_iterator_create();
 	bool is_ok = (NULL != iter);
 	if (is_ok)
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 	return is_ok;
 }
 
 static bool check_set_container(void)
 {
-	vcn_container_t *cnt = get_container(N_ITEMS);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	bool is_ok = vcn_iterator_has_more(iter);
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	bool is_ok = nb_iterator_has_more(iter);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return is_ok;
 }
 
 static bool check_clone(void)
 {
-	vcn_container_t *cnt = get_container(N_ITEMS);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	vcn_iterator_t *cloned = vcn_iterator_clone(iter);
-	bool is_ok = vcn_iterator_has_more(cloned);
-	vcn_iterator_destroy(cloned);
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	nb_iterator_t *cloned = nb_iterator_clone(iter);
+	bool is_ok = nb_iterator_has_more(cloned);
+	nb_iterator_destroy(cloned);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return is_ok;	
 }
 
 static bool check_destroy(void)
 {
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_destroy(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_destroy(iter);
 	return true;
 }
 
 static bool check_restart(void)
 {
-	vcn_container_t *cnt = get_container(N_ITEMS);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
-	while (vcn_iterator_has_more(iter))
-		vcn_iterator_get_next(iter);
-	vcn_iterator_restart(iter);
-	bool is_ok = vcn_iterator_has_more(iter);
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
+	while (nb_iterator_has_more(iter))
+		nb_iterator_get_next(iter);
+	nb_iterator_restart(iter);
+	bool is_ok = nb_iterator_has_more(iter);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return is_ok;
 }
 
 static bool check_get_next(void)
 {
-	vcn_container_t *cnt = get_container(N_ITEMS);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
 	bool is_ok = true;
-	while (vcn_iterator_has_more(iter)) {
-		const int32_t *val = vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		const int32_t *val = nb_iterator_get_next(iter);
 		is_ok = is_ok && (NULL != val);
 	}
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return is_ok;
 }
 
 static bool check_has_more(void)
 {
-	vcn_container_t *cnt = get_container(N_ITEMS);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
+	nb_container_t *cnt = get_container(N_ITEMS);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
 	int32_t counter = 0;
-	while (vcn_iterator_has_more(iter)) {
-		vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		nb_iterator_get_next(iter);
 		counter += 1;
 	}
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return (N_ITEMS == counter);
 }
 
 static bool check_has_more_with_1_item(void)
 {
-	vcn_container_t *cnt = get_container(1);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, cnt);
+	nb_container_t *cnt = get_container(1);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, cnt);
 	int32_t counter = 0;
-	while (vcn_iterator_has_more(iter)) {
-		vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		nb_iterator_get_next(iter);
 		counter += 1;
 	}
-	vcn_iterator_destroy(iter);
-	vcn_container_destroy(cnt);
+	nb_iterator_destroy(iter);
+	nb_container_destroy(cnt);
 	return (1 == counter);
 }
 
-static inline vcn_container_t* get_container(int N)
+static inline nb_container_t* get_container(int N)
 {
-	vcn_container_t *cnt = vcn_container_create(CONTAINER_ID);
-      	vcn_container_set_key_generator(cnt, keygen);
-      	vcn_container_set_destroyer(cnt, free);
+	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
+      	nb_container_set_key_generator(cnt, keygen);
+      	nb_container_set_destroyer(cnt, free);
 	insert_N_int32(cnt, N);
 	return cnt;
 }
 
-static void insert_N_int32(vcn_container_t *cnt, int N)
+static void insert_N_int32(nb_container_t *cnt, int N)
 {
 	for (int32_t i = 0; i < N; i++) {
 		int32_t *val = malloc(sizeof(*val));
 		*val = i;
-		vcn_container_insert(cnt, val);
+		nb_container_insert(cnt, val);
 	}
 }
 

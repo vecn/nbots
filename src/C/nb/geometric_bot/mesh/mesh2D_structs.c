@@ -11,7 +11,7 @@
 #include "mesh2D_structs.h"
 
 static bool mesh_remove_edge
-                       (vcn_container_t *const ht_edge,
+                       (nb_container_t *const ht_edge,
 			const msh_vtx_t *const v1,
 			const msh_vtx_t *const v2);
 
@@ -710,7 +710,7 @@ void medge_flip_without_dealloc(msh_edge_t* shared_sgm)
 	}
 }
 
-inline msh_edge_t* mesh_insert_edge(vcn_container_t *const ht_edge,
+inline msh_edge_t* mesh_insert_edge(nb_container_t *const ht_edge,
 				    const msh_vtx_t *const v1, 
 				    const msh_vtx_t *const v2)
 {
@@ -718,21 +718,21 @@ inline msh_edge_t* mesh_insert_edge(vcn_container_t *const ht_edge,
   
 	new_sgm->v1 = (msh_vtx_t*)v1;
 	new_sgm->v2 = (msh_vtx_t*)v2;
-	vcn_container_insert(ht_edge, new_sgm);
+	nb_container_insert(ht_edge, new_sgm);
 	return new_sgm;
 }
 inline msh_edge_t* mesh_exist_edge_guided
-                         (vcn_container_t *const restrict ht_edge,
+                         (nb_container_t *const restrict ht_edge,
 			  const msh_vtx_t *const restrict v1,
 			  const msh_vtx_t *const restrict v2)
 {
 	msh_edge_t key_edge;
 	key_edge.v1 = (msh_vtx_t*)v1;
 	key_edge.v2 = (msh_vtx_t*)v2;
-	return vcn_container_exist(ht_edge, &key_edge);
+	return nb_container_exist(ht_edge, &key_edge);
 }
 
-inline msh_edge_t* mesh_exist_edge(vcn_container_t *const restrict ht_edge,
+inline msh_edge_t* mesh_exist_edge(nb_container_t *const restrict ht_edge,
 				   const msh_vtx_t *const restrict v1,
 				   const msh_vtx_t *const restrict v2)
 {
@@ -745,7 +745,7 @@ inline msh_edge_t* mesh_exist_edge(vcn_container_t *const restrict ht_edge,
 void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 {
 	/* Insert new triangle into the mesh */
-	vcn_container_insert(mesh->ht_trg, trg);
+	nb_container_insert(mesh->ht_trg, trg);
 
 	/* Connect triangle with the first segment */
 	msh_edge_t* sgm = mesh_exist_edge(mesh->ht_edge, trg->v1, trg->v2);
@@ -785,7 +785,7 @@ void mesh_substract_triangle(vcn_mesh_t *const restrict mesh,
 			     const msh_trg_t *const restrict trg)
 {
 	/* Remove from hash table */
-	vcn_container_delete(mesh->ht_trg, trg);
+	nb_container_delete(mesh->ht_trg, trg);
 
 	/* Disconnect from segments */
 	msh_edge_t* sgm = trg->s1;
@@ -819,7 +819,7 @@ void mesh_substract_triangle(vcn_mesh_t *const restrict mesh,
 	mtrg_disconnect(trg);
 }
 
-static bool mesh_remove_edge(vcn_container_t *const restrict ht_edge,
+static bool mesh_remove_edge(nb_container_t *const restrict ht_edge,
 			     const msh_vtx_t *const restrict v1, 
 			     const msh_vtx_t *const restrict v2)
 {
@@ -831,9 +831,9 @@ static bool mesh_remove_edge(vcn_container_t *const restrict ht_edge,
 				      * key, but with the compromise to do not
 				      * modify its value */
 	key_sgm.attr = NULL;
-	msh_edge_t* sgm = vcn_container_exist(ht_edge, &key_sgm);
+	msh_edge_t* sgm = nb_container_exist(ht_edge, &key_sgm);
 	if (NULL != sgm) {
-		vcn_container_delete(ht_edge, sgm);
+		nb_container_delete(ht_edge, sgm);
 		free(sgm);
 		return true;
 	}
@@ -863,11 +863,11 @@ inline bool are_equal_edge(const void *const edge1_ptr,
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_trg);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_trg);
 	msh_trg_t *enveloping_trg = NULL;
-	while (vcn_iterator_has_more(iter)) {
-		const msh_trg_t *trg = vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
 							trg->v2->x,
 							trg->v3->x,
@@ -876,7 +876,7 @@ msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 			break;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return enveloping_trg;
 }
 

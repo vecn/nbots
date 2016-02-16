@@ -39,7 +39,7 @@ static void throw_exception_if_lib_driver_is_wrong(vcn_exception_t *exception,
 static void* get_loader_or_throw_exception(vcn_exception_t *exception,
 					   void *lib);
 static void destroy_tests(void* tests);
-static bool process_tests(vcn_container_t *tests);
+static bool process_tests(nb_container_t *tests);
 static int execute_tests(int N_tests, void **tests);
 static void show_running_msg(int i, int N, const char *label);
 static void clear_stream(FILE *stream);
@@ -141,10 +141,10 @@ static bool process_library_or_throw_exception(vcn_exception_t *exception,
 
 	throw_exception_if_lib_driver_is_wrong(exception, lib);
 
-	void (*load_tests)(vcn_container_t*);
+	void (*load_tests)(nb_container_t*);
 	load_tests = get_loader_or_throw_exception(exception, lib);
 
-	vcn_container_t *tests = vcn_container_create(NB_CONTAINER_QUEUE);
+	nb_container_t *tests = nb_container_create(NB_QUEUE);
 	vcn_exception_set_alloc(exception, tests, destroy_tests);
 	load_tests(tests);
 
@@ -196,16 +196,16 @@ static void* get_loader_or_throw_exception(vcn_exception_t *exception, void *lib
 
 static void destroy_tests(void* tests)
 {
-	vcn_container_destroy(tests);
+	nb_container_destroy(tests);
 }
 
-static bool process_tests(vcn_container_t *tests)
+static bool process_tests(nb_container_t *tests)
 {
-	int N_tests = vcn_container_get_length(tests);
+	int N_tests = nb_container_get_length(tests);
 	int N_success = 0;
 	if (N_tests > 0) {
 		void** tests_array = malloc(N_tests * sizeof(*tests_array));
-		vcn_container_copy_to_array(tests, tests_array);
+		nb_container_copy_to_array(tests, tests_array);
 		N_success += execute_tests(N_tests, tests_array);
 		free(tests_array);
 	}

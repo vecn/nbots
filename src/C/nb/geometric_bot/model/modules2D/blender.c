@@ -29,44 +29,44 @@ static double get_scale_and_disp(const vcn_model_t *const model1,
 				 double *xdisp, double *ydisp);
 static void scale_and_displace(vcn_model_t *model, double scale,
 			       double xdisp, double ydisp);
-static vcn_container_t* search_intersections(vcn_model_t *model1,
+static nb_container_t* search_intersections(vcn_model_t *model1,
 					     vcn_model_t *model2,
-					     vcn_container_t *vertices,
-					     vcn_container_t *edges);
+					     nb_container_t *vertices,
+					     nb_container_t *edges);
 static edge_t** insert_edges_and_vtx(vcn_model_t *model,
-				      vcn_container_t *vertices,
-				      vcn_container_t *edges,
+				      nb_container_t *vertices,
+				      nb_container_t *edges,
 				      bool check_if_edges_exist);
 static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
-				      vcn_container_t *vertices,
+				      nb_container_t *vertices,
 				      uint32_t vtx_id);
 static uint32_t intersection_pack_key(const void* const pack);
-static edge_t* exist_edge_and_insert_if_not(vcn_container_t* edges,
+static edge_t* exist_edge_and_insert_if_not(nb_container_t* edges,
 					    edge_t* edge);
 static void** get_intersection_pack(const edge_t *const sgm1,
 				    const edge_t *const sgm2);
-static void process_segment_intersections(vcn_container_t* avl_sgm,
-					  vcn_container_t* sgm_intersect,
-					  vcn_container_t* ht_vtx);
-static void process_short_edges(vcn_container_t *vertices,
-				vcn_container_t *edges,
+static void process_segment_intersections(nb_container_t* avl_sgm,
+					  nb_container_t* sgm_intersect,
+					  nb_container_t* ht_vtx);
+static void process_short_edges(nb_container_t *vertices,
+				nb_container_t *edges,
 				double min_length_x_edg);
-static void remove_short_segments(vcn_container_t* avl_sgm,
-				  vcn_container_t* ht_vtx,
+static void remove_short_segments(nb_container_t* avl_sgm,
+				  nb_container_t* ht_vtx,
 				  double min_length_x_segment);
-static vcn_container_t* search_intersections_in_edges(vcn_container_t *edges);
-static void set_as_initial_vtx_in_edges(vcn_container_t *edges);
-static void delete_unused_vertices(vcn_container_t *vertices);
+static nb_container_t* search_intersections_in_edges(nb_container_t *edges);
+static void set_as_initial_vtx_in_edges(nb_container_t *edges);
+static void delete_unused_vertices(nb_container_t *vertices);
 static void** search_intersection_pack_with_sgm
-				(const vcn_container_t *const packs,
+				(const nb_container_t *const packs,
 				 const edge_t *const edge);
 static void destroy_intersection_pack(void **pack);
 static void** search_intersection_pack_with_both_segments
-			(const vcn_container_t *const packs,
+			(const nb_container_t *const packs,
 			 const edge_t *const edge1,
 			 const edge_t *const edge2);
-static void split_segment_by_vertex(vcn_container_t* avl_sgm,
-				    vcn_container_t* sgm_intersect,
+static void split_segment_by_vertex(nb_container_t* avl_sgm,
+				    nb_container_t* sgm_intersect,
 				    edge_t* sgm, vtx_t* vtx);
 
 vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
@@ -83,31 +83,31 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 	scale_and_displace(model2, scale, xdisp, ydisp);
 
 	/* Insert segments and vertices */
-	vcn_container_t* ht_vtx = vcn_container_create(NB_CONTAINER_HASH);
-	vcn_container_set_key_generator(ht_vtx, vtx_hash_key);
-	vcn_container_set_comparer(ht_vtx, vtx_are_equal);
-	vcn_container_set_destroyer(ht_vtx, vtx_destroy);
+	nb_container_t* ht_vtx = nb_container_create(NB_HASH);
+	nb_container_set_key_generator(ht_vtx, vtx_hash_key);
+	nb_container_set_comparer(ht_vtx, vtx_are_equal);
+	nb_container_set_destroyer(ht_vtx, vtx_destroy);
 
-	vcn_container_t* avl_sgm = vcn_container_create(NB_CONTAINER_SORTED);
-	vcn_container_set_key_generator(avl_sgm, edge_key_by_length);
-	vcn_container_set_comparer(avl_sgm, edge_are_equal);
-	vcn_container_set_destroyer(avl_sgm, edge_destroy);
+	nb_container_t* avl_sgm = nb_container_create(NB_SORTED);
+	nb_container_set_key_generator(avl_sgm, edge_key_by_length);
+	nb_container_set_comparer(avl_sgm, edge_are_equal);
+	nb_container_set_destroyer(avl_sgm, edge_destroy);
 	   
-	vcn_container_t* sgm_intersect = search_intersections(model1, model2,
+	nb_container_t* sgm_intersect = search_intersections(model1, model2,
 							      ht_vtx, avl_sgm);
 
 	process_segment_intersections(avl_sgm, sgm_intersect, ht_vtx);
 
-	vcn_container_destroy(sgm_intersect);
+	nb_container_destroy(sgm_intersect);
 
 	process_short_edges(ht_vtx, avl_sgm, min_length_x_segment * scale);
 
 	/* Check that a volume is possible */
-	if (vcn_container_get_length(avl_sgm) < 3) {
+	if (nb_container_get_length(avl_sgm) < 3) {
 		vcn_model_destroy(model1);
 		vcn_model_destroy(model2);
-		vcn_container_destroy(avl_sgm);
-		vcn_container_destroy(ht_vtx);
+		nb_container_destroy(avl_sgm);
+		nb_container_destroy(ht_vtx);
 		return vcn_model_create();
 	}
 	
@@ -116,34 +116,34 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 
 	/* Allocate new model */
 	vcn_model_t* model = vcn_model_create();
-	model->N = vcn_container_get_length(ht_vtx);
+	model->N = nb_container_get_length(ht_vtx);
 	model_alloc_vertices(model);
-	model->M = vcn_container_get_length(avl_sgm);
+	model->M = nb_container_get_length(avl_sgm);
 	model_alloc_edges(model);
 
 	/* Set vertices to the model */
 	uint32_t vtx_id = 0;
-	vcn_iterator_t *ht_iter = vcn_iterator_create();
-	vcn_iterator_set_container(ht_iter, ht_vtx);
-	while(vcn_iterator_has_more(ht_iter)){
-		const vtx_t* vtx = vcn_iterator_get_next(ht_iter);
+	nb_iterator_t *ht_iter = nb_iterator_create();
+	nb_iterator_set_container(ht_iter, ht_vtx);
+	while(nb_iterator_has_more(ht_iter)){
+		const vtx_t* vtx = nb_iterator_get_next(ht_iter);
 		vtx_set_id((vtx_t*)vtx, vtx_id);
 		memcpy(GET_PVTX(model, vtx_id), vtx->x, 2 * sizeof(*(vtx->x)));
 		vtx_id++;
 	}
-	vcn_iterator_destroy(ht_iter);
+	nb_iterator_destroy(ht_iter);
 
 	/* Set segments to the model */
 	uint32_t sgm_counter = 0;
-	vcn_iterator_t *avl_iter = vcn_iterator_create();
-	vcn_iterator_set_container(avl_iter, avl_sgm);
-	while(vcn_iterator_has_more(avl_iter)){
-		const edge_t* edge = vcn_iterator_get_next(avl_iter);
+	nb_iterator_t *avl_iter = nb_iterator_create();
+	nb_iterator_set_container(avl_iter, avl_sgm);
+	while(nb_iterator_has_more(avl_iter)){
+		const edge_t* edge = nb_iterator_get_next(avl_iter);
 		model->edge[sgm_counter * 2] = vtx_get_id(edge->v1);
 		model->edge[sgm_counter*2+1] = vtx_get_id(edge->v2);
 		sgm_counter++;
 	}
-	vcn_iterator_destroy(avl_iter);
+	nb_iterator_destroy(avl_iter);
 
 	/* Get holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -193,14 +193,14 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
   
-	vcn_container_set_destroyer(ht_vtx, (void (*)(void*)) vtx_destroy);
-	vcn_container_destroy(ht_vtx);
+	nb_container_set_destroyer(ht_vtx, (void (*)(void*)) vtx_destroy);
+	nb_container_destroy(ht_vtx);
   
-	while (vcn_container_is_not_empty(avl_sgm)) {
-		edge_t* sgm = vcn_container_delete_first(avl_sgm);
+	while (nb_container_is_not_empty(avl_sgm)) {
+		edge_t* sgm = nb_container_delete_first(avl_sgm);
 		edge_destroy(sgm);
 	}
-	vcn_container_destroy(avl_sgm);
+	nb_container_destroy(avl_sgm);
 
 	/* Rescale coordinates (to avoid floating point error) */
 	for (uint32_t i = 0; i < model->N; i++) {
@@ -267,16 +267,16 @@ static void scale_and_displace(vcn_model_t *model, double scale,
 	}
 }
 
-static vcn_container_t* search_intersections(vcn_model_t *model1,
+static nb_container_t* search_intersections(vcn_model_t *model1,
 					     vcn_model_t *model2,
-					     vcn_container_t *vertices,
-					     vcn_container_t *edges)
+					     nb_container_t *vertices,
+					     nb_container_t *edges)
 {
 	edge_t** edges1 = insert_edges_and_vtx(model1, vertices, edges, false);
 	edge_t** edges2 = insert_edges_and_vtx(model2, vertices, edges, true);
-	vcn_container_t *intersections =
-		vcn_container_create(NB_CONTAINER_SORTED);
-	vcn_container_set_key_generator(intersections, intersection_pack_key);
+	nb_container_t *intersections =
+		nb_container_create(NB_SORTED);
+	nb_container_set_key_generator(intersections, intersection_pack_key);
 	for (uint32_t i = 0; i < model1->M; i++) {
 		for (uint32_t j = 0; j < model2->M; j++) {
 			if (NULL != edges2[j]) {
@@ -284,7 +284,7 @@ static vcn_container_t* search_intersections(vcn_model_t *model1,
 					get_intersection_pack(edges1[i],
 							      edges2[j]);
 				if (NULL != intersection_pack)
-					vcn_container_insert(intersections,
+					nb_container_insert(intersections,
 							     intersection_pack);
 			}
 		}
@@ -295,8 +295,8 @@ static vcn_container_t* search_intersections(vcn_model_t *model1,
 }
 
 static edge_t** insert_edges_and_vtx(vcn_model_t *model,
-				     vcn_container_t *vertices,
-				     vcn_container_t *edges,
+				     nb_container_t *vertices,
+				     nb_container_t *edges,
 				     bool check_if_edges_exist)
 {
 	edge_t **edges_array = calloc(model->M, sizeof(*edges_array));
@@ -309,7 +309,7 @@ static edge_t** insert_edges_and_vtx(vcn_model_t *model,
 		edge_set_length(&aux_edge);
 		bool allow_to_insert_edge = true;
 		if (check_if_edges_exist) {
-			edge_t* existing = vcn_container_exist(edges, &aux_edge);
+			edge_t* existing = nb_container_exist(edges, &aux_edge);
 			if (NULL != existing)
 				allow_to_insert_edge = false;
 
@@ -317,7 +317,7 @@ static edge_t** insert_edges_and_vtx(vcn_model_t *model,
 		if (allow_to_insert_edge) {
 			edge_t *edge = edge_clone(&aux_edge);
 			edges_array[i] = edge;
-			vcn_container_insert(edges, edge);
+			nb_container_insert(edges, edge);
 		} else {
 			edges_array[i] = NULL;
 		}
@@ -326,18 +326,18 @@ static edge_t** insert_edges_and_vtx(vcn_model_t *model,
 }
 
 static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
-				      vcn_container_t *vertices,
+				      nb_container_t *vertices,
 				      uint32_t vtx_id)
 {
 	vtx_t vtx_to_find;
 	memcpy(vtx_to_find.x, GET_PVTX(model, vtx_id), 
 	       2 * sizeof(*(vtx_to_find.x)));
 
-	vtx_t *vtx = vcn_container_exist(vertices, &vtx_to_find);
+	vtx_t *vtx = nb_container_exist(vertices, &vtx_to_find);
 	if (NULL == vtx) {
 		vtx = vtx_create();
 		memcpy(vtx->x, GET_PVTX(model, vtx_id), 2 * sizeof(*(vtx->x)));
-		vcn_container_insert(vertices, vtx);
+		nb_container_insert(vertices, vtx);
 	}
 	return vtx;
 }
@@ -353,12 +353,12 @@ static inline uint32_t intersection_pack_key(const void* const pack)
 	return status;
 }
 
-static inline edge_t* exist_edge_and_insert_if_not(vcn_container_t* edges, 
+static inline edge_t* exist_edge_and_insert_if_not(nb_container_t* edges, 
 						   edge_t* edge)
 {
-	edge_t* existing_edge = vcn_container_exist(edges, edge);
+	edge_t* existing_edge = nb_container_exist(edges, edge);
 	if (NULL == existing_edge)
-			vcn_container_insert(edges, edge);
+			nb_container_insert(edges, edge);
 	return existing_edge;
 }
 
@@ -455,37 +455,37 @@ static void** get_intersection_pack(const edge_t *const sgm1,
 	return intersection_pack;
 }
 
-static void process_segment_intersections(vcn_container_t* avl_sgm,
-					  vcn_container_t* sgm_intersect,
-					  vcn_container_t* ht_vtx)
+static void process_segment_intersections(nb_container_t* avl_sgm,
+					  nb_container_t* sgm_intersect,
+					  nb_container_t* ht_vtx)
 {
   
 
 	/* Process intersections */
-	while (vcn_container_is_not_empty(sgm_intersect)) {
-		void** ipack = (void**)vcn_container_delete_first(sgm_intersect);
+	while (nb_container_is_not_empty(sgm_intersect)) {
+		void** ipack = (void**)nb_container_delete_first(sgm_intersect);
 		int status = ((int*)ipack[0])[0];
 		double* intersection = ipack[3];
 
 		edge_t* sgm1 = ipack[1];
 		edge_t* sgm2 = ipack[2];
 		if (0 == status) {
-			vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
+			nb_container_t* sgm_intersect_aux = nb_container_create(NB_QUEUE);
 			/* Segments intersecting */
 			vtx_t* vtx = vtx_create();
 			memcpy(vtx->x, intersection, 2 * sizeof(double));
       
-			vtx_t* aux_vtx = vcn_container_exist(ht_vtx, vtx);
+			vtx_t* aux_vtx = nb_container_exist(ht_vtx, vtx);
 			if (NULL == aux_vtx) {
-				vcn_container_insert(ht_vtx, vtx);
+				nb_container_insert(ht_vtx, vtx);
 			} else {
 				vtx_destroy(vtx);
 				vtx = aux_vtx;
 			}
 
 			/* Remove segments */
-			vcn_container_delete(avl_sgm, sgm1);
-			vcn_container_delete(avl_sgm, sgm2);
+			nb_container_delete(avl_sgm, sgm1);
+			nb_container_delete(avl_sgm, sgm2);
 
 			/* Insert subsegments of sgm1 */
 			edge_t* sgm1B = edge_create();
@@ -515,16 +515,16 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 				if (NULL == existing_sgm1) {
 					void **new_pack = get_intersection_pack(sgm1, sgm_aux);
 					if (NULL != new_pack)
-						vcn_container_insert(sgm_intersect_aux, new_pack);
+						nb_container_insert(sgm_intersect_aux, new_pack);
 				}
 	  
 				if (NULL == existing_sgm1B) {
 					void **new_pack = get_intersection_pack(sgm1B, sgm_aux);
 					if (NULL != new_pack)
-						vcn_container_insert(sgm_intersect_aux, new_pack);
+						nb_container_insert(sgm_intersect_aux, new_pack);
 				}
 	
-				vcn_container_delete(sgm_intersect, jpack);
+				nb_container_delete(sgm_intersect, jpack);
 	
 				destroy_intersection_pack(jpack);
 	
@@ -560,16 +560,16 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 				if (NULL == existing_sgm2) {
 					void** new_pack = get_intersection_pack(sgm2, sgm_aux);
 					if (NULL != new_pack)
-						vcn_container_insert(sgm_intersect_aux, new_pack);
+						nb_container_insert(sgm_intersect_aux, new_pack);
 				}
 	
 				if (NULL == existing_sgm2B) {
 					void** new_pack = get_intersection_pack(sgm2B, sgm_aux);
 					if (NULL != new_pack)
-						vcn_container_insert(sgm_intersect_aux, new_pack);
+						nb_container_insert(sgm_intersect_aux, new_pack);
 				}
 	
-				vcn_container_delete(sgm_intersect, jpack);
+				nb_container_delete(sgm_intersect, jpack);
 	
 				destroy_intersection_pack(jpack);
 	
@@ -579,11 +579,11 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 			if (NULL != existing_sgm2)
 				edge_destroy(sgm2);
 
-			while (vcn_container_is_not_empty(sgm_intersect_aux)) {
-				void** aux_pack = vcn_container_delete_first(sgm_intersect_aux);
-				vcn_container_insert(sgm_intersect, aux_pack);
+			while (nb_container_is_not_empty(sgm_intersect_aux)) {
+				void** aux_pack = nb_container_delete_first(sgm_intersect_aux);
+				nb_container_insert(sgm_intersect, aux_pack);
 			}
-			vcn_container_destroy(sgm_intersect_aux);
+			nb_container_destroy(sgm_intersect_aux);
 		} else if (3 == status) {
 			/* Collineal segments */
 			double length1 = edge_get_length(sgm1);
@@ -598,9 +598,9 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 			/* Verify type of intersection segments */
 			if (MAX(length1, length2) - max_dist < -NB_GEOMETRIC_TOL) {
 				/* Intersected by one side */
-				vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
-				vcn_container_delete(avl_sgm, sgm1);
-				vcn_container_delete(avl_sgm, sgm2);
+				nb_container_t* sgm_intersect_aux = nb_container_create(NB_QUEUE);
+				nb_container_delete(avl_sgm, sgm1);
+				nb_container_delete(avl_sgm, sgm2);
 
 				if (dist_1A_2A == max_dist)
 					sgm1->v2 = sgm2->v1;
@@ -628,10 +628,10 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 					if (NULL == existing_sgm1) {
 						void** new_pack = get_intersection_pack(sgm1, sgm_aux);
 						if (NULL != new_pack)
-							vcn_container_insert(sgm_intersect_aux, new_pack);
+							nb_container_insert(sgm_intersect_aux, new_pack);
 					}
 
-					vcn_container_delete(sgm_intersect, jpack);
+					nb_container_delete(sgm_intersect, jpack);
 	      
 					destroy_intersection_pack(jpack);
 	      
@@ -653,11 +653,11 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 						if (NULL == kpack) {
 							void **new_pack = get_intersection_pack(sgm1, sgm_aux);
 							if (NULL != new_pack)
-								vcn_container_insert(sgm_intersect_aux, new_pack);
+								nb_container_insert(sgm_intersect_aux, new_pack);
 						}
 					}
 	      
-					vcn_container_delete(sgm_intersect, jpack);
+					nb_container_delete(sgm_intersect, jpack);
 	      
 					destroy_intersection_pack(jpack);
 	      
@@ -667,11 +667,11 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 				if (NULL != existing_sgm1)
 					edge_destroy(sgm1);
 
-				while (vcn_container_is_not_empty(sgm_intersect_aux)) {
-					void** aux_pack = vcn_container_delete_first(sgm_intersect_aux);
-					vcn_container_insert(sgm_intersect, aux_pack);
+				while (nb_container_is_not_empty(sgm_intersect_aux)) {
+					void** aux_pack = nb_container_delete_first(sgm_intersect_aux);
+					nb_container_insert(sgm_intersect, aux_pack);
 				}
-				vcn_container_destroy(sgm_intersect_aux);
+				nb_container_destroy(sgm_intersect_aux);
 				edge_destroy(sgm2);
 			} else {
 				/* One segment contains the other */
@@ -681,12 +681,12 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 				else
 					small_sgm = sgm1;
 
-				vcn_container_delete(avl_sgm, small_sgm);
+				nb_container_delete(avl_sgm, small_sgm);
 
 				void** jpack =
 					search_intersection_pack_with_sgm(sgm_intersect, small_sgm);
 				while (NULL != jpack) {
-					vcn_container_delete(sgm_intersect, jpack);
+					nb_container_delete(sgm_intersect, jpack);
 					destroy_intersection_pack(jpack);
 					jpack = 
 						search_intersection_pack_with_sgm(sgm_intersect, small_sgm);
@@ -714,72 +714,72 @@ static void process_segment_intersections(vcn_container_t* avl_sgm,
 	}
 }
 
-static void process_short_edges(vcn_container_t *vertices,
-				vcn_container_t *edges,
+static void process_short_edges(nb_container_t *vertices,
+				nb_container_t *edges,
 				double min_length_x_edge)
 {
 	remove_short_segments(edges, vertices, min_length_x_edge);
-	vcn_container_t *intersections = search_intersections_in_edges(edges);
-	while (vcn_container_is_not_empty(intersections)) {
+	nb_container_t *intersections = search_intersections_in_edges(edges);
+	while (nb_container_is_not_empty(intersections)) {
 		process_segment_intersections(edges, intersections, vertices);
 		remove_short_segments(edges, vertices, min_length_x_edge);
-		vcn_container_destroy(intersections);
+		nb_container_destroy(intersections);
 		intersections = search_intersections_in_edges(edges);
 	}
-	vcn_container_destroy(intersections);
+	nb_container_destroy(intersections);
 }
 
-static void remove_short_segments(vcn_container_t* avl_sgm,
-				  vcn_container_t* ht_vtx,
+static void remove_short_segments(nb_container_t* avl_sgm,
+				  nb_container_t* ht_vtx,
 				  double min_length_x_segment)
 {
-	while (vcn_container_is_not_empty(avl_sgm)) {
+	while (nb_container_is_not_empty(avl_sgm)) {
 		/* TEMPORAL: This must be faster */
-		edge_t* sgm = vcn_container_delete_first(avl_sgm);
+		edge_t* sgm = nb_container_delete_first(avl_sgm);
 		double length = edge_get_length(sgm);
 		if (length >= MAX(min_length_x_segment, NB_GEOMETRIC_TOL)) {
-			vcn_container_insert(avl_sgm, sgm);
+			nb_container_insert(avl_sgm, sgm);
 			break;
 		}
     
-		vcn_container_delete(ht_vtx, sgm->v1);
-		vcn_container_delete(ht_vtx, sgm->v2);
+		nb_container_delete(ht_vtx, sgm->v1);
+		nb_container_delete(ht_vtx, sgm->v2);
 		vtx_t* vtx = sgm->v1;
 
-		vcn_container_t* list_sgm = vcn_container_create(NB_CONTAINER_QUEUE);
-		vcn_iterator_t* avl_subiter = vcn_iterator_create();
-		vcn_iterator_set_container(avl_subiter, avl_sgm);
-		while (vcn_iterator_has_more(avl_subiter)) {
-			const edge_t* subsgm = vcn_iterator_get_next(avl_subiter);
+		nb_container_t* list_sgm = nb_container_create(NB_QUEUE);
+		nb_iterator_t* avl_subiter = nb_iterator_create();
+		nb_iterator_set_container(avl_subiter, avl_sgm);
+		while (nb_iterator_has_more(avl_subiter)) {
+			const edge_t* subsgm = nb_iterator_get_next(avl_subiter);
 			if (subsgm->v1 == sgm->v2 || subsgm->v2 == sgm->v2 ||
 			    subsgm->v1 == vtx || subsgm->v2 == vtx)
-				vcn_container_insert(list_sgm, subsgm);
+				nb_container_insert(list_sgm, subsgm);
 		}
-		vcn_iterator_destroy(avl_subiter);
+		nb_iterator_destroy(avl_subiter);
 
-		vcn_iterator_t* iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, list_sgm);
-		while (vcn_iterator_has_more(iter)) {
-			edge_t* subsgm = (edge_t*) vcn_iterator_get_next(iter);
-			vcn_container_delete(avl_sgm, subsgm);
+		nb_iterator_t* iter = nb_iterator_create();
+		nb_iterator_set_container(iter, list_sgm);
+		while (nb_iterator_has_more(iter)) {
+			edge_t* subsgm = (edge_t*) nb_iterator_get_next(iter);
+			nb_container_delete(avl_sgm, subsgm);
 			if (subsgm->v1 == sgm->v2)
 				subsgm->v1 = vtx;
 			else if (subsgm->v2 == sgm->v2)
 				subsgm->v2 = vtx;
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 
 		/* Re-insert into the hash tables */
-		if (vcn_container_is_not_empty(list_sgm)) {
+		if (nb_container_is_not_empty(list_sgm)) {
 			vtx->x[0] = (vtx->x[0] + sgm->v2->x[0]) * 0.5;
 			vtx->x[1] = (vtx->x[1] + sgm->v2->x[1]) * 0.5;
-			vcn_container_insert(ht_vtx, vtx);
+			nb_container_insert(ht_vtx, vtx);
 		} else {
 			vtx_destroy(vtx);
 		}
 
-		while (vcn_container_is_not_empty(list_sgm)) {
-			edge_t* subsgm = vcn_container_delete_first(list_sgm);
+		while (nb_container_is_not_empty(list_sgm)) {
+			edge_t* subsgm = nb_container_delete_first(list_sgm);
 			/* Update length */
 			edge_set_length(subsgm);
 
@@ -788,7 +788,7 @@ static void remove_short_segments(vcn_container_t* avl_sgm,
 			if (NULL != existing_sgm)
 				edge_destroy(subsgm);
 		}
-		vcn_container_destroy(list_sgm);
+		nb_container_destroy(list_sgm);
 
 		/* Free memory */
 		vtx_destroy(sgm->v2);
@@ -796,76 +796,76 @@ static void remove_short_segments(vcn_container_t* avl_sgm,
 	}
 }
 
-static vcn_container_t* search_intersections_in_edges(vcn_container_t *edges)
+static nb_container_t* search_intersections_in_edges(nb_container_t *edges)
 {
-	vcn_container_t *intersections = 
-		vcn_container_create(NB_CONTAINER_SORTED);
-	vcn_container_set_key_generator(intersections, intersection_pack_key);
+	nb_container_t *intersections = 
+		nb_container_create(NB_SORTED);
+	nb_container_set_key_generator(intersections, intersection_pack_key);
   
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, edges);
-	while (vcn_iterator_has_more(iter)) {
-		const edge_t* edge1 = vcn_iterator_get_next(iter);
-		vcn_iterator_t* subiter = vcn_iterator_clone(iter);
-		while (vcn_iterator_has_more(subiter)) {
-			const edge_t* edge2 = vcn_iterator_get_next(subiter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, edges);
+	while (nb_iterator_has_more(iter)) {
+		const edge_t* edge1 = nb_iterator_get_next(iter);
+		nb_iterator_t* subiter = nb_iterator_clone(iter);
+		while (nb_iterator_has_more(subiter)) {
+			const edge_t* edge2 = nb_iterator_get_next(subiter);
 			void** pack = get_intersection_pack(edge1, edge2);
 			if (NULL != pack)
-				vcn_container_insert(intersections, pack);
+				nb_container_insert(intersections, pack);
 		}
-		vcn_iterator_destroy(subiter);
+		nb_iterator_destroy(subiter);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return intersections;
 }
 
-static void set_as_initial_vtx_in_edges(vcn_container_t *edges)
+static void set_as_initial_vtx_in_edges(nb_container_t *edges)
 {
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, edges);
-	while (vcn_iterator_has_more(iter)) {
-		const edge_t *edge = vcn_iterator_get_next(iter);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, edges);
+	while (nb_iterator_has_more(iter)) {
+		const edge_t *edge = nb_iterator_get_next(iter);
 		vtx_set_as_initial(edge->v1);
 			vtx_set_as_initial(edge->v2);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
-static void delete_unused_vertices(vcn_container_t *vertices)
+static void delete_unused_vertices(nb_container_t *vertices)
 {
-	vcn_container_t *to_delete = vcn_container_create(NB_CONTAINER_QUEUE);
-	vcn_iterator_t *iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, vertices);
-	while (vcn_iterator_has_more(iter)) {
-		const vtx_t* vtx = vcn_iterator_get_next(iter);
+	nb_container_t *to_delete = nb_container_create(NB_QUEUE);
+	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_set_container(iter, vertices);
+	while (nb_iterator_has_more(iter)) {
+		const vtx_t* vtx = nb_iterator_get_next(iter);
 		if (vtx_is_not_initial(vtx))
-			vcn_container_insert(to_delete, vtx);
+			nb_container_insert(to_delete, vtx);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 
-	while (vcn_container_is_not_empty(to_delete)) {
-		vtx_t *vtx = vcn_container_delete_first(to_delete);
-		vcn_container_delete(vertices, vtx);
+	while (nb_container_is_not_empty(to_delete)) {
+		vtx_t *vtx = nb_container_delete_first(to_delete);
+		nb_container_delete(vertices, vtx);
 		vtx_destroy(vtx);		
 	}
-	vcn_container_destroy(to_delete);
+	nb_container_destroy(to_delete);
 }
 
 static void** search_intersection_pack_with_sgm
-				(const vcn_container_t *const packs,
+				(const nb_container_t *const packs,
 				 const edge_t *const edge)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, packs);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, packs);
 	void** out_pack = NULL;
-	while (vcn_iterator_has_more(iter)) {
-		void** pack = (void**) vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		void** pack = (void**) nb_iterator_get_next(iter);
 		if (edge == pack[1] || edge == pack[2]) {
 			out_pack = pack;
 			break;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return out_pack;
 }
 
@@ -877,30 +877,30 @@ static inline void destroy_intersection_pack(void **pack)
 }
 
 static void** search_intersection_pack_with_both_segments
-				(const vcn_container_t *const packs,
+				(const nb_container_t *const packs,
 				 const edge_t *const edge1,
 				 const edge_t *const edge2)
 {
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, packs);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, packs);
 	void **out_pack = NULL;
-	while (vcn_iterator_has_more(iter)) {
-		void** pack = (void**) vcn_iterator_get_next(iter);
+	while (nb_iterator_has_more(iter)) {
+		void** pack = (void**) nb_iterator_get_next(iter);
 		if ((edge1 == pack[1] && edge2 == pack[2]) ||
 		    (edge2 == pack[1] && edge1 == pack[2])) {
 			out_pack = pack;
 			break;
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return out_pack;
 }
 
-static void split_segment_by_vertex(vcn_container_t* avl_sgm,
-				    vcn_container_t* sgm_intersect,
+static void split_segment_by_vertex(nb_container_t* avl_sgm,
+				    nb_container_t* sgm_intersect,
 				    edge_t* sgm, vtx_t* vtx)
 {
-	vcn_container_delete(avl_sgm, sgm);
+	nb_container_delete(avl_sgm, sgm);
 	edge_t* new_sgm = edge_create();
 	
 	new_sgm->v1 = vtx;
@@ -918,7 +918,7 @@ static void split_segment_by_vertex(vcn_container_t* avl_sgm,
 	if (NULL != existing_new_sgm)
 		edge_destroy(new_sgm);
 	
-	vcn_container_t* sgm_intersect_aux = vcn_container_create(NB_CONTAINER_QUEUE);
+	nb_container_t* sgm_intersect_aux = nb_container_create(NB_QUEUE);
   
 	void** jpack = search_intersection_pack_with_sgm(sgm_intersect, sgm);
 	while (NULL != jpack) {
@@ -929,24 +929,24 @@ static void split_segment_by_vertex(vcn_container_t* avl_sgm,
 		if (NULL == existing_sgm) {
 			void** new_pack = get_intersection_pack(sgm, sgm_aux);
 			if (NULL != new_pack)
-				vcn_container_insert(sgm_intersect_aux, new_pack);
+				nb_container_insert(sgm_intersect_aux, new_pack);
 		}
 
 		if (NULL == existing_new_sgm) {
 			void** new_pack = get_intersection_pack(new_sgm, sgm_aux);
 			if (NULL != new_pack)
-				vcn_container_insert(sgm_intersect_aux, new_pack);
+				nb_container_insert(sgm_intersect_aux, new_pack);
 		}
-		vcn_container_delete(sgm_intersect, jpack);
+		nb_container_delete(sgm_intersect, jpack);
 		destroy_intersection_pack(jpack);
 		jpack = search_intersection_pack_with_sgm(sgm_intersect, sgm);
 	}	 
 
-	while (vcn_container_is_not_empty(sgm_intersect_aux)) {
-		void** aux_pack = vcn_container_delete_first(sgm_intersect_aux);
-		vcn_container_insert(sgm_intersect, aux_pack);
+	while (nb_container_is_not_empty(sgm_intersect_aux)) {
+		void** aux_pack = nb_container_delete_first(sgm_intersect_aux);
+		nb_container_insert(sgm_intersect, aux_pack);
 	}
-	vcn_container_destroy(sgm_intersect_aux);
+	nb_container_destroy(sgm_intersect_aux);
 
 	if (NULL != existing_sgm)
 		edge_destroy(sgm);

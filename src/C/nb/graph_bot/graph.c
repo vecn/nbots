@@ -20,7 +20,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val);
-static vcn_container_t* get_collisions(vcn_container_t *hash);
+static nb_container_t* get_collisions(nb_container_t *hash);
 static int compare_degree(const void *const A,
 			  const void *const B);
 
@@ -122,7 +122,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
  */
 {
 	/* Allocate AVL to minimize */
-	vcn_container_t* minimum_degree = vcn_container_create(NB_CONTAINER_SORTED);
+	nb_container_t* minimum_degree = nb_container_create(NB_SORTED);
 	/* REFACTOR next lines
 	   set_key_generator(compare_degree);
 	*/
@@ -130,7 +130,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
 
 	/* Allocate and initialize nodal data */
-	vcn_container_t** adj_variables = calloc(graph->N, sizeof(*adj_variables));
+	nb_container_t** adj_variables = calloc(graph->N, sizeof(*adj_variables));
 	void*** adj_elements = calloc(graph->N, sizeof(*adj_elements));
 	uint32_t* N_adj_elements = calloc(graph->N, sizeof(*N_adj_elements));
 	int* degree = malloc(2 * graph->N * sizeof(*degree));
@@ -138,59 +138,59 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 	uint32_t* N_super_variable =
 		calloc(graph->N, sizeof(*N_super_variable));
 	for (uint32_t i = 0; i < graph->N; i++) {
-		adj_variables[i] = vcn_container_create(NB_CONTAINER_QUEUE);
+		adj_variables[i] = nb_container_create(NB_QUEUE);
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-			vcn_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
+			nb_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
 		adj_elements[i] = calloc(6, sizeof(*(adj_elements[i])));
 
 		degree[i * 2] = i;
-		degree[i*2+1] = vcn_container_get_length(adj_variables[i]);
+		degree[i*2+1] = nb_container_get_length(adj_variables[i]);
 
 		super_variable[i] = calloc(6, sizeof(*super_variable[i]));
 		N_super_variable[i] = 
 			array_insert(N_super_variable[i], &(super_variable[i]),
 				     &(degree[i*2]));
-		vcn_container_insert(minimum_degree, &(degree[i*2]));
+		nb_container_insert(minimum_degree, &(degree[i*2]));
 	}
 
 	/* Approximate Minimum degree */
 	uint32_t* perm = calloc(graph->N, sizeof(*perm));
 	uint32_t label = 0;
-	while (vcn_container_is_not_empty(minimum_degree)) {
+	while (nb_container_is_not_empty(minimum_degree)) {
 		/* Select variable which minimize the approximated degree */
-		int* elem_p = vcn_container_delete_first(minimum_degree);
+		int* elem_p = nb_container_delete_first(minimum_degree);
 
 		/* Add variables from adjacent elements */
 		for (uint32_t i=0; i < N_adj_elements[elem_p[0]]; i++) {
 			int *elem_e = (int*)adj_elements[elem_p[0]][i];
-			vcn_iterator_t* subiter = vcn_iterator_create();
-			vcn_iterator_set_container(subiter, adj_variables[elem_e[0]]);
-			while (vcn_iterator_has_more(subiter)) {
-				int* vtx_i = (int*)vcn_iterator_get_next(subiter);
+			nb_iterator_t* subiter = nb_iterator_create();
+			nb_iterator_set_container(subiter, adj_variables[elem_e[0]]);
+			while (nb_iterator_has_more(subiter)) {
+				int* vtx_i = (int*)nb_iterator_get_next(subiter);
 				if (vtx_i == elem_p) 
 					continue;
-				if (NULL == vcn_container_exist(adj_variables[elem_p[0]], vtx_i))
-					vcn_container_insert(adj_variables[elem_p[0]], vtx_i);
+				if (NULL == nb_container_exist(adj_variables[elem_p[0]], vtx_i))
+					nb_container_insert(adj_variables[elem_p[0]], vtx_i);
 			}
-			vcn_iterator_destroy(subiter);
-			vcn_container_clear(adj_variables[elem_e[0]]);
+			nb_iterator_destroy(subiter);
+			nb_container_clear(adj_variables[elem_e[0]]);
 		}
 
 		/* Update variables i adjacent to p */
-		vcn_iterator_t* iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			const int *vtx_i = vcn_iterator_get_next(iter);
+		nb_iterator_t* iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			const int *vtx_i = nb_iterator_get_next(iter);
 			/* Remove redundant entries */
-			vcn_iterator_t* subiter = vcn_iterator_create();
-			vcn_iterator_set_container(subiter, adj_variables[elem_p[0]]);
-			while (vcn_iterator_has_more(subiter)) {
-				const int* vtx_j = vcn_iterator_get_next(subiter);
-				vcn_container_delete(adj_variables[vtx_i[0]], vtx_j);
+			nb_iterator_t* subiter = nb_iterator_create();
+			nb_iterator_set_container(subiter, adj_variables[elem_p[0]]);
+			while (nb_iterator_has_more(subiter)) {
+				const int* vtx_j = nb_iterator_get_next(subiter);
+				nb_container_delete(adj_variables[vtx_i[0]], vtx_j);
 			}
-			vcn_iterator_destroy(subiter);
+			nb_iterator_destroy(subiter);
       
-			vcn_container_delete(adj_variables[vtx_i[0]], elem_p);
+			nb_container_delete(adj_variables[vtx_i[0]], elem_p);
 
 			/* Element absorption */
 			for (uint32_t j = 0; j < N_adj_elements[elem_p[0]]; j++) {
@@ -204,34 +204,34 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 				array_insert(N_adj_elements[vtx_i[0]], 
 					     &(adj_elements[vtx_i[0]]), elem_p);
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
     
 		/* Compute Le \ Lp for all elements */
 		memset(flag_elements, 0, graph->N);
-		iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			const int *vtx_i = vcn_iterator_get_next(iter);
+		iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			const int *vtx_i = nb_iterator_get_next(iter);
 			for (uint32_t i = 0; i < N_adj_elements[vtx_i[0]]; i++) {
 				int* elem_e = (int*)adj_elements[vtx_i[0]][i];
 				if (!flag_elements[elem_e[0]]) {
-					elem_e[1] = vcn_container_get_length(adj_variables[elem_e[0]]);
+					elem_e[1] = nb_container_get_length(adj_variables[elem_e[0]]);
 					flag_elements[elem_e[0]] = 1;
 				} else {
 					elem_e[1] -= N_super_variable[vtx_i[0]];
 				}
 			}
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 
 		/* Compute approximate degree */
-		iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			int* vtx_i = (int*)vcn_iterator_get_next(iter);
+		iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			int* vtx_i = (int*)nb_iterator_get_next(iter);
 
-			int Ai = vcn_container_get_length(adj_variables[vtx_i[0]]);
-			int Lp = vcn_container_get_length(adj_variables[elem_p[0]]) - 1;
+			int Ai = nb_container_get_length(adj_variables[vtx_i[0]]);
+			int Lp = nb_container_get_length(adj_variables[elem_p[0]]) - 1;
 			
 			uint32_t sum_Le_substract_Lp = 0;
 			for (uint32_t j=0; j < N_adj_elements[vtx_i[0]]; j++) {
@@ -240,57 +240,57 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 					sum_Le_substract_Lp += elem_e[1];
 			}
 			int di = MIN(vtx_i[1] + Lp, Ai + Lp + sum_Le_substract_Lp);
-			di = MIN(di, vcn_container_get_length(minimum_degree));
+			di = MIN(di, nb_container_get_length(minimum_degree));
 			/* Update degree */
 			if (di != vtx_i[1]) {
-				vcn_container_delete(minimum_degree, vtx_i);
+				nb_container_delete(minimum_degree, vtx_i);
 				vtx_i[1] = di;
-				vcn_container_insert(minimum_degree, vtx_i);
+				nb_container_insert(minimum_degree, vtx_i);
 			}
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 		
 		/* Supervariables detection */
-		vcn_container_t* hash_supervariables =
-			vcn_container_create(NB_CONTAINER_HASH);
-		vcn_container_set_key_generator(hash_supervariables,
+		nb_container_t* hash_supervariables =
+			nb_container_create(NB_HASH);
+		nb_container_set_key_generator(hash_supervariables,
 						hash_function_supervariables);
 		
-		iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			const int* vtx_i = vcn_iterator_get_next(iter);
+		iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			const int* vtx_i = nb_iterator_get_next(iter);
 			void** var = malloc(4 * sizeof(*var));
 			var[0] = (int*) vtx_i;
 			var[1] = adj_variables[vtx_i[0]];
 			var[2] = adj_elements;
 			var[3] = N_adj_elements;
-			vcn_container_insert(hash_supervariables, var);
+			nb_container_insert(hash_supervariables, var);
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 		
-		vcn_container_t* hash_collisions = get_collisions(hash_supervariables);
+		nb_container_t* hash_collisions = get_collisions(hash_supervariables);
 
-		vcn_iterator_t* liter_collision_sets = 
-			vcn_iterator_create();
-		vcn_iterator_set_container(liter_collision_sets, hash_collisions);
-		while (vcn_iterator_has_more(liter_collision_sets)) {
-			vcn_container_t* colliding_set = (vcn_container_t*)
-				vcn_iterator_get_next(liter_collision_sets);
-			vcn_iterator_t* liter_i = vcn_iterator_create();
-			vcn_iterator_set_container(liter_i, colliding_set);
-			while (vcn_iterator_has_more(liter_i)) {
-				void** hash_val_i = (void**) vcn_iterator_get_next(liter_i);
+		nb_iterator_t* liter_collision_sets = 
+			nb_iterator_create();
+		nb_iterator_set_container(liter_collision_sets, hash_collisions);
+		while (nb_iterator_has_more(liter_collision_sets)) {
+			nb_container_t* colliding_set = (nb_container_t*)
+				nb_iterator_get_next(liter_collision_sets);
+			nb_iterator_t* liter_i = nb_iterator_create();
+			nb_iterator_set_container(liter_i, colliding_set);
+			while (nb_iterator_has_more(liter_i)) {
+				void** hash_val_i = (void**) nb_iterator_get_next(liter_i);
 				int* vtx_i = (int*) hash_val_i[0];
-				vcn_iterator_t* liter_j = vcn_iterator_clone(liter_i);
-				while (vcn_iterator_has_more(liter_j)) {
-					void** hash_val_j = (void**) vcn_iterator_get_next(liter_j);
+				nb_iterator_t* liter_j = nb_iterator_clone(liter_i);
+				while (nb_iterator_has_more(liter_j)) {
+					void** hash_val_j = (void**) nb_iterator_get_next(liter_j);
 					int* vtx_j = (int*)hash_val_j[0];
 					/* Evaluate if vtx_i and vtx_j are indistinguishable */
 					bool ij_are_indistinguishable = true;	
 					{
-						if ((vcn_container_get_length(adj_variables[vtx_i[0]]) != 
-						     vcn_container_get_length(adj_variables[vtx_j[0]])) ||
+						if ((nb_container_get_length(adj_variables[vtx_i[0]]) != 
+						     nb_container_get_length(adj_variables[vtx_j[0]])) ||
 						    (N_adj_elements[vtx_i[0]] != N_adj_elements[vtx_j[0]])) {
 							ij_are_indistinguishable = false;
 						} else {
@@ -308,21 +308,21 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 								}
 							}
 							if (ij_are_indistinguishable) {
-								vcn_iterator_t* iter_i = vcn_iterator_create();
-								vcn_iterator_set_container(iter_i, adj_variables[vtx_i[0]]);
-								vcn_iterator_t* iter_j = vcn_iterator_create();
-								vcn_iterator_set_container(iter_j, adj_variables[vtx_j[0]]);
-								while (vcn_iterator_has_more(iter_i) &&
-								       vcn_iterator_has_more(iter_j)) {
-									const int *ui = vcn_iterator_get_next(iter_i);
-									const int *uj = vcn_iterator_get_next(iter_j);
+								nb_iterator_t* iter_i = nb_iterator_create();
+								nb_iterator_set_container(iter_i, adj_variables[vtx_i[0]]);
+								nb_iterator_t* iter_j = nb_iterator_create();
+								nb_iterator_set_container(iter_j, adj_variables[vtx_j[0]]);
+								while (nb_iterator_has_more(iter_i) &&
+								       nb_iterator_has_more(iter_j)) {
+									const int *ui = nb_iterator_get_next(iter_i);
+									const int *uj = nb_iterator_get_next(iter_j);
 									if (ui != uj) {
 										ij_are_indistinguishable = false;
 										break;
 									}		
 								}
-								vcn_iterator_destroy(iter_i);
-								vcn_iterator_destroy(iter_j);
+								nb_iterator_destroy(iter_i);
+								nb_iterator_destroy(iter_j);
 							}
 						}
 					}/* End of evaluation of indistinguishable variables */
@@ -331,21 +331,21 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 						/* Remove references */
 						for (uint32_t k = 0; k < N_adj_elements[vtx_j[0]]; k++) {
 							int *vtx_k = (int*)adj_elements[vtx_j[0]][k];
-							vcn_container_delete(adj_variables[vtx_k[0]], vtx_j);
-							if (NULL == vcn_container_exist(adj_variables[vtx_k[0]], vtx_i))
-								vcn_container_insert(adj_variables[vtx_k[0]], vtx_i);
+							nb_container_delete(adj_variables[vtx_k[0]], vtx_j);
+							if (NULL == nb_container_exist(adj_variables[vtx_k[0]], vtx_i))
+								nb_container_insert(adj_variables[vtx_k[0]], vtx_i);
 						}
 	    
-						vcn_iterator_t* subiter = 
-							vcn_iterator_create();
-						vcn_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
-						while (vcn_iterator_has_more(subiter)) {
-							int* vtx_k = (int*)vcn_iterator_get_next(subiter);
-							vcn_container_delete(adj_variables[vtx_k[0]], vtx_j);
-							if (NULL == vcn_container_exist(adj_variables[vtx_k[0]], vtx_i))
-								vcn_container_insert(adj_variables[vtx_k[0]], vtx_i);
+						nb_iterator_t* subiter = 
+							nb_iterator_create();
+						nb_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
+						while (nb_iterator_has_more(subiter)) {
+							int* vtx_k = (int*)nb_iterator_get_next(subiter);
+							nb_container_delete(adj_variables[vtx_k[0]], vtx_j);
+							if (NULL == nb_container_exist(adj_variables[vtx_k[0]], vtx_i))
+								nb_container_insert(adj_variables[vtx_k[0]], vtx_i);
 						}
-						vcn_iterator_destroy(subiter);
+						nb_iterator_destroy(subiter);
 
 						/* Add j to super variable i */
 						for (uint32_t i=0; i < N_super_variable[vtx_j[0]]; i++) {
@@ -355,30 +355,30 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 									     &(super_variable[vtx_i[0]]), vtx_k);
 						}
 						
-						vcn_container_delete(minimum_degree, vtx_i);
+						nb_container_delete(minimum_degree, vtx_i);
 						vtx_i[1] -= N_super_variable[vtx_j[0]];
-						vcn_container_insert(minimum_degree, vtx_i);
+						nb_container_insert(minimum_degree, vtx_i);
 
-						vcn_container_delete(minimum_degree, vtx_j);
+						nb_container_delete(minimum_degree, vtx_j);
 
-						vcn_container_clear(adj_variables[vtx_j[0]]);
+						nb_container_clear(adj_variables[vtx_j[0]]);
 						free(adj_elements[vtx_j[0]]);
 
-						vcn_container_delete(colliding_set, hash_val_j);
-						vcn_iterator_restart(liter_i);
+						nb_container_delete(colliding_set, hash_val_j);
+						nb_iterator_restart(liter_i);
 						break;
 					}
 				}
-				vcn_iterator_destroy(liter_j);
+				nb_iterator_destroy(liter_j);
 			}
-			vcn_iterator_destroy(liter_i);
-			vcn_container_destroy(colliding_set);
+			nb_iterator_destroy(liter_i);
+			nb_container_destroy(colliding_set);
 		}
-		vcn_iterator_destroy(liter_collision_sets);
+		nb_iterator_destroy(liter_collision_sets);
 		
-		vcn_container_destroy(hash_collisions);
-		vcn_container_set_destroyer(hash_supervariables, free);
-		vcn_container_destroy(hash_supervariables);
+		nb_container_destroy(hash_collisions);
+		nb_container_set_destroyer(hash_supervariables, free);
+		nb_container_destroy(hash_supervariables);
 
 		for (uint32_t i = 0; i < N_super_variable[elem_p[0]]; i++) {
 			int *elem_p_i = (int*)super_variable[elem_p[0]][i];
@@ -391,7 +391,7 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
     		free(adj_elements[elem_p[0]]);
 	}
   	for (uint32_t i=0; i < graph->N; i++) {
-		vcn_container_destroy(adj_variables[i]);
+		nb_container_destroy(adj_variables[i]);
 		free(super_variable[i]);
 	}
 
@@ -403,19 +403,19 @@ uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm
 	free(N_super_variable);
 	free(degree);
 	free(flag_elements);
-	vcn_container_destroy(minimum_degree);
+	nb_container_destroy(minimum_degree);
 	return perm;
 }
 
-static vcn_container_t* get_collisions(vcn_container_t *hash)
+static nb_container_t* get_collisions(nb_container_t *hash)
 {
 	int8_t status;
-	vcn_container_t *collisions =
-		vcn_container_do(hash, "get_collisions", NULL, &status);
+	nb_container_t *collisions =
+		nb_container_do(hash, "get_collisions", NULL, &status);
 	if (0 != status) {
-		printf("\nERROR: vcn_container_do()\n");
+		printf("\nERROR: nb_container_do()\n");
 		printf("       using 'get_collisions'\n");
-		printf("       exclusive of NB_CONTAINER_HASH\n");
+		printf("       exclusive of NB_HASH\n");
 		exit(1);
 	}
 	return collisions;
@@ -425,74 +425,74 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 /* TEMPORAL: Reuse code, very similar to AMD */
 {
 	/* Allocate AVL to minimize */
-	vcn_container_t* minimum_degree = vcn_container_create(NB_CONTAINER_SORTED);
+	nb_container_t* minimum_degree = nb_container_create(NB_SORTED);
 	/* REFACTOR next lines
-	vcn_container_set_key_generator(compare_degree);
+	nb_container_set_key_generator(compare_degree);
 	*/
 	/* List to store labeled nodes */
 	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
   
 	/* Allocate and initialize nodal data */
-	vcn_container_t** adj_variables = calloc(graph->N, sizeof(*adj_variables));
+	nb_container_t** adj_variables = calloc(graph->N, sizeof(*adj_variables));
 	void*** adj_elements = calloc(graph->N, sizeof(*adj_elements));
 	uint32_t* N_adj_elements = calloc(graph->N, sizeof(*N_adj_elements));
 	int* degree = malloc(2 * graph->N * sizeof(*degree));
 	void*** super_variable = malloc(graph->N * sizeof(*super_variable));
 	uint32_t* N_super_variable = calloc(graph->N, sizeof(*N_super_variable));
 	for (uint32_t i = 0; i < graph->N; i++) {
-		adj_variables[i] = vcn_container_create(NB_CONTAINER_QUEUE);
+		adj_variables[i] = nb_container_create(NB_QUEUE);
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-			vcn_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
+			nb_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
 		adj_elements[i] = calloc(6, sizeof(*adj_elements[i]));
 
 		degree[i * 2] = i;
-		degree[i*2+1] = vcn_container_get_length(adj_variables[i]);
+		degree[i*2+1] = nb_container_get_length(adj_variables[i]);
 
 		super_variable[i] = calloc(6, sizeof(*super_variable[i]));
 		N_super_variable[i] = 
 			array_insert(N_super_variable[i], &(super_variable[i]), &(degree[i*2]));
 
-		vcn_container_insert(minimum_degree, &(degree[i*2]));
+		nb_container_insert(minimum_degree, &(degree[i*2]));
 	}
 
 	/* Multiple Minimum degree */
 	uint32_t* perm = calloc(graph->N, sizeof(*perm));
 	uint32_t label = 0;
-	while (vcn_container_is_not_empty(minimum_degree)) {
+	while (nb_container_is_not_empty(minimum_degree)) {
 		/* Select variable which minimize the approximated degree */
-		int* elem_p = vcn_container_delete_first(minimum_degree);
+		int* elem_p = nb_container_delete_first(minimum_degree);
 
 		/* Add variables from adjacent elements */
 		for (uint32_t i = 0; i < N_adj_elements[elem_p[0]]; i++) {
 			int *elem_e = (int*)adj_elements[elem_p[0]][i];
-			vcn_iterator_t* subiter = vcn_iterator_create();
-			vcn_iterator_set_container(subiter, adj_variables[elem_e[0]]);
-			while (vcn_iterator_has_more(subiter)) {
-				const int *vtx_i = vcn_iterator_get_next(subiter);
+			nb_iterator_t* subiter = nb_iterator_create();
+			nb_iterator_set_container(subiter, adj_variables[elem_e[0]]);
+			while (nb_iterator_has_more(subiter)) {
+				const int *vtx_i = nb_iterator_get_next(subiter);
 				if (vtx_i == elem_p)
 					continue;
-				if (NULL == vcn_container_exist(adj_variables[elem_p[0]], vtx_i))
-					vcn_container_insert(adj_variables[elem_p[0]], vtx_i);
+				if (NULL == nb_container_exist(adj_variables[elem_p[0]], vtx_i))
+					nb_container_insert(adj_variables[elem_p[0]], vtx_i);
 			}
-			vcn_iterator_destroy(subiter);
+			nb_iterator_destroy(subiter);
 
-			vcn_container_clear(adj_variables[elem_e[0]]);
+			nb_container_clear(adj_variables[elem_e[0]]);
 		}
 
 		/* Update variables i adjacent to p */
-		vcn_iterator_t* iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			int *vtx_i = (int*) vcn_iterator_get_next(iter);
+		nb_iterator_t* iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			int *vtx_i = (int*) nb_iterator_get_next(iter);
 			/* Remove redundant entries */
-			vcn_iterator_t* subiter = vcn_iterator_create();
-			vcn_iterator_set_container(subiter, adj_variables[elem_p[0]]);
-			while (vcn_iterator_has_more(subiter)) {
-				int* vtx_j = (int*)vcn_iterator_get_next(subiter);
-				vcn_container_delete(adj_variables[vtx_i[0]], vtx_j);
+			nb_iterator_t* subiter = nb_iterator_create();
+			nb_iterator_set_container(subiter, adj_variables[elem_p[0]]);
+			while (nb_iterator_has_more(subiter)) {
+				int* vtx_j = (int*)nb_iterator_get_next(subiter);
+				nb_container_delete(adj_variables[vtx_i[0]], vtx_j);
 			}
-			vcn_iterator_destroy(subiter);
-			vcn_container_delete(adj_variables[vtx_i[0]], elem_p);
+			nb_iterator_destroy(subiter);
+			nb_container_delete(adj_variables[vtx_i[0]], elem_p);
 
 			/* Element absorption */
 			for (uint32_t j=0; j < N_adj_elements[elem_p[0]]; j++) {
@@ -509,78 +509,78 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 			/* Compute minimum degree */
 			int Le = 0;
 			if (N_adj_elements[vtx_i[0]] > 0) {
-				vcn_container_t* union_of_vars_from_elems_from_i;
+				nb_container_t* union_of_vars_from_elems_from_i;
 				int* first_vtx = (int*)adj_elements[vtx_i[0]][0];
 				union_of_vars_from_elems_from_i = 	  
-					vcn_container_clone(adj_variables[first_vtx[0]]);
+					nb_container_clone(adj_variables[first_vtx[0]]);
 				
 				for (uint32_t j=1; j < N_adj_elements[vtx_i[0]]; j++) {
 					int *vtx_j = (int*)adj_elements[vtx_i[0]][j];
-					subiter = vcn_iterator_create();
-					vcn_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
-					while (vcn_iterator_has_more(subiter)) {
-						int* vtx_k = (int*)vcn_iterator_get_next(subiter);
-						if (NULL == vcn_container_exist(union_of_vars_from_elems_from_i, vtx_k))
-							vcn_container_insert(union_of_vars_from_elems_from_i, vtx_k);
+					subiter = nb_iterator_create();
+					nb_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
+					while (nb_iterator_has_more(subiter)) {
+						int* vtx_k = (int*)nb_iterator_get_next(subiter);
+						if (NULL == nb_container_exist(union_of_vars_from_elems_from_i, vtx_k))
+							nb_container_insert(union_of_vars_from_elems_from_i, vtx_k);
 					}
-					vcn_iterator_destroy(subiter);
+					nb_iterator_destroy(subiter);
 				}
-				Le = vcn_container_get_length(union_of_vars_from_elems_from_i) - 1;
-				vcn_container_destroy(union_of_vars_from_elems_from_i);
+				Le = nb_container_get_length(union_of_vars_from_elems_from_i) - 1;
+				nb_container_destroy(union_of_vars_from_elems_from_i);
 			}
 			
-			int di = vcn_container_get_length(adj_variables[vtx_i[0]]) + Le;
+			int di = nb_container_get_length(adj_variables[vtx_i[0]]) + Le;
 
 			/* Update degree */
 			if (di != vtx_i[1]) {
-				vcn_container_delete(minimum_degree, vtx_i);
+				nb_container_delete(minimum_degree, vtx_i);
 				vtx_i[1] = di;
-				vcn_container_insert(minimum_degree, vtx_i);
+				nb_container_insert(minimum_degree, vtx_i);
 			}
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 		
 		/* Supervariables detection */
-		vcn_container_t* hash_supervariables =
-			vcn_container_create(NB_CONTAINER_HASH);
-		vcn_container_set_key_generator(hash_supervariables,
+		nb_container_t* hash_supervariables =
+			nb_container_create(NB_HASH);
+		nb_container_set_key_generator(hash_supervariables,
 						hash_function_supervariables);
 		
-		iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, adj_variables[elem_p[0]]);
-		while (vcn_iterator_has_more(iter)) {
-			const int *vtx_i = vcn_iterator_get_next(iter);
+		iter = nb_iterator_create();
+		nb_iterator_set_container(iter, adj_variables[elem_p[0]]);
+		while (nb_iterator_has_more(iter)) {
+			const int *vtx_i = nb_iterator_get_next(iter);
 			void** var = malloc(4 * sizeof(*var));
 			var[0] = (int*) vtx_i;
 			var[1] = adj_variables[vtx_i[0]];
 			var[2] = adj_elements;
 			var[3] = N_adj_elements;
-			vcn_container_insert(hash_supervariables, var);
+			nb_container_insert(hash_supervariables, var);
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 		
-		vcn_container_t* hash_collisions = get_collisions(hash_supervariables);
+		nb_container_t* hash_collisions = get_collisions(hash_supervariables);
 
-		vcn_iterator_t* liter_collision_sets = 
-			vcn_iterator_create();
-		vcn_iterator_set_container(liter_collision_sets, hash_collisions);
-		while (vcn_iterator_has_more(liter_collision_sets)) {
-			vcn_container_t* colliding_set = (vcn_container_t*)
-				vcn_iterator_get_next(liter_collision_sets);
-			vcn_iterator_t* liter_i = vcn_iterator_create();
-			vcn_iterator_set_container(liter_i, colliding_set);
-			while (vcn_iterator_has_more(liter_i)) {
-				void** hash_val_i = (void**)vcn_iterator_get_next(liter_i);
+		nb_iterator_t* liter_collision_sets = 
+			nb_iterator_create();
+		nb_iterator_set_container(liter_collision_sets, hash_collisions);
+		while (nb_iterator_has_more(liter_collision_sets)) {
+			nb_container_t* colliding_set = (nb_container_t*)
+				nb_iterator_get_next(liter_collision_sets);
+			nb_iterator_t* liter_i = nb_iterator_create();
+			nb_iterator_set_container(liter_i, colliding_set);
+			while (nb_iterator_has_more(liter_i)) {
+				void** hash_val_i = (void**)nb_iterator_get_next(liter_i);
 				int* vtx_i = (int*)hash_val_i[0];
-				vcn_iterator_t* liter_j = vcn_iterator_clone(liter_i);
-				while (vcn_iterator_has_more(liter_j)) {
-					void** hash_val_j = (void**)vcn_iterator_get_next(liter_j);
+				nb_iterator_t* liter_j = nb_iterator_clone(liter_i);
+				while (nb_iterator_has_more(liter_j)) {
+					void** hash_val_j = (void**)nb_iterator_get_next(liter_j);
 					int* vtx_j = (int*)hash_val_j[0];
 					/* Evaluate if vtx_i and vtx_j are indistinguishable */
 					bool ij_are_indistinguishable = true;	
 					{
-						if ((vcn_container_get_length(adj_variables[vtx_i[0]]) != 
-						     vcn_container_get_length(adj_variables[vtx_j[0]])) ||
+						if ((nb_container_get_length(adj_variables[vtx_i[0]]) != 
+						     nb_container_get_length(adj_variables[vtx_j[0]])) ||
 						    (N_adj_elements[vtx_i[0]] != N_adj_elements[vtx_j[0]])) {
 							ij_are_indistinguishable = false;
 						} else {
@@ -598,21 +598,21 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 								}
 							}
 							if (ij_are_indistinguishable) {
-								vcn_iterator_t* iter_i = vcn_iterator_create();
-								vcn_iterator_set_container(iter_i, adj_variables[vtx_i[0]]);
-								vcn_iterator_t* iter_j = vcn_iterator_create();
-								vcn_iterator_set_container(iter_j, adj_variables[vtx_j[0]]);
-								while (vcn_iterator_has_more(iter_i) &&
-								       vcn_iterator_has_more(iter_j)) {
-									const int *ui = vcn_iterator_get_next(iter_i);
-									const int *uj = vcn_iterator_get_next(iter_j);
+								nb_iterator_t* iter_i = nb_iterator_create();
+								nb_iterator_set_container(iter_i, adj_variables[vtx_i[0]]);
+								nb_iterator_t* iter_j = nb_iterator_create();
+								nb_iterator_set_container(iter_j, adj_variables[vtx_j[0]]);
+								while (nb_iterator_has_more(iter_i) &&
+								       nb_iterator_has_more(iter_j)) {
+									const int *ui = nb_iterator_get_next(iter_i);
+									const int *uj = nb_iterator_get_next(iter_j);
 									if (ui != uj) {
 										ij_are_indistinguishable = false;
 										break;
 									}
 								}
-								vcn_iterator_destroy(iter_i);
-								vcn_iterator_destroy(iter_j);
+								nb_iterator_destroy(iter_i);
+								nb_iterator_destroy(iter_j);
 							}
 						}
 					}/* End of evaluation of indistinguishable variables */
@@ -621,19 +621,19 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 						/* Remove references */
 						for (uint32_t k=0; k < N_adj_elements[vtx_j[0]]; k++) {
 							int *vtx_k = (int*)adj_elements[vtx_j[0]][k];
-							vcn_container_delete(adj_variables[vtx_k[0]], vtx_j);
-							if (NULL == vcn_container_exist(adj_variables[vtx_k[0]], vtx_i))
-								vcn_container_insert(adj_variables[vtx_k[0]], vtx_i);
+							nb_container_delete(adj_variables[vtx_k[0]], vtx_j);
+							if (NULL == nb_container_exist(adj_variables[vtx_k[0]], vtx_i))
+								nb_container_insert(adj_variables[vtx_k[0]], vtx_i);
 						}
-						vcn_iterator_t* subiter = vcn_iterator_create();
-						vcn_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
-						while (vcn_iterator_has_more(subiter)) {
-							const int *vtx_k = vcn_iterator_get_next(subiter);
-							vcn_container_delete(adj_variables[vtx_k[0]], vtx_j);
-							if (NULL == vcn_container_exist(adj_variables[vtx_k[0]], vtx_i))
-								vcn_container_insert(adj_variables[vtx_k[0]], vtx_i);
+						nb_iterator_t* subiter = nb_iterator_create();
+						nb_iterator_set_container(subiter, adj_variables[vtx_j[0]]);
+						while (nb_iterator_has_more(subiter)) {
+							const int *vtx_k = nb_iterator_get_next(subiter);
+							nb_container_delete(adj_variables[vtx_k[0]], vtx_j);
+							if (NULL == nb_container_exist(adj_variables[vtx_k[0]], vtx_i))
+								nb_container_insert(adj_variables[vtx_k[0]], vtx_i);
 						}
-						vcn_iterator_destroy(subiter);
+						nb_iterator_destroy(subiter);
 						/* Add j to super variable i */
 						for (uint32_t i = 0; i < N_super_variable[vtx_j[0]]; i++) {
 							int *vtx_k = (int*)super_variable[vtx_j[0]][i];
@@ -641,30 +641,30 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 								array_insert(N_super_variable[vtx_i[0]],
 									     &(super_variable[vtx_i[0]]), vtx_k);
 						}
-						vcn_container_delete(minimum_degree, vtx_i);
+						nb_container_delete(minimum_degree, vtx_i);
 						vtx_i[1] -= N_super_variable[vtx_j[0]];
-						vcn_container_insert(minimum_degree, vtx_i);
+						nb_container_insert(minimum_degree, vtx_i);
 
-						vcn_container_delete(minimum_degree, vtx_j);
+						nb_container_delete(minimum_degree, vtx_j);
 
-						vcn_container_clear(adj_variables[vtx_j[0]]);
+						nb_container_clear(adj_variables[vtx_j[0]]);
 						free(adj_elements[vtx_j[0]]);
 
-						vcn_container_delete(colliding_set, hash_val_j);
-						vcn_iterator_restart(liter_i);
+						nb_container_delete(colliding_set, hash_val_j);
+						nb_iterator_restart(liter_i);
 						break;
 					}
 				}
-				vcn_iterator_destroy(liter_j);
+				nb_iterator_destroy(liter_j);
 			}
-			vcn_iterator_destroy(liter_i);
-			vcn_container_destroy(colliding_set);
+			nb_iterator_destroy(liter_i);
+			nb_container_destroy(colliding_set);
 		}
-		vcn_iterator_destroy(liter_collision_sets);
+		nb_iterator_destroy(liter_collision_sets);
 		
-		vcn_container_destroy(hash_collisions);
-		vcn_container_set_destroyer(hash_supervariables, free);
-		vcn_container_destroy(hash_supervariables);
+		nb_container_destroy(hash_collisions);
+		nb_container_set_destroyer(hash_supervariables, free);
+		nb_container_destroy(hash_supervariables);
 
 		for (uint32_t i = 0; i < N_super_variable[elem_p[0]]; i++) {
 			int *elem_p_i = (int*)super_variable[elem_p[0]][i];
@@ -678,7 +678,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 
 	/* Free memory */ 
 	for (uint32_t i = 0; i < graph->N; i++) {
-		vcn_container_destroy(adj_variables[i]);
+		nb_container_destroy(adj_variables[i]);
 		free(super_variable[i]);
 	}
 	free(adj_variables);
@@ -688,7 +688,7 @@ uint32_t* vcn_graph_labeling_mmd(const vcn_graph_t *const graph, uint32_t* iperm
 	free(N_super_variable);
 	free(degree);
 	free(flag_elements);
-	vcn_container_destroy(minimum_degree);
+	nb_container_destroy(minimum_degree);
 	return perm;
 }
 
@@ -706,18 +706,18 @@ static int compare_degree(const void *const A,
 
 static uint32_t hash_function_supervariables(const void *const A)
 {
-	vcn_container_t* vars = ((void**)A)[1];
+	nb_container_t* vars = ((void**)A)[1];
 	void*** adj_elements = ((void**)A)[2];
 	uint32_t* N_adj_elements = ((void**)A)[3];
 	uint32_t idx = ((int*)((void**)A)[0])[0];
 	uint32_t hash = 0;
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, vars);
-	while (vcn_iterator_has_more(iter)) {
-		int* vtx = (int*) vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, vars);
+	while (nb_iterator_has_more(iter)) {
+		int* vtx = (int*) nb_iterator_get_next(iter);
 		hash += vtx[0];
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	for (uint32_t k=0; k < N_adj_elements[idx]; k++) {
 		int *vtx = (int*)adj_elements[idx][k];
 		hash += vtx[0];

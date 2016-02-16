@@ -1,5 +1,5 @@
-#ifndef __NB_NB_CONTAINER_HEAP_HEAP_ITERATOR_H__
-#define __NB_NB_CONTAINER_HEAP_HEAP_ITERATOR_H__
+#ifndef __NB_CONTAINER_BOT_HEAP_HEAP_ITERATOR_H__
+#define __NB_CONTAINER_BOT_HEAP_HEAP_ITERATOR_H__
 
 #include <stdint.h>
 #include <stdbool.h>

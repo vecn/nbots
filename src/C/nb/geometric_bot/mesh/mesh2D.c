@@ -69,14 +69,14 @@ vcn_mesh_t* vcn_mesh_create(void)
 	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
 
-	mesh->ht_edge = vcn_container_create(NB_CONTAINER_HASH);
-	vcn_container_set_key_generator(mesh->ht_edge, hash_key_edge);
-	vcn_container_set_comparer(mesh->ht_edge, are_equal_edge);
-	vcn_container_set_destroyer(mesh->ht_edge, free);
+	mesh->ht_edge = nb_container_create(NB_HASH);
+	nb_container_set_key_generator(mesh->ht_edge, hash_key_edge);
+	nb_container_set_comparer(mesh->ht_edge, are_equal_edge);
+	nb_container_set_destroyer(mesh->ht_edge, free);
 
-	mesh->ht_trg = vcn_container_create(NB_CONTAINER_HASH);
-	vcn_container_set_key_generator(mesh->ht_trg, hash_key_trg);
-	vcn_container_set_destroyer(mesh->ht_trg, free);
+	mesh->ht_trg = nb_container_create(NB_HASH);
+	nb_container_set_key_generator(mesh->ht_trg, hash_key_trg);
+	nb_container_set_destroyer(mesh->ht_trg, free);
 	mesh->scale = 1.0;
 
 	set_angle_constraint(mesh, NB_MESH_MAX_ANGLE);
@@ -117,8 +117,8 @@ void vcn_mesh_clear(vcn_mesh_t *mesh)
 		mesh->N_input_sgm = 0;
 	}
 	vcn_bins2D_clear(mesh->ug_vtx);
-	vcn_container_clear(mesh->ht_trg);
-	vcn_container_clear(mesh->ht_edge);
+	nb_container_clear(mesh->ht_trg);
+	nb_container_clear(mesh->ht_edge);
 
 	init_tasks(mesh);
 }
@@ -127,8 +127,8 @@ void vcn_mesh_destroy(vcn_mesh_t* mesh)
 {
 	vcn_mesh_clear(mesh);
 	vcn_bins2D_destroy(mesh->ug_vtx);
-	vcn_container_destroy(mesh->ht_trg);
-	vcn_container_destroy(mesh->ht_edge);
+	nb_container_destroy(mesh->ht_trg);
+	nb_container_destroy(mesh->ht_edge);
 	free(mesh);
 }
 
@@ -280,7 +280,7 @@ inline int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh)
 
 inline bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh)
 {
-	return vcn_container_is_empty(mesh->ht_trg);
+	return nb_container_is_empty(mesh->ht_trg);
 }
 
 bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
@@ -313,26 +313,26 @@ inline uint32_t vcn_mesh_get_N_vtx(const vcn_mesh_t *const mesh)
 
 inline uint32_t vcn_mesh_get_N_trg(const vcn_mesh_t *const mesh)
 {
-	return vcn_container_get_length(mesh->ht_trg);
+	return nb_container_get_length(mesh->ht_trg);
 }
 
 inline uint32_t vcn_mesh_get_N_edg(const vcn_mesh_t *const mesh)
 {
-	return vcn_container_get_length(mesh->ht_edge);
+	return nb_container_get_length(mesh->ht_edge);
 }
 
 double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
 {
 	double area = 0.0;
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_trg);
-	while (vcn_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
 		area += vcn_utils2D_get_2x_trg_area(trg->v1->x,
 						    trg->v2->x,
 						    trg->v3->x);
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 	return (0.5 * area) / vcn_math_pow2(mesh->scale);
 }
 
@@ -497,18 +497,18 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 {
 	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
 	msh_trg_t* trg = NULL;
-	vcn_iterator_t* iter = vcn_iterator_create();
-	vcn_iterator_set_container(iter, mesh->ht_trg);
-	while (vcn_iterator_has_more(iter)) {
-		trg = (msh_trg_t*)vcn_iterator_get_next(iter);
+	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		trg = (msh_trg_t*)nb_iterator_get_next(iter);
 		if ((trg->t1 == NULL && !medge_is_subsgm(trg->s1)) || 
 		    (trg->t2 == NULL && !medge_is_subsgm(trg->s2)) ||
 		    (trg->t3 == NULL && !medge_is_subsgm(trg->s3))) {
 			remove_triangles_propagate(mesh, trg);
-			vcn_iterator_restart(iter);
+			nb_iterator_restart(iter);
 		}
 	}
-	vcn_iterator_destroy(iter);
+	nb_iterator_destroy(iter);
 }
 
 static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
@@ -517,11 +517,11 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
 	for (uint32_t i=0; i < N_holes; i++) {
 		msh_trg_t* trg = NULL;
-		vcn_iterator_t* iter = vcn_iterator_create();
-		vcn_iterator_set_container(iter, mesh->ht_trg);
-		while (vcn_iterator_has_more(iter)) {
+		nb_iterator_t* iter = nb_iterator_create();
+		nb_iterator_set_container(iter, mesh->ht_trg);
+		while (nb_iterator_has_more(iter)) {
 			/* REFACTOR next line */
-			trg = (msh_trg_t*) vcn_iterator_get_next(iter);
+			trg = (msh_trg_t*) nb_iterator_get_next(iter);
 			if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
 							trg->v2->x,
 							trg->v3->x,
@@ -531,7 +531,7 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 				break;
 			}
 		}
-		vcn_iterator_destroy(iter);
+		nb_iterator_destroy(iter);
 	}
 }
 
@@ -626,13 +626,13 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
-	uint32_t N_triangles = vcn_container_get_length(mesh->ht_trg);
+	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
 	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
 	i = 0;
-	vcn_iterator_t* trg_iter = vcn_iterator_create();
-	vcn_iterator_set_container(trg_iter, mesh->ht_trg);
-	while (vcn_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*) vcn_iterator_get_next(trg_iter);
+	nb_iterator_t* trg_iter = nb_iterator_create();
+	nb_iterator_set_container(trg_iter, mesh->ht_trg);
+	while (nb_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		/* Clone the triangle */
 		msh_trg_t* trg_clone = calloc(1, sizeof(*trg_clone));
 		trg_clone->attr = trg->attr;
@@ -647,13 +647,13 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		triangles[id[0]] = trg_clone;
 	}
 
-	uint32_t N_segments = vcn_container_get_length(mesh->ht_edge);
+	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
 	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
 	i = 0;
-	vcn_iterator_t* sgm_iter = vcn_iterator_create();
-	vcn_iterator_set_container(sgm_iter, mesh->ht_edge);
-	while (vcn_iterator_has_more(sgm_iter)) {
-		msh_edge_t* sgm = (msh_edge_t*) vcn_iterator_get_next(sgm_iter);
+	nb_iterator_t* sgm_iter = nb_iterator_create();
+	nb_iterator_set_container(sgm_iter, mesh->ht_edge);
+	while (nb_iterator_has_more(sgm_iter)) {
+		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		/* Clone the segment */
 		msh_edge_t* sgm_clone = calloc(1, sizeof(*sgm_clone));
 
@@ -669,12 +669,12 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 
 	/* Clone data structures and hash tables used to handle mesh */
-	clone->ht_trg = vcn_container_create(NB_CONTAINER_HASH);
-	vcn_container_set_key_generator(clone->ht_trg, hash_key_trg);
-	vcn_container_set_destroyer(clone->ht_trg, free);
-	vcn_iterator_restart(trg_iter);
-	while (vcn_iterator_has_more(trg_iter)) {
-		const msh_trg_t *trg = vcn_iterator_get_next(trg_iter);
+	clone->ht_trg = nb_container_create(NB_HASH);
+	nb_container_set_key_generator(clone->ht_trg, hash_key_trg);
+	nb_container_set_destroyer(clone->ht_trg, free);
+	nb_iterator_restart(trg_iter);
+	while (nb_iterator_has_more(trg_iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(trg_iter);
 		msh_trg_t *trg_clone = 
 			triangles[((uint32_t*)((void**)trg->attr)[0])[0]];
 		trg_clone->v1 = vertices[((uint32_t*)((void**)trg->v1->attr)[0])[0]];
@@ -691,15 +691,15 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 			trg_clone->t2 = triangles[((uint32_t*)((void**)trg->t2->attr)[0])[0]];
 		if (NULL != trg->t3)
 			trg_clone->t3 = triangles[((uint32_t*)((void**)trg->t3->attr)[0])[0]];
-		vcn_container_insert(clone->ht_trg, trg_clone);
+		nb_container_insert(clone->ht_trg, trg_clone);
 	}
-	clone->ht_edge = vcn_container_create(NB_CONTAINER_HASH);
-	vcn_container_set_key_generator(clone->ht_edge, hash_key_edge);
-	vcn_container_set_destroyer(clone->ht_edge, free);
-	vcn_container_set_comparer(clone->ht_edge, are_equal_edge);
-	vcn_iterator_restart(sgm_iter);
-	while (vcn_iterator_has_more(sgm_iter)) {
-		const msh_edge_t *sgm = vcn_iterator_get_next(sgm_iter);
+	clone->ht_edge = nb_container_create(NB_HASH);
+	nb_container_set_key_generator(clone->ht_edge, hash_key_edge);
+	nb_container_set_destroyer(clone->ht_edge, free);
+	nb_container_set_comparer(clone->ht_edge, are_equal_edge);
+	nb_iterator_restart(sgm_iter);
+	while (nb_iterator_has_more(sgm_iter)) {
+		const msh_edge_t *sgm = nb_iterator_get_next(sgm_iter);
 		msh_edge_t *sgm_clone = segments[((uint32_t*)((void**)sgm->attr)[0])[0]];
 		sgm_clone->v1 = vertices[((uint32_t*)((void**)sgm->v1->attr)[0])[0]];
 		sgm_clone->v2 = vertices[((uint32_t*)((void**)sgm->v2->attr)[0])[0]];
@@ -724,7 +724,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 						    prev_clone, next_clone);
 			}
 		}
-		vcn_container_insert(clone->ht_edge, sgm_clone);
+		nb_container_insert(clone->ht_edge, sgm_clone);
 	}
 	for (uint32_t i = 0; i < clone->N_input_vtx; i++)
 		clone->input_vtx[i] = 
@@ -739,25 +739,25 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	free(segments);
 	free(triangles);
 
-	vcn_iterator_restart(sgm_iter);
-	while (vcn_iterator_has_more(sgm_iter)) {
-		msh_edge_t* sgm = (msh_edge_t*) vcn_iterator_get_next(sgm_iter);
+	nb_iterator_restart(sgm_iter);
+	while (nb_iterator_has_more(sgm_iter)) {
+		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		void** attr = sgm->attr;
 		sgm->attr = attr[1];
 		free(attr[0]);
 		free(attr);
 	}
-	vcn_iterator_destroy(sgm_iter);
+	nb_iterator_destroy(sgm_iter);
 
-	vcn_iterator_restart(trg_iter);
-	while (vcn_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*) vcn_iterator_get_next(trg_iter);
+	nb_iterator_restart(trg_iter);
+	while (nb_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		void** attr = trg->attr;
 		trg->attr = attr[1];
 		free(attr[0]);
 		free(attr);
 	}
-	vcn_iterator_destroy(trg_iter);
+	nb_iterator_destroy(trg_iter);
 
 	vcn_bins2D_iter_restart(giter);
 	while (vcn_bins2D_iter_has_more(giter)) {
@@ -805,7 +805,7 @@ static inline bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
 	bool refine = false;
 	if (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||
 	    0 == mesh->max_vtx) {
-		if (vcn_container_get_length(mesh->ht_trg) < mesh->max_trg ||
+		if (nb_container_get_length(mesh->ht_trg) < mesh->max_trg ||
 		    0 == mesh->max_trg)
 			refine = true;
 	}
