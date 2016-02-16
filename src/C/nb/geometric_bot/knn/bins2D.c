@@ -157,7 +157,7 @@ vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
 	nb_container_set_key_generator(bins2D->bins, bin_hash_key);
 	nb_container_set_comparer(bins2D->bins, bin_compare);
 	nb_container_set_destroyer(bins2D->bins, bin_destroy);
-	bins2D->destroy = (void(*)(void*)) vcn_point2D_destroy;
+	bins2D->destroy = vcn_point2D_destroy;
 	bins2D->destroy_attr = null_destroy;
 	bins2D->filter = null_filter;
 	return bins2D;

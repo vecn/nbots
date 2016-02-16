@@ -8,9 +8,9 @@ inline vcn_point2D_t* vcn_point2D_create(void)
 	return calloc(1, sizeof(vcn_point2D_t));
 }
 
-inline void vcn_point2D_destroy(vcn_point2D_t* point)
+inline void vcn_point2D_destroy(void *point_ptr)
 {
-	free(point);
+	free(point_ptr);
 }
 
 inline int8_t vcn_point2D_compare(const void *const p1_ptr,

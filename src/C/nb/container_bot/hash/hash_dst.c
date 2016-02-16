@@ -67,8 +67,12 @@ void hash_copy(void *hash_ptr, const void *src_hash_ptr,
 {
 	hash_t *hash = hash_ptr;
 	const hash_t *src_hash = src_hash_ptr;
-	init(hash, src_hash->max_load_factor, src_hash->size);
+	hash->max_load_factor = src_hash->max_load_factor;
+	hash->size = src_hash->size;
 	hash->length = src_hash->length;
+	if (NULL != hash->rows)
+		free(hash->rows);
+	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
 	clone_lists(hash, src_hash, clone);
 }
 
@@ -85,12 +89,8 @@ void hash_clear(void* hash_ptr,
 		void (*destroy)(void*))
 {
 	hash_t* hash = hash_ptr;
-	hash->length = 0;  
-	if (NULL != hash->rows) {
-		clear_rows(hash, destroy);
-		free(hash->rows);
-		hash->rows = NULL;
-	}
+	hash->length = 0;
+	clear_rows(hash, destroy);
 }
 
 static void clear_rows(hash_t *hash,
@@ -102,6 +102,17 @@ static void clear_rows(hash_t *hash,
 			hash->rows[i] = NULL;
 		}
 	}
+}
+
+void hash_finish(void *hash_ptr,
+		 void (*destroy)(void*))
+{
+	hash_t* hash = hash_ptr;
+	if (NULL != hash->rows) {
+		clear_rows(hash, destroy);
+		free(hash->rows);
+		hash->rows = NULL;
+	}	
 }
 
 inline void* hash_create(void)
@@ -121,7 +132,6 @@ inline void* hash_clone(const void *const hash_ptr,
 			void* (*clone)(const void*))
 {
 	hash_t *hash = malloc_hash();
-	hash_init(hash);
 	hash_copy(hash, hash_ptr, clone);
 	return hash;
 }
@@ -130,7 +140,7 @@ void hash_destroy(void* hash_ptr,
 		    void (*destroy)(void*))
 {
 	hash_t *hash = hash_ptr;
-	hash_clear(hash, destroy);
+	hash_finish(hash, destroy);
 	free(hash);
 }
 
