@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-uint16_t stack_get_iter_memsize(void);
+uint16_t stack_iter_get_memsize(void);
 void stack_iter_init(void *iter_ptr);
-void stack_iter_copy(void *iter_ptr, const void *srciter_ptr);
+void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr);
 void stack_iter_clear(void *iter_ptr);
 void* stack_iter_create(void);
 void* stack_iter_clone(const void *const iter_ptr);

@@ -1,10 +1,13 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "queue/queue_dst.h"
-#include "queue/queue_iterator.h"
+#include "queue_dst.h"
+#include "queue_iterator.h"
+#include "binding.h"
 
 void queue_set_handlers(nb_container_t *container)
 {
@@ -20,7 +23,7 @@ void queue_set_handlers(nb_container_t *container)
 	container->b.exist = queue_exist;
 	container->b.delete = queue_delete;
 	container->b.get_length = queue_get_length;
-	container->b.is_empy = queue_is_empty;
+	container->b.is_empty = queue_is_empty;
 	container->b.is_not_empty = queue_is_not_empty;
 }
 
@@ -44,7 +47,7 @@ void* queue_do(nb_container_t *container, const char* func,
 	*status = 0;
 	void *out = NULL;
 	if (0 == strcmp("insert_first", func)) {
-		list_insert_first(container->cnt, data, container->op.key);
+		queue_insert_first(container->cnt, data, container->op.key);
 	} else {
 		*status = 2;
 	}

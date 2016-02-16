@@ -1,41 +1,44 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "sorted/avl_dst.h"
-#include "sorted/avl_iterator.h"
+#include "avl_dst.h"
+#include "avl_iterator.h"
+#include "binding.h"
 
 void sorted_set_handlers(nb_container_t *container)
 {
-	container->b.init = sorted_init;
-	container->b.copy = sorted_copy;
-	container->b.clear = sorted_clear;
-	container->b.clone = sorted_clone;
-	container->b.destroy = sorted_destroy;
-	container->b.merge = sorted_merge;
-	container->b.insert = sorted_insert;
-	container->b.get_first = sorted_get_first;
-	container->b.delete_first = sorted_delete_first;
-	container->b.exist = sorted_exist;
-	container->b.delete = sorted_delete;
-	container->b.get_length = sorted_get_length;
-	container->b.is_empy = sorted_is_empty;
-	container->b.is_not_empty = sorted_is_not_empty;
+	container->b.init = avl_init;
+	container->b.copy = avl_copy;
+	container->b.clear = avl_clear;
+	container->b.clone = avl_clone;
+	container->b.destroy = avl_destroy;
+	container->b.merge = avl_merge;
+	container->b.insert = avl_insert;
+	container->b.get_first = avl_get_first;
+	container->b.delete_first = avl_delete_first;
+	container->b.exist = avl_exist;
+	container->b.delete = avl_delete;
+	container->b.get_length = avl_get_length;
+	container->b.is_empty = avl_is_empty;
+	container->b.is_not_empty = avl_is_not_empty;
 }
 
 void sorted_iterator_set_handlers(nb_iterator_t *iter)
 {
-	iter->b.init = sorted_iter_init;
-	iter->b.copy = sorted_iter_copy;
-	iter->b.clear = sorted_iter_clear;
-	iter->b.create = sorted_iter_create;
-	iter->b.clone = sorted_iter_clone;
-	iter->b.destroy = sorted_iter_destroy;
-	iter->b.restart = sorted_iter_restart;
-	iter->b.get_next = sorted_iter_get_next;
-	iter->b.has_more = sorted_iter_has_more;
-	iter->b.set_dst = sorted_iter_set_dst;
+	iter->b.init = avl_iter_init;
+	iter->b.copy = avl_iter_copy;
+	iter->b.clear = avl_iter_clear;
+	iter->b.create = avl_iter_create;
+	iter->b.clone = avl_iter_clone;
+	iter->b.destroy = avl_iter_destroy;
+	iter->b.restart = avl_iter_restart;
+	iter->b.get_next = avl_iter_get_next;
+	iter->b.has_more = avl_iter_has_more;
+	iter->b.set_dst = avl_iter_set_dst;
 }
 
 void* sorted_do(nb_container_t *container, const char* func,

@@ -6,6 +6,9 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
+#include "stack_dst.h"
+#include "stack_iterator.h"
+
 void stack_set_handlers(nb_container_t *container);
 
 void stack_iterator_set_handlers(nb_iterator_t *iter);

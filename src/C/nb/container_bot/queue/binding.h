@@ -6,6 +6,9 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
+#include "queue_dst.h"
+#include "queue_iterator.h"
+
 void queue_set_handlers(nb_container_t *container);
 
 void queue_iterator_set_handlers(nb_iterator_t *iter);

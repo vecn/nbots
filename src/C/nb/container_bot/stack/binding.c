@@ -1,10 +1,13 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "stack/stack_dst.h"
-#include "stack/stack_iterator.h"
+#include "stack_dst.h"
+#include "stack_iterator.h"
+#include "binding.h"
 
 void stack_set_handlers(nb_container_t *container)
 {
@@ -20,7 +23,7 @@ void stack_set_handlers(nb_container_t *container)
 	container->b.exist = stack_exist;
 	container->b.delete = stack_delete;
 	container->b.get_length = stack_get_length;
-	container->b.is_empy = stack_is_empty;
+	container->b.is_empty = stack_is_empty;
 	container->b.is_not_empty = stack_is_not_empty;
 }
 
@@ -39,8 +42,8 @@ void stack_iterator_set_handlers(nb_iterator_t *iter)
 }
 
 void* stack_do(nb_container_t *container, const char* func,
-		void *data, int8_t *status)
+	       void *data, int8_t *status)
 {
-	*status = 2
+	*status = 2;
 	return NULL;
 }

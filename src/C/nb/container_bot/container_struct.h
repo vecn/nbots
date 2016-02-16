@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "nb/container_bot/container.h"
+
 typedef struct {
 	uint32_t (*key)(const void*); 
 	void (*destroy)(void*);

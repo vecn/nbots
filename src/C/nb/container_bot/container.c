@@ -9,9 +9,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <alloca.h>
 
 #include "queue/binding.h"
-#include "stack/binging.h"
+#include "stack/binding.h"
 #include "sorted/binding.h"
 #include "heap/binding.h"
 #include "hash/binding.h"
@@ -61,7 +62,7 @@ static uint16_t dst_get_memsize(nb_container_type type)
 		dst_size = stack_get_memsize();
 		break;
 	case NB_SORTED:
-		dst_size = sorted_get_memsize();
+		dst_size = avl_get_memsize();
 		break;
 	case NB_HEAP:
 		dst_size = heap_get_memsize();
@@ -160,7 +161,8 @@ void nb_container_copy(void *container_ptr, const void *src_container_ptr)
 	container->cnt = src_container->cnt;
 	copy_dst_functions(container, src_container);
 	if (container->type == src_container->type)
-		container->b.copy(container->cnt, src_container->cnt);
+		container->b.copy(container->cnt, src_container->cnt,
+				  container->op.clone);
 	else
 		copy_different_type(container, src_container);
 }
@@ -180,12 +182,12 @@ static void copy_different_type(nb_container_t *dest,
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
-	nb_iterator_iter_init(iter);
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, src);
 	while (nb_iterator_has_more(iter)) {
-		void *val = nb_iterator_get_next(iter);
+		const void *val = nb_iterator_get_next(iter);
 		void *cloned_val = src->op.clone(val);
-		nb_container_insert(dest->src, cloned_val);
+		nb_container_insert(dest->cnt, cloned_val);
 	}
 	nb_iterator_clear(iter);
 }
@@ -193,7 +195,7 @@ static void copy_different_type(nb_container_t *dest,
 inline void nb_container_clear(void* container_ptr)
 {
 	nb_container_t *container = container_ptr;
-	container->clear(container->cnt, container->op.destroy);
+	container->b.clear(container->cnt, container->op.destroy);
 }
 
 inline void* nb_container_create(nb_container_type type)
@@ -211,6 +213,7 @@ static inline void *malloc_container(nb_container_type type)
 
 inline void* nb_container_clone(const void *container_ptr)
 {
+	nb_container_type type = nb_container_get_type(container_ptr);
 	void *container = malloc_container(type);
 	nb_container_copy(container, container_ptr);
 	return container;
@@ -219,7 +222,7 @@ inline void* nb_container_clone(const void *container_ptr)
 inline void nb_container_destroy(void *container_ptr)
 {
 	nb_container_clear(container_ptr);
-	free(container);
+	free(container_ptr);
 }
 
 inline void nb_container_merge(nb_container_t *main, 
@@ -240,9 +243,10 @@ inline static bool is_the_same_dst(const nb_container_t *const restrict c1,
 static void insert_2clear_into_main(nb_container_t *main, 
 				    nb_container_t *to_clear)
 {
-  	while (to_clear->is_not_empty(to_clear->cnt)) {
-    		void *val = to_clear->delete_first(to_clear->cnt, to_clear->op.key);
-		main->insert(main->cnt, val, main->op.key);
+  	while (to_clear->b.is_not_empty(to_clear->cnt)) {
+    		void *val = to_clear->b.delete_first(to_clear->cnt, 
+						     to_clear->op.key);
+		main->b.insert(main->cnt, val, main->op.key);
 	}
 }
 
@@ -267,16 +271,16 @@ static void cast_container(nb_container_t* container,
 			   nb_container_type new_type)
 {
 	nb_container_t container_old;
-	set_functions(&container_old, container->id);
-	container_old.dst = container->cnt;
+	set_functions(&container_old, container->type);
+	container_old.cnt = container->cnt;
 	set_functions(container, new_type);
-	container->cnt = container->create();
-	while (container_old.b.is_not_empty(container_old.dst)) {
-		void *val = container_old.b.delete_first(container_old.dst,
+	container->cnt = container->b.create();
+	while (container_old.b.is_not_empty(container_old.cnt)) {
+		void *val = container_old.b.delete_first(container_old.cnt,
 							 container->op.key);
 		container->b.insert(container->cnt, val, container->op.key);
 	}
-	container_old.b.destroy(container_old.dst, destroy_null);
+	container_old.b.destroy(container_old.cnt, destroy_null);
 }
 
 void** nb_container_cast_to_array(nb_container_t *container)
@@ -326,7 +330,7 @@ inline void nb_container_set_comparer(nb_container_t *container,
 				      int8_t (*compare)(const void*, 
 							const void*))
 {
-  	container->op.are_equal = are_equal;
+  	container->op.compare = compare;
 }
 
 inline void nb_container_set_cloner(nb_container_t *container,
@@ -337,7 +341,7 @@ inline void nb_container_set_cloner(nb_container_t *container,
 
 inline bool nb_container_insert(nb_container_t *container, const void *val)
 {
-	return container->insert(container->cnt, val, container->op.key);
+	return container->b.insert(container->cnt, val, container->op.key);
 }
 
 void nb_container_insert_array(nb_container_t *container,
@@ -362,7 +366,7 @@ inline void* nb_container_exist(const nb_container_t *const container,
 				 const void *const val)
 {
   	return container->b.exist(container->cnt, val, container->op.key,
-				  container->op.are_equal);
+				  container->op.compare);
 }
 
 inline void* nb_container_delete(nb_container_t *container,
@@ -370,7 +374,7 @@ inline void* nb_container_delete(nb_container_t *container,
 {
   	return container->b.delete(container->cnt, val,
 				   container->op.key,
-				   container->op.are_equal);
+				   container->op.compare);
 }
 
 inline uint32_t nb_container_get_length(const nb_container_t *const container)

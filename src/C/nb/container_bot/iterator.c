@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "queue/binding.h"
-#include "stack/binging.h"
+#include "stack/binding.h"
 #include "sorted/binding.h"
 #include "heap/binding.h"
 #include "hash/binding.h"
@@ -19,33 +19,15 @@
 #include "nb/container_bot/iterator.h"
 
 #include "container_struct.h"
+#include "iterator_struct.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-typedef struct {
-	void (*init)(void*);
-	void (*copy)(void*, const void*);
-	void (*clear)(void*);
-	void* (*create)(void);
-	void* (*clone)(const void *);
-	void (*destroy)(void*);
-	void (*restart)(void*);
-	const void* (*get_next)(void*);
-	bool (*has_more)(const void *);
-	void (*set_dst)(void*, const void*)
-} iter_binding;
-
-struct nb_iterator_s {
-	void *internal;
-	iter_binding b;
-};
-
 static uint16_t dst_iter_get_max_memsize(void);
-static uint16_t null_get_memsize(void);
 static void null_init(void *iter);
 static void null_copy(void *iter, const void *src_iter);
 static void null_clear(void *iter);
-static void null_create(void);
+static void* null_create(void);
 static void* null_clone(const void *iter);
 static void null_destroy(void *iter);
 static void null_restart(void *iter);
@@ -61,11 +43,11 @@ uint16_t nb_iterator_get_memsize(void)
 	return size + sizeof(nb_iterator_t);
 }
 
-static uint16_t dst_iter_get_memsize(void)
+static uint16_t dst_iter_get_max_memsize(void)
 {
 	uint16_t size = MAX(queue_iter_get_memsize(),
 			    stack_iter_get_memsize());
-	size = MAX(size, sorted_iter_get_memsize());
+	size = MAX(size, avl_iter_get_memsize());
 	size = MAX(size, heap_iter_get_memsize());
 	size = MAX(size, hash_iter_get_memsize());
 	return size;
@@ -74,7 +56,6 @@ static uint16_t dst_iter_get_memsize(void)
 void nb_iterator_init(void *iter_ptr)
 {
 	nb_iterator_t *iter = iter_ptr;
-	iter->b.get_memsize = null_get_memsize;
 	iter->b.init = null_init;
 	iter->b.copy = null_copy;
 	iter->b.clear = null_clear;
@@ -88,11 +69,6 @@ void nb_iterator_init(void *iter_ptr)
 
 	char *memblock = iter_ptr;
 	iter->internal = memblock + sizeof(nb_iterator_t);
-}
-
-static uint16_t null_get_memsize(void)
-{
-	return 0;
 }
 
 static void null_init(void *iter)
@@ -110,9 +86,9 @@ static void null_clear(void *iter)
 	; /* Null statement */
 }
 
-static void null_create(void)
+static void* null_create(void)
 {
-	; /* Null statement */
+	return NULL;
 }
 
 static inline void* null_clone(const void *const iter)
@@ -150,12 +126,11 @@ void nb_iterator_copy(void *iter_ptr, const void *src_iter_ptr)
 	nb_iterator_t *iter = iter_ptr;
 	const nb_iterator_t *src_iter = src_iter_ptr;
 	copy_handlers(iter, src_iter);
-	iter->copy(iter->internal, src_iter->internal);
+	iter->b.copy(iter->internal, src_iter->internal);
 }
 
 static void copy_handlers(nb_iterator_t *iter, const nb_iterator_t *src_iter)
 {
-	iter->b.get_memsize = src_iter->b.get_memsize;
 	iter->b.init = src_iter->b.init;
 	iter->b.copy = src_iter->b.copy;
 	iter->b.clear = src_iter->b.clear;
@@ -221,6 +196,8 @@ void nb_iterator_set_container(nb_iterator_t *iter,
 	case NB_HASH:
 		hash_iterator_set_handlers(iter);
 		break;
+	case NB_NULL:
+		; /* Null statement */
 	}
 	iter->b.init(iter->internal);
 	iter->b.set_dst(iter->internal, container->cnt);

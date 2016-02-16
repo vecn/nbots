@@ -6,6 +6,9 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
+#include "hash_dst.h"
+#include "hash_iterator.h"
+
 void hash_set_handlers(nb_container_t *container);
 
 void hash_iterator_set_handlers(nb_iterator_t *iter);

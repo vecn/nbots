@@ -1,10 +1,13 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "hash/avl_dst.h"
-#include "hash/avl_iterator.h"
+#include "hash_dst.h"
+#include "hash_iterator.h"
+#include "binding.h"
 
 void hash_set_handlers(nb_container_t *container)
 {
@@ -20,7 +23,7 @@ void hash_set_handlers(nb_container_t *container)
 	container->b.exist = hash_exist;
 	container->b.delete = hash_delete;
 	container->b.get_length = hash_get_length;
-	container->b.is_empy = hash_is_empty;
+	container->b.is_empty = hash_is_empty;
 	container->b.is_not_empty = hash_is_not_empty;
 }
 
@@ -45,14 +48,14 @@ void* hash_do(nb_container_t *container, const char* func,
 	void *out = NULL;
 	if (0 == strcmp("get_size", func)) {
 		uint32_t *size = malloc(sizeof(*size));
-		*size = htable_get_size(container->cnt);
+		*size = hash_get_size(container->cnt);
 		out = size;
 	} else if (0 == strcmp("get_N_collisions", func)) {
 		uint32_t *N = malloc(sizeof(*N));
-		*N = htable_get_N_collisions(container->cnt);
+		*N = hash_get_N_collisions(container->cnt);
 		out = N;
 	} else if (0 == strcmp("get_collisions", func)) {
-		out = htable_get_collisions(container->cnt);
+		out = hash_get_collisions(container->cnt);
 	} else {
 		*status = 2;
 	}

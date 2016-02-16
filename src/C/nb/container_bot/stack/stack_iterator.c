@@ -18,9 +18,55 @@ typedef struct {
 	const node_t *start;
 } iter_t;
 
+static void* malloc_iter(void);
+
+inline uint16_t stack_iter_get_memsize(void)
+{
+	return sizeof(iter_t);
+}
+
+inline void stack_iter_init(void *iter_ptr)
+{
+	memset(iter_ptr, 0, stack_get_iter_memsize());
+}
+
+void stack_iter_copy(void *iter_ptr, const void *src_iter_ptr)
+{
+	iter_t *iter = iter_ptr;
+	const iter_t *src_iter = src_iter_ptr;
+	iter->start = src_iter->start;
+	iter->node = src_iter->node;
+	iter->is_init = src_iter->is_init;
+}
+
+inline void stack_iter_clear(void *iter_ptr)
+{
+	memset(iter_ptr, 0, stack_get_iter_memsize());
+}
+
 inline void* stack_iter_create(void)
 {
-	return calloc(1, sizeof(iter_t));
+	void *iter = malloc_iter();
+	stack_iter_init(iter);
+	return iter;
+}
+
+static inline void* malloc_iter(void)
+{
+	uint16_t size = stack_iter_get_memsize();
+	return malloc(size);
+}
+
+inline void* stack_iter_clone(const void *const iter_ptr)
+{
+	void *iter = malloc_iter();
+	stack_iter_copy(iter, iter_ptr);
+	return iter;
+}
+
+inline void stack_iter_destroy(void *iter_ptr)
+{
+	free(iter_ptr);
 }
 
 void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr)
@@ -33,21 +79,6 @@ void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr)
 		iter->start = NULL;
 	}
 	stack_iter_restart(iter);
-}
-
-void* stack_iter_clone(const void *const iter_ptr)
-{
-	const iter_t *const restrict iter = iter_ptr;
-	iter_t *const restrict clone = calloc(1, sizeof(*clone));
-	clone->start = iter->start;
-	clone->node = iter->node;
-	clone->is_init = iter->is_init;
-	return clone;
-}
-
-inline void stack_iter_destroy(void *iter_ptr)
-{
-	free(iter_ptr);
 }
 
 inline void stack_iter_restart(void* iter_ptr)

@@ -1,10 +1,13 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "heap/avl_dst.h"
-#include "heap/avl_iterator.h"
+#include "heap_dst.h"
+#include "heap_iterator.h"
+#include "binding.h"
 
 void heap_set_handlers(nb_container_t *container)
 {
@@ -20,7 +23,7 @@ void heap_set_handlers(nb_container_t *container)
 	container->b.exist = heap_exist;
 	container->b.delete = heap_delete;
 	container->b.get_length = heap_get_length;
-	container->b.is_empy = heap_is_empty;
+	container->b.is_empty = heap_is_empty;
 	container->b.is_not_empty = heap_is_not_empty;
 }
 

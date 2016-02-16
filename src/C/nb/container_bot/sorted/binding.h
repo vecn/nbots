@@ -6,6 +6,9 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
+#include "avl_dst.h"
+#include "avl_iterator.h"
+
 void sorted_set_handlers(nb_container_t *container);
 
 void sorted_iterator_set_handlers(nb_iterator_t *iter);
