@@ -78,7 +78,7 @@ inline void nb_bcond_iter_clear(void *iter_ptr)
 }
 
 inline void nb_bcond_iter_set_conditions(nb_bcond_iter_t *iter,
-					 nb_bcond_t *bcond,
+					 const nb_bcond_t *bcond,
 					 nb_bcond_id type_id,
 					 nb_bcond_where type_elem)
 {

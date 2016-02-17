@@ -78,11 +78,11 @@ inline void queue_iter_clear(void *iter_ptr)
 void queue_iter_set_dst(void *iter_ptr, const void *const queue_ptr)
 {
 	iter_t *iter = iter_ptr;
+	iter->start = NULL;
 	if (NULL != queue_ptr) {
 		const queue_t* queue = queue_ptr;
-		iter->start = queue->end->next;
-	} else {
-		iter->start = NULL;
+		if (NULL != queue->end)
+			iter->start = queue->end->next;
 	}
 	queue_iter_restart(iter);
 }

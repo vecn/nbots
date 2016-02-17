@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <alloca.h>
 
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
@@ -99,7 +100,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	set_results_into_jmesh(env, jmesh_results, displacement, strain,
 			       msh3trg->N_vertices, msh3trg->N_triangles);
 
-	vcn_fem_bcond_clear(bcond);
+	nb_bcond_finish(bcond);
 
 	vcn_model_destroy(model);
 	vcn_msh3trg_destroy(msh3trg);

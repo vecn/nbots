@@ -1,5 +1,5 @@
-#ifndef __NB_PDE_BOT_BCONDITIONS_ITERATOR_H__
-#define __NB_PDE_BOT_BCONDITIONS_ITERATOR_H__
+#ifndef __NB_PDE_BOT_BOUNDARY_CONDITIONS_BCOND_ITERATOR_H__
+#define __NB_PDE_BOT_BOUNDARY_CONDITIONS_BCOND_ITERATOR_H__
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,7 +17,8 @@ void* nb_bcond_iter_clone(const void *iter_ptr);
 void nb_bcond_iter_destroy(void *iter_ptr);
 void nb_bcond_iter_clear(void *iter_ptr);
 
-void nb_bcond_iter_set_conditions(nb_bcond_iter_t *iter, nb_bcond_t *bcond,
+void nb_bcond_iter_set_conditions(nb_bcond_iter_t *iter,
+				  const nb_bcond_t *bcond,
 				  nb_bcond_id type_id,
 				  nb_bcond_where type_elem);
 bool nb_bcond_iter_has_more(const nb_bcond_iter_t *iter);

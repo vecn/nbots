@@ -11,6 +11,7 @@
 
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
+#include "nb/pde_bot/boundary_conditions/bcond_read.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element.h"
 

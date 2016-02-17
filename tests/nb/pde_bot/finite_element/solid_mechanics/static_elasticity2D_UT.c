@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
@@ -113,7 +114,7 @@ CLEANUP_FEM:
 	free(strain);
 CLEANUP_INPUT:
 	vcn_model_destroy(model);
-	nb_bcond_clear(bcond);
+	nb_bcond_finish(bcond);
 	vcn_fem_material_destroy(material);
 	return false;
 }

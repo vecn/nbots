@@ -1,9 +1,7 @@
-#ifndef __NB_PDE_BOT_BOUNDARY_CONDITIONS_H__
-#define __NB_PDE_BOT_BOUNDARY_CONDITIONS_H__
+#ifndef __NB_PDE_BOT_BOUNDARY_CONDITIONS_BCOND_H__
+#define __NB_PDE_BOT_BOUNDARY_CONDITIONS_BCOND_H__
 
 #include <stdint.h>
-
-#include "nb/cfreader_cat.h"
 
 typedef enum {
 	NB_DIRICHLET,
@@ -27,7 +25,6 @@ void nb_bcond_destroy(void *bcond_ptr);
 void nb_bcond_clear(void *bcond_ptr);
 
 uint8_t nb_bcond_get_N_dof(const nb_bcond_t *const bcond);
-int nb_bcond_read(nb_bcond_t *bcond, vcn_cfreader_t *cfreader);
 void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 		   nb_bcond_where type_elem, uint32_t elem_id,
 		   const bool dof_mask[], const double value[]);
