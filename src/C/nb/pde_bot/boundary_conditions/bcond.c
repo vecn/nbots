@@ -1,51 +1,38 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <alloca.h>
 
 #include "nb/cfreader_cat.h"
 #include "nb/container_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
 #include "bc_atom.h"
+#include "bcond_struct.h"
 #include "bc_get_container.h"
 
-#define CONTAINER_ID NB_CONTAINER_QUEUE
-
-struct nb_bcond_s {
-	uint8_t N_dof; /* Degrees of freedom */
-	vcn_container_t *dirichlet_vtx;
-	vcn_container_t *neumann_vtx;
-	vcn_container_t *dirichlet_sgm;
-	vcn_container_t *neumann_sgm;
-};
+#define CONTAINER_ID NB_QUEUE
 
 static void init_containers(nb_bcond_t *bcond);
 static void copy_containers(nb_bcond_t *bcond,
 			    const nb_bcond_t *const bcond_src);
-static void clone_container_elements(vcn_container_t *cnt,
-				     const vcn_container_t *const cnt_src,
+static void clone_container_elements(nb_container_t *cnt,
+				     const nb_container_t *const cnt_src,
 				     uint8_t N_dof);
 static void* malloc_bcond(void);
-static int read_conditions(vcn_container_t *cnt, uint8_t N_dof,
+static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
 			   vcn_cfreader_t *cfreader);
-
-static vcn_containre_t* get_dirichlet_container(nb_bcond_t *bcond,
-						nb_bcond_where type_elem);
-static vcn_containre_t* get_neumann_container(nb_bcond_t *bcond,
-					      nb_bcond_where type_elem);
 
 
 uint16_t nb_bcond_get_memsize(uint8_t N_dof)
 {
 	uint16_t size = sizeof(nb_bcond_t);
-	uint16_t size_cnt = vcn_container_get_memsize(CONTAINER_ID);
+	uint16_t size_cnt = nb_container_get_memsize(CONTAINER_ID);
 	return size + 4 * size_cnt;
 }
 
 inline void nb_bcond_init(void *bcond_ptr, uint8_t N_dof)
 {
-	uint16_t size = nb_bcond_get_memsize(N_dof);
-	memset(bcond_ptr, 0, size);
 	nb_bcond_t *bcond = bcond_ptr;
 	bcond->N_dof = N_dof;
 	init_containers(bcond);	
@@ -54,83 +41,80 @@ inline void nb_bcond_init(void *bcond_ptr, uint8_t N_dof)
 static void init_containers(nb_bcond_t *bcond)
 {
 	uint16_t size = sizeof(nb_bcond_t);
-	uint16_t size_cnt = vcn_container_get_memsize(CONTAINER_ID);
-	char *memblock = bcond;
-	bcond->dirichlet_vtx = memblock + size;
-	bcond->neumann_vtx = memblock + size + size_cnt;
-	bcond->dirichlet_sgm = memblock + size + 2 * size_cnt;
-	bcond->neumann_sgm = memblock + size + 3 * size_cnt;
+	uint16_t size_cnt = nb_container_get_memsize(CONTAINER_ID);
+	char *memblock = (void*)bcond;
+	bcond->dirichlet_vtx = (void*)(memblock + size);
+	bcond->neumann_vtx = (void*)(memblock + size + size_cnt);
+	bcond->dirichlet_sgm = (void*)(memblock + size + 2 * size_cnt);
+	bcond->neumann_sgm = (void*)(memblock + size + 3 * size_cnt);
 
-	vcn_container_init(bcond->dirichlet_vtx, CONTAINER_ID);
-	vcn_container_set_destroyer(bcond->dirichlet_vtx, bc_atom_destroy);
+	nb_container_init(bcond->dirichlet_vtx, CONTAINER_ID);
+	nb_container_set_destroyer(bcond->dirichlet_vtx, bc_atom_destroy);
 
-	vcn_container_init(bcond->neumann_vtx, CONTAINER_ID);
-	vcn_container_set_destroyer(bcond->neumann_vtx, bc_atom_destroy);
+	nb_container_init(bcond->neumann_vtx, CONTAINER_ID);
+	nb_container_set_destroyer(bcond->neumann_vtx, bc_atom_destroy);
 
-	vcn_container_init(bcond->dirichlet_sgm, CONTAINER_ID);
-	vcn_container_set_destroyer(bcond->dirichlet_sgm, bc_atom_destroy);
+	nb_container_init(bcond->dirichlet_sgm, CONTAINER_ID);
+	nb_container_set_destroyer(bcond->dirichlet_sgm, bc_atom_destroy);
 
-	vcn_container_init(bcond->neumann_sgm, CONTAINER_ID);
-	vcn_container_set_destroyer(bcond->neumann_sgm, bc_atom_destroy);
+	nb_container_init(bcond->neumann_sgm, CONTAINER_ID);
+	nb_container_set_destroyer(bcond->neumann_sgm, bc_atom_destroy);
 }
 
 void nb_bcond_copy(void *bcond_ptr, const void *const src_bcond_ptr)
 {
 	nb_bcond_t *bcond = bcond_ptr;
-	bcond_clone->N_dof = bcond->N_dof;
-	copy_containers(bcond_clone, bcond);	
+	const nb_bcond_t *src_bcond = src_bcond_ptr;
+	bcond->N_dof = src_bcond->N_dof;
+	init_containers(bcond);	
+	copy_containers(bcond, src_bcond);	
 }
 
 
-static void copy_containers(nb_bcond_t *bcond,
-			    const nb_bcond_t *const bcond_src)
+static void copy_containers(nb_bcond_t *bcond, const nb_bcond_t *src_bcond)
 {
 	clone_container_elements(bcond->dirichlet_vtx,
-				 bcond_src->dirichlet_vtx, bcond->N_dof);
+				 src_bcond->dirichlet_vtx, bcond->N_dof);
 	clone_container_elements(bcond->neumann_vtx,
-				 bcond_src->neumann_vtx, bcond->N_dof);
+				 src_bcond->neumann_vtx, bcond->N_dof);
 	clone_container_elements(bcond->dirichlet_sgm,
-				 bcond_src->dirichlet_sgm, bcond->N_dof);
+				 src_bcond->dirichlet_sgm, bcond->N_dof);
 	clone_container_elements(bcond->neumann_sgm,
-				 bcond_src->neumann_sgm, bcond->N_dof);
+				 src_bcond->neumann_sgm, bcond->N_dof);
 }
 
-static void clone_container_elements(vcn_container_t *cnt,
-				     const vcn_container_t *const cnt_src,
+static void clone_container_elements(nb_container_t *cnt,
+				     const nb_container_t *const cnt_src,
 				     uint8_t N_dof)
 {
-	uint16_t size = vcn_iterator_get_memsize();
-	vcn_iterator_t *iter = alloca(size);
-	vcn_iterator_init(iter);
-	vcn_iterator_set_container(iter, cnt_src);
-	while (vcn_iterator_has_more(iter)) {
-		const bc_atom_t *bc = vcn_iterator_get_next(iter);
+	uint16_t size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, cnt_src);
+	while (nb_iterator_has_more(iter)) {
+		const bc_atom_t *bc = nb_iterator_get_next(iter);
 		bc_atom_t *bc_clone = bc_atom_clone(bc, N_dof);
-		vcn_container_insert(cnt, bc_clone);
+		nb_container_insert(cnt, bc_clone);
 	}
-	vcn_iterator_clear(iter);
+	nb_iterator_finish(iter);
 }
 
-void nb_bcond_clear(void *bcond_ptr)
+inline void nb_bcond_finish(void *bcond_ptr)
 {
-	nb_bcond_t *bcond = bcond_ptr;
-	vcn_container_clear(bcond->dirichlet_vtx);
-	vcn_container_clear(bcond->neumann_vtx);
-	vcn_container_clear(bcond->dirichlet_sgm);
-	vcn_container_clear(bcond->neumann_sgm);
+	nb_bcond_clear(bcond_ptr);
 }
 
 inline void* nb_bcond_create(uint8_t N_dof)
 {
 	void *bcond = malloc_bcond();
-	nb_bcond_init(bcond_ptr, N_dof);
+	nb_bcond_init(bcond, N_dof);
 	return bcond;
 }
 
 static void* malloc_bcond(void)
 {
 	uint16_t size = sizeof(nb_bcond_t);
-	uint16_t size_cnt = vcn_container_get_memsize(CONTAINER_ID);
+	uint16_t size_cnt = nb_container_get_memsize(CONTAINER_ID);
 	return malloc(size + 4 * size_cnt);
 }
 
@@ -142,10 +126,19 @@ void* nb_bcond_clone(const void *const bcond)
 }
 
 
-void nb_bcond_destroy(nb_bcond_t *bcond)
+void nb_bcond_destroy(void *bcond)
 {
-	nb_bcond_clear(bcond);
+	nb_bcond_finish(bcond);
 	free(bcond);
+}
+
+void nb_bcond_clear(void *bcond_ptr)
+{
+	nb_bcond_t *bcond = bcond_ptr;
+	nb_container_clear(bcond->dirichlet_vtx);
+	nb_container_clear(bcond->neumann_vtx);
+	nb_container_clear(bcond->dirichlet_sgm);
+	nb_container_clear(bcond->neumann_sgm);
 }
 
 inline uint8_t nb_bcond_get_N_dof(const nb_bcond_t *const bcond)
@@ -169,7 +162,7 @@ EXIT:
 	return status;
 }
 
-static int read_conditions(vcn_container_t *cnt, uint8_t N_dof,
+static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
 			   vcn_cfreader_t *cfreader)
 {
 	int status = 1;
@@ -179,7 +172,7 @@ static int read_conditions(vcn_container_t *cnt, uint8_t N_dof,
 
 	for (unsigned int i = 0; i < N; i++) {
 		bc_atom_t *bc = bc_atom_create(N_dof);
-		vcn_container_insert(cnt, bc);
+		nb_container_insert(cnt, bc);
 		if (0 != vcn_cfreader_read_uint(cfreader, &(bc->id)))
 			goto CLEANUP;
 		for (uint8_t j = 0; j < N_dof; j++) {
@@ -196,7 +189,7 @@ static int read_conditions(vcn_container_t *cnt, uint8_t N_dof,
 	status = 0;
 	goto EXIT;
 CLEANUP:
-	vcn_container_clear(cnt);
+	nb_container_clear(cnt);
 EXIT:
 	return status;
 }
@@ -205,63 +198,11 @@ void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 		   nb_bcond_where type_elem, uint32_t elem_id,
 		   const bool dof_mask[], const double value[])
 {
-	vcn_container_t *container = 
+	nb_container_t *container = 
 		nb_bcond_get_container(bcond, type_id, type_elem);
 	if (NULL != container) {
 		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value);
-		vcn_container_insert(container, bc);
+		bc_atom_set_data(bc, elem_id, dof_mask, value, bcond->N_dof);
+		nb_container_insert(container, bc);
 	}
-}
-
-vcn_container_t *nb_bcond_get_container(const nb_bcond_t *const bcond,
-					nb_bcond_id type_id,
-					nb_bcond_where type_elem)
-{
-	vcn_container_t *container;
-	switch (type_id) {
-	case NB_DIRICHLET:
-		container = get_dirichlet_container(bcond, type_elem);
-		break;
-	case NB_NEUMANN:
-		container = get_neumann_container(bcond, type_elem);
-		break;
-	default:
-		container = NULL;
-	}
-	return container;
-}
-
-static vcn_container_t* get_dirichlet_container(nb_bcond_t *bcond,
-						nb_bcond_where type_elem)
-{
-	vcn_container_t *container;
-	switch (type_elem) {
-	case NB_BC_ON_POINT:
-		container = bcond->dirichlet_vtx;
-		break;
-	case NB_BC_ON_SEGMENT:
-		container = bcond->dirichlet_sgm;
-		break;
-	default:
-		container = NULL;
-	}
-	return container;
-}
-
-static vcn_container_t* get_neumann_container(nb_bcond_t *bcond,
-					      nb_bcond_where type_elem)
-{
-	vcn_container_t *container;
-	switch (type_elem) {
-	case NB_BC_ON_POINT:
-		container = bcond->neumann_vtx;
-		break;
-	case NB_BC_ON_SEGMENT:
-		container = bcond->neumann_sgm;
-		break;
-	default:
-		container = NULL;
-	}
-	return container;
 }
