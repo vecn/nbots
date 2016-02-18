@@ -3,7 +3,7 @@
 make
 
 echo "Unit Tests"
-LAUNCHER=tests/launch_unit_tests
+LAUNCHER=ci_tools/test_launchers/launch_unit_tests
 
 echo "  Container Bot"
 CONTAINER_BOT_TESTS_DIR=tests/nb/container_bot

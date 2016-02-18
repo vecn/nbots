@@ -12,7 +12,7 @@
 #include "nb/geometric_bot.h"
 #include "geometric_bot.h"
 
-#include "../../C/nb/geometric_bot/model/model2D_struct.h"
+#include "../src/nb/geometric_bot/model/model2D_struct.h"
 
 #include "jModel.h"
 #include "load_jMesh.h"

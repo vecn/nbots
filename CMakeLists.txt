@@ -7,3 +7,7 @@ message("twitter: @victore_cardoso")
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+add_subdirectory(binding_java)
+
+add_subdirectory(ci_tools)

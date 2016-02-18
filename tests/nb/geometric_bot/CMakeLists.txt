@@ -1,7 +1,8 @@
 cmake_minimum_required (VERSION 2.8.6)
 project (Numerical_Bots)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../ci_tools/test_launchers)
 
 if(${CMAKE_COMPILER_IS_GNUCXX}) 
   set(CMAKE_C_FLAGS 
