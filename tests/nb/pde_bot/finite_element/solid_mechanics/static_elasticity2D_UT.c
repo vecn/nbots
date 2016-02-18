@@ -9,6 +9,9 @@
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
+#include "nb/pde_bot/boundary_conditions/bcond.h"
+#include "nb/pde_bot/boundary_conditions/bcond_read.h"
+#include "nb/pde_bot/material.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
 #include "test_library.h"

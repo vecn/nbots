@@ -156,15 +156,20 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 			uint32_t v3 = GET_1_EDGE_VTX(model, j);
 			uint32_t v4 = GET_2_EDGE_VTX(model, j);
 
-			int status;
-			bool are_intersecting = 
-				vcn_utils2D_are_sgm_intersected(GET_PVTX(model, v1),
-								GET_PVTX(model, v2),
-								GET_PVTX(model, v3),
-								GET_PVTX(model, v4),
-								NULL, &status);
+			nb_intersect_t status = 
+				vcn_utils2D_are_sgm_intersected
+						(GET_PVTX(model, v1),
+						 GET_PVTX(model, v2),
+						 GET_PVTX(model, v3),
+						 GET_PVTX(model, v4),
+						 NULL);
+			bool are_intersecting = NB_INTERSECTED == status;
       
-			if (status >=3 && status <= 7) {
+			if (NB_PARALLEL == status ||
+			    NB_INTERSECT_ON_A1 == status ||
+			    NB_INTERSECT_ON_A2 == status ||
+			    NB_INTERSECT_ON_B1 == status ||
+			    NB_INTERSECT_ON_B2 == status) {
 				double dist_1A_2A = vcn_utils2D_get_dist(GET_PVTX(model, v1),
 							     GET_PVTX(model, v3));
 				double dist_1A_2B = vcn_utils2D_get_dist(GET_PVTX(model, v1),
@@ -174,7 +179,7 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 				double dist_1B_2B = vcn_utils2D_get_dist(GET_PVTX(model, v2),
 							     GET_PVTX(model, v4));
 
-				if (status == 3) {
+				if (NB_PARALLEL == status) {
 					/* Segments parallel or coincident */
 					double area = vcn_utils2D_get_2x_trg_area(GET_PVTX(model, v1),
 									 GET_PVTX(model, v2),
@@ -195,28 +200,28 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 							are_intersecting = true;
 					}
 				}
-				if (status == 4) {
+				if (NB_INTERSECT_ON_A1 == status) {
 					/* Segments intersecting on sgm1->v1 */
 					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
 					   dist_1A_2B > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
-				if (status == 5) {
+				if (NB_INTERSECT_ON_A2 == status) {
 					/* Segments intersecting on sgm1->v2 */
 					if(dist_1B_2A > NB_GEOMETRIC_TOL &&
 					   dist_1B_2B > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
-				if (status == 6) {
+				if (NB_INTERSECT_ON_B1 == status) {
 					/* Segments intersecting on sgm2->v1 */
 					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
 					   dist_1B_2A > NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 
-				if (status == 7) {
+				if (NB_INTERSECT_ON_B2 == status) {
 					/* Segments intersecting on sgm2->v2 */
 					if(dist_1A_2B > NB_GEOMETRIC_TOL &&
 					   dist_1B_2B > NB_GEOMETRIC_TOL)

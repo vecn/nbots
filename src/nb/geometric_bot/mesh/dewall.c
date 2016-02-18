@@ -292,19 +292,21 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 	while (nb_iterator_has_more(iter)) {
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		bool intersected =
-			vcn_utils2D_are_sgm_intersected(v1->x, v3->x,
-							edge->v1->x,
-							edge->v2->x,
-							NULL, NULL);
+			NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+							(v1->x, v3->x,
+							 edge->v1->x,
+							 edge->v2->x,
+							 NULL);
 		if (intersected) {
 			intersects = true;
 			break;
 		} else {
-			intersected =
-				vcn_utils2D_are_sgm_intersected(v2->x, v3->x,
-								edge->v1->x,
-								edge->v2->x,
-								NULL, NULL);
+			intersected = (NB_INTERSECTED == 
+				       vcn_utils2D_are_sgm_intersected
+				       			(v2->x, v3->x,
+							 edge->v1->x,
+							 edge->v2->x,
+							 NULL));
 			if (intersected) {
 				intersects = true;
 				break;

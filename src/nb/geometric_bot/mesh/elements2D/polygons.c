@@ -626,7 +626,7 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 					vcn_utils2D_are_sgm_intersected
 						(half1, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
-						 v1->x, NULL);
+						 v1->x);
 					double half2[2];
 					half2[0] = (sgm->v2->x[0] + 
 						    sgm_v3->x[0])/2.0;
@@ -635,7 +635,7 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 					vcn_utils2D_are_sgm_intersected
 						(half2, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
-						 v2->x, NULL);
+						 v2->x);
 				} else {
 					msh_vtx_t* sgm_v3 = 
 						mtrg_get_opposite_vertex_guided
@@ -648,7 +648,7 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 					vcn_utils2D_are_sgm_intersected
 						(half1, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
-						 v1->x, NULL);
+						 v1->x);
 					double half2[2];
 					half2[0] = (sgm->v1->x[0] + 
 						    sgm_v3->x[0])/2.0;
@@ -657,7 +657,7 @@ static nb_container_t* voronoi_get_boundary_segments_with_vertices
 					vcn_utils2D_are_sgm_intersected
 						(half2, circumcenter->x,
 						 sgm->v1->x, sgm->v2->x,
-						 v2->x, NULL);
+						 v2->x);
 				}
 				bsgm->vertices[0] = v1;
 				bsgm->vertices[1] = v2;

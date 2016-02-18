@@ -353,7 +353,8 @@ static bool input_constrains(const input_t *const input,
 static inline bool intersects(const double a1[2], const double a2[2],
 			      const double b1[2], const double b2[2])
 {
-	return vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2, NULL, NULL);
+	return (NB_INTERSECTED == 
+		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2, NULL));
 }
 
 static bool check_get_cdelaunay_centipede(int N_pairs)

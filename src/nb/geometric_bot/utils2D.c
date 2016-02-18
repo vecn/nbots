@@ -332,21 +332,18 @@ void vcn_utils2D_get_closest_pnt_to_sgm(const double s1[2],
 	}
 }
 
-bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
-				     const double b1[2], const double b2[2],
-				     /* Output NULL if not required */
-				     double intersection[2],
-				     /* Output NULL if not required */
-				     int *status)
+nb_intersect_t vcn_utils2D_are_sgm_intersected
+				(const double a1[2], const double a2[2],
+				 const double b1[2], const double b2[2],
+				 /* Output NULL if not required */
+				 double intersection[2])
 {
-	/* Return 1 if the segments are strictly intersected */
+	nb_intersect_t status;
 	const double denominator = 
 		((b2[1]-b1[1])*(a2[0]-a1[0]) - (b2[0]-b1[0])*(a2[1]-a1[1]));
 	if (fabs(denominator) < NB_GEOMETRIC_TOL) {
-		/* Lines are parallel (or coincident) */
-		if (status != NULL) 
-			status[0] = 3;
-		return false;
+		status = NB_PARALLEL;
+		goto EXIT;
 	}
 	const double ua = ((b2[0]-b1[0])*(a1[1]-b1[1]) - 
 			   (b2[1]-b1[1])*(a1[0]-b1[0])) /
@@ -354,17 +351,15 @@ bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
 	const double ub = ((a2[0]-a1[0])*(a1[1]-b1[1]) -
 			   (a2[1]-a1[1])*(a1[0]-b1[0])) /
 		denominator;
-	/* There aren't intersection */
+
 	if (ua < - NB_GEOMETRIC_TOL || ua > 1 + NB_GEOMETRIC_TOL) {
-		if (status != NULL) 
-			status[0] = 1;
-		return false;
+		status = NB_NOT_INTERSECTED;
+		goto EXIT;
 	}
 
 	if (ub < - NB_GEOMETRIC_TOL || ub > 1 + NB_GEOMETRIC_TOL) {
-		if (status != NULL)
-			status[0] = 1;
-		return false;
+		status = NB_NOT_INTERSECTED;
+		goto EXIT;
 	}
 
 	/* Check extremes (for floating error) */
@@ -378,32 +373,27 @@ bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
 
 	if (fabs(p[0]-a1[0]) < NB_GEOMETRIC_TOL &&
 	    fabs(p[1]-a1[1]) < NB_GEOMETRIC_TOL) {
-		if (status != NULL)
-			status[0] = 4;
-		return false;
+		status = NB_INTERSECT_ON_A1;
+		goto EXIT;
 	}
 	if (fabs(p[0]-a2[0]) < NB_GEOMETRIC_TOL &&
 	    fabs(p[1]-a2[1]) < NB_GEOMETRIC_TOL) {
-		if (status != NULL)
-			status[0] = 5;
-		return false;
+		status = NB_INTERSECT_ON_A2;
+		goto EXIT;
 	}
 	if (fabs(p[0]-b1[0]) < NB_GEOMETRIC_TOL &&
 	    fabs(p[1]-b1[1]) < NB_GEOMETRIC_TOL) {
-		if(status != NULL)
-			status[0] = 6;
-		return false;
+		status = NB_INTERSECT_ON_B1;
+		goto EXIT;
 	}
 	if (fabs(p[0]-b2[0]) < NB_GEOMETRIC_TOL &&
 	    fabs(p[1]-b2[1]) < NB_GEOMETRIC_TOL) {
-		if (status != NULL)
-			status[0] = 7;
-		return false;
+		status = NB_INTERSECT_ON_B2;
+		goto EXIT;
 	}
-
-	if (status != NULL)
-		status[0] = 0;
-	return true;
+	status = NB_INTERSECTED;
+EXIT:
+	return status;
 }
 
 inline bool vcn_utils2D_sgm_intersects_trg(const double t1[2],
@@ -412,11 +402,16 @@ inline bool vcn_utils2D_sgm_intersects_trg(const double t1[2],
 					   const double s1[2],
 					   const double s2[2])
 {
-	if (vcn_utils2D_are_sgm_intersected(t1, t2, s1, s2, NULL, NULL))
-		return true;
-	if (vcn_utils2D_are_sgm_intersected(t2, t3, s1, s2, NULL, NULL))
-		return true;
-	return vcn_utils2D_are_sgm_intersected(t3, t1, s1, s2, NULL, NULL);
+	nb_intersect_t status =
+		vcn_utils2D_are_sgm_intersected(t1, t2, s1, s2, NULL);
+	if (NB_INTERSECTED != status) {
+		status = vcn_utils2D_are_sgm_intersected(t2, t3, s1, s2, NULL);
+		if (NB_INTERSECTED != status) {
+			status = vcn_utils2D_are_sgm_intersected(t3, t1, 
+								 s1, s2, NULL);
+		}
+	}
+	return (NB_INTERSECTED == status);
 }
 
 inline bool vcn_utils2D_sgm_intersects_circle(const double circumcenter[2],

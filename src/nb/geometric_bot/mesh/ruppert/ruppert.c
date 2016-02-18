@@ -970,15 +970,17 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 					     centroid);
 
 		/* Move to the next triangle */
-		if (vcn_utils2D_are_sgm_intersected(centroid, cc->x,
-						    trg_containing_cc->v1->x,
-						    trg_containing_cc->v2->x,
-						    NULL, NULL))
+		if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+		    				(centroid, cc->x,
+						 trg_containing_cc->v1->x,
+						 trg_containing_cc->v2->x,
+						 NULL))
 			trg_containing_cc = trg_containing_cc->t1;
-		else if (vcn_utils2D_are_sgm_intersected(centroid, cc->x,
-							 trg_containing_cc->v2->x,
-							 trg_containing_cc->v3->x,
-							 NULL, NULL))
+		else if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+						(centroid, cc->x,
+						 trg_containing_cc->v2->x,
+						 trg_containing_cc->v3->x,
+						 NULL))
 			trg_containing_cc = trg_containing_cc->t2;
 		else
 			trg_containing_cc = trg_containing_cc->t3;

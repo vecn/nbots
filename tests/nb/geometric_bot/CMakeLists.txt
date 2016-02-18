@@ -54,6 +54,15 @@ add_library(constrained_delaunay_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/constrained_delaunay_UT.c)
 target_link_libraries(constrained_delaunay_UT ${geometric_bot_libs})
 
+
+message("-- blender_UT")
+add_library(blender_UT MODULE
+  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/blender_UT.c)
+target_link_libraries(blender_UT
+  ${geometric_bot_libs}
+  nb_geometric_bot-cairo #TEMPORAL
+  )
+
 message("-- mesh2D_UT")
 add_library(mesh2D_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mesh2D_UT.c)

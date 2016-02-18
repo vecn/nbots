@@ -9,6 +9,16 @@
 #define NB_GEOMETRIC_TOL (1.5e-8)
 #define NB_GEOMETRIC_TOL_POW2 (2.25e-16)
 
+typedef enum {
+	NB_INTERSECTED,
+	NB_NOT_INTERSECTED,
+	NB_PARALLEL,
+	NB_INTERSECT_ON_A1,
+	NB_INTERSECT_ON_A2,
+	NB_INTERSECT_ON_B1,
+	NB_INTERSECT_ON_B2
+} nb_intersect_t;
+
 double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr);
 double vcn_utils2D_get_y_from_darray(const void *const vtx_ptr);
 void vcn_utils2D_get_normal(const double x1[2],
@@ -83,14 +93,12 @@ void vcn_utils2D_get_closest_pnt_to_sgm(const double s1[2],
 					const double s2[2],
 					const double p[2],
 					double closest_point[2]);
-bool vcn_utils2D_are_sgm_intersected(const double a1[2],
-				     const double a2[2],
-				     const double b1[2],
-				     const double b2[2],
-				     /* Output NULL if not required */
-				     double intersection[2],
-				     /* Output NULL if not required */
-				     int *status);
+nb_intersect_t vcn_utils2D_are_sgm_intersected(const double a1[2],
+					       const double a2[2],
+					       const double b1[2],
+					       const double b2[2],
+					       /* Output NULL if not required */
+					       double intersection[2]);
 
 bool vcn_utils2D_sgm_intersects_trg(const double t1[2],
 				    const double t2[2],

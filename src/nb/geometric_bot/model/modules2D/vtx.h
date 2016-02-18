@@ -10,8 +10,12 @@ typedef struct {
   	bool initial_input;
 } vtx_t;
 
-vtx_t* vtx_create(void);
-void vtx_destroy(void *vtx);
+uint16_t vtx_get_memsize(void);
+void vtx_init(void *vtx_ptr);
+void vtx_finish(void *vtx_ptr);
+void* vtx_create(void);
+void vtx_destroy(void *vtx_ptr);
+void vtx_clear(void *vtx_ptr);
 void vtx_set_id(vtx_t *vtx, uint32_t id);
 uint32_t vtx_get_id(const vtx_t *const vtx);
 bool vtx_is_not_initial(const vtx_t *const vtx);

@@ -27,6 +27,7 @@ $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_iterator_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libdewall_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libconstrained_delaunay_UT.so
+$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libblender_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libmesh2D_UT.so
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libimage_density_UT.so
 
@@ -35,9 +36,10 @@ GEOMETRIC_BOT_TESTS_DIR=tests/nb/pde_bot
 $LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/finite_element/libstatic_elasticity2D_UT.so
 
 echo "  Java binding for Geometric Bot"
-JAVA_TEST_DIR=tests/java
-JAVA_CP=src/java/GeometricBot.jar:src/java/PdeBot.jar
-JAVA_LP=src/JNI
+JAVA_DIR=binding_java
+JAVA_TEST_DIR=$JAVA_DIR/tests
+JAVA_CP=$JAVA_DIR/java/GeometricBot.jar:$JAVA_DIR/java/PdeBot.jar
+JAVA_LP=$JAVA_DIR/JNI
 TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestGeometricBot.jar
 java -Djava.library.path=$JAVA_LP -cp $TEST_JARS TestGeometricBot
 TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestPdeBot.jar

@@ -324,23 +324,26 @@ static bool vtx_is_constrained
 	for (uint32_t i=0; i < N_input_sgm; i++) {
 		msh_edge_t* sgm = input_sgm[i];
 		while (NULL != sgm) {
-			if(vcn_utils2D_are_sgm_intersected(trg_v1->x,
-							   encroaching_vtx->x,
-							   sgm->v1->x,
-							   sgm->v2->x,
-							   NULL, NULL))
+			if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+			    				(trg_v1->x,
+							 encroaching_vtx->x,
+							 sgm->v1->x,
+							 sgm->v2->x,
+							 NULL))
 				return true;
-			if(vcn_utils2D_are_sgm_intersected(trg_v2->x,
-							   encroaching_vtx->x,
-							   sgm->v1->x,
-							   sgm->v2->x,
-							   NULL, NULL))
+			if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+							(trg_v2->x,
+							 encroaching_vtx->x,
+							 sgm->v1->x,
+							 sgm->v2->x,
+							 NULL))
 				return true;
-			if(vcn_utils2D_are_sgm_intersected(trg_v3->x,
-							   encroaching_vtx->x,
-							   sgm->v1->x,
-							   sgm->v2->x,
-							   NULL, NULL))
+			if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+			    				(trg_v3->x,
+							 encroaching_vtx->x,
+							 sgm->v1->x,
+							 sgm->v2->x,
+							 NULL))
 				return true;
 			sgm = medge_subsgm_next(sgm);
 		}
@@ -429,11 +432,11 @@ static bool are_intersecting_edges(const vcn_mesh_t *const restrict mesh,
 		if (v1 == edge->v1 || v1 == edge->v2 ||
 		    v2 == edge->v1 || v2 == edge->v2)
 			continue;
-		if (vcn_utils2D_are_sgm_intersected(edge->v1->x,
-						    edge->v2->x,
-						    v1->x,
-						    v2->x,
-						    NULL, NULL)) {
+		if (NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+		    				(edge->v1->x,
+						 edge->v2->x,
+						 v1->x,v2->x,
+						 NULL)) {
 			nb_iterator_destroy(iter);
 			return true;
 		}

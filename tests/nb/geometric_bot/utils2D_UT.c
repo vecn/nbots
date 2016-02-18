@@ -457,14 +457,12 @@ static bool check_are_sgm_intersected_true(void)
 	double b1[2] = {1, 0};
 	double b2[2] = {0, 1};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return intersected &&
-		(fabs(intersection[0] - 0.5) < TOLERANCE) &&
+						intersection);
+	return (fabs(intersection[0] - 0.5) < TOLERANCE) &&
 		(fabs(intersection[1] - 0.5) < TOLERANCE) &&
-		(0 == status);
+		(NB_INTERSECTED == status);
 }
 
 static bool check_are_sgm_intersected_parallel(void)
@@ -474,11 +472,10 @@ static bool check_are_sgm_intersected_parallel(void)
 	double b1[2] = {1, 0};
 	double b2[2] = {1, 1};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected && (3 == status);
+						intersection);
+	return (NB_PARALLEL == status);
 }
 
 static bool check_are_sgm_intersected_strictly_false(void)
@@ -488,11 +485,10 @@ static bool check_are_sgm_intersected_strictly_false(void)
 	double b1[2] = {2, 1};
 	double b2[2] = {1, 2};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected && (1 == status);
+						intersection);
+	return (NB_NOT_INTERSECTED == status);
 }
 
 static bool check_are_sgm_intersected_a1(void)
@@ -502,14 +498,12 @@ static bool check_are_sgm_intersected_a1(void)
 	double b1[2] = {-1, 1};
 	double b2[2] = {1, -1};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected &&
-		(fabs(intersection[0] - a1[0]) < TOLERANCE) &&
+						intersection);
+	return (fabs(intersection[0] - a1[0]) < TOLERANCE) &&
 		(fabs(intersection[1] - a1[1]) < TOLERANCE) &&
-		(4 == status);
+		(NB_INTERSECT_ON_A1 == status);
 }
 
 static bool check_are_sgm_intersected_a2(void)
@@ -519,14 +513,12 @@ static bool check_are_sgm_intersected_a2(void)
 	double b1[2] = {-1, 1};
 	double b2[2] = {1, -1};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected &&
-		(fabs(intersection[0] - a2[0]) < TOLERANCE) &&
+						intersection);
+	return (fabs(intersection[0] - a2[0]) < TOLERANCE) &&
 		(fabs(intersection[1] - a2[1]) < TOLERANCE) &&
-		(5 == status);
+		(NB_INTERSECT_ON_A2 == status);
 }
 
 static bool check_are_sgm_intersected_b1(void)
@@ -536,14 +528,12 @@ static bool check_are_sgm_intersected_b1(void)
 	double b1[2] = {0, 0};
 	double b2[2] = {1, 1};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	nb_intersect_t status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected &&
-		(fabs(intersection[0] - b1[0]) < TOLERANCE) &&
+						intersection);
+	return (fabs(intersection[0] - b1[0]) < TOLERANCE) &&
 		(fabs(intersection[1] - b1[1]) < TOLERANCE) &&
-		(6 == status);
+		(NB_INTERSECT_ON_B1 == status);
 }
 
 static bool check_are_sgm_intersected_b2(void)
@@ -553,14 +543,12 @@ static bool check_are_sgm_intersected_b2(void)
 	double b1[2] = {1, 1};
 	double b2[2] = {0, 0};
 	double intersection[2];
-	int status;
-	bool intersected = 
+	int status =
 		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection, &status);
-	return !intersected &&
-		(fabs(intersection[0] - b2[0]) < TOLERANCE) &&
+						intersection);
+	return (fabs(intersection[0] - b2[0]) < TOLERANCE) &&
 		(fabs(intersection[1] - b2[1]) < TOLERANCE) &&
-		(7 == status);
+		(NB_INTERSECT_ON_B2 == status);
 }
 
 static bool check_sgm_intersects_trg_1edge(void)

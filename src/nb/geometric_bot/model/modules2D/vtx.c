@@ -1,18 +1,51 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "nb/geometric_bot/utils2D.h"
 #include "vtx.h"
 
-inline vtx_t* vtx_create(void)
+static void* malloc_vtx(void);
+
+inline uint16_t vtx_get_memsize(void)
 {
-	return calloc(1, sizeof(vtx_t));
+	return sizeof(vtx_t);
 }
 
-inline void vtx_destroy(void *vtx)
+inline void vtx_init(void *vtx_ptr)
 {
-	free(vtx);
+	memset(vtx_ptr, 0, vtx_get_memsize());
+}
+
+inline void vtx_finish(void *vtx_ptr)
+{
+	vtx_clear(vtx_ptr);
+}
+
+inline void* vtx_create(void)
+{
+	void *vtx = malloc_vtx();
+	vtx_init(vtx);
+	return vtx;
+}
+
+static inline void* malloc_vtx(void)
+{
+	uint16_t size = vtx_get_memsize();
+	return malloc(size);
+}
+
+inline void vtx_destroy(void *vtx_ptr)
+{
+	vtx_finish(vtx_ptr);
+	free(vtx_ptr);
+}
+
+
+inline void vtx_clear(void *vtx_ptr)
+{
+	memset(vtx_ptr, 0, vtx_get_memsize());
 }
 
 inline void vtx_set_id(vtx_t *vtx, uint32_t id)

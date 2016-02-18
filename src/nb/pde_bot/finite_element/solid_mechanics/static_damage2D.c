@@ -33,6 +33,8 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 			     double *r_damage,
 			     double characteristic_length_of_fractured_domain,
 			     bool enable_plane_stress);
+/*
+SECOND OPTION
 static double tension_truncated_damage_r0(const vcn_fem_material_t *const mat);
 static double tension_truncated_damage
 			(const vcn_fem_material_t *const mat, 
@@ -41,6 +43,7 @@ static double tension_truncated_damage
 			 double* r_damage,
 			 double characteristic_length_of_fractured_domain,
 			 bool enable_plane_stress);
+*/
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
@@ -184,6 +187,8 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 	return G;
 }
 
+/*
+SECOND OPTION
 static inline double tension_truncated_damage_r0
 			(const vcn_fem_material_t *const mat)
 {
@@ -198,13 +203,13 @@ static double tension_truncated_damage
 			 double characteristic_length_of_fractured_domain,
 			 bool enable_plane_stress)
 {
-	/* Material properties */
+// Material properties
 	double E = vcn_fem_material_get_elasticity_module(mat);
 	double v = vcn_fem_material_get_poisson_module(mat);
 	double Gf = vcn_fem_material_get_fracture_energy(mat);
 	double ft = vcn_fem_material_get_traction_limit_stress(mat);
 
-	/* Get constitutive matrix */
+// Get constitutive matrix
 	double d11 = E/(1.0 - POW2(v));
 	double d12 = v*d11;
     
@@ -215,13 +220,13 @@ static double tension_truncated_damage
 	double d22 = d11;
 	double d33 = E/(2.0*(1.0+v));
 
-	/* Compute effective stress */
+// Compute effective stress
 	double effective_stress[3];
 	effective_stress[0] = d11 * strain[0] + d12 * strain[1];
 	effective_stress[1] = d12 * strain[0] + d22 * strain[1];
 	effective_stress[2] = d33 * strain[2] * 0.5;
 
-	/* Compute principal stress using Mohr's circle */
+// Compute principal stress using Mohr's circle
 	double sigma_avg = 0.5 * (effective_stress[0] + effective_stress[1]);
 	double R = sqrt(0.25 * 
 			POW2(effective_stress[0] - effective_stress[1]) +
@@ -229,11 +234,11 @@ static double tension_truncated_damage
 	double main_stress1 = sigma_avg + R;
 	double main_stress2 = sigma_avg - R;
 
-	/* Compute tau */
+// Compute tau
 	double tau = MAX(0, main_stress1) + 
 		MAX(0, main_stress2);
 
-	/* Compute and return damage */
+// Compute and return damage
 	double r0 = tension_damage_r0(mat);
 	double beta = 2.0;
 	r_damage[0] = MAX(r_damage_prev[0], tau);
@@ -245,6 +250,7 @@ static double tension_truncated_damage
 	double G = 1.0 - (r0/r_damage[0])*exp(2.0*Hs*(1.0-r_damage[0]/r0));
 	return G;
 }
+*/
 
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
@@ -784,11 +790,11 @@ static void DMG_pipeline_compute_strain
       
 				damage[idx] = 
 					tension_damage(material, 
-							 &(strain[idx*3]),
-							 &(r_dmg_prev[idx]),
-							 &(r_dmg[idx]),
-							 characteristic_length_of_fractured_domain,
-							 enable_plane_stress);
+						       &(strain[idx*3]),
+						       &(r_dmg_prev[idx]),
+						       &(r_dmg[idx]),
+						       characteristic_length_of_fractured_domain,
+						       enable_plane_stress);
 			}
 		}
 		free(dNi_dx);
