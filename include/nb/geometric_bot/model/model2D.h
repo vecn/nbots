@@ -13,6 +13,7 @@
 typedef struct vcn_model_s vcn_model_t;
 
 vcn_model_t* vcn_model_create(void);
+void vcn_model_clear(vcn_model_t *model);
   
 /**
  * @brief Load geometry from a plain text file.
@@ -81,6 +82,9 @@ vcn_model_t* vcn_model_create_circle(double radius,
  */
 vcn_model_t* vcn_model_create_from_msh3trg
 (const vcn_msh3trg_t *const msh3trg);
+
+vcn_model_t* vcn_model_generate_from_msh3trg
+(vcn_model_t *model, const vcn_msh3trg_t *const msh3trg);
 
 /**
  * @brief Build a geometry model from a triangulation with disabled

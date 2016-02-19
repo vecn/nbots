@@ -25,6 +25,25 @@ inline vcn_model_t* vcn_model_create(void)
 	return calloc(1, sizeof(vcn_model_t));
 }
 
+void vcn_model_clear(vcn_model_t *model)
+{
+	if (0 < model->N) {
+		model->N = 0;
+		free(model->vertex);
+		model->vertex = NULL;
+	}
+	if (0 < model->M) {
+		model->M = 0;
+		free(model->edge);
+		model->edge = NULL;
+	}
+	if (0 < model->H) {
+		model->H = 0;
+		free(model->holes);
+		model->holes = NULL;
+	}
+}
+
 vcn_model_t* vcn_model_load(const char* filename)
 {
 	/* OPPORTUNITY: Use custom format */
@@ -197,6 +216,15 @@ vcn_model_t* vcn_model_create_circle(double radius,
 vcn_model_t* vcn_model_create_from_msh3trg
 		(const vcn_msh3trg_t *const restrict msh3trg)
 {
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_generate_from_msh3trg(model, msh3trg);
+	return model;
+}
+
+vcn_model_t* vcn_model_generate_from_msh3trg
+(vcn_model_t *model, const vcn_msh3trg_t *const msh3trg)
+{
+	vcn_model_clear(model);
 	uint32_t* segments =
 		malloc(2 * msh3trg->N_input_segments * sizeof(*segments));
 	double* vertices =
@@ -240,7 +268,6 @@ vcn_model_t* vcn_model_create_from_msh3trg
 		}
 	}
 	/* Build model without holes */
-	vcn_model_t* model = vcn_model_create();
 	model->N = N_vertices;
 	model->vertex = vertices;
 	model->M = N_segments;
@@ -265,7 +292,6 @@ vcn_model_t* vcn_model_create_from_msh3trg
 	/* Return model */
 	return model;
 }
-
 vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 		(const vcn_msh3trg_t *const restrict msh3trg,
 		 const bool *const restrict trg_enabled,
