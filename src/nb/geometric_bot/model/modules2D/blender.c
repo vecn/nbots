@@ -601,7 +601,7 @@ static void insert_subsgm(edge_t *sgm, vtx_t *vtx,
 			  nb_container_t* sgm_intersect,
 			  nb_container_t* sgm_intersect_aux)
 {
-	/* Insert subsegments of sgm1 */
+	/* Insert subsegments of sgm */
 	edge_t* sgmB = edge_create();
 	sgmB->v1 = vtx;
 	sgmB->v2 = sgm->v2;

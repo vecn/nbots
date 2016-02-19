@@ -45,6 +45,15 @@ int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 	bool eq_e1v2_e2v2 = edge1->v2 == edge2->v2;
 	bool eq_e1v1_e2v2 = edge1->v1 == edge2->v2;
 	bool eq_e1v2_e2v1 = edge1->v2 == edge2->v1;
-	return ((eq_e1v1_e2v1 && eq_e1v2_e2v2) ||
-		(eq_e1v1_e2v2 && eq_e1v2_e2v1)) ? 0:1;
+	int8_t out;
+	if ((eq_e1v1_e2v1 && eq_e1v2_e2v2) ||
+	    (eq_e1v1_e2v2 && eq_e1v2_e2v1)) {
+		out = 0;
+	} else {
+		if (edge1_ptr < edge2_ptr)
+			out = -1;
+		else
+			out = 1;
+	}
+	return out;
 }
