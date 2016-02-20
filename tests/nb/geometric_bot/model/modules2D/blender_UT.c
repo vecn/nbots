@@ -12,16 +12,17 @@
 
 #define INPUTS_DIR "../tests/nb/geometric_bot/model/modules2D/blender_UT_inputs"
 
-#include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
+#include  "nb/geometric_bot/model/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
 static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
 {							      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
 	sprintf(label, "TEMP_M_%02i.png", TEMPORAL_++);	      /* TEMPORAL */
-	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_generate_from_model(mesh, model);
-	vcn_mesh_save_png(mesh, label, 1000, 800);  /* TEMPORAL */
-	vcn_mesh_destroy(mesh);
+	vcn_model_export_png(model, label, 1000, 800, false);
+	//vcn_mesh_t *mesh = vcn_mesh_create();
+	//vcn_mesh_generate_from_model(mesh, model);
+	//vcn_mesh_save_png(mesh, label, 1000, 800);  /* TEMPORAL */
+	//vcn_mesh_destroy(mesh);
 }                                                             /* TEMPORAL */
 
 static bool check_get_combination_squares(void);
@@ -75,7 +76,7 @@ static bool check_get_combination_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_intersection_squares(void)
@@ -89,7 +90,7 @@ static bool check_get_intersection_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_union_squares(void)
@@ -103,7 +104,7 @@ static bool check_get_union_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_substractionA_squares(void)
@@ -117,7 +118,7 @@ static bool check_get_substractionA_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_substractionB_squares(void)
@@ -131,7 +132,7 @@ static bool check_get_substractionB_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_combination_cross(void)
@@ -145,7 +146,7 @@ static bool check_get_combination_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_intersection_cross(void)
@@ -159,7 +160,7 @@ static bool check_get_intersection_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_union_cross(void)
@@ -173,7 +174,7 @@ static bool check_get_union_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_substractionA_cross(void)
@@ -187,7 +188,7 @@ static bool check_get_substractionA_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
 
 static bool check_get_substractionB_cross(void)
@@ -201,5 +202,5 @@ static bool check_get_substractionB_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
-	return model;
+	return false;
 }
