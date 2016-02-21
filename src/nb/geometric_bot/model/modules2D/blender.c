@@ -218,6 +218,7 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 
 	/* Get holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh, model);
 
 	uint32_t N_centroids;
@@ -228,9 +229,11 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 		char* mask_centroids = calloc(N_centroids, 1);
 		
 		vcn_mesh_t* mesh1 = vcn_mesh_create();
+		vcn_mesh_set_geometric_constraint(mesh1, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 		vcn_mesh_generate_from_model(mesh1, model1);
 
 		vcn_mesh_t* mesh2 = vcn_mesh_create();
+		vcn_mesh_set_geometric_constraint(mesh2, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 		vcn_mesh_generate_from_model(mesh2, model2);
 
 		model->H = 0;
@@ -1056,6 +1059,7 @@ static double* get_centroids_of_model_subareas(const vcn_model_t *model,
 						uint32_t *N_centroids)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh, model);
 	double* centroids = 
 		vcn_mesh_get_centroids_of_subareas(mesh, N_centroids);
@@ -1071,9 +1075,11 @@ static uint32_t mask_intersection_holes(const vcn_model_t *model1,
 {
 	uint32_t N_new_holes = 0;
 	vcn_mesh_t* mesh1 = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh1, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh1, model1);
 
 	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh2, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh2, model2);
  
 	for (uint32_t i = 0; i < N_centroids; i++) {
@@ -1124,6 +1130,7 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 static void delete_isolated_elements(vcn_model_t *model)
 {
 	vcn_mesh_t *mesh = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh, model);
 
 	vcn_mesh_delete_isolated_segments(mesh);
@@ -1216,7 +1223,6 @@ static void set_substraction_from_combination(vcn_model_t *model,
 					      const vcn_model_t *const model2)
 {
 	set_substraction_holes(model, model2);
-	return;/* TEMPORAL */
 	delete_isolated_elements(model);
 	delete_isolated_internal_vtx(model);	
 }
@@ -1249,6 +1255,7 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 	uint32_t N_new_holes = 0;
 
 	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_set_geometric_constraint(mesh2, NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE, 0);
 	vcn_mesh_generate_from_model(mesh2, model2);
  
 	for (uint32_t i = 0; i < N_centroids; i++) {

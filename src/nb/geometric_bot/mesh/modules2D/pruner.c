@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <alloca.h>
 
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -15,6 +16,16 @@
 
 #define POW2(a) ((a)*(a))
 
+static void group_trg_by_areas(const vcn_mesh_t *const mesh,
+			       nb_container_t *areas);
+static double* get_centroids(const vcn_mesh_t *mesh,
+			     nb_container_t *areas, uint32_t *N_centroids);
+static void calculate_area_centroid(const vcn_mesh_t *mesh,
+				    nb_container_t *area_trg,
+				    double centroid[2]);
+static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
+						    msh_edge_t *longest_edge,
+						    double *max_length2);
 static double colorize_infected_triangles(msh_trg_t* trg_infected,
 					  nb_container_t* l_infected_trg,
 					  bool blocking_with_input_segments);
@@ -25,9 +36,24 @@ static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
-	nb_container_t* areas = nb_container_create(NB_SORTED);
+	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(areas, NB_SORTED);
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = nb_iterator_create();
+
+	group_trg_by_areas(mesh, areas);
+
+	double *centroids = get_centroids(mesh, areas, N_centroids);
+
+	nb_container_finish(areas);
+
+	return centroids;
+}
+
+static void group_trg_by_areas(const vcn_mesh_t *const mesh,
+			       nb_container_t *areas)
+{
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
@@ -38,81 +64,133 @@ double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 		}
 		nb_container_t* area_trg = nb_container_create(NB_SORTED);
 		double* area = malloc(sizeof(*area));
-		area[0] = colorize_infected_triangles(trg, area_trg, true);
-		void** obj = (void**)malloc(2 * sizeof(*obj));
+		*area = colorize_infected_triangles(trg, area_trg, true);
+		void** obj = malloc(2 * sizeof(*obj));
 		obj[0] = area;
 		obj[1] = area_trg;
 		nb_container_insert(areas, obj);
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
+}
 
-	/* Get centroids */
-	N_centroids[0] = nb_container_get_length(areas);
-	double *centroids = calloc(N_centroids[0] * 2, sizeof(*centroids));
-	N_centroids[0] = 0;
+static double* get_centroids(const vcn_mesh_t *mesh,
+			     nb_container_t *areas, uint32_t *N_centroids)
+{
+	*N_centroids = nb_container_get_length(areas);
+	double *centroids = calloc(*N_centroids * 2, sizeof(*centroids));
+	uint32_t i = 0;
 	while (nb_container_is_not_empty(areas)) {
 		void** obj = nb_container_delete_first(areas);
+		nb_container_t *area_trg = obj[1];
+		calculate_area_centroid(mesh, area_trg, &(centroids[i*2]));
 		free(obj[0]);
-		nb_container_t* area_trg = obj[1];
-		double* trg_centroids = malloc(nb_container_get_length(area_trg) *
-					       2 * sizeof(*trg_centroids));
-		double* centroid = calloc(2, sizeof(*centroid));
-		double vol = 0;
-		uint32_t trg_count = 0;
-		while (nb_container_is_not_empty(area_trg)) {
-			msh_trg_t* trg = nb_container_delete_first(area_trg);
-			/* Restore color */
-			attr_t* trg_attr = trg->attr;
-			trg->attr = trg_attr->data;
-			free(trg_attr);
-			/* Compute triangle centroid */
-			trg_centroids[trg_count * 2] = (trg->v1->x[0] +
-							trg->v2->x[0] +
-							trg->v3->x[0]) /
-				(3.0 * mesh->scale) + mesh->xdisp;
-			trg_centroids[trg_count*2+1] = (trg->v1->x[1] +
-							trg->v2->x[1] +
-							trg->v3->x[1]) /
-				(3.0 * mesh->scale) + mesh->ydisp;
-			/* Compute triangle volume (area) */
-			double trg_vol = vcn_utils2D_get_trg_area(trg->v1->x,
-								  trg->v2->x,
-								  trg->v3->x) /
-				POW2(mesh->scale);
-			/* Compute global centroid */
-			centroid[0] += trg_vol * trg_centroids[trg_count * 2];
-			centroid[1] += trg_vol * trg_centroids[trg_count*2+1];
-			/* Compute global volume */
-			vol += trg_vol;
-			/* Increase triangle counter */
-			trg_count += 1;
-		}
-		centroid[0] /= vol;
-		centroid[1] /= vol;
-		uint32_t idx_closest_centroid = 0;
-		double min_dist = vcn_utils2D_get_dist2(trg_centroids, centroid);
-		for (uint32_t i = 1; i < trg_count; i++) {
-			double dist = vcn_utils2D_get_dist2(&(trg_centroids[i*2]),
-						   centroid);
-			if (dist < min_dist) {
-				min_dist = dist;
-				idx_closest_centroid = i;
-			}
-		}
-		centroids[N_centroids[0] * 2] = 
-			trg_centroids[idx_closest_centroid * 2];
-		centroids[N_centroids[0]*2+1] =
-			trg_centroids[idx_closest_centroid*2+1];
-		N_centroids[0] += 1;
-
-		/* Free memory */
-		free(trg_centroids);
-		free(centroid);
 		nb_container_destroy(area_trg);
 		free(obj);
+		i += 1;
 	}
-	nb_container_destroy(areas);
 	return centroids;
+}
+
+static void _calculate_area_centroid(const vcn_mesh_t *mesh,
+				    nb_container_t *area_trg,
+				    double centroid[2])
+{
+	memset(centroid, 0, 2 * sizeof(*centroid));
+	double* trg_centroids = 
+		alloca(nb_container_get_length(area_trg) *
+		       2 * sizeof(*trg_centroids));
+	double vol = 0;
+	uint32_t trg_count = 0;
+	while (nb_container_is_not_empty(area_trg)) {
+		msh_trg_t* trg = nb_container_delete_first(area_trg);
+		/* Restore color */
+		attr_t* trg_attr = trg->attr;
+		trg->attr = trg_attr->data;
+		free(trg_attr);
+		/* Compute triangle centroid */
+		trg_centroids[trg_count * 2] = (trg->v1->x[0] +
+						trg->v2->x[0] +
+						trg->v3->x[0]) /
+			(3.0 * mesh->scale) + mesh->xdisp;
+		trg_centroids[trg_count*2+1] = (trg->v1->x[1] +
+						trg->v2->x[1] +
+						trg->v3->x[1]) /
+			(3.0 * mesh->scale) + mesh->ydisp;
+		/* Compute triangle volume (area) */
+		double trg_vol = vcn_utils2D_get_trg_area(trg->v1->x,
+							  trg->v2->x,
+							  trg->v3->x) /
+			POW2(mesh->scale);
+		/* Compute global centroid */
+		centroid[0] += trg_vol * trg_centroids[trg_count * 2];
+		centroid[1] += trg_vol * trg_centroids[trg_count*2+1];
+		/* Compute global volume */
+		vol += trg_vol;
+		/* Increase triangle counter */
+		trg_count += 1;
+	}
+	centroid[0] /= vol;
+	centroid[1] /= vol;
+	
+	uint32_t idx_closest_centroid = 0;
+	double min_dist = vcn_utils2D_get_dist2(trg_centroids, centroid);
+	for (uint32_t i = 1; i < trg_count; i++) {
+		double dist = 
+			vcn_utils2D_get_dist2(&(trg_centroids[i*2]),
+					      centroid);
+		if (dist < min_dist) {
+			min_dist = dist;
+			idx_closest_centroid = i;
+		}
+	}
+	memcpy(centroid, &(trg_centroids[idx_closest_centroid*2]),
+	       2 * sizeof(*centroid));
+}
+
+static void calculate_area_centroid(const vcn_mesh_t *mesh,
+				    nb_container_t *area_trg,
+				    double centroid[2])
+{
+	msh_edge_t *max_edge = NULL;
+	double max_length2 = 0;
+	while (nb_container_is_not_empty(area_trg)) {
+		msh_trg_t* trg = nb_container_delete_first(area_trg);
+		/* Restore color */
+		attr_t* trg_attr = trg->attr;
+		trg->attr = trg_attr->data;
+		free(trg_attr);
+		
+		max_edge = check_if_internal_edge_is_longer(trg->s1, max_edge,
+							    &max_length2);
+		max_edge = check_if_internal_edge_is_longer(trg->s2, max_edge,
+							    &max_length2);
+		max_edge = check_if_internal_edge_is_longer(trg->s3, max_edge,
+							    &max_length2);
+	}
+	if (max_edge != NULL) {
+		centroid[0] = (max_edge->v1->x[0] + max_edge->v2->x[0]) / 2.0;
+		centroid[1] = (max_edge->v1->x[1] + max_edge->v2->x[1]) / 2.0;
+		centroid[0] = centroid[0] / mesh->scale + mesh->xdisp;
+		centroid[1] = centroid[1] / mesh->scale + mesh->ydisp;
+	} else {
+		memset(centroid, 0, 2 * sizeof(*centroid));
+	}
+}
+
+static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
+						    msh_edge_t *longest_edge,
+						    double *max_length2)
+{
+	msh_edge_t *longest = longest_edge;
+	if (!medge_is_subsgm(edge)) {
+		double dist2 =
+			vcn_utils2D_get_dist2(edge->v1->x, edge->v2->x);
+		if (dist2 > *max_length2) {
+			*max_length2 = dist2;
+			longest = edge;
+		}
+	}
+	return longest;
 }
 
 static double colorize_infected_triangles(msh_trg_t* trg_infected,
@@ -509,8 +587,12 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh
 
 uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 {
-	nb_container_t* useful_vtx = nb_container_create(NB_SORTED);
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_container_t* useful_vtx =
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(useful_vtx, NB_SORTED);
+
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
@@ -519,13 +601,17 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 		nb_container_insert(useful_vtx, trg->v2);
 		nb_container_insert(useful_vtx, trg->v3);
 	}
-	nb_iterator_destroy(iter);
-  
+	nb_iterator_finish(iter);
+
+	nb_container_t *vtx_to_destroy = 
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(vtx_to_destroy, NB_QUEUE);
+	
 	uint32_t deleted = vcn_bins2D_get_length(mesh->ug_vtx);
 	vcn_bins2D_iter_t* bins2D_iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(bins2D_iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(bins2D_iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(bins2D_iter);
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(bins2D_iter);
 		if(!nb_container_exist(useful_vtx, vtx)){
 			vcn_bins2D_delete(mesh->ug_vtx, vtx);
 			if (_NB_INPUT_VTX == vtx->attr ||
@@ -537,12 +623,18 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 					}
 				}
 			}
-			/* REFACTOR because the next line */
-			free(vtx);
+			nb_container_insert(vtx_to_destroy, vtx);
 		}
 	}
 	vcn_bins2D_iter_destroy(bins2D_iter);
-	nb_container_destroy(useful_vtx);
+	nb_container_finish(useful_vtx);
+
+	while (nb_container_is_not_empty(vtx_to_destroy)) {
+		msh_vtx_t *vtx = nb_container_delete_first(vtx_to_destroy);
+		free(vtx);
+	}
+	nb_container_finish(vtx_to_destroy);
+
 	deleted = deleted - vcn_bins2D_get_length(mesh->ug_vtx);
 	return deleted;
 }
