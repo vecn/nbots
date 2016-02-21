@@ -190,7 +190,6 @@ void vcn_model_export_png(const vcn_model_t *const model,
 			  int width, int height,
 			  bool include_numbering)
 {
-  
 	/* Create drawable surface and cairo context */
 	cairo_surface_t* surface =
 		cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 

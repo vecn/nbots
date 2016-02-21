@@ -223,7 +223,7 @@ void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
 static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle)
 {
 	mesh->min_angle = angle;
-	if (0.0 < angle)
+	if (NB_GEOMETRIC_TOL < angle)
 		mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
 	else
 		mesh->cr2se_ratio = 1e6;
@@ -287,7 +287,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
 	v.x[0] = mesh->scale * (vtx[0] - mesh->xdisp);
 	v.x[1] = mesh->scale * (vtx[1] - mesh->ydisp);
 	msh_trg_t* enveloping_trg = mesh_locate_vtx(mesh, &v);
-	return (enveloping_trg != NULL);
+	return (NULL != enveloping_trg);
 }
 
 void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices)
@@ -354,7 +354,7 @@ static void remove_triangles_propagate
 		if (!medge_is_subsgm(trg->s2) && nb_trg->attr != (attr_t*)0x1)
 			remove_triangles_propagate(mesh, nb_trg);
 	}
-	if (trg->t3 != NULL) {
+	if (NULL != trg->t3) {
 		msh_trg_t* nb_trg = trg->t3;
 		mtrg_vanish_from_neighbour(trg, nb_trg);
 		if (!medge_is_subsgm(trg->s3) && nb_trg->attr != (attr_t*)0x1)

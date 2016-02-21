@@ -83,7 +83,7 @@ vcn_model_t* vcn_model_create_circle(double radius,
 vcn_model_t* vcn_model_create_from_msh3trg
 (const vcn_msh3trg_t *const msh3trg);
 
-vcn_model_t* vcn_model_generate_from_msh3trg
+void vcn_model_generate_from_msh3trg
 (vcn_model_t *model, const vcn_msh3trg_t *const msh3trg);
 
 /**

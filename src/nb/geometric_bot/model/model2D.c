@@ -27,21 +27,20 @@ inline vcn_model_t* vcn_model_create(void)
 
 void vcn_model_clear(vcn_model_t *model)
 {
-	if (0 < model->N) {
-		model->N = 0;
+	if (0 < model->N)
 		free(model->vertex);
-		model->vertex = NULL;
-	}
-	if (0 < model->M) {
-		model->M = 0;
+	model->N = 0;
+	model->vertex = NULL;
+	
+	if (0 < model->M)
 		free(model->edge);
-		model->edge = NULL;
-	}
-	if (0 < model->H) {
-		model->H = 0;
+	model->M = 0;
+	model->edge = NULL;
+	
+	if (0 < model->H)
 		free(model->holes);
-		model->holes = NULL;
-	}
+	model->H = 0;
+	model->holes = NULL;
 }
 
 vcn_model_t* vcn_model_load(const char* filename)
@@ -221,7 +220,7 @@ vcn_model_t* vcn_model_create_from_msh3trg
 	return model;
 }
 
-vcn_model_t* vcn_model_generate_from_msh3trg
+void vcn_model_generate_from_msh3trg
 (vcn_model_t *model, const vcn_msh3trg_t *const msh3trg)
 {
 	vcn_model_clear(model);
@@ -275,6 +274,9 @@ vcn_model_t* vcn_model_generate_from_msh3trg
 
 	/* Build a light mesh to know where are the holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
 
 	/* Get holes and destroy mesh */
@@ -288,9 +290,6 @@ vcn_model_t* vcn_model_generate_from_msh3trg
 
 	/* Free memory */
 	free(vtx_index_relation);
-
-	/* Return model */
-	return model;
 }
 vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 		(const vcn_msh3trg_t *const restrict msh3trg,
@@ -594,6 +593,9 @@ vcn_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
 
 	uint32_t N_holes;
@@ -610,6 +612,9 @@ bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 			     const double *const vtx)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
 
 	bool is_inside = vcn_mesh_is_vtx_inside(mesh, vtx);
@@ -750,6 +755,9 @@ double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
 double vcn_model_get_area(const vcn_model_t *const model)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
 	double area = vcn_mesh_get_area(mesh);
 	vcn_mesh_destroy(mesh);

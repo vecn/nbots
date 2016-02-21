@@ -16,10 +16,25 @@
 
 #define POW2(a) ((a)*(a))
 
+typedef struct {
+	double area;
+	nb_container_t *trgs;
+} subarea_t;
+
+static void* subarea_create(void);
+static void subarea_destroy(void *subarea_ptr);
+static void subarea_clear(void *subarea_ptr);
+static int8_t subarea_compare_size(const void *subarea1_ptr,
+				   const void *subarea2_ptr);
+
 static void group_trg_by_areas(const vcn_mesh_t *const mesh,
 			       nb_container_t *areas);
 static double* get_centroids(const vcn_mesh_t *mesh,
 			     nb_container_t *areas, uint32_t *N_centroids);
+static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
+				      nb_container_t *areas,
+				      uint32_t *N_centroids);
+static bool area_is_enclosed(const nb_container_t *area_trg);
 static void calculate_area_centroid(const vcn_mesh_t *mesh,
 				    nb_container_t *area_trg,
 				    double centroid[2]);
@@ -33,12 +48,58 @@ static double colorize_infected_triangles(msh_trg_t* trg_infected,
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
 
+
+static void* subarea_create(void)
+{
+	uint16_t size = sizeof(subarea_t) +
+		nb_container_get_memsize(NB_QUEUE);
+	char *memblock = malloc(size);
+	subarea_t *subarea = (void*) memblock;
+	subarea->trgs = (void*) (memblock + sizeof(subarea_t));
+	nb_container_init(subarea->trgs, NB_QUEUE);
+	return subarea;
+}
+
+static void subarea_destroy(void *subarea_ptr)
+{
+	subarea_t *subarea = subarea_ptr;
+	nb_container_finish(subarea->trgs);
+	free(subarea);
+}
+
+static void subarea_clear(void *subarea_ptr)
+{
+	subarea_t *subarea = subarea_ptr;
+	while (nb_container_is_not_empty(subarea->trgs)) {
+		msh_trg_t *trg = nb_container_delete_first(subarea->trgs);
+		/* Restore color */
+		attr_t* trg_attr = trg->attr;
+		trg->attr = trg_attr->data;
+		free(trg_attr);
+	}
+}
+
+static int8_t subarea_compare_size(const void *subarea1_ptr,
+				   const void *subarea2_ptr)
+{
+	const subarea_t *subarea1 = subarea1_ptr;
+	const subarea_t *subarea2 = subarea2_ptr;
+	int8_t out;
+	if (subarea1->area - subarea2->area < -NB_GEOMETRIC_TOL)
+		out = -1;
+	else if (subarea1->area - subarea2->area > NB_GEOMETRIC_TOL)
+		out = 1;
+	else
+		out = 0;
+	return out;
+}
+
 double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
-	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
+	nb_container_set_comparer(areas, subarea_compare_size);
 
 	group_trg_by_areas(mesh, areas);
 
@@ -59,16 +120,13 @@ static void group_trg_by_areas(const vcn_mesh_t *const mesh,
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
 		if (NULL != trg->attr) {
 			attr_t* attr = trg->attr;
-			if(attr->id == 0x19FEC7ED)
+			if (attr->id == 0x19FEC7ED)
 				continue;
 		}
-		nb_container_t* area_trg = nb_container_create(NB_SORTED);
-		double* area = malloc(sizeof(*area));
-		*area = colorize_infected_triangles(trg, area_trg, true);
-		void** obj = malloc(2 * sizeof(*obj));
-		obj[0] = area;
-		obj[1] = area_trg;
-		nb_container_insert(areas, obj);
+		subarea_t *subarea = subarea_create();
+		subarea->area =
+			colorize_infected_triangles(trg, subarea->trgs, true);
+		nb_container_insert(areas, subarea);
 	}
 	nb_iterator_finish(iter);
 }
@@ -80,72 +138,14 @@ static double* get_centroids(const vcn_mesh_t *mesh,
 	double *centroids = calloc(*N_centroids * 2, sizeof(*centroids));
 	uint32_t i = 0;
 	while (nb_container_is_not_empty(areas)) {
-		void** obj = nb_container_delete_first(areas);
-		nb_container_t *area_trg = obj[1];
-		calculate_area_centroid(mesh, area_trg, &(centroids[i*2]));
-		free(obj[0]);
-		nb_container_destroy(area_trg);
-		free(obj);
+		subarea_t *subarea = nb_container_delete_first(areas);
+		calculate_area_centroid(mesh, subarea->trgs, &(centroids[i*2]));
+		subarea_destroy(subarea);
 		i += 1;
 	}
 	return centroids;
 }
 
-static void _calculate_area_centroid(const vcn_mesh_t *mesh,
-				    nb_container_t *area_trg,
-				    double centroid[2])
-{
-	memset(centroid, 0, 2 * sizeof(*centroid));
-	double* trg_centroids = 
-		alloca(nb_container_get_length(area_trg) *
-		       2 * sizeof(*trg_centroids));
-	double vol = 0;
-	uint32_t trg_count = 0;
-	while (nb_container_is_not_empty(area_trg)) {
-		msh_trg_t* trg = nb_container_delete_first(area_trg);
-		/* Restore color */
-		attr_t* trg_attr = trg->attr;
-		trg->attr = trg_attr->data;
-		free(trg_attr);
-		/* Compute triangle centroid */
-		trg_centroids[trg_count * 2] = (trg->v1->x[0] +
-						trg->v2->x[0] +
-						trg->v3->x[0]) /
-			(3.0 * mesh->scale) + mesh->xdisp;
-		trg_centroids[trg_count*2+1] = (trg->v1->x[1] +
-						trg->v2->x[1] +
-						trg->v3->x[1]) /
-			(3.0 * mesh->scale) + mesh->ydisp;
-		/* Compute triangle volume (area) */
-		double trg_vol = vcn_utils2D_get_trg_area(trg->v1->x,
-							  trg->v2->x,
-							  trg->v3->x) /
-			POW2(mesh->scale);
-		/* Compute global centroid */
-		centroid[0] += trg_vol * trg_centroids[trg_count * 2];
-		centroid[1] += trg_vol * trg_centroids[trg_count*2+1];
-		/* Compute global volume */
-		vol += trg_vol;
-		/* Increase triangle counter */
-		trg_count += 1;
-	}
-	centroid[0] /= vol;
-	centroid[1] /= vol;
-	
-	uint32_t idx_closest_centroid = 0;
-	double min_dist = vcn_utils2D_get_dist2(trg_centroids, centroid);
-	for (uint32_t i = 1; i < trg_count; i++) {
-		double dist = 
-			vcn_utils2D_get_dist2(&(trg_centroids[i*2]),
-					      centroid);
-		if (dist < min_dist) {
-			min_dist = dist;
-			idx_closest_centroid = i;
-		}
-	}
-	memcpy(centroid, &(trg_centroids[idx_closest_centroid*2]),
-	       2 * sizeof(*centroid));
-}
 
 static void calculate_area_centroid(const vcn_mesh_t *mesh,
 				    nb_container_t *area_trg,
@@ -279,127 +279,63 @@ static int8_t compare_area1_isGreaterThan_area2
 double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 						  uint32_t* N_centroids)
 {
-	/* TEMPORAL (Repeated code): 
-	 * Unify with code of vcn_mesh_get_centroid_of_subareas() */
-	nb_container_t* areas = nb_container_create(NB_SORTED);
-	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = nb_iterator_create();
-	nb_iterator_set_container(iter, mesh->ht_trg);
-	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (NULL != trg->attr) {
-			attr_t* attr = trg->attr;
-			if (attr->id == 0x19FEC7ED)
-				continue;
-		}
-		nb_container_t* area_trg = nb_container_create(NB_SORTED);
-		double* area = malloc(sizeof(*area));
-		area[0] = colorize_infected_triangles(trg, area_trg, true);
-		void** obj = malloc(2 * sizeof(*obj));
-		obj[0] = area;
-		obj[1] = area_trg;
-		nb_container_insert(areas, obj);
-	}
-	nb_iterator_destroy(iter);
-	/* Get centroids */
-	N_centroids[0] = nb_container_get_length(areas);
-	double *centroids = calloc(N_centroids[0] * 2, sizeof(*centroids));
-	N_centroids[0] = 0;
+	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(areas, NB_SORTED);
+	nb_container_set_comparer(areas, subarea_compare_size);
+
+	group_trg_by_areas(mesh, areas);
+
+	double *centroids =
+		get_centroids_if_enclosed(mesh, areas, N_centroids);
+
+	nb_container_finish(areas);
+
+	return centroids;
+}
+
+static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
+					 nb_container_t *areas,
+					 uint32_t *N_centroids)
+{
+	*N_centroids = nb_container_get_length(areas);
+	double *centroids = alloca(*N_centroids * 2 * sizeof(*centroids));
+	uint32_t i = 0;
 	while (nb_container_is_not_empty(areas)) {
-		void** obj = nb_container_delete_first(areas);
-		free(obj[0]);
-		nb_container_t* area_trg = obj[1];
-		bool is_enveloped = true;
-		double* trg_centroids = NULL;
-		if (nb_container_is_not_empty(area_trg))
-			trg_centroids = malloc(nb_container_get_length(area_trg) *
-					       2 * sizeof(*trg_centroids));
-		double* centroid = calloc(2, sizeof(*centroid));
-		double vol = 0;
-		uint32_t trg_count = 0;
-		while (nb_container_is_not_empty(area_trg)) {
-			msh_trg_t* trg = nb_container_delete_first(area_trg);
-			/* Restore color */
-			attr_t* trg_attr = (attr_t*)trg->attr;
-			trg->attr = trg_attr->data;
-			free(trg_attr);
-			/* Check if it is enveloped */
-			if (trg->t1 == NULL ||
-			    trg->t2 == NULL || trg->t3 == NULL) {
-				is_enveloped = false;
-				break;
-			}
-			/* Compute triangle centroid */
-			trg_centroids[trg_count * 2] = (trg->v1->x[0] +
-							trg->v2->x[0] +
-							trg->v3->x[0]) /
-				(3.0 * mesh->scale) + mesh->xdisp;
-			trg_centroids[trg_count*2+1] = (trg->v1->x[1] +
-							trg->v2->x[1] +
-							trg->v3->x[1]) /
-				(3.0 * mesh->scale) + mesh->ydisp;
-			/* Compute triangle volume (area) */
-			double trg_vol = vcn_utils2D_get_trg_area(trg->v1->x,
-								  trg->v2->x,
-								  trg->v3->x) /
-				POW2(mesh->scale);
-
-			/* Compute global centroid */
-			centroid[0] += trg_vol * trg_centroids[trg_count * 2];
-			centroid[1] += trg_vol * trg_centroids[trg_count*2+1];
-
-			/* Compute global volume */
-			vol += trg_vol;
-
-			/* Increase triangle counter */
-			trg_count += 1;
+		subarea_t *subarea = nb_container_delete_first(areas);
+		if (area_is_enclosed(subarea->trgs)) {
+			calculate_area_centroid(mesh, subarea->trgs,
+						&(centroids[i*2]));
+			i += 1;
+		} else {
+			subarea_clear(subarea);
 		}
-
-		/* Remove the attributes of the remaining triangles if
-		 * it is enveloped */
-		while (nb_container_is_not_empty(area_trg)) {
-			msh_trg_t* trg = nb_container_delete_first(area_trg);
-			/* Restore color */
-			attr_t* trg_attr = (attr_t*)trg->attr;
-			trg->attr = trg_attr->data;
-			free(trg_attr);
-		}
-
-		if (is_enveloped) {
-			centroid[0] /= vol;
-			centroid[1] /= vol;
-			uint32_t idx_closest_centroid = 0;
-			double min_dist = vcn_utils2D_get_dist2(trg_centroids, centroid);
-			for (uint32_t i = 1; i < trg_count; i++) {
-				double dist = vcn_utils2D_get_dist2(&(trg_centroids[i*2]),
-								    centroid);
-				if (dist < min_dist) {
-					min_dist = dist;
-					idx_closest_centroid = i;
-				}
-			}
-			centroids[N_centroids[0] * 2] =
-				trg_centroids[idx_closest_centroid * 2];
-			centroids[N_centroids[0]*2+1] =
-				trg_centroids[idx_closest_centroid*2+1];
-			N_centroids[0] += 1;
-		}
-		free(trg_centroids);
-		free(centroid);
-		nb_container_destroy(area_trg);
-		free(obj);
+		subarea_destroy(subarea);
 	}
-	/* Free memory */
-	nb_container_destroy(areas);
-
-	/* Output */
-	double *aux = NULL;
-	if (N_centroids[0] > 0) {
-		aux = malloc(N_centroids[0] * 2 * sizeof(*aux));
-		memcpy(aux, centroids, N_centroids[0] * 2 * sizeof(*aux));
+	*N_centroids = i;
+	double *out = NULL;
+	if (0 < *N_centroids) {
+		out = malloc(*N_centroids * 2 * sizeof(*out));
+		memcpy(out, centroids, *N_centroids * 2 * sizeof(*out));
 	}
-	free(centroids);
-	return aux;
+	return out;
+
+}
+
+static bool area_is_enclosed(const nb_container_t *area_trg)
+{
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, area_trg);
+	bool out = true;
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		if (NULL == trg->t1 || NULL == trg->t2 || NULL == trg->t3) {
+			out = false;
+			break;
+		}
+	}
+	nb_iterator_finish(iter);
+	return out;
 }
 
 double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/container_bot/container.h"
@@ -864,20 +865,21 @@ inline int8_t compare_edge(const void *const edge1_ptr,
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
-	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	msh_trg_t *enveloping_trg = NULL;
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
-							trg->v2->x,
-							trg->v3->x,
-							v->x)) {
+						trg->v2->x,
+						trg->v3->x,
+						v->x)) {
 			enveloping_trg = (msh_trg_t*) trg;
 			break;
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 	return enveloping_trg;
 }
 

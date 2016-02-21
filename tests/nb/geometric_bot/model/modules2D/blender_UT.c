@@ -48,7 +48,7 @@ void vcn_test_load_tests(void *tests_ptr)
 	//vcn_test_add(tests_ptr, check_get_intersection_squares,
 	//	     "Check get_intersection() of squares");
 	//vcn_test_add(tests_ptr, check_get_union_squares,
-	//	     "Check get_combination() of squares");
+	//	     "Check get_union() of squares");
 	//vcn_test_add(tests_ptr, check_get_substractionA_squares,
 	//	     "Check get_substraction() of squares A");
 	//vcn_test_add(tests_ptr, check_get_substractionB_squares,
@@ -58,7 +58,7 @@ void vcn_test_load_tests(void *tests_ptr)
 	vcn_test_add(tests_ptr, check_get_intersection_cross,
 		     "Check get_intersection() of cross");
 	vcn_test_add(tests_ptr, check_get_union_cross,
-		     "Check get_combination() of cross");
+		     "Check get_union() of cross");
 	vcn_test_add(tests_ptr, check_get_substractionA_cross,
 		     "Check get_substraction() of cross A");
 	vcn_test_add(tests_ptr, check_get_substractionB_cross,
@@ -76,6 +76,7 @@ static bool check_get_combination_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -90,6 +91,7 @@ static bool check_get_intersection_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -104,6 +106,7 @@ static bool check_get_union_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -118,6 +121,7 @@ static bool check_get_substractionA_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -132,6 +136,7 @@ static bool check_get_substractionB_squares(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -146,6 +151,7 @@ static bool check_get_combination_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -160,6 +166,7 @@ static bool check_get_intersection_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -174,6 +181,7 @@ static bool check_get_union_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -188,6 +196,7 @@ static bool check_get_substractionA_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
 
@@ -202,5 +211,6 @@ static bool check_get_substractionB_cross(void)
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
 	return false;
 }
