@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/container_bot/container.h"
@@ -220,17 +221,16 @@ vcn_model_t* vcn_model_create_from_msh3trg
 	return model;
 }
 
-void vcn_model_generate_from_msh3trg
-(vcn_model_t *model, const vcn_msh3trg_t *const msh3trg)
+void vcn_model_generate_from_msh3trg(vcn_model_t *model,
+				     const vcn_msh3trg_t *const msh3trg)
 {
-	vcn_model_clear(model);
 	uint32_t* segments =
 		malloc(2 * msh3trg->N_input_segments * sizeof(*segments));
 	double* vertices =
 		malloc(2 * msh3trg->N_input_vertices * sizeof(*vertices));
 
 	uint32_t* vtx_index_relation =
-		malloc(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
+		alloca(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
 
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < msh3trg->N_input_vertices; i++) {
@@ -245,7 +245,7 @@ void vcn_model_generate_from_msh3trg
 
 	uint32_t N_segments = 0;
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-		if (msh3trg->N_subsgm_x_inputsgm[i] != 0) {
+		if (0 < msh3trg->N_subsgm_x_inputsgm[i]) {
 			uint32_t v1 = msh3trg->meshvtx_x_inputsgm[i][0];
 			uint32_t last_idx = msh3trg->N_subsgm_x_inputsgm[i];
 			uint32_t v2 = msh3trg->meshvtx_x_inputsgm[i][last_idx];
@@ -267,6 +267,7 @@ void vcn_model_generate_from_msh3trg
 		}
 	}
 	/* Build model without holes */
+	vcn_model_clear(model);
 	model->N = N_vertices;
 	model->vertex = vertices;
 	model->M = N_segments;
@@ -278,19 +279,18 @@ void vcn_model_generate_from_msh3trg
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
-
+	
 	/* Get holes and destroy mesh */
 	uint32_t N_holes;
-	double* holes = vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
+	double* holes =
+		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
 	vcn_mesh_destroy(mesh);
 
 	/* Build model with holes */
 	model->H = N_holes;
 	model->holes = holes;
-
-	/* Free memory */
-	free(vtx_index_relation);
 }
+
 vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 		(const vcn_msh3trg_t *const restrict msh3trg,
 		 const bool *const restrict trg_enabled,

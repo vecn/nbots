@@ -782,8 +782,8 @@ void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 	medge_connect_triangles(sgm);
 }
 
-void mesh_substract_triangle(vcn_mesh_t *const restrict mesh, 
-			     const msh_trg_t *const restrict trg)
+void mesh_substract_triangle(vcn_mesh_t *restrict mesh, 
+			     msh_trg_t *restrict trg)
 {
 	/* Remove from hash table */
 	nb_container_delete(mesh->ht_trg, trg);
@@ -794,9 +794,11 @@ void mesh_substract_triangle(vcn_mesh_t *const restrict mesh,
 		sgm->t1 = NULL;
 	else
 		sgm->t2 = NULL;
-
-	if(sgm->t1 == NULL && sgm->t2 == NULL && !medge_is_subsgm(sgm))
-		mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	
+	if (!medge_is_subsgm(sgm)) {
+		if (sgm->t1 == NULL && sgm->t2 == NULL)
+			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	}
 
 	sgm = trg->s2;
 	if (sgm->v1 == trg->v2)
@@ -804,8 +806,10 @@ void mesh_substract_triangle(vcn_mesh_t *const restrict mesh,
 	else
 		sgm->t2 = NULL;
 
-	if (sgm->t1 == NULL && sgm->t2 == NULL && !medge_is_subsgm(sgm))
-		mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	if (!medge_is_subsgm(sgm)) {
+		if (sgm->t1 == NULL && sgm->t2 == NULL)
+			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	}
 
 	sgm = trg->s3;
 	if (sgm->v1 == trg->v3)
@@ -813,8 +817,10 @@ void mesh_substract_triangle(vcn_mesh_t *const restrict mesh,
 	else
 		sgm->t2 = NULL;
 
-	if (sgm->t1 == NULL && sgm->t2 == NULL && !medge_is_subsgm(sgm))
-		mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	if (!medge_is_subsgm(sgm)) {
+		if (sgm->t1 == NULL && sgm->t2 == NULL)
+			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+	}
 
 	/* Disconnect from neigbouring triangles */
 	mtrg_disconnect(trg);
@@ -827,10 +833,8 @@ static bool mesh_remove_edge(nb_container_t *const restrict ht_edge,
 	/* Generate Index and Hash Key */
 	msh_edge_t key_sgm;
 	key_sgm.v1 = (msh_vtx_t*)v1;
-	key_sgm.v2 = (msh_vtx_t*)v2; /* Casting from const to non-const pointer
-				      * in order to assign it to compute the hash
-				      * key, but with the compromise to do not
-				      * modify its value */
+	key_sgm.v2 = (msh_vtx_t*)v2;
+
 	key_sgm.attr = NULL;
 	msh_edge_t* sgm = nb_container_exist(ht_edge, &key_sgm);
 	if (NULL != sgm) {
@@ -845,12 +849,10 @@ inline uint32_t hash_key_edge(const void *const edge_ptr)
 {
 	const msh_edge_t *const restrict edge = edge_ptr;
 	return (uint32_t)
-		((int)((edge->v1->x[0]/((edge->v2->x[0]!=0.0)?
-				       edge->v2->x[0]:13.13))*73856093) ^ 
-		 (int)((edge->v1->x[1]/((edge->v2->x[1]!=0.0)?
-				       edge->v2->x[1]:13.13))*19349663) ^
-		 (int)((edge->v2->x[0]/((edge->v1->x[1]!=0.0)?
-				       edge->v1->x[1]:17.17))*83492791));
+		((int)(edge->v1->x[0] * 73856093) ^ 
+		 (int)(edge->v1->x[1] * 19349663) ^
+		 (int)(edge->v2->x[0] * 83492791) ^
+		 (int)(edge->v2->x[1] * 83492791));
 }
 
 inline int8_t compare_edge(const void *const edge1_ptr,

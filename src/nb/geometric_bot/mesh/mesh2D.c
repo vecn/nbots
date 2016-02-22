@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
@@ -334,30 +335,27 @@ double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
 	return (0.5 * area) / vcn_math_pow2(mesh->scale);
 }
 
-
-
 static void remove_triangles_propagate
                    (vcn_mesh_t *const restrict mesh, 
 		    msh_trg_t* trg)
 {
+	bool s1_is_not_boundary = !medge_is_subsgm(trg->s1);
+	bool s2_is_not_boundary = !medge_is_subsgm(trg->s2);
+	bool s3_is_not_boundary = !medge_is_subsgm(trg->s3);
 	mesh_substract_triangle(mesh, trg);
-	trg->attr = (attr_t*)0x1;
 	if (NULL != trg->t1) {
 		msh_trg_t* nb_trg = trg->t1;
-		mtrg_vanish_from_neighbour(trg, nb_trg);
-		if (!medge_is_subsgm(trg->s1) && nb_trg->attr != (attr_t*)0x1)
+		if (s1_is_not_boundary)
 			remove_triangles_propagate(mesh, nb_trg);
 	}
 	if (NULL != trg->t2) {
 		msh_trg_t* nb_trg = trg->t2;
-		mtrg_vanish_from_neighbour(trg, nb_trg);
-		if (!medge_is_subsgm(trg->s2) && nb_trg->attr != (attr_t*)0x1)
+		if (s2_is_not_boundary)
 			remove_triangles_propagate(mesh, nb_trg);
 	}
 	if (NULL != trg->t3) {
 		msh_trg_t* nb_trg = trg->t3;
-		mtrg_vanish_from_neighbour(trg, nb_trg);
-		if (!medge_is_subsgm(trg->s3) && nb_trg->attr != (attr_t*)0x1)
+		if (s3_is_not_boundary)
 			remove_triangles_propagate(mesh, nb_trg);
 	}
 	free(trg);
@@ -467,53 +465,64 @@ static inline uint32_t hash_key_trg(const void *const restrict triangle)
 {
 	const msh_trg_t *const restrict trg = triangle;
 	return (uint32_t)
-		((int)((trg->v1->x[0]/((trg->v1->x[1]!=0.0)?
-				       trg->v1->x[1]:13.13))*73856093) ^ 
-		 (int)((trg->v2->x[1]/((trg->v2->x[0]!=0.0)?
-				       trg->v2->x[0]:17.17))*19349663) ^
-		 (int)((trg->v3->x[0]/((trg->v3->x[1]!=0.0)?
-				       trg->v3->x[1]:23.23))*83492791));
+		((int)(trg->v1->x[0] * 73856093) ^ 
+		 (int)(trg->v1->x[1] * 19349663) ^
+		 (int)(trg->v2->x[0] * 83492791) ^
+		 (int)(trg->v2->x[1] * 73856093) ^
+		 (int)(trg->v3->x[0] * 19349663) ^
+		 (int)(trg->v3->x[1] * 83492791));
 }
 
 static void remove_concavities_triangles(vcn_mesh_t* mesh)
 {
 	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
-	msh_trg_t* trg = NULL;
-	nb_iterator_t* iter = nb_iterator_create();
-	nb_iterator_set_container(iter, mesh->ht_trg);
-	while (nb_iterator_has_more(iter)) {
-		trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		if ((trg->t1 == NULL && !medge_is_subsgm(trg->s1)) || 
-		    (trg->t2 == NULL && !medge_is_subsgm(trg->s2)) ||
-		    (trg->t3 == NULL && !medge_is_subsgm(trg->s3))) {
-			remove_triangles_propagate(mesh, trg);
-			nb_iterator_restart(iter);
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	bool stop = false;
+	while (!stop) {
+		msh_trg_t *trg = NULL;
+		nb_iterator_init(iter);
+		nb_iterator_set_container(iter, mesh->ht_trg);
+		while (nb_iterator_has_more(iter)) {
+			msh_trg_t *t = (msh_trg_t*)nb_iterator_get_next(iter);
+			if ((t->t1 == NULL && !medge_is_subsgm(t->s1)) || 
+			    (t->t2 == NULL && !medge_is_subsgm(t->s2)) ||
+			    (t->t3 == NULL && !medge_is_subsgm(t->s3))) {
+				trg = t;
+				break;
+			}
 		}
+		nb_iterator_finish(iter);
+		if (NULL != trg)
+			remove_triangles_propagate(mesh, trg);
+		else
+			stop = true;
 	}
-	nb_iterator_destroy(iter);
 }
 
 static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 				   uint32_t N_holes)
 {
 	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
-	for (uint32_t i=0; i < N_holes; i++) {
-		msh_trg_t* trg = NULL;
-		nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	for (uint32_t i = 0; i < N_holes; i++) {
+		msh_trg_t *trg = NULL;
+		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, mesh->ht_trg);
 		while (nb_iterator_has_more(iter)) {
 			/* REFACTOR next line */
-			trg = (msh_trg_t*) nb_iterator_get_next(iter);
-			if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
-							trg->v2->x,
-							trg->v3->x,
-							&(holes[i*2])))
-			{
-				remove_triangles_propagate(mesh, trg);
+			msh_trg_t *t = (msh_trg_t*) nb_iterator_get_next(iter);
+			if (vcn_utils2D_pnt_lies_in_trg(t->v1->x,
+							t->v2->x,
+							t->v3->x,
+							&(holes[i*2]))) {
+				trg = t;
 				break;
 			}
 		}
-		nb_iterator_destroy(iter);
+		nb_iterator_finish(iter);
+
+		if (NULL != trg)
+			remove_triangles_propagate(mesh, trg);
 	}
 }
 
@@ -772,13 +781,14 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model)
 {
 	if (0 < model->H) {
-		double *holes = calloc(2 * model->H, sizeof(*holes));
+		double *holes = alloca(2 * model->H * sizeof(*holes));
 		for (uint32_t i = 0; i < model->H; i++) {
-			holes[i * 2] = mesh->scale * (model->holes[i * 2] - mesh->xdisp);
-			holes[i*2+1] = mesh->scale * (model->holes[i*2+1] - mesh->ydisp);
+			holes[i * 2] = mesh->scale *
+				(model->holes[i * 2] - mesh->xdisp);
+			holes[i*2+1] = mesh->scale * 
+				(model->holes[i*2+1] - mesh->ydisp);
 		}
 		remove_holes_triangles(mesh, holes, model->H);
-		free(holes);
 	}
 }
 

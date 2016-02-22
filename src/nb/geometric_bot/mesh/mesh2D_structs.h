@@ -173,8 +173,7 @@ msh_edge_t* mesh_exist_edge(nb_container_t *const ht_edge,
 			    const msh_vtx_t *const v1,
 			    const msh_vtx_t *const v2);
 void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg);
-void mesh_substract_triangle(vcn_mesh_t *const mesh,
-			     const msh_trg_t *const trg);
+void mesh_substract_triangle(vcn_mesh_t *mesh, msh_trg_t *trg);
 uint32_t hash_key_edge(const void *const  edge_ptr);
 int8_t compare_edge(const void *const edge1_ptr, const void *const edge2_ptr);
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
