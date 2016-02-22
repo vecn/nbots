@@ -149,40 +149,39 @@ static void model_draw_with_cairo(const vcn_model_t *const model,
 				  int width, int height,
 				  bool include_numbering) 
 {
-	if (model->N == 0)
-		return;
-  
-	/* Compute center and zoom */
-	double box[4];
-	vcn_utils2D_get_enveloping_box(model->N, model->vertex,
-				       2 * sizeof(*(model->vertex)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
-				       box);
+	if (0 < model->N) {
+		/* Compute center and zoom */
+		double box[4];
+		vcn_utils2D_get_enveloping_box(model->N, model->vertex,
+					       2 * sizeof(*(model->vertex)),
+					       vcn_utils2D_get_x_from_darray,
+					       vcn_utils2D_get_y_from_darray,
+					       box);
 
-	double center[2];
-	double zoom = get_center_and_zoom(box, width, height, center);
+		double center[2];
+		double zoom = get_center_and_zoom(box, width, height, center);
 
-	/* Draw background */
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_paint(cr);
+		/* Draw background */
+		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+		cairo_paint(cr);
 
-	/* Draw input segments */
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.8);
-	cairo_set_line_width(cr, 0.75);
-	draw_edges(cr, model->N, model->vertex, model->M, model->edge,
-		   width, height, center, zoom);
+		/* Draw input segments */
+		cairo_set_source_rgb(cr, 1.0, 0.0, 0.8);
+		cairo_set_line_width(cr, 0.75);
+		draw_edges(cr, model->N, model->vertex, model->M, model->edge,
+			   width, height, center, zoom);
 
-	/* Draw input vertices */
-	double rgb_bg[3] = {1.0, 0.0, 0.0};
-	double rgb_fg[3] = {0.0, 0.0, 0.0};
-	cairo_set_line_width(cr, 0.75);
-	draw_vertices(cr, model->N, model->vertex, width, height,
-		      center, zoom, include_numbering, rgb_bg, rgb_fg);
+		/* Draw input vertices */
+		double rgb_bg[3] = {1.0, 0.0, 0.0};
+		double rgb_fg[3] = {0.0, 0.0, 0.0};
+		cairo_set_line_width(cr, 0.75);
+		draw_vertices(cr, model->N, model->vertex, width, height,
+			      center, zoom, include_numbering, rgb_bg, rgb_fg);
 
-	/* Draw holes */
-	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-	draw_holes(cr, model->H, model->holes, width, height, center, zoom);
+		/* Draw holes */
+		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+		draw_holes(cr, model->H, model->holes, width, height, center, zoom);
+	}
 }
 
 void vcn_model_export_png(const vcn_model_t *const model,

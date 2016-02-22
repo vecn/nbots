@@ -225,9 +225,9 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 				     const vcn_msh3trg_t *const msh3trg)
 {
 	uint32_t* segments =
-		malloc(2 * msh3trg->N_input_segments * sizeof(*segments));
+		alloca(2 * msh3trg->N_input_segments * sizeof(*segments));
 	double* vertices =
-		malloc(2 * msh3trg->N_input_vertices * sizeof(*vertices));
+		alloca(2 * msh3trg->N_input_vertices * sizeof(*vertices));
 
 	uint32_t* vtx_index_relation =
 		alloca(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
@@ -269,9 +269,12 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 	/* Build model without holes */
 	vcn_model_clear(model);
 	model->N = N_vertices;
-	model->vertex = vertices;
+	model->vertex = malloc(2 * N_vertices * sizeof(*(model->vertex)));
+	memcpy(model->vertex, vertices, 
+	       2 * N_vertices * sizeof(*(model->vertex)));
 	model->M = N_segments;
-	model->edge = segments;
+	model->edge = malloc(2 * N_segments * sizeof(*(model->edge)));
+	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
 
 	/* Build a light mesh to know where are the holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -303,32 +306,33 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 	model->M = 0;
 	char* vertices_used = (char*) calloc(msh3trg->N_vertices, 1);
 	char* vertices_bndr = (char*) calloc(msh3trg->N_vertices, 1);
-	for(uint32_t i = 0; i < msh3trg->N_triangles; i++){
-		if(!trg_enabled[i]) continue;
+	for (uint32_t i = 0; i < msh3trg->N_triangles; i++){
+		if (!trg_enabled[i])
+			continue;
 		uint32_t v1 = msh3trg->vertices_forming_triangles[i * 3];
 		uint32_t v2 = msh3trg->vertices_forming_triangles[i*3+1];
 		uint32_t v3 = msh3trg->vertices_forming_triangles[i*3+2];
 		uint32_t nid = msh3trg->triangles_sharing_sides[i * 3];
-		if(nid == msh3trg->N_triangles){
+		if (nid == msh3trg->N_triangles){
 			model->M += 1;
 			vertices_bndr[v1] = 1;
 			vertices_bndr[v2] = 1;
 			vertices_used[v1] = 1;
 			vertices_used[v2] = 1;
-		}else if(!trg_enabled[nid]){
+		} else if (!trg_enabled[nid]) {
 			model->M += 1;
 			vertices_used[v1] = 1;
 			vertices_used[v2] = 1;
 		}
 
 		nid = msh3trg->triangles_sharing_sides[i*3+1];
-		if(nid == msh3trg->N_triangles){
+		if (nid == msh3trg->N_triangles) {
 			model->M += 1;
 			vertices_bndr[v2] = 1;
 			vertices_bndr[v3] = 1;
 			vertices_used[v2] = 1;
 			vertices_used[v3] = 1;
-		}else if(!trg_enabled[nid]){
+		} else if (!trg_enabled[nid]) {
 			model->M += 1;
 			N_real_vtx_boundaries[0] += 1;
 			vertices_used[v2] = 1;
@@ -336,13 +340,13 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 		}
 
 		nid = msh3trg->triangles_sharing_sides[i*3+2];
-		if(nid == msh3trg->N_triangles){
+		if (nid == msh3trg->N_triangles) {
 			model->M += 1;
 			vertices_bndr[v3] = 1;
 			vertices_bndr[v1] = 1;
 			vertices_used[v3] = 1;
 			vertices_used[v1] = 1;
-		}else if(!trg_enabled[nid]){
+ 		} else if (!trg_enabled[nid]) {
 			model->M += 1;
 			vertices_used[v3] = 1;
 			vertices_used[v1] = 1;
@@ -357,8 +361,8 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 	free(vertices_used);
 
 	N_real_vtx_boundaries[0] = 0;
-	for(uint32_t i = 0; i < msh3trg->N_vertices; i++){
-		if(vertices_bndr[i]) 
+	for (uint32_t i = 0; i < msh3trg->N_vertices; i++) {
+		if (vertices_bndr[i]) 
 			N_real_vtx_boundaries[0] += 1;
 	}
 

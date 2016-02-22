@@ -31,9 +31,10 @@ static void init_tasks(vcn_mesh_t *mesh);
 static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh);
 static void null_task(const vcn_mesh_t *const mesh);
 static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle);
-static void remove_triangles_propagate(vcn_mesh_t *const mesh,
-				       msh_trg_t* trg);
-
+static void delete_triangles_by_wave(vcn_mesh_t *const mesh, msh_trg_t* trg,
+				       nb_container_t *trg_deleted);
+static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
+				  nb_container_t *trg_deleted);
 static void remove_concavities_triangles(vcn_mesh_t* mesh);
 static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 				   uint32_t N_holes);
@@ -323,42 +324,46 @@ inline uint32_t vcn_mesh_get_N_edg(const vcn_mesh_t *const mesh)
 double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
 {
 	double area = 0.0;
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		area += vcn_utils2D_get_2x_trg_area(trg->v1->x,
 						    trg->v2->x,
 						    trg->v3->x);
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 	return (0.5 * area) / vcn_math_pow2(mesh->scale);
 }
 
-static void remove_triangles_propagate
-                   (vcn_mesh_t *const restrict mesh, 
-		    msh_trg_t* trg)
+static void delete_triangles_by_wave
+                   (vcn_mesh_t *const restrict mesh, msh_trg_t* trg,
+		    nb_container_t *trg_deleted)
 {
 	bool s1_is_not_boundary = !medge_is_subsgm(trg->s1);
 	bool s2_is_not_boundary = !medge_is_subsgm(trg->s2);
 	bool s3_is_not_boundary = !medge_is_subsgm(trg->s3);
 	mesh_substract_triangle(mesh, trg);
-	if (NULL != trg->t1) {
-		msh_trg_t* nb_trg = trg->t1;
-		if (s1_is_not_boundary)
-			remove_triangles_propagate(mesh, nb_trg);
-	}
-	if (NULL != trg->t2) {
-		msh_trg_t* nb_trg = trg->t2;
-		if (s2_is_not_boundary)
-			remove_triangles_propagate(mesh, nb_trg);
-	}
-	if (NULL != trg->t3) {
-		msh_trg_t* nb_trg = trg->t3;
-		if (s3_is_not_boundary)
-			remove_triangles_propagate(mesh, nb_trg);
-	}
+	nb_container_insert(trg_deleted, trg);
+	if (s1_is_not_boundary)
+		advance_deletion_wave(mesh, trg->t1, trg_deleted);
+	if (s2_is_not_boundary)
+		advance_deletion_wave(mesh, trg->t2, trg_deleted);
+	if (s3_is_not_boundary)
+		advance_deletion_wave(mesh, trg->t3, trg_deleted);
 	free(trg);
+}
+
+static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
+				  nb_container_t *trg_deleted)
+{
+	if (NULL != nb_trg) {
+		bool is_not_deleted = 
+			(NULL == nb_container_exist(trg_deleted, nb_trg));
+		if (is_not_deleted)
+			delete_triangles_by_wave(mesh, nb_trg, trg_deleted);
+	}
 }
 
 static inline int compare_sgmA_isSmallerThan_sgmB
@@ -475,7 +480,6 @@ static inline uint32_t hash_key_trg(const void *const restrict triangle)
 
 static void remove_concavities_triangles(vcn_mesh_t* mesh)
 {
-	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	bool stop = false;
 	while (!stop) {
@@ -492,24 +496,27 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 			}
 		}
 		nb_iterator_finish(iter);
-		if (NULL != trg)
-			remove_triangles_propagate(mesh, trg);
-		else
+		if (NULL != trg) {
+			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
+			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_init(trg_deleted, NB_SORTED);
+			delete_triangles_by_wave(mesh, trg, trg_deleted);
+			nb_container_finish(trg_deleted);
+		} else {
 			stop = true;
+		}
 	}
 }
 
 static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 				   uint32_t N_holes)
 {
-	/* (BIG OPPORTUNITY TO MAKE IT FAST) */
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < N_holes; i++) {
 		msh_trg_t *trg = NULL;
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, mesh->ht_trg);
 		while (nb_iterator_has_more(iter)) {
-			/* REFACTOR next line */
 			msh_trg_t *t = (msh_trg_t*) nb_iterator_get_next(iter);
 			if (vcn_utils2D_pnt_lies_in_trg(t->v1->x,
 							t->v2->x,
@@ -521,8 +528,13 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 		}
 		nb_iterator_finish(iter);
 
-		if (NULL != trg)
-			remove_triangles_propagate(mesh, trg);
+		if (NULL != trg) {
+			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
+			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_init(trg_deleted, NB_SORTED);
+			delete_triangles_by_wave(mesh, trg, trg_deleted);
+			nb_container_finish(trg_deleted);
+		}
 	}
 }
 

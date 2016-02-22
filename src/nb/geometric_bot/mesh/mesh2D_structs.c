@@ -18,7 +18,7 @@ static bool mesh_remove_edge
 
 inline bool medge_is_subsgm(const msh_edge_t *const restrict sgm)
 {
-	if (sgm->attr == NULL)
+	if (NULL == sgm->attr)
 		return false;
 	return ((attr_t*)sgm->attr)->id == 1;
 }

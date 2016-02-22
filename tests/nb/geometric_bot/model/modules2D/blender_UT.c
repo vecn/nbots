@@ -43,16 +43,16 @@ inline int vcn_test_get_driver_id(void)
 
 void vcn_test_load_tests(void *tests_ptr)
 {
-	//vcn_test_add(tests_ptr, check_get_combination_squares,
-	//	     "Check get_combination() of squares");
-	//vcn_test_add(tests_ptr, check_get_intersection_squares,
-	//	     "Check get_intersection() of squares");
-	//vcn_test_add(tests_ptr, check_get_union_squares,
-	//	     "Check get_union() of squares");
-	//vcn_test_add(tests_ptr, check_get_substractionA_squares,
-	//	     "Check get_substraction() of squares A");
-	//vcn_test_add(tests_ptr, check_get_substractionB_squares,
-	//	     "Check get_substraction() of squares B");
+	vcn_test_add(tests_ptr, check_get_combination_squares,
+		     "Check get_combination() of squares");
+	vcn_test_add(tests_ptr, check_get_intersection_squares,
+		     "Check get_intersection() of squares");
+	vcn_test_add(tests_ptr, check_get_union_squares,
+		     "Check get_union() of squares");
+	vcn_test_add(tests_ptr, check_get_substractionA_squares,
+		     "Check get_substraction() of squares A");
+	vcn_test_add(tests_ptr, check_get_substractionB_squares,
+		     "Check get_substraction() of squares B");
 	vcn_test_add(tests_ptr, check_get_combination_cross,
 		     "Check get_combination() of cross");
 	vcn_test_add(tests_ptr, check_get_intersection_cross,

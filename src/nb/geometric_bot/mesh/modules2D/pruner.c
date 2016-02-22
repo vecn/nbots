@@ -151,30 +151,35 @@ static void calculate_area_centroid(const vcn_mesh_t *mesh,
 				    nb_container_t *area_trg,
 				    double centroid[2])
 {
-	msh_edge_t *max_edge = NULL;
-	double max_length2 = 0;
-	while (nb_container_is_not_empty(area_trg)) {
+	uint32_t N_trg = nb_container_get_length(area_trg);
+	if (0 == N_trg) {
+		memset(centroid, 0, 2 * sizeof(*centroid));
+	} else if (1 == N_trg) {
 		msh_trg_t* trg = nb_container_delete_first(area_trg);
-		/* Restore color */
-		attr_t* trg_attr = trg->attr;
-		trg->attr = trg_attr->data;
-		free(trg_attr);
+		vcn_utils2D_get_trg_centroid(trg->v1->x, trg->v2->x,
+					     trg->v3->x, centroid);
+	} else {
+		msh_edge_t *max_edge = NULL;
+		double max_length2 = 0;
+		while (nb_container_is_not_empty(area_trg)) {
+			msh_trg_t* trg = nb_container_delete_first(area_trg);
+			/* Restore color */
+			attr_t* trg_attr = trg->attr;
+			trg->attr = trg_attr->data;
+			free(trg_attr);
 		
-		max_edge = check_if_internal_edge_is_longer(trg->s1, max_edge,
-							    &max_length2);
-		max_edge = check_if_internal_edge_is_longer(trg->s2, max_edge,
-							    &max_length2);
-		max_edge = check_if_internal_edge_is_longer(trg->s3, max_edge,
-							    &max_length2);
-	}
-	if (max_edge != NULL) {
+			max_edge = check_if_internal_edge_is_longer(trg->s1, max_edge,
+								    &max_length2);
+			max_edge = check_if_internal_edge_is_longer(trg->s2, max_edge,
+								    &max_length2);
+			max_edge = check_if_internal_edge_is_longer(trg->s3, max_edge,
+								    &max_length2);
+		}
 		centroid[0] = (max_edge->v1->x[0] + max_edge->v2->x[0]) / 2.0;
 		centroid[1] = (max_edge->v1->x[1] + max_edge->v2->x[1]) / 2.0;
-		centroid[0] = centroid[0] / mesh->scale + mesh->xdisp;
-		centroid[1] = centroid[1] / mesh->scale + mesh->ydisp;
-	} else {
-		memset(centroid, 0, 2 * sizeof(*centroid));
 	}
+	centroid[0] = centroid[0] / mesh->scale + mesh->xdisp;
+	centroid[1] = centroid[1] / mesh->scale + mesh->ydisp;
 }
 
 static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,

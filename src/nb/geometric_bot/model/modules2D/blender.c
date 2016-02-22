@@ -228,8 +228,9 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 	vcn_mesh_destroy(mesh);
 
 	if (N_centroids > 1) {
-		char* mask_centroids = calloc(N_centroids, 1);
-		
+		char* mask_centroids = alloca(N_centroids);
+		memset(mask_centroids, 0, N_centroids);
+
 		vcn_mesh_t* mesh1 = vcn_mesh_create();
 		vcn_mesh_set_size_constraint(mesh1,
 					     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
@@ -244,12 +245,12 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 
 		model->H = 0;
 		for (uint32_t i = 0; i < N_centroids; i++) {
-			if (vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])))
-				continue;
-			if (vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2])))
-				continue;
-			mask_centroids[i] = 1;
-			model->H += 1;
+			if (!vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2]))) {
+				if (!vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
+					mask_centroids[i] = 1;
+					model->H += 1;
+				}
+			}
 		}
 		vcn_mesh_destroy(mesh1);
 		vcn_mesh_destroy(mesh2);
@@ -265,9 +266,6 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 				model->H += 1;
 			}
 		}
-
-		/* Free memory */
-		free(mask_centroids);
 	}
 	free(centroids);
 	vcn_model_destroy(model1);
@@ -1167,6 +1165,7 @@ static void delete_isolated_elements(vcn_model_t *model)
 static void delete_isolated_internal_vtx(vcn_model_t *model)
 {
 	char* mask = alloca(model->N);
+	memset(mask, 0, model->N);
 	for(uint32_t i = 0; i < model->M; i++){
 		mask[model->edge[i * 2]] = 1;
 		mask[model->edge[i*2+1]] = 1;
@@ -1228,7 +1227,6 @@ vcn_model_t* vcn_model_get_substraction(const vcn_model_t *const model1,
 	if (NULL != model)
 		set_substraction_from_combination(model, model2);
 	return model;
-
 }
 
 static void set_substraction_from_combination(vcn_model_t *model,
@@ -1236,7 +1234,7 @@ static void set_substraction_from_combination(vcn_model_t *model,
 {
 	set_substraction_holes(model, model2);
 	delete_isolated_elements(model);
-	delete_isolated_internal_vtx(model);	
+	delete_isolated_internal_vtx(model);
 }
 
 
