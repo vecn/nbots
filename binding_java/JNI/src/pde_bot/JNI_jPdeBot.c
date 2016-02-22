@@ -4,9 +4,9 @@
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 
-#include "pde_bot.h"
-#include "../geometric_bot/load_jMesh.h"
-#include "../geometric_bot/jModel.h"
+#include "geometric_bot/jMesh.h"
+#include "geometric_bot/jModel.h"
+#include "pde_bot/JNI_jPdeBot.h"
 
 static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
 				      jobject jBCDirichletVtx,

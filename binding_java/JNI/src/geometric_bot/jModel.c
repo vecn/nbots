@@ -3,7 +3,7 @@
 
 #include "nb/geometric_bot/model/model2D.h"
 
-#include "jModel.h"
+#include "geometric_bot/jModel.h"
 
 static void set_vertices_from_jModel(JNIEnv *env, float *vertices,
 				     jint N, jobject jmodel);

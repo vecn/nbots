@@ -12,6 +12,7 @@ set(JDK_INCLUDE
 )
 
 include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
   ${JDK_INCLUDE}
   )
@@ -26,9 +27,10 @@ message("Configuring Java Native Interface (JNI)")
 
 message("Configuring JNI - Geometric Bot")
 add_library(nb_geometric_bot-jni SHARED
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/load_jMesh.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/jModel.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/geometric_bot.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jMesh.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jModel.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/JNI_jModel.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/JNI_jGeometricBot.c
   )
 target_link_libraries(nb_geometric_bot-jni
   nb_geometric_bot
@@ -36,9 +38,9 @@ target_link_libraries(nb_geometric_bot-jni
 
 message("Configuring JNI - PDE Bot")
 add_library(nb_pde_bot-jni SHARED
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/load_jMesh.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_bot/jModel.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pde_bot/pde_bot.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jMesh.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jModel.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/pde_bot/JNI_jPdeBot.c
   )
 target_link_libraries(nb_pde_bot-jni
   nb_geometric_bot

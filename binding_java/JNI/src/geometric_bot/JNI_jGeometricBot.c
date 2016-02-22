@@ -10,12 +10,12 @@
 #include <stdint.h>
 #include "nb/image_bot.h"
 #include "nb/geometric_bot.h"
-#include "geometric_bot.h"
+
+#include "geometric_bot/jModel.h"
+#include "geometric_bot/jMesh.h"
+#include "geometric_bot/JNI_jGeometricBot.h"
 
 #include "../src/nb/geometric_bot/model/model2D_struct.h"
-
-#include "jModel.h"
-#include "load_jMesh.h"
 
 static vcn_model_t* create_model_from_JNI(JNIEnv *env,
 					  jint N, jfloatArray jvertices,

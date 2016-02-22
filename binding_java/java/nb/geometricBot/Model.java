@@ -17,7 +17,7 @@ public class Model {
     protected Model() {}
 
     static {
-	System.loadLibrary("JNI-nb-geometric_bot-model");
+	System.loadLibrary("nb_geometric_bot-jni");
     }
 
     public static native Model combine(Model modelA, Model modelB);
