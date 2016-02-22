@@ -98,7 +98,8 @@ static void process_short_edges(nb_container_t *vertices,
 static void remove_short_segments(nb_container_t* avl_sgm,
 				  nb_container_t* ht_vtx,
 				  double min_length_x_segment);
-static nb_container_t* search_intersections_in_edges(nb_container_t *edges);
+static void search_intersections_in_edges(const nb_container_t *edges,
+					  nb_container_t *intersections);
 static void set_as_initial_vtx_in_edges(nb_container_t *edges);
 static void delete_unused_vertices(nb_container_t *vertices);
 static ipack_t* search_intersection_pack_with_sgm
@@ -554,7 +555,6 @@ static void process_segment_intersections(nb_container_t* avl_sgm,
 					  nb_container_t* sgm_intersect,
 					  nb_container_t* ht_vtx)
 {
-	/* Process intersections */
 	while (nb_container_is_not_empty(sgm_intersect)) {
 		ipack_t *ipack = nb_container_delete_first(sgm_intersect);
 		process_ipack(ipack, avl_sgm, sgm_intersect, ht_vtx);
@@ -783,14 +783,19 @@ static void process_short_edges(nb_container_t *vertices,
 				double min_length_x_edge)
 {
 	remove_short_segments(edges, vertices, min_length_x_edge);
-	nb_container_t *intersections = search_intersections_in_edges(edges);
+
+	nb_container_t *intersections =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(intersections, NB_SORTED);
+	nb_container_set_comparer(intersections, ipack_comparer);
+	search_intersections_in_edges(edges, intersections);
+
 	while (nb_container_is_not_empty(intersections)) {
 		process_segment_intersections(edges, intersections, vertices);
 		remove_short_segments(edges, vertices, min_length_x_edge);
-		nb_container_destroy(intersections);
-		intersections = search_intersections_in_edges(edges);
+		search_intersections_in_edges(edges, intersections);
 	}
-	nb_container_destroy(intersections);
+	nb_container_finish(intersections);
 }
 
 static void remove_short_segments(nb_container_t* avl_sgm,
@@ -860,11 +865,9 @@ static void remove_short_segments(nb_container_t* avl_sgm,
 	}
 }
 
-static nb_container_t* search_intersections_in_edges(nb_container_t *edges)
-{
-	nb_container_t *intersections = nb_container_create(NB_SORTED);
-	nb_container_set_comparer(intersections, ipack_comparer);
-  
+static void search_intersections_in_edges(const nb_container_t *edges,
+					  nb_container_t *intersections)
+{  
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
@@ -881,7 +884,6 @@ static nb_container_t* search_intersections_in_edges(nb_container_t *edges)
 		nb_iterator_finish(subiter);
 	}
 	nb_iterator_finish(iter);
-	return intersections;
 }
 
 static void set_as_initial_vtx_in_edges(nb_container_t *edges)

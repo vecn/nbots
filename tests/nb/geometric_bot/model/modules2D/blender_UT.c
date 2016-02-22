@@ -35,6 +35,26 @@ static bool check_get_intersection_cross(void);
 static bool check_get_union_cross(void);
 static bool check_get_substractionA_cross(void);
 static bool check_get_substractionB_cross(void);
+static bool check_get_combination_c(void);
+static bool check_get_intersection_c(void);
+static bool check_get_union_c(void);
+static bool check_get_substractionA_c(void);
+static bool check_get_substractionB_c(void);
+static bool check_get_combination_b(void);
+static bool check_get_intersection_b(void);
+static bool check_get_union_b(void);
+static bool check_get_substractionA_b(void);
+static bool check_get_substractionB_b(void);
+static bool check_get_combination_g(void);
+static bool check_get_intersection_g(void);
+static bool check_get_union_g(void);
+static bool check_get_substractionA_g(void);
+static bool check_get_substractionB_g(void);
+static bool check_get_combination_h(void);
+static bool check_get_intersection_h(void);
+static bool check_get_union_h(void);
+static bool check_get_substractionA_h(void);
+static bool check_get_substractionB_h(void);
 
 inline int vcn_test_get_driver_id(void)
 {
@@ -63,6 +83,47 @@ void vcn_test_load_tests(void *tests_ptr)
 		     "Check get_substraction() of cross A");
 	vcn_test_add(tests_ptr, check_get_substractionB_cross,
 		     "Check get_substraction() of cross B");
+	vcn_test_add(tests_ptr, check_get_combination_c,
+		     "Check get_combination() of c");
+	vcn_test_add(tests_ptr, check_get_intersection_c,
+		     "Check get_intersection() of c");
+	vcn_test_add(tests_ptr, check_get_union_c,
+		     "Check get_union() of c");
+	vcn_test_add(tests_ptr, check_get_substractionA_c,
+		     "Check get_substraction() of c A");
+	vcn_test_add(tests_ptr, check_get_substractionB_c,
+		     "Check get_substraction() of c B");
+	vcn_test_add(tests_ptr, check_get_combination_b,
+		     "Check get_combination() of b");
+	vcn_test_add(tests_ptr, check_get_intersection_b,
+		     "Check get_intersection() of b");
+	vcn_test_add(tests_ptr, check_get_union_b,
+		     "Check get_union() of b");
+	vcn_test_add(tests_ptr, check_get_substractionA_b,
+		     "Check get_substraction() of b A");
+	vcn_test_add(tests_ptr, check_get_substractionB_b,
+		     "Check get_substraction() of b B");
+	return;/* TEMPORAL */
+	vcn_test_add(tests_ptr, check_get_combination_g,
+		     "Check get_combination() of g");
+	vcn_test_add(tests_ptr, check_get_intersection_g,
+		     "Check get_intersection() of g");
+	vcn_test_add(tests_ptr, check_get_union_g,
+		     "Check get_union() of g");
+	vcn_test_add(tests_ptr, check_get_substractionA_g,
+		     "Check get_substraction() of g A");
+	vcn_test_add(tests_ptr, check_get_substractionB_g,
+		     "Check get_substraction() of g B");
+	vcn_test_add(tests_ptr, check_get_combination_h,
+		     "Check get_combination() of h");
+	vcn_test_add(tests_ptr, check_get_intersection_h,
+		     "Check get_intersection() of h");
+	vcn_test_add(tests_ptr, check_get_union_h,
+		     "Check get_union() of h");
+	vcn_test_add(tests_ptr, check_get_substractionA_h,
+		     "Check get_substraction() of h A");
+	vcn_test_add(tests_ptr, check_get_substractionB_h,
+		     "Check get_substraction() of h B");
 }
 
 static bool check_get_combination_squares(void)
@@ -206,6 +267,306 @@ static bool check_get_substractionB_cross(void)
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_combination_c(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_intersection_c(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_union_c(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionA_c(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionB_c(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_combination_b(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_intersection_b(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_union_b(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionA_b(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionB_b(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_combination_g(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_intersection_g(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_union_g(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionA_g(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionB_g(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_combination_h(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_intersection_h(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_union_h(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionA_h(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
+	vcn_model_t *model2 = vcn_model_load(input_name);
+	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	TEMPORAL(model); /* TEMPORAL */
+	vcn_model_destroy(model1);
+	vcn_model_destroy(model2);
+	vcn_model_destroy(model);
+	return false;
+}
+
+static bool check_get_substractionB_h(void)
+{
+	char input_name[256];
+	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
+	vcn_model_t *model1 = vcn_model_load(input_name);
+	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
