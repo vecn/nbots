@@ -16,6 +16,17 @@ public class Model {
 
     protected Model() {}
 
+    static {
+	System.loadLibrary("JNI-nb-geometric_bot-model");
+    }
+
+    public static native Model combine(Model modelA, Model modelB);
+    public static native Model unify(Model modelA, Model modelB);
+    public static native Model intersect(Model modelA, Model modelB);
+    public static native Model substract(Model modelA, Model modelB);
+
+    public native ModelStatus verify();
+
     public int getNVertices()
     {
 	if (null == vertices)
