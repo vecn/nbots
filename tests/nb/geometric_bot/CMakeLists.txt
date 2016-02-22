@@ -54,6 +54,10 @@ add_library(constrained_delaunay_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/constrained_delaunay_UT.c)
 target_link_libraries(constrained_delaunay_UT ${geometric_bot_libs})
 
+message("-- verifier_UT")
+add_library(verifier_UT MODULE
+  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/verifier_UT.c)
+target_link_libraries(verifier_UT ${geometric_bot_libs})
 
 message("-- blender_UT")
 add_library(blender_UT MODULE

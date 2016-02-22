@@ -149,7 +149,7 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 				      uint32_t intersected_ids[2])
 {
 	bool out = false;
-	for (uint32_t i = 0; i < model->M-1 && !out; i++) {
+	for (uint32_t i = 0; i < model->M-1; i++) {
 		for (uint32_t j = i+1; j < model->M; j++) {
 			uint32_t v1 = GET_1_EDGE_VTX(model, i);
 			uint32_t v2 = GET_2_EDGE_VTX(model, i);
@@ -163,13 +163,12 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 						 GET_PVTX(model, v3),
 						 GET_PVTX(model, v4),
 						 NULL);
-			bool are_intersecting = NB_INTERSECTED == status;
       
-			if (NB_PARALLEL == status ||
-			    NB_INTERSECT_ON_A1 == status ||
-			    NB_INTERSECT_ON_A2 == status ||
-			    NB_INTERSECT_ON_B1 == status ||
-			    NB_INTERSECT_ON_B2 == status) {
+			
+			bool are_intersecting = false;			
+			if (NB_INTERSECTED == status) {
+				are_intersecting = true;
+			} else if (NB_PARALLEL == status) {
 				double dist_1A_2A = vcn_utils2D_get_dist(GET_PVTX(model, v1),
 							     GET_PVTX(model, v3));
 				double dist_1A_2B = vcn_utils2D_get_dist(GET_PVTX(model, v1),
@@ -179,66 +178,38 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 				double dist_1B_2B = vcn_utils2D_get_dist(GET_PVTX(model, v2),
 							     GET_PVTX(model, v4));
 
-				if (NB_PARALLEL == status) {
-					/* Segments parallel or coincident */
-					double area = vcn_utils2D_get_2x_trg_area(GET_PVTX(model, v1),
-									 GET_PVTX(model, v2),
-									 GET_PVTX(model, v3));
-					/* Check if them are parallel */
-					if (fabs(area) < NB_GEOMETRIC_TOL) {
-						/* Collineal segments */
-						double length1 = vcn_utils2D_get_dist(GET_PVTX(model, v1),
-									  GET_PVTX(model, v2));
-						double length2 = vcn_utils2D_get_dist(GET_PVTX(model, v3),
-									  GET_PVTX(model, v4));
-						double max_dist = MAX(dist_1B_2A, dist_1B_2B);
-						max_dist = MAX(max_dist, dist_1A_2B);
-						max_dist = MAX(max_dist, dist_1A_2A);
-						/* Check if they are intersected */
-						if(max_dist - (length1 + length2) < 
-						   -NB_GEOMETRIC_TOL)
-							are_intersecting = true;
-					}
-				}
-				if (NB_INTERSECT_ON_A1 == status) {
-					/* Segments intersecting on sgm1->v1 */
-					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
-					   dist_1A_2B > NB_GEOMETRIC_TOL)
-						are_intersecting = true;
-				}
-
-				if (NB_INTERSECT_ON_A2 == status) {
-					/* Segments intersecting on sgm1->v2 */
-					if(dist_1B_2A > NB_GEOMETRIC_TOL &&
-					   dist_1B_2B > NB_GEOMETRIC_TOL)
-						are_intersecting = true;
-				}
-
-				if (NB_INTERSECT_ON_B1 == status) {
-					/* Segments intersecting on sgm2->v1 */
-					if(dist_1A_2A > NB_GEOMETRIC_TOL &&
-					   dist_1B_2A > NB_GEOMETRIC_TOL)
-						are_intersecting = true;
-				}
-
-				if (NB_INTERSECT_ON_B2 == status) {
-					/* Segments intersecting on sgm2->v2 */
-					if(dist_1A_2B > NB_GEOMETRIC_TOL &&
-					   dist_1B_2B > NB_GEOMETRIC_TOL)
+				/* Segments parallel or coincident */
+				double area = vcn_utils2D_get_2x_trg_area(GET_PVTX(model, v1),
+									  GET_PVTX(model, v2),
+									  GET_PVTX(model, v3));
+				/* Check if them are parallel */
+				if (fabs(area) < NB_GEOMETRIC_TOL) {
+					/* Collineal segments */
+					double length1 = vcn_utils2D_get_dist(GET_PVTX(model, v1),
+									      GET_PVTX(model, v2));
+					double length2 = vcn_utils2D_get_dist(GET_PVTX(model, v3),
+									      GET_PVTX(model, v4));
+					double max_dist = MAX(dist_1B_2A, dist_1B_2B);
+					max_dist = MAX(max_dist, dist_1A_2B);
+					max_dist = MAX(max_dist, dist_1A_2A);
+					/* Check if they are intersected */
+					if (max_dist - (length1 + length2) < -NB_GEOMETRIC_TOL)
 						are_intersecting = true;
 				}
 			}
-       
+			
 			if (are_intersecting) {
 				if (NULL != intersected_ids) {
 					intersected_ids[0] = i;
 					intersected_ids[1] = j;
 				}
 				out = true;
-				break;
+				goto EXIT;
 			}
+				
 		}
 	}
+EXIT:
 	return out;
 }
 
@@ -281,11 +252,12 @@ bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
 	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	bool is_unclosed;
-	if (vcn_mesh_is_empty(mesh))
-		is_unclosed = true;
+	bool is_unclosed = vcn_mesh_is_empty(mesh);
 
 	vcn_mesh_destroy(mesh);
 

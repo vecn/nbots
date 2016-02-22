@@ -9,6 +9,7 @@
 
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
+#include  "nb/geometric_bot/model/modules2D/blender.h"
 
 #define INPUTS_DIR "../tests/nb/geometric_bot/model/modules2D/blender_UT_inputs"
 
