@@ -8,6 +8,19 @@
 #include "geometric_bot/jModel.h"
 #include "pde_bot/JNI_jPdeBot.h"
 
+typedef struct {
+	double *disp;
+	double *strain;
+	double *stress;
+	double *strain_on_nodes,
+		*stress_on_nodes; /* Same memory buffer */
+	double *von_mises;
+} results_t;
+
+static void results_init(results_t *results,
+			 const vcn_msh3trg_t *msh3trg);
+static void results_finish(results_t *results);
+
 static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
 				      jobject jBCDirichletVtx,
 				      jobject jBCNeumannVtx,
@@ -35,7 +48,7 @@ static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
 				   const double *strain,
 				   const double *von_mises,
-				   jint N_vtx, jint N_trg);
+				   jint N_vtx);
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,
 						 const double *displacement,
 						 jint N);
@@ -90,45 +103,78 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	double* displacement = 
-		malloc(msh3trg->N_vertices * 2 * sizeof(*displacement));
-	double* strain = 
-		malloc(msh3trg->N_triangles * 3 * sizeof(*strain));
+	/* Allocate memory */
+	results_t results;
+	results_init(&results, msh3trg);
 
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
 					   bcond, false, NULL, true,
 					   jthickness, NULL,
-					   displacement, strain);
+					   results.disp, results.strain);
 
-	double* stress = 
-		malloc(msh3trg->N_triangles * 3 * sizeof(*stress));
 	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
 					   msh3trg->vertices_forming_triangles,
 					   elemtype, material,
-					   true, strain, NULL, stress);
+					   true, results.strain, NULL, 
+					   results.stress);
 
-	double* von_mises = 
-		malloc(msh3trg->N_triangles * sizeof(*von_mises));
+	vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
+						       3, results.stress,
+						       results.stress_on_nodes);
 
-	vcn_fem_compute_von_mises(msh3trg->N_triangles, stress, von_mises);
+	vcn_fem_compute_von_mises(msh3trg->N_vertices, results.stress_on_nodes,
+				  results.von_mises);
+	
+	vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
+						       3, results.strain,
+						       results.strain_on_nodes);
 
 	jobject jMeshResults = jMeshResults_create(env);
 	load_jMesh_from_msh3trg(env, msh3trg, jMeshResults);
-	set_results_into_jMesh(env, jMeshResults,
-			       displacement, strain, von_mises,
-			       msh3trg->N_vertices, msh3trg->N_triangles);
+	set_results_into_jMesh(env, jMeshResults, results.disp,
+			       results.strain_on_nodes, results.von_mises,
+			       msh3trg->N_vertices);
 
 	nb_bcond_finish(bcond);
-
 	vcn_model_finish(model);
 	vcn_msh3trg_destroy(msh3trg);
 	vcn_fem_material_destroy(material);
 	vcn_fem_elem_destroy(elemtype);
-	free(displacement);
-	free(strain);
-	free(stress);
-	free(von_mises);
+	results_finish(&results);
 	return jMeshResults;
+}
+
+static void results_init(results_t *results,
+			 const vcn_msh3trg_t *msh3trg)
+{
+	uint16_t size_disp = msh3trg->N_vertices * 2 *
+		sizeof(*(results->disp));
+	uint16_t size_strain = msh3trg->N_triangles * 3 *
+		sizeof(*(results->strain));
+	uint16_t size_stress = msh3trg->N_triangles * 3 *
+		sizeof(*(results->stress));
+	uint16_t size_data_on_nodes = msh3trg->N_vertices * 3 *
+		sizeof(*(results->strain_on_nodes));
+	uint16_t size_von_mises = msh3trg->N_vertices *
+		sizeof(*(results->von_mises));
+	uint16_t total_size = size_disp + size_strain +
+		size_stress + size_data_on_nodes + size_von_mises;
+	char *memblock = malloc(total_size);
+
+	results->disp = (void*) memblock;
+	results->strain = (void*)(memblock + size_disp);
+	results->stress = (void*)(memblock + size_disp + size_strain);
+	results->strain_on_nodes = (void*)(memblock + size_disp +
+					   size_strain + size_stress);
+	results->stress_on_nodes = (void*)(memblock + size_disp +
+					   size_strain + size_stress);
+	results->von_mises = (void*)(memblock + size_disp + size_strain +
+				     size_stress + size_data_on_nodes);
+}
+
+static inline void results_finish(results_t *results)
+{
+	free(results->disp);
 }
 
 static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
@@ -291,11 +337,11 @@ static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
 				   const double *strain,
 				   const double *von_mises,
-				   jint N_vtx, jint N_trg)
+				   jint N_vtx)
 {
 	load_displacements_into_jMeshResults(env, jMesh, displacement, N_vtx);
-	load_strain_into_jMeshResults(env, jMesh, strain, N_trg);
-	load_von_mises_into_jMeshResults(env, jMesh, von_mises, N_trg);
+	load_strain_into_jMeshResults(env, jMesh, strain, N_vtx);
+	load_von_mises_into_jMeshResults(env, jMesh, von_mises, N_vtx);
 }
 
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,

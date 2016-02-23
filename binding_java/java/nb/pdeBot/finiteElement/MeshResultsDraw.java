@@ -61,7 +61,7 @@ public class MeshResultsDraw {
 	float d = (float)mesh.VonMisesStress[0];
 	float min = d;
 	float max = d;
-	for (int i = 1; i < mesh.getNElements(); i++) {
+	for (int i = 1; i < mesh.getNVertices(); i++) {
 	    d = (float)mesh.VonMisesStress[i];
 	    if (min > d)
 		min = d;
@@ -111,8 +111,30 @@ public class MeshResultsDraw {
 
     private static Color getTrgColor(MeshResults mesh, int i,
 				     float min, float max) {
-	float val = mesh.getVonMisesStressRef()[i];
-	float factor = (val - min) / (max - min);
-	return new Color(factor, factor, factor);
+	int id1 = mesh.getConnMtxRef()[i * 3];
+	int id2 = mesh.getConnMtxRef()[i*3+1];
+	int id3 = mesh.getConnMtxRef()[i*3+2];
+	float vm1 = (float)mesh.VonMisesStress[id1];
+	float vm2 = (float)mesh.VonMisesStress[id2];
+	float vm3 = (float)mesh.VonMisesStress[id3];
+	float vm = (float)((vm1 + vm2 + vm3)/3.0);
+	float factor = (vm - min) / (max - min);
+	return new Color(getRed(factor), getGreen(factor), getBlue(factor));
+    }
+
+    private static float getRed(float factor) {
+	return factor;
+    }
+    private static float getGreen(float factor) {
+	float color = 0.0f;
+	if (factor > 0.8f)
+	    color = 0.4f + 0.6f * (factor - 0.8f)/0.2f;
+	return color;
+    }
+    private static float getBlue(float factor) {
+	float color = 0.0f;
+	if (factor > 0.15f && factor < 0.3f)
+	    color = 0.4f + 0.38f * (factor - 0.15f)/0.15f;
+	return color;
     }
 }
