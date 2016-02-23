@@ -8,20 +8,24 @@
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/graph_bot.h"
   
-vcn_model_t* vcn_model_get_combination(const vcn_model_t *const model1,
-				       const vcn_model_t *const model2,
-				       double min_length_x_segment);
+void vcn_model_get_combination(vcn_model_t *model,
+			       const vcn_model_t *const model1,
+			       const vcn_model_t *const model2,
+			       double min_length_x_segment);
 
-vcn_model_t* vcn_model_get_intersection(const vcn_model_t *const model1,
-					const vcn_model_t *const model2,
-					double min_length_x_segment);
+void vcn_model_get_intersection(vcn_model_t *model,
+				const vcn_model_t *const model1,
+				const vcn_model_t *const model2,
+				double min_length_x_segment);
 
-vcn_model_t* vcn_model_get_union(const vcn_model_t *const model1,
-				 const vcn_model_t *const model2,
-				 double min_length_x_segment);
+void vcn_model_get_union(vcn_model_t *model,
+			 const vcn_model_t *const model1,
+			 const vcn_model_t *const model2,
+			 double min_length_x_segment);
 
-vcn_model_t* vcn_model_get_substraction(const vcn_model_t *const model1,
-					const vcn_model_t *const model2,
-					double min_length_x_segment);
+void vcn_model_get_substraction(vcn_model_t *model,
+				const vcn_model_t *const model1,
+				const vcn_model_t *const model2,
+				double min_length_x_segment);
 
 #endif

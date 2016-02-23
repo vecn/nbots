@@ -14,7 +14,11 @@ public class Model {
     protected int[]  edges;       /* Concatenated IDs of vertices forming edges */
     protected float[] holes;      /* Concatenated coordinates of holes */
 
-    protected Model() {}
+    protected Model() {
+	vertices = null;
+	edges = null;
+	holes = null;
+    }
 
     static {
 	System.loadLibrary("nb_geometric_bot-jni");

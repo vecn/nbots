@@ -29,6 +29,7 @@ message("Configuring JNI - Geometric Bot")
 add_library(nb_geometric_bot-jni SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jMesh.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jModel.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/jModelStatus.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/JNI_jModel.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/geometric_bot/JNI_jGeometricBot.c
   )

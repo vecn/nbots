@@ -5,10 +5,21 @@
 
 #include "nb/geometric_bot/model/model2D.h"
 
-void get_model_from_java(JNIEnv *env, vcn_model_t *model, jobject jmodel);
+void vcn_model_load_from_jModel(JNIEnv *env, vcn_model_t *model,
+				const jobject jModel);
 
-jint jModel_getNVertices(JNIEnv *env, jobject jmodel);
-jint jModel_getNEdges(JNIEnv *env, jobject jmodel);
-jint jModel_getNHoles(JNIEnv *env, jobject jmodel);
+jobject jModel_create(JNIEnv *env);
+void jModel_load_from_model(JNIEnv *env, jobject jModel,
+			      const vcn_model_t *model);
+jobject jModel_get_combination(JNIEnv *env, jclass class,
+			       jobject jModelA, jobject jModelB,
+			       void (*combine)(vcn_model_t *model,
+					       const vcn_model_t *model1,
+					       const vcn_model_t *model2,
+					       double));
+
+jint jModel_getNVertices(JNIEnv *env, jobject jModel);
+jint jModel_getNEdges(JNIEnv *env, jobject jModel);
+jint jModel_getNHoles(JNIEnv *env, jobject jModel);
 
 #endif

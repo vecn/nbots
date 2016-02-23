@@ -27,17 +27,17 @@ static jdoubleArray jBoundaryConditions_getValuesRef
 			(JNIEnv *env, jobject jBoundaryConditions);
 static void set_bc_dof(bool enabled[2], jchar dof);
 static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
-				   jobject jmaterial);
-static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jmaterial);
-static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial);
-static jobject jMeshResults_new(JNIEnv *env);
-static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
+				   jobject jMaterial);
+static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jMaterial);
+static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jMaterial);
+static jobject jMeshResults_create(JNIEnv *env);
+static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
 				   const double *strain, jint N_vtx, jint N_trg);
-static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
+static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,
 						 const double *displacement,
 						 jint N);
-static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
+static void load_strain_into_jMeshResults(JNIEnv *env, jobject jMesh,
 					  const double *strain,
 					  jint N);
 
@@ -48,7 +48,7 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
  */
 JNIEXPORT jobject JNICALL
 Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
-		(JNIEnv *env, jclass class, jobject jmodel, jobject jmaterial,
+		(JNIEnv *env, jclass class, jobject jModel, jobject jMaterial,
 		 jobject jBCDirichletVtx, jobject jBCNeumannVtx,
 		 jobject jBCDirichletSgm, jobject jBCNeumannSgm,
 		 jdouble jthickness, jint jN_nodes)
@@ -62,10 +62,10 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 				  jBCDirichletSgm, jBCNeumannSgm);
 	
 	vcn_fem_material_t* material = vcn_fem_material_create();
-	get_material_from_java(env, material, jmaterial);
+	get_material_from_java(env, material, jMaterial);
 	
 	vcn_model_t* model = vcn_model_create();
-	get_model_from_java(env, model, jmodel);
+	vcn_model_load_from_jModel(env, model, jModel);
 
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -95,9 +95,9 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 					   jthickness, NULL,
 					   displacement, strain);
 
-	jobject jmesh_results = jMeshResults_new(env);
-	load_jMesh_from_msh3trg(env, msh3trg, jmesh_results);
-	set_results_into_jmesh(env, jmesh_results, displacement, strain,
+	jobject jMeshResults = jMeshResults_create(env);
+	load_jMesh_from_msh3trg(env, msh3trg, jMeshResults);
+	set_results_into_jMesh(env, jMeshResults, displacement, strain,
 			       msh3trg->N_vertices, msh3trg->N_triangles);
 
 	nb_bcond_finish(bcond);
@@ -108,7 +108,7 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	vcn_fem_elem_destroy(elemtype);
 	free(displacement);
 	free(strain);
-	return jmesh_results;
+	return jMeshResults;
 }
 
 static void get_bconditions_from_java(JNIEnv *env, nb_bcond_t *bcond,
@@ -229,35 +229,35 @@ static void set_bc_dof(bool enabled[2], jchar dof)
 }
 
 static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
-				   jobject jmaterial)
+				   jobject jMaterial)
 {
 	vcn_fem_material_set_poisson_module
-		(material, jMaterial_getPoissonModulus(env, jmaterial));
+		(material, jMaterial_getPoissonModulus(env, jMaterial));
 	vcn_fem_material_set_elasticity_module
-		(material, jMaterial_getYoungModulus(env, jmaterial));
+		(material, jMaterial_getYoungModulus(env, jMaterial));
 }
 
-static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jmaterial)
+static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jMaterial)
 {
-	jclass class = (*env)->GetObjectClass(env, jmaterial);
+	jclass class = (*env)->GetObjectClass(env, jMaterial);
 	jmethodID method_id = 
 		(*env)->GetMethodID(env, class, "getPoissonModulus", "()D");
 	jdouble poisson_modulus =
-		(*env)->CallDoubleMethod(env, jmaterial, method_id);
+		(*env)->CallDoubleMethod(env, jMaterial, method_id);
 	return poisson_modulus;
 }
 
-static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jmaterial)
+static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jMaterial)
 {
-	jclass class = (*env)->GetObjectClass(env, jmaterial);
+	jclass class = (*env)->GetObjectClass(env, jMaterial);
 	jmethodID method_id =
 		(*env)->GetMethodID(env, class, "getYoungModulus", "()D");
 	jdouble young_modulus =
-		(*env)->CallDoubleMethod(env, jmaterial, method_id);
+		(*env)->CallDoubleMethod(env, jMaterial, method_id);
 	return young_modulus;
 }
 
-static jobject jMeshResults_new(JNIEnv *env)
+static jobject jMeshResults_create(JNIEnv *env)
 {
 	jclass class =
 		(*env)->FindClass(env, "nb/pdeBot/finiteElement/MeshResults");
@@ -267,20 +267,20 @@ static jobject jMeshResults_new(JNIEnv *env)
 
 }
 
-static void set_results_into_jmesh(JNIEnv *env, jobject jmesh,
+static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
 				   const double *strain, jint N_vtx, jint N_trg)
 {
-	load_displacements_into_jMeshResults(env, jmesh, displacement, N_vtx);
-	load_strain_into_jMeshResults(env, jmesh, strain, N_trg);
+	load_displacements_into_jMeshResults(env, jMesh, displacement, N_vtx);
+	load_strain_into_jMeshResults(env, jMesh, strain, N_trg);
 }
 
-static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
+static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,
 						 const double *displacement,
 						 jint N)
 {
 	jclass class =
-		(*env)->GetObjectClass(env, jmesh);
+		(*env)->GetObjectClass(env, jMesh);
 	jfieldID field_id = 
 		(*env)->GetFieldID(env, class, "displacement", "[F");
 	jfloatArray jdisplacement =
@@ -291,15 +291,15 @@ static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jmesh,
 	for (uint32_t i = 0; i < 2 * N; i++)
 		fdisp[i] = displacement[i];
 	(*env)->ReleaseFloatArrayElements(env, jdisplacement, fdisp, 0);
-	(*env)->SetObjectField(env, jmesh, field_id, jdisplacement);
+	(*env)->SetObjectField(env, jMesh, field_id, jdisplacement);
 }
 
-static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
+static void load_strain_into_jMeshResults(JNIEnv *env, jobject jMesh,
 					  const double *strain,
 					  jint N)
 {
 	jclass class =
-		(*env)->GetObjectClass(env, jmesh);
+		(*env)->GetObjectClass(env, jMesh);
 	jfieldID field_id = 
 		(*env)->GetFieldID(env, class, "strain", "[F");
 	jfloatArray jstrain =
@@ -310,5 +310,5 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jmesh,
 	for (uint32_t i = 0; i < 3 * N; i++)
 		fstrain[i] = strain[i];
 	(*env)->ReleaseFloatArrayElements(env, jstrain, fstrain, 0);
-	(*env)->SetObjectField(env, jmesh, field_id, jstrain);
+	(*env)->SetObjectField(env, jMesh, field_id, jstrain);
 }

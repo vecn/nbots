@@ -142,12 +142,17 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 					const double *centroids,
 					char *mask_centroids);
 
-vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
-				       const vcn_model_t *const input_model2,
-				       double min_length_x_segment)
+void vcn_model_get_combination(vcn_model_t *model,
+			       const vcn_model_t *const input_model1,
+			       const vcn_model_t *const input_model2,
+			       double min_length_x_segment)
 {
-	vcn_model_t* model1 = vcn_model_clone(input_model1);
-	vcn_model_t* model2 = vcn_model_clone(input_model2);
+	vcn_model_clear(model);
+
+	vcn_model_t* model1 = alloca(vcn_model_get_memsize());
+	vcn_model_copy(model1, input_model1);
+	vcn_model_t* model2 = alloca(vcn_model_get_memsize());
+	vcn_model_copy(model2, input_model2);
 
 	/* Calculate displacement and scale to avoid floating imprecisions */
 	double xdisp, ydisp;
@@ -176,18 +181,17 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 
 	/* Check that a volume is possible */
 	if (nb_container_get_length(avl_sgm) < 3) {
-		vcn_model_destroy(model1);
-		vcn_model_destroy(model2);
 		nb_container_destroy(avl_sgm);
 		nb_container_destroy(ht_vtx);
-		return vcn_model_create();
+		vcn_model_finish(model1);
+		vcn_model_finish(model2);
+		return;
 	}
 	
 	set_as_initial_vtx_in_edges(avl_sgm);
 	delete_unused_vertices(ht_vtx);
 
 	/* Allocate new model */
-	vcn_model_t* model = vcn_model_create();
 	model->N = nb_container_get_length(ht_vtx);
 	model_alloc_vertices(model);
 	model->M = nb_container_get_length(avl_sgm);
@@ -269,8 +273,8 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 		}
 	}
 	free(centroids);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
+	vcn_model_finish(model1);
+	vcn_model_finish(model2);
   
 	nb_container_set_destroyer(ht_vtx, vtx_destroy);
 	nb_container_destroy(ht_vtx);
@@ -291,9 +295,6 @@ vcn_model_t* vcn_model_get_combination(const vcn_model_t *const input_model1,
 		model->holes[i * 2] = model->holes[i * 2]/scale + xdisp;
 		model->holes[i*2+1] = model->holes[i*2+1]/scale + ydisp;
 	}
-
-	/* Return models combination */
-	return model;
 }
 
 static void* ipack_create(void)
@@ -1021,15 +1022,14 @@ static void split_segment_by_vertex(nb_container_t* avl_sgm,
 		edge_destroy(sgm);
 }
 
-vcn_model_t* vcn_model_get_intersection(const vcn_model_t *const model1,
-					const vcn_model_t *const model2,
-					double min_length_x_segment)
+void vcn_model_get_intersection(vcn_model_t *model,
+				const vcn_model_t *const model1,
+				const vcn_model_t *const model2,
+				double min_length_x_segment)
 {
-	vcn_model_t* model = vcn_model_get_combination(model1, model2,
-						       min_length_x_segment);
-	if (NULL != model)
-		set_intersection_from_combination(model, model1, model2);
-	return model;
+	vcn_model_get_combination(model, model1, model2,
+				  min_length_x_segment);
+	set_intersection_from_combination(model, model1, model2);
 
 }
 
@@ -1201,17 +1201,14 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 	}
 }
 
-vcn_model_t* vcn_model_get_union(const vcn_model_t *model1,
-				 const vcn_model_t *model2,
-				 double min_length_x_segment){
-  
-	/* Get combined model */
-	vcn_model_t* model = vcn_model_get_combination(model1, model2,
-						       min_length_x_segment);
-
-	if (NULL != model)
-		set_union_from_combination(model);
-	return model;
+void vcn_model_get_union(vcn_model_t *model,
+			 const vcn_model_t *model1,
+			 const vcn_model_t *model2,
+			 double min_length_x_segment)
+{
+	vcn_model_get_combination(model, model1, model2,
+				  min_length_x_segment);
+	set_union_from_combination(model);
 }
 
 static void set_union_from_combination(vcn_model_t *model)
@@ -1220,15 +1217,14 @@ static void set_union_from_combination(vcn_model_t *model)
 	delete_isolated_internal_vtx(model);
 }
 
-vcn_model_t* vcn_model_get_substraction(const vcn_model_t *const model1,
-					const vcn_model_t *const model2,
-					double min_length_x_segment)
+void vcn_model_get_substraction(vcn_model_t *model,
+				const vcn_model_t *const model1,
+				const vcn_model_t *const model2,
+				double min_length_x_segment)
 {
-	vcn_model_t* model = vcn_model_get_combination(model1, model2,
-						       min_length_x_segment);
-	if (NULL != model)
-		set_substraction_from_combination(model, model2);
-	return model;
+	vcn_model_get_combination(model, model1, model2,
+				  min_length_x_segment);
+	set_substraction_from_combination(model, model2);
 }
 
 static void set_substraction_from_combination(vcn_model_t *model,

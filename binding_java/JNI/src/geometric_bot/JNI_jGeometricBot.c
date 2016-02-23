@@ -65,7 +65,7 @@ Java_nb_geometricBot_GeometricBot_generateMesh
 		(JNIEnv *env, jclass class, jobject jModel)
 {
 	vcn_model_t* model = vcn_model_create();
-	get_model_from_java(env, model, jModel);
+	vcn_model_load_from_jModel(env, model, jModel);
 
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);

@@ -12,8 +12,14 @@
  */
 typedef struct vcn_model_s vcn_model_t;
 
-vcn_model_t* vcn_model_create(void);
-void vcn_model_clear(vcn_model_t *model);
+uint16_t vcn_model_get_memsize(void);
+void vcn_model_init(void *model_ptr);
+void vcn_model_copy(void *model_ptr, const void *src_model_ptr);
+void vcn_model_finish(void *model_ptr);
+void* vcn_model_create(void);
+void* vcn_model_clone(const void *model_ptr);
+void vcn_model_destroy(void *model_ptr);
+void vcn_model_clear(void *model_ptr);
   
 /**
  * @brief Load geometry from a plain text file.
@@ -103,19 +109,6 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
  const bool *const trg_enabled,
  uint32_t *N_real_vtx_boundaries,
  uint32_t **real_vtx_boundaries);
-
-/**
- * @brief Create an identical copy of the model.
- * @param model Model to be cloned.
- * @return Cloned model.
- */
-vcn_model_t* vcn_model_clone(const vcn_model_t *const model);
-
-/**
- * @brief Destroy the model.
- * @param[in] model Model to be destroyed.
- */
-void vcn_model_destroy(vcn_model_t* model);
 
 /**
  * @brief Save model into a plain text file.

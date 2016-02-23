@@ -21,13 +21,79 @@
 #define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 #define MAX(a, b) (((a)>(b))?(a):(b))
 
-inline vcn_model_t* vcn_model_create(void)
+static inline void *malloc_model(void);
+
+inline uint16_t vcn_model_get_memsize(void)
 {
-	return calloc(1, sizeof(vcn_model_t));
+	return sizeof(vcn_model_t);
 }
 
-void vcn_model_clear(vcn_model_t *model)
+inline void vcn_model_init(void *model_ptr)
 {
+	memset(model_ptr, 0, vcn_model_get_memsize());
+}
+
+void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
+{
+	vcn_model_t *model = model_ptr;
+	const vcn_model_t *src_model = src_model_ptr;
+
+	model->N = src_model->N;
+	if (0 < model->N) {
+		uint16_t size = 2 * model->N * sizeof(*(model->vertex));
+		model->vertex = malloc(size);
+		memcpy(model->vertex, src_model->vertex, size);
+	}
+
+	model->M = src_model->M;
+	if (0 < model->M) {
+		uint16_t size = 2 * model->M * sizeof(*(model->edge));
+		model->edge = malloc(size);
+		memcpy(model->edge, src_model->edge, size);
+	}
+
+	model->H = src_model->H;
+	if (0 < model->H) {
+		uint16_t size = 2 * model->H * sizeof(*(model->holes));
+		model->holes = malloc(size);
+		memcpy(model->holes, src_model->holes, size);
+	}
+}
+
+inline void vcn_model_finish(void *model_ptr)
+{
+	vcn_model_clear(model_ptr);
+}
+
+inline void* vcn_model_create(void)
+{
+	vcn_model_t *model = malloc_model();
+	vcn_model_init(model);
+	return model;
+}
+
+static inline void *malloc_model(void)
+{
+	uint16_t size = vcn_model_get_memsize();
+	return malloc(size);
+}
+
+inline void* vcn_model_clone(const void *model_ptr)
+{
+	vcn_model_t *model = malloc_model();
+	vcn_model_copy(model, model_ptr);
+	return model;
+}
+
+inline void vcn_model_destroy(void *model_ptr)
+{
+	vcn_model_finish(model_ptr);
+	free(model_ptr);
+}
+
+void vcn_model_clear(void *model_ptr)
+{
+	vcn_model_t *model = model_ptr;
 	if (0 < model->N)
 		free(model->vertex);
 	model->N = 0;
@@ -488,45 +554,6 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 
 	/* Return model */
 	return model;
-}
-
-vcn_model_t* vcn_model_clone(const vcn_model_t *const model)
-{
-	vcn_model_t* clone = vcn_model_create();
-	clone->N = model->N;
-	clone->M = model->M;
-	clone->H = model->H;
-
-	if (0 < clone->N) {
-		model_alloc_vertices(clone);
-		memcpy(clone->vertex, model->vertex,
-		       2 * clone->N * sizeof(*(model->vertex)));
-	}
-
-	if (0 < clone->M) {
-		model_alloc_edges(clone);
-		memcpy(clone->edge, model->edge,
-		       2 * clone->M * sizeof(*(model->edge)));
-	}
-
-	if (0 < clone->H) {
-		model_alloc_holes(clone);
-		memcpy(clone->holes, model->holes,
-		       2 * clone->H * sizeof(model->holes));
-	}
-
-	return clone;
-}
-
-void vcn_model_destroy(vcn_model_t* model)
-{
-	if (0 < model->N)
-		free(model->vertex);
-	if (0 < model->M)
-		free(model->edge);
-	if (0 < model->H)
-		free(model->holes);
-	free(model);
 }
 
 uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename)

@@ -19,7 +19,8 @@ public class TestGeometricBot {
     public static void sample2() {
 	/* Min angle constraint relaxed */
 	Model model = GeometricBot.getCircle(0.0f, 0.0f, 1.0f, 0.1f);
-	Mesh mesh = GeometricBot.createMesh(model, GeometricBot.ANGLE_MAX / 2.0f);
+	Mesh mesh = GeometricBot.createMesh(model,
+					    GeometricBot.ANGLE_MAX / 2.0f);
 	GeometricBotDraw.drawMesh(mesh, "sample2_mesh.png", 1000, 800);
     }
     public static void sample3() {

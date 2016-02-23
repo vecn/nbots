@@ -134,7 +134,8 @@ static bool check_get_combination_squares(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -149,7 +150,8 @@ static bool check_get_intersection_squares(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -164,7 +166,8 @@ static bool check_get_union_squares(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -179,7 +182,8 @@ static bool check_get_substractionA_squares(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -194,7 +198,8 @@ static bool check_get_substractionB_squares(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -209,7 +214,8 @@ static bool check_get_combination_cross(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -224,7 +230,8 @@ static bool check_get_intersection_cross(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -239,7 +246,8 @@ static bool check_get_union_cross(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -254,7 +262,8 @@ static bool check_get_substractionA_cross(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -269,7 +278,8 @@ static bool check_get_substractionB_cross(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -284,7 +294,8 @@ static bool check_get_combination_c(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -299,7 +310,8 @@ static bool check_get_intersection_c(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -314,7 +326,8 @@ static bool check_get_union_c(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -329,7 +342,8 @@ static bool check_get_substractionA_c(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -344,7 +358,8 @@ static bool check_get_substractionB_c(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -359,7 +374,8 @@ static bool check_get_combination_b(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -374,7 +390,8 @@ static bool check_get_intersection_b(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -389,7 +406,8 @@ static bool check_get_union_b(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -404,7 +422,8 @@ static bool check_get_substractionA_b(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -419,7 +438,8 @@ static bool check_get_substractionB_b(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -434,7 +454,8 @@ static bool check_get_combination_g(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -449,7 +470,8 @@ static bool check_get_intersection_g(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -464,7 +486,8 @@ static bool check_get_union_g(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -479,7 +502,8 @@ static bool check_get_substractionA_g(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -494,7 +518,8 @@ static bool check_get_substractionB_g(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -509,7 +534,8 @@ static bool check_get_combination_h(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_combination(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_combination(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -524,7 +550,8 @@ static bool check_get_intersection_h(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_intersection(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_intersection(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -539,7 +566,8 @@ static bool check_get_union_h(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_union(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_union(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -554,7 +582,8 @@ static bool check_get_substractionA_h(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
@@ -569,7 +598,8 @@ static bool check_get_substractionB_h(void)
 	vcn_model_t *model1 = vcn_model_load(input_name);
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
 	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_get_substraction(model1, model2, 0);
+	vcn_model_t *model = vcn_model_create();
+	vcn_model_get_substraction(model, model1, model2, 0);
 	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);

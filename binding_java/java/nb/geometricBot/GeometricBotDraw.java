@@ -20,7 +20,8 @@ import javax.imageio.ImageIO;
 public class GeometricBotDraw {
     private GeometricBotDraw() {}
 
-    public static void drawMesh(Mesh mesh, String imageFile, int width, int height)
+    public static void drawMesh(Mesh mesh, String imageFile,
+				int width, int height)
     {
 	try {
 	    /* TYPE_INT_ARGB specifies the image format: 
@@ -34,7 +35,8 @@ public class GeometricBotDraw {
 	    Box box = GeometricBot.getEnvelopingBox(mesh.vertices);
 	    
 	    float[] center = new float[2];
-	    float zoom = GeometricBot.getCenterAndZoom(width, height, box, center);
+	    float zoom = GeometricBot.getCenterAndZoom(width, height,
+						       box, center);
 
 	    /* Draw background */
 	    ig2.setColor(Color.WHITE);
@@ -51,9 +53,9 @@ public class GeometricBotDraw {
 	}
     }
 
-    private static void drawEdges(Graphics2D g2, int connEdges[], float vertices[],
-				  int width, int height, float center[], 
-				  float zoom)
+    private static void drawEdges(Graphics2D g2, int connEdges[],
+				  float vertices[], int width, int height,
+				  float center[], float zoom)
     {
 	for (int i = 0; i < connEdges.length / 2; i++) {
 	    int id1 = connEdges[i * 2];
@@ -63,6 +65,39 @@ public class GeometricBotDraw {
 	    float y1 =  zoom * vertices[id1*2+1] - zoom * center[1] + height / 2.0f;
 	    float y2 =  zoom * vertices[id2*2+1] - zoom * center[1] + height / 2.0f;
 	    g2.draw(new Line2D.Float(x1, height - y1, x2, height - y2));
+	}
+    }
+
+    public static void drawModel(Model model, String imageFile,
+				 int width, int height)
+    {
+	try {
+	    /* TYPE_INT_ARGB specifies the image format: 
+	     * 8-bit RGBA packed into integer pixels 
+	     */
+	    BufferedImage bi = 
+		new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+	    Graphics2D ig2 = bi.createGraphics();
+
+	    Box box = GeometricBot.getEnvelopingBox(model.vertices);
+	    
+	    float[] center = new float[2];
+	    float zoom = GeometricBot.getCenterAndZoom(width, height,
+						       box, center);
+
+	    /* Draw background */
+	    ig2.setColor(Color.WHITE);
+	    ig2.fillRect(0, 0, width, height);
+	    
+	    ig2.setColor(Color.BLACK);
+	    drawEdges(ig2, model.edges, model.vertices,
+		      width, height, center, zoom);
+	    
+	    ImageIO.write(bi, "PNG", new File(imageFile));
+	    /* You could use "JPEG", "gif" and "BMP" instead of "PNG" */      
+	} catch (IOException ie) {
+	    ie.printStackTrace();
 	}
     }
 }
