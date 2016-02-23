@@ -58,19 +58,27 @@ public class MeshResultsDraw {
 				int width, int height, float center[], 
 				float zoom)
     {
-	float d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
-				   Math.pow(mesh.displacement[1], 2));
+	float d = (float)mesh.VonMisesStress[0];
 	float min = d;
 	float max = d;
-	for (int i = 1; i < mesh.getNVertices(); i++) {
-	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
-				 Math.pow(mesh.displacement[i*2+1], 2));
+	for (int i = 1; i < mesh.getNElements(); i++) {
+	    d = (float)mesh.VonMisesStress[i];
 	    if (min > d)
 		min = d;
 	    if (max < d)
 		max = d;
 	}
-	double scale = 1/max;
+
+	d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
+			     Math.pow(mesh.displacement[1], 2));
+	float max_disp = d;
+	for (int i = 1; i < mesh.getNVertices(); i++) {
+	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
+				 Math.pow(mesh.displacement[i*2+1], 2));
+	    if (max_disp < d)
+		max_disp = d;
+	}
+	double scale = 1/max_disp;
 
 	for (int i = 0; i < mesh.getNElements(); i++) {
 	    int id1 = mesh.getConnMtxRef()[i * 3];
@@ -103,17 +111,8 @@ public class MeshResultsDraw {
 
     private static Color getTrgColor(MeshResults mesh, int i,
 				     float min, float max) {
-	int id1 = mesh.getConnMtxRef()[i * 3];
-	int id2 = mesh.getConnMtxRef()[i*3+1];
-	int id3 = mesh.getConnMtxRef()[i*3+2];
-	float d1 = (float)Math.sqrt(Math.pow(mesh.displacement[id1 * 2], 2) +
-				    Math.pow(mesh.displacement[id1*2+1], 2));
-	float d2 = (float)Math.sqrt(Math.pow(mesh.displacement[id2 * 2], 2) +
-				    Math.pow(mesh.displacement[id2*2+1], 2));
-	float d3 = (float)Math.sqrt(Math.pow(mesh.displacement[id3 * 2], 2) +
-				    Math.pow(mesh.displacement[id3*2+1], 2));
-	float disp = (float)((d1 + d2 + d3)/3.0);
-	float factor = (disp - min) / (max - min);
+	float val = mesh.getVonMisesStressRef()[i];
+	float factor = (val - min) / (max - min);
 	return new Color(factor, factor, factor);
     }
 }

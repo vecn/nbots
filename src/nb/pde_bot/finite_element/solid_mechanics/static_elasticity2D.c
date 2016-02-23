@@ -117,3 +117,16 @@ void vcn_fem_compute_stress_from_strain
 		stress[i*3+2] = strain[i*3+2] * d33;
 	}
 }
+
+void vcn_fem_compute_von_mises(uint32_t N_elements,
+			       double *stress,
+			       double *von_mises /* Output */)
+{
+	for (uint32_t i = 0; i < N_elements; i++) {
+		double sx = stress[i * 3];
+		double sy = stress[i*3+1];
+		double sxy = stress[i*3+2];
+		von_mises[i] = sqrt(POW2(sx) + POW2(sy) - sx * sy +
+				    3 * POW2(sxy));
+	}
+}

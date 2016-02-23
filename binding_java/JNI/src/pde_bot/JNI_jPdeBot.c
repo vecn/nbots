@@ -33,14 +33,18 @@ static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jMaterial);
 static jobject jMeshResults_create(JNIEnv *env);
 static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
-				   const double *strain, jint N_vtx, jint N_trg);
+				   const double *strain,
+				   const double *von_mises,
+				   jint N_vtx, jint N_trg);
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,
 						 const double *displacement,
 						 jint N);
 static void load_strain_into_jMeshResults(JNIEnv *env, jobject jMesh,
 					  const double *strain,
 					  jint N);
-
+static void load_von_mises_into_jMeshResults(JNIEnv *env, jobject jMesh,
+					     const double *von_mises,
+					     jint N);
 /*
  * Class:     vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
  * Method:    solve
@@ -64,7 +68,8 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	vcn_fem_material_t* material = vcn_fem_material_create();
 	get_material_from_java(env, material, jMaterial);
 	
-	vcn_model_t* model = vcn_model_create();
+	vcn_model_t* model = alloca(vcn_model_get_memsize());
+	vcn_model_init(model);
 	vcn_model_load_from_jModel(env, model, jModel);
 
 	/* Mesh domain */
@@ -95,19 +100,34 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 					   jthickness, NULL,
 					   displacement, strain);
 
+	double* stress = 
+		malloc(msh3trg->N_triangles * 3 * sizeof(*stress));
+	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
+					   msh3trg->vertices_forming_triangles,
+					   elemtype, material,
+					   true, strain, NULL, stress);
+
+	double* von_mises = 
+		malloc(msh3trg->N_triangles * sizeof(*von_mises));
+
+	vcn_fem_compute_von_mises(msh3trg->N_triangles, stress, von_mises);
+
 	jobject jMeshResults = jMeshResults_create(env);
 	load_jMesh_from_msh3trg(env, msh3trg, jMeshResults);
-	set_results_into_jMesh(env, jMeshResults, displacement, strain,
+	set_results_into_jMesh(env, jMeshResults,
+			       displacement, strain, von_mises,
 			       msh3trg->N_vertices, msh3trg->N_triangles);
 
 	nb_bcond_finish(bcond);
 
-	vcn_model_destroy(model);
+	vcn_model_finish(model);
 	vcn_msh3trg_destroy(msh3trg);
 	vcn_fem_material_destroy(material);
 	vcn_fem_elem_destroy(elemtype);
 	free(displacement);
 	free(strain);
+	free(stress);
+	free(von_mises);
 	return jMeshResults;
 }
 
@@ -269,10 +289,13 @@ static jobject jMeshResults_create(JNIEnv *env)
 
 static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
-				   const double *strain, jint N_vtx, jint N_trg)
+				   const double *strain,
+				   const double *von_mises,
+				   jint N_vtx, jint N_trg)
 {
 	load_displacements_into_jMeshResults(env, jMesh, displacement, N_vtx);
 	load_strain_into_jMeshResults(env, jMesh, strain, N_trg);
+	load_von_mises_into_jMeshResults(env, jMesh, von_mises, N_trg);
 }
 
 static void load_displacements_into_jMeshResults(JNIEnv *env, jobject jMesh,
@@ -311,4 +334,23 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jMesh,
 		fstrain[i] = strain[i];
 	(*env)->ReleaseFloatArrayElements(env, jstrain, fstrain, 0);
 	(*env)->SetObjectField(env, jMesh, field_id, jstrain);
+}
+
+static void load_von_mises_into_jMeshResults(JNIEnv *env, jobject jMesh,
+					     const double *von_mises,
+					     jint N)
+{
+	jclass class =
+		(*env)->GetObjectClass(env, jMesh);
+	jfieldID field_id = 
+		(*env)->GetFieldID(env, class, "VonMisesStress", "[F");
+	jfloatArray jstress =
+		(*env)->NewFloatArray(env, N);
+	jfloat *fstress =
+		(*env)->GetFloatArrayElements(env, jstress, NULL);
+
+	for (uint32_t i = 0; i < N; i++)
+		fstress[i] = von_mises[i];
+	(*env)->ReleaseFloatArrayElements(env, jstress, fstress, 0);
+	(*env)->SetObjectField(env, jMesh, field_id, jstress);
 }
