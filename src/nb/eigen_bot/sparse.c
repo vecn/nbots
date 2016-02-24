@@ -724,8 +724,8 @@ int vcn_sparse_solve_CG_precond_Jacobi
 	double* w = (double*)calloc(A->N, sizeof(double));
 	double* Aii = (double*)calloc(A->N, sizeof(double));
 	double dot_gg = 0;
-#pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
-	for(uint32_t i=0; i< A->N; i++){
+	//#pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
+	for (uint32_t i = 0; i < A->N; i++) {
 		double sum = 0;
 		for(uint32_t j=0; j< A->rows_size[i]; j++)
 			sum += A->rows_values[i][j] * _x[A->rows_index[i][j]];
@@ -736,11 +736,11 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		dot_gg += g[i]*g[i];
 	}
 	uint32_t k = 0;
-	while(dot_gg > tolerance*tolerance && k < max_iter){
+	while (dot_gg > tolerance * tolerance && k < max_iter) {
 		double dot_pw = 0;
 		double dot_gq = 0;
 		dot_gg = 0;
-#pragma omp parallel for reduction(+:dot_pw, dot_gg, dot_gq) num_threads(omp_parallel_threads)
+		//#pragma omp parallel for reduction(+:dot_pw, dot_gg, dot_gq) num_threads(omp_parallel_threads)
 		for (uint32_t i = 0; i < A->N; i++){
 			w[i] = 0;
 			for (uint32_t j = 0; j <  A->rows_size[i]; j++)
@@ -752,7 +752,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		double alphak = dot_gq/dot_pw;
 		double dot_gkqk = 0;
 		
-#pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
+		//#pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
 		for(uint32_t i=0; i< A->N; i++){
 			_x[i] += alphak*p[i];
 			g[i] += alphak*w[i];
@@ -761,7 +761,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		}
 
 		double betak = dot_gkqk/dot_gq;
-#pragma omp parallel for num_threads(omp_parallel_threads)
+		//#pragma omp parallel for num_threads(omp_parallel_threads)
 		for(uint32_t i=0; i< A->N; i++)
 			p[i] = -q[i]+betak*p[i];
 		k++;

@@ -134,28 +134,25 @@ vcn_model_t* vcn_model_load(const char* filename)
 	if (fscanf(fp, "%u", &(model->M)) != 1)
 		return NULL;
 
-	if (0 < model->M) {
-		model_alloc_edges(model);
-		/* Read segments */
-		for (int32_t i = 0; i < model->M; i++) {
-			if (fscanf(fp, "%u %u",
-				   &(model->edge[i * 2]),
-				   &(model->edge[i*2+1])) != 2)
-				return NULL;
-		}
+	model_alloc_edges(model);
+	/* Read segments */
+	for (int32_t i = 0; i < model->M; i++) {
+	  if (fscanf(fp, "%u %u",
+		     &(model->edge[i * 2]),
+		     &(model->edge[i*2+1])) != 2)
+	    return NULL;
 	}
+
 	/* Read number of holes */
 	if (fscanf(fp, "%u", &(model->H)) != 1)
 		return NULL;
-	if (0 < model->H) {
-		model_alloc_holes(model);
-		/* Read vertices */
-		for (int32_t i = 0; i < model->H; i++) {
-			if (fscanf(fp, "%lf %lf",
-				   &(model->holes[i * 2]),
-				   &(model->holes[i*2+1])) != 2)
-				return NULL;
-		}
+
+	model_alloc_holes(model);
+	for (int32_t i = 0; i < model->H; i++) {
+	  if (fscanf(fp, "%lf %lf",
+		     &(model->holes[i * 2]),
+		     &(model->holes[i*2+1])) != 2)
+	    return NULL;
 	}
 	/* Close file */
 	fclose(fp);
@@ -196,21 +193,18 @@ void vcn_model_load_from_farrays(vcn_model_t *model,
 	model->N = N_vertices;
 	model->M = N_segments;
 	model->H = N_holes;
-	if (0 < N_vertices) {
-		model_alloc_vertices(model);
-		for (uint32_t i = 0; i < 2 * N_vertices; i++)
-			model->vertex[i] = vertices[i];
-	}
-	if (0 < N_segments) {
-		model_alloc_edges(model);
-		for (uint32_t i = 0; i < 2 * N_segments; i++)
-			model->edge[i] = segments[i];
-	}
-	if (0 < N_holes ) {
-		model_alloc_holes(model);
-		for (uint32_t i = 0; i < 2 * N_holes; i++)
-			model->holes[i] = holes[i];
-	}
+
+	model_alloc_vertices(model);
+	for (uint32_t i = 0; i < 2 * N_vertices; i++)
+	  model->vertex[i] = vertices[i];
+
+	model_alloc_edges(model);
+	for (uint32_t i = 0; i < 2 * N_segments; i++)
+	  model->edge[i] = segments[i];
+
+	model_alloc_holes(model);
+	for (uint32_t i = 0; i < 2 * N_holes; i++)
+	  model->holes[i] = holes[i];
 }
 
 vcn_model_t* vcn_model_create_rectangle(double x_min, double y_min,

@@ -73,6 +73,7 @@ CLEANUP_LINEAR_SYSTEM:
 static inline int solver(const vcn_sparse_t *const A,
 			 const double *const b, double* x)
 {
+	memset(x, 0, vcn_sparse_get_size(A) * sizeof(*x));
 	return vcn_sparse_solve_CG_precond_Jacobi(A, b, x,
 						  vcn_sparse_get_size(A),
 						  1e-8, NULL, NULL, 1);

@@ -85,7 +85,7 @@ static bool check_static_elasticity2D(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     300);
+				     10000);
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
@@ -135,11 +135,11 @@ CLEANUP_INPUT:
 static void results_init(results_t *results,
 			 const vcn_msh3trg_t *msh3trg)
 {
-	uint16_t size_disp = msh3trg->N_vertices * 2 *
+	uint32_t size_disp = msh3trg->N_vertices * 2 *
 		sizeof(*(results->disp));
-	uint16_t size_strain = msh3trg->N_triangles * 3 *
+	uint32_t size_strain = msh3trg->N_triangles * 3 *
 		sizeof(*(results->strain));
-	uint16_t total_size = size_disp + size_strain;
+	uint32_t total_size = size_disp + size_strain;
 	char *memblock = malloc(total_size);
 
 	results->disp = (void*) memblock;

@@ -25,7 +25,7 @@ public class TestPdeBot {
 	    StaticElasticity2D.solve(model, material,
 				     DirichletVtx, NeumannVtx,
 				     DirichletSgm, NeumannSgm,
-				     0.1, 1000);
+				     0.1, 1500);
 	MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
     }
     private static BoundaryConditions getDirichletVtx() {

@@ -416,10 +416,10 @@ void pipeline_compute_strain(double *strain,
 	uint32_t *connectivity_mtx = (uint32_t*) mesh->vertices_forming_triangles;
 
 	/* Initialize strains */
-	memset(strain, 0, 3 * elem->N_Gauss_points * N_elements * sizeof(double));
+	memset(strain, 0, 3 * elem->N_Gauss_points * N_elements * sizeof(*strain));
 
 	/* Iterate over elements to compute strain and stress at nodes */
-	for(uint32_t k=0; k < N_elements; k++){
+	for (uint32_t k = 0; k < N_elements; k++) {
 		double* dNi_dx = (double*)malloc(elem->N_nodes*sizeof(double));
 		double* dNi_dy = (double*)malloc(elem->N_nodes*sizeof(double));
 

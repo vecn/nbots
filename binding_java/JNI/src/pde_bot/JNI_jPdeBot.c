@@ -147,17 +147,17 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 static void results_init(results_t *results,
 			 const vcn_msh3trg_t *msh3trg)
 {
-	uint16_t size_disp = msh3trg->N_vertices * 2 *
+	uint32_t size_disp = msh3trg->N_vertices * 2 *
 		sizeof(*(results->disp));
-	uint16_t size_strain = msh3trg->N_triangles * 3 *
+	uint32_t size_strain = msh3trg->N_triangles * 3 *
 		sizeof(*(results->strain));
-	uint16_t size_stress = msh3trg->N_triangles * 3 *
+	uint32_t size_stress = msh3trg->N_triangles * 3 *
 		sizeof(*(results->stress));
-	uint16_t size_data_on_nodes = msh3trg->N_vertices * 3 *
+	uint32_t size_data_on_nodes = msh3trg->N_vertices * 3 *
 		sizeof(*(results->strain_on_nodes));
-	uint16_t size_von_mises = msh3trg->N_vertices *
+	uint32_t size_von_mises = msh3trg->N_vertices *
 		sizeof(*(results->von_mises));
-	uint16_t total_size = size_disp + size_strain +
+	uint32_t total_size = size_disp + size_strain +
 		size_stress + size_data_on_nodes + size_von_mises;
 	char *memblock = malloc(total_size);
 

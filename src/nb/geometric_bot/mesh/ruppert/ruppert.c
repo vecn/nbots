@@ -25,8 +25,9 @@ typedef struct {
 	uint32_t length;
 } hash_trg_t;
 
-static inline int8_t compare_edge_size(const void *const edge1_ptr,
-				       const void *const edge2_ptr);
+static void clear_container_trg_attr(nb_container_t *cnt);
+static int8_t compare_edge_size(const void *const edge1_ptr,
+				const void *const edge2_ptr);
 static int8_t compare_trg_attr(const void *const trg1_ptr,
 			       const void *const trg2_ptr);
 static hash_trg_t* hash_trg_create(void);
@@ -200,13 +201,24 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
+	clear_container_trg_attr(encroached_sgm);
+	clear_container_trg_attr(big_trg);
 	nb_container_destroy(encroached_sgm);
 	nb_container_destroy(big_trg);
 	hash_trg_destroy(poor_quality_trg);
 }
 
-static inline int8_t compare_edge_size(const void *const edge1_ptr,
-				       const void *const edge2_ptr)
+static void clear_container_trg_attr(nb_container_t *cnt)
+{
+	while (nb_container_is_not_empty(cnt)) {
+		msh_trg_t* trg = nb_container_delete_first(cnt);
+		free(trg->attr);
+		trg->attr = NULL; 
+	}
+}
+
+static int8_t compare_edge_size(const void *const edge1_ptr,
+				const void *const edge2_ptr)
 {
 	const msh_edge_t *const edge1 = edge1_ptr;
 	const msh_edge_t *const edge2 = edge2_ptr;
@@ -230,8 +242,8 @@ static inline int8_t compare_edge_size(const void *const edge1_ptr,
 	return out;
 }
 
-static inline int8_t compare_trg_attr(const void *const trg1_ptr,
-				      const void *const trg2_ptr)
+static int8_t compare_trg_attr(const void *const trg1_ptr,
+			       const void *const trg2_ptr)
 {
 	const msh_trg_t *const trg1 = trg1_ptr;
 	const msh_trg_t *const trg2 = trg2_ptr;
@@ -451,15 +463,15 @@ static inline void hash_trg_remove(hash_trg_t *const restrict htrg,
 
 static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
 {
-  for (uint32_t i = 0; i < 64; i++) {
-    while (nb_container_is_not_empty(htrg->avl[i])) {
-      msh_trg_t* trg = nb_container_delete_first(htrg->avl[i]);
-      free(trg->attr);
-      trg->attr = NULL;      
-    }
-    nb_container_destroy(htrg->avl[i]);
-  }
-  free(htrg);
+	for (uint32_t i = 0; i < 64; i++) {
+		while (nb_container_is_not_empty(htrg->avl[i])) {
+			msh_trg_t* trg = nb_container_delete_first(htrg->avl[i]);
+			free(trg->attr);
+			trg->attr = NULL; 
+		}		
+		nb_container_destroy(htrg->avl[i]);
+	}
+	free(htrg);
 }
 
 static inline bool check_max_vtx(const vcn_mesh_t *const restrict mesh)

@@ -46,11 +46,11 @@ add_library(nb_drawing_bot SHARED
 )
 
 message("Configuring NB Bots Library (ALL in one)")
-add_library(nb_bots SHARED
+add_library(nbots SHARED
   ${NB_SOURCE_DIR}/nb/math_bot.c
   ${NB_SOURCE_DIR}/nb/statistics_bot.c
 )
-target_link_libraries(nb_bots LINK_INTERFACE_LIBRARIES
+target_link_libraries(nbots LINK_INTERFACE_LIBRARIES
   nb_cfreader_bot
   nb_container_bot
   nb_eigen_bot
@@ -62,11 +62,11 @@ target_link_libraries(nb_bots LINK_INTERFACE_LIBRARIES
   )
 
 message("Configuring NB Bots: Cairo Extension Library")
-add_library(nb_bots-cairo SHARED
+add_library(nbots-cairo SHARED
   ${NB_SOURCE_DIR}/nb/geometric_bot/model/modules2D/exporter_cairo.c
   ${NB_SOURCE_DIR}/nb/geometric_bot/mesh/modules2D/exporter_cairo.c
 )
-target_link_libraries(nb_bots-cairo ${CAIRO_LIBRARIES}
+target_link_libraries(nbots-cairo ${CAIRO_LIBRARIES}
   nb_pde_bot-cairo
   )
 
