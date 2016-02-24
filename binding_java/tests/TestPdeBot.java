@@ -11,25 +11,22 @@ public class TestPdeBot {
 	Model model = GeometricBot.getRect(-3, 0, 3, 1);
 	Material material = new Material(2e11, 0.29);
 	BoundaryConditions DirichletVtx = getDirichletVtx();
+	BoundaryConditions NeumannVtx = new BoundaryConditions();
+	BoundaryConditions DirichletSgm = new BoundaryConditions();
+	BoundaryConditions NeumannSgm = new BoundaryConditions();
 
-	BoundaryConditions NeumannVtx = 
-	    new BoundaryConditions(BCType.NEUMANN);
-
-	BoundaryConditions DirichletSgm =
-	    new BoundaryConditions(BCType.DIRICHLET);
-
-	BoundaryConditions NeumannSgm =
-	    new BoundaryConditions(BCType.NEUMANN);
+	Analysis2D analysis2D = Analysis2D.PLANE_STRESS;
+	analysis2D.setThickness(0.1);
 
 	MeshResults mesh =
-	    StaticElasticity2D.solve(model, material,
+	    StaticElasticity2D.solve(model, material, analysis2D,
 				     DirichletVtx, NeumannVtx,
 				     DirichletSgm, NeumannSgm,
-				     0.1, 200);
+				     1000);
 	MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
     }
     private static BoundaryConditions getDirichletVtx() {
-	BoundaryConditions BC = new BoundaryConditions(BCType.DIRICHLET);
+	BoundaryConditions BC = new BoundaryConditions();
 	int ids[] = new int[3];
 	ids[0] = 0;
 	ids[1] = 2;

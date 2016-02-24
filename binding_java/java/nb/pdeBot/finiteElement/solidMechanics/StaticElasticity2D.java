@@ -12,9 +12,10 @@ public class StaticElasticity2D {
     }
     
     public static native MeshResults solve(Model model, Material material,
+					   Analysis2D analysis2D,
 					   BoundaryConditions DirichletVtx,
 					   BoundaryConditions NeumannVtx,
 					   BoundaryConditions DirichletSgm,
 					   BoundaryConditions NeumannSgm,
-					   double thickness, int N_nodes);
+					   int N_nodes);
 }

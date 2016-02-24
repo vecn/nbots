@@ -27,26 +27,28 @@ static bool elem_is_enabled(const bool *elements_enabled, uint32_t id);
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    const vcn_msh3trg_t *mesh,
 			    const vcn_fem_material_t *material,
-			    bool is_enabled, bool enable_plane_stress,
-			    double thickness, bool enable_self_weight,
+			    bool is_enabled,
+			    nb_analysis2D_t analysis2D,
+			    nb_analysis2D_params *params2D,
+			    bool enable_self_weight,
 			    double gravity[2],
 			    vcn_sparse_t *K, double *M, double *F);
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
-				  double thickness, double factor);
+				  double factor);
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
-				  double thickness, double factor);
+				  double factor);
 static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
-				    double thickness, double factor);
+				    double factor);
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
-				    double thickness, double factor);
+				    double factor);
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
@@ -54,8 +56,8 @@ int pipeline_assemble_system
 		 const vcn_fem_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
-		 bool enable_plane_stress,
-		 double thickness,
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
 		 const bool* elements_enabled /* NULL to enable all */)
 {
 	int status = 1;
@@ -65,14 +67,11 @@ int pipeline_assemble_system
 		memset(M, 0, vcn_sparse_get_size(K) * sizeof(*M));
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
 
-	if (!enable_plane_stress)
-		thickness = 1.0;
-
 	for (uint32_t k = 0; k < N_elements; k++) {
 		bool is_enabled = elem_is_enabled(elements_enabled, k);
 		int status_element =
 			assemble_element(elem, k, mesh, material, is_enabled,
-					 enable_plane_stress, thickness,
+					 analysis2D, params2D,
 					 enable_self_weight, gravity,
 					 K, M, F);
 		if (0 != status_element)
@@ -94,8 +93,10 @@ static inline bool elem_is_enabled(const bool *elements_enabled, uint32_t id)
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    const vcn_msh3trg_t *mesh,
 			    const vcn_fem_material_t *material,
-			    bool is_enabled, bool enable_plane_stress,
-			    double thickness, bool enable_self_weight,
+			    bool is_enabled,
+			    nb_analysis2D_t analysis2D,
+			    nb_analysis2D_params *params2D,
+			    bool enable_self_weight,
 			    double gravity[2],
 			    vcn_sparse_t *K, double *M, double *F)
 {
@@ -112,15 +113,24 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	double v = vcn_fem_material_get_poisson_module(material);
     
 	/* Get constitutive matrix */
-	double d11 = E / (1.0 - POW2(v));
-	double d12 = v * d11;
-    
-	if (!enable_plane_stress) {
-		d11 = (E * (1.0-v)) / ((1.0 + v) * (1.0-2*v));
+	double d11, d12, d22, d33;
+	if (NB_PLANE_STRESS == analysis2D) {
+		d11 = E / (1.0 - POW2(v));
+		d12 = v * d11;
+		d22 = d11;
+		d33 = E / (2.0 * (1.0 + v));
+	} else if (NB_PLANE_STRAIN == analysis2D) {
+		d11 = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
 		d12 = (v * d11) / (1.0 - v);
-	}    
-	double d22 = d11;
-	double d33 = E / (2.0 * (1.0 + v));
+		d22 = d11;
+		d33 = E / (2.0 * (1.0 + v));
+	} else {
+		/* Default: Plane stress */
+		d11 = E / (1.0 - POW2(v));
+		d12 = v * d11;
+		d22 = d11;
+		d33 = E / (2.0 * (1.0 + v));
+	}
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	double *dNi_dx = malloc(elem->N_nodes * sizeof(*dNi_dx));
@@ -204,16 +214,16 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 				/*  Integrating elemental siffness matrix */
 				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2 * 2)] += 
 					(dNi_dx[i1]*dNi_dx[i2]*dd11 + dNi_dy[i1]*dNi_dy[i2]*dd33) *
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2*2+1)] +=
 					(dNi_dx[i1]*dNi_dy[i2]*dd12 + dNi_dy[i1]*dNi_dx[i2]*dd33) *
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2 * 2)] +=
 					(dNi_dy[i1]*dNi_dx[i2]*dd12 + dNi_dx[i1]*dNi_dy[i2]*dd33) *
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2*2+1)] +=
 					(dNi_dy[i1]*dNi_dy[i2]*dd22 + dNi_dx[i1]*dNi_dx[i2]*dd33) *
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 			}
 			/* Calculate shape function of the i-th node at the j-th gauss point */
 			double Ni_eval = 
@@ -222,16 +232,16 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			if (NULL != M) {
 				/* OPPORTUNITY: Allocate just one for each component */
 				Me[i1 * 2] += Ni_eval * Ni_eval * density *
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 				Me[i1*2+1] += Ni_eval * Ni_eval * density * 
-					detJ * thickness * elem->gp_weight[j];
+					detJ * params2D->thickness * elem->gp_weight[j];
 			}
 			/* Compute elemental forces vector */
 			/* OPPORTUNITY: Allocate just one for each component */
 			Fe[i1 * 2] += Ni_eval * fx * detJ * 
-				thickness * elem->gp_weight[j];
+				params2D->thickness * elem->gp_weight[j];
 			Fe[i1*2+1] += Ni_eval * fy * detJ * 
-				thickness * elem->gp_weight[j];
+				params2D->thickness * elem->gp_weight[j];
 		}
 	}
 	/* Add to global stiffness matrix */
@@ -268,21 +278,19 @@ CLEANUP:
 
 void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
 				      vcn_sparse_t* K, double* F, 
-				      const nb_bcond_t *const bcond, 
-				      double thickness,
+				      const nb_bcond_t *const bcond,
 				      double factor)
 {
-	set_bcond_neumann_sgm(msh3trg, K, F, bcond, thickness, factor);
-	set_bcond_neumann_vtx(msh3trg, K, F, bcond, thickness, factor);
-	set_bcond_dirichlet_sgm(msh3trg, K, F, bcond, thickness, factor);
-	set_bcond_dirichlet_vtx(msh3trg, K, F, bcond, thickness, factor);
+	set_bcond_neumann_sgm(msh3trg, K, F, bcond, factor);
+	set_bcond_neumann_vtx(msh3trg, K, F, bcond, factor);
+	set_bcond_dirichlet_sgm(msh3trg, K, F, bcond, factor);
+	set_bcond_dirichlet_vtx(msh3trg, K, F, bcond, factor);
 }
 
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K,
 				  double* F, 
 				  const nb_bcond_t *const bcond, 
-				  double thickness,
 				  double factor)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
@@ -314,8 +322,7 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K,
 				  double* F, 
-				  const nb_bcond_t *const bcond, 
-				  double thickness,
+				  const nb_bcond_t *const bcond,
 				  double factor)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
@@ -343,8 +350,7 @@ static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K,
 				    double* F, 
-				    const nb_bcond_t *const bcond, 
-				    double thickness,
+				    const nb_bcond_t *const bcond,
 				    double factor)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
@@ -377,8 +383,7 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K,
 				    double* F, 
-				    const nb_bcond_t *const bcond, 
-				    double thickness,
+				    const nb_bcond_t *const bcond,
 				    double factor)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
@@ -408,7 +413,7 @@ void pipeline_compute_strain(double *strain,
 			     const vcn_msh3trg_t *const mesh,
 			     double *displacement,
 			     const vcn_fem_elem_t *const elem,
-			     bool enable_plane_stress,
+			     nb_analysis2D_t analysis2D,
 			     const vcn_fem_material_t *const material)
 {
 	double *vertices = (double*) mesh->vertices;

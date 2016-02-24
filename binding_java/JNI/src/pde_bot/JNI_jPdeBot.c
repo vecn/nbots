@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <alloca.h>
 
 #include "nb/geometric_bot.h"
@@ -41,6 +42,10 @@ static jdoubleArray jBoundaryConditions_getValuesRef
 static void set_bc_dof(bool enabled[2], jchar dof);
 static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 				   jobject jMaterial);
+static void nb_analysis2D_load_from_jAnalysis2D(JNIEnv *env, 
+						nb_analysis2D_t * analysis2D,
+						nb_analysis2D_params *params2D,
+						jobject jAnalysis2D);
 static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jMaterial);
 static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jMaterial);
 static jobject jMeshResults_create(JNIEnv *env);
@@ -58,17 +63,19 @@ static void load_strain_into_jMeshResults(JNIEnv *env, jobject jMesh,
 static void load_von_mises_into_jMeshResults(JNIEnv *env, jobject jMesh,
 					     const double *von_mises,
 					     jint N);
+
 /*
- * Class:     vcn_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
+ * Class:     nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
  * Method:    solve
- * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;DI)Lnb/pdeBot/finiteElement/MeshResults;
+ * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/finiteElement/solidMechanics/Analysis2D;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;DI)Lnb/pdeBot/finiteElement/MeshResults;
  */
 JNIEXPORT jobject JNICALL
 Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
-		(JNIEnv *env, jclass class, jobject jModel, jobject jMaterial,
+		(JNIEnv *env, jclass class, jobject jModel,
+		 jobject jMaterial, jobject jAnalysis2D,
 		 jobject jBCDirichletVtx, jobject jBCNeumannVtx,
 		 jobject jBCDirichletSgm, jobject jBCNeumannSgm,
-		 jdouble jthickness, jint jN_nodes)
+		 jint jN_nodes)
 {
 	/* Read optimization parameters */
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
@@ -84,6 +91,10 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	vcn_model_t* model = alloca(vcn_model_get_memsize());
 	vcn_model_init(model);
 	vcn_model_load_from_jModel(env, model, jModel);
+
+	nb_analysis2D_t analysis2D;
+	nb_analysis2D_params params2D;
+	nb_analysis2D_load_from_jAnalysis2D(env, &analysis2D, &params2D, jAnalysis2D);
 
 	/* Mesh domain */
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -108,14 +119,14 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	results_init(&results, msh3trg);
 
 	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
-					   bcond, false, NULL, true,
-					   jthickness, NULL,
+					   bcond, false, NULL, analysis2D,
+					   &params2D, NULL,
 					   results.disp, results.strain);
 
 	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
 					   msh3trg->vertices_forming_triangles,
 					   elemtype, material,
-					   true, results.strain, NULL, 
+					   analysis2D, results.strain, NULL, 
 					   results.stress);
 
 	vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
@@ -301,6 +312,41 @@ static void get_material_from_java(JNIEnv *env, vcn_fem_material_t *material,
 		(material, jMaterial_getPoissonModulus(env, jMaterial));
 	vcn_fem_material_set_elasticity_module
 		(material, jMaterial_getYoungModulus(env, jMaterial));
+}
+
+static void nb_analysis2D_load_from_jAnalysis2D(JNIEnv *env, 
+						nb_analysis2D_t * analysis2D,
+						nb_analysis2D_params *params2D,
+						jobject jAnalysis2D)
+{
+	const char *str_class =
+		"nb/pdeBot/finiteElement/solidMechanics/Analysis2D";
+	jclass enum_class = (*env)->FindClass(env, str_class);
+	jmethodID enum_get_name_id = 
+		(*env)->GetMethodID(env, enum_class, "name",
+				    "()Ljava/lang/String;");
+	jstring enum_type = (*env)->CallObjectMethod(env, jAnalysis2D,
+						     enum_get_name_id);
+	const char *str_enum = (*env)->GetStringUTFChars(env, enum_type, 0);
+	
+	if (0 == strcmp("PLANE_STRESS", str_enum)) {
+		*analysis2D = NB_PLANE_STRESS;
+		jmethodID methodID = 
+			(*env)->GetMethodID(env, enum_class,
+					    "getThickness", "()D");
+		jdouble jthickness =
+			(*env)->CallDoubleMethod(env, jAnalysis2D, methodID);
+		params2D->thickness = jthickness;
+	} else if (0 == strcmp("PLANE_STRAIN", str_enum)) {
+		*analysis2D = NB_PLANE_STRAIN;
+		params2D->thickness = 1.0;
+	} else if (0 == strcmp("SOLID_OF_REVOLUTION", str_enum)) {
+		*analysis2D = NB_SOLID_OF_REVOLUTION;
+		params2D->thickness = 1.0;
+	} else {
+		*analysis2D = NB_PLANE_STRESS;
+		params2D->thickness = 1.0;
+	}
 }
 
 static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jMaterial)

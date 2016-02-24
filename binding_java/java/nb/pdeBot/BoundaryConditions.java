@@ -1,20 +1,16 @@
 package nb.pdeBot;
 
 public class BoundaryConditions {
-    protected BCType type;
     protected int id[];
     protected char dof[]; /* 'x', 'y' or 'a' */
     protected double val[];
-    private BoundaryConditions(){}
-    public BoundaryConditions(BCType type) {
-	this.type = type;
+
+    public BoundaryConditions() {
+	id = null;
+	dof = null;
+	val = null;
     }
-    public boolean isDirichlet() {
-	return type == BCType.DIRICHLET;
-    }
-    public boolean isNewmann() {
-	return type == BCType.NEUMANN;
-    }
+
     public int getN() {
 	if (null == id)
 	    return 0;

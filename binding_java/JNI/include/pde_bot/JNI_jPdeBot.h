@@ -14,13 +14,14 @@
 /*
  * Class:     nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D
  * Method:    solve
- * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;DI)Lnb/pdeBot/finiteElement/MeshResults;
+ * Signature: (Lnb/geometricBot/Model;Lnb/pdeBot/Material;Lnb/pdeBot/finiteElement/solidMechanics/Analysis2D;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;Lnb/pdeBot/BoundaryConditions;DI)Lnb/pdeBot/finiteElement/MeshResults;
  */
 JNIEXPORT jobject JNICALL
 Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
-		(JNIEnv *env, jclass class, jobject jmodel, jobject jmaterial,
+		(JNIEnv *env, jclass class, jobject jModel,
+		 jobject jMaterial, jobject jAnalysis2D,
 		 jobject jBCDirichletVtx, jobject jBCNeumannVtx,
 		 jobject jBCDirichletSgm, jobject jBCNeumannSgm,
-		 jdouble jthickness, jint jN_nodes);
+		 jint jN_nodes);
 
 #endif

@@ -22,9 +22,9 @@ add_jar(GeometricBot SOURCES ${geometricBot})
 set(pdeBot
   ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/Material.java
   ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/BoundaryConditions.java
-  ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/BCType.java
   ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/finiteElement/MeshResults.java
   ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/finiteElement/MeshResultsDraw.java
+  ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/finiteElement/solidMechanics/Analysis2D.java
   ${CMAKE_CURRENT_SOURCE_DIR}/nb/pdeBot/finiteElement/solidMechanics/StaticElasticity2D.java
   )
 

@@ -56,8 +56,8 @@
 
 #---------------- Analysis ---------------------#
 #--- Does the analysis uses plane stress?-------#
-# (0: No, use plane strain instead, 1: Yes)	#
- 1						#
-# Thickness                                     #
+# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+ 0						#
+# Analysis params (Thickness axis of rev)       #
  0.1	                                        #
 #-----------------------------------------------#

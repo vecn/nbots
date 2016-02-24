@@ -41,13 +41,13 @@ static int read_initial_conditions
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
 		 vcn_fem_material_t* mat,
-		 char* enable_plane_stress_analysis,
-		 double *thickness);
+		 nb_analysis2D_t *analysis2D,
+		 nb_analysis2D_params *params2D);
 static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model);
 static int read_material(vcn_cfreader_t *cfreader, vcn_fem_material_t *mat);
 static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
-				     char* enable_plane_stress_analysis,
-				     double *thickness);
+				    nb_analysis2D_t *analysis2D,
+				    nb_analysis2D_params *params2D);
 
 inline int vcn_test_get_driver_id(void)
 {
@@ -68,15 +68,14 @@ static bool check_static_elasticity2D(void)
 	nb_bcond_t *bcond = alloca(bcond_size);
 	nb_bcond_init(bcond, 2);
 	vcn_fem_material_t* material = vcn_fem_material_create();
-	char enable_plane_stress_analysis = 1;
-	double thickness;
+	nb_analysis2D_t analysis2D;
+	nb_analysis2D_params params2D;
 
 	char input[255];
 	sprintf(input, "%s/beam_cantilever.txt", INPUTS_DIR);
 	int read_status =
 		read_initial_conditions(input, model, bcond, material,
-					&enable_plane_stress_analysis,
-					&thickness);
+					&analysis2D, &params2D);
 
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
@@ -107,8 +106,8 @@ static bool check_static_elasticity2D(void)
 		vcn_fem_compute_2D_Solid_Mechanics(delaunay, elemtype,
 						   material, bcond,
 						   false, NULL,
-						   enable_plane_stress_analysis,
-						   thickness, NULL,
+						   analysis2D,
+						   &params2D, NULL,
 						   results.disp, results.strain);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
@@ -167,8 +166,8 @@ static int read_initial_conditions
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
 		 vcn_fem_material_t* mat,
-		 char* enable_plane_stress_analysis,
-		 double *thickness)
+		 nb_analysis2D_t *analysis2D,
+		 nb_analysis2D_params *params2D)
 {      
 	int status = 1;
 	/* Initialize custom format to read file */
@@ -193,9 +192,7 @@ static int read_initial_conditions
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_elasticity2D_params(cfreader, 
-					  enable_plane_stress_analysis,
-					  thickness)) {
+	if (0 != read_elasticity2D_params(cfreader, analysis2D, params2D)) {
 		printf("\nERROR: Reading numerical params in %s.\n",
 		       filename);
 		goto EXIT;
@@ -301,16 +298,30 @@ EXIT:
 
 
 static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
-				    char* enable_plane_stress_analysis,
-				    double *thickness)
+				    nb_analysis2D_t *analysis2D,
+				    nb_analysis2D_params *params2D)
 {
 	int status = 1;
 	int iaux;
 	if (0 != vcn_cfreader_read_int(cfreader, &iaux))
 		goto EXIT;
-	*enable_plane_stress_analysis = (char)iaux;
+	
+	switch (iaux) {
+	case 0:
+		*analysis2D = NB_PLANE_STRESS;
+		break;
+	case 1:
+		*analysis2D = NB_PLANE_STRAIN;
+		break;
+	case 2:
+		*analysis2D = NB_SOLID_OF_REVOLUTION;
+		break;
+	default:
+		*analysis2D = NB_PLANE_STRESS;
+	}
 
-	if (0 != vcn_cfreader_read_double(cfreader, thickness))
+	/* FIX: Usable only for plane stress */
+	if (0 != vcn_cfreader_read_double(cfreader, &(params2D->thickness)))
 		goto EXIT;
 	status = 0;
 EXIT:

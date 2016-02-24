@@ -260,13 +260,16 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 bool enable_self_weight,
 			 double gravity[2],
 			 bool enable_Cholesky_solver,
-			 bool enable_plane_stress,
-			 double thickness,
+			 nb_analysis2D_t analysis2D,
+			 nb_analysis2D_params *params2D,
 			 vcn_fem_implicit_t* params,
 			 bool restore_computation,
 			 const char* logfile)
 /* Quasistatic formulation */
 {
+	/* REFACTOR: */
+	bool enable_plane_stress = (NB_PLANE_STRESS == analysis2D);
+
 	uint32_t N_vertices = mesh->N_vertices;
 	uint32_t N_elements = mesh->N_triangles;
 	double* vertices = mesh->vertices;
@@ -346,7 +349,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 						     enable_self_weight,
 						     gravity,
 						     enable_plane_stress,
-						     thickness,
+						     params2D->thickness,
 						     true, /* Enable computing damage */
 						     damage,
 						     NULL);
@@ -359,7 +362,6 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 
 			/* Set Boundary Conditions */
 			pipeline_set_boundary_conditions(mesh, K, F, bcond,
-							 thickness,
 							 condition_factor);
 
 			/*******************************************/
@@ -459,8 +461,9 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/***** > Compute Strain and Damage      *******/
 			/**********************************************/
 			DMG_pipeline_compute_strain(strain, mesh, displacement, elemtype, true,
-						enable_plane_stress, material, damage,
-						r_dmg_prev, r_dmg);
+						    enable_plane_stress,
+						    material, damage,
+						    r_dmg_prev, r_dmg);
 
 			/* Increase iterator */
 			residual_iter ++;

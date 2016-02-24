@@ -8,6 +8,7 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/analysis2D.h"
 
 typedef struct vcn_fem_implicit_s vcn_fem_implicit_t;
 
@@ -38,8 +39,8 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
  bool enable_self_weight,
  double gravity[2],
  bool enable_Cholesky_solver,
- bool enable_plane_stress,
- double thickness,
+ nb_analysis2D_t analysis2D,
+ nb_analysis2D_params *params2D,
  vcn_fem_implicit_t* params,
  bool restore_computation, /* Restore computation after crash */
  const char* logfile);

@@ -15,6 +15,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
   
 #include "../element_struct.h"
@@ -32,8 +33,8 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 const nb_bcond_t *const bcond,
 			 char enable_self_weight,
 			 double gravity[2],
-			 bool enable_plane_stress,
-			 double thickness,
+			 nb_analysis2D_t analysis2D,
+			 nb_analysis2D_params *params2D,
 			 const bool *elements_enabled, /* NULL to enable all */
 			 double *displacement, /* Output */
 			 double *strain       /* Output */)
@@ -48,12 +49,12 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	int status_assemble =
 		pipeline_assemble_system(K, NULL, F, mesh, elemtype, material,
 					 enable_self_weight, gravity,
-					 enable_plane_stress, thickness,
+					 analysis2D, params2D,
 					 elements_enabled);
 	if (0 != status_assemble)
 		goto CLEANUP_LINEAR_SYSTEM;
 
-	pipeline_set_boundary_conditions(mesh, K, F, bcond, thickness, 1.0);
+	pipeline_set_boundary_conditions(mesh, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);
@@ -61,7 +62,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
-				enable_plane_stress, material);
+				analysis2D, material);
 	
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
@@ -84,7 +85,7 @@ void vcn_fem_compute_stress_from_strain
 			 uint32_t* elements_connectivity_matrix, 
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
-			 bool enable_plane_stress,
+			 nb_analysis2D_t analysis2D,
 			 double* strain,
 			 const bool* elements_enabled /* NULL to enable all */,
 			 double* stress /* Output */)
@@ -102,16 +103,25 @@ void vcn_fem_compute_stress_from_strain
 
 		double v = vcn_fem_material_get_poisson_module(material);
     
-		/* Get constitutive matrix */    
-		double d11 = E/(1.0 - POW2(v));
-		double d12 = v*d11;
-    
-		if(!enable_plane_stress){
-			d11 = (E*(1.0-v))/((1.0 + v)*(1.0-2*v));
-			d12 = (v*d11)/(1.0-v);
-		}    
-		double d22 = d11;
-		double d33 = E/(2.0*(1.0+v));
+		/* Get constitutive matrix */
+		double d11, d12, d22, d33;
+		if (NB_PLANE_STRESS == analysis2D) {
+			d11 = E / (1.0 - POW2(v));
+			d12 = v * d11;
+			d22 = d11;
+			d33 = E / (2.0 * (1.0 + v));
+		} else if (NB_PLANE_STRAIN == analysis2D) {
+			d11 = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
+			d12 = (v * d11) / (1.0 - v);
+			d22 = d11;
+			d33 = E / (2.0 * (1.0 + v));
+		} else {
+			/* Default: Plane stress */
+			d11 = E / (1.0 - POW2(v));
+			d12 = v * d11;
+			d22 = d11;
+			d33 = E / (2.0 * (1.0 + v));
+		}
 		/* Calculate stress */
 		stress[i * 3] = strain[i * 3] * d11 + strain[i*3+1] * d12;
 		stress[i*3+1] = strain[i * 3] * d12 + strain[i*3+1] * d22;
