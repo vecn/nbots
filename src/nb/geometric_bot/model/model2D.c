@@ -39,21 +39,21 @@ void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
 
 	model->N = src_model->N;
 	if (0 < model->N) {
-		uint16_t size = 2 * model->N * sizeof(*(model->vertex));
+		uint32_t size = 2 * model->N * sizeof(*(model->vertex));
 		model->vertex = malloc(size);
 		memcpy(model->vertex, src_model->vertex, size);
 	}
 
 	model->M = src_model->M;
 	if (0 < model->M) {
-		uint16_t size = 2 * model->M * sizeof(*(model->edge));
+		uint32_t size = 2 * model->M * sizeof(*(model->edge));
 		model->edge = malloc(size);
 		memcpy(model->edge, src_model->edge, size);
 	}
 
 	model->H = src_model->H;
 	if (0 < model->H) {
-		uint16_t size = 2 * model->H * sizeof(*(model->holes));
+		uint32_t size = 2 * model->H * sizeof(*(model->holes));
 		model->holes = malloc(size);
 		memcpy(model->holes, src_model->holes, size);
 	}
@@ -73,7 +73,7 @@ inline void* vcn_model_create(void)
 
 static inline void *malloc_model(void)
 {
-	uint16_t size = vcn_model_get_memsize();
+	uint32_t size = vcn_model_get_memsize();
 	return malloc(size);
 }
 

@@ -718,13 +718,16 @@ int vcn_sparse_solve_CG_precond_Jacobi
 /* Return the num of iterations */
 {
 	/* Solve Ax = b with Conjugate Gradient preconditioned with jacobi */
-	double* g = (double*)calloc(A->N, sizeof(double));
-	double* p = (double*)calloc(A->N, sizeof(double));
-	double* q = (double*)calloc(A->N, sizeof(double));
-	double* w = (double*)calloc(A->N, sizeof(double));
-	double* Aii = (double*)calloc(A->N, sizeof(double));
+	uint32_t vec_size = A->N * sizeof(double);
+	char *memblock = calloc(1, 5 * vec_size);	
+	double* g = (void*) memblock;
+	double* p = (void*) (memblock + vec_size);
+	double* q = (void*) (memblock + 2 * vec_size);
+	double* w = (void*) (memblock + 3 * vec_size);
+	double* Aii = (void*) (memblock + 4 * vec_size);
 	double dot_gg = 0;
-	//#pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
+
+#pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
 	for (uint32_t i = 0; i < A->N; i++) {
 		double sum = 0;
 		for(uint32_t j=0; j< A->rows_size[i]; j++)
@@ -740,7 +743,8 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		double dot_pw = 0;
 		double dot_gq = 0;
 		dot_gg = 0;
-		//#pragma omp parallel for reduction(+:dot_pw, dot_gg, dot_gq) num_threads(omp_parallel_threads)
+
+#pragma omp parallel for reduction(+:dot_pw, dot_gg, dot_gq) num_threads(omp_parallel_threads)
 		for (uint32_t i = 0; i < A->N; i++){
 			w[i] = 0;
 			for (uint32_t j = 0; j <  A->rows_size[i]; j++)
@@ -752,7 +756,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		double alphak = dot_gq/dot_pw;
 		double dot_gkqk = 0;
 		
-		//#pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
+#pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
 		for(uint32_t i=0; i< A->N; i++){
 			_x[i] += alphak*p[i];
 			g[i] += alphak*w[i];
@@ -761,17 +765,14 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		}
 
 		double betak = dot_gkqk/dot_gq;
-		//#pragma omp parallel for num_threads(omp_parallel_threads)
+		
+#pragma omp parallel for num_threads(omp_parallel_threads)
 		for(uint32_t i=0; i< A->N; i++)
 			p[i] = -q[i]+betak*p[i];
 		k++;
 	}
 	/* Free memory */
-	free(g);
-	free(p);
-	free(q);
-	free(w);
-	free(Aii);
+	free(memblock);
 
 	if (NULL != niter_performed)
 		niter_performed[0]= k;
