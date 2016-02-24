@@ -24,10 +24,18 @@
 
 #define POW2(a) ((a)*(a))
 
+typedef struct {
+	double *disp;
+	double *strain;
+} results_t;
+
+
 static bool check_static_elasticity2D(void);
 
+static void results_init(results_t *results,
+			 const vcn_msh3trg_t *msh3trg);
+static void results_finish(results_t *results);
 static double* get_total_disp(uint32_t N, const double *displacement);
-
 static int read_initial_conditions
 		(const char* filename,
 		 vcn_model_t *model,
@@ -54,7 +62,8 @@ void vcn_test_load_tests(void *tests_ptr)
 
 static bool check_static_elasticity2D(void)
 {
-	vcn_model_t* model = vcn_model_create();
+	vcn_model_t* model = alloca(vcn_model_get_memsize());
+	vcn_model_init(model);
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *bcond = alloca(bcond_size);
 	nb_bcond_init(bcond, 2);
@@ -76,12 +85,14 @@ static bool check_static_elasticity2D(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     200);
+				     300);
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
-	vcn_mesh_save_png(mesh, "TEMPORAL.png", 1000, 800);/* TEMPORAL */
+
+	vcn_mesh_save_png(mesh,"TEMPORAL_FEM_MESH.png", 1000, 800);
+
 	vcn_msh3trg_t* delaunay = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
@@ -89,10 +100,8 @@ static bool check_static_elasticity2D(void)
 	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	double* displacement = 
-		malloc(delaunay->N_vertices * 2 * sizeof(*displacement));
-	double* strain = 
-		malloc(delaunay->N_triangles * 3 * sizeof(*strain));
+	results_t results;
+	results_init(&results, delaunay);
 
 	int status_fem =
 		vcn_fem_compute_2D_Solid_Mechanics(delaunay, elemtype,
@@ -100,28 +109,47 @@ static bool check_static_elasticity2D(void)
 						   false, NULL,
 						   enable_plane_stress_analysis,
 						   thickness, NULL,
-						   displacement, strain);
+						   results.disp, results.strain);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
 	
 	double *total_disp = get_total_disp(delaunay->N_vertices,
-					    displacement);
+					    results.disp);
 	
-	nb_fem_save_png(delaunay, total_disp, "TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
+	nb_fem_save_png(delaunay, total_disp, 
+			"TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
 
 	free(total_disp);
 CLEANUP_FEM:
 	vcn_msh3trg_destroy(delaunay);
 	vcn_fem_elem_destroy(elemtype);
-	free(displacement);
-	free(strain);
+	results_finish(&results);
 CLEANUP_INPUT:
-	vcn_model_destroy(model);
+	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
 	vcn_fem_material_destroy(material);
 	return false;
 }
 
+
+static void results_init(results_t *results,
+			 const vcn_msh3trg_t *msh3trg)
+{
+	uint16_t size_disp = msh3trg->N_vertices * 2 *
+		sizeof(*(results->disp));
+	uint16_t size_strain = msh3trg->N_triangles * 3 *
+		sizeof(*(results->strain));
+	uint16_t total_size = size_disp + size_strain;
+	char *memblock = malloc(total_size);
+
+	results->disp = (void*) memblock;
+	results->strain = (void*)(memblock + size_disp);
+}
+
+static inline void results_finish(results_t *results)
+{
+	free(results->disp);
+}
 
 static double* get_total_disp(uint32_t N, const double *displacement)
 {

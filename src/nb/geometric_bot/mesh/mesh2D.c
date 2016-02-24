@@ -529,7 +529,8 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 		nb_iterator_finish(iter);
 
 		if (NULL != trg) {
-			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
+			uint16_t container_size =
+				nb_container_get_memsize(NB_SORTED);
 			nb_container_t *trg_deleted = alloca(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
@@ -793,7 +794,7 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model)
 {
 	if (0 < model->H) {
-		double *holes = alloca(2 * model->H * sizeof(*holes));
+		double *holes = malloc(2 * model->H * sizeof(*holes));
 		for (uint32_t i = 0; i < model->H; i++) {
 			holes[i * 2] = mesh->scale *
 				(model->holes[i * 2] - mesh->xdisp);
@@ -801,6 +802,7 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				(model->holes[i*2+1] - mesh->ydisp);
 		}
 		remove_holes_triangles(mesh, holes, model->H);
+		free(holes);
 	}
 }
 

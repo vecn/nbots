@@ -233,7 +233,7 @@ void vcn_model_get_combination(vcn_model_t *model,
 	vcn_mesh_destroy(mesh);
 
 	if (N_centroids > 1) {
-		char* mask_centroids = alloca(N_centroids);
+		char* mask_centroids = malloc(N_centroids);
 		memset(mask_centroids, 0, N_centroids);
 
 		vcn_mesh_t* mesh1 = vcn_mesh_create();
@@ -271,6 +271,7 @@ void vcn_model_get_combination(vcn_model_t *model,
 				model->H += 1;
 			}
 		}
+		free(mask_centroids);
 	}
 	free(centroids);
 	vcn_model_finish(model1);
@@ -1050,7 +1051,7 @@ static void set_intersection_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = alloca(N_centroids);
+	char* mask_centroids = malloc(N_centroids);
 
 	uint32_t N_new_holes =
 		mask_intersection_holes(model1, model2, N_centroids,
@@ -1058,6 +1059,7 @@ static void set_intersection_holes(vcn_model_t *model,
 	
 	set_new_holes_to_model(N_new_holes, N_centroids,
 			       centroids, mask_centroids, model);
+	free(mask_centroids);
 	free(centroids);
 }
 
@@ -1166,7 +1168,7 @@ static void delete_isolated_elements(vcn_model_t *model)
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)
 {
-	char* mask = alloca(model->N);
+	char* mask = malloc(model->N);
 	memset(mask, 0, model->N);
 	for(uint32_t i = 0; i < model->M; i++){
 		mask[model->edge[i * 2]] = 1;
@@ -1174,7 +1176,7 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 	}
 
 	uint32_t N_vtx = 0;
-	uint32_t* perm = alloca(model->N * sizeof(*perm));
+	uint32_t* perm = malloc(model->N * sizeof(*perm));
 	for (uint32_t i = 0; i < model->N; i++){
 		if (mask[i] == 0)
 			continue;
@@ -1199,6 +1201,8 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 		free(model->vertex);
 		model->vertex = vertices;
 	}
+	free(mask);
+	free(perm);
 }
 
 void vcn_model_get_union(vcn_model_t *model,
@@ -1243,7 +1247,7 @@ static void set_substraction_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = alloca(N_centroids);
+	char* mask_centroids = malloc(N_centroids);
 	
 	uint32_t N_new_holes =
 		mask_substraction_holes(model2, N_centroids,
@@ -1252,7 +1256,8 @@ static void set_substraction_holes(vcn_model_t *model,
 	set_new_holes_to_model(N_new_holes, N_centroids,
 			       centroids, mask_centroids, model);
 
-	free(centroids);	
+	free(centroids);
+	free(mask_centroids);
 }
 
 static uint32_t mask_substraction_holes(const vcn_model_t *model2,

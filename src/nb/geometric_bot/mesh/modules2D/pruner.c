@@ -303,7 +303,7 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 					 uint32_t *N_centroids)
 {
 	*N_centroids = nb_container_get_length(areas);
-	double *centroids = alloca(*N_centroids * 2 * sizeof(*centroids));
+	double *centroids = malloc(*N_centroids * 2 * sizeof(*centroids));
 	uint32_t i = 0;
 	while (nb_container_is_not_empty(areas)) {
 		subarea_t *subarea = nb_container_delete_first(areas);
@@ -322,6 +322,7 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 		out = malloc(*N_centroids * 2 * sizeof(*out));
 		memcpy(out, centroids, *N_centroids * 2 * sizeof(*out));
 	}
+	free(centroids);
 	return out;
 
 }

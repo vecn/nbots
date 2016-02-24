@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/container_bot/container.h"
@@ -291,12 +290,12 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 				     const vcn_msh3trg_t *const msh3trg)
 {
 	uint32_t* segments =
-		alloca(2 * msh3trg->N_input_segments * sizeof(*segments));
+		malloc(2 * msh3trg->N_input_segments * sizeof(*segments));
 	double* vertices =
-		alloca(2 * msh3trg->N_input_vertices * sizeof(*vertices));
+		malloc(2 * msh3trg->N_input_vertices * sizeof(*vertices));
 
 	uint32_t* vtx_index_relation =
-		alloca(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
+		malloc(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
 
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < msh3trg->N_input_vertices; i++) {
@@ -341,6 +340,10 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 	model->M = N_segments;
 	model->edge = malloc(2 * N_segments * sizeof(*(model->edge)));
 	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
+
+	free(segments);
+	free(vertices);
+	free(vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
