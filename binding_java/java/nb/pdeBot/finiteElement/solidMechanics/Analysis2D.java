@@ -6,6 +6,7 @@ public enum Analysis2D {
     SOLID_OF_REVOLUTION;
 
     double thickness;
+    int revolutionEdgeID;
 
     private Analysis2D() {
 	thickness = 1.0;
@@ -17,5 +18,13 @@ public enum Analysis2D {
 
     public double getThickness() {
 	return thickness;
+    }
+
+    public void setRevolutionEdgeID(int id) {
+	revolutionEdgeID = id;
+    }
+
+    public int getRevolutionEdgeID() {
+	return revolutionEdgeID;
     }
 }
