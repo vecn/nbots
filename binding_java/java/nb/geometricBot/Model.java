@@ -31,9 +31,9 @@ public class Model {
     public static native Model difference(Model modelA, Model modelB);
     
     public native ModelStatus verify();
+    public native boolean isPointInside(double x, double y);
 
-    public int getNVertices()
-    {
+    public int getNVertices() {
 	if (null == vertices)
 	    return 0;
 	else
@@ -41,39 +41,33 @@ public class Model {
 	
     }
 
-    public int getNEdges()
-    {
+    public int getNEdges() {
 	if (null == edges)
 	    return 0;
 	else
 	    return edges.length / 2;
     }
 
-    public int getNHoles()
-    {
+    public int getNHoles() {
 	if (hasHoles())
 	    return holes.length / 2;
 	else
 	    return 0;
     }
 
-    public boolean hasHoles()
-    {
+    public boolean hasHoles() {
 	return (null != holes);
     }
 
-    public float[] getVerticesRef()
-    {
+    public float[] getVerticesRef() {
 	return vertices;
     }
 
-    public int[] getEdgesRef()
-    {
+    public int[] getEdgesRef() {
 	return edges;
     }
 
-    public float[] getHolesRef()
-    {
+    public float[] getHolesRef() {
 	return vertices;
     }
 }

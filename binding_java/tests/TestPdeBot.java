@@ -22,7 +22,7 @@ public class TestPdeBot {
 	    StaticElasticity2D.solve(model, material, analysis2D,
 				     DirichletVtx, NeumannVtx,
 				     DirichletSgm, NeumannSgm,
-				     500);
+				     100);
 	
 	if (mesh.FEMSuccess()) {
 	    MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);

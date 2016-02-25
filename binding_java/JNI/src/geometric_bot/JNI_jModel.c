@@ -26,11 +26,6 @@ Java_nb_geometricBot_Model_unify(JNIEnv *env, jclass class,
 				      vcn_model_get_union);
 }
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    intersect
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_intersect(JNIEnv *env, jclass class,
 				     jobject jModelA, jobject jModelB)
@@ -39,11 +34,6 @@ Java_nb_geometricBot_Model_intersect(JNIEnv *env, jclass class,
 				      vcn_model_get_intersection);
 }
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    substract
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_substract(JNIEnv *env, jclass class,
 				     jobject jModelA, jobject jModelB)
@@ -52,11 +42,6 @@ Java_nb_geometricBot_Model_substract(JNIEnv *env, jclass class,
 				      vcn_model_get_substraction);
 }
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    difference
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_difference(JNIEnv *env, jclass class,
 				      jobject jModelA, jobject jModelB)
@@ -65,11 +50,6 @@ Java_nb_geometricBot_Model_difference(JNIEnv *env, jclass class,
 				      vcn_model_get_difference);
 }
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    verify
- * Signature: ()Lnb/geometricBot/ModelStatus;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_verify(JNIEnv *env, jobject jModel)
 {	
@@ -83,4 +63,20 @@ Java_nb_geometricBot_Model_verify(JNIEnv *env, jobject jModel)
 
 	jobject jModelStatus = jModelStatus_create(env, status);
 	return jModelStatus;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_nb_geometricBot_Model_isPointInside(JNIEnv *env, jobject jModel,
+					 jdouble x, jdouble y)
+{
+	double vtx[2] = {x, y};
+
+	vcn_model_t *model = alloca(vcn_model_get_memsize());
+	vcn_model_init(model);
+	vcn_model_load_from_jModel(env, model, jModel);
+
+	jboolean is_inside = vcn_model_is_vtx_inside(model, vtx);
+
+	vcn_model_finish(model);
+	return is_inside;
 }

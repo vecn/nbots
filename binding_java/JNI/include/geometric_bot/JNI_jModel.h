@@ -3,57 +3,31 @@
 
 #include <jni.h>
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    combine
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_combine(JNIEnv *env, jclass class,
 				   jobject jModelA, jobject jModelB);
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    unify
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_unify(JNIEnv *env, jclass class,
 				 jobject jModelA, jobject jModelB);
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    intersect
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_intersect(JNIEnv *env, jclass class,
 				     jobject jModelA, jobject jModelB);
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    substract
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_substract(JNIEnv *env, jclass class,
 				     jobject jModelA, jobject jModelB);
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    difference
- * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_difference(JNIEnv *env, jclass class,
 				      jobject jModelA, jobject jModelB);
 
-/*
- * Class:     nb_geometricBot_Model
- * Method:    verify
- * Signature: ()Lnb/geometricBot/ModelStatus;
- */
 JNIEXPORT jobject JNICALL
 Java_nb_geometricBot_Model_verify(JNIEnv *env, jobject jModel);
+
+JNIEXPORT jboolean JNICALL
+Java_nb_geometricBot_Model_isPointInside(JNIEnv *env, jobject jModel,
+					 jdouble x, jdouble y);
 
 #endif
