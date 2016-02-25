@@ -4,6 +4,10 @@
 # Main build directory
 build/*
 
+# Gradle files
+.gradle/*
+gradle/*
+
 # Object files
 *.o
 *.ko
