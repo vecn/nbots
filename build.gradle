@@ -1,3 +1,37 @@
-task wrapper(type: Wrapper) {
-     gradleVersion = '2.0'
+apply plugin: 'c'
+
+model {
+    binaries {
+	all {
+	    if (toolChain in Gcc) {
+		cCompiler.args "-O3", "-ffast-math", "-funroll-loops"
+	    }
+	}
+    }
+    compontents {
+	nb_geometric_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDir "src"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDir "include"
+		    }
+		}
+	    }
+	}
+	launch_unit_tests(NativeExecutableSpec) {
+	    targetPlatform 'x86'
+	    sources {
+
+	    }
+	    binaries.all {
+		lib library: 'nb_geometric_bot', linkage: 'shared'
+	    }
+	}
+    }
 }
+
+// Reading: 72.14.2 Project Dependencis
