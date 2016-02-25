@@ -1,4 +1,5 @@
 apply plugin: 'c'
+apply from: 'build-gradle/container_bot.gradle'
 
 model {
     buildTypes {
@@ -17,21 +18,23 @@ model {
     binaries {
 	all {
 	    if (toolChain in Gcc) {
-		if (buildType == buildTypes.release) {
-		    cCompiler.args "-O3", "-ffast-math", "-funroll-loops"
-		} else if (buildType == buildTypes.release) {
-		    cCompiler.args "-g", "-p"		    
-		}
+		cCompiler.args "-std=c99"
 	    }
 	}
     }
-    components {
-	geometric_bot(NativeLibrarySpec) {
-	    binaries.all {
-	    
-	    }
-	}
-    }
+ //    components {
+//	launch_unit_test(NativeExecutableSpec) {
+//	    sources {
+//		c {
+//		    source {
+//			srcDirs "ci_tools/test_launchers"
+//			include "**/*.c"
+//		    }
+//		}
+//	    }
+//	    
+//	}
+//    }
 }
 
 task wrapper(type: Wrapper) {

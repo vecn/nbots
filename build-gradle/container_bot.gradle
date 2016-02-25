@@ -1,0 +1,17 @@
+model {
+    components {
+	container_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot/queue"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+    }
+}

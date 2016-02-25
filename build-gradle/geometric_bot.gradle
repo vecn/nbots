@@ -1,0 +1,19 @@
+model {
+    components {
+	geometric_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/geometric_bot"
+			include "**/*.c"
+			exclude "**/*cairo*"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "container_bot"
+		}
+	    }
+	}
+    }
+}
