@@ -58,27 +58,19 @@ public class MeshResultsDraw {
 				int width, int height, float center[], 
 				float zoom)
     {
-	float d = (float)mesh.VonMisesStress[0];
+	float d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
+				   Math.pow(mesh.displacement[1], 2));;
 	float min = d;
 	float max = d;
 	for (int i = 1; i < mesh.getNVertices(); i++) {
-	    d = (float)mesh.VonMisesStress[i];
+	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
+				 Math.pow(mesh.displacement[i*2+1], 2));
 	    if (min > d)
 		min = d;
 	    if (max < d)
 		max = d;
 	}
-
-	d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
-			     Math.pow(mesh.displacement[1], 2));
-	float max_disp = d;
-	for (int i = 1; i < mesh.getNVertices(); i++) {
-	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
-				 Math.pow(mesh.displacement[i*2+1], 2));
-	    if (max_disp < d)
-		max_disp = d;
-	}
-	double scale = 1/max_disp;
+	double scale = 1/max;
 
 	for (int i = 0; i < mesh.getNElements(); i++) {
 	    int id1 = mesh.getConnMtxRef()[i * 3];
@@ -114,11 +106,14 @@ public class MeshResultsDraw {
 	int id1 = mesh.getConnMtxRef()[i * 3];
 	int id2 = mesh.getConnMtxRef()[i*3+1];
 	int id3 = mesh.getConnMtxRef()[i*3+2];
-	float vm1 = (float)mesh.VonMisesStress[id1];
-	float vm2 = (float)mesh.VonMisesStress[id2];
-	float vm3 = (float)mesh.VonMisesStress[id3];
-	float vm = (float)((vm1 + vm2 + vm3)/3.0);
-	float factor = (vm - min) / (max - min);
+	float d1 =  (float)Math.sqrt(Math.pow(mesh.displacement[id1 * 2], 2) +
+				     Math.pow(mesh.displacement[id1*2+1], 2));
+	float d2 =  (float)Math.sqrt(Math.pow(mesh.displacement[id2 * 2], 2) +
+				     Math.pow(mesh.displacement[id2*2+1], 2));
+	float d3 =  (float)Math.sqrt(Math.pow(mesh.displacement[id3 * 2], 2) +
+				     Math.pow(mesh.displacement[id3*2+1], 2));
+	float dist = (float)((d1 + d2 + d3)/3.0);
+	float factor = (dist - min) / (max - min);
 	return new Color(getRed(factor), getGreen(factor), getBlue(factor));
     }
 
@@ -126,15 +121,9 @@ public class MeshResultsDraw {
 	return factor;
     }
     private static float getGreen(float factor) {
-	float color = 0.0f;
-	if (factor > 0.8f)
-	    color = 0.4f + 0.6f * (factor - 0.8f)/0.2f;
-	return color;
+	return factor * factor;
     }
     private static float getBlue(float factor) {
-	float color = 0.0f;
-	if (factor > 0.15f && factor < 0.3f)
-	    color = 0.4f + 0.38f * (factor - 0.15f)/0.15f;
-	return color;
+	return 1.0f - factor;
     }
 }

@@ -39,7 +39,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double *displacement, /* Output */
 			 double *strain       /* Output */)
 {
-	int status = 1;
+	int status = 0;
 	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	vcn_graph_destroy(graph);
@@ -51,20 +51,23 @@ int vcn_fem_compute_2D_Solid_Mechanics
 					 enable_self_weight, gravity,
 					 analysis2D, params2D,
 					 elements_enabled);
-	if (0 != status_assemble)
+	if (0 != status_assemble) {
+		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
+	}
 
 	pipeline_set_boundary_conditions(mesh, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);
-	if (0 != solver_status)
+	if (0 != solver_status) {
+		status = 2;
 		goto CLEANUP_LINEAR_SYSTEM;
+	}
 
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
 				analysis2D, material);
 	
-	status = 0;
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	free(F);
@@ -74,10 +77,17 @@ CLEANUP_LINEAR_SYSTEM:
 static inline int solver(const vcn_sparse_t *const A,
 			 const double *const b, double* x)
 {
-	memset(x, 0, vcn_sparse_get_size(A) * sizeof(*x));
-	return vcn_sparse_solve_CG_precond_Jacobi(A, b, x,
-						  vcn_sparse_get_size(A),
-						  1e-8, NULL, NULL, 1);
+	uint32_t N = vcn_sparse_get_size(A);
+	memset(x, 0, N * sizeof(*x));
+	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
+							1e-8, NULL,
+							NULL, 1);
+	int out;
+	if (0 == status || 1 == status)
+		out = 0;
+	else
+		out = 1; /* Tolerance not reached in CG Jacobi */
+	return out;
 }
 
 void vcn_fem_compute_stress_from_strain

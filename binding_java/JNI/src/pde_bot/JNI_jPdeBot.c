@@ -49,6 +49,8 @@ static void nb_analysis2D_load_from_jAnalysis2D(JNIEnv *env,
 static jdouble jMaterial_getPoissonModulus(JNIEnv *env, jobject jMaterial);
 static jdouble jMaterial_getYoungModulus(JNIEnv *env, jobject jMaterial);
 static jobject jMeshResults_create(JNIEnv *env);
+static void jMeshResults_set_status(JNIEnv *env, jobject jMeshResults,
+				    int fem_status);
 static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,
 				   const double *displacement,
 				   const double *strain,
@@ -118,33 +120,39 @@ Java_nb_pdeBot_finiteElement_solidMechanics_StaticElasticity2D_solve
 	results_t results;
 	results_init(&results, msh3trg);
 
-	vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
-					   bcond, false, NULL, analysis2D,
-					   &params2D, NULL,
-					   results.disp, results.strain);
-
-	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
-					   msh3trg->vertices_forming_triangles,
-					   elemtype, material,
-					   analysis2D, results.strain, NULL, 
-					   results.stress);
-
-	vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
-						       3, results.stress,
-						       results.stress_on_nodes);
-
-	vcn_fem_compute_von_mises(msh3trg->N_vertices, results.stress_on_nodes,
-				  results.von_mises);
+	int status_fem =
+	  vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype, material,
+					     bcond, false, NULL, analysis2D,
+					     &params2D, NULL,
+					     results.disp, results.strain);
 	
-	vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
-						       3, results.strain,
-						       results.strain_on_nodes);
 
 	jobject jMeshResults = jMeshResults_create(env);
+	jMeshResults_set_status(env, jMeshResults, status_fem);
 	load_jMesh_from_msh3trg(env, msh3trg, jMeshResults);
-	set_results_into_jMesh(env, jMeshResults, results.disp,
-			       results.strain_on_nodes, results.von_mises,
-			       msh3trg->N_vertices);
+
+	if (0 == status_fem) {
+		vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
+						   msh3trg->vertices_forming_triangles,
+						   elemtype, material,
+						   analysis2D, results.strain, NULL, 
+						   results.stress);
+
+		vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
+							       3, results.stress,
+							       results.stress_on_nodes);
+
+		vcn_fem_compute_von_mises(msh3trg->N_vertices, results.stress_on_nodes,
+					  results.von_mises);
+	
+		vcn_fem_interpolate_from_Gauss_points_to_nodes(msh3trg, elemtype,
+							       3, results.strain,
+							       results.strain_on_nodes);
+
+		set_results_into_jMesh(env, jMeshResults,
+				       results.disp, results.strain_on_nodes,
+				       results.von_mises, msh3trg->N_vertices);
+	}
 
 	nb_bcond_finish(bcond);
 	vcn_model_finish(model);
@@ -377,6 +385,15 @@ static jobject jMeshResults_create(JNIEnv *env)
 	jobject instance = (*env)->NewObject(env, class, method_id);
 	return instance;
 
+}
+
+static void jMeshResults_set_status(JNIEnv *env, jobject jMeshResults,
+				    int fem_status)
+{
+	jclass class = (*env)->GetObjectClass(env, jMeshResults);
+	jmethodID method_id =
+		(*env)->GetMethodID(env, class, "setStatus", "(I)V");
+	(*env)->CallVoidMethod(env, jMeshResults, method_id, fem_status);
 }
 
 static void set_results_into_jMesh(JNIEnv *env, jobject jMesh,

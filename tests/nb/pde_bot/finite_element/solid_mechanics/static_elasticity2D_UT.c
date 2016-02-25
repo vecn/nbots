@@ -84,7 +84,7 @@ static bool check_static_elasticity2D(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     200);
+				     2);
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);

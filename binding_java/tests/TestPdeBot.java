@@ -22,8 +22,14 @@ public class TestPdeBot {
 	    StaticElasticity2D.solve(model, material, analysis2D,
 				     DirichletVtx, NeumannVtx,
 				     DirichletSgm, NeumannSgm,
-				     1000);
-	MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
+				     2);
+	
+	if (mesh.FEMSuccess()) {
+	    MeshResultsDraw.draw(mesh, "TEMPORAL_Java.png", 1000, 800);
+	} else {
+	    System.out.println("FEM fails");
+	    GeometricBotDraw.drawMesh(mesh, "TEMPORAL_Java.png", 1000, 800);
+	}
     }
     private static BoundaryConditions getDirichletVtx() {
 	BoundaryConditions BC = new BoundaryConditions();
