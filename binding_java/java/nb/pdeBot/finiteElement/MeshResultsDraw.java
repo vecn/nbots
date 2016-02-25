@@ -58,19 +58,27 @@ public class MeshResultsDraw {
 				int width, int height, float center[], 
 				float zoom)
     {
+	float vm = (float)mesh.VonMisesStress[0];
+	float min = vm;
+	float max = vm;
+	for (int i = 1; i < mesh.getNVertices(); i++) {
+	    vm = (float)mesh.VonMisesStress[i];
+	    if (min > vm)
+		min = vm;
+	    if (max < vm)
+		max = vm;
+	}
+
 	float d = (float)Math.sqrt(Math.pow(mesh.displacement[0], 2) +
-				   Math.pow(mesh.displacement[1], 2));;
-	float min = d;
-	float max = d;
+				   Math.pow(mesh.displacement[1], 2));
+	float max_disp = d;
 	for (int i = 1; i < mesh.getNVertices(); i++) {
 	    d = (float)Math.sqrt(Math.pow(mesh.displacement[i * 2], 2) +
 				 Math.pow(mesh.displacement[i*2+1], 2));
-	    if (min > d)
-		min = d;
-	    if (max < d)
-		max = d;
+	    if (max_disp < d)
+		max_disp = d;
 	}
-	double scale = 1/max;
+	double scale = 1/max_disp;
 
 	for (int i = 0; i < mesh.getNElements(); i++) {
 	    int id1 = mesh.getConnMtxRef()[i * 3];
@@ -106,14 +114,11 @@ public class MeshResultsDraw {
 	int id1 = mesh.getConnMtxRef()[i * 3];
 	int id2 = mesh.getConnMtxRef()[i*3+1];
 	int id3 = mesh.getConnMtxRef()[i*3+2];
-	float d1 =  (float)Math.sqrt(Math.pow(mesh.displacement[id1 * 2], 2) +
-				     Math.pow(mesh.displacement[id1*2+1], 2));
-	float d2 =  (float)Math.sqrt(Math.pow(mesh.displacement[id2 * 2], 2) +
-				     Math.pow(mesh.displacement[id2*2+1], 2));
-	float d3 =  (float)Math.sqrt(Math.pow(mesh.displacement[id3 * 2], 2) +
-				     Math.pow(mesh.displacement[id3*2+1], 2));
-	float dist = (float)((d1 + d2 + d3)/3.0);
-	float factor = (dist - min) / (max - min);
+	float vm1 = mesh.VonMisesStress[id1];
+	float vm2 = mesh.VonMisesStress[id2];
+	float vm3 = mesh.VonMisesStress[id3];
+	float vm = (float)((vm1 + vm2 + vm3)/3.0);
+	float factor = (vm - min) / (max - min);
 	return new Color(getRed(factor), getGreen(factor), getBlue(factor));
     }
 

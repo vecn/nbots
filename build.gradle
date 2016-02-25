@@ -8,7 +8,7 @@ model {
 	    }
 	}
     }
-    compontents {
+    components {
 	nb_geometric_bot(NativeLibrarySpec) {
 	    sources {
 		c {
@@ -33,5 +33,3 @@ model {
 	}
     }
 }
-
-// Reading: 72.14.2 Project Dependencis

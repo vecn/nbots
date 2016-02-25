@@ -37,20 +37,22 @@ void vcn_fem_interpolate_from_Gauss_points_to_nodes
 	uint32_t N_vertices = mesh->N_vertices;
 	double *vertices = mesh->vertices;
 	uint32_t N_elements = mesh->N_triangles;
-	uint32_t* connectivity_mtx = mesh->vertices_forming_triangles;
+	uint32_t* adj = mesh->vertices_forming_triangles;
 
 	/* Define max number of elements for a single node */
 	uint32_t N_room = 10;
 	/* Allocate structures to store connectivities of nodes */
-	uint32_t* N_elems_adjacents_to_node =
-		(uint32_t*) calloc(N_vertices, sizeof(uint32_t));
-	uint32_t* elems_adjacents_to_node =
-		(uint32_t*) malloc(N_room * N_vertices * sizeof(uint32_t));
+	uint32_t vec_size = N_vertices * sizeof(uint32_t);
+	uint32_t total_size = (1 + N_room) * vec_size;
+	char *memblock = calloc(1, total_size);
+	uint32_t* N_elems_adjacents_to_node = (void*) memblock;
+	uint32_t* elems_adjacents_to_node =  (void*) (memblock + vec_size);
+
 	/* Iterate over elements searching for connectivities */
-	for (uint32_t i = 0; i < N_elements; i++){
+	for (uint32_t i = 0; i < N_elements; i++) {
 		/* Iterate over the nodes of the element */
 		for (uint32_t j = 0; j < elemtype->N_nodes; j++){
-			uint32_t vj = connectivity_mtx[i*elemtype->N_nodes + j];
+			uint32_t vj = adj[i*elemtype->N_nodes + j];
 			elems_adjacents_to_node[vj*N_room + N_elems_adjacents_to_node[vj]] = i;
 			if (N_elems_adjacents_to_node[vj] < N_room - 1)
 				N_elems_adjacents_to_node[vj] += 1;
@@ -66,7 +68,7 @@ void vcn_fem_interpolate_from_Gauss_points_to_nodes
 			uint32_t elem_id = elems_adjacents_to_node[i*N_room + k];
 			/* Get ID of the vertex relative to the element */
 			uint32_t inside_idx = 0;
-			while (connectivity_mtx[elem_id * elemtype->N_nodes + inside_idx] != i)
+			while (adj[elem_id * elemtype->N_nodes + inside_idx] != i)
 				inside_idx++;
 
 			/* Get id of the closest GP */
@@ -77,7 +79,7 @@ void vcn_fem_interpolate_from_Gauss_points_to_nodes
 			/* Get coordinates to the GP */
 			double gp[2] = {0, 0};
 			for (uint32_t j = 0; j < elemtype->N_nodes; j++){
-				uint32_t vj = connectivity_mtx[k * elemtype->N_nodes + j];
+				uint32_t vj = adj[k * elemtype->N_nodes + j];
 				gp[0] += vertices[vj * 2] *
 					elemtype->Ni[j](elemtype->psi[id_gp], elemtype->eta[id_gp]);
 				gp[1] += vertices[vj*2+1] *
@@ -99,7 +101,5 @@ void vcn_fem_interpolate_from_Gauss_points_to_nodes
 			values_interpolated_on_nodes[i * N_components + c] /= sum_w;
 	}
 
-	/* Free memory */
-	free(N_elems_adjacents_to_node);
-	free(elems_adjacents_to_node);
+	free(memblock);
 }
