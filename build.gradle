@@ -1,6 +1,10 @@
 apply plugin: 'c'
 
 model {
+    buildTypes {
+	debug
+	release
+    }
     platforms {
 	x86 {
 	    architecture "x86"
@@ -9,10 +13,6 @@ model {
 	x64 {
 	    architecture "x86_64"
 	}
-    }
-    buildTypes {
-	debug
-	release
     }
     binaries {
 	all {
@@ -26,38 +26,14 @@ model {
 	}
     }
     components {
-	nb_geometric_bot(NativeLibrarySpec) {
-	    targetPlatform "x86"
-	    targetPlatform "x64"
-	    sources {
-		c {
-		    source {
-			srcDir "src"
-			include "**/*.c"
-		    }
-		    exportedHeaders {
-			srcDir "include"
-		    }
-		}
-	    }
-	}
-	launch_unit_tests(NativeExecutableSpec) {
-	    targetPlatform "x86"
-	    targetPlatform "x64"
-	    sources {
-
-	    }
+	geometric_bot(NativeLibrarySpec) {
 	    binaries.all {
-		lib library: 'nb_geometric_bot', linkage: 'shared'
+	    
 	    }
 	}
     }
-    tasks {
-        buildAllExecutables(Task) {
-            dependsOn $.binaries.findAll { it.buildable }
-        }
-    }
-    task wrapper(type: Wrapper) {
-	gradleVersion = '2.0'
-    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.11'
 }
