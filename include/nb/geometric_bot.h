@@ -26,7 +26,7 @@
 #include "nb/geometric_bot/model/modules2D/verifier.h"
 #include "nb/geometric_bot/model/modules2D/regularizer.h"
 #include "nb/geometric_bot/model/modules2D/simplifier.h"
-#include "nb/geometric_bot/model/modules2D/blender.h"
+#include "nb/geometric_bot/model/modules2D/clipper.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 #include "nb/geometric_bot/mesh/constrained_delaunay.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"

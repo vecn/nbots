@@ -59,10 +59,10 @@ add_library(verifier_UT MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/verifier_UT.c)
 target_link_libraries(verifier_UT ${geometric_bot_libs})
 
-message("-- blender_UT")
-add_library(blender_UT MODULE
-  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/blender_UT.c)
-target_link_libraries(blender_UT
+message("-- clipper_UT")
+add_library(clipper_UT MODULE
+  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/clipper_UT.c)
+target_link_libraries(clipper_UT
   ${geometric_bot_libs}
   nb_geometric_bot-cairo #TEMPORAL
   )

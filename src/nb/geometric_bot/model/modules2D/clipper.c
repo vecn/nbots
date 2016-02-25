@@ -18,7 +18,7 @@
 #include "../model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"
-#include "nb/geometric_bot/model/modules2D/blender.h"
+#include "nb/geometric_bot/model/modules2D/clipper.h"
 
 #define GET_PVTX(model, i) (&((model)->vertex[(i)*2]))
 #define GET_1_EDGE_VTX(model, i) ((model)->edge[(i) * 2])
@@ -133,6 +133,17 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 static void delete_isolated_elements(vcn_model_t *model);
 static void delete_isolated_internal_vtx(vcn_model_t *model);
 static void set_union_from_combination(vcn_model_t *model);
+static void set_difference_from_combination(vcn_model_t *model,
+					    const vcn_model_t *const model1,
+					    const vcn_model_t *const model2);
+static void set_difference_holes(vcn_model_t *model,
+				 const vcn_model_t *const model1,
+				 const vcn_model_t *const model2);
+static uint32_t mask_difference_holes(const vcn_model_t *model1,
+				      const vcn_model_t *model2,
+				      uint32_t N_centroids,
+				      const double *centroids,
+				      char *mask_centroids);
 static void set_substraction_from_combination(vcn_model_t *model,
 					      const vcn_model_t *const model2);
 static void set_substraction_holes(vcn_model_t *model,
@@ -1219,6 +1230,80 @@ static void set_union_from_combination(vcn_model_t *model)
 {
 	delete_isolated_elements(model);
 	delete_isolated_internal_vtx(model);
+}
+
+
+void vcn_model_get_difference(vcn_model_t *model,
+			      const vcn_model_t *const model1,
+			      const vcn_model_t *const model2,
+			      double min_length_x_segment)
+{
+	vcn_model_get_combination(model, model1, model2,
+				  min_length_x_segment);
+	set_difference_from_combination(model, model1, model2);
+
+}
+
+static void set_difference_from_combination(vcn_model_t *model,
+					    const vcn_model_t *const model1,
+					    const vcn_model_t *const model2)
+{
+	set_difference_holes(model, model1, model2);
+	delete_isolated_elements(model);
+	delete_isolated_internal_vtx(model);
+}
+
+static void set_difference_holes(vcn_model_t *model,
+				 const vcn_model_t *const model1,
+				 const vcn_model_t *const model2)
+{
+	uint32_t N_centroids;
+	double *centroids = 
+		get_centroids_of_model_subareas(model, &N_centroids);
+
+	char* mask_centroids = malloc(N_centroids);
+
+	uint32_t N_new_holes =
+		mask_difference_holes(model1, model2, N_centroids,
+				      centroids, mask_centroids);
+	
+	set_new_holes_to_model(N_new_holes, N_centroids,
+			       centroids, mask_centroids, model);
+	free(mask_centroids);
+	free(centroids);
+}
+
+static uint32_t mask_difference_holes(const vcn_model_t *model1,
+				      const vcn_model_t *model2,
+				      uint32_t N_centroids,
+				      const double *centroids,
+				      char *mask_centroids)
+{
+	uint32_t N_new_holes = 0;
+	vcn_mesh_t* mesh1 = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh1,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model1->N);
+	vcn_mesh_generate_from_model(mesh1, model1);
+
+	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh2,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model2->N);
+	vcn_mesh_generate_from_model(mesh2, model2);
+ 
+	for (uint32_t i = 0; i < N_centroids; i++) {
+		if (vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) &&
+		    vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
+			mask_centroids[i] = 1;
+			N_new_holes += 1;
+		} else {
+			mask_centroids[i] = 0;
+		}
+	}
+	vcn_mesh_destroy(mesh1);
+	vcn_mesh_destroy(mesh2);
+	return N_new_holes;
 }
 
 void vcn_model_get_substraction(vcn_model_t *model,

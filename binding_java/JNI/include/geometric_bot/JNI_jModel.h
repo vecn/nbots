@@ -41,6 +41,15 @@ Java_nb_geometricBot_Model_substract(JNIEnv *env, jclass class,
 
 /*
  * Class:     nb_geometricBot_Model
+ * Method:    difference
+ * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
+ */
+JNIEXPORT jobject JNICALL
+Java_nb_geometricBot_Model_difference(JNIEnv *env, jclass class,
+				      jobject jModelA, jobject jModelB);
+
+/*
+ * Class:     nb_geometricBot_Model
  * Method:    verify
  * Signature: ()Lnb/geometricBot/ModelStatus;
  */

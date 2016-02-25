@@ -9,6 +9,7 @@ public class TestModel {
 	checkIntersect();
 	checkSubstractA();
 	checkSubstractB();
+	checkDifference();
 	boolean ok = checkVerify();
 	if (ok)
 	    N_success += 1;
@@ -53,6 +54,13 @@ public class TestModel {
 	GeometricBotDraw.drawModel(model, "java_substract_B.png", 1000, 800);
     }
     
+    public static void checkDifference() {
+	Model model1 = GeometricBot.getCircle(-5, 0, 7, 1);
+	Model model2 = GeometricBot.getCircle(5, 0, 7, 1);
+	Model model = Model.difference(model2, model1);
+	GeometricBotDraw.drawModel(model, "java_difference.png", 1000, 800);
+    }
+
     public static boolean checkVerify() {
 	Model model = GeometricBot.getCircle(0, 0, 7, 1);
 	ModelStatus status = model.verify();

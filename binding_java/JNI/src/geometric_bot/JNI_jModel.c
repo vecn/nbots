@@ -4,7 +4,7 @@
 
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"
-#include "nb/geometric_bot/model/modules2D/blender.h"
+#include "nb/geometric_bot/model/modules2D/clipper.h"
 
 #include "geometric_bot/jModel.h"
 #include "geometric_bot/jModelStatus.h"
@@ -50,6 +50,19 @@ Java_nb_geometricBot_Model_substract(JNIEnv *env, jclass class,
 {
 	return jModel_get_combination(env, class, jModelA, jModelB,
 				      vcn_model_get_substraction);
+}
+
+/*
+ * Class:     nb_geometricBot_Model
+ * Method:    difference
+ * Signature: (Lnb/geometricBot/Model;Lnb/geometricBot/Model;)Lnb/geometricBot/Model;
+ */
+JNIEXPORT jobject JNICALL
+Java_nb_geometricBot_Model_difference(JNIEnv *env, jclass class,
+				      jobject jModelA, jobject jModelB)
+{
+	return jModel_get_combination(env, class, jModelA, jModelB,
+				      vcn_model_get_difference);
 }
 
 /*

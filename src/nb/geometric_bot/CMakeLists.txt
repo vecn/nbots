@@ -18,7 +18,7 @@ set(model
   ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/simplifier.c
   ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/vtx.c
   ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/edge.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/blender.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/model/modules2D/clipper.c
 )
 
 set(mesh2D

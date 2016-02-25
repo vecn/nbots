@@ -28,7 +28,8 @@ public class Model {
     public static native Model unify(Model modelA, Model modelB);
     public static native Model intersect(Model modelA, Model modelB);
     public static native Model substract(Model modelA, Model modelB);
-
+    public static native Model difference(Model modelA, Model modelB);
+    
     public native ModelStatus verify();
 
     public int getNVertices()
