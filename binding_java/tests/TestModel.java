@@ -3,19 +3,31 @@ import nb.geometricBot.*;
 public class TestModel {
     public static void main(String[] args) {
 	int N_success = 0;
-	int N_total = 6;
+	int N_total = 9;
 	checkCombine();
 	checkUnify();
 	checkIntersect();
 	checkSubstractA();
 	checkSubstractB();
 	checkDifference();
-	boolean ok = checkVerify();
-	if (ok)
+	boolean ok1 = checkVerify();
+	if (ok1)
 	    N_success += 1;
 	else
 	    System.out.println(" > Test fails: 'Check verify()'");
+
+	boolean ok2 = checkIsContinuum();
+	if (ok2)
+	    N_success += 1;
+	else
+	    System.out.println(" > Test fails: 'Check isContinuum()'");
 	
+	boolean ok3 = checkIsPointInside();
+	if (ok3)
+	    N_success += 1;
+	else
+	    System.out.println(" > Test fails: 'Check isContinuum()'");
+
 	System.out.println("["+N_success+","+N_total+"] " + "Success");
     }
 
@@ -65,5 +77,15 @@ public class TestModel {
 	Model model = GeometricBot.getCircle(0, 0, 7, 1);
 	ModelStatus status = model.verify();
 	return status == ModelStatus.OK;
+    }
+
+    public static boolean checkIsContinuum() {
+	Model model = GeometricBot.getCircle(0, 0, 7, 1);
+	return model.isContinuum();
+    }
+
+    public static boolean checkIsPointInside() {
+	Model model = GeometricBot.getCircle(0, 0, 7, 1);
+	return model.isPointInside(0, 0);
     }
 }

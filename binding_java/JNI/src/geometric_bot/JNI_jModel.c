@@ -66,6 +66,19 @@ Java_nb_geometricBot_Model_verify(JNIEnv *env, jobject jModel)
 }
 
 JNIEXPORT jboolean JNICALL
+Java_nb_geometricBot_Model_isContinuum(JNIEnv *env, jobject jModel)
+{
+	vcn_model_t *model = alloca(vcn_model_get_memsize());
+	vcn_model_init(model);
+	vcn_model_load_from_jModel(env, model, jModel);
+
+	jboolean is_continuum = vcn_model_is_continuum(model);
+
+	vcn_model_finish(model);
+	return is_continuum;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_nb_geometricBot_Model_isPointInside(JNIEnv *env, jobject jModel,
 					 jdouble x, jdouble y)
 {

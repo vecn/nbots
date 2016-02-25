@@ -10,6 +10,8 @@
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 
+#include "nb/geometric_bot/mesh/modules2D/pruner.h"
+
 #include "../mesh2D_structs.h"
 
 #define _NB_SUBSEGMENT_VTX ((void*)0x2) /* REFACTOR: Taken from ruppert.c */
@@ -42,12 +44,13 @@ static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
 						    msh_edge_t *longest_edge,
 						    double *max_length2);
 static double colorize_infected_triangles(msh_trg_t* trg_infected,
-					  nb_container_t* l_infected_trg,
+	       /* NULL if not required */ nb_container_t* infected_trg,
 					  bool blocking_with_input_segments);
 
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
-
+static uint16_t get_N_areas(const vcn_mesh_t *mesh,
+			    bool block_with_input_sgm);
 
 static void* subarea_create(void)
 {
@@ -199,12 +202,13 @@ static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
 }
 
 static double colorize_infected_triangles(msh_trg_t* trg_infected,
-					  nb_container_t* infected_trg,
+	       /* NULL if not required */ nb_container_t* infected_trg,
 					  bool blocking_with_input_segments)
 {
 	double area = 0.0;
 	/* Colorize triangle */
-	nb_container_insert(infected_trg, trg_infected);
+	if (NULL != infected_trg)
+		nb_container_insert(infected_trg, trg_infected);
 	attr_t* trg_attr = calloc(1, sizeof(*trg_attr));
 	trg_attr->id = 0x19FEC7ED;
 	trg_attr->data = trg_infected->attr;
@@ -414,8 +418,8 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 	return ret_val;
 }
 
-double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
-				       double* area_removed)
+double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
+					    double* area_removed)
 {
 	nb_container_t* areas = nb_container_create(NB_SORTED);
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
@@ -579,4 +583,43 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 
 	deleted = deleted - vcn_bins2D_get_length(mesh->ug_vtx);
 	return deleted;
+}
+
+bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh)
+{
+	uint16_t N = vcn_mesh_get_N_continuum_areas(mesh);
+	return (N == 1);
+}
+
+inline uint16_t vcn_mesh_get_N_subareas(const vcn_mesh_t *mesh)
+{
+	return get_N_areas(mesh, true);
+}
+
+static uint16_t get_N_areas(const vcn_mesh_t *mesh,
+			    bool block_with_input_sgm)
+{
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+
+	uint16_t counter = 0;
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		if (NULL != trg->attr) {
+			attr_t* attr = trg->attr;
+			if (attr->id == 0x19FEC7ED)
+				continue;
+		}
+		colorize_infected_triangles(trg, NULL,
+					    block_with_input_sgm);
+		counter += 1;
+	}
+	nb_iterator_finish(iter);
+	return counter;
+}
+
+inline uint16_t vcn_mesh_get_N_continuum_areas(const vcn_mesh_t *mesh)
+{
+	return get_N_areas(mesh, false);
 }

@@ -5,8 +5,8 @@
 #include "nb/container_bot/container.h"
 #include "nb/geometric_bot/model/model2D.h"
 
-nb_container_t* vcn_model_generate_wires
-(const vcn_model_t *const model);
+nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model);
+
 void vcn_model_collapse_small_segments(vcn_model_t* model,
 				       double tolerance,
 				       uint32_t N_fixed_vertices,

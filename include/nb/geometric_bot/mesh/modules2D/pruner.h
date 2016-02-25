@@ -1,6 +1,9 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
 #define __NB_GEOMETRIC_BOT_MESH_MODULES2D_PRUNER_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+
 /**
  * @brief Calculates the pseudo-centroid of the sub-areas in the mesh.
  * A sub-area is a portion of the domain which is bounded by input segments,
@@ -48,8 +51,8 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
  * Stores the total area of deleted triangles.
  * @return Area of the non-deleted mesh.
  */
-double vcn_mesh_keep_biggest_isolated_area(vcn_mesh_t* mesh,
-					   double* area_removed);
+double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
+					    double* area_removed);
 
 /**
  * @brief Delete those input segments without adjacent triangles, which could arise
@@ -76,5 +79,11 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const mesh);
  * @return Number of vertices deleted.
  */
 uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh);
+
+bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh);
+
+uint16_t vcn_mesh_get_N_subareas(const vcn_mesh_t *mesh);
+
+uint16_t vcn_mesh_get_N_continuum_areas(const vcn_mesh_t *mesh);
 
 #endif

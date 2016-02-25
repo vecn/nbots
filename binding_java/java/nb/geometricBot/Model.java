@@ -31,6 +31,7 @@ public class Model {
     public static native Model difference(Model modelA, Model modelB);
     
     public native ModelStatus verify();
+    public native boolean isContinuum();
     public native boolean isPointInside(double x, double y);
 
     public int getNVertices() {

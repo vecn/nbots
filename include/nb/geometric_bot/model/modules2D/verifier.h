@@ -40,5 +40,6 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 					   uint32_t ids_edge_and_vtx[2]);
 bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model);
+bool vcn_model_is_continuum(const vcn_model_t *model);
 
 #endif
