@@ -1,0 +1,18 @@
+model {
+    components {
+	geometric_bot_cairo(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/geometric_bot"
+			include "**/*cairo*"
+		    }
+		    exportedHeaders {
+			srcDirs "include", "/usr/include/cairo"
+		    }
+		    lib library: "container_bot"
+		}
+	    }
+	}
+    }
+}

@@ -1,0 +1,19 @@
+model {
+    components {
+	pde_bot_cairo(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/pde_bot"
+			include "**/*cairo*"
+		    }
+		    exportedHeaders {
+			srcDirs "include", "/usr/include/cairo"
+		    }
+		    lib library: "container_bot"
+		    lib library: "geometric_bot"
+		}
+	    }
+	}
+    }
+}

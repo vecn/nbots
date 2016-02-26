@@ -1,0 +1,19 @@
+model {
+    components {
+	graph_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/graph_bot"
+			include "*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "eigen_bot"
+		    lib library: "container_bot"
+		}
+	    }
+	}
+    }
+}

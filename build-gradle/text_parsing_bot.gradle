@@ -1,0 +1,17 @@
+model {
+    components {
+	text_parser_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb"
+			include "cfreader_cat.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+    }
+}

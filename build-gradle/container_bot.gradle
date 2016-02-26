@@ -1,6 +1,6 @@
 model {
     components {
-	container_bot(NativeLibrarySpec) {
+	queue(NativeLibrarySpec) {
 	    sources {
 		c {
 		    source {
@@ -10,6 +10,76 @@ model {
 		    exportedHeaders {
 			srcDirs "include"
 		    }
+		}
+	    }
+	}
+	stack(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot/stack"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+	sorted(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot/sorted"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+	heap(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot/heap"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+	hash(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot/hash"
+			include "**/*.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+	container_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb/container_bot"
+			    include "*.c", "*/*binding.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "queue"
+		    lib library: "stack"
+		    lib library: "sorted"
+		    lib library: "heap"
+		    lib library: "hash"
 		}
 	    }
 	}

@@ -1,0 +1,17 @@
+model {
+    components {
+	drawing_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb"
+			include "visual_cat.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+    }
+}

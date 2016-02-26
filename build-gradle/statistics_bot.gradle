@@ -1,0 +1,17 @@
+model {
+    components {
+	statistics_bot(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb"
+			include "statistics_bot.c"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+    }
+}
