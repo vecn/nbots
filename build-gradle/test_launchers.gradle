@@ -1,12 +1,40 @@
 model {
+    repositories {
+	libs(PrebuiltLibraries) {
+	    dl {
+		binaries.withType(SharedLibraryBinary) {
+		    //def arch = binaries.targetPlatform.architecture.name
+		    sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libdl.so")
+		    sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libdl.so")
+	        }
+	    }
+	}
+    }
     components {
+	test_exec(NativeLibrarySpec) {
+	    sources {
+		c {
+ 		    source {
+ 			srcDirs "ci_tools/test_launchers"
+			include "test.c"
+ 		    }
+ 		}
+ 	    }
+	}
 	launch_unit_test(NativeExecutableSpec) {
 	    sources {
 		c {
  		    source {
  			srcDirs "ci_tools/test_launchers"
+			include "unit_test_driver.c"
 			include "run_tests.c"
  		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "dl"
+		    lib library: "test_exec"
+		    lib library: "nbots_all"
  		}
  	    }
 	}
