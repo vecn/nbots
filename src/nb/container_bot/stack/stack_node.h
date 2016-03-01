@@ -1,17 +1,17 @@
 #ifndef __NB_CONTAINER_BOT_STACK_STACK_NODE_H__
 #define __NB_CONTAINER_BOT_STACK_STACK_NODE_H__
 
-typedef struct node_s node_t;
+typedef struct stack_node_s stack_node_t;
 
-struct node_s {
-	node_t *next;
+struct stack_node_s {
+	stack_node_t *next;
 	void *val;
 };
 
-node_t* node_create(void);
-void node_destroy(node_t *node, void (*destroy)(void*));
-node_t* node_clone(const node_t *const node,
+stack_node_t* stack_node_create(void);
+void stack_node_destroy(stack_node_t *node, void (*destroy)(void*));
+stack_node_t* stack_node_clone(const stack_node_t *const node,
 		    void* (*clone)(const void *const));
-node_t* node_get_prev(const node_t *const node);
+stack_node_t* stack_node_get_prev(const stack_node_t *const node);
 
 #endif

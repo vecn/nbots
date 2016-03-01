@@ -14,8 +14,8 @@
 
 typedef struct {
 	bool is_init;
-	node_t *node;
-	const node_t *start;
+	stack_node_t *node;
+	const stack_node_t *start;
 } iter_t;
 
 static void* malloc_iter(void);
@@ -90,7 +90,7 @@ void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr)
 inline void stack_iter_restart(void* iter_ptr)
 {
 	iter_t *iter = iter_ptr;
-	iter->node = (node_t*) iter->start;
+	iter->node = (stack_node_t*) iter->start;
 	iter->is_init = (NULL != iter->start);
 }
 

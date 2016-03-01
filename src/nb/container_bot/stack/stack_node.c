@@ -1,29 +1,29 @@
 #include <stdlib.h>
 #include "stack_node.h"
 
-inline node_t* node_create(void)
+inline stack_node_t* stack_node_create(void)
 {
-  	return calloc(1, sizeof(node_t));
+  	return calloc(1, sizeof(stack_node_t));
 }
 
-inline void node_destroy(node_t *node, void (*destroy)(void*))
+inline void stack_node_destroy(stack_node_t *node, void (*destroy)(void*))
 {
   	destroy(node->val);
   	free(node);
 }
 
-node_t* node_clone(const node_t *const node,
+stack_node_t* stack_node_clone(const stack_node_t *const node,
 		   void* (*clone)(const void *const))
 {
-  	node_t *nc = node_create();
+  	stack_node_t *nc = stack_node_create();
   	nc->val = clone(node->val);
   	nc->next = node->next;
   	return nc;
 }
 
-node_t* node_get_prev(const node_t *const node)
+stack_node_t* stack_node_get_prev(const stack_node_t *const node)
 {
-	node_t *iter = node->next;
+	stack_node_t *iter = node->next;
 	while (iter->next != node)
 		iter = iter->next;
 	return iter;
