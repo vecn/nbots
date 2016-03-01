@@ -1,0 +1,17 @@
+model {
+    components {
+	nbots_all_cairo(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src/nb"
+			include "**/*cairo*"
+		    }
+		    exportedHeaders {
+			srcDirs "include", "/usr/include/cairo"
+		    }
+		}
+	    }
+	}
+    }
+}

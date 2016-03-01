@@ -8,12 +8,15 @@ apply from: 'build-gradle/eigen_bot.gradle'
 apply from: 'build-gradle/graph_bot.gradle'
 apply from: 'build-gradle/image_bot.gradle'
 apply from: 'build-gradle/geometric_bot.gradle'
-apply from: 'build-gradle/geometric_bot-cairo.gradle'
 apply from: 'build-gradle/pde_bot.gradle'
-apply from: 'build-gradle/pde_bot-cairo.gradle'
 apply from: 'build-gradle/exceptions_bot.gradle'
 apply from: 'build-gradle/nbots_all.gradle'
-//apply from: 'build-gradle/nbots_all-cairo.gradle'
+
+apply from: 'build-gradle/geometric_bot-cairo.gradle'
+apply from: 'build-gradle/pde_bot-cairo.gradle'
+apply from: 'build-gradle/nbots_all-cairo.gradle'
+
+apply from: 'build-gradle/test_launchers.gradle'
 
 model {
     buildTypes {
@@ -36,19 +39,6 @@ model {
 	    }
 	}
     }
- //    components {
-//	launch_unit_test(NativeExecutableSpec) {
-//	    sources {
-//		c {
-//		    source {
-//			srcDirs "ci_tools/test_launchers"
-//			include "**/*.c"
-//		    }
-//		}
-//	    }
-//	    
-//	}
-//    }
 }
 
 task wrapper(type: Wrapper) {

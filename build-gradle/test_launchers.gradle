@@ -1,0 +1,14 @@
+model {
+    components {
+	launch_unit_test(NativeExecutableSpec) {
+	    sources {
+		c {
+ 		    source {
+ 			srcDirs "ci_tools/test_launchers"
+			include "run_tests.c"
+ 		    }
+ 		}
+ 	    }
+	}
+    }
+}
