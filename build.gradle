@@ -18,6 +18,8 @@ apply from: 'build-gradle/nbots_all-cairo.gradle'
 
 apply from: 'build-gradle/test_launchers.gradle'
 
+apply from: 'build-gradle/container_bot-tests.gradle'
+
 model {
     buildTypes {
 	debug

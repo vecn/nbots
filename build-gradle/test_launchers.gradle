@@ -11,6 +11,21 @@ model {
 	}
     }
     components {
+	nb_test_add(NativeLibrarySpec) {
+	    sources {
+		c {
+ 		    source {
+ 			srcDirs "ci_tools/test_launchers"
+			include "test.c"
+			include "test_add.c"
+ 		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "container_bot"
+ 		}
+ 	    }
+	}
 	test_exec(NativeLibrarySpec) {
 	    sources {
 		c {
@@ -27,6 +42,41 @@ model {
  		    source {
  			srcDirs "ci_tools/test_launchers"
 			include "unit_test_driver.c"
+			include "run_tests.c"
+ 		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "dl"
+		    lib library: "test_exec"
+		    lib library: "nbots_all"
+ 		}
+ 	    }
+	}
+	launch_performance_test(NativeExecutableSpec) {
+	    sources {
+		c {
+ 		    source {
+ 			srcDirs "ci_tools/test_launchers"
+			include "performance_test_driver.c"
+			include "run_tests.c"
+ 		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		    lib library: "dl"
+		    lib library: "test_exec"
+		    lib library: "nbots_all"
+ 		}
+ 	    }
+	}
+	launch_complexity_test(NativeExecutableSpec) {
+	    sources {
+		c {
+ 		    source {
+ 			srcDirs "ci_tools/test_launchers"
+			include "complexity_funcs.c"
+			include "complexity_test_driver.c"
 			include "run_tests.c"
  		    }
 		    exportedHeaders {
