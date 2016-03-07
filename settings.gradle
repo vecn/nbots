@@ -1,1 +1,4 @@
-include 'build-gradle:container_bot', 'build-gradle:nbots_all', 'build-gradle:test_launchers'//, 'build-gradle/container_bot-tests'
+include 'build-gradle:container_bot'
+include 'build-gradle:nbots_all'
+include 'build-gradle:test_launchers'
+inlcude 'build-gradle/container_bot-tests'

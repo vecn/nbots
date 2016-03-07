@@ -1,17 +1,17 @@
 model {	  
-    components {
-	container_bot(NativeLibrarySpec) {
-	    sources {
-		c {
-		    source {
-			srcDirs "src/nb/container_bot"
-			include "**/*.c"
-		    }
-		    exportedHeaders {
-			srcDirs "include"
-		    }
-		}
-	    }
+  components {
+    container_bot(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "src/nb/container_bot"
+	    include "**/*.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
 	}
+      }
     }
+  }
 }

@@ -1,22 +1,20 @@
 Numerical Bots
 ==============
 
+Abstract
+--------
+Numerical bots is an incubating project which aims to implement the most used numerical calculations in scientific computing foucusing on achieving the best performance (processor and memory efficiency) for single and parallel arquitectures, such as shared memory, distributed memory and general purpose graphic processors.
+
 Introduction
 ------------
 A numerical bot is an automatic tool to perform several related numerical tasks.
-For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes,
-Voronoi diagrams, Alpha-shapes, Convex-Hulls, etc. and the Eigen Bot is a linear algebra
-library, which includes special routines for sparse systems.
+For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes, Voronoi diagrams, Alpha-shapes, Convex-Hulls, etc. and the Eigen Bot is a linear algebra library, which includes special routines for sparse systems.
 
 The project nbots is a self-contained ecosystem of numerical bots.
 
 Compilation
 -----------
-1. Create a 'build' directory inside this directory.
-2. Go to the 'build' directory and execute the following command:
-        cmake -DCMAKE_BUILD_TYPE=Release ../
-   (You must have cmake installed)
-3. Execute 'make'.
+Run 'gradle build' or use the shell script 'gradlew' (gradlew.bat for Windows) if gradle is not installed in your system.
 
 
 Contact

@@ -20,32 +20,30 @@
 // container_bot-tests.gradle'
 
 allprojects {
-    apply plugin: 'c'
+  apply plugin: 'c'
 
-    model {
-	buildTypes {
-	    debug
-	    release
-	}
-	platforms {
-	    x86 {
-		architecture "x86"
-	    }
-
-	    x64 {
-		architecture "x86_64"
-	    }
-	}
-	binaries {
-	    all {
-		if (toolChain in Gcc) {
-		    cCompiler.args "-std=c99"
-	        }
-	    }
-	}
+  model {
+    buildTypes {
+      debug
+      release
     }
+    platforms {
+      x86 {
+	architecture "x86"
+      }
+
+      x64 {
+	architecture "x86_64"
+      }
+    }
+    binaries {
+      //all {
+      //	cCompiler.args "-std=c89"
+      //}
+    }
+  }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.11'
+  gradleVersion = '2.11'
 }

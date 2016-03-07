@@ -1,95 +1,92 @@
 model {
-    dependencies {
-	compile project(':build-gradle:container_bot'), project(':build-gradle:nbots_all')
+  repositories {
+    libs(PrebuiltLibraries) {
+      dl {
+	binaries.withType(SharedLibraryBinary) {
+	  //def arch = binaries.targetPlatform.architecture.name
+	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libdl.so")
+	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libdl.so")
+	}
+      }
     }
-    repositories {
-	libs(PrebuiltLibraries) {
-	    dl {
-		binaries.withType(SharedLibraryBinary) {
-		    //def arch = binaries.targetPlatform.architecture.name
-		    sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libdl.so")
-		    sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libdl.so")
-	        }
-	    }
+  }
+  components {
+    nb_test_add(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "ci_tools/test_launchers"
+	    include "test.c"
+	    include "test_add.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	  lib project: ':build-gradle:container_bot', library: 'container_bot'
 	}
+      }
     }
-    components {
-	nb_test_add(NativeLibrarySpec) {
-	    sources {
-		c {
- 		    source {
- 			srcDirs "ci_tools/test_launchers"
-			include "test.c"
-			include "test_add.c"
- 		    }
-		    exportedHeaders {
-			srcDirs "include"
-		    }
-		    lib project: ':build-gradle:container_bot', library: 'container_bot'
- 		}
- 	    }
+    test_exec(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "ci_tools/test_launchers"
+	    include "test.c"
+	  }
 	}
-	test_exec(NativeLibrarySpec) {
-	    sources {
-		c {
- 		    source {
- 			srcDirs "ci_tools/test_launchers"
-			include "test.c"
- 		    }
- 		}
- 	    }
-	}
-	launch_unit_test(NativeExecutableSpec) {
-	    sources {
-		c {
- 		    source {
- 			srcDirs "ci_tools/test_launchers"
-			include "unit_test_driver.c"
-			include "run_tests.c"
- 		    }
-		    exportedHeaders {
-			srcDirs "include"
-		    }
-		    lib library: "dl"
-		    lib library: "test_exec"
-		    lib project: ':build-gradle:nbots_all', library: 'nbots_all'
- 		}
- 	    }
-	}
-	launch_performance_test(NativeExecutableSpec) {
-	    sources {
-		c {
- 		    source {
- 			srcDirs "ci_tools/test_launchers"
-			include "performance_test_driver.c"
-			include "run_tests.c"
- 		    }
-		    exportedHeaders {
-			srcDirs "include"
-		    }
-		    lib library: "dl"
-		    lib library: "test_exec"
-		    lib project: ':build-gradle:nbots_all', library: 'nbots_all'
- 		}
- 	    }
-	}
-	launch_complexity_test(NativeExecutableSpec) {
-	    sources {
-		c {
- 		    source {
- 			srcDirs "ci_tools/test_launchers"
-			include "complexity_funcs.c"
-			include "complexity_test_driver.c"
-			include "run_tests.c"
- 		    }
-		    exportedHeaders {
-			srcDirs "include"
-		    }
-		    lib library: "dl"
-		    lib library: "test_exec"
-		    lib project: ':build-gradle:nbots_all', library: 'nbots_all'
- 		}
- 	    }
-	}
+      }
     }
+    launch_unit_test(NativeExecutableSpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "ci_tools/test_launchers"
+	    include "unit_test_driver.c"
+	    include "run_tests.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	  lib library: "dl"
+	  lib library: "test_exec"
+	  lib project: ':build-gradle:nbots_all', library: 'nbots_all'
+	}
+      }
+    }
+    launch_performance_test(NativeExecutableSpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "ci_tools/test_launchers"
+	    include "performance_test_driver.c"
+	    include "run_tests.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	  lib library: "dl"
+	  lib library: "test_exec"
+	  lib project: ':build-gradle:nbots_all', library: 'nbots_all'
+	}
+      }
+    }
+    launch_complexity_test(NativeExecutableSpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "ci_tools/test_launchers"
+	    include "complexity_funcs.c"
+	    include "complexity_test_driver.c"
+	    include "run_tests.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	  lib library: "dl"
+	  lib library: "test_exec"
+	  lib project: ':build-gradle:nbots_all', library: 'nbots_all'
+	}
+      }
+    }
+  }
 }
