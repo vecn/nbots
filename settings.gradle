@@ -1,4 +1,0 @@
-include 'build-gradle:container_bot'
-include 'build-gradle:nbots_all'
-include 'build-gradle:test_launchers'
-inlcude 'build-gradle/container_bot-tests'

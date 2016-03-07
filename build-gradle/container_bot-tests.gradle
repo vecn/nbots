@@ -1,22 +1,24 @@
 model {
-  binaries {
-    all {
+  components {
+    matching {
       sources {
-	  lib project: ':build-gradle:test_launchers', library: 'nb_test_add'
-	  lib project: ':build-gradle:nbots_all', library: 'nbots_all'
+	c {
+	  source {
+	    exportedHeaders {
+	      srcDirs "include", "ci_tools/test_launchers"
+	    }
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
+	}
       }
     }
-  }
-  components {
     container_array_UT(NativeLibrarySpec) {
       sources {
 	c {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -29,9 +31,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_PT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -42,9 +41,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_CT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -57,9 +53,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_QUEUE_UT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -70,9 +63,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_STACK_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -85,9 +75,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_SORTED_UT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -98,9 +85,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HEAP_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -113,9 +97,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HASH_UT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -126,9 +107,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/iterator_bot"
 	    include "iterator_QUEUE_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -141,9 +119,6 @@ model {
 	    srcDirs "tests/nb/iterator_bot"
 	    include "iterator_STACK_UT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -154,9 +129,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/iterator_bot"
 	    include "iterator_SORTED_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -169,9 +141,6 @@ model {
 	    srcDirs "tests/nb/iterator_bot"
 	    include "iterator_HEAP_UT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -182,9 +151,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/iterator_bot"
 	    include "iterator_HASH_UT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -211,9 +177,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_STACK_CT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -224,9 +187,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_SORTED_CT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }
@@ -239,9 +199,6 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HEAP_CT.c"
 	  }
-	  exportedHeaders {
-	    srcDirs "include"
-	  }
 	}
       }
     }
@@ -252,9 +209,6 @@ model {
 	  source {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HASH_CT.c"
-	  }
-	  exportedHeaders {
-	    srcDirs "include"
 	  }
 	}
       }

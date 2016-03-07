@@ -1,45 +1,40 @@
-//apply from: 'build-gradle/math_bot.gradle'
-//apply from: 'build-gradle/statistics_bot.gradle'
-//apply from: 'build-gradle/text_parsing_bot.gradle'
-//apply from: 'build-gradle/drawing_bot.gradle'
-// container_bot.gradle
-//apply from: 'build-gradle/eigen_bot.gradle'
-//apply from: 'build-gradle/graph_bot.gradle'
-//apply from: 'build-gradle/image_bot.gradle'
-//apply from: 'build-gradle/geometric_bot.gradle'
-//apply from: 'build-gradle/pde_bot.gradle'
-//apply from: 'build-gradle/exceptions_bot.gradle'
-// build-gradle/nbots_all.gradle'
-//
-//apply from: 'build-gradle/geometric_bot-cairo.gradle'
-//apply from: 'build-gradle/pde_bot-cairo.gradle'
-//apply from: 'build-gradle/nbots_all-cairo.gradle'
-//
-// test_launchers.gradle'
-//
-// container_bot-tests.gradle'
+apply from: 'build-gradle/math_bot.gradle'
+apply from: 'build-gradle/statistics_bot.gradle'
+apply from: 'build-gradle/text_parsing_bot.gradle'
+apply from: 'build-gradle/drawing_bot.gradle'
+apply from: 'build-gradle/container_bot.gradle'
+apply from: 'build-gradle/eigen_bot.gradle'
+apply from: 'build-gradle/graph_bot.gradle'
+apply from: 'build-gradle/image_bot.gradle'
+apply from: 'build-gradle/geometric_bot.gradle'
+apply from: 'build-gradle/pde_bot.gradle'
+apply from: 'build-gradle/exceptions_bot.gradle'
+apply from: 'build-gradle/nbots_all.gradle'
+apply from: 'build-gradle/geometric_bot-cairo.gradle'
+apply from: 'build-gradle/pde_bot-cairo.gradle'
+apply from: 'build-gradle/nbots_all-cairo.gradle'
+apply from: 'build-gradle/test_launchers.gradle'
+apply from: 'build-gradle/container_bot-tests.gradle'
 
-allprojects {
-  apply plugin: 'c'
+apply plugin: 'c'
 
-  model {
-    buildTypes {
-      debug
-      release
+model {
+  buildTypes {
+    debug
+    release
+  }
+  platforms {
+    x86 {
+      architecture "x86"
     }
-    platforms {
-      x86 {
-	architecture "x86"
-      }
-
-      x64 {
-	architecture "x86_64"
-      }
+    
+    x64 {
+      architecture "x86_64"
     }
-    binaries {
-      //all {
-      //	cCompiler.args "-std=c89"
-      //}
+  }
+  binaries {
+    all {
+      cCompiler.args "-std=c99"
     }
   }
 }
