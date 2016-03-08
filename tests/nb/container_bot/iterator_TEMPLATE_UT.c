@@ -32,7 +32,7 @@ static void insert_N_int32(nb_container_t *cnt, int N);
 static uint32_t keygen(const void *const val);
 static int8_t compare(const void *const a, const void *const b);
 
-inline int TEMPLATE_get_driver_id(void)
+int TEMPLATE_get_driver_id(void)
 {
 	return NB_DRIVER_UNIT_TEST;
 }

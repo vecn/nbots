@@ -10,30 +10,30 @@ FLAVOR_DIR=shared/release
 
 echo "  Container Bot"
 $LAUNCHER $MODULES_DIR/container_array_UT/$FLAVOR_DIR/libcontainer_array_UT.so
-#$LAUNCHER $MODULES_DIR/container_QUEUE_UT/$FLAVOR_DIR/libcontainer_QUEUE_UT.so
-#$LAUNCHER $MODULES_DIR/container_STACK_UT/$FLAVOR_DIR/libcontainer_STACK_UT.so
-#$LAUNCHER $MODULES_DIR/container_SORTED_UT/$FLAVOR_DIR/libcontainer_SORTED_UT.so
-#$LAUNCHER $MODULES_DIR/container_HEAP_UT/$FLAVOR_DIR/libcontainer_HEAP_UT.so
-#$LAUNCHER $MODULES_DIR/container_HASH_UT/$FLAVOR_DIR/libcontainer_HASH_UT.so
-#$LAUNCHER $MODULES_DIR/iterator_QUEUE_UT/$FLAVOR_DIR/libiterator_QUEUE_UT.so
-#$LAUNCHER $MODULES_DIR/iterator_STACK_UT/$FLAVOR_DIR/libiterator_STACK_UT.so
-#$LAUNCHER $MODULES_DIR/iterator_SORTED_UT/$FLAVOR_DIR/libiterator_SORTED_UT.so
-#$LAUNCHER $MODULES_DIR/iterator_HEAP_UT/$FLAVOR_DIR/libiterator_HEAP_UT.so
-#$LAUNCHER $MODULES_DIR/iterator_HASH_UT/$FLAVOR_DIR/libiterator_HASH_UT.so
+$LAUNCHER $MODULES_DIR/container_QUEUE_UT/$FLAVOR_DIR/libcontainer_QUEUE_UT.so
+$LAUNCHER $MODULES_DIR/container_STACK_UT/$FLAVOR_DIR/libcontainer_STACK_UT.so
+$LAUNCHER $MODULES_DIR/container_SORTED_UT/$FLAVOR_DIR/libcontainer_SORTED_UT.so
+$LAUNCHER $MODULES_DIR/container_HEAP_UT/$FLAVOR_DIR/libcontainer_HEAP_UT.so
+$LAUNCHER $MODULES_DIR/container_HASH_UT/$FLAVOR_DIR/libcontainer_HASH_UT.so
+$LAUNCHER $MODULES_DIR/iterator_QUEUE_UT/$FLAVOR_DIR/libiterator_QUEUE_UT.so
+$LAUNCHER $MODULES_DIR/iterator_STACK_UT/$FLAVOR_DIR/libiterator_STACK_UT.so
+$LAUNCHER $MODULES_DIR/iterator_SORTED_UT/$FLAVOR_DIR/libiterator_SORTED_UT.so
+$LAUNCHER $MODULES_DIR/iterator_HEAP_UT/$FLAVOR_DIR/libiterator_HEAP_UT.so
+$LAUNCHER $MODULES_DIR/iterator_HASH_UT/$FLAVOR_DIR/libiterator_HASH_UT.so
 
-#echo "  Geometric Bot"
-#GEOMETRIC_BOT_TESTS_DIR=libs/*/shared/release
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libpoint2D_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libutils2D_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libbins2D_iterator_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libdewall_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libconstrained_delaunay_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libverifier_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libclipper_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libmesh2D_UT.so
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/libimage_density_UT.so
-#
+echo "  Geometric Bot"
+GEOMETRIC_BOT_TESTS_DIR=libs/*/shared/release
+$LAUNCHER $MODULES_DIR/point2D_UT/$FLAVOR_DIR/libpoint2D_UT.so
+#$LAUNCHER $MODULES_DIR/utils2D/$FLAVOR_DIR/libutils2D_UT.so
+#$LAUNCHER $MODULES_DIR/bins2D/$FLAVOR_DIR/libbins2D_UT.so
+#$LAUNCHER $MODULES_DIR/bins2D_iterator/$FLAVOR_DIR/libbins2D_iterator_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libdewall_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libconstrained_delaunay_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libverifier_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libclipper_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libmesh2D_UT.so
+#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libimage_density_UT.so
+
 #echo "  PDE Bot"
 #GEOMETRIC_BOT_TESTS_DIR=libs/*/shared/release
 #$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/finite_element/libstatic_elasticity2D_UT.so

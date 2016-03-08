@@ -1,18 +1,5 @@
 model {
   components {
-    matching {
-      sources {
-	c {
-	  source {
-	    exportedHeaders {
-	      srcDirs "include", "ci_tools/test_launchers"
-	    }
-	  }
-	  lib library: 'nb_test_add'
-	  lib library: 'nbots_all'
-	}
-      }
-    }
     container_array_UT(NativeLibrarySpec) {
       sources {
 	c {
@@ -20,6 +7,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -31,6 +23,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_PT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -42,6 +39,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "array_CT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -53,6 +55,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_QUEUE_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -64,6 +71,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_STACK_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -75,6 +87,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_SORTED_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -86,6 +103,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HEAP_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -97,6 +119,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HASH_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -105,9 +132,14 @@ model {
       sources {
 	c {
 	  source {
-	    srcDirs "tests/nb/iterator_bot"
+	    srcDirs "tests/nb/container_bot"
 	    include "iterator_QUEUE_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -116,9 +148,14 @@ model {
       sources {
 	c {
 	  source {
-	    srcDirs "tests/nb/iterator_bot"
+	    srcDirs "tests/nb/container_bot"
 	    include "iterator_STACK_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -127,9 +164,14 @@ model {
       sources {
 	c {
 	  source {
-	    srcDirs "tests/nb/iterator_bot"
+	    srcDirs "tests/nb/container_bot"
 	    include "iterator_SORTED_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -138,9 +180,14 @@ model {
       sources {
 	c {
 	  source {
-	    srcDirs "tests/nb/iterator_bot"
+	    srcDirs "tests/nb/container_bot"
 	    include "iterator_HEAP_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -149,9 +196,14 @@ model {
       sources {
 	c {
 	  source {
-	    srcDirs "tests/nb/iterator_bot"
+	    srcDirs "tests/nb/container_bot"
 	    include "iterator_HASH_UT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -164,8 +216,10 @@ model {
 	    include "container_QUEUE_CT.c"
 	  }
 	  exportedHeaders {
-	    srcDirs "include"
+	    srcDirs "include", "ci_tools/test_launchers"
 	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -177,6 +231,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_STACK_CT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -188,6 +247,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_SORTED_CT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -199,6 +263,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HEAP_CT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }
@@ -210,6 +279,11 @@ model {
 	    srcDirs "tests/nb/container_bot"
 	    include "container_HASH_CT.c"
 	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
 	}
       }
     }

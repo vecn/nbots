@@ -1,0 +1,19 @@
+model {
+  components {
+    point2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "point2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots_all'
+	}
+      }
+    }
+  }
+}

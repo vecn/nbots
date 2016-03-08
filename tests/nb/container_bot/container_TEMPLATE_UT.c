@@ -57,7 +57,7 @@ static void* clone_int32(const void *const val);
 static void** get_N_array(nb_container_t *cnt, int N);
 static bool first_is_ok(int32_t *val);
 
-inline int TEMPLATE_get_driver_id(void)
+int TEMPLATE_get_driver_id(void)
 {
 	return NB_DRIVER_UNIT_TEST;
 }
