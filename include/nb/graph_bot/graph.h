@@ -24,16 +24,15 @@
 
 #include <stdint.h>
 
-/**
- * @brief Graph structure.
- */
-typedef struct vcn_graph_s {
+typedef struct {
   uint32_t N;
   uint32_t *N_adj;
   uint32_t **adj;
   double *wi;   /* NULL for equal weights on vertices */
   double **wij; /* NULL for equal weights on edges */
-} vcn_graph_t;
+} nb_graph_t;
+
+typedef nb_graph_t vcn_graph_t; /* Deprecated */
 
 vcn_graph_t* vcn_graph_create(void);
 

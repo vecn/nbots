@@ -35,6 +35,7 @@
 #include "nb/geometric_bot/mesh/modules2D/pruner.h"
 #include "nb/geometric_bot/mesh/modules2D/extra_fem.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/geometric_bot/mesh/elements2D/quad.h"
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
 #include "nb/geometric_bot/mesh/elements2D/disks.h"
 

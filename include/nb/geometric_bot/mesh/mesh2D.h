@@ -42,7 +42,8 @@ enum {
  * In order to read the mesh, it must be "converted" into a read-only 
  * structure, such as vcn_msh3trg_t.
  */
-typedef struct vcn_mesh_s vcn_mesh_t;
+typedef struct vcn_mesh_s vcn_mesh_t; /* DEPRECATED */
+typedef struct vcn_mesh_s nb_mesh_t;
 
 vcn_mesh_t* vcn_mesh_create(void);
 void vcn_mesh_clear(vcn_mesh_t* mesh);
