@@ -60,7 +60,7 @@ struct vcn_mesh_s {
 	msh_vtx_t** input_vtx;
 	uint32_t N_input_sgm;      
 	msh_edge_t** input_sgm; /* Each input_sgm is the root of a double 
-				 * linked list conatining the subsegments
+				 * linked list containing the subsegments
 				 * forming this input segment. */
 	/* Data structures to handle mesh */
 	vcn_bins2D_t* ug_vtx;       /* Grid to sort vertices */

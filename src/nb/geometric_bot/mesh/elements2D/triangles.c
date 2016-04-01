@@ -263,10 +263,10 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 		mesh_2_msh3trg_cast_input_sgm(mesh, msh3trg);
 
 	/* Free memory */
-	mesh_free_vtx_ids((vcn_mesh_t*)mesh); /* Casting to non-const */
+	mesh_free_vtx_ids((vcn_mesh_t*)mesh);
 
 	if (include_neighbours)
-		mesh_2_msh3trg_free_trg_ids((vcn_mesh_t*)mesh); /* Casting to non-const */
+		mesh_2_msh3trg_free_trg_ids((vcn_mesh_t*)mesh);
 
 	/* Return data */
 	return msh3trg;
@@ -458,26 +458,26 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 		malloc(3 * msh3trg->N_triangles *
 		       sizeof(*(msh3trg->triangles_sharing_sides)));
 
-    nb_iterator_t* trg_iter =  nb_iterator_create();
-    nb_iterator_set_container(trg_iter, mesh->ht_trg);
-    while (nb_iterator_has_more(trg_iter)) {
-	    msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
-	    uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
-	    uint32_t id1 = msh3trg->N_triangles;
-	    if (NULL != trg->t1)
-		    id1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
-	    uint32_t id2 = msh3trg->N_triangles;
-	    if (NULL != trg->t2)
-		    id2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-	    uint32_t id3 = msh3trg->N_triangles;
-	    if (NULL != trg->t3)
-		    id3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+	nb_iterator_t* trg_iter =  nb_iterator_create();
+	nb_iterator_set_container(trg_iter, mesh->ht_trg);
+	while (nb_iterator_has_more(trg_iter)) {
+		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
+		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id1 = msh3trg->N_triangles;
+		if (NULL != trg->t1)
+			id1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
+		uint32_t id2 = msh3trg->N_triangles;
+		if (NULL != trg->t2)
+			id2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
+		uint32_t id3 = msh3trg->N_triangles;
+		if (NULL != trg->t3)
+			id3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
 
-	    msh3trg->triangles_sharing_sides[id * 3] = id1;
-	    msh3trg->triangles_sharing_sides[id*3+1] = id2;
-	    msh3trg->triangles_sharing_sides[id*3+2] = id3;
-    }
-    nb_iterator_destroy(trg_iter);
+		msh3trg->triangles_sharing_sides[id * 3] = id1;
+		msh3trg->triangles_sharing_sides[id*3+1] = id2;
+		msh3trg->triangles_sharing_sides[id*3+2] = id3;
+	}
+	nb_iterator_destroy(trg_iter);
 }
 
 static void mesh_2_msh3trg_cast_trg_and_alloc_id

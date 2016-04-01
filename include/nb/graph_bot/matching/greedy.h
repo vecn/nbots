@@ -5,4 +5,4 @@
 #include "nb/graph_bot/graph.h"
 
 void nb_graph_matching_greedy(const nb_graph_t *const graph,
-			      int8_t *matched_edges);
+			      uint32_t *nodal_match);

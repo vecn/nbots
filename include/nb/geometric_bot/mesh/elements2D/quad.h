@@ -9,11 +9,13 @@
 uint32_t nb_quad_get_memsize(void);
 void nb_mshquad_init(void *mshquad_ptr);
 void nb_mshquad_copy(void *dest, const void *const src);
-void nb_mshquad_clear(void *mshquad_ptr);
+void nb_mshquad_finish(void *mshquad_ptr);
 
 void* nb_mshquad_create(void);
 void* nb_mshquad_clone(const void *const mshquad_ptr);
 void nb_mshquad_destroy(void *mshquad_ptr);  
+
+void nb_mshquad_clear(void *mshquad_ptr);
 
 void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 			       const nb_mesh_t *const mesh);
