@@ -10,5 +10,6 @@
 #define __NB_GRAPH_BOT_H__
 
 #include "nb/graph_bot/graph.h"
+#include "nb/graph_bot/minimum_matching/greedy.h"
 
 #endif

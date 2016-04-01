@@ -54,7 +54,7 @@ void vcn_statistics_runif(int n, double min, double max,
 		/*(A)*/           /*(Q)*/  /*(R)*/          /*(Q)*/
 		*seed = 16807 * (*seed % 127773) - 2836 * (*seed / 127773);
 		/* (M-1) */
-		out[i] = min + (max-min) * ((double)*seed/2147483647.0);
+		out[i] = min + (max-min) * (*seed/2147483647.0);
 	}
 }
 
