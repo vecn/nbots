@@ -43,6 +43,16 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches);
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
+static void init_elems(nb_mshquad_t *quad, uint32_t *new_elem_id);
+static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+			    const msh_trg_t *const trg, uint32_t elem_id);
+static void set_quad_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+			     const msh_trg_t *const trg, 
+			     const uint32_t *const matches,
+			     uint32_t elem_id);
+static void update_neighbors_ids(nb_mshquad_t *quad,
+				 const uint32_t *const new_elem_id,
+				 uint32_t N_trg);
 static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
@@ -312,33 +322,84 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
-/* AQUI VOY */
+	uint32_t N_trg = vcn_mesh_get_N_trg();
+	uint32_t *new_elem_id = malloc(N_trg * sizeof(new_elem_id));
+	init_elems(quad, new_elem_id);
+	update_neigborhs_ids(quad, new_elem_id, N_trg);
+	free(new_elem_id);
+}
+
+static void init_elems(nb_mshquad_t *quad, uint32_t *new_elem_id)
+{
+
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
+	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = nb_iterator_get_next(iter);
 		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
 
-		if (matches[]){}
-
-		uint32_t elem_id = msh3trg->N_triangles;
-		if (NULL != trg->t1)
-			id1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
-
-		uint32_t id2 = msh3trg->N_triangles;
-		if (NULL != trg->t2)
-			id2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-		uint32_t id3 = msh3trg->N_triangles;
-		if (NULL != trg->t3)
-			id3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
-
-		quad->ngb[id * 3] = id1;
-		quad->ngb[id*3+1] = id2;
-		quad->ngb[id*3+2] = id3;
+		if (matches[id] == id) {
+			set_trg_element(quad, mesh, trg, elem_id);
+			new_elem_id[id] = elem_id;
+			elem_id += 1;
+		} else {
+			if (id < matches[id]) {
+				set_quad_element(quad, mesh, trg, matches, elem_id);
+				new_elem_id[id] = elem_id;
+				elem_id += 1;
+			} else {
+				uint32_t match_id = matches[id];
+				new_elem_id[id] = new_elem_id[match_id];
+			}
+		}
 	}
 	nb_iterator_finish(iter);
+}
+
+static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+			    const msh_trg_t *const trg, uint32_t elem_id)
+{
+	quad->type[elem_id] = 1;
+
+	uint32_t v1 = ((uint32_t*)((void**)trg->v1)[0])[0];
+	uint32_t v2 = ((uint32_t*)((void**)trg->v2)[0])[0];
+	uint32_t v3 = ((uint32_t*)((void**)trg->v3)[0])[0];
+	quad->adj[elem_id * 4] = v1;
+	quad->adj[elem_id*4+1] = v2;
+	quad->adj[elem_id*4+2] = v3;
+	quad->adj[elem_id*4+3] = vcn_mesh_N_vtx(mesh);
+
+	uint32_t t1 = ((uint32_t*)((void**)trg->t1)[0])[0];
+	uint32_t t2 = ((uint32_t*)((void**)trg->t2)[0])[0];
+	uint32_t t3 = ((uint32_t*)((void**)trg->t3)[0])[0];
+	quad->ngb[elem_id * 4] = t1;
+	quad->ngb[elem_id*4+1] = t2;
+	quad->ngb[elem_id*4+2] = t3;
+	quad->ngb[elem_id*4+3] = vcn_mesh_N_trg(mesh);
+}
+
+static void set_quad_element(nb_mshquad_t *quad,
+			     const nb_mesh_t *const mesh,
+			     const msh_trg_t *const trg, 
+			     const uint32_t *const matches,
+			     uint32_t elem_id)
+{
+	quad->type[elem_id] = 0;
+}
+
+static void update_neighbors_ids(nb_mshquad_t *quad,
+				 const uint32_t *const new_elem_id,
+				 uint32_t N_trg)
+{
+	for (uint32_t i = 0; i < 4 * quad->N_elems; i++) {
+		if (quad->ngb[i] < N_trg)
+			quad->ngb[i] = new_elem_id[quad->ngb[i]];
+		else
+			quad->ngb[i] = quad->N_elems;
+	}
 }
 
 static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
