@@ -42,6 +42,11 @@ vcn_graph_t* vcn_graph_create(void);
  */
 void vcn_graph_destroy(vcn_graph_t *graph);
 
+void nb_graph_init_vtx_weights(nb_graph_t *graph);
+void nb_graph_init_edge_weights(nb_graph_t *graph);
+void nb_graph_finish_vtx_weights(nb_graph_t *graph);
+void nb_graph_finish_edge_weights(nb_graph_t *graph);
+
 /**
  * @brief Get a subgraph from the graph.
  * @param[in] graph Super graph containing the output subgraph.

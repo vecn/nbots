@@ -19,6 +19,7 @@
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
+static uint32_t get_wij_memsize(nb_graph_t *graph);
 static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val);
 static nb_container_t* get_collisions(nb_container_t *hash);
 static int8_t compare_degree(const void *const A,
@@ -111,6 +112,43 @@ void vcn_graph_destroy(vcn_graph_t *graph)
 		free(graph->wij);
 
 	free(graph);
+}
+
+void nb_graph_init_vtx_weights(nb_graph_t *graph)
+{
+	graph->wi = calloc(graph->N * sizeof(*(graph->wi)));
+}
+
+void nb_graph_init_edge_weights(nb_graph_t *graph)
+{
+	uint32_t memsize = get_wij_memsize(graph);
+	char *memblock = calloc(1, memsize);
+	graph->wij = (void*) memblock;
+	char *block =  memblock + graph->N * sizeof(*(graph->wij));
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->wij[i] = (void*) block;
+		block += graph->N_adj[i] * sizeof(**(graph->wij));
+	}
+}
+
+static uint32_t get_wij_memsize(nb_graph_t *graph)
+{
+	uint32_t size = graph->N * sizeof(*(graph->wij));
+	for (uint32_t i = 0; i < graph->N; i++)
+		size += graph->N_adj[i] * sizeof(**(graph->wij));
+	return size;
+}
+
+void nb_graph_finish_vtx_weights(nb_graph_t *graph)
+{
+	free(graph->wi);
+	graph->wi = NULL;
+}
+
+void nb_graph_finish_edge_weights(nb_graph_t *graph)
+{
+	free(graph->wij);
+	graph->wij = NULL;
 }
 
 uint32_t* vcn_graph_labeling_amd(const vcn_graph_t *const graph, uint32_t* iperm)

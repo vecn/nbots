@@ -539,9 +539,11 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 {
 	msh3trg->N_input_segments = mesh->N_input_sgm;
 	msh3trg->N_subsgm_x_inputsgm =
-		calloc(msh3trg->N_input_segments, sizeof(*(msh3trg->N_subsgm_x_inputsgm)));
+		calloc(msh3trg->N_input_segments,
+		       sizeof(*(msh3trg->N_subsgm_x_inputsgm)));
 	msh3trg->meshvtx_x_inputsgm = 
-		calloc(msh3trg->N_input_segments,  sizeof(*(msh3trg->meshvtx_x_inputsgm)));
+		calloc(msh3trg->N_input_segments,
+		       sizeof(*(msh3trg->meshvtx_x_inputsgm)));
 
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
 		msh_edge_t* sgm = mesh->input_sgm[i];
@@ -551,10 +553,13 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 			sgm = medge_subsgm_next(sgm);
 		}
 		msh3trg->N_subsgm_x_inputsgm[i] = counter;
-		if (counter > 0)
+		if (counter > 0) {
 			msh3trg->meshvtx_x_inputsgm[i] =
-				calloc(counter+1, sizeof(*(msh3trg->meshvtx_x_inputsgm[i])));
-  }
+				calloc(counter+1,
+				       sizeof(*(msh3trg->
+						meshvtx_x_inputsgm[i])));
+		}
+	}
 
 	for (uint32_t i=0; i < msh3trg->N_input_segments; i++) {
 		if (NULL == mesh->input_sgm[i])
