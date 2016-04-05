@@ -33,9 +33,6 @@ static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const mesh,
 					  vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const mesh,
 					  vcn_msh3trg_t * msh3trg);
-static void mesh_2_msh3trg_free_trg_ids(vcn_mesh_t *mesh);
-static void mesh_alloc_vtx_ids(vcn_mesh_t *mesh);
-static void mesh_free_vtx_ids(vcn_mesh_t *mesh);
 
 inline vcn_msh3trg_t* vcn_msh3trg_create(void)
 {
@@ -266,7 +263,7 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 	mesh_free_vtx_ids((vcn_mesh_t*)mesh);
 
 	if (include_neighbours)
-		mesh_2_msh3trg_free_trg_ids((vcn_mesh_t*)mesh);
+		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 
 	/* Return data */
 	return msh3trg;
@@ -603,49 +600,4 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 			}
 		}
 	}
-}
-
-static void mesh_2_msh3trg_free_trg_ids(vcn_mesh_t *restrict mesh)
-{
-	nb_iterator_t* iter = nb_iterator_create();
-	nb_iterator_set_container(iter, mesh->ht_trg);
-	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		void** attr = (void**)trg->attr;
-		trg->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-	nb_iterator_destroy(iter);
-}
-
-static void mesh_alloc_vtx_ids(vcn_mesh_t * restrict mesh)
-{
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	int i = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t* id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
-		attr[1] = vtx->attr;
-		vtx->attr = attr;
-	}
-	vcn_bins2D_iter_destroy(iter);
-}
-
-static void mesh_free_vtx_ids(vcn_mesh_t *mesh)
-{
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = vtx->attr;
-		vtx->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-	vcn_bins2D_iter_destroy(iter);
 }

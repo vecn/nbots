@@ -4,12 +4,16 @@
 #include <stdbool.h>
 #include <alloca.h>
 
+#include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
 
 #include "nb/geometric_bot/mesh/elements2D/quad.h"
 
 #include "../mesh2D_structs.h"
+
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define POW2(a) ((a)*(a))
 
 typedef struct {
 	uint32_t N_matchs;
@@ -29,6 +33,15 @@ static void* malloc_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
 
+static double get_max_angle_distortion(const msh_trg_t *const trg1,
+				       const msh_trg_t *const trg2);
+static void get_angle_vertices(const msh_trg_t *const trg1,
+			       const msh_trg_t *const trg2,
+			       double a[2], double b[2],
+			       double c[2], uint32_t id);
+static double get_angle(double a[2], double b[2], double c[2]);
+static uint32_t get_trg_adj(const msh_trg_t *const trg,
+			    uint32_t id_adj);
 static void set_mshquad(nb_mshquad_t *quad,
 			const nb_graph_t *const graph,
 			const nb_mesh_t *const mesh,
@@ -67,6 +80,20 @@ static void set_sgm_nodes(nb_quad_t *quad,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_quad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
+static void nodal_graph_allocate_adj(nb_graph_t *graph,
+				     const nb_mshquad_t *mshquad);
+static void nodal_graph_count_adj(nb_graph_t *graph,
+				  const nb_mshquad_t *mshquad);
+static void nodal_graph_assign_mem_adj(nb_graph_t *graph,
+				       const nb_mshquad_t *mshquad);
+static void graph_set_adj(nb_graph_t *graph);
+static void elemental_graph_allocate_adj(nb_graph_t *graph,
+					 const nb_mshquad_t *mshquad);
+static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad);
+static void elemental_graph_count_adj(nb_graph_t *graph,
+				      const nb_mshquad_t *mshquad);
+static void elemental_graph_set_adj(nb_graph_t *graph,
+				    const nb_mshquad_t *mshquad);
 
 uint32_t nb_mshquad_get_memsize(void)
 {
@@ -258,7 +285,121 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph)
 {
-	
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	uint32_t elem_id = 0;
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = nb_iterator_get_next(iter);
+		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+
+		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
+			uint32_t id_adj = graph->adj[id][i];
+			msh_trg_t *trg_adj = get_trg_adj(trg, id_adj);
+			double maxk = get_max_angle_distortion(trg, trg_adj);
+			double quality = MAX(0.0, 1.0 - 2.0 * maxk / NB_PI);
+			graph->wij[id][i] = quality;
+		}
+	}
+	nb_iterator_finish(iter);	
+}
+
+static double get_max_angle_distortion(const msh_trg_t *const trg1,
+				       const msh_trg_t *const trg2)
+{
+	double a[2], b[2], c[2];
+	get_angle_vertices(trg1, trg2, a, b, c, 0);
+	double angle = get_angle(a, b, c);
+	double max_distortion = fabs(NB_PI/2.0 - angle);
+
+	get_angle_vertices(trg1, trg2, a, b, c, 1);
+	angle = get_angle(a, b, c);
+	double distortion = fabs(NB_PI/2.0 - angle);
+	max_distortion = MAX(max_distortion, distortion);
+
+	get_angle_vertices(trg1, trg2, a, b, c, 2);
+	angle = get_angle(a, b, c);
+	distortion = fabs(NB_PI/2.0 - angle);
+	max_distortion = MAX(max_distortion, distortion);
+
+	get_angle_vertices(trg1, trg2, a, b, c, 3);
+	angle = get_angle(a, b, c);
+	distortion = fabs(NB_PI/2.0 - angle);
+	max_distortion = MAX(max_distortion, distortion);
+
+	return max_distortion;
+}
+
+static void get_angle_vertices(const msh_trg_t *const trg1,
+			       const msh_trg_t *const trg2,
+			       double a[2], double b[2],
+			       double c[2], uint32_t id)
+{
+	uint16_t vtx_size = 2 * sizeof(double);
+	msh_vtx_t *trg2_vtx;
+	if (trg1->v1 == trg2->v1)
+		trg2_vtx = trg2->v2;
+	else if (trg1->v1 == trg2->v2)
+		trg2_vtx = trg2->v3;
+	else
+		trg2_vtx = trg2->v1;
+
+	if (0 == id) {
+		memcpy(a, trg1->v3->x, vtx_size);
+		memcpy(b, trg1->v1->x, vtx_size);
+		memcpy(c, trg2_vtx->x, vtx_size);
+	} else if (1 == id) {
+		memcpy(a, trg1->v1->x, vtx_size);
+		memcpy(b, trg2_vtx->x, vtx_size);
+		memcpy(c, trg1->v2->x, vtx_size);
+	} else if (2 == id) {
+		memcpy(a, trg2_vtx->x, vtx_size);
+		memcpy(b, trg1->v2->x, vtx_size);
+		memcpy(c, trg1->v3->x, vtx_size);
+	} else {
+		memcpy(a, trg1->v2->x, vtx_size);
+		memcpy(b, trg1->v3->x, vtx_size);
+		memcpy(c, trg1->v1->x, vtx_size);
+	}
+}
+
+static double get_angle(double a[2], double b[2], double c[2])
+{
+	/* Angle between segments A and B, formed by vtx a, b and c
+	 *           a       c
+	 *            \     /
+	 *           A \___/ B
+	 *              \ /
+	 *               b
+	 */
+	double A[2];
+	A[0] = a[0] - b[0];
+	A[1] = a[1] - b[1];
+
+	double B[2];
+	B[0] = c[0] - b[0];
+	B[1] = c[1] - b[1];
+
+	double dotAB = (A[0] * B[0] + A[1] * B[1]);
+	double lengthA = sqrt(POW2(A[0]) + POW2(A[1]));
+	double lengthB = sqrt(POW2(B[0]) + POW2(B[1]));
+	return acos(dotAB / (lengthA * lengthB));
+}
+
+static uint32_t get_trg_adj(const msh_trg_t *const trg,
+			    uint32_t id_adj)
+{
+	msh_trg_t *trg_adj;
+	if (id_adj == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
+		trg_adj = t1;
+	else if (id_adj == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
+		trg_adj = t2;
+	else if (id_adj == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
+		trg_adj = t3;
+	else
+		trg_adj = NULL;
+	return trg_adj;
 }
 
 static void set_mshquad(nb_mshquad_t *quad,
@@ -346,7 +487,6 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 
 static void init_elems(nb_mshquad_t *quad, uint32_t *new_elem_id)
 {
-
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
 	nb_iterator_init(iter);
@@ -433,50 +573,63 @@ static void set_quad_from_trg(nb_quad_t *quad,
 			      const msh_trg_t *const match_trg,
 			      uint32_t elem_id)
 {
-	uint32_t v1, v2, v3, v4;
-	uint32_t t1, t2, t3, t4;
-	if (((uint32_t*)((void**)trg->v1->attr)[0])[0] ==
-	    ((uint32_t*)((void**)match_trg->v1->attr)[0])[0]) {
-		v1 = ((uint32_t*)((void**)match_trg->v1->attr)[0])[0];
-		v2 = ((uint32_t*)((void**)match_trg->v2->attr)[0])[0];
-		v3 = ((uint32_t*)((void**)match_trg->v3->attr)[0])[0];
-		v4 = ((uint32_t*)((void**)trg->v3->attr)[0])[0];
+	msh_vtx_t *v1, *v2, *v3, *v4;
+	msh_trg_t *t1, *t2, *t3, *t4;
+	if (trg->v1 == match_trg->v1) {
+		v1 = match_trg->v1;
+		v2 = match_trg->v2;
+		v3 = match_trg->v3;
+		v4 = trg->v3;
 
-		t1 = ((uint32_t*)((void**)match_trg->t1->attr)[0])[0];
-		t2 = ((uint32_t*)((void**)match_trg->t2->attr)[0])[0];
-		t3 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-		t4 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
-	} else if (((uint32_t*)((void**)trg->v1->attr)[0])[0] ==
-		   ((uint32_t*)((void**)match_trg->v2->attr)[0])[0]) {
-		v1 = ((uint32_t*)((void**)match_trg->v2->attr)[0])[0];
-		v2 = ((uint32_t*)((void**)match_trg->v3->attr)[0])[0];
-		v3 = ((uint32_t*)((void**)match_trg->v1->attr)[0])[0];
-		v4 = ((uint32_t*)((void**)trg->v3->attr)[0])[0];
+		t1 = match_trg->t1;
+		t2 = match_trg->t2;
+		t3 = trg->t2;
+		t4 = trg->t3;
+	} else if (trg->v1 == match_trg->v2) {
+		v1 = match_trg->v2;
+		v2 = match_trg->v3;
+		v3 = match_trg->v1;
+		v4 = trg->v3;
 
-		t1 = ((uint32_t*)((void**)match_trg->t2->attr)[0])[0];
-		t2 = ((uint32_t*)((void**)match_trg->t3->attr)[0])[0];
-		t3 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-		t4 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+		t1 = match_trg->t2;
+		t2 = match_trg->t3;
+		t3 = trg->t2;
+		t4 = trg->t3;
 	} else {
-		v1 = ((uint32_t*)((void**)match_trg->v3->attr)[0])[0];
-		v2 = ((uint32_t*)((void**)match_trg->v1->attr)[0])[0];
-		v3 = ((uint32_t*)((void**)match_trg->v2->attr)[0])[0];
-		v4 = ((uint32_t*)((void**)trg->v3->attr)[0])[0];
+		v1 = match_trg->v3;
+		v2 = match_trg->v1;
+		v3 = match_trg->v2;
+		v4 = trg->v3;
 
-		t1 = ((uint32_t*)((void**)match_trg->t3->attr)[0])[0];
-		t2 = ((uint32_t*)((void**)match_trg->t1->attr)[0])[0];
-		t3 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-		t4 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+		t1 = match_trg->t3;
+		t2 = match_trg->t1;
+		t3 = trg->t2;
+		t4 = trg->t3;
 	}
-	quad->adj[elem_id * 4] = v1;
-	quad->adj[elem_id*4+1] = v2;
-	quad->adj[elem_id*4+2] = v3;
-	quad->adj[elem_id*4+3] = v4;
+	quad->adj[elem_id * 4] = ((uint32_t*)((void**)v1->attr)[0])[0];
+	quad->adj[elem_id*4+1] = ((uint32_t*)((void**)v2->attr)[0])[0];
+	quad->adj[elem_id*4+2] = ((uint32_t*)((void**)v3->attr)[0])[0];
+	quad->adj[elem_id*4+3] = ((uint32_t*)((void**)v4->attr)[0])[0];
 
-	quad->ngb[elem_id * 4] = t1;
-	quad->ngb[elem_id*4+1] = t2;
-	quad->ngb[elem_id*4+2] = t3;
-	quad->ngb[elem_id*4+3] = t4;
+	if (NULL != t1)
+		quad->ngb[elem_id * 4] = ((uint32_t*)((void**)t1->attr)[0])[0];
+	else
+		quad->ngb[elem_id * 4] = quad->N_elems;
+
+	if (NULL != t2)
+		quad->ngb[elem_id*4+1] = ((uint32_t*)((void**)t2->attr)[0])[0];
+	else
+		quad->ngb[elem_id*4+1] = quad->N_elems;
+
+	if (NULL != t3)
+		quad->ngb[elem_id*4+2] = ((uint32_t*)((void**)t3->attr)[0])[0];
+	else
+		quad->ngb[elem_id*4+2] = quad->N_elems;
+
+	if (NULL != t4)
+		quad->ngb[elem_id*4+3] = ((uint32_t*)((void**)t4->attr)[0])[0];
+	else
+		quad->ngb[elem_id*4+3] = quad->N_elems;
 }
 
 static void update_neighbors_ids(nb_mshquad_t *quad,
@@ -592,6 +745,143 @@ static void get_match_data(const nb_graph_t *const graph,
 }
 
 void nb_mshquad_set_nodal_graph(const nb_mshquad_t *mshquad,
-				nb_graph_t *graph);
+				nb_graph_t *graph)
+{
+	graph->N = mshquad->N_nod;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	nodal_graph_allocate_adj(graph, mshquad);
+	nodal_graph_count_adj(graph, mshquad);
+	nodal_graph_assign_mem_adj(graph, mshquad);
+	nodal_graph_set_adj(graph, mshquad);
+}
+
+
+static void nodal_graph_allocate_adj(nb_graph_t *graph,
+				       const nb_mshquad_t *mshquad)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+}
+
+static void nodal_graph_count_adj(nb_graph_t *graph,
+				  const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+}
+
+
+static void graph_assign_mem_adj(nb_graph_t *graph)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	char *block = (char*) grap->N_adj + memsize_N_adj;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->adj[i] = (void*) block;
+		block += graph->N_adj[i] * sizeof(**(graph->adj));
+	}
+}
+
+
+static void nodal_graph_set_edges(nb_graph_t *graph,
+				  const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->adj[id1][graph->N_adj[id1]] = id2;
+		graph->adj[id2][graph->N_adj[id2]] = id1;
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}	
+}
+
 void nb_mshquad_set_elemental_graph(const nb_mshquad_t *mshquad,
-				    nb_graph_t *graph);
+				    nb_graph_t *graph)
+{
+	graph->N = mshquad->N_elems;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
+	elemental_graph_allocate_edges(graph);
+	elemental_graph_count_edges(graph, mshquad);
+	graph_assign_mem_adj(graph, mshquad);
+	elemental_graph_set_edges(graph, mshquad);
+}
+
+static void elemental_graph_allocate_adj(nb_graph_t *graph,
+					 const nb_mshquad_t *mshquad)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t N_adj = get_N_elemental_adj(mshquad);
+	uint32_t memsize_adj = 2 * N_adj * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+}
+
+static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)
+{
+	uint32_t N = 0;
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (mshquad->N_elems > mshquad->ngb[i * 4])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+1])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+2])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+3])
+			N += 1;
+	}
+	return N;
+}
+
+static void elemental_graph_count_adj(nb_graph_t *graph,
+				      const nb_mshquad_t *mshquad)
+{
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		graph->N_adj[i] = 0;
+		if (mshquad->N_elems > mshquad->ngb[i * 4])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+1])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+2])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+3])
+			graph->N_adj[i] += 1;
+	}
+}
+
+static void elemental_graph_set_adj(nb_graph_t *graph,
+				    const nb_mshquad_t *mshquad)
+{
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		graph->N_adj[i] = 0;
+		if (mshquad->N_elems > mshquad->ngb[i * 4]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i * 4];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+1]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+1];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+2]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+2];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+3];
+			graph->N_adj[i] += 1;
+		}
+	}
+}

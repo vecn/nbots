@@ -100,10 +100,7 @@ vcn_graph_t* vcn_graph_get_subgraph(const vcn_graph_t *const graph,
 
 void vcn_graph_destroy(vcn_graph_t *graph)
 {
-	for (uint32_t i = 0; i < graph->N; i++)
-		free(graph->adj[i]);
-	free(graph->N_adj);
-	free(graph->adj);
+	free(graph->N_adj); /* Includes graph->adj in the same memblock */
 
 	if (NULL != graph->wi)
 		free(graph->wi);

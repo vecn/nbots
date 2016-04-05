@@ -181,4 +181,9 @@ msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
 void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 				    const double *const internal,
 				    double external[2]);
+void mesh_alloc_vtx_ids(vcn_mesh_t *mesh);
+void mesh_free_vtx_ids(vcn_mesh_t *mesh);
+void mesh_alloc_trg_ids(vcn_mesh_t *mesh);
+void mesh_free_trg_ids(vcn_mesh_t *mesh);
+
 #endif

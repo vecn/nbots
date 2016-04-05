@@ -25,11 +25,11 @@
 #include <stdint.h>
 
 typedef struct {
-  uint32_t N;
-  uint32_t *N_adj;
-  uint32_t **adj;
-  double *wi;   /* NULL for equal weights on vertices */
-  double **wij; /* NULL for equal weights on edges */
+	uint32_t N;
+	uint32_t *N_adj;
+	uint32_t **adj;
+	double *wi;   /* NULL for equal weights on vertices */
+	double **wij; /* NULL for equal weights on edges */
 } nb_graph_t;
 
 typedef nb_graph_t vcn_graph_t; /* Deprecated */
