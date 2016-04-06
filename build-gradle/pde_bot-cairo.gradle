@@ -1,19 +1,31 @@
 model {
-    components {
-	pde_bot_cairo(NativeLibrarySpec) {
-	    sources {
-		c {
-		    source {
-			srcDirs "src/nb/pde_bot"
-			include "**/*cairo*"
-		    }
-		    exportedHeaders {
-			srcDirs "include", "/usr/include/cairo"
-		    }
-		    lib library: "container_bot"
-		    lib library: "geometric_bot"
-		}
-	    }
+  repositories {
+    libs(PrebuiltLibraries) {
+      cairo {
+	binaries.withType(SharedLibraryBinary) {
+	  //def arch = binaries.targetPlatform.architecture.name
+	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libcairo.so")
+	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libcairo.so")
 	}
+      }
     }
+  }
+  components {
+    pde_bot_cairo(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "src/nb/pde_bot"
+	    include "**/*cairo*"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "/usr/include/cairo"
+	  }
+	  lib library: "container_bot"
+	  lib library: "geometric_bot"
+	  lib library: 'cairo'
+	}
+      }
+    }
+  }
 }

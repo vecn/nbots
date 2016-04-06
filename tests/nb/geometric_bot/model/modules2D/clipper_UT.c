@@ -11,7 +11,8 @@
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/model/modules2D/clipper.h"
 
-#define INPUTS_DIR "../tests/nb/geometric_bot/model/modules2D/clipper_UT_inputs"
+#define INPUTS_DIR "tests/nb/geometric_bot/model/modules2D/clipper_UT_inputs"
+#define OUTPUT_DIR "build"
 
 #include  "nb/geometric_bot/model/modules2D/exporter_cairo.h" /* TEMPORAL */
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
@@ -19,11 +20,13 @@ static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
 static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
 {							      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
-	sprintf(label, "TEMP_MODEL_%02i.png", TEMPORAL_++);  /* TEMPORAL */
+	sprintf(label, "%s/TEMP_MODEL_%02i.png",
+		OUTPUT_DIR, TEMPORAL_++);                    /* TEMPORAL */
 	vcn_model_export_png(model, label, 1000, 800, false);
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);
-	sprintf(label, "TEMP_MODEL_%02i_MSH.png", TEMPORAL_++);	 /* TEMPORAL */
+	sprintf(label, "%s/TEMP_MODEL_%02i_MSH.png", OUTPUT_DIR,
+		TEMPORAL_++);	                             /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);  /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 }                                                             /* TEMPORAL */

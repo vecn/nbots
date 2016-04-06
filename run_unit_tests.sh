@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export LD_LIBRARY_PATH=build/libs/nbots_all/shared/release
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:build/libs/nbots_all_cairo/shared/release #TEMPORAL
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:build/libs/nb_test_add/shared/release
 
 echo "Unit Tests"
@@ -22,15 +23,14 @@ $LAUNCHER $MODULES_DIR/iterator_HEAP_UT/$FLAVOR_DIR/libiterator_HEAP_UT.so
 $LAUNCHER $MODULES_DIR/iterator_HASH_UT/$FLAVOR_DIR/libiterator_HASH_UT.so
 
 echo "  Geometric Bot"
-GEOMETRIC_BOT_TESTS_DIR=libs/*/shared/release
 $LAUNCHER $MODULES_DIR/point2D_UT/$FLAVOR_DIR/libpoint2D_UT.so
-#$LAUNCHER $MODULES_DIR/utils2D/$FLAVOR_DIR/libutils2D_UT.so
-#$LAUNCHER $MODULES_DIR/bins2D/$FLAVOR_DIR/libbins2D_UT.so
-#$LAUNCHER $MODULES_DIR/bins2D_iterator/$FLAVOR_DIR/libbins2D_iterator_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libdewall_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libconstrained_delaunay_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libverifier_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libclipper_UT.so
+$LAUNCHER $MODULES_DIR/utils2D_UT/$FLAVOR_DIR/libutils2D_UT.so
+$LAUNCHER $MODULES_DIR/knn_bins2D_UT/$FLAVOR_DIR/libknn_bins2D_UT.so
+$LAUNCHER $MODULES_DIR/knn_bins2D_iterator_UT/$FLAVOR_DIR/libknn_bins2D_iterator_UT.so
+$LAUNCHER $MODULES_DIR/mesh_dewall_UT/$FLAVOR_DIR/libmesh_dewall_UT.so
+$LAUNCHER $MODULES_DIR/mesh_constrained_delaunay_UT/$FLAVOR_DIR/libmesh_constrained_delaunay_UT.so
+$LAUNCHER $MODULES_DIR/model_verifier_UT/$FLAVOR_DIR/libmodel_verifier_UT.so
+$LAUNCHER $MODULES_DIR/model_clipper_UT/$FLAVOR_DIR/libmodel_clipper_UT.so
 #$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libmesh2D_UT.so
 #$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libimage_density_UT.so
 

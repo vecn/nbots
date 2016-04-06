@@ -54,12 +54,12 @@ int vcn_model_verify_consistence(const vcn_model_t *const model,
 
 inline bool vcn_model_have_vertices(const vcn_model_t *const model)
 {
-	return (0 < model->N);
+	return (0 <= model->N);
 }
 
 inline bool vcn_model_have_edges(const vcn_model_t *const model)
 {
-	return (0 < model->M);
+	return (0 <= model->M);
 }
 
 bool vcn_model_have_repeated_vertices(const vcn_model_t *const model,

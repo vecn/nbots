@@ -1,18 +1,30 @@
 model {
-    components {
-	geometric_bot_cairo(NativeLibrarySpec) {
-	    sources {
-		c {
-		    source {
-			srcDirs "src/nb/geometric_bot"
-			include "**/*cairo*"
-		    }
-		    exportedHeaders {
-			srcDirs "include", "/usr/include/cairo"
-		    }
-		    lib library: "container_bot"
-		}
-	    }
+  repositories {
+    libs(PrebuiltLibraries) {
+      cairo {
+	binaries.withType(SharedLibraryBinary) {
+	  //def arch = binaries.targetPlatform.architecture.name
+	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libcairo.so")
+	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libcairo.so")
 	}
+      }
     }
+  }
+  components {
+    geometric_bot_cairo(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "src/nb/geometric_bot"
+	    include "**/*cairo*"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "/usr/include/cairo"
+	  }
+	  lib library: "container_bot"
+	  lib library: 'cairo'
+	}
+      }
+    }
+  }
 }

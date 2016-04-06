@@ -13,7 +13,7 @@
 
 #define POW2(a) ((a)*(a))
 
-#define INPUTS_DIR "../tests/nb/geometric_bot/mesh/dewall_UT_inputs"
+#define INPUTS_DIR "tests/nb/geometric_bot/mesh/dewall_UT_inputs"
 
 static bool check_get_delaunay_polygon_0_center(void);
 static bool check_get_delaunay_polygon_1_center(void);
