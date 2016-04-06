@@ -1,5 +1,5 @@
-#ifndef __NB_GRAPH_BOT_PERFECT_MATCHING_H__
-#define __NB_GRAPH_BOT_PERFECT_MATCHING_H__
+#ifndef __NB_GRAPH_BOT_MATCHING_GREEDY_H__
+#define __NB_GRAPH_BOT_MATCHING_GREEDY_H__
 
 #include <stdint.h>
 #include "nb/graph_bot/graph.h"
