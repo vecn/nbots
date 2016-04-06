@@ -17,7 +17,7 @@ static void set_edges(const nb_graph_t *const graph, edge_t *edges);
 static double get_wij(const nb_graph_t *const graph,
 		      uint32_t i, uint32_t j);
 static int8_t compare_edges(const void *const a, const void *const b);
-static void greedy_matching(uint32_t N_edges, const edges_t *edges,
+static void greedy_matching(uint32_t N_edges, const edge_t *edges,
 			    uint32_t *nodal_match);
 
 void nb_graph_matching_greedy(const nb_graph_t *const graph,
@@ -55,7 +55,7 @@ static void set_edges(const nb_graph_t *const graph, edge_t *edges)
 			if (id1 < id2) {
 				edges[cnt].id1 = id1;
 				edges[cnt].id2 = id2;
-				edges[cnt].w = get_weight(graph, id1, i);
+				edges[cnt].w = get_wij(graph, id1, i);
 				cnt += 1;
 			}
 		}
@@ -78,14 +78,14 @@ static int8_t compare_edges(const void *const a, const void *const b)
 	edge_t* edg_a = a;
 	edge_t* edg_b = b;
 	int8_t out = 0;
-	if (edg_a->w > edg_b->w)
+	if (edg_a->w < edg_b->w)
 		out = 1;
-	else if (edg_a->w < edg_b->w)
+	else if (edg_a->w > edg_b->w)
 		out = -1;
 	return out;
 }
 
-static void greedy_matching(uint32_t N_edges, const edges_t *edges,
+static void greedy_matching(uint32_t N_edges, const edge_t *edges,
 			    uint32_t *nodal_match)
 {
 	for (uint32_t i = 0; i < N_edges; i++) {

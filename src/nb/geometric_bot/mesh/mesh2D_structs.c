@@ -8,6 +8,8 @@
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/knn/bins2D.h"
+#include "nb/geometric_bot/knn/bins2D_iterator.h"
 
 #include "mesh2D_structs.h"
 
@@ -899,7 +901,7 @@ void mesh_alloc_vtx_ids(vcn_mesh_t * restrict mesh)
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int i = 0;
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	  msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
 		void** attr = malloc(2 * sizeof(*attr));
 		uint32_t* id = malloc(sizeof(*id));
 		id[0] = i++;
@@ -915,7 +917,7 @@ void mesh_free_vtx_ids(vcn_mesh_t *mesh)
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
 		void** attr = vtx->attr;
 		vtx->attr = attr[1];
 		free(attr[0]);
@@ -932,10 +934,10 @@ void mesh_alloc_trg_ids(vcn_mesh_t *mesh)
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;
 	while (nb_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = nb_iterator_get_next(trg_iter);
-		char *memblock = malloc(2 * sizeof(*attr) + sizeof(*id));
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
+		char *memblock = malloc(2 * sizeof(void*) + sizeof(uint32_t*));
 		void** attr = memblock;
-		uint32_t* id = memblock + 2 * sizeof(*attr);
+		uint32_t* id = memblock + 2 * sizeof(void*);
 		id[0] = i;
 		attr[0] = id;
 		attr[1] = trg->attr;
@@ -950,8 +952,8 @@ void mesh_free_trg_ids(vcn_mesh_t *mesh)
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		void** attr = (void**)trg->attr;
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		void** attr = trg->attr;
 		trg->attr = attr[1];
 		free(attr);
 	}

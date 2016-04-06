@@ -113,7 +113,7 @@ void vcn_graph_destroy(vcn_graph_t *graph)
 
 void nb_graph_init_vtx_weights(nb_graph_t *graph)
 {
-	graph->wi = calloc(graph->N * sizeof(*(graph->wi)));
+	graph->wi = calloc(graph->N, sizeof(*(graph->wi)));
 }
 
 void nb_graph_init_edge_weights(nb_graph_t *graph)

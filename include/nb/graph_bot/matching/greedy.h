@@ -6,3 +6,5 @@
 
 void nb_graph_matching_greedy(const nb_graph_t *const graph,
 			      uint32_t *nodal_match);
+
+#endif

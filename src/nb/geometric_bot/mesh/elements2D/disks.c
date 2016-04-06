@@ -542,22 +542,6 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_destroy(iter);
 }
 
-static void mesh_free_vtx_ids(vcn_mesh_t *mesh)
-/* REFACTOR: taken from triangle.c */
-{
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = vtx->attr;
-		vtx->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-	vcn_bins2D_iter_destroy(iter);
-}
-
-
 vcn_mshpack_t* vcn_mesh_get_mshpack
         (const vcn_mesh_t *const mesh,
 	 bool include_adjacencies,
