@@ -31,18 +31,20 @@ $LAUNCHER $MODULES_DIR/mesh_dewall_UT/$FLAVOR_DIR/libmesh_dewall_UT.so
 $LAUNCHER $MODULES_DIR/mesh_constrained_delaunay_UT/$FLAVOR_DIR/libmesh_constrained_delaunay_UT.so
 $LAUNCHER $MODULES_DIR/model_verifier_UT/$FLAVOR_DIR/libmodel_verifier_UT.so
 $LAUNCHER $MODULES_DIR/model_clipper_UT/$FLAVOR_DIR/libmodel_clipper_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libmesh2D_UT.so
-#$LAUNCHER $MODULES_DIR//$FLAVOR_DIR/libimage_density_UT.so
+$LAUNCHER $MODULES_DIR/mesh_mesh2D_UT/$FLAVOR_DIR/libmesh_mesh2D_UT.so
+$LAUNCHER $MODULES_DIR/mesh_image_density_UT/$FLAVOR_DIR/libmesh_image_density_UT.so
 
-#echo "  PDE Bot"
-#GEOMETRIC_BOT_TESTS_DIR=libs/*/shared/release
-#$LAUNCHER $GEOMETRIC_BOT_TESTS_DIR/finite_element/libstatic_elasticity2D_UT.so
-#
-#echo "  Java binding for Geometric Bot"
+echo "  PDE Bot"
+$LAUNCHER $MODULES_DIR/pde_fem_elasticity2D_UT/$FLAVOR_DIR/libpde_fem_elasticity2D_UT.so
+
+echo "  Java binding for Geometric Bot"
 #JAVA_DIR=binding_java
 #JAVA_TEST_DIR=$JAVA_DIR/tests
 #JAVA_CP=$JAVA_DIR/java/GeometricBot.jar:$JAVA_DIR/java/PdeBot.jar
-#JAVA_LP=$JAVA_DIR/JNI
+
+#JAVA_LP=$MODULES_DIR/nb_geometric_bot_jni/$FLAVOR_DIR
+#JAVA_LP=$JAVA_LP:$MODULES_DIR/nb_pde_bot_jni/$FLAVOR_DIR
+
 #TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestModel.jar
 #java -Djava.library.path=$JAVA_LP -cp $TEST_JARS TestModel
 #TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestGeometricBot.jar

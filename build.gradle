@@ -1,3 +1,6 @@
+apply plugin: 'c'
+
+// NBots
 apply from: 'build-gradle/math_bot.gradle'
 apply from: 'build-gradle/statistics_bot.gradle'
 apply from: 'build-gradle/text_parsing_bot.gradle'
@@ -10,18 +13,22 @@ apply from: 'build-gradle/geometric_bot.gradle'
 apply from: 'build-gradle/pde_bot.gradle'
 apply from: 'build-gradle/exceptions_bot.gradle'
 apply from: 'build-gradle/nbots_all.gradle'
+
+// Cairo extensions
 apply from: 'build-gradle/geometric_bot-cairo.gradle'
 apply from: 'build-gradle/pde_bot-cairo.gradle'
-
-apply from: 'build-gradle/container_bot-tests.gradle'
-apply from: 'build-gradle/geometric_bot-tests.gradle'
-
 apply from: 'build-gradle/nbots_all-cairo.gradle'
 
+// Java binding
+apply from: 'build-gradle/binding_java.gradle'
+
+// Unit tests
+apply from: 'build-gradle/container_bot-tests.gradle'
+apply from: 'build-gradle/geometric_bot-tests.gradle'
+apply from: 'build-gradle/pde_bot-tests.gradle'
+
+// Continuous integration: Testers
 apply from: 'build-gradle/test_launchers.gradle'
-
-
-apply plugin: 'c'
 
 model {
   buildTypes {

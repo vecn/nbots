@@ -13,13 +13,15 @@
 
 #define INPUTS_DIR "../tests/nb/geometric_bot/mesh/\
 modules2D/image_density_UT_inputs"
+#define OUTPUT "build"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
 static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 {							      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
-	sprintf(label, "TEMP_IMG_%02i.png", TEMPORAL_++);     /* TEMPORAL */
+	sprintf(label, "%s/TEMP_IMG_%02i.png", OUTPUT,
+		TEMPORAL_++);                                 /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
 }                                                             /* TEMPORAL */
 

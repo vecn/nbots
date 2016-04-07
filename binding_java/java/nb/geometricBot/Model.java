@@ -21,7 +21,7 @@ public class Model {
     }
 
     static {
-	System.loadLibrary("nb_geometric_bot-jni");
+	System.loadLibrary("nb_geometric_bot_jni");
     }
 
     public static native Model combine(Model modelA, Model modelB);

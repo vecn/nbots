@@ -8,7 +8,7 @@ public class StaticElasticity2D {
     private StaticElasticity2D() {}
 
     static {
-	System.loadLibrary("nb_pde_bot-jni");
+	System.loadLibrary("nb_pde_bot_jni");
     }
     
     public static native MeshResults solve(Model model, Material material,

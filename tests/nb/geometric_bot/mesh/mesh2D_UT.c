@@ -10,14 +10,16 @@
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 
-#define INPUTS_DIR "../tests/nb/geometric_bot/mesh/mesh2D_UT_inputs"
+#define INPUTS_DIR "tests/nb/geometric_bot/mesh/mesh2D_UT_inputs"
+#define OUTPUT_DIR "build"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
 static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 {							      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
-	sprintf(label, "TEMP_%02i.png", TEMPORAL_++);	      /* TEMPORAL */
+	sprintf(label, "%s/TEMP_%02i.png", OUTPUT_DIR,
+		TEMPORAL_++);	                              /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
 }                                                             /* TEMPORAL */
 

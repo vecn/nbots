@@ -12,7 +12,7 @@ public class GeometricBot {
     private GeometricBot() {}
 
     static {
-	System.loadLibrary("nb_geometric_bot-jni");
+	System.loadLibrary("nb_geometric_bot_jni");
     }
     
     public static native Mesh generateMesh(Model model);
