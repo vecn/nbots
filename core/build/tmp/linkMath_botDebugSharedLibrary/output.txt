@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkMath_botDebugSharedLibrary/output.txt for all output for linkMath_botDebugSharedLibrary.
+linking libmath_bot.so successful.
+
+Finished linkMath_botDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkMath_botDebugSharedLibrary/output.txt.

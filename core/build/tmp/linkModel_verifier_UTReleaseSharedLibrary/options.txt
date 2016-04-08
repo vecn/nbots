@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libmodel_verifier_UT.so
+-o
+/home/victor/nbots/core/build/libs/model_verifier_UT/shared/release/libmodel_verifier_UT.so
+/home/victor/nbots/core/build/objs/model_verifier_UT/shared/release/model_verifier_UTC/2wxezct793faw8aqn4tlwabd0/verifier_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

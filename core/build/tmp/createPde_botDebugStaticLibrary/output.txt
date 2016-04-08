@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createPde_botDebugStaticLibrary/output.txt for all output for createPde_botDebugStaticLibrary.
+archiving libpde_bot.a successful.
+
+Finished createPde_botDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createPde_botDebugStaticLibrary/output.txt.

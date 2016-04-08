@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkStatistics_botReleaseSharedLibrary/output.txt for all output for linkStatistics_botReleaseSharedLibrary.
+linking libstatistics_bot.so successful.
+
+Finished linkStatistics_botReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkStatistics_botReleaseSharedLibrary/output.txt.

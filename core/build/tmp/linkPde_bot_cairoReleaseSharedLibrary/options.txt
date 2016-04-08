@@ -1,0 +1,9 @@
+-shared
+-Wl,-soname,libpde_bot_cairo.so
+-o
+/home/victor/nbots/core/build/libs/pde_bot_cairo/shared/release/libpde_bot_cairo.so
+/home/victor/nbots/core/build/objs/pde_bot_cairo/shared/release/pde_bot_cairoC/4bobt69uzmzcoj8bzrsm7b74s/exporter_cairo.o
+/home/victor/nbots/core/build/libs/container_bot/shared/release/libcontainer_bot.so
+/home/victor/nbots/core/build/libs/geometric_bot/shared/release/libgeometric_bot.so
+/usr/lib/x86_64-linux-gnu/libcairo.so
+-m64

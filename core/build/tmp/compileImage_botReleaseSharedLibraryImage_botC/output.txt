@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileImage_botReleaseSharedLibraryImage_botC/output.txt for all output for compileImage_botReleaseSharedLibraryImage_botC.
+compiling image.c successful.
+
+Finished compileImage_botReleaseSharedLibraryImage_botC, see full log file:///home/victor/nbots/core/build/tmp/compileImage_botReleaseSharedLibraryImage_botC/output.txt.

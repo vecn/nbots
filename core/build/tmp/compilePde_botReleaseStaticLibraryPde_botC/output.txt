@@ -1,0 +1,26 @@
+See file:///home/victor/nbots/core/build/tmp/compilePde_botReleaseStaticLibraryPde_botC/output.txt for all output for compilePde_botReleaseStaticLibraryPde_botC.
+compiling trg_linear.c successful.
+
+compiling element.c successful.
+
+compiling gaussp_to_nodes.c successful.
+
+compiling static_elasticity2D.c successful.
+
+compiling bcond_read.c successful.
+
+compiling material.c successful.
+
+compiling bcond_iter.c successful.
+
+compiling static_damage2D.c successful.
+
+compiling pipeline.c successful.
+
+compiling bc_get_container.c successful.
+
+compiling bc_atom.c successful.
+
+compiling bcond.c successful.
+
+Finished compilePde_botReleaseStaticLibraryPde_botC, see full log file:///home/victor/nbots/core/build/tmp/compilePde_botReleaseStaticLibraryPde_botC/output.txt.

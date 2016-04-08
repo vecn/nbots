@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libeigen_bot.so
+-o
+/home/victor/nbots/core/build/libs/eigen_bot/shared/release/libeigen_bot.so
+/home/victor/nbots/core/build/objs/eigen_bot/shared/release/eigen_botC/a97hf58lb82f33b37ewz1jrm6/sparse.o
+/home/victor/nbots/core/build/libs/math_bot/shared/release/libmath_bot.so
+/home/victor/nbots/core/build/libs/container_bot/shared/release/libcontainer_bot.so
+-m64

@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileContainer_array_CTReleaseSharedLibraryContainer_array_CTC/output.txt for all output for compileContainer_array_CTReleaseSharedLibraryContainer_array_CTC.
+compiling array_CT.c successful.
+
+Finished compileContainer_array_CTReleaseSharedLibraryContainer_array_CTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_array_CTReleaseSharedLibraryContainer_array_CTC/output.txt.

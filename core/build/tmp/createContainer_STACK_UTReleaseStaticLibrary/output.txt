@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createContainer_STACK_UTReleaseStaticLibrary/output.txt for all output for createContainer_STACK_UTReleaseStaticLibrary.
+archiving libcontainer_STACK_UT.a successful.
+
+Finished createContainer_STACK_UTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_STACK_UTReleaseStaticLibrary/output.txt.

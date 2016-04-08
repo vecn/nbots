@@ -1,0 +1,154 @@
+See file:///home/victor/nbots/core/build/tmp/compileNbots_allReleaseStaticLibraryNbots_allC/output.txt for all output for compileNbots_allReleaseStaticLibraryNbots_allC.
+compiling cfreader_cat.c successful.
+
+compiling mesh2D_structs.c successful.
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c: In function ‘mesh_alloc_trg_ids’:
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c:939:17: warning: initialization from incompatible pointer type [enabled by default]
+   void** attr = memblock;
+                 ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c:940:18: warning: initialization from incompatible pointer type [enabled by default]
+   uint32_t* id = memblock + 2 * sizeof(void*);
+                  ^
+
+compiling dewall.c successful.
+
+compiling math_bot.c successful.
+
+compiling triangles.c successful.
+
+compiling polygons.c successful.
+
+compiling disks.c successful.
+
+compiling image_density.c successful.
+
+compiling extra_fem.c successful.
+
+compiling ruppert.c successful.
+
+compiling quad.c successful.
+
+compiling graph_generator.c successful.
+
+compiling pruner.c successful.
+
+compiling constrained_delaunay.c successful.
+
+compiling bins2D_iterator.c successful.
+
+compiling mesh2D.c successful.
+
+compiling model2D_struct.c successful.
+
+compiling utils2D.c successful.
+
+compiling exporter_asymptote.c successful.
+
+compiling bins2D.c successful.
+
+compiling model2D.c successful.
+
+compiling verifier.c successful.
+
+compiling regularizer.c successful.
+
+compiling vtx.c successful.
+
+compiling edge.c successful.
+
+compiling point2D.c successful.
+
+compiling simplifier.c successful.
+
+compiling exceptions.c successful.
+
+compiling visual_cat.c successful.
+
+compiling clipper.c successful.
+
+compiling binding.c successful.
+
+compiling heap_tree.c successful.
+
+compiling heap_iterator.c successful.
+
+compiling heap_dst.c successful.
+
+compiling binding.c successful.
+
+compiling avl_tree.c successful.
+
+compiling container.c successful.
+
+compiling avl_iterator.c successful.
+
+compiling avl_dst.c successful.
+
+compiling iterator.c successful.
+
+compiling binding.c successful.
+
+compiling hash_iterator.c successful.
+
+compiling hash_dst.c successful.
+
+compiling binding.c successful.
+
+compiling queue_node.c successful.
+
+compiling queue_iterator.c successful.
+
+compiling binding.c successful.
+
+compiling queue_dst.c successful.
+
+compiling stack_iterator.c successful.
+
+compiling stack_node.c successful.
+
+compiling stack_dst.c successful.
+
+compiling array.c successful.
+
+compiling element.c successful.
+
+compiling trg_linear.c successful.
+
+compiling gaussp_to_nodes.c successful.
+
+compiling image.c successful.
+
+compiling static_elasticity2D.c successful.
+
+compiling static_damage2D.c successful.
+
+compiling material.c successful.
+
+compiling pipeline.c successful.
+
+compiling bcond_read.c successful.
+
+compiling bcond_iter.c successful.
+
+compiling bc_get_container.c successful.
+
+compiling bcond.c successful.
+
+compiling statistics_bot.c successful.
+
+compiling bc_atom.c successful.
+
+compiling greedy.c successful.
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c: In function ‘compare_edges’:
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c:78:18: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+  edge_t* edg_a = a;
+                  ^
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c:79:18: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+  edge_t* edg_b = b;
+                  ^
+
+compiling sparse.c successful.
+
+compiling graph.c successful.
+
+Finished compileNbots_allReleaseStaticLibraryNbots_allC, see full log file:///home/victor/nbots/core/build/tmp/compileNbots_allReleaseStaticLibraryNbots_allC/output.txt.

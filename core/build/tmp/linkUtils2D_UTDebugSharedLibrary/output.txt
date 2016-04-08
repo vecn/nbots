@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkUtils2D_UTDebugSharedLibrary/output.txt for all output for linkUtils2D_UTDebugSharedLibrary.
+linking libutils2D_UT.so successful.
+
+Finished linkUtils2D_UTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkUtils2D_UTDebugSharedLibrary/output.txt.

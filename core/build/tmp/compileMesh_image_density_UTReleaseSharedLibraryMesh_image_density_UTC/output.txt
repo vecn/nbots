@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileMesh_image_density_UTReleaseSharedLibraryMesh_image_density_UTC/output.txt for all output for compileMesh_image_density_UTReleaseSharedLibraryMesh_image_density_UTC.
+compiling image_density_UT.c successful.
+
+Finished compileMesh_image_density_UTReleaseSharedLibraryMesh_image_density_UTC, see full log file:///home/victor/nbots/core/build/tmp/compileMesh_image_density_UTReleaseSharedLibraryMesh_image_density_UTC/output.txt.

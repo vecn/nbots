@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkIterator_HASH_UTReleaseSharedLibrary/output.txt for all output for linkIterator_HASH_UTReleaseSharedLibrary.
+linking libiterator_HASH_UT.so successful.
+
+Finished linkIterator_HASH_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkIterator_HASH_UTReleaseSharedLibrary/output.txt.

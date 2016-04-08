@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkContainer_array_PTDebugSharedLibrary/output.txt for all output for linkContainer_array_PTDebugSharedLibrary.
+linking libcontainer_array_PT.so successful.
+
+Finished linkContainer_array_PTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_array_PTDebugSharedLibrary/output.txt.

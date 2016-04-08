@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkTest_execDebugSharedLibrary/output.txt for all output for linkTest_execDebugSharedLibrary.
+linking libtest_exec.so successful.
+
+Finished linkTest_execDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkTest_execDebugSharedLibrary/output.txt.

@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createUtils2D_UTReleaseStaticLibrary/output.txt for all output for createUtils2D_UTReleaseStaticLibrary.
+archiving libutils2D_UT.a successful.
+
+Finished createUtils2D_UTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createUtils2D_UTReleaseStaticLibrary/output.txt.

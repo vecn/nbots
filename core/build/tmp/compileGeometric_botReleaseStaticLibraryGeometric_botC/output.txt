@@ -1,0 +1,61 @@
+See file:///home/victor/nbots/core/build/tmp/compileGeometric_botReleaseStaticLibraryGeometric_botC/output.txt for all output for compileGeometric_botReleaseStaticLibraryGeometric_botC.
+compiling triangles.c successful.
+
+compiling mesh2D_structs.c successful.
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c: In function ‘mesh_alloc_trg_ids’:
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c:939:17: warning: initialization from incompatible pointer type [enabled by default]
+   void** attr = memblock;
+                 ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/mesh2D_structs.c:940:18: warning: initialization from incompatible pointer type [enabled by default]
+   uint32_t* id = memblock + 2 * sizeof(void*);
+                  ^
+
+compiling dewall.c successful.
+
+compiling polygons.c successful.
+
+compiling image_density.c successful.
+
+compiling disks.c successful.
+
+compiling extra_fem.c successful.
+
+compiling quad.c successful.
+
+compiling graph_generator.c successful.
+
+compiling ruppert.c successful.
+
+compiling pruner.c successful.
+
+compiling bins2D_iterator.c successful.
+
+compiling constrained_delaunay.c successful.
+
+compiling mesh2D.c successful.
+
+compiling model2D_struct.c successful.
+
+compiling utils2D.c successful.
+
+compiling exporter_asymptote.c successful.
+
+compiling verifier.c successful.
+
+compiling bins2D.c successful.
+
+compiling regularizer.c successful.
+
+compiling model2D.c successful.
+
+compiling vtx.c successful.
+
+compiling edge.c successful.
+
+compiling point2D.c successful.
+
+compiling simplifier.c successful.
+
+compiling clipper.c successful.
+
+Finished compileGeometric_botReleaseStaticLibraryGeometric_botC, see full log file:///home/victor/nbots/core/build/tmp/compileGeometric_botReleaseStaticLibraryGeometric_botC/output.txt.

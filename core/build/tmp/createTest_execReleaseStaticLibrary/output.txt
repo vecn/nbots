@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createTest_execReleaseStaticLibrary/output.txt for all output for createTest_execReleaseStaticLibrary.
+archiving libtest_exec.a successful.
+
+Finished createTest_execReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createTest_execReleaseStaticLibrary/output.txt.

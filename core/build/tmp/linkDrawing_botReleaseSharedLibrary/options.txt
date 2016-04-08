@@ -1,0 +1,6 @@
+-shared
+-Wl,-soname,libdrawing_bot.so
+-o
+/home/victor/nbots/core/build/libs/drawing_bot/shared/release/libdrawing_bot.so
+/home/victor/nbots/core/build/objs/drawing_bot/shared/release/drawing_botC/atjteo92c7ep812jk2vpn6pad/visual_cat.o
+-m64

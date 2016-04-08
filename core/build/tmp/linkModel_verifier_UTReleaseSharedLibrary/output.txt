@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkModel_verifier_UTReleaseSharedLibrary/output.txt for all output for linkModel_verifier_UTReleaseSharedLibrary.
+linking libmodel_verifier_UT.so successful.
+
+Finished linkModel_verifier_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkModel_verifier_UTReleaseSharedLibrary/output.txt.

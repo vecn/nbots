@@ -1,0 +1,8 @@
+-o
+/home/victor/nbots/core/build/exe/launch_unit_test/debug/launch_unit_test
+/home/victor/nbots/core/build/objs/launch_unit_test/debug/launch_unit_testC/ac1x5tatlzmxas6uuh63hxsxn/run_tests.o
+/home/victor/nbots/core/build/objs/launch_unit_test/debug/launch_unit_testC/bi5l2y8ijgl8w2wqatydqfq2z/unit_test_driver.o
+/usr/lib/x86_64-linux-gnu/libdl.so
+/home/victor/nbots/core/build/libs/test_exec/shared/debug/libtest_exec.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+-m64

@@ -1,0 +1,8 @@
+-x
+c
+-c
+-fPIC
+-std=c99
+-I
+/home/victor/nbots/core/src/test_exec/headers
+-m64

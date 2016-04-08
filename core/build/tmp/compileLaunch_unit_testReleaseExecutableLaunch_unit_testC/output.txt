@@ -1,0 +1,6 @@
+See file:///home/victor/nbots/core/build/tmp/compileLaunch_unit_testReleaseExecutableLaunch_unit_testC/output.txt for all output for compileLaunch_unit_testReleaseExecutableLaunch_unit_testC.
+compiling unit_test_driver.c successful.
+
+compiling run_tests.c successful.
+
+Finished compileLaunch_unit_testReleaseExecutableLaunch_unit_testC, see full log file:///home/victor/nbots/core/build/tmp/compileLaunch_unit_testReleaseExecutableLaunch_unit_testC/output.txt.

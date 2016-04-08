@@ -1,0 +1,9 @@
+-shared
+-Wl,-soname,libpde_fem_elasticity2D_UT.so
+-o
+/home/victor/nbots/core/build/libs/pde_fem_elasticity2D_UT/shared/debug/libpde_fem_elasticity2D_UT.so
+/home/victor/nbots/core/build/objs/pde_fem_elasticity2D_UT/shared/debug/pde_fem_elasticity2D_UTC/2wfj93824lxe61no5k2mrypsz/static_elasticity2D_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victor/nbots/core/build/libs/nbots_all_cairo/shared/debug/libnbots_all_cairo.so
+-m64

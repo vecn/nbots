@@ -1,0 +1,8 @@
+See file:///home/victor/nbots/core/build/tmp/compileLaunch_complexity_testReleaseExecutableLaunch_complexity_testC/output.txt for all output for compileLaunch_complexity_testReleaseExecutableLaunch_complexity_testC.
+compiling complexity_funcs.c successful.
+
+compiling run_tests.c successful.
+
+compiling complexity_test_driver.c successful.
+
+Finished compileLaunch_complexity_testReleaseExecutableLaunch_complexity_testC, see full log file:///home/victor/nbots/core/build/tmp/compileLaunch_complexity_testReleaseExecutableLaunch_complexity_testC/output.txt.

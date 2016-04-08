@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libpoint2D_UT.so
+-o
+/home/victor/nbots/core/build/libs/point2D_UT/shared/release/libpoint2D_UT.so
+/home/victor/nbots/core/build/objs/point2D_UT/shared/release/point2D_UTC/9g3uujxg61yr8y9a3ju1z76wz/point2D_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

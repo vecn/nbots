@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libcontainer_SORTED_CT.so
+-o
+/home/victor/nbots/core/build/libs/container_SORTED_CT/shared/debug/libcontainer_SORTED_CT.so
+/home/victor/nbots/core/build/objs/container_SORTED_CT/shared/debug/container_SORTED_CTC/8gncnzsacix12lnz0kxfldgna/container_SORTED_CT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+-m64

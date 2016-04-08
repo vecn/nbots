@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createIterator_STACK_UTReleaseStaticLibrary/output.txt for all output for createIterator_STACK_UTReleaseStaticLibrary.
+archiving libiterator_STACK_UT.a successful.
+
+Finished createIterator_STACK_UTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createIterator_STACK_UTReleaseStaticLibrary/output.txt.

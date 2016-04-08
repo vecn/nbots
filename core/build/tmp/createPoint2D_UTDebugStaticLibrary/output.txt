@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createPoint2D_UTDebugStaticLibrary/output.txt for all output for createPoint2D_UTDebugStaticLibrary.
+archiving libpoint2D_UT.a successful.
+
+Finished createPoint2D_UTDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createPoint2D_UTDebugStaticLibrary/output.txt.

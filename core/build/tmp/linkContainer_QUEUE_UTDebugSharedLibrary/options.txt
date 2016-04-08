@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libcontainer_QUEUE_UT.so
+-o
+/home/victor/nbots/core/build/libs/container_QUEUE_UT/shared/debug/libcontainer_QUEUE_UT.so
+/home/victor/nbots/core/build/objs/container_QUEUE_UT/shared/debug/container_QUEUE_UTC/cup7pxj3fiuk127q2nog0m2hc/container_QUEUE_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+-m64

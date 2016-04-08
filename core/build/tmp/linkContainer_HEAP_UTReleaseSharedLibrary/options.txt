@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libcontainer_HEAP_UT.so
+-o
+/home/victor/nbots/core/build/libs/container_HEAP_UT/shared/release/libcontainer_HEAP_UT.so
+/home/victor/nbots/core/build/objs/container_HEAP_UT/shared/release/container_HEAP_UTC/eqnos33a4sdc07kt5lx9hn1l7/container_HEAP_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

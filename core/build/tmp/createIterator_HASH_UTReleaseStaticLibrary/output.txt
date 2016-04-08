@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createIterator_HASH_UTReleaseStaticLibrary/output.txt for all output for createIterator_HASH_UTReleaseStaticLibrary.
+archiving libiterator_HASH_UT.a successful.
+
+Finished createIterator_HASH_UTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createIterator_HASH_UTReleaseStaticLibrary/output.txt.

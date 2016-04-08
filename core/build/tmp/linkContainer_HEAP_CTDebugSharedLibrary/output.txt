@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkContainer_HEAP_CTDebugSharedLibrary/output.txt for all output for linkContainer_HEAP_CTDebugSharedLibrary.
+linking libcontainer_HEAP_CT.so successful.
+
+Finished linkContainer_HEAP_CTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_HEAP_CTDebugSharedLibrary/output.txt.

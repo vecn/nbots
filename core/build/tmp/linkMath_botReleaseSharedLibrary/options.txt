@@ -1,0 +1,6 @@
+-shared
+-Wl,-soname,libmath_bot.so
+-o
+/home/victor/nbots/core/build/libs/math_bot/shared/release/libmath_bot.so
+/home/victor/nbots/core/build/objs/math_bot/shared/release/math_botC/tof1b9cxrffsiip9uwp9jouu/math_bot.o
+-m64

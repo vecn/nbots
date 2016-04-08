@@ -1,0 +1,10 @@
+See file:///home/victor/nbots/core/build/tmp/compileNbots_all_cairoDebugSharedLibraryNbots_all_cairoC/output.txt for all output for compileNbots_all_cairoDebugSharedLibraryNbots_all_cairoC.
+compiling visual_cat-cairo.c successful.
+
+compiling exporter_cairo.c successful.
+
+compiling exporter_cairo.c successful.
+
+compiling exporter_cairo.c successful.
+
+Finished compileNbots_all_cairoDebugSharedLibraryNbots_all_cairoC, see full log file:///home/victor/nbots/core/build/tmp/compileNbots_all_cairoDebugSharedLibraryNbots_all_cairoC/output.txt.

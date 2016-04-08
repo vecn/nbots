@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libcontainer_HASH_UT.so
+-o
+/home/victor/nbots/core/build/libs/container_HASH_UT/shared/release/libcontainer_HASH_UT.so
+/home/victor/nbots/core/build/objs/container_HASH_UT/shared/release/container_HASH_UTC/v0kesz7xy440wvbfpikassso/container_HASH_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

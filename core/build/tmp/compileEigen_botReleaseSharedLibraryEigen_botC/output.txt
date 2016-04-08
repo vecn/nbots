@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileEigen_botReleaseSharedLibraryEigen_botC/output.txt for all output for compileEigen_botReleaseSharedLibraryEigen_botC.
+compiling sparse.c successful.
+
+Finished compileEigen_botReleaseSharedLibraryEigen_botC, see full log file:///home/victor/nbots/core/build/tmp/compileEigen_botReleaseSharedLibraryEigen_botC/output.txt.

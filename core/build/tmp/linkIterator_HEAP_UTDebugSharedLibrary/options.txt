@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libiterator_HEAP_UT.so
+-o
+/home/victor/nbots/core/build/libs/iterator_HEAP_UT/shared/debug/libiterator_HEAP_UT.so
+/home/victor/nbots/core/build/objs/iterator_HEAP_UT/shared/debug/iterator_HEAP_UTC/e7cdnwqnaqi8fgp07hxjuxpyh/iterator_HEAP_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+-m64

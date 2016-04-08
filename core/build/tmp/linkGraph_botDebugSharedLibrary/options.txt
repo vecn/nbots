@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libgraph_bot.so
+-o
+/home/victor/nbots/core/build/libs/graph_bot/shared/debug/libgraph_bot.so
+/home/victor/nbots/core/build/objs/graph_bot/shared/debug/graph_botC/7jt0iowae1oxfvi9jheiun16e/graph.o
+/home/victor/nbots/core/build/libs/eigen_bot/shared/debug/libeigen_bot.so
+/home/victor/nbots/core/build/libs/container_bot/shared/debug/libcontainer_bot.so
+-m64

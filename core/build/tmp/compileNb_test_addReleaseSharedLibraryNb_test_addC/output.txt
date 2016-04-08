@@ -1,0 +1,6 @@
+See file:///home/victor/nbots/core/build/tmp/compileNb_test_addReleaseSharedLibraryNb_test_addC/output.txt for all output for compileNb_test_addReleaseSharedLibraryNb_test_addC.
+compiling test_add.c successful.
+
+compiling test.c successful.
+
+Finished compileNb_test_addReleaseSharedLibraryNb_test_addC, see full log file:///home/victor/nbots/core/build/tmp/compileNb_test_addReleaseSharedLibraryNb_test_addC/output.txt.

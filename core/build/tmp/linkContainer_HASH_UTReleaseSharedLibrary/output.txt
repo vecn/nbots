@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkContainer_HASH_UTReleaseSharedLibrary/output.txt for all output for linkContainer_HASH_UTReleaseSharedLibrary.
+linking libcontainer_HASH_UT.so successful.
+
+Finished linkContainer_HASH_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_HASH_UTReleaseSharedLibrary/output.txt.

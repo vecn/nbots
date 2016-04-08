@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileContainer_HEAP_CTDebugSharedLibraryContainer_HEAP_CTC/output.txt for all output for compileContainer_HEAP_CTDebugSharedLibraryContainer_HEAP_CTC.
+compiling container_HEAP_CT.c successful.
+
+Finished compileContainer_HEAP_CTDebugSharedLibraryContainer_HEAP_CTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_HEAP_CTDebugSharedLibraryContainer_HEAP_CTC/output.txt.

@@ -1,0 +1,9 @@
+-x
+c
+-c
+-std=c99
+-I
+/home/victor/nbots/core/include
+-I
+/home/victor/nbots/core/ci_tools/test_launchers
+-m64

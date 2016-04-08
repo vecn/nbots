@@ -1,0 +1,9 @@
+-shared
+-Wl,-soname,libgeometric_bot_cairo.so
+-o
+/home/victor/nbots/core/build/libs/geometric_bot_cairo/shared/debug/libgeometric_bot_cairo.so
+/home/victor/nbots/core/build/objs/geometric_bot_cairo/shared/debug/geometric_bot_cairoC/2dqor4abkhdrdx34ktpeyj5hu/exporter_cairo.o
+/home/victor/nbots/core/build/objs/geometric_bot_cairo/shared/debug/geometric_bot_cairoC/45b1xfzqk5czffputl8as36ub/exporter_cairo.o
+/home/victor/nbots/core/build/libs/container_bot/shared/debug/libcontainer_bot.so
+/usr/lib/x86_64-linux-gnu/libcairo.so
+-m64

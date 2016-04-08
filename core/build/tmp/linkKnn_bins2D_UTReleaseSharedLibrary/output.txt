@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkKnn_bins2D_UTReleaseSharedLibrary/output.txt for all output for linkKnn_bins2D_UTReleaseSharedLibrary.
+linking libknn_bins2D_UT.so successful.
+
+Finished linkKnn_bins2D_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkKnn_bins2D_UTReleaseSharedLibrary/output.txt.

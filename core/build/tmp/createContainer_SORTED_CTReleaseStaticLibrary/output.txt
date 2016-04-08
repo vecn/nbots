@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/createContainer_SORTED_CTReleaseStaticLibrary/output.txt for all output for createContainer_SORTED_CTReleaseStaticLibrary.
+archiving libcontainer_SORTED_CT.a successful.
+
+Finished createContainer_SORTED_CTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_SORTED_CTReleaseStaticLibrary/output.txt.

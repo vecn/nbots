@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileModel_verifier_UTDebugSharedLibraryModel_verifier_UTC/output.txt for all output for compileModel_verifier_UTDebugSharedLibraryModel_verifier_UTC.
+compiling verifier_UT.c successful.
+
+Finished compileModel_verifier_UTDebugSharedLibraryModel_verifier_UTC, see full log file:///home/victor/nbots/core/build/tmp/compileModel_verifier_UTDebugSharedLibraryModel_verifier_UTC/output.txt.

@@ -1,0 +1,6 @@
+-shared
+-Wl,-soname,libexceptions_bot.so
+-o
+/home/victor/nbots/core/build/libs/exceptions_bot/shared/debug/libexceptions_bot.so
+/home/victor/nbots/core/build/objs/exceptions_bot/shared/debug/exceptions_botC/44srmzw8ffmgf9xtj0py8977o/exceptions.o
+-m64

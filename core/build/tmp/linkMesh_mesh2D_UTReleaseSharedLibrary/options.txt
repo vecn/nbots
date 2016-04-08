@@ -1,0 +1,9 @@
+-shared
+-Wl,-soname,libmesh_mesh2D_UT.so
+-o
+/home/victor/nbots/core/build/libs/mesh_mesh2D_UT/shared/release/libmesh_mesh2D_UT.so
+/home/victor/nbots/core/build/objs/mesh_mesh2D_UT/shared/release/mesh_mesh2D_UTC/66acei7435ypy3ktzgnhwriff/mesh2D_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victor/nbots/core/build/libs/nbots_all_cairo/shared/release/libnbots_all_cairo.so
+-m64

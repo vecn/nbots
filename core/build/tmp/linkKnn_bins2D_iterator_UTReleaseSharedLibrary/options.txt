@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libknn_bins2D_iterator_UT.so
+-o
+/home/victor/nbots/core/build/libs/knn_bins2D_iterator_UT/shared/release/libknn_bins2D_iterator_UT.so
+/home/victor/nbots/core/build/objs/knn_bins2D_iterator_UT/shared/release/knn_bins2D_iterator_UTC/bvwyh83878s37zmsqidgfm68z/bins2D_iterator_UT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

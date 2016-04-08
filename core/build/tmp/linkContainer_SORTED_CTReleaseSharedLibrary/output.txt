@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkContainer_SORTED_CTReleaseSharedLibrary/output.txt for all output for linkContainer_SORTED_CTReleaseSharedLibrary.
+linking libcontainer_SORTED_CT.so successful.
+
+Finished linkContainer_SORTED_CTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_SORTED_CTReleaseSharedLibrary/output.txt.

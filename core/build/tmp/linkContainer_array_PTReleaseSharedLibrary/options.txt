@@ -1,0 +1,8 @@
+-shared
+-Wl,-soname,libcontainer_array_PT.so
+-o
+/home/victor/nbots/core/build/libs/container_array_PT/shared/release/libcontainer_array_PT.so
+/home/victor/nbots/core/build/objs/container_array_PT/shared/release/container_array_PTC/eu0i1njvn5qvyohp4stweievg/array_PT.o
+/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+-m64

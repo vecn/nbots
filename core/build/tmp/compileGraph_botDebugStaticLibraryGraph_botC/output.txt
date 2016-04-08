@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileGraph_botDebugStaticLibraryGraph_botC/output.txt for all output for compileGraph_botDebugStaticLibraryGraph_botC.
+compiling graph.c successful.
+
+Finished compileGraph_botDebugStaticLibraryGraph_botC, see full log file:///home/victor/nbots/core/build/tmp/compileGraph_botDebugStaticLibraryGraph_botC/output.txt.

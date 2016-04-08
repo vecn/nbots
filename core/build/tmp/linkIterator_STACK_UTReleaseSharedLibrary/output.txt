@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkIterator_STACK_UTReleaseSharedLibrary/output.txt for all output for linkIterator_STACK_UTReleaseSharedLibrary.
+linking libiterator_STACK_UT.so successful.
+
+Finished linkIterator_STACK_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkIterator_STACK_UTReleaseSharedLibrary/output.txt.

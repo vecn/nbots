@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/linkNbots_all_cairoReleaseSharedLibrary/output.txt for all output for linkNbots_all_cairoReleaseSharedLibrary.
+linking libnbots_all_cairo.so successful.
+
+Finished linkNbots_all_cairoReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkNbots_all_cairoReleaseSharedLibrary/output.txt.
