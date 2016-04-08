@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileDrawing_botReleaseSharedLibraryDrawing_botC/output.txt for all output for compileDrawing_botReleaseSharedLibraryDrawing_botC.
+See file:///home/victorc/nbots/core/build/tmp/compileDrawing_botReleaseSharedLibraryDrawing_botC/output.txt for all output for compileDrawing_botReleaseSharedLibraryDrawing_botC.
 compiling visual_cat.c successful.
 
-Finished compileDrawing_botReleaseSharedLibraryDrawing_botC, see full log file:///home/victor/nbots/core/build/tmp/compileDrawing_botReleaseSharedLibraryDrawing_botC/output.txt.
+Finished compileDrawing_botReleaseSharedLibraryDrawing_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileDrawing_botReleaseSharedLibraryDrawing_botC/output.txt.

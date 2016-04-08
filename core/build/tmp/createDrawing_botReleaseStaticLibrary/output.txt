@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createDrawing_botReleaseStaticLibrary/output.txt for all output for createDrawing_botReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createDrawing_botReleaseStaticLibrary/output.txt for all output for createDrawing_botReleaseStaticLibrary.
 archiving libdrawing_bot.a successful.
 
-Finished createDrawing_botReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createDrawing_botReleaseStaticLibrary/output.txt.
+Finished createDrawing_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createDrawing_botReleaseStaticLibrary/output.txt.

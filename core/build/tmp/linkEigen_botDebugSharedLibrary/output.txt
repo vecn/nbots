@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkEigen_botDebugSharedLibrary/output.txt for all output for linkEigen_botDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkEigen_botDebugSharedLibrary/output.txt for all output for linkEigen_botDebugSharedLibrary.
 linking libeigen_bot.so successful.
 
-Finished linkEigen_botDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkEigen_botDebugSharedLibrary/output.txt.
+Finished linkEigen_botDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkEigen_botDebugSharedLibrary/output.txt.

@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_STACK_CTDebugStaticLibrary/output.txt for all output for createContainer_STACK_CTDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_STACK_CTDebugStaticLibrary/output.txt for all output for createContainer_STACK_CTDebugStaticLibrary.
 archiving libcontainer_STACK_CT.a successful.
 
-Finished createContainer_STACK_CTDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_STACK_CTDebugStaticLibrary/output.txt.
+Finished createContainer_STACK_CTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_STACK_CTDebugStaticLibrary/output.txt.

@@ -3,6 +3,7 @@
 
 # Main build directory
 build/*
+**/build/*
 
 # Gradle files
 .gradle/*

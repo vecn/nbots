@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_array_UTReleaseStaticLibrary/output.txt for all output for createContainer_array_UTReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_array_UTReleaseStaticLibrary/output.txt for all output for createContainer_array_UTReleaseStaticLibrary.
 archiving libcontainer_array_UT.a successful.
 
-Finished createContainer_array_UTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_array_UTReleaseStaticLibrary/output.txt.
+Finished createContainer_array_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_array_UTReleaseStaticLibrary/output.txt.

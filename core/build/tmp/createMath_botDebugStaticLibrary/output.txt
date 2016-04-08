@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createMath_botDebugStaticLibrary/output.txt for all output for createMath_botDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createMath_botDebugStaticLibrary/output.txt for all output for createMath_botDebugStaticLibrary.
 archiving libmath_bot.a successful.
 
-Finished createMath_botDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createMath_botDebugStaticLibrary/output.txt.
+Finished createMath_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createMath_botDebugStaticLibrary/output.txt.

@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileStatistics_botReleaseSharedLibraryStatistics_botC/output.txt for all output for compileStatistics_botReleaseSharedLibraryStatistics_botC.
+See file:///home/victorc/nbots/core/build/tmp/compileStatistics_botReleaseSharedLibraryStatistics_botC/output.txt for all output for compileStatistics_botReleaseSharedLibraryStatistics_botC.
 compiling statistics_bot.c successful.
 
-Finished compileStatistics_botReleaseSharedLibraryStatistics_botC, see full log file:///home/victor/nbots/core/build/tmp/compileStatistics_botReleaseSharedLibraryStatistics_botC/output.txt.
+Finished compileStatistics_botReleaseSharedLibraryStatistics_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileStatistics_botReleaseSharedLibraryStatistics_botC/output.txt.

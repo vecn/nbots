@@ -1,6 +1,6 @@
 -shared
 -Wl,-soname,libimage_bot.so
 -o
-/home/victor/nbots/core/build/libs/image_bot/shared/debug/libimage_bot.so
-/home/victor/nbots/core/build/objs/image_bot/shared/debug/image_botC/4u6s74uv72lpnv1dgtw97u9hw/image.o
+/home/victorc/nbots/core/build/libs/image_bot/shared/debug/libimage_bot.so
+/home/victorc/nbots/core/build/objs/image_bot/shared/debug/image_botC/8yxy5kgfztn7k9prs4s5p0rex/image.o
 -m64

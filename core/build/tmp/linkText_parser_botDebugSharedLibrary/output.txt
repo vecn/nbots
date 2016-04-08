@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkText_parser_botDebugSharedLibrary/output.txt for all output for linkText_parser_botDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkText_parser_botDebugSharedLibrary/output.txt for all output for linkText_parser_botDebugSharedLibrary.
 linking libtext_parser_bot.so successful.
 
-Finished linkText_parser_botDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkText_parser_botDebugSharedLibrary/output.txt.
+Finished linkText_parser_botDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkText_parser_botDebugSharedLibrary/output.txt.

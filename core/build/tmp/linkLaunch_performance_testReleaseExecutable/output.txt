@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkLaunch_performance_testReleaseExecutable/output.txt for all output for linkLaunch_performance_testReleaseExecutable.
+See file:///home/victorc/nbots/core/build/tmp/linkLaunch_performance_testReleaseExecutable/output.txt for all output for linkLaunch_performance_testReleaseExecutable.
 linking launch_performance_test successful.
 
-Finished linkLaunch_performance_testReleaseExecutable, see full log file:///home/victor/nbots/core/build/tmp/linkLaunch_performance_testReleaseExecutable/output.txt.
+Finished linkLaunch_performance_testReleaseExecutable, see full log file:///home/victorc/nbots/core/build/tmp/linkLaunch_performance_testReleaseExecutable/output.txt.

@@ -3,5 +3,5 @@ c
 -c
 -std=c99
 -I
-/home/victor/nbots/core/include
+/home/victorc/nbots/core/include
 -m64

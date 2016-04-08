@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createImage_botDebugStaticLibrary/output.txt for all output for createImage_botDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createImage_botDebugStaticLibrary/output.txt for all output for createImage_botDebugStaticLibrary.
 archiving libimage_bot.a successful.
 
-Finished createImage_botDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createImage_botDebugStaticLibrary/output.txt.
+Finished createImage_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createImage_botDebugStaticLibrary/output.txt.

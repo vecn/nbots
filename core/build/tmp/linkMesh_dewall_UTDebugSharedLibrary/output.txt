@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkMesh_dewall_UTDebugSharedLibrary/output.txt for all output for linkMesh_dewall_UTDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkMesh_dewall_UTDebugSharedLibrary/output.txt for all output for linkMesh_dewall_UTDebugSharedLibrary.
 linking libmesh_dewall_UT.so successful.
 
-Finished linkMesh_dewall_UTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkMesh_dewall_UTDebugSharedLibrary/output.txt.
+Finished linkMesh_dewall_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkMesh_dewall_UTDebugSharedLibrary/output.txt.

@@ -1,6 +1,6 @@
 -shared
 -Wl,-soname,libtest_exec.so
 -o
-/home/victor/nbots/core/build/libs/test_exec/shared/release/libtest_exec.so
-/home/victor/nbots/core/build/objs/test_exec/shared/release/test_execC/13h099aiwd00ii7wt2fftnwns/test.o
+/home/victorc/nbots/core/build/libs/test_exec/shared/release/libtest_exec.so
+/home/victorc/nbots/core/build/objs/test_exec/shared/release/test_execC/13fso8cheyu6sa1bkpniujcsh/test.o
 -m64

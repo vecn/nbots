@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createGeometric_bot_cairoDebugStaticLibrary/output.txt for all output for createGeometric_bot_cairoDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createGeometric_bot_cairoDebugStaticLibrary/output.txt for all output for createGeometric_bot_cairoDebugStaticLibrary.
 archiving libgeometric_bot_cairo.a successful.
 
-Finished createGeometric_bot_cairoDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createGeometric_bot_cairoDebugStaticLibrary/output.txt.
+Finished createGeometric_bot_cairoDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createGeometric_bot_cairoDebugStaticLibrary/output.txt.

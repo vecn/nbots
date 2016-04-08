@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createModel_verifier_UTDebugStaticLibrary/output.txt for all output for createModel_verifier_UTDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createModel_verifier_UTDebugStaticLibrary/output.txt for all output for createModel_verifier_UTDebugStaticLibrary.
 archiving libmodel_verifier_UT.a successful.
 
-Finished createModel_verifier_UTDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createModel_verifier_UTDebugStaticLibrary/output.txt.
+Finished createModel_verifier_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createModel_verifier_UTDebugStaticLibrary/output.txt.

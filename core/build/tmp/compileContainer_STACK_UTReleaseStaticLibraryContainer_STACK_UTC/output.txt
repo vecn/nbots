@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC/output.txt for all output for compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC.
+See file:///home/victorc/nbots/core/build/tmp/compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC/output.txt for all output for compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC.
 compiling container_STACK_UT.c successful.
 
-Finished compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC/output.txt.
+Finished compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_STACK_UTReleaseStaticLibraryContainer_STACK_UTC/output.txt.

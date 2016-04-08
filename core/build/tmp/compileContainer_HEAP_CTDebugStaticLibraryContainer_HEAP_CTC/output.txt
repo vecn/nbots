@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC/output.txt for all output for compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC.
+See file:///home/victorc/nbots/core/build/tmp/compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC/output.txt for all output for compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC.
 compiling container_HEAP_CT.c successful.
 
-Finished compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC/output.txt.
+Finished compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_HEAP_CTDebugStaticLibraryContainer_HEAP_CTC/output.txt.

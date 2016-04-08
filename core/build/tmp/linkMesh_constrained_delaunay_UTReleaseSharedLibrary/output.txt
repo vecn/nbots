@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkMesh_constrained_delaunay_UTReleaseSharedLibrary/output.txt for all output for linkMesh_constrained_delaunay_UTReleaseSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkMesh_constrained_delaunay_UTReleaseSharedLibrary/output.txt for all output for linkMesh_constrained_delaunay_UTReleaseSharedLibrary.
 linking libmesh_constrained_delaunay_UT.so successful.
 
-Finished linkMesh_constrained_delaunay_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkMesh_constrained_delaunay_UTReleaseSharedLibrary/output.txt.
+Finished linkMesh_constrained_delaunay_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkMesh_constrained_delaunay_UTReleaseSharedLibrary/output.txt.

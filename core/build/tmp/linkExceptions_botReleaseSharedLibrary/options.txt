@@ -1,6 +1,6 @@
 -shared
 -Wl,-soname,libexceptions_bot.so
 -o
-/home/victor/nbots/core/build/libs/exceptions_bot/shared/release/libexceptions_bot.so
-/home/victor/nbots/core/build/objs/exceptions_bot/shared/release/exceptions_botC/44srmzw8ffmgf9xtj0py8977o/exceptions.o
+/home/victorc/nbots/core/build/libs/exceptions_bot/shared/release/libexceptions_bot.so
+/home/victorc/nbots/core/build/objs/exceptions_bot/shared/release/exceptions_botC/2qhmiovrsrszytdle1z0wp0qj/exceptions.o
 -m64

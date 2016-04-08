@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkMesh_mesh2D_UTDebugSharedLibrary/output.txt for all output for linkMesh_mesh2D_UTDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkMesh_mesh2D_UTDebugSharedLibrary/output.txt for all output for linkMesh_mesh2D_UTDebugSharedLibrary.
 linking libmesh_mesh2D_UT.so successful.
 
-Finished linkMesh_mesh2D_UTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkMesh_mesh2D_UTDebugSharedLibrary/output.txt.
+Finished linkMesh_mesh2D_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkMesh_mesh2D_UTDebugSharedLibrary/output.txt.

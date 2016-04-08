@@ -11,7 +11,7 @@
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/model/modules2D/verifier.h"
 
-#define INPUTS_DIR "tests/nb/geometric_bot/model/modules2D/verifier_UT_inputs"
+#define INPUTS_DIR "core/tests/nb/geometric_bot/model/modules2D/verifier_UT_inputs"
 
 static bool check_verify_consistence(void);
 

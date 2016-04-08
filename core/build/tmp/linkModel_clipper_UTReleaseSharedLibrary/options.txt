@@ -1,9 +1,9 @@
 -shared
 -Wl,-soname,libmodel_clipper_UT.so
 -o
-/home/victor/nbots/core/build/libs/model_clipper_UT/shared/release/libmodel_clipper_UT.so
-/home/victor/nbots/core/build/objs/model_clipper_UT/shared/release/model_clipper_UTC/5lp7fbe3ztw9vs77mvzruhlao/clipper_UT.o
-/home/victor/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victor/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
-/home/victor/nbots/core/build/libs/nbots_all_cairo/shared/release/libnbots_all_cairo.so
+/home/victorc/nbots/core/build/libs/model_clipper_UT/shared/release/libmodel_clipper_UT.so
+/home/victorc/nbots/core/build/objs/model_clipper_UT/shared/release/model_clipper_UTC/ed5bwbqibzdrmpty5jrcir5dk/clipper_UT.o
+/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
+/home/victorc/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots_all_cairo/shared/release/libnbots_all_cairo.so
 -m64

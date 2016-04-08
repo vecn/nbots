@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC/output.txt for all output for compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC.
+See file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC/output.txt for all output for compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC.
 compiling container_HASH_UT.c successful.
 
-Finished compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC/output.txt.
+Finished compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_UTDebugStaticLibraryContainer_HASH_UTC/output.txt.

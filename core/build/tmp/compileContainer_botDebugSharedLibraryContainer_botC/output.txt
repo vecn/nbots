@@ -1,7 +1,21 @@
-See file:///home/victor/nbots/core/build/tmp/compileContainer_botDebugSharedLibraryContainer_botC/output.txt for all output for compileContainer_botDebugSharedLibraryContainer_botC.
+See file:///home/victorc/nbots/core/build/tmp/compileContainer_botDebugSharedLibraryContainer_botC/output.txt for all output for compileContainer_botDebugSharedLibraryContainer_botC.
+compiling stack_node.c successful.
+
 compiling binding.c successful.
 
-compiling heap_dst.c successful.
+compiling stack_iterator.c successful.
+
+compiling stack_dst.c successful.
+
+compiling queue_node.c successful.
+
+compiling queue_iterator.c successful.
+
+compiling iterator.c successful.
+
+compiling queue_dst.c successful.
+
+compiling binding.c successful.
 
 compiling heap_tree.c successful.
 
@@ -9,38 +23,24 @@ compiling heap_iterator.c successful.
 
 compiling binding.c successful.
 
-compiling avl_iterator.c successful.
-
-compiling avl_tree.c successful.
-
 compiling container.c successful.
-
-compiling avl_dst.c successful.
 
 compiling binding.c successful.
 
-compiling iterator.c successful.
+compiling heap_dst.c successful.
 
 compiling hash_iterator.c successful.
 
-compiling binding.c successful.
-
-compiling queue_iterator.c successful.
-
 compiling hash_dst.c successful.
 
-compiling queue_node.c successful.
-
-compiling stack_node.c successful.
+compiling avl_iterator.c successful.
 
 compiling binding.c successful.
 
-compiling queue_dst.c successful.
-
-compiling stack_iterator.c successful.
-
-compiling stack_dst.c successful.
+compiling avl_dst.c successful.
 
 compiling array.c successful.
 
-Finished compileContainer_botDebugSharedLibraryContainer_botC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_botDebugSharedLibraryContainer_botC/output.txt.
+compiling avl_tree.c successful.
+
+Finished compileContainer_botDebugSharedLibraryContainer_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_botDebugSharedLibraryContainer_botC/output.txt.

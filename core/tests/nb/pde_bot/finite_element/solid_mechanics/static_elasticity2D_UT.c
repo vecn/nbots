@@ -17,7 +17,7 @@
 #include "test_library.h"
 #include "test_add.h"
 
-#define INPUTS_DIR "tests/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_UT_inputs"
+#define INPUTS_DIR "core/tests/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_UT_inputs"
 
 #include "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 #include "nb/pde_bot/finite_element/modules/exporter_cairo.h" /* TEMPORAL */
@@ -90,7 +90,7 @@ static bool check_static_elasticity2D(void)
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	vcn_mesh_save_png(mesh,"build/TEMPORAL_FEM_MESH.png", 1000, 800);
+	vcn_mesh_save_png(mesh,"core/build/TEMPORAL_FEM_MESH.png", 1000, 800);
 
 	vcn_msh3trg_t* delaunay = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
@@ -116,7 +116,7 @@ static bool check_static_elasticity2D(void)
 					    results.disp);
 	
 	nb_fem_save_png(delaunay, total_disp, 
-			"build/TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
+			"core/build/TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
 
 	free(total_disp);
 CLEANUP_FEM:

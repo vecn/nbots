@@ -1,6 +1,6 @@
-See file:///home/victor/nbots/core/build/tmp/compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC/output.txt for all output for compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC.
+See file:///home/victorc/nbots/core/build/tmp/compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC/output.txt for all output for compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC.
 compiling exporter_cairo.c successful.
 
 compiling exporter_cairo.c successful.
 
-Finished compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC, see full log file:///home/victor/nbots/core/build/tmp/compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC/output.txt.
+Finished compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC, see full log file:///home/victorc/nbots/core/build/tmp/compileGeometric_bot_cairoDebugSharedLibraryGeometric_bot_cairoC/output.txt.

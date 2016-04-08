@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_botReleaseStaticLibrary/output.txt for all output for createContainer_botReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_botReleaseStaticLibrary/output.txt for all output for createContainer_botReleaseStaticLibrary.
 archiving libcontainer_bot.a successful.
 
-Finished createContainer_botReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_botReleaseStaticLibrary/output.txt.
+Finished createContainer_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_botReleaseStaticLibrary/output.txt.

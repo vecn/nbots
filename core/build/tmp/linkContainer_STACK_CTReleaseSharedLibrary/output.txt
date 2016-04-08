@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkContainer_STACK_CTReleaseSharedLibrary/output.txt for all output for linkContainer_STACK_CTReleaseSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkContainer_STACK_CTReleaseSharedLibrary/output.txt for all output for linkContainer_STACK_CTReleaseSharedLibrary.
 linking libcontainer_STACK_CT.so successful.
 
-Finished linkContainer_STACK_CTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_STACK_CTReleaseSharedLibrary/output.txt.
+Finished linkContainer_STACK_CTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_STACK_CTReleaseSharedLibrary/output.txt.

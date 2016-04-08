@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC/output.txt for all output for compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC.
+See file:///home/victorc/nbots/core/build/tmp/compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC/output.txt for all output for compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC.
 compiling exporter_cairo.c successful.
 
-Finished compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC, see full log file:///home/victor/nbots/core/build/tmp/compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC/output.txt.
+Finished compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC, see full log file:///home/victorc/nbots/core/build/tmp/compilePde_bot_cairoReleaseSharedLibraryPde_bot_cairoC/output.txt.

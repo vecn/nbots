@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC/output.txt for all output for compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC.
+See file:///home/victorc/nbots/core/build/tmp/compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC/output.txt for all output for compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC.
 compiling container_SORTED_CT.c successful.
 
-Finished compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC, see full log file:///home/victor/nbots/core/build/tmp/compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC/output.txt.
+Finished compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_SORTED_CTReleaseStaticLibraryContainer_SORTED_CTC/output.txt.

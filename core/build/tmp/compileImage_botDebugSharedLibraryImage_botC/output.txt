@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileImage_botDebugSharedLibraryImage_botC/output.txt for all output for compileImage_botDebugSharedLibraryImage_botC.
+See file:///home/victorc/nbots/core/build/tmp/compileImage_botDebugSharedLibraryImage_botC/output.txt for all output for compileImage_botDebugSharedLibraryImage_botC.
 compiling image.c successful.
 
-Finished compileImage_botDebugSharedLibraryImage_botC, see full log file:///home/victor/nbots/core/build/tmp/compileImage_botDebugSharedLibraryImage_botC/output.txt.
+Finished compileImage_botDebugSharedLibraryImage_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileImage_botDebugSharedLibraryImage_botC/output.txt.

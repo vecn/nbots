@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_HEAP_CTDebugStaticLibrary/output.txt for all output for createContainer_HEAP_CTDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_HEAP_CTDebugStaticLibrary/output.txt for all output for createContainer_HEAP_CTDebugStaticLibrary.
 archiving libcontainer_HEAP_CT.a successful.
 
-Finished createContainer_HEAP_CTDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_HEAP_CTDebugStaticLibrary/output.txt.
+Finished createContainer_HEAP_CTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_HEAP_CTDebugStaticLibrary/output.txt.

@@ -1,6 +1,6 @@
 -shared
 -Wl,-soname,libtext_parser_bot.so
 -o
-/home/victor/nbots/core/build/libs/text_parser_bot/shared/debug/libtext_parser_bot.so
-/home/victor/nbots/core/build/objs/text_parser_bot/shared/debug/text_parser_botC/7b6u5yv54z89hjwc0qaj9viu3/cfreader_cat.o
+/home/victorc/nbots/core/build/libs/text_parser_bot/shared/debug/libtext_parser_bot.so
+/home/victorc/nbots/core/build/objs/text_parser_bot/shared/debug/text_parser_botC/5q7fzbgjabxt5zh9ah7zgs79f/cfreader_cat.o
 -m64

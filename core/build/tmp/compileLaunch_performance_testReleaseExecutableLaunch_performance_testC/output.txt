@@ -1,6 +1,6 @@
-See file:///home/victor/nbots/core/build/tmp/compileLaunch_performance_testReleaseExecutableLaunch_performance_testC/output.txt for all output for compileLaunch_performance_testReleaseExecutableLaunch_performance_testC.
+See file:///home/victorc/nbots/core/build/tmp/compileLaunch_performance_testReleaseExecutableLaunch_performance_testC/output.txt for all output for compileLaunch_performance_testReleaseExecutableLaunch_performance_testC.
 compiling performance_test_driver.c successful.
 
 compiling run_tests.c successful.
 
-Finished compileLaunch_performance_testReleaseExecutableLaunch_performance_testC, see full log file:///home/victor/nbots/core/build/tmp/compileLaunch_performance_testReleaseExecutableLaunch_performance_testC/output.txt.
+Finished compileLaunch_performance_testReleaseExecutableLaunch_performance_testC, see full log file:///home/victorc/nbots/core/build/tmp/compileLaunch_performance_testReleaseExecutableLaunch_performance_testC/output.txt.

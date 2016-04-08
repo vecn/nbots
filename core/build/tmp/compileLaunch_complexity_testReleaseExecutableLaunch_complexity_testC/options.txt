@@ -3,7 +3,7 @@ c
 -c
 -std=c99
 -I
-/home/victor/nbots/core/include
+/home/victorc/nbots/core/include
 -I
-/home/victor/nbots/core/src/test_exec/headers
+/home/victorc/nbots/core/src/test_exec/headers
 -m64

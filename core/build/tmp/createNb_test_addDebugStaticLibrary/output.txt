@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createNb_test_addDebugStaticLibrary/output.txt for all output for createNb_test_addDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createNb_test_addDebugStaticLibrary/output.txt for all output for createNb_test_addDebugStaticLibrary.
 archiving libnb_test_add.a successful.
 
-Finished createNb_test_addDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createNb_test_addDebugStaticLibrary/output.txt.
+Finished createNb_test_addDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createNb_test_addDebugStaticLibrary/output.txt.

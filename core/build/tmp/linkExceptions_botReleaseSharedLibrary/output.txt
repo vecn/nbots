@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkExceptions_botReleaseSharedLibrary/output.txt for all output for linkExceptions_botReleaseSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkExceptions_botReleaseSharedLibrary/output.txt for all output for linkExceptions_botReleaseSharedLibrary.
 linking libexceptions_bot.so successful.
 
-Finished linkExceptions_botReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkExceptions_botReleaseSharedLibrary/output.txt.
+Finished linkExceptions_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkExceptions_botReleaseSharedLibrary/output.txt.

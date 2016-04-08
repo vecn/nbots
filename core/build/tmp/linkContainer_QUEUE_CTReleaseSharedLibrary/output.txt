@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkContainer_QUEUE_CTReleaseSharedLibrary/output.txt for all output for linkContainer_QUEUE_CTReleaseSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkContainer_QUEUE_CTReleaseSharedLibrary/output.txt for all output for linkContainer_QUEUE_CTReleaseSharedLibrary.
 linking libcontainer_QUEUE_CT.so successful.
 
-Finished linkContainer_QUEUE_CTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_QUEUE_CTReleaseSharedLibrary/output.txt.
+Finished linkContainer_QUEUE_CTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_QUEUE_CTReleaseSharedLibrary/output.txt.

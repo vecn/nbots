@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkContainer_SORTED_CTDebugSharedLibrary/output.txt for all output for linkContainer_SORTED_CTDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkContainer_SORTED_CTDebugSharedLibrary/output.txt for all output for linkContainer_SORTED_CTDebugSharedLibrary.
 linking libcontainer_SORTED_CT.so successful.
 
-Finished linkContainer_SORTED_CTDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkContainer_SORTED_CTDebugSharedLibrary/output.txt.
+Finished linkContainer_SORTED_CTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_SORTED_CTDebugSharedLibrary/output.txt.

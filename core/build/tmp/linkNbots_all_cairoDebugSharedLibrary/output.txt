@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkNbots_all_cairoDebugSharedLibrary/output.txt for all output for linkNbots_all_cairoDebugSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkNbots_all_cairoDebugSharedLibrary/output.txt for all output for linkNbots_all_cairoDebugSharedLibrary.
 linking libnbots_all_cairo.so successful.
 
-Finished linkNbots_all_cairoDebugSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkNbots_all_cairoDebugSharedLibrary/output.txt.
+Finished linkNbots_all_cairoDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkNbots_all_cairoDebugSharedLibrary/output.txt.

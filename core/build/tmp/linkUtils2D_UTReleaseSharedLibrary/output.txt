@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/linkUtils2D_UTReleaseSharedLibrary/output.txt for all output for linkUtils2D_UTReleaseSharedLibrary.
+See file:///home/victorc/nbots/core/build/tmp/linkUtils2D_UTReleaseSharedLibrary/output.txt for all output for linkUtils2D_UTReleaseSharedLibrary.
 linking libutils2D_UT.so successful.
 
-Finished linkUtils2D_UTReleaseSharedLibrary, see full log file:///home/victor/nbots/core/build/tmp/linkUtils2D_UTReleaseSharedLibrary/output.txt.
+Finished linkUtils2D_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkUtils2D_UTReleaseSharedLibrary/output.txt.

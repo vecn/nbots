@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createPde_botReleaseStaticLibrary/output.txt for all output for createPde_botReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createPde_botReleaseStaticLibrary/output.txt for all output for createPde_botReleaseStaticLibrary.
 archiving libpde_bot.a successful.
 
-Finished createPde_botReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createPde_botReleaseStaticLibrary/output.txt.
+Finished createPde_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createPde_botReleaseStaticLibrary/output.txt.

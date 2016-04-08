@@ -1,12 +1,12 @@
 #!/bin/bash
 
-export LD_LIBRARY_PATH=build/libs/nbots_all/shared/release
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:build/libs/nbots_all_cairo/shared/release #TEMPORAL
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:build/libs/nb_test_add/shared/release
+export LD_LIBRARY_PATH=core/build/libs/nbots_all/shared/release
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:core/build/libs/nbots_all_cairo/shared/release #TEMPORAL
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:core/build/libs/nb_test_add/shared/release
 
 echo "Unit Tests"
-LAUNCHER=build/exe/launch_unit_test/release/launch_unit_test
-MODULES_DIR=build/libs
+LAUNCHER=core/build/exe/launch_unit_test/release/launch_unit_test
+MODULES_DIR=core/build/libs
 FLAVOR_DIR=shared/release
 
 echo "  Container Bot"

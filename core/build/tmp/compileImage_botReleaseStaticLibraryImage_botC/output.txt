@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/compileImage_botReleaseStaticLibraryImage_botC/output.txt for all output for compileImage_botReleaseStaticLibraryImage_botC.
+See file:///home/victorc/nbots/core/build/tmp/compileImage_botReleaseStaticLibraryImage_botC/output.txt for all output for compileImage_botReleaseStaticLibraryImage_botC.
 compiling image.c successful.
 
-Finished compileImage_botReleaseStaticLibraryImage_botC, see full log file:///home/victor/nbots/core/build/tmp/compileImage_botReleaseStaticLibraryImage_botC/output.txt.
+Finished compileImage_botReleaseStaticLibraryImage_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileImage_botReleaseStaticLibraryImage_botC/output.txt.

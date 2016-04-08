@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createExceptions_botDebugStaticLibrary/output.txt for all output for createExceptions_botDebugStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createExceptions_botDebugStaticLibrary/output.txt for all output for createExceptions_botDebugStaticLibrary.
 archiving libexceptions_bot.a successful.
 
-Finished createExceptions_botDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createExceptions_botDebugStaticLibrary/output.txt.
+Finished createExceptions_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createExceptions_botDebugStaticLibrary/output.txt.

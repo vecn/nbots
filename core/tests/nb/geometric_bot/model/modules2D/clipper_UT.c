@@ -11,8 +11,8 @@
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/model/modules2D/clipper.h"
 
-#define INPUTS_DIR "tests/nb/geometric_bot/model/modules2D/clipper_UT_inputs"
-#define OUTPUT_DIR "build"
+#define INPUTS_DIR "core/tests/nb/geometric_bot/model/modules2D/clipper_UT_inputs"
+#define OUTPUT_DIR "core/build"
 
 #include  "nb/geometric_bot/model/modules2D/exporter_cairo.h" /* TEMPORAL */
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */

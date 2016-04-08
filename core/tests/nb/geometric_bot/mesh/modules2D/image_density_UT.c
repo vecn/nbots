@@ -11,9 +11,8 @@
 #include "test_library.h"
 #include "test_add.h"
 
-#define INPUTS_DIR "../tests/nb/geometric_bot/mesh/\
-modules2D/image_density_UT_inputs"
-#define OUTPUT "build"
+#define INPUTS_DIR "core/tests/nb/geometric_bot/mesh/modules2D/image_density_UT_inputs"
+#define OUTPUT "core/build"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */

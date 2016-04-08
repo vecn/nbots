@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_HASH_CTReleaseStaticLibrary/output.txt for all output for createContainer_HASH_CTReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_HASH_CTReleaseStaticLibrary/output.txt for all output for createContainer_HASH_CTReleaseStaticLibrary.
 archiving libcontainer_HASH_CT.a successful.
 
-Finished createContainer_HASH_CTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_HASH_CTReleaseStaticLibrary/output.txt.
+Finished createContainer_HASH_CTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_HASH_CTReleaseStaticLibrary/output.txt.

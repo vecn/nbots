@@ -1,4 +1,4 @@
-See file:///home/victor/nbots/core/build/tmp/createContainer_QUEUE_CTReleaseStaticLibrary/output.txt for all output for createContainer_QUEUE_CTReleaseStaticLibrary.
+See file:///home/victorc/nbots/core/build/tmp/createContainer_QUEUE_CTReleaseStaticLibrary/output.txt for all output for createContainer_QUEUE_CTReleaseStaticLibrary.
 archiving libcontainer_QUEUE_CT.a successful.
 
-Finished createContainer_QUEUE_CTReleaseStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createContainer_QUEUE_CTReleaseStaticLibrary/output.txt.
+Finished createContainer_QUEUE_CTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_QUEUE_CTReleaseStaticLibrary/output.txt.
