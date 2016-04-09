@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createGeometric_botReleaseStaticLibrary/output.txt for all output for createGeometric_botReleaseStaticLibrary.
-archiving libgeometric_bot.a successful.
-
-Finished createGeometric_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createGeometric_botReleaseStaticLibrary/output.txt.

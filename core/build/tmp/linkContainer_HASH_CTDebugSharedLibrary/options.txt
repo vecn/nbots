@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/container_HASH_CT/shared/debug/libcontainer_HASH_CT.so
 /home/victorc/nbots/core/build/objs/container_HASH_CT/shared/debug/container_HASH_CTC/cl1qpsrquld1ts6fjwf537n45/container_HASH_CT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

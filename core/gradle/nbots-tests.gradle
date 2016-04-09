@@ -1,0 +1,465 @@
+model {
+  components {
+    // Container bot
+    container_array_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "array_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_array_PT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "array_PT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+
+    container_array_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "array_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+
+    container_QUEUE_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_QUEUE_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_STACK_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_STACK_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_SORTED_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_SORTED_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_HEAP_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_HEAP_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_HASH_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_HASH_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+
+    iterator_QUEUE_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "iterator_QUEUE_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    iterator_STACK_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "iterator_STACK_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    iterator_SORTED_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "iterator_SORTED_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    iterator_HEAP_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "iterator_HEAP_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    iterator_HASH_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "iterator_HASH_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_QUEUE_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_QUEUE_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_STACK_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_STACK_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_SORTED_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_SORTED_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_HEAP_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_HEAP_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+	
+    container_HASH_CT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/container_bot"
+	    include "container_HASH_CT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    
+    // Geometric bot
+    point2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "point2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    utils2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "utils2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    knn_bins2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "knn/bins2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    knn_bins2D_iterator_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "knn/bins2D_iterator_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    mesh_dewall_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "mesh/dewall_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    mesh_constrained_delaunay_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "mesh/constrained_delaunay_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    model_verifier_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "model/modules2D/verifier_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	}
+      }
+    }
+    model_clipper_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "model/modules2D/clipper_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	  lib library: 'nbots_cairo' // TEMPORAL
+	}
+      }
+    }
+    mesh_mesh2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "mesh/mesh2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	  lib library: 'nbots_cairo' // TEMPORAL
+	}
+      }
+    }
+    mesh_image_density_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/geometric_bot"
+	    include "mesh/modules2D/image_density_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	  lib library: 'nbots_cairo' // TEMPORAL
+	}
+      }
+    }
+
+    // Pde bot
+    pde_fem_elasticity2D_UT(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "tests/nb/pde_bot"
+	    include "finite_element/solid_mechanics/static_elasticity2D_UT.c"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "ci_tools/test_launchers"
+	  }
+	  lib library: 'nb_test_add'
+	  lib library: 'nbots'
+	  lib library: 'nbots_cairo' // TEMPORAL
+	}
+      }
+    }
+  }
+}

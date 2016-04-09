@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkNbots_allReleaseSharedLibrary/output.txt for all output for linkNbots_allReleaseSharedLibrary.
-linking libnbots_all.so successful.
-
-Finished linkNbots_allReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkNbots_allReleaseSharedLibrary/output.txt.

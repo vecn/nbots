@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/iterator_STACK_UT/shared/release/libiterator_STACK_UT.so
 /home/victorc/nbots/core/build/objs/iterator_STACK_UT/shared/release/iterator_STACK_UTC/66vhn4xuyzdwv7hqen1fuybp2/iterator_STACK_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
 -m64

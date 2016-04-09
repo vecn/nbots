@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/container_QUEUE_UT/shared/debug/libcontainer_QUEUE_UT.so
 /home/victorc/nbots/core/build/objs/container_QUEUE_UT/shared/debug/container_QUEUE_UTC/bo4wmvozr9dexbbt3upqfns5/container_QUEUE_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

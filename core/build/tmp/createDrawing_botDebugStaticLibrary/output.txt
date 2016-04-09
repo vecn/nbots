@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createDrawing_botDebugStaticLibrary/output.txt for all output for createDrawing_botDebugStaticLibrary.
-archiving libdrawing_bot.a successful.
-
-Finished createDrawing_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createDrawing_botDebugStaticLibrary/output.txt.

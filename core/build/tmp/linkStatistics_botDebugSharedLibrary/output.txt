@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkStatistics_botDebugSharedLibrary/output.txt for all output for linkStatistics_botDebugSharedLibrary.
-linking libstatistics_bot.so successful.
-
-Finished linkStatistics_botDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkStatistics_botDebugSharedLibrary/output.txt.

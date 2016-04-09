@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/model_verifier_UT/shared/debug/libmodel_verifier_UT.so
 /home/victorc/nbots/core/build/objs/model_verifier_UT/shared/debug/model_verifier_UTC/9s06nnkglwxmf5t99ovt7sjni/verifier_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

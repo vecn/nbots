@@ -1,32 +1,9 @@
 project(':core') {
   apply plugin: 'c'
 
-  // NBots
-  apply from: 'gradle/math_bot.gradle'
-  apply from: 'gradle/statistics_bot.gradle'
-  apply from: 'gradle/text_parsing_bot.gradle'
-  apply from: 'gradle/drawing_bot.gradle'
-  apply from: 'gradle/container_bot.gradle'
-  apply from: 'gradle/eigen_bot.gradle'
-  apply from: 'gradle/graph_bot.gradle'
-  apply from: 'gradle/image_bot.gradle'
-  apply from: 'gradle/geometric_bot.gradle'
-  apply from: 'gradle/pde_bot.gradle'
-  apply from: 'gradle/exceptions_bot.gradle'
-  apply from: 'gradle/nbots_all.gradle'
-
-  // Cairo extensions
-  apply from: 'gradle/geometric_bot-cairo.gradle'
-  apply from: 'gradle/pde_bot-cairo.gradle'
-  apply from: 'gradle/nbots_all-cairo.gradle'
-
-  // Java binding
-  apply from: 'gradle/binding_java.gradle'
-
-  // Unit tests
-  apply from: 'gradle/container_bot-tests.gradle'
-  apply from: 'gradle/geometric_bot-tests.gradle'
-  apply from: 'gradle/pde_bot-tests.gradle'
+  apply from: 'gradle/nbots.gradle'
+  apply from: 'gradle/nbots-cairo.gradle'
+  apply from: 'gradle/nbots-tests.gradle'
 
   // Continuous integration: Testers
   apply from: 'gradle/test_launchers.gradle'
@@ -51,6 +28,9 @@ project(':core') {
       }
     }
   }
+}
+
+project(':wrappers:JNI') {
 }
 
 task wrapper(type: Wrapper) {

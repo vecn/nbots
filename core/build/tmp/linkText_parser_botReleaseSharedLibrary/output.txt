@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkText_parser_botReleaseSharedLibrary/output.txt for all output for linkText_parser_botReleaseSharedLibrary.
-linking libtext_parser_bot.so successful.
-
-Finished linkText_parser_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkText_parser_botReleaseSharedLibrary/output.txt.

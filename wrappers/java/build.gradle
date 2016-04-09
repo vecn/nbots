@@ -1,0 +1,48 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'tests'
+	    include '*.java'
+        }
+    }
+}
+
+test {
+    systemProperty 'java.library.path', 'libs'
+}
+
+sourceSets.all { set ->
+    def jarTask = task("${set.name}Jar", type: Jar) {
+	baseName = "$set.name"
+        from set.output
+    }
+
+    artifacts {
+        archives jarTask
+    }
+}
+
+dependencies {
+    //testCompile sourceSets.main.output
+    testCompile 'junit:junit:4.12'
+    //testCompile files('libnbots.so', 'libnbots_jni.so')
+}
+
+jar {
+    from sourceSets.main.output
+    from sourceSets.test.output
+}

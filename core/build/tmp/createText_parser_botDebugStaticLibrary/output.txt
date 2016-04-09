@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createText_parser_botDebugStaticLibrary/output.txt for all output for createText_parser_botDebugStaticLibrary.
-archiving libtext_parser_bot.a successful.
-
-Finished createText_parser_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createText_parser_botDebugStaticLibrary/output.txt.

@@ -1,0 +1,18 @@
+model {
+    components {
+    	nbots(NativeLibrarySpec) {
+	    sources {
+		c {
+		    source {
+			srcDirs "src"
+			include "**/*.c"
+			exclude "**/*cairo*"
+		    }
+		    exportedHeaders {
+			srcDirs "include"
+		    }
+		}
+	    }
+	}
+    }
+}

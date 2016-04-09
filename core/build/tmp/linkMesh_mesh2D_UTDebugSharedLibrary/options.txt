@@ -4,6 +4,6 @@
 /home/victorc/nbots/core/build/libs/mesh_mesh2D_UT/shared/debug/libmesh_mesh2D_UT.so
 /home/victorc/nbots/core/build/objs/mesh_mesh2D_UT/shared/debug/mesh_mesh2D_UTC/7kvp7s7j0g75gg2xmtz5weyxr/mesh2D_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
-/home/victorc/nbots/core/build/libs/nbots_all_cairo/shared/debug/libnbots_all_cairo.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
+/home/victorc/nbots/core/build/libs/nbots_cairo/shared/debug/libnbots_cairo.so
 -m64

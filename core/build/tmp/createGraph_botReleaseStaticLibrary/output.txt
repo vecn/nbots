@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createGraph_botReleaseStaticLibrary/output.txt for all output for createGraph_botReleaseStaticLibrary.
-archiving libgraph_bot.a successful.
-
-Finished createGraph_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createGraph_botReleaseStaticLibrary/output.txt.

@@ -5,5 +5,5 @@
 /home/victorc/nbots/core/build/objs/launch_complexity_test/debug/launch_complexity_testC/6ejvp3cbdpgnt7j92b6syttsz/complexity_test_driver.o
 /usr/lib/x86_64-linux-gnu/libdl.so
 /home/victorc/nbots/core/build/libs/test_exec/shared/debug/libtest_exec.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

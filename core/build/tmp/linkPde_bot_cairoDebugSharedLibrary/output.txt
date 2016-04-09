@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkPde_bot_cairoDebugSharedLibrary/output.txt for all output for linkPde_bot_cairoDebugSharedLibrary.
-linking libpde_bot_cairo.so successful.
-
-Finished linkPde_bot_cairoDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkPde_bot_cairoDebugSharedLibrary/output.txt.

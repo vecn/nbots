@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileText_parser_botDebugSharedLibraryText_parser_botC/output.txt for all output for compileText_parser_botDebugSharedLibraryText_parser_botC.
-compiling cfreader_cat.c successful.
-
-Finished compileText_parser_botDebugSharedLibraryText_parser_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileText_parser_botDebugSharedLibraryText_parser_botC/output.txt.

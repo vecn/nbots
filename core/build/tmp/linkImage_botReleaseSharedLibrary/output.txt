@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkImage_botReleaseSharedLibrary/output.txt for all output for linkImage_botReleaseSharedLibrary.
-linking libimage_bot.so successful.
-
-Finished linkImage_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkImage_botReleaseSharedLibrary/output.txt.

@@ -14,7 +14,7 @@ The project nbots is a self-contained ecosystem of numerical bots.
 
 Compilation
 -----------
-Run 'gradle build' or use the shell script 'gradlew' (gradlew.bat for Windows) if gradle is not installed in your system.
+Run 'gradle build' or use the shell script './gradlew build' (gradlew.bat for Windows) if gradle is not installed in your system.
 
 
 Contact

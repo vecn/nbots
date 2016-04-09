@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createExceptions_botReleaseStaticLibrary/output.txt for all output for createExceptions_botReleaseStaticLibrary.
-archiving libexceptions_bot.a successful.
-
-Finished createExceptions_botReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createExceptions_botReleaseStaticLibrary/output.txt.

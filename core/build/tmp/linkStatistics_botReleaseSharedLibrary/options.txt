@@ -1,6 +1,0 @@
--shared
--Wl,-soname,libstatistics_bot.so
--o
-/home/victorc/nbots/core/build/libs/statistics_bot/shared/release/libstatistics_bot.so
-/home/victorc/nbots/core/build/objs/statistics_bot/shared/release/statistics_botC/3zcyoa0s4jh9kl2sjlbbu81fp/statistics_bot.o
--m64

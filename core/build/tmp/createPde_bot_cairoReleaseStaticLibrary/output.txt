@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createPde_bot_cairoReleaseStaticLibrary/output.txt for all output for createPde_bot_cairoReleaseStaticLibrary.
-archiving libpde_bot_cairo.a successful.
-
-Finished createPde_bot_cairoReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createPde_bot_cairoReleaseStaticLibrary/output.txt.

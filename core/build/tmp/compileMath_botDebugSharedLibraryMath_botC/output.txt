@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileMath_botDebugSharedLibraryMath_botC/output.txt for all output for compileMath_botDebugSharedLibraryMath_botC.
-compiling math_bot.c successful.
-
-Finished compileMath_botDebugSharedLibraryMath_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileMath_botDebugSharedLibraryMath_botC/output.txt.

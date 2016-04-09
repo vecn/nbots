@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileGraph_botReleaseSharedLibraryGraph_botC/output.txt for all output for compileGraph_botReleaseSharedLibraryGraph_botC.
-compiling graph.c successful.
-
-Finished compileGraph_botReleaseSharedLibraryGraph_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileGraph_botReleaseSharedLibraryGraph_botC/output.txt.

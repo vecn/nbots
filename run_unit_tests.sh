@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export LD_LIBRARY_PATH=core/build/libs/nbots_all/shared/release
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:core/build/libs/nbots_all_cairo/shared/release #TEMPORAL
+export LD_LIBRARY_PATH=core/build/libs/nbots/shared/release
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:core/build/libs/nbots_cairo/shared/release #TEMPORAL
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:core/build/libs/nb_test_add/shared/release
 
 echo "Unit Tests"
@@ -36,18 +36,3 @@ $LAUNCHER $MODULES_DIR/mesh_image_density_UT/$FLAVOR_DIR/libmesh_image_density_U
 
 echo "  PDE Bot"
 $LAUNCHER $MODULES_DIR/pde_fem_elasticity2D_UT/$FLAVOR_DIR/libpde_fem_elasticity2D_UT.so
-
-echo "  Java binding for Geometric Bot"
-#JAVA_DIR=binding_java
-#JAVA_TEST_DIR=$JAVA_DIR/tests
-#JAVA_CP=$JAVA_DIR/java/GeometricBot.jar:$JAVA_DIR/java/PdeBot.jar
-
-#JAVA_LP=$MODULES_DIR/nb_geometric_bot_jni/$FLAVOR_DIR
-#JAVA_LP=$JAVA_LP:$MODULES_DIR/nb_pde_bot_jni/$FLAVOR_DIR
-
-#TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestModel.jar
-#java -Djava.library.path=$JAVA_LP -cp $TEST_JARS TestModel
-#TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestGeometricBot.jar
-#java -Djava.library.path=$JAVA_LP -cp $TEST_JARS TestGeometricBot
-#TEST_JARS=$JAVA_CP:$JAVA_TEST_DIR/TestPdeBot.jar
-#java -Djava.library.path=$JAVA_LP -cp $TEST_JARS TestPdeBot

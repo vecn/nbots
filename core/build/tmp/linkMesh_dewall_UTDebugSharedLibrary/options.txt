@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/mesh_dewall_UT/shared/debug/libmesh_dewall_UT.so
 /home/victorc/nbots/core/build/objs/mesh_dewall_UT/shared/debug/mesh_dewall_UTC/cbdp5k9d31g3igtezphqyf02a/dewall_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

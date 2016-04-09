@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/objs/launch_performance_test/release/launch_performance_testC/dz4q3tcs61o0bji8sh3qzay9d/performance_test_driver.o
 /usr/lib/x86_64-linux-gnu/libdl.so
 /home/victorc/nbots/core/build/libs/test_exec/shared/release/libtest_exec.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
 -m64

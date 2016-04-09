@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/container_array_PT/shared/debug/libcontainer_array_PT.so
 /home/victorc/nbots/core/build/objs/container_array_PT/shared/debug/container_array_PTC/dljc1be1tlltvshvshgzedj1w/array_PT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/debug/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
 -m64

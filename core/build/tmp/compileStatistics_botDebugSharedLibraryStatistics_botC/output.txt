@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileStatistics_botDebugSharedLibraryStatistics_botC/output.txt for all output for compileStatistics_botDebugSharedLibraryStatistics_botC.
-compiling statistics_bot.c successful.
-
-Finished compileStatistics_botDebugSharedLibraryStatistics_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileStatistics_botDebugSharedLibraryStatistics_botC/output.txt.

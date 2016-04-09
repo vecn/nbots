@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkPde_botDebugSharedLibrary/output.txt for all output for linkPde_botDebugSharedLibrary.
-linking libpde_bot.so successful.
-
-Finished linkPde_botDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkPde_botDebugSharedLibrary/output.txt.

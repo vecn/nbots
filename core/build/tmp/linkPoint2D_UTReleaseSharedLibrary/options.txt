@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/point2D_UT/shared/release/libpoint2D_UT.so
 /home/victorc/nbots/core/build/objs/point2D_UT/shared/release/point2D_UTC/mbw77bw2wyphc6dsi0j05eqx/point2D_UT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
 -m64

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkMath_botReleaseSharedLibrary/output.txt for all output for linkMath_botReleaseSharedLibrary.
-linking libmath_bot.so successful.
-
-Finished linkMath_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkMath_botReleaseSharedLibrary/output.txt.

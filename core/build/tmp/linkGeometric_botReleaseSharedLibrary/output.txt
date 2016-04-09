@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkGeometric_botReleaseSharedLibrary/output.txt for all output for linkGeometric_botReleaseSharedLibrary.
-linking libgeometric_bot.so successful.
-
-Finished linkGeometric_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkGeometric_botReleaseSharedLibrary/output.txt.

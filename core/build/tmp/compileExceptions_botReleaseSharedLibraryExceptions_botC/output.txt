@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileExceptions_botReleaseSharedLibraryExceptions_botC/output.txt for all output for compileExceptions_botReleaseSharedLibraryExceptions_botC.
-compiling exceptions.c successful.
-
-Finished compileExceptions_botReleaseSharedLibraryExceptions_botC, see full log file:///home/victorc/nbots/core/build/tmp/compileExceptions_botReleaseSharedLibraryExceptions_botC/output.txt.

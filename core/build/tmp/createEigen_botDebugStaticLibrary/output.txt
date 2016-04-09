@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createEigen_botDebugStaticLibrary/output.txt for all output for createEigen_botDebugStaticLibrary.
-archiving libeigen_bot.a successful.
-
-Finished createEigen_botDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createEigen_botDebugStaticLibrary/output.txt.

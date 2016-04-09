@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkGraph_botDebugSharedLibrary/output.txt for all output for linkGraph_botDebugSharedLibrary.
-linking libgraph_bot.so successful.
-
-Finished linkGraph_botDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkGraph_botDebugSharedLibrary/output.txt.

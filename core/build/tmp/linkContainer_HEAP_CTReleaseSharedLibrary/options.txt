@@ -4,5 +4,5 @@
 /home/victorc/nbots/core/build/libs/container_HEAP_CT/shared/release/libcontainer_HEAP_CT.so
 /home/victorc/nbots/core/build/objs/container_HEAP_CT/shared/release/container_HEAP_CTC/24davbl71yt1mpdcyd3c863d5/container_HEAP_CT.o
 /home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots_all/shared/release/libnbots_all.so
+/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
 -m64

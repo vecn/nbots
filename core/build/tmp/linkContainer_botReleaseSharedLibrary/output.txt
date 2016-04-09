@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_botReleaseSharedLibrary/output.txt for all output for linkContainer_botReleaseSharedLibrary.
-linking libcontainer_bot.so successful.
-
-Finished linkContainer_botReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_botReleaseSharedLibrary/output.txt.

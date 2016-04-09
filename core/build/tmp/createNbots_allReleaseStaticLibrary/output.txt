@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createNbots_allReleaseStaticLibrary/output.txt for all output for createNbots_allReleaseStaticLibrary.
-archiving libnbots_all.a successful.
-
-Finished createNbots_allReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createNbots_allReleaseStaticLibrary/output.txt.

@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libeigen_bot.so
--o
-/home/victorc/nbots/core/build/libs/eigen_bot/shared/release/libeigen_bot.so
-/home/victorc/nbots/core/build/objs/eigen_bot/shared/release/eigen_botC/6aw480tt71r2uwwkx214tqok2/sparse.o
-/home/victorc/nbots/core/build/libs/math_bot/shared/release/libmath_bot.so
-/home/victorc/nbots/core/build/libs/container_bot/shared/release/libcontainer_bot.so
--m64

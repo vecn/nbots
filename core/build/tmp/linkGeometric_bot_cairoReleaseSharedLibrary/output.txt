@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkGeometric_bot_cairoReleaseSharedLibrary/output.txt for all output for linkGeometric_bot_cairoReleaseSharedLibrary.
-linking libgeometric_bot_cairo.so successful.
-
-Finished linkGeometric_bot_cairoReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkGeometric_bot_cairoReleaseSharedLibrary/output.txt.
