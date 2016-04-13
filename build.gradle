@@ -1,38 +1,3 @@
-project(':core') {
-  apply plugin: 'c'
-
-  apply from: 'gradle/nbots.gradle'
-  apply from: 'gradle/nbots-cairo.gradle'
-  apply from: 'gradle/nbots-tests.gradle'
-
-  // Continuous integration: Testers
-  apply from: 'gradle/test_launchers.gradle'
-
-  model {
-    buildTypes {
-      debug
-      release
-    }
-    platforms {
-      x86 {
-	architecture "x86"
-      }
-    
-      x64 {
-	architecture "x86_64"
-      }
-    }
-    binaries {
-      all {
-	cCompiler.args "-std=c99"
-      }
-    }
-  }
-}
-
-project(':wrappers:JNI') {
-}
-
 task wrapper(type: Wrapper) {
   gradleVersion = '2.11'
 }

@@ -1,0 +1,103 @@
+apply plugin: 'c'
+apply plugin: 'cunit-test-suite'
+
+model {
+  buildTypes {
+    debug
+    release
+  }
+  platforms {
+    x86 {
+      architecture "x86"
+    }
+    
+    x64 {
+      architecture "x86_64"
+    }
+  }
+  repositories {
+    libs(PrebuiltLibraries) {
+      cunit {
+	headers.srcDir "/usr/include"
+	binaries.withType(StaticLibraryBinary) {
+	  staticLibraryFile =
+	    file("/usr/lib/libcunit.a")
+	}
+      }
+    }
+  }
+  binaries {
+    all {
+      cCompiler.args "-std=c99"
+    }
+    withType(CUnitTestSuiteBinarySpec) {
+      lib library: "cunit", linkage: "static"
+    }
+  }
+}
+
+model {
+  components {
+    nbots(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "src"
+	    include "**/*.c"
+	    exclude "**/*cairo*"
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	}
+      }
+    }
+  }
+  testSuites {
+    nbots_unit_tests(CUnitTestSuiteSpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "utest"
+	    include "**/*.c"
+	    exclude "**/*UT.c" // TEMPORAL
+	  }
+	  exportedHeaders {
+	    srcDirs "include"
+	  }
+	}
+      }
+      testing $.components.nbots
+    }
+  }
+}
+
+model {
+  repositories {
+    libs(PrebuiltLibraries) {
+      cairo {
+	binaries.withType(SharedLibraryBinary) {
+	  //def arch = binaries.targetPlatform.architecture.name
+	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libcairo.so")
+	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libcairo.so")
+	}
+      }
+    }
+  }
+  components {
+    nbots_cairo(NativeLibrarySpec) {
+      sources {
+	c {
+	  source {
+	    srcDirs "src"
+	    include "**/*cairo*"
+	  }
+	  exportedHeaders {
+	    srcDirs "include", "/usr/include/cairo"
+	  }
+	  lib library: 'cairo'
+	}
+      }
+    }
+  }
+}

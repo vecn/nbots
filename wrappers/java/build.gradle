@@ -16,21 +16,23 @@ sourceSets {
   test {
     java {
       srcDir 'tests'
-      include '*.java'
     }
   }
 }
 
 task copyNativeDeps(type: Copy) {
-  from (configurations.compile + configurations.testCompile) {
-    include "../core/build/libs/nbots/shared/release/libnbots.so"
+  from ("../../core/build/libs/nbots/shared/release") {
+    include "libnbots.so"
   }
-  into 'build/libs'
+  from ("../JNI/build/libs/nbots_jni/shared/release") {
+    include "libnbots_jni.so"
+  }
+  into 'ndk_libs'
 }
 
 test {
-  //dependsOn copyNativeDeps
-  systemProperty 'java.library.path', 'libs'
+  dependsOn copyNativeDeps
+  systemProperty 'java.library.path', 'ndk_libs'
 }
 
 sourceSets.all { set ->
@@ -45,9 +47,7 @@ sourceSets.all { set ->
 }
 
 dependencies {
-  //testCompile sourceSets.main.output
   testCompile 'junit:junit:4.12'
-  //testCompile files('libnbots.so', 'libnbots_jni.so')
 }
 
 jar {
