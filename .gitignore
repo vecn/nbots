@@ -1,6 +1,9 @@
 # System temporary files
 *~
 
+# Gradle files
+.gradle/*
+
 # Object files
 *.o
 *.ko
