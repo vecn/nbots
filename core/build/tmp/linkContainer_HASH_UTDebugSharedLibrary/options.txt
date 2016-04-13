@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libcontainer_HASH_UT.so
--o
-/home/victorc/nbots/core/build/libs/container_HASH_UT/shared/debug/libcontainer_HASH_UT.so
-/home/victorc/nbots/core/build/objs/container_HASH_UT/shared/debug/container_HASH_UTC/5iote6nnm9tql6our9zccff3u/container_HASH_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
--m64

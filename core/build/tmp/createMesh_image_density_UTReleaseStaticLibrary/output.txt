@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createMesh_image_density_UTReleaseStaticLibrary/output.txt for all output for createMesh_image_density_UTReleaseStaticLibrary.
-archiving libmesh_image_density_UT.a successful.
-
-Finished createMesh_image_density_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createMesh_image_density_UTReleaseStaticLibrary/output.txt.

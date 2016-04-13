@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkPoint2D_UTReleaseSharedLibrary/output.txt for all output for linkPoint2D_UTReleaseSharedLibrary.
-linking libpoint2D_UT.so successful.
-
-Finished linkPoint2D_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkPoint2D_UTReleaseSharedLibrary/output.txt.

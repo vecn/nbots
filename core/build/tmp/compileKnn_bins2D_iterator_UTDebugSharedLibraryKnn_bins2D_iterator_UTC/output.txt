@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileKnn_bins2D_iterator_UTDebugSharedLibraryKnn_bins2D_iterator_UTC/output.txt for all output for compileKnn_bins2D_iterator_UTDebugSharedLibraryKnn_bins2D_iterator_UTC.
-compiling bins2D_iterator_UT.c successful.
-
-Finished compileKnn_bins2D_iterator_UTDebugSharedLibraryKnn_bins2D_iterator_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileKnn_bins2D_iterator_UTDebugSharedLibraryKnn_bins2D_iterator_UTC/output.txt.

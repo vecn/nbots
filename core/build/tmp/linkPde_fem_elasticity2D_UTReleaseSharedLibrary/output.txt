@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkPde_fem_elasticity2D_UTReleaseSharedLibrary/output.txt for all output for linkPde_fem_elasticity2D_UTReleaseSharedLibrary.
-linking libpde_fem_elasticity2D_UT.so successful.
-
-Finished linkPde_fem_elasticity2D_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkPde_fem_elasticity2D_UTReleaseSharedLibrary/output.txt.

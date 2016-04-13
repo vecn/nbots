@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileUtils2D_UTDebugSharedLibraryUtils2D_UTC/output.txt for all output for compileUtils2D_UTDebugSharedLibraryUtils2D_UTC.
-compiling utils2D_UT.c successful.
-
-Finished compileUtils2D_UTDebugSharedLibraryUtils2D_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileUtils2D_UTDebugSharedLibraryUtils2D_UTC/output.txt.

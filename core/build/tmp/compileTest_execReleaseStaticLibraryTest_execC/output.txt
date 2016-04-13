@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileTest_execReleaseStaticLibraryTest_execC/output.txt for all output for compileTest_execReleaseStaticLibraryTest_execC.
-compiling test.c successful.
-
-Finished compileTest_execReleaseStaticLibraryTest_execC, see full log file:///home/victorc/nbots/core/build/tmp/compileTest_execReleaseStaticLibraryTest_execC/output.txt.

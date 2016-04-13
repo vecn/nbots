@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createModel_verifier_UTReleaseStaticLibrary/output.txt for all output for createModel_verifier_UTReleaseStaticLibrary.
-archiving libmodel_verifier_UT.a successful.
-
-Finished createModel_verifier_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createModel_verifier_UTReleaseStaticLibrary/output.txt.

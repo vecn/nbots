@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createMesh_dewall_UTReleaseStaticLibrary/output.txt for all output for createMesh_dewall_UTReleaseStaticLibrary.
-archiving libmesh_dewall_UT.a successful.
-
-Finished createMesh_dewall_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createMesh_dewall_UTReleaseStaticLibrary/output.txt.

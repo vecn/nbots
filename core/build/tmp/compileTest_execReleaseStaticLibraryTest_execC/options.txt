@@ -1,7 +1,0 @@
--x
-c
--c
--std=c99
--I
-/home/victorc/nbots/core/src/test_exec/headers
--m64

@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libcontainer_SORTED_UT.so
--o
-/home/victorc/nbots/core/build/libs/container_SORTED_UT/shared/release/libcontainer_SORTED_UT.so
-/home/victorc/nbots/core/build/objs/container_SORTED_UT/shared/release/container_SORTED_UTC/4ir18u7whu63vu53xv5w5r6qt/container_SORTED_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
--m64

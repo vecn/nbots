@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createUtils2D_UTDebugStaticLibrary/output.txt for all output for createUtils2D_UTDebugStaticLibrary.
-archiving libutils2D_UT.a successful.
-
-Finished createUtils2D_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createUtils2D_UTDebugStaticLibrary/output.txt.

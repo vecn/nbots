@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createNb_test_addReleaseStaticLibrary/output.txt for all output for createNb_test_addReleaseStaticLibrary.
-archiving libnb_test_add.a successful.
-
-Finished createNb_test_addReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createNb_test_addReleaseStaticLibrary/output.txt.

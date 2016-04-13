@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createIterator_STACK_UTDebugStaticLibrary/output.txt for all output for createIterator_STACK_UTDebugStaticLibrary.
-archiving libiterator_STACK_UT.a successful.
-
-Finished createIterator_STACK_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createIterator_STACK_UTDebugStaticLibrary/output.txt.

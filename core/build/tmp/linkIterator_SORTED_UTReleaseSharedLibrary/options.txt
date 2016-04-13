@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libiterator_SORTED_UT.so
--o
-/home/victorc/nbots/core/build/libs/iterator_SORTED_UT/shared/release/libiterator_SORTED_UT.so
-/home/victorc/nbots/core/build/objs/iterator_SORTED_UT/shared/release/iterator_SORTED_UTC/cgijgcb9d90uxymredljp9kym/iterator_SORTED_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
--m64

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createTest_execDebugStaticLibrary/output.txt for all output for createTest_execDebugStaticLibrary.
-archiving libtest_exec.a successful.
-
-Finished createTest_execDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createTest_execDebugStaticLibrary/output.txt.

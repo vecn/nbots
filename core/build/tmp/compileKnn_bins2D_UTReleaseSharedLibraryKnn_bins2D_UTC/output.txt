@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileKnn_bins2D_UTReleaseSharedLibraryKnn_bins2D_UTC/output.txt for all output for compileKnn_bins2D_UTReleaseSharedLibraryKnn_bins2D_UTC.
-compiling bins2D_UT.c successful.
-
-Finished compileKnn_bins2D_UTReleaseSharedLibraryKnn_bins2D_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileKnn_bins2D_UTReleaseSharedLibraryKnn_bins2D_UTC/output.txt.

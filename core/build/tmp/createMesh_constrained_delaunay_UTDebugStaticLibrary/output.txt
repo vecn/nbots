@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createMesh_constrained_delaunay_UTDebugStaticLibrary/output.txt for all output for createMesh_constrained_delaunay_UTDebugStaticLibrary.
-archiving libmesh_constrained_delaunay_UT.a successful.
-
-Finished createMesh_constrained_delaunay_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createMesh_constrained_delaunay_UTDebugStaticLibrary/output.txt.

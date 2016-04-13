@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createContainer_SORTED_CTDebugStaticLibrary/output.txt for all output for createContainer_SORTED_CTDebugStaticLibrary.
-archiving libcontainer_SORTED_CT.a successful.
-
-Finished createContainer_SORTED_CTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_SORTED_CTDebugStaticLibrary/output.txt.

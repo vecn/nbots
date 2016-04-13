@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_HASH_UTDebugSharedLibrary/output.txt for all output for linkContainer_HASH_UTDebugSharedLibrary.
-linking libcontainer_HASH_UT.so successful.
-
-Finished linkContainer_HASH_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_HASH_UTDebugSharedLibrary/output.txt.

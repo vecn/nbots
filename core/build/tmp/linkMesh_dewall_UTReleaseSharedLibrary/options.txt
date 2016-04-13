@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libmesh_dewall_UT.so
--o
-/home/victorc/nbots/core/build/libs/mesh_dewall_UT/shared/release/libmesh_dewall_UT.so
-/home/victorc/nbots/core/build/objs/mesh_dewall_UT/shared/release/mesh_dewall_UTC/cbdp5k9d31g3igtezphqyf02a/dewall_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
--m64

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createContainer_HASH_UTReleaseStaticLibrary/output.txt for all output for createContainer_HASH_UTReleaseStaticLibrary.
-archiving libcontainer_HASH_UT.a successful.
-
-Finished createContainer_HASH_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_HASH_UTReleaseStaticLibrary/output.txt.

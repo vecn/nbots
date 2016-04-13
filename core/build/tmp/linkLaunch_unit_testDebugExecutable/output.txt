@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkLaunch_unit_testDebugExecutable/output.txt for all output for linkLaunch_unit_testDebugExecutable.
-linking launch_unit_test successful.
-
-Finished linkLaunch_unit_testDebugExecutable, see full log file:///home/victorc/nbots/core/build/tmp/linkLaunch_unit_testDebugExecutable/output.txt.

@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libiterator_QUEUE_UT.so
--o
-/home/victorc/nbots/core/build/libs/iterator_QUEUE_UT/shared/debug/libiterator_QUEUE_UT.so
-/home/victorc/nbots/core/build/objs/iterator_QUEUE_UT/shared/debug/iterator_QUEUE_UTC/8zd515dycza53wxuedpy4ydtr/iterator_QUEUE_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
--m64

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileModel_clipper_UTReleaseSharedLibraryModel_clipper_UTC/output.txt for all output for compileModel_clipper_UTReleaseSharedLibraryModel_clipper_UTC.
-compiling clipper_UT.c successful.
-
-Finished compileModel_clipper_UTReleaseSharedLibraryModel_clipper_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileModel_clipper_UTReleaseSharedLibraryModel_clipper_UTC/output.txt.

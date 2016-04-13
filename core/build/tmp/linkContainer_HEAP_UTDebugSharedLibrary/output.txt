@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_HEAP_UTDebugSharedLibrary/output.txt for all output for linkContainer_HEAP_UTDebugSharedLibrary.
-linking libcontainer_HEAP_UT.so successful.
-
-Finished linkContainer_HEAP_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_HEAP_UTDebugSharedLibrary/output.txt.

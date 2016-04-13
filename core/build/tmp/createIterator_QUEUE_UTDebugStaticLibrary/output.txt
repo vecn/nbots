@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createIterator_QUEUE_UTDebugStaticLibrary/output.txt for all output for createIterator_QUEUE_UTDebugStaticLibrary.
-archiving libiterator_QUEUE_UT.a successful.
-
-Finished createIterator_QUEUE_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createIterator_QUEUE_UTDebugStaticLibrary/output.txt.

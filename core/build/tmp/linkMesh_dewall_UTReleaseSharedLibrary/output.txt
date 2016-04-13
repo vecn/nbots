@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkMesh_dewall_UTReleaseSharedLibrary/output.txt for all output for linkMesh_dewall_UTReleaseSharedLibrary.
-linking libmesh_dewall_UT.so successful.
-
-Finished linkMesh_dewall_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkMesh_dewall_UTReleaseSharedLibrary/output.txt.

@@ -1,9 +1,0 @@
--shared
--Wl,-soname,libmesh_image_density_UT.so
--o
-/home/victorc/nbots/core/build/libs/mesh_image_density_UT/shared/release/libmesh_image_density_UT.so
-/home/victorc/nbots/core/build/objs/mesh_image_density_UT/shared/release/mesh_image_density_UTC/f2j0uimzxb2gjh52701614iyr/image_density_UT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
-/home/victorc/nbots/core/build/libs/nbots_cairo/shared/release/libnbots_cairo.so
--m64

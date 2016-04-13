@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createIterator_SORTED_UTReleaseStaticLibrary/output.txt for all output for createIterator_SORTED_UTReleaseStaticLibrary.
-archiving libiterator_SORTED_UT.a successful.
-
-Finished createIterator_SORTED_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createIterator_SORTED_UTReleaseStaticLibrary/output.txt.

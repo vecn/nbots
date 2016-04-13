@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkIterator_HEAP_UTDebugSharedLibrary/output.txt for all output for linkIterator_HEAP_UTDebugSharedLibrary.
-linking libiterator_HEAP_UT.so successful.
-
-Finished linkIterator_HEAP_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkIterator_HEAP_UTDebugSharedLibrary/output.txt.

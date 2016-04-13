@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkIterator_SORTED_UTReleaseSharedLibrary/output.txt for all output for linkIterator_SORTED_UTReleaseSharedLibrary.
-linking libiterator_SORTED_UT.so successful.
-
-Finished linkIterator_SORTED_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkIterator_SORTED_UTReleaseSharedLibrary/output.txt.

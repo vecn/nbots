@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createPde_fem_elasticity2D_UTReleaseStaticLibrary/output.txt for all output for createPde_fem_elasticity2D_UTReleaseStaticLibrary.
-archiving libpde_fem_elasticity2D_UT.a successful.
-
-Finished createPde_fem_elasticity2D_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createPde_fem_elasticity2D_UTReleaseStaticLibrary/output.txt.

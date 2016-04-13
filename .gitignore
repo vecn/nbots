@@ -1,14 +1,6 @@
 # System temporary files
 *~
 
-# Main build directory
-build/*
-**/build/*
-
-# Gradle files
-.gradle/*
-gradle/*
-
 # Object files
 *.o
 *.ko

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compilePoint2D_UTDebugStaticLibraryPoint2D_UTC/output.txt for all output for compilePoint2D_UTDebugStaticLibraryPoint2D_UTC.
-compiling point2D_UT.c successful.
-
-Finished compilePoint2D_UTDebugStaticLibraryPoint2D_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compilePoint2D_UTDebugStaticLibraryPoint2D_UTC/output.txt.

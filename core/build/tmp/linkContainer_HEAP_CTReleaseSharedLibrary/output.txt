@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_HEAP_CTReleaseSharedLibrary/output.txt for all output for linkContainer_HEAP_CTReleaseSharedLibrary.
-linking libcontainer_HEAP_CT.so successful.
-
-Finished linkContainer_HEAP_CTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_HEAP_CTReleaseSharedLibrary/output.txt.

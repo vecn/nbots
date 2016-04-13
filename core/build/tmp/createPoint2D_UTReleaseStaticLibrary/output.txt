@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createPoint2D_UTReleaseStaticLibrary/output.txt for all output for createPoint2D_UTReleaseStaticLibrary.
-archiving libpoint2D_UT.a successful.
-
-Finished createPoint2D_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createPoint2D_UTReleaseStaticLibrary/output.txt.

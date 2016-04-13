@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_SORTED_UTReleaseSharedLibrary/output.txt for all output for linkContainer_SORTED_UTReleaseSharedLibrary.
-linking libcontainer_SORTED_UT.so successful.
-
-Finished linkContainer_SORTED_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_SORTED_UTReleaseSharedLibrary/output.txt.

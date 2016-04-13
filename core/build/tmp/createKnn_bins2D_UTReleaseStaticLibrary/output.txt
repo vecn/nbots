@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createKnn_bins2D_UTReleaseStaticLibrary/output.txt for all output for createKnn_bins2D_UTReleaseStaticLibrary.
-archiving libknn_bins2D_UT.a successful.
-
-Finished createKnn_bins2D_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createKnn_bins2D_UTReleaseStaticLibrary/output.txt.

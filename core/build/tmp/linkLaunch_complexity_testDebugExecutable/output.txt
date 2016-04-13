@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkLaunch_complexity_testDebugExecutable/output.txt for all output for linkLaunch_complexity_testDebugExecutable.
-linking launch_complexity_test successful.
-
-Finished linkLaunch_complexity_testDebugExecutable, see full log file:///home/victorc/nbots/core/build/tmp/linkLaunch_complexity_testDebugExecutable/output.txt.

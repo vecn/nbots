@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileMesh_constrained_delaunay_UTDebugSharedLibraryMesh_constrained_delaunay_UTC/output.txt for all output for compileMesh_constrained_delaunay_UTDebugSharedLibraryMesh_constrained_delaunay_UTC.
-compiling constrained_delaunay_UT.c successful.
-
-Finished compileMesh_constrained_delaunay_UTDebugSharedLibraryMesh_constrained_delaunay_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileMesh_constrained_delaunay_UTDebugSharedLibraryMesh_constrained_delaunay_UTC/output.txt.

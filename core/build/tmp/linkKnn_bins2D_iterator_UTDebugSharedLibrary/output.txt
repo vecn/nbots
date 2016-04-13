@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkKnn_bins2D_iterator_UTDebugSharedLibrary/output.txt for all output for linkKnn_bins2D_iterator_UTDebugSharedLibrary.
-linking libknn_bins2D_iterator_UT.so successful.
-
-Finished linkKnn_bins2D_iterator_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkKnn_bins2D_iterator_UTDebugSharedLibrary/output.txt.

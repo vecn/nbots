@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileMesh_mesh2D_UTReleaseSharedLibraryMesh_mesh2D_UTC/output.txt for all output for compileMesh_mesh2D_UTReleaseSharedLibraryMesh_mesh2D_UTC.
-compiling mesh2D_UT.c successful.
-
-Finished compileMesh_mesh2D_UTReleaseSharedLibraryMesh_mesh2D_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileMesh_mesh2D_UTReleaseSharedLibraryMesh_mesh2D_UTC/output.txt.

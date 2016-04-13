@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_CTDebugSharedLibraryContainer_HASH_CTC/output.txt for all output for compileContainer_HASH_CTDebugSharedLibraryContainer_HASH_CTC.
-compiling container_HASH_CT.c successful.
-
-Finished compileContainer_HASH_CTDebugSharedLibraryContainer_HASH_CTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_CTDebugSharedLibraryContainer_HASH_CTC/output.txt.

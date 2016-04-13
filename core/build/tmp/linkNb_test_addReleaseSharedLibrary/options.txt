@@ -1,7 +1,0 @@
--shared
--Wl,-soname,libnb_test_add.so
--o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/objs/nb_test_add/shared/release/nb_test_addC/13fso8cheyu6sa1bkpniujcsh/test.o
-/home/victorc/nbots/core/build/objs/nb_test_add/shared/release/nb_test_addC/2saubp00evsg6kd91kmore5cc/test_add.o
--m64

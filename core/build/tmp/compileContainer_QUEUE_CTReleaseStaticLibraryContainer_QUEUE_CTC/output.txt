@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_QUEUE_CTReleaseStaticLibraryContainer_QUEUE_CTC/output.txt for all output for compileContainer_QUEUE_CTReleaseStaticLibraryContainer_QUEUE_CTC.
-compiling container_QUEUE_CT.c successful.
-
-Finished compileContainer_QUEUE_CTReleaseStaticLibraryContainer_QUEUE_CTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_QUEUE_CTReleaseStaticLibraryContainer_QUEUE_CTC/output.txt.

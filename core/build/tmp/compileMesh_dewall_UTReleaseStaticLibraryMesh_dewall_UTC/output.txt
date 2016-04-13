@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileMesh_dewall_UTReleaseStaticLibraryMesh_dewall_UTC/output.txt for all output for compileMesh_dewall_UTReleaseStaticLibraryMesh_dewall_UTC.
-compiling dewall_UT.c successful.
-
-Finished compileMesh_dewall_UTReleaseStaticLibraryMesh_dewall_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileMesh_dewall_UTReleaseStaticLibraryMesh_dewall_UTC/output.txt.

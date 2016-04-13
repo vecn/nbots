@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createIterator_HEAP_UTReleaseStaticLibrary/output.txt for all output for createIterator_HEAP_UTReleaseStaticLibrary.
-archiving libiterator_HEAP_UT.a successful.
-
-Finished createIterator_HEAP_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createIterator_HEAP_UTReleaseStaticLibrary/output.txt.

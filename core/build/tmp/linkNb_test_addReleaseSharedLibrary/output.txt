@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkNb_test_addReleaseSharedLibrary/output.txt for all output for linkNb_test_addReleaseSharedLibrary.
-linking libnb_test_add.so successful.
-
-Finished linkNb_test_addReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkNb_test_addReleaseSharedLibrary/output.txt.

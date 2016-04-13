@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createContainer_HEAP_CTReleaseStaticLibrary/output.txt for all output for createContainer_HEAP_CTReleaseStaticLibrary.
-archiving libcontainer_HEAP_CT.a successful.
-
-Finished createContainer_HEAP_CTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_HEAP_CTReleaseStaticLibrary/output.txt.

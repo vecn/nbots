@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileIterator_SORTED_UTReleaseStaticLibraryIterator_SORTED_UTC/output.txt for all output for compileIterator_SORTED_UTReleaseStaticLibraryIterator_SORTED_UTC.
-compiling iterator_SORTED_UT.c successful.
-
-Finished compileIterator_SORTED_UTReleaseStaticLibraryIterator_SORTED_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileIterator_SORTED_UTReleaseStaticLibraryIterator_SORTED_UTC/output.txt.

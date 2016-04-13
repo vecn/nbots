@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libcontainer_HEAP_CT.so
--o
-/home/victorc/nbots/core/build/libs/container_HEAP_CT/shared/debug/libcontainer_HEAP_CT.so
-/home/victorc/nbots/core/build/objs/container_HEAP_CT/shared/debug/container_HEAP_CTC/24davbl71yt1mpdcyd3c863d5/container_HEAP_CT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
--m64

@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileIterator_HASH_UTDebugStaticLibraryIterator_HASH_UTC/output.txt for all output for compileIterator_HASH_UTDebugStaticLibraryIterator_HASH_UTC.
-compiling iterator_HASH_UT.c successful.
-
-Finished compileIterator_HASH_UTDebugStaticLibraryIterator_HASH_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileIterator_HASH_UTDebugStaticLibraryIterator_HASH_UTC/output.txt.

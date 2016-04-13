@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_array_PTReleaseSharedLibrary/output.txt for all output for linkContainer_array_PTReleaseSharedLibrary.
-linking libcontainer_array_PT.so successful.
-
-Finished linkContainer_array_PTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_array_PTReleaseSharedLibrary/output.txt.

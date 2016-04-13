@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_array_UTReleaseStaticLibraryContainer_array_UTC/output.txt for all output for compileContainer_array_UTReleaseStaticLibraryContainer_array_UTC.
-compiling array_UT.c successful.
-
-Finished compileContainer_array_UTReleaseStaticLibraryContainer_array_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_array_UTReleaseStaticLibraryContainer_array_UTC/output.txt.

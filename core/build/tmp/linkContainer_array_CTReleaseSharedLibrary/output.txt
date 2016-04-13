@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_array_CTReleaseSharedLibrary/output.txt for all output for linkContainer_array_CTReleaseSharedLibrary.
-linking libcontainer_array_CT.so successful.
-
-Finished linkContainer_array_CTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_array_CTReleaseSharedLibrary/output.txt.

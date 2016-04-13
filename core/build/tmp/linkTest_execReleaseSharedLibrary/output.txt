@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkTest_execReleaseSharedLibrary/output.txt for all output for linkTest_execReleaseSharedLibrary.
-linking libtest_exec.so successful.
-
-Finished linkTest_execReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkTest_execReleaseSharedLibrary/output.txt.

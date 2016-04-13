@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_STACK_UTReleaseSharedLibrary/output.txt for all output for linkContainer_STACK_UTReleaseSharedLibrary.
-linking libcontainer_STACK_UT.so successful.
-
-Finished linkContainer_STACK_UTReleaseSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_STACK_UTReleaseSharedLibrary/output.txt.

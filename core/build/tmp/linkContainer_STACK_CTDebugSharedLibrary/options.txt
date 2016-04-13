@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libcontainer_STACK_CT.so
--o
-/home/victorc/nbots/core/build/libs/container_STACK_CT/shared/debug/libcontainer_STACK_CT.so
-/home/victorc/nbots/core/build/objs/container_STACK_CT/shared/debug/container_STACK_CTC/euzj3cqy5jk1zta18uc3br03b/container_STACK_CT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/debug/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
--m64

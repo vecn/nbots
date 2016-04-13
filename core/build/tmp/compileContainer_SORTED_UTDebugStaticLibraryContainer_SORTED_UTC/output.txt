@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_SORTED_UTDebugStaticLibraryContainer_SORTED_UTC/output.txt for all output for compileContainer_SORTED_UTDebugStaticLibraryContainer_SORTED_UTC.
-compiling container_SORTED_UT.c successful.
-
-Finished compileContainer_SORTED_UTDebugStaticLibraryContainer_SORTED_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_SORTED_UTDebugStaticLibraryContainer_SORTED_UTC/output.txt.

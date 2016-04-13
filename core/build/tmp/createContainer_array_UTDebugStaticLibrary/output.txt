@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createContainer_array_UTDebugStaticLibrary/output.txt for all output for createContainer_array_UTDebugStaticLibrary.
-archiving libcontainer_array_UT.a successful.
-
-Finished createContainer_array_UTDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createContainer_array_UTDebugStaticLibrary/output.txt.

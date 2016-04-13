@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_UTReleaseSharedLibraryContainer_HASH_UTC/output.txt for all output for compileContainer_HASH_UTReleaseSharedLibraryContainer_HASH_UTC.
-compiling container_HASH_UT.c successful.
-
-Finished compileContainer_HASH_UTReleaseSharedLibraryContainer_HASH_UTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_HASH_UTReleaseSharedLibraryContainer_HASH_UTC/output.txt.

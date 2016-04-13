@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/createModel_clipper_UTReleaseStaticLibrary/output.txt for all output for createModel_clipper_UTReleaseStaticLibrary.
-archiving libmodel_clipper_UT.a successful.
-
-Finished createModel_clipper_UTReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createModel_clipper_UTReleaseStaticLibrary/output.txt.

@@ -1,8 +1,0 @@
--shared
--Wl,-soname,libcontainer_QUEUE_CT.so
--o
-/home/victorc/nbots/core/build/libs/container_QUEUE_CT/shared/release/libcontainer_QUEUE_CT.so
-/home/victorc/nbots/core/build/objs/container_QUEUE_CT/shared/release/container_QUEUE_CTC/3urheogue68d2du4whdwiap4l/container_QUEUE_CT.o
-/home/victorc/nbots/core/build/libs/nb_test_add/shared/release/libnb_test_add.so
-/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
--m64

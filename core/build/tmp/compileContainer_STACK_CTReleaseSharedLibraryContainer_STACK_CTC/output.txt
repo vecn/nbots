@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/compileContainer_STACK_CTReleaseSharedLibraryContainer_STACK_CTC/output.txt for all output for compileContainer_STACK_CTReleaseSharedLibraryContainer_STACK_CTC.
-compiling container_STACK_CT.c successful.
-
-Finished compileContainer_STACK_CTReleaseSharedLibraryContainer_STACK_CTC, see full log file:///home/victorc/nbots/core/build/tmp/compileContainer_STACK_CTReleaseSharedLibraryContainer_STACK_CTC/output.txt.

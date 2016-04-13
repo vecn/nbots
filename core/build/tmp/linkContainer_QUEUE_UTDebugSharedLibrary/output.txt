@@ -1,4 +1,0 @@
-See file:///home/victorc/nbots/core/build/tmp/linkContainer_QUEUE_UTDebugSharedLibrary/output.txt for all output for linkContainer_QUEUE_UTDebugSharedLibrary.
-linking libcontainer_QUEUE_UT.so successful.
-
-Finished linkContainer_QUEUE_UTDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkContainer_QUEUE_UTDebugSharedLibrary/output.txt.

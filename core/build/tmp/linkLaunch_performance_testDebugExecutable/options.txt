@@ -1,8 +1,0 @@
--o
-/home/victorc/nbots/core/build/exe/launch_performance_test/debug/launch_performance_test
-/home/victorc/nbots/core/build/objs/launch_performance_test/debug/launch_performance_testC/3z98dtfvepc056ck39kbppk76/run_tests.o
-/home/victorc/nbots/core/build/objs/launch_performance_test/debug/launch_performance_testC/dz4q3tcs61o0bji8sh3qzay9d/performance_test_driver.o
-/usr/lib/x86_64-linux-gnu/libdl.so
-/home/victorc/nbots/core/build/libs/test_exec/shared/debug/libtest_exec.so
-/home/victorc/nbots/core/build/libs/nbots/shared/debug/libnbots.so
--m64
