@@ -4,9 +4,9 @@ c
 -fPIC
 -std=c99
 -I
-/home/victorc/nbots/wrappers/JNI/include
+/home/victor/nbots/wrappers/JNI/include
 -I
-/home/victorc/nbots/wrappers/JNI/binding_java/JNI/include
+/home/victor/nbots/wrappers/JNI/binding_java/JNI/include
 -I
 /opt/java/jdk1.8.0_51/include
 -I
@@ -16,5 +16,5 @@ c
 -I
 /usr/local/java/jdk1.8.0_51/include/linux
 -I
-/home/victorc/nbots/core/include
+/home/victor/nbots/core/include
 -m64

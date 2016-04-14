@@ -4,13 +4,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "test_library.h"
-#include "test_add.h"
+#include <CUnit/Basic.h>
 
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 
-#define INPUTS_DIR "core/tests/nb/geometric_bot/mesh/mesh2D_UT_inputs"
+#define INPUTS_DIR "core/utest/nb/geometric_bot/mesh/mesh2D_inputs"
 #define OUTPUT_DIR "core/build"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
@@ -23,64 +22,79 @@ static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
 }                                                             /* TEMPORAL */
 
-static bool check_generate_from_model_angle_constraint(void);
-static bool check_generate_from_model_length_constraint(void);
-static bool check_generate_from_model_huge_scale(void);
-static bool check_generate_from_model_tiny_scale(void);
-static bool check_generate_from_model_simple_square(void);
-static bool check_generate_from_model_subsgm_constraint(void);
-static bool check_generate_from_model_small_local_feature(void);
-static bool check_generate_from_model_small_localf_v2(void);
-static bool check_generate_from_model_subsgm_const_v2(void);
-static bool check_generate_from_model_holes(void);
-static bool check_generate_from_model_small_angles(void);
-static bool check_generate_from_model_quasi_linear(void);
-static bool check_generate_from_model_trg_constraint(void);
-static bool check_is_vtx_inside(void);
-static bool check_set_density(void);
+static int suite_init(void);
+static int suite_clean(void);
+
+static void test_generate_from_model_angle_constraint(void);
+static void test_generate_from_model_length_constraint(void);
+static void test_generate_from_model_huge_scale(void);
+static void test_generate_from_model_tiny_scale(void);
+static void test_generate_from_model_simple_square(void);
+static void test_generate_from_model_subsgm_constraint(void);
+static void test_generate_from_model_small_local_feature(void);
+static void test_generate_from_model_small_localf_v2(void);
+static void test_generate_from_model_subsgm_const_v2(void);
+static void test_generate_from_model_holes(void);
+static void test_generate_from_model_small_angles(void);
+static void test_generate_from_model_quasi_linear(void);
+static void test_generate_from_model_trg_constraint(void);
+static void test_is_vtx_inside(void);
+static void test_set_density(void);
 
 static double density_func(const double *const x, const void * const data);
 
-inline int vcn_test_get_driver_id(void)
+
+void cunit_nb_geometric_bot_mesh2D(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/mesh2D.c",
+				       suite_init, suite_clean);
+	CU_add_test(suite, "generate_from_model() with angle constraint",
+		    test_generate_from_model_angle_constraint);
+	CU_add_test(suite, "generate_from_model() with length constraint",
+		    test_generate_from_model_length_constraint);
+	CU_add_test(suite, "generate_from_model() with huge scale",
+		    test_generate_from_model_huge_scale);
+	CU_add_test(suite, "generate_from_model() with tiny scale",
+		    test_generate_from_model_tiny_scale);
+	CU_add_test(suite, "generate_from_model() of simple square",
+		    test_generate_from_model_simple_square);
+	CU_add_test(suite,
+		    "generate_from_model() with sub-segment constraint",
+		    test_generate_from_model_subsgm_constraint);
+	CU_add_test(suite,
+		    "generate_from_model() with small local feature",
+		    test_generate_from_model_small_local_feature);
+	CU_add_test(suite,
+		    "generate_from_model() with small local feat. v2",
+		    test_generate_from_model_small_localf_v2);
+	CU_add_test(suite,
+		    "generate_from_model() with sub-segment const. v2",
+		    test_generate_from_model_subsgm_const_v2);
+	CU_add_test(suite, "generate_from_model() with holes",
+		    test_generate_from_model_holes);
+	CU_add_test(suite, "generate_from_model() with small angles",
+		    test_generate_from_model_small_angles);
+	CU_add_test(suite,
+		    "generate_from_model() with quasi linear segments",
+		    test_generate_from_model_quasi_linear);
+	CU_add_test(suite,
+		    "generate_from_model() with triangles constraint",
+		    test_generate_from_model_trg_constraint);
+	CU_add_test(suite, "is_vtx_inside()", test_is_vtx_inside);
+	CU_add_test(suite, "set_density()", test_set_density);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_generate_from_model_angle_constraint,
-		     "Check generate_from_model() with angle constraint");
-	vcn_test_add(tests_ptr, check_generate_from_model_length_constraint,
-		     "Check generate_from_model() with length constraint");
-	vcn_test_add(tests_ptr, check_generate_from_model_huge_scale,
-		     "Check generate_from_model() with huge scale");
-	vcn_test_add(tests_ptr, check_generate_from_model_tiny_scale,
-		     "Check generate_from_model() with tiny scale");
-	vcn_test_add(tests_ptr, check_generate_from_model_simple_square,
-		     "Check generate_from_model() of simple square");
-	vcn_test_add(tests_ptr, check_generate_from_model_subsgm_constraint,
-		     "Check generate_from_model() with sub-segment constraint");
-	vcn_test_add(tests_ptr, check_generate_from_model_small_local_feature,
-		     "Check generate_from_model() with small local feature");
-	vcn_test_add(tests_ptr, check_generate_from_model_small_localf_v2,
-		     "Check generate_from_model() with small local feat. v2");
-	vcn_test_add(tests_ptr, check_generate_from_model_subsgm_const_v2,
-		     "Check generate_from_model() with sub-segment const. v2");
-	vcn_test_add(tests_ptr, check_generate_from_model_holes,
-		     "Check generate_from_model() with holes");
-	vcn_test_add(tests_ptr, check_generate_from_model_small_angles,
-		     "Check generate_from_model() with small angles");
-	vcn_test_add(tests_ptr, check_generate_from_model_quasi_linear,
-		     "Check generate_from_model() with quasi linear segments");
-	vcn_test_add(tests_ptr, check_generate_from_model_trg_constraint,
-		     "Check generate_from_model() with triangles constraint");
-	vcn_test_add(tests_ptr, check_is_vtx_inside,
-		     "Check is_vtx_inside()");
-	vcn_test_add(tests_ptr, check_set_density,
-		     "Check set_density()");
+	return 0;
 }
 
-static bool check_generate_from_model_angle_constraint(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_generate_from_model_angle_constraint(void)
 /* Test that the algorithm terminates */
 {
 	char input_name[256];
@@ -93,10 +107,11 @@ static bool check_generate_from_model_angle_constraint(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_length_constraint(void)
+static void test_generate_from_model_length_constraint(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(20, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -111,26 +126,28 @@ static bool check_generate_from_model_length_constraint(void)
 	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_huge_scale(void)
+static void test_generate_from_model_huge_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e13, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					 1e12);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  1e12);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
 	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_tiny_scale(void)
+static void test_generate_from_model_tiny_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e-13, 0, 0, 100);
 	vcn_mesh_t* mesh = vcn_mesh_create();
@@ -143,28 +160,30 @@ static bool check_generate_from_model_tiny_scale(void)
 	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_simple_square(void)
+static void test_generate_from_model_simple_square(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					 0.5);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  0.5);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_subsgm_constraint(void)
+static void test_generate_from_model_subsgm_constraint(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
@@ -182,10 +201,11 @@ static bool check_generate_from_model_subsgm_constraint(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_small_local_feature(void)
+static void test_generate_from_model_small_local_feature(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Rectangle.psl", INPUTS_DIR);
@@ -200,10 +220,11 @@ static bool check_generate_from_model_small_local_feature(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_small_localf_v2(void)
+static void test_generate_from_model_small_localf_v2(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Rectangle_with_two_nodges.psl", INPUTS_DIR);
@@ -218,10 +239,11 @@ static bool check_generate_from_model_small_localf_v2(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_subsgm_const_v2(void)
+static void test_generate_from_model_subsgm_const_v2(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Medieval_Ax.psl", INPUTS_DIR);
@@ -236,28 +258,30 @@ static bool check_generate_from_model_subsgm_const_v2(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_holes(void)
+static void test_generate_from_model_holes(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/CIMAT_Logo.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
-					 0.3);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					  0.3);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_small_angles(void)
+static void test_generate_from_model_small_angles(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Spokes.psl", INPUTS_DIR);
@@ -272,12 +296,14 @@ static bool check_generate_from_model_small_angles(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_quasi_linear(void)
+static void test_generate_from_model_quasi_linear(void)
 {
-	return false; /* TEMPORAL: Fails on delaunay */
+	CU_ASSERT(false); /* TEMPORAL: Fails on delaunay */
+	return; /* TEMPORAL: Fails on delaunay */
 	char input_name[256];
 	sprintf(input_name, "%s/Short_cantilever.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
@@ -288,10 +314,11 @@ static bool check_generate_from_model_quasi_linear(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_generate_from_model_trg_constraint(void)
+static void test_generate_from_model_trg_constraint(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
@@ -312,10 +339,11 @@ static bool check_generate_from_model_trg_constraint(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_is_vtx_inside(void)
+static void test_is_vtx_inside(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
@@ -343,10 +371,11 @@ static bool check_is_vtx_inside(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
-static bool check_set_density(void)
+static void test_set_density(void)
 {
 	vcn_model_t* model =
 		vcn_model_create_rectangle(-2 * NB_MATH_PI, -2 * NB_MATH_PI,
@@ -359,7 +388,8 @@ static bool check_set_density(void)
 	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return trg_ok && edg_ok;
+	CU_ASSERT(trg_ok);
+	CU_ASSERT(edg_ok);
 }
 
 static inline double density_func(const double *const x, 

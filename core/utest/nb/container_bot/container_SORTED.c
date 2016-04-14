@@ -1,22 +1,32 @@
 #define CONTAINER_ID NB_SORTED
 #define N_ITEMS 200
-#include "container_TEMPLATE_UT.c"
 
-static bool check_delete_last(void);
+#include "container_ALL.h"
 
-inline int vcn_test_get_driver_id(void)
+static int suite_init(void);
+static int suite_clean(void);
+
+static void test_delete_last(void);
+
+void cunit_nb_container_bot_SORTED(void)
 {
-	return TEMPLATE_get_driver_id();
+	CU_pSuite suite = CU_add_suite("nb/container_bot/container_SORTED.c",
+				       suite_init, suite_clean);
+	container_add_tests(suite);
+	CU_add_test(suite, "do('delete_last')", test_delete_last);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	TEMPLATE_load_tests(tests_ptr);
-	vcn_test_add(tests_ptr, check_delete_last,
-		     "Check do('delete_last')");
+	return 0;
 }
 
-static bool check_delete_last(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_delete_last(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
@@ -33,5 +43,6 @@ static bool check_delete_last(void)
 	free(val);
 	bool length_ok = ((N - 1) == nb_container_get_length(cnt));
 	nb_container_destroy(cnt);
-	return is_ok && length_ok;
+	CU_ASSERT(is_ok);
+	CU_ASSERT(length_ok);
 }

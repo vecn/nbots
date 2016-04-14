@@ -3,12 +3,11 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/constrained_delaunay.h"
-
-#include "test_library.h"
-#include "test_add.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -19,20 +18,24 @@ typedef struct {
 	uint32_t *segments;
 } input_t;
 
-static bool check_get_cdelaunay_twist_square(void);
-static bool check_get_cdelaunay_twist_polygon_5(void);
-static bool check_get_cdelaunay_twist_polygon_50(void);
-static bool check_get_cdelaunay_twist_polygon_100(void);
-static bool check_get_cdelaunay_60_strips(void);
-static bool check_get_cdelaunay_centipede_5(void);
-static bool check_get_cdelaunay_centipede_50(void);
+static int suite_init(void);
+static int suite_clean(void);
+
+static void test_get_cdelaunay_twist_square(void);
+static void test_get_cdelaunay_twist_polygon_5(void);
+static void test_get_cdelaunay_twist_polygon_50(void);
+static void test_get_cdelaunay_twist_polygon_100(void);
+static void test_get_cdelaunay_60_strips(void);
+static void test_get_cdelaunay_centipede_5(void);
+static void test_get_cdelaunay_centipede_50(void);
 
 static bool check_get_cdelaunay_twist_polygon(uint32_t N_sides);
 static void set_twist_polygon(input_t *input, uint32_t N_sides, double size);
 static int get_expected_trg_of_polygon(int N, int N_centers);
 static int get_expected_edg_of_polygon(int N, int N_centers);
 static void set_polygon(int N, double r, double vertices[]);
-static void set_polygon_bissections(int N_sides, const double vtx_polygon[],
+static void set_polygon_bissections(int N_sides,
+				    const double vtx_polygon[],
 				    int N_biss, double vertices[]);
 static void set_vertex(int id, double vertices[], double x, double y);
 static bool check_get_cdelaunay_strips(int N);
@@ -53,62 +56,73 @@ static bool intersects(const double a1[2], const double a2[2],
 static bool check_get_cdelaunay_centipede(int N_pairs);
 static void set_centipede(input_t *input, uint32_t N_pairs);
 
-inline int vcn_test_get_driver_id(void)
+void cunit_nb_geometric_bot_constrained_delaunay(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite =
+		CU_add_suite("nb/geometric_bot/mesh/constrained_delaunay.c",
+			     suite_init, suite_clean);
+	CU_add_test(suite, "get_constrained_delaunay() of twisted square",
+		    test_get_cdelaunay_twist_square);
+	CU_add_test(suite, "get_constrained_delaunay() of twisted pentagon",
+		    test_get_cdelaunay_twist_polygon_5);
+	CU_add_test(suite, "get_constrained_delaunay() tw. poly. of 50 vtx",
+		    test_get_cdelaunay_twist_polygon_50);
+	CU_add_test(suite, "get_constrained_delaunay() tw. poly. of 100 vtx",
+		    test_get_cdelaunay_twist_polygon_100);
+	CU_add_test(suite,
+		    "get_constrained_delaunay() of 60 parallel strips",
+		    test_get_cdelaunay_60_strips);
+	CU_add_test(suite,
+		    "get_constrained_delaunay() of 5 pair centipede",
+		    test_get_cdelaunay_centipede_5);
+	CU_add_test(suite,
+		    "get_constrained_delaunay() of 50 pair centipede",
+		    test_get_cdelaunay_centipede_50);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_get_cdelaunay_twist_square,
-		     "Check get_constrained_delaunay() of twisted square");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_twist_polygon_5,
-		     "Check get_constrained_delaunay() of twisted pentagon");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_twist_polygon_50,
-		     "Check get_constrained_delaunay() tw. poly. of 50 vtx");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_twist_polygon_100,
-		     "Check get_constrained_delaunay() tw. poly. of 100 vtx");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_60_strips,
-		     "Check get_constrained_delaunay() of 60 parallel strips");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_centipede_5,
-		     "Check get_constrained_delaunay() of 5 pair centipede");
-	vcn_test_add(tests_ptr, check_get_cdelaunay_centipede_50,
-		     "Check get_constrained_delaunay() of 50 pair centipede");
+	return 0;
 }
 
-static inline bool check_get_cdelaunay_twist_square(void)
+static int suite_clean(void)
 {
-	return check_get_cdelaunay_twist_polygon(4);
+	return 0;
 }
 
-static inline bool check_get_cdelaunay_twist_polygon_5(void)
+static void test_get_cdelaunay_twist_square(void)
 {
-	return check_get_cdelaunay_twist_polygon(5);
+	CU_ASSERT(check_get_cdelaunay_twist_polygon(4));
 }
 
-static inline bool check_get_cdelaunay_twist_polygon_50(void)
+static void test_get_cdelaunay_twist_polygon_5(void)
 {
-	return check_get_cdelaunay_twist_polygon(50);
+	CU_ASSERT(check_get_cdelaunay_twist_polygon(5));
 }
 
-static inline bool check_get_cdelaunay_twist_polygon_100(void)
+static void test_get_cdelaunay_twist_polygon_50(void)
 {
-	return check_get_cdelaunay_twist_polygon(100);
+	CU_ASSERT(check_get_cdelaunay_twist_polygon(50));
 }
 
-static inline bool check_get_cdelaunay_60_strips(void)
+static void test_get_cdelaunay_twist_polygon_100(void)
 {
-	return check_get_cdelaunay_strips(60);
+	CU_ASSERT(check_get_cdelaunay_twist_polygon(100));
 }
 
-static inline bool check_get_cdelaunay_centipede_5(void)
+static void test_get_cdelaunay_60_strips(void)
 {
-	return check_get_cdelaunay_centipede(5);
+	CU_ASSERT(check_get_cdelaunay_strips(60));
 }
 
-static inline bool check_get_cdelaunay_centipede_50(void)
+static void test_get_cdelaunay_centipede_5(void)
 {
-	return check_get_cdelaunay_centipede(50);
+	CU_ASSERT(check_get_cdelaunay_centipede(5));
+}
+
+static void test_get_cdelaunay_centipede_50(void)
+{
+	CU_ASSERT(check_get_cdelaunay_centipede(50));
 }
 
 static bool check_get_cdelaunay_twist_polygon(uint32_t N_sides)

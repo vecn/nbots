@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="TestGeometricBot" tests="5" skipped="0" failures="0" errors="0" timestamp="2016-04-14T03:34:11" hostname="ThinkPad489" time="1.02">
+<testsuite name="TestGeometricBot" tests="5" skipped="0" failures="0" errors="0" timestamp="2016-04-14T15:23:12" hostname="victor-LANIX" time="1.462">
   <properties/>
-  <testcase name="sample1" classname="TestGeometricBot" time="0.195"/>
-  <testcase name="sample2" classname="TestGeometricBot" time="0.171"/>
-  <testcase name="sample3" classname="TestGeometricBot" time="0.167"/>
-  <testcase name="sample4" classname="TestGeometricBot" time="0.443"/>
-  <testcase name="sample5" classname="TestGeometricBot" time="0.043"/>
+  <testcase name="sample1" classname="TestGeometricBot" time="0.277"/>
+  <testcase name="sample2" classname="TestGeometricBot" time="0.274"/>
+  <testcase name="sample3" classname="TestGeometricBot" time="0.262"/>
+  <testcase name="sample4" classname="TestGeometricBot" time="0.576"/>
+  <testcase name="sample5" classname="TestGeometricBot" time="0.073"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

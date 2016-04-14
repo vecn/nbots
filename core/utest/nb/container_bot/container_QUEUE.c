@@ -1,13 +1,13 @@
 #define CONTAINER_ID NB_QUEUE
 #define N_ITEMS 200
-#include "container_all.h"
+#include "container_ALL.h"
 
 static int suite_init(void);
 static int suite_clean(void);
 
 static void test_insert_first(void);
 
-void cunit_nb_container_bot_queue(void)
+void cunit_nb_container_bot_QUEUE(void)
 {
 	CU_pSuite suite = CU_add_suite("nb/container_bot/container_QUEUE.c",
 				       suite_init, suite_clean);

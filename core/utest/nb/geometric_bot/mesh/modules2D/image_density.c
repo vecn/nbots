@@ -4,14 +4,13 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include <CUnit/Basic.h>
+
 #include  "nb/geometric_bot/model/model2D.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/mesh/modules2D/image_density.h"
 
-#include "test_library.h"
-#include "test_add.h"
-
-#define INPUTS_DIR "core/tests/nb/geometric_bot/mesh/modules2D/image_density_UT_inputs"
+#define INPUTS_DIR "core/utest/nb/geometric_bot/mesh/modules2D/image_density_inputs"
 #define OUTPUT "core/build"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
@@ -24,32 +23,44 @@ static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
 }                                                             /* TEMPORAL */
 
-static bool check_set_img_density_jpg_eye(void);
-static bool check_set_img_density_jpg_gnome(void);
-static bool check_set_img_density_png_jolie(void);
-static bool check_set_img_density_jpg_hand(void);
-static bool check_set_img_density_jpg_size_const(void);
+static int suite_init(void);
+static int suite_clean(void);
 
-inline int vcn_test_get_driver_id(void)
+static void test_set_img_density_jpg_eye(void);
+static void test_set_img_density_jpg_gnome(void);
+static void test_set_img_density_png_jolie(void);
+static void test_set_img_density_jpg_hand(void);
+static void test_set_img_density_jpg_size_const(void);
+
+void cunit_nb_geometric_bot_mesh2D_image_density(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite =
+		CU_add_suite("nb/geometric_bot/mesh/modules2D/image_density.c",
+			     suite_init, suite_clean);
+	CU_add_test(suite, "set_img_density() with a JPG of 'the eye'",
+		    test_set_img_density_jpg_eye);
+	CU_add_test(suite, "set_img_density() with a JPG of 'gnome logo'",
+		    test_set_img_density_jpg_gnome);
+	CU_add_test(suite, "set_img_density() with a PNG of 'Angeline Jolie'",
+		    test_set_img_density_png_jolie);
+	CU_add_test(suite, "set_img_density() with a JPG of 'Hands'",
+		    test_set_img_density_jpg_hand);
+	CU_add_test(suite,
+		    "set_img_density() with a JPG with size constraint",
+		    test_set_img_density_jpg_size_const);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_set_img_density_jpg_eye,
-		     "Check set_img_density() with a JPG of 'the eye'");
-	vcn_test_add(tests_ptr, check_set_img_density_jpg_gnome,
-		     "Check set_img_density() with a JPG of 'gnome logo'");
-	vcn_test_add(tests_ptr, check_set_img_density_png_jolie,
-		     "Check set_img_density() with a PNG of 'Angeline Jolie'");
-	vcn_test_add(tests_ptr, check_set_img_density_jpg_hand,
-		     "Check set_img_density() with a JPG of 'Hands'");
-	vcn_test_add(tests_ptr, check_set_img_density_jpg_size_const,
-		     "Check set_img_density() with a JPG with size constraint");
+	return 0;
 }
 
-static bool check_set_img_density_jpg_eye(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_set_img_density_jpg_eye(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/eye.jpg", INPUTS_DIR);
@@ -70,10 +81,10 @@ static bool check_set_img_density_jpg_eye(void)
 	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_set_img_density_jpg_gnome(void)
+static void test_set_img_density_jpg_gnome(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/gnome.jpg", INPUTS_DIR);
@@ -91,10 +102,10 @@ static bool check_set_img_density_jpg_gnome(void)
 	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_set_img_density_png_jolie(void)
+static void test_set_img_density_png_jolie(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/jolie.png", INPUTS_DIR);
@@ -115,10 +126,10 @@ static bool check_set_img_density_png_jolie(void)
 	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_set_img_density_jpg_hand(void)
+static void test_set_img_density_jpg_hand(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/hand.jpg", INPUTS_DIR);
@@ -138,10 +149,10 @@ static bool check_set_img_density_jpg_hand(void)
 	vcn_mesh_clear_img_density(mesh);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_set_img_density_jpg_size_const(void)
+static void test_set_img_density_jpg_size_const(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/color_eye.jpg", INPUTS_DIR);
@@ -165,5 +176,5 @@ static bool check_set_img_density_jpg_size_const(void)
 	vcn_image_destroy(img);
 	TEMPORAL(mesh); /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
-	return false;
+	CU_ASSERT(false);
 }

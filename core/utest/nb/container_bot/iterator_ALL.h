@@ -6,67 +6,54 @@
  * Example:
  *  #define CONTAINER_ID NB_QUEUE
  *  #define N_ITEMS 1000
- *  #include "iterator_TEMPLATE_UT.c"
+ *  #include "iterator_ALL.c"
  */
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 
-#include "test_library.h"
-#include "test_add.h"
-
-static bool check_create(void);
-static bool check_clone(void);
-static bool check_destroy(void);
-static bool check_set_container(void);
-static bool check_restart(void);
-static bool check_get_next(void);
-static bool check_has_more(void);
-static bool check_has_more_with_1_item(void);
+static void test_create(void);
+static void test_clone(void);
+static void test_destroy(void);
+static void test_set_container(void);
+static void test_restart(void);
+static void test_get_next(void);
+static void test_has_more(void);
+static void test_has_more_with_1_item(void);
 
 static nb_container_t* get_container(int N);
 static void insert_N_int32(nb_container_t *cnt, int N);
 static uint32_t keygen(const void *const val);
 static int8_t compare(const void *const a, const void *const b);
 
-int TEMPLATE_get_driver_id(void)
+static void iterator_add_tests(CU_pSuite suite)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_add_test(suite, "create()", test_create);
+	CU_add_test(suite, "clone()", test_clone);
+	CU_add_test(suite, "destroy()", test_destroy);
+	CU_add_test(suite, "set_container()", test_set_container);
+	CU_add_test(suite, "restart()", test_restart);
+	CU_add_test(suite, "get_next()", test_get_next);
+	CU_add_test(suite, "has_more()", test_has_more);
+	CU_add_test(suite, "has_more() with one item",
+		    test_has_more_with_1_item);
 }
 
-void TEMPLATE_load_tests(void *tests_ptr)
-{
-	vcn_test_add(tests_ptr, check_create,
-		     "Check create()");
-	vcn_test_add(tests_ptr, check_clone,
-		     "Check clone()");
-	vcn_test_add(tests_ptr, check_destroy,
-		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_set_container,
-		     "Check set_container()");
-	vcn_test_add(tests_ptr, check_restart,
-		     "Check restart()");
-	vcn_test_add(tests_ptr, check_get_next,
-		     "Check get_next()");
-	vcn_test_add(tests_ptr, check_has_more,
-		     "Check has_more()");
-	vcn_test_add(tests_ptr, check_has_more_with_1_item,
-		     "Check has_more() with one item");
-}
-
-static bool check_create(void)
+static void test_create(void)
 {
 	nb_iterator_t *iter = nb_iterator_create();
 	bool is_ok = (NULL != iter);
 	if (is_ok)
 		nb_iterator_destroy(iter);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_clone(void)
+static void test_clone(void)
 {
 	nb_container_t *cnt = get_container(N_ITEMS);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -76,17 +63,17 @@ static bool check_clone(void)
 	nb_iterator_destroy(cloned);
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return is_ok;	
+	CU_ASSERT(is_ok);
 }
 
-static bool check_destroy(void)
+static void test_destroy(void)
 {
 	nb_iterator_t *iter = nb_iterator_create();
 	nb_iterator_destroy(iter);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_set_container(void)
+static void test_set_container(void)
 {
 	nb_container_t *cnt = get_container(N_ITEMS);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -94,10 +81,10 @@ static bool check_set_container(void)
 	bool is_ok = nb_iterator_has_more(iter);
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_restart(void)
+static void test_restart(void)
 {
 	nb_container_t *cnt = get_container(N_ITEMS);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -108,10 +95,10 @@ static bool check_restart(void)
 	bool is_ok = nb_iterator_has_more(iter);
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_next(void)
+static void test_get_next(void)
 {
 	nb_container_t *cnt = get_container(N_ITEMS);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -123,10 +110,10 @@ static bool check_get_next(void)
 	}
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_has_more(void)
+static void test_has_more(void)
 {
 	nb_container_t *cnt = get_container(N_ITEMS);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -138,10 +125,10 @@ static bool check_has_more(void)
 	}
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return (N_ITEMS == counter);
+	CU_ASSERT(N_ITEMS == counter);
 }
 
-static bool check_has_more_with_1_item(void)
+static void test_has_more_with_1_item(void)
 {
 	nb_container_t *cnt = get_container(1);
 	nb_iterator_t *iter = nb_iterator_create();
@@ -153,7 +140,7 @@ static bool check_has_more_with_1_item(void)
 	}
 	nb_iterator_destroy(iter);
 	nb_container_destroy(cnt);
-	return (1 == counter);
+	CU_ASSERT(1 == counter);
 }
 
 static inline nb_container_t* get_container(int N)

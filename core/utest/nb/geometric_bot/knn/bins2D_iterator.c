@@ -1,44 +1,48 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 
-#include "test_library.h"
-#include "test_add.h"
+static int suite_init(void);
+static int suite_clean(void);
 
-static bool check_create(void);
-static bool check_destroy(void);
-static bool check_set_bins(void);
-static bool check_has_more(void);
-static bool check_get_next(void);
-static bool check_restart(void);
+static void test_create(void);
+static void test_destroy(void);
+static void test_set_bins(void);
+static void test_has_more(void);
+static void test_get_next(void);
+static void test_restart(void);
 
 static vcn_bins2D_t* get_bins(int N);
 
-inline int vcn_test_get_driver_id(void)
+void cunit_nb_geometric_bot_bins2D_iterator(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite = 
+	  CU_add_suite("nb/geometric_bot/knn/bins2D_iterator.c",
+		       suite_init, suite_clean);
+	CU_add_test(suite, "create()", test_create);
+	CU_add_test(suite, "destroy()", test_destroy);
+	CU_add_test(suite, "set_bins()", test_set_bins);
+	CU_add_test(suite, "has_more()", test_has_more);
+	CU_add_test(suite, "get_next()", test_get_next);
+	CU_add_test(suite, "restart()", test_restart);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_create,
-		     "Check create()");
-	vcn_test_add(tests_ptr, check_destroy,
-		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_set_bins,
-		     "Check set_bins()");
-	vcn_test_add(tests_ptr, check_has_more,
-		     "Check has_more()");
-	vcn_test_add(tests_ptr, check_get_next,
-		     "Check get_next()");
-	vcn_test_add(tests_ptr, check_restart,
-		     "Check restart()");
+	return 0;
 }
 
-static bool check_create(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_create(void)
 {
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
 	bool is_ok = false;
@@ -46,17 +50,17 @@ static bool check_create(void)
 		is_ok = true;
 		vcn_bins2D_iter_destroy(iter);
 	}
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_destroy(void)
+static void test_destroy(void)
 {
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_destroy(iter);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_set_bins(void)
+static void test_set_bins(void)
 {
 	int N = 100;
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
@@ -65,10 +69,10 @@ static bool check_set_bins(void)
 	bool is_ok = vcn_bins2D_iter_has_more(iter);
 	vcn_bins2D_iter_destroy(iter);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_has_more(void)
+static void test_has_more(void)
 {
 	int N = 100;
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
@@ -81,10 +85,10 @@ static bool check_has_more(void)
 	}
 	vcn_bins2D_iter_destroy(iter);
 	vcn_bins2D_destroy(bins);
-	return (counter == N);
+	CU_ASSERT(counter == N);
 }
 
-static bool check_get_next(void)
+static void test_get_next(void)
 {
 	int N = 100;
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
@@ -100,23 +104,25 @@ static bool check_get_next(void)
 	}
 	vcn_bins2D_iter_destroy(iter);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_restart(void)
+static void test_restart(void)
 {
 	int N = 100;
 	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
 	vcn_bins2D_t *bins = get_bins(N);
 	vcn_bins2D_iter_set_bins(iter, bins);
-	const vcn_point2D_t *first_point = vcn_bins2D_iter_get_next(iter);
+	const vcn_point2D_t *first_point =
+		vcn_bins2D_iter_get_next(iter);
 	bool is_ok = (NULL != first_point);
 	vcn_bins2D_iter_restart(iter);
-	const vcn_point2D_t *first_point_after_restart = vcn_bins2D_iter_get_next(iter);
+	const vcn_point2D_t *first_point_after_restart =
+		vcn_bins2D_iter_get_next(iter);
 	is_ok = is_ok && (first_point_after_restart == first_point);
 	vcn_bins2D_iter_destroy(iter);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
 static vcn_bins2D_t* get_bins(int N)

@@ -3,9 +3,9 @@ c
 -c
 -std=c99
 -I
-/home/victorc/nbots/core/include
+/home/victor/nbots/core/include
 -I
 /usr/include
 -I
-/home/victorc/nbots/core/build/src/nbots_unit_tests/cunitLauncher/headers
+/home/victor/nbots/core/build/src/nbots_unit_tests/cunitLauncher/headers
 -m64

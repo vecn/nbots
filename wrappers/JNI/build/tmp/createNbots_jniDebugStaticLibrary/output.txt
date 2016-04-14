@@ -1,4 +1,4 @@
-See file:///home/victorc/nbots/wrappers/JNI/build/tmp/createNbots_jniDebugStaticLibrary/output.txt for all output for createNbots_jniDebugStaticLibrary.
+See file:///home/victor/nbots/wrappers/JNI/build/tmp/createNbots_jniDebugStaticLibrary/output.txt for all output for createNbots_jniDebugStaticLibrary.
 archiving libnbots_jni.a successful.
 
-Finished createNbots_jniDebugStaticLibrary, see full log file:///home/victorc/nbots/wrappers/JNI/build/tmp/createNbots_jniDebugStaticLibrary/output.txt.
+Finished createNbots_jniDebugStaticLibrary, see full log file:///home/victor/nbots/wrappers/JNI/build/tmp/createNbots_jniDebugStaticLibrary/output.txt.

@@ -6,7 +6,7 @@
  * Example:
  *  #define CONTAINER_ID NB_QUEUE
  *  #define N_ITEMS 1000
- *  #include "container_all.h"
+ *  #include "container_ALL.h"
  */
 #include <stdbool.h>
 #include <stdlib.h>

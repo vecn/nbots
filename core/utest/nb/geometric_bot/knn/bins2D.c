@@ -3,37 +3,39 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 
-#include "test_library.h"
-#include "test_add.h"
-
 #define POW2(a) ((a)*(a))
 
-static bool check_create(void);
-static bool check_destroy(void);
-static bool check_clear(void);
-static bool check_enable_point_destroyer(void);
-static bool check_disable_point_destroyer(void);
-static bool check_set_attribute_destroyer(void);
-static bool check_insert(void);
-static bool check_delete(void);
-static bool check_delete_first(void);
-static bool check_get_knn(void);
-static bool check_set_filter(void);
-static bool check_set_filter_data(void);
-static bool check_get_candidate_points_to_min_delaunay(void);
-static bool check_get_points_inside_circle(void);
-static bool check_are_points_inside_circle(void);
-static bool check_get_N_bins(void);
-static bool check_get_min_points_x_bin(void);
-static bool check_get_length(void);
-static bool check_is_empty(void);
-static bool check_is_not_empty(void);
-static bool check_get_size_of_bins(void);
+static int suite_init(void);
+static int suite_clean(void);
+
+static void test_create(void);
+static void test_destroy(void);
+static void test_clear(void);
+static void test_enable_point_destroyer(void);
+static void test_disable_point_destroyer(void);
+static void test_set_attribute_destroyer(void);
+static void test_insert(void);
+static void test_delete(void);
+static void test_delete_first(void);
+static void test_get_knn(void);
+static void test_set_filter(void);
+static void test_set_filter_data(void);
+static void test_get_candidate_points_to_min_delaunay(void);
+static void test_get_points_inside_circle(void);
+static void test_are_points_inside_circle(void);
+static void test_get_N_bins(void);
+static void test_get_min_points_x_bin(void);
+static void test_get_length(void);
+static void test_is_empty(void);
+static void test_is_not_empty(void);
+static void test_get_size_of_bins(void);
 
 static vcn_bins2D_t* get_bins(int N);
 static vcn_bins2D_t* get_bins_and_array(int N, vcn_point2D_t *vertices[]);
@@ -67,58 +69,51 @@ static bool all_inside_circle(const nb_container_t *const cnt,
 			      const double center[2],
 			      double radius);
 
-inline int vcn_test_get_driver_id(void)
+void cunit_nb_geometric_bot_bins2D(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/knn/bins2D.c",
+				       suite_init, suite_clean);
+	CU_add_test(suite, "create()", test_create);
+	CU_add_test(suite, "destroy()", test_destroy);
+	CU_add_test(suite, "clear()", test_clear);
+	CU_add_test(suite, "enable_point_destroyer()",
+		    test_enable_point_destroyer);
+	CU_add_test(suite, "disable_point_destroyer()",
+		    test_disable_point_destroyer);
+	CU_add_test(suite, "set_attribute_destroyer()",
+		    test_set_attribute_destroyer);
+	CU_add_test(suite, "insert()", test_insert);
+	CU_add_test(suite, "delete()", test_delete);
+	CU_add_test(suite, "delete_first()", test_delete_first);
+	CU_add_test(suite, "get_knn()", test_get_knn);
+	CU_add_test(suite, "set_filter()", test_set_filter);
+	CU_add_test(suite, "set_filter_data()", test_set_filter_data);
+	CU_add_test(suite, "get_candidate_points_to_min_delaunay()",
+		    test_get_candidate_points_to_min_delaunay);
+	CU_add_test(suite, "get_points_inside_circle()",
+		    test_get_points_inside_circle);
+	CU_add_test(suite, "are_points_inside_circle()",
+		    test_are_points_inside_circle);
+	CU_add_test(suite, "get_N_bins()", test_get_N_bins);
+	CU_add_test(suite, "get_min_points_x_bin()",
+		    test_get_min_points_x_bin);
+	CU_add_test(suite, "get_length()", test_get_length);
+	CU_add_test(suite, "is_empty()", test_is_empty);
+	CU_add_test(suite, "is_not_empty()", test_is_not_empty);
+	CU_add_test(suite, "get_size_of_bins()", test_get_size_of_bins);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_create,
-		     "Check create()");
-	vcn_test_add(tests_ptr, check_destroy,
-		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_clear,
-		     "Check clear()");
-	vcn_test_add(tests_ptr, check_enable_point_destroyer,
-		     "Check enable_point_destroyer()");
-	vcn_test_add(tests_ptr, check_disable_point_destroyer,
-		     "Check disable_point_destroyer()");
-	vcn_test_add(tests_ptr, check_set_attribute_destroyer,
-		     "Check set_attribute_destroyer()");
-	vcn_test_add(tests_ptr, check_insert,
-		     "Check insert()");
-	vcn_test_add(tests_ptr, check_delete,
-		     "Check delete()");
-	vcn_test_add(tests_ptr, check_delete_first,
-		     "Check delete_first()");
-	vcn_test_add(tests_ptr, check_get_knn,
-		     "Check get_knn()");
-	vcn_test_add(tests_ptr, check_set_filter,
-		     "Check set_filter()");
-	vcn_test_add(tests_ptr, check_set_filter_data,
-		     "Check set_filter_data()");
-	vcn_test_add(tests_ptr, check_get_candidate_points_to_min_delaunay,
-		     "Check get_candidate_points_to_min_delaunay()");
-	vcn_test_add(tests_ptr, check_get_points_inside_circle,
-		     "Check get_points_inside_circle()");
-	vcn_test_add(tests_ptr, check_are_points_inside_circle,
-		     "Check are_points_inside_circle()");
-	vcn_test_add(tests_ptr, check_get_N_bins,
-		     "Check get_N_bins()");
-	vcn_test_add(tests_ptr, check_get_min_points_x_bin,
-		     "Check get_min_points_x_bin()");
-	vcn_test_add(tests_ptr, check_get_length,
-		     "Check get_length()");
-	vcn_test_add(tests_ptr, check_is_empty,
-		     "Check is_empty()");
-	vcn_test_add(tests_ptr, check_is_not_empty,
-		     "Check is_not_empty()");
-	vcn_test_add(tests_ptr, check_get_size_of_bins,
-		     "Check get_size_of_bins()");
+	return 0;
 }
 
-static bool check_create(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_create(void)
 {
 	vcn_bins2D_t *bins = vcn_bins2D_create(1.0);
 	bool is_ok = (NULL != bins);
@@ -129,37 +124,37 @@ static bool check_create(void)
 		is_ok = is_ok && size_is_ok && length_is_ok;
 		vcn_bins2D_destroy(bins);
 	}
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_destroy(void)
+static void test_destroy(void)
 {
 	vcn_bins2D_t *bins = vcn_bins2D_create(1.0);
 	vcn_bins2D_destroy(bins);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_clear(void)
+static void test_clear(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	vcn_bins2D_clear(bins);
 	bool is_ok = (0 == vcn_bins2D_get_length(bins));
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_enable_point_destroyer(void)
+static void test_enable_point_destroyer(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	vcn_bins2D_disable_point_destroyer(bins);
 	vcn_bins2D_enable_point_destroyer(bins);
 	vcn_bins2D_destroy(bins);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_disable_point_destroyer(void)
+static void test_disable_point_destroyer(void)
 {
 	int N = 100;
 	vcn_point2D_t *vertices[100];
@@ -168,28 +163,28 @@ static bool check_disable_point_destroyer(void)
 	vcn_bins2D_destroy(bins);
 	for (int i = 0; i < N; i++)
 		vcn_point2D_destroy(vertices[i]);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_set_attribute_destroyer(void)
+static void test_set_attribute_destroyer(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins_with_attribute(N);
 	vcn_bins2D_set_attribute_destroyer(bins, free);
 	vcn_bins2D_destroy(bins);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_insert(void)
+static void test_insert(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = (N == vcn_bins2D_get_length(bins));
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_delete(void)
+static void test_delete(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -204,10 +199,10 @@ static bool check_delete(void)
 		vcn_point2D_destroy(deleted_point);
 	}
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_delete_first(void)
+static void test_delete_first(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -218,10 +213,10 @@ static bool check_delete_first(void)
 		is_ok = true;
 	}
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_knn(void)
+static void test_get_knn(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -233,10 +228,10 @@ static bool check_get_knn(void)
 	uint32_t k = vcn_bins2D_get_knn(bins, &p, 10, knn, knn_dist);
 	bool is_ok = (10 == k) && distances_are_ok(10, knn_dist);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_set_filter(void)
+static void test_set_filter(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -250,10 +245,10 @@ static bool check_set_filter(void)
 	bool is_ok = (10 == k) && distances_are_ok(10, knn_dist) &&
 		all_pass_filter(10, &p, knn);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_set_filter_data(void)
+static void test_set_filter_data(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -269,10 +264,10 @@ static bool check_set_filter_data(void)
 	bool is_ok = (10 == k) && distances_are_ok(10, knn_dist) &&
 		all_pass_filter(10, &p, knn);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_candidate_points_to_min_delaunay(void)
+static void test_get_candidate_points_to_min_delaunay(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
@@ -282,98 +277,104 @@ static bool check_get_candidate_points_to_min_delaunay(void)
 	p2.x[0] = 1;
 	p2.x[1] = -1;
 	nb_container_t *cnt = 
-		vcn_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2);
+		vcn_bins2D_get_candidate_points_to_min_delaunay(bins,
+								&p1,
+								&p2);
 	bool is_ok = nb_container_is_not_empty(cnt);
 	if (is_ok)
-		is_ok = is_ok && dont_include_edge_points(cnt, &p1, &p2);
+		is_ok = is_ok && dont_include_edge_points(cnt,
+							  &p1, &p2);
 	if (is_ok)
 		is_ok = is_ok && all_in_half_space(cnt, &p1, &p2);
 	if (is_ok)
 		is_ok = is_ok && contains_min_dd(bins, cnt, &p1, &p2);
 	nb_container_destroy(cnt);
 	vcn_bins2D_destroy(bins);
-	return is_ok;	
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_points_inside_circle(void)
+static void test_get_points_inside_circle(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	double center[2] = {0, 0};
 	double radius = 10.0;
 	nb_container_t *cnt = 
-		vcn_bins2D_get_points_inside_circle(bins, center, radius);
+		vcn_bins2D_get_points_inside_circle(bins, center,
+						    radius);
 	bool is_ok = nb_container_is_not_empty(cnt) &&
 		all_inside_circle(cnt, center, radius);
 	nb_container_destroy(cnt);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_are_points_inside_circle(void)
+static void test_are_points_inside_circle(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	double center[2] = {0, 0};
 	double radius = 10.0;
-	bool is_ok = vcn_bins2D_are_points_inside_circle(bins, center, radius);
+	bool is_ok =
+		vcn_bins2D_are_points_inside_circle(bins, center,
+						    radius);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_N_bins(void)
+static void test_get_N_bins(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	uint32_t N_bins = vcn_bins2D_get_N_bins(bins);
 	bool is_ok = (N_bins > 0 && N_bins < N);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_min_points_x_bin(void)
+static void test_get_min_points_x_bin(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = (vcn_bins2D_get_min_points_x_bin(bins) == 1);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_length(void)
+static void test_get_length(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = (vcn_bins2D_get_length(bins) == N);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_is_empty(void)
+static void test_is_empty(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = !vcn_bins2D_is_empty(bins);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_is_not_empty(void)
+static void test_is_not_empty(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = vcn_bins2D_is_not_empty(bins);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_size_of_bins(void)
+static void test_get_size_of_bins(void)
 {
 	int N = 100;
 	vcn_bins2D_t *bins = get_bins(N);
 	bool is_ok = (fabs(vcn_bins2D_get_size_of_bins(bins) - 1.0) < 1e-9);
 	vcn_bins2D_destroy(bins);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
 static vcn_bins2D_t* get_bins(int N)

@@ -1,4 +1,4 @@
-See file:///home/victorc/nbots/wrappers/JNI/build/tmp/linkNbots_jniDebugSharedLibrary/output.txt for all output for linkNbots_jniDebugSharedLibrary.
+See file:///home/victor/nbots/wrappers/JNI/build/tmp/linkNbots_jniDebugSharedLibrary/output.txt for all output for linkNbots_jniDebugSharedLibrary.
 linking libnbots_jni.so successful.
 
-Finished linkNbots_jniDebugSharedLibrary, see full log file:///home/victorc/nbots/wrappers/JNI/build/tmp/linkNbots_jniDebugSharedLibrary/output.txt.
+Finished linkNbots_jniDebugSharedLibrary, see full log file:///home/victor/nbots/wrappers/JNI/build/tmp/linkNbots_jniDebugSharedLibrary/output.txt.

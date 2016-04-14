@@ -65,6 +65,7 @@ model {
 	  exportedHeaders {
 	    srcDirs "include"
 	  }
+	  lib library: 'nbots_cairo' //TEMPORAL
 	}
       }
       testing $.components.nbots

@@ -1,46 +1,55 @@
 #define CONTAINER_ID NB_HASH
 #define N_ITEMS 200
-#include "container_TEMPLATE_UT.c"
+#include "container_ALL.h"
 
-static bool check_realloc_if_max_load(void);
-static bool check_get_size(void);
-static bool check_get_N_collisions(void);
-static bool check_get_collisions(void);
-static bool check_exist_if_not_with_collision(void);
+static int suite_init(void);
+static int suite_clean(void);
+
+static void test_realloc_if_max_load(void);
+static void test_get_size(void);
+static void test_get_N_collisions(void);
+static void test_get_collisions(void);
+static void test_exist_if_not_with_collision(void);
 
 static uint32_t small_hash_key(const void *const val_ptr);
 static bool check_collisions(nb_container_t *collisions);
 
-inline int vcn_test_get_driver_id(void)
+void cunit_nb_container_bot_HASH(void)
 {
-	return TEMPLATE_get_driver_id();
+	CU_pSuite suite = CU_add_suite("nb/container_bot/container_HASH.c",
+				       suite_init, suite_clean);
+	container_add_tests(suite);
+	CU_add_test(suite, "realloc() if max load",
+		    test_realloc_if_max_load);
+	CU_add_test(suite, "do('get_size')", test_get_size);
+	CU_add_test(suite, "do('get_N_collisions')",
+		    test_get_N_collisions);
+	CU_add_test(suite, "do('get_collisions')",
+		    test_get_collisions);
+	CU_add_test(suite, "exist() if not exist and the key collides",
+		    test_exist_if_not_with_collision);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	TEMPLATE_load_tests(tests_ptr);
-	vcn_test_add(tests_ptr, check_realloc_if_max_load,
-		     "Check realloc() if max load");
-	vcn_test_add(tests_ptr, check_get_size,
-		     "Check do('get_size')");
-	vcn_test_add(tests_ptr, check_get_N_collisions,
-		     "Check do('get_N_collisions')");
-	vcn_test_add(tests_ptr, check_get_collisions,
-		     "Check do('get_collisions')");
-	vcn_test_add(tests_ptr, check_exist_if_not_with_collision,
-		     "Check exist() if not exist and the key collides");
+	return 0;
 }
 
-static bool check_realloc_if_max_load(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_realloc_if_max_load(void)
 {
 	int N = 3000;
 	nb_container_t *cnt = get_container(N);
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	return (N == length);  
+	CU_ASSERT(N == length);  
 }
 
-static bool check_get_size(void)
+static void test_get_size(void)
 {
 	nb_container_t *cnt = nb_container_create(NB_HASH);
 	int8_t status;
@@ -51,10 +60,10 @@ static bool check_get_size(void)
 		free(size_ptr);
 	}
 	nb_container_destroy(cnt);
-	return (0 < size);
+	CU_ASSERT(0 < size);
 }
 
-static bool check_get_N_collisions(void)
+static void test_get_N_collisions(void)
 {
 	nb_container_t *cnt = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(cnt, small_hash_key);
@@ -72,10 +81,10 @@ static bool check_get_N_collisions(void)
 		N_collisions = *N_collisions_ptr;
 		free(N_collisions_ptr);
 	}
-	return (3 == N_collisions);
+	CU_ASSERT(3 == N_collisions);
 }
 
-static bool check_get_collisions(void)
+static void test_get_collisions(void)
 {
 	nb_container_t *cnt = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(cnt, small_hash_key);
@@ -97,7 +106,7 @@ static bool check_get_collisions(void)
 }
 
 
-static bool check_exist_if_not_with_collision(void)
+static void test_exist_if_not_with_collision(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -109,7 +118,7 @@ static bool check_exist_if_not_with_collision(void)
 	int32_t *val = nb_container_exist(cnt, &to_find);
 	bool is_ok = (NULL == val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
 static uint32_t small_hash_key(const void *const val_ptr)

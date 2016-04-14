@@ -4,14 +4,13 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "test_library.h"
-#include "test_add.h"
+#include <CUnit/Basic.h>
 
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/model/modules2D/clipper.h"
 
-#define INPUTS_DIR "core/tests/nb/geometric_bot/model/modules2D/clipper_UT_inputs"
+#define INPUTS_DIR "core/utest/nb/geometric_bot/model/modules2D/clipper_inputs"
 #define OUTPUT_DIR "core/build"
 
 #include  "nb/geometric_bot/model/modules2D/exporter_cairo.h" /* TEMPORAL */
@@ -31,127 +30,136 @@ static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 }                                                             /* TEMPORAL */
 
-static bool check_get_combination_squares(void);
-static bool check_get_intersection_squares(void);
-static bool check_get_union_squares(void);
-static bool check_get_substractionA_squares(void);
-static bool check_get_substractionB_squares(void);
-static bool check_get_difference_squares(void);
-static bool check_get_combination_cross(void);
-static bool check_get_intersection_cross(void);
-static bool check_get_union_cross(void);
-static bool check_get_substractionA_cross(void);
-static bool check_get_substractionB_cross(void);
-static bool check_get_difference_cross(void);
-static bool check_get_combination_c(void);
-static bool check_get_intersection_c(void);
-static bool check_get_union_c(void);
-static bool check_get_substractionA_c(void);
-static bool check_get_substractionB_c(void);
-static bool check_get_difference_c(void);
-static bool check_get_combination_b(void);
-static bool check_get_intersection_b(void);
-static bool check_get_union_b(void);
-static bool check_get_substractionA_b(void);
-static bool check_get_substractionB_b(void);
-static bool check_get_difference_b(void);
-static bool check_get_combination_g(void);
-static bool check_get_intersection_g(void);
-static bool check_get_union_g(void);
-static bool check_get_substractionA_g(void);
-static bool check_get_substractionB_g(void);
-static bool check_get_difference_g(void);
-static bool check_get_combination_h(void);
-static bool check_get_intersection_h(void);
-static bool check_get_union_h(void);
-static bool check_get_substractionA_h(void);
-static bool check_get_substractionB_h(void);
-static bool check_get_difference_h(void);
+static int suite_init(void);
+static int suite_clean(void);
 
-inline int vcn_test_get_driver_id(void)
-{
-	return NB_DRIVER_UNIT_TEST;
-}
+static void test_get_combination_squares(void);
+static void test_get_intersection_squares(void);
+static void test_get_union_squares(void);
+static void test_get_substractionA_squares(void);
+static void test_get_substractionB_squares(void);
+static void test_get_difference_squares(void);
+static void test_get_combination_cross(void);
+static void test_get_intersection_cross(void);
+static void test_get_union_cross(void);
+static void test_get_substractionA_cross(void);
+static void test_get_substractionB_cross(void);
+static void test_get_difference_cross(void);
+static void test_get_combination_c(void);
+static void test_get_intersection_c(void);
+static void test_get_union_c(void);
+static void test_get_substractionA_c(void);
+static void test_get_substractionB_c(void);
+static void test_get_difference_c(void);
+static void test_get_combination_b(void);
+static void test_get_intersection_b(void);
+static void test_get_union_b(void);
+static void test_get_substractionA_b(void);
+static void test_get_substractionB_b(void);
+static void test_get_difference_b(void);
+static void test_get_combination_g(void);
+static void test_get_intersection_g(void);
+static void test_get_union_g(void);
+static void test_get_substractionA_g(void);
+static void test_get_substractionB_g(void);
+static void test_get_difference_g(void);
+static void test_get_combination_h(void);
+static void test_get_intersection_h(void);
+static void test_get_union_h(void);
+static void test_get_substractionA_h(void);
+static void test_get_substractionB_h(void);
+static void test_get_difference_h(void);
 
-void vcn_test_load_tests(void *tests_ptr)
+void cunit_nb_geometric_bot_model2D_clipper(void)
 {
-	vcn_test_add(tests_ptr, check_get_combination_squares,
-		     "Check get_combination() of squares");
-	vcn_test_add(tests_ptr, check_get_intersection_squares,
-		     "Check get_intersection() of squares");
-	vcn_test_add(tests_ptr, check_get_union_squares,
-		     "Check get_union() of squares");
-	vcn_test_add(tests_ptr, check_get_substractionA_squares,
-		     "Check get_substraction() of squares A");
-	vcn_test_add(tests_ptr, check_get_substractionB_squares,
-		     "Check get_substraction() of squares B");
-	vcn_test_add(tests_ptr, check_get_difference_squares,
-		     "Check get_difference() of squares B");
-	vcn_test_add(tests_ptr, check_get_combination_cross,
-		     "Check get_combination() of cross");
-	vcn_test_add(tests_ptr, check_get_intersection_cross,
-		     "Check get_intersection() of cross");
-	vcn_test_add(tests_ptr, check_get_union_cross,
-		     "Check get_union() of cross");
-	vcn_test_add(tests_ptr, check_get_substractionA_cross,
-		     "Check get_substraction() of cross A");
-	vcn_test_add(tests_ptr, check_get_substractionB_cross,
-		     "Check get_substraction() of cross B");
-	vcn_test_add(tests_ptr, check_get_difference_cross,
-		     "Check get_difference() of cross");
-	vcn_test_add(tests_ptr, check_get_combination_c,
-		     "Check get_combination() of c");
-	vcn_test_add(tests_ptr, check_get_intersection_c,
-		     "Check get_intersection() of c");
-	vcn_test_add(tests_ptr, check_get_union_c,
-		     "Check get_union() of c");
-	vcn_test_add(tests_ptr, check_get_substractionA_c,
-		     "Check get_substraction() of c A");
-	vcn_test_add(tests_ptr, check_get_substractionB_c,
-		     "Check get_substraction() of c B");
-	vcn_test_add(tests_ptr, check_get_difference_c,
-		     "Check get_difference() of c");
-	vcn_test_add(tests_ptr, check_get_combination_b,
-		     "Check get_combination() of b");
-	vcn_test_add(tests_ptr, check_get_intersection_b,
-		     "Check get_intersection() of b");
-	vcn_test_add(tests_ptr, check_get_union_b,
-		     "Check get_union() of b");
-	vcn_test_add(tests_ptr, check_get_substractionA_b,
-		     "Check get_substraction() of b A");
-	vcn_test_add(tests_ptr, check_get_substractionB_b,
-		     "Check get_substraction() of b B");
-	vcn_test_add(tests_ptr, check_get_difference_b,
-		     "Check get_difference() of b");
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/model/modules2D/clipper.c",
+				       suite_init, suite_clean);
+	CU_add_test(suite,
+		    "get_combination() of squares",
+		    test_get_combination_squares);
+	CU_add_test(suite, "get_intersection() of squares",
+		    test_get_intersection_squares);
+	CU_add_test(suite, "get_union() of squares",
+		    test_get_union_squares);
+	CU_add_test(suite, "get_substraction() of squares A",
+		    test_get_substractionA_squares);
+	CU_add_test(suite, "get_substraction() of squares B",
+		    test_get_substractionB_squares);
+	CU_add_test(suite, "get_difference() of squares B",
+		    test_get_difference_squares);
+	CU_add_test(suite, "get_combination() of cross",
+		    test_get_combination_cross);
+	CU_add_test(suite, "get_intersection() of cross",
+		    test_get_intersection_cross);
+	CU_add_test(suite, "get_union() of cross",
+		    test_get_union_cross);
+	CU_add_test(suite, "get_substraction() of cross A",
+		    test_get_substractionA_cross);
+	CU_add_test(suite, "get_substraction() of cross B",
+		    test_get_substractionB_cross);
+	CU_add_test(suite, "get_difference() of cross",
+		    test_get_difference_cross);
+	CU_add_test(suite, "get_combination() of c",
+		    test_get_combination_c);
+	CU_add_test(suite, "get_intersection() of c",
+		    test_get_intersection_c);
+	CU_add_test(suite, "get_union() of c", test_get_union_c);
+	CU_add_test(suite, "get_substraction() of c A",
+		    test_get_substractionA_c);
+	CU_add_test(suite, "get_substraction() of c B",
+		    test_get_substractionB_c);
+	CU_add_test(suite, "get_difference() of c",
+		    test_get_difference_c);
+	CU_add_test(suite, "get_combination() of b",
+		    test_get_combination_b);
+	CU_add_test(suite, "get_intersection() of b",
+		    test_get_intersection_b);
+	CU_add_test(suite, "get_union() of b", test_get_union_b);
+	CU_add_test(suite, "get_substraction() of b A",
+		    test_get_substractionA_b);
+	CU_add_test(suite, "get_substraction() of b B",
+		    test_get_substractionB_b);
+	CU_add_test(suite, "get_difference() of b",
+		    test_get_difference_b);
 	return;/* TEMPORAL */
 
-	vcn_test_add(tests_ptr, check_get_combination_g,
-		     "Check get_combination() of g");
-	vcn_test_add(tests_ptr, check_get_intersection_g,
-		     "Check get_intersection() of g");
-	vcn_test_add(tests_ptr, check_get_union_g,
-		     "Check get_union() of g");
-	vcn_test_add(tests_ptr, check_get_substractionA_g,
-		     "Check get_substraction() of g A");
-	vcn_test_add(tests_ptr, check_get_substractionB_g,
-		     "Check get_substraction() of g B");
-	vcn_test_add(tests_ptr, check_get_difference_g,
-		     "Check get_difference() of g");
-	vcn_test_add(tests_ptr, check_get_combination_h,
-		     "Check get_combination() of h");
-	vcn_test_add(tests_ptr, check_get_intersection_h,
-		     "Check get_intersection() of h");
-	vcn_test_add(tests_ptr, check_get_union_h,
-		     "Check get_union() of h");
-	vcn_test_add(tests_ptr, check_get_substractionA_h,
-		     "Check get_substraction() of h A");
-	vcn_test_add(tests_ptr, check_get_substractionB_h,
-		     "Check get_substraction() of h B");
-	vcn_test_add(tests_ptr, check_get_difference_h,
-		     "Check get_difference() of h");
+	CU_add_test(suite, "get_combination() of g",
+		    test_get_combination_g);
+	CU_add_test(suite, "get_intersection() of g",
+		    test_get_intersection_g);
+	CU_add_test(suite, "get_union() of g",
+		    test_get_union_g);
+	CU_add_test(suite, "get_substraction() of g A",
+		    test_get_substractionA_g);
+	CU_add_test(suite, "get_substraction() of g B",
+		    test_get_substractionB_g);
+	CU_add_test(suite, "get_difference() of g",
+		    test_get_difference_g);
+	CU_add_test(suite, "get_combination() of h",
+		    test_get_combination_h);
+	CU_add_test(suite, "get_intersection() of h",
+		    test_get_intersection_h);
+	CU_add_test(suite, "get_union() of h",
+		    test_get_union_h);
+	CU_add_test(suite, "get_substraction() of h A",
+		    test_get_substractionA_h);
+	CU_add_test(suite, "get_substraction() of h B",
+		    test_get_substractionB_h);
+	CU_add_test(suite, "get_difference() of h",
+		    test_get_difference_h);
 }
 
-static bool check_get_combination_squares(void)
+static int suite_init(void)
+{
+	return 0;
+}
+
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_get_combination_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
@@ -164,10 +172,10 @@ static bool check_get_combination_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_squares(void)
+static void test_get_intersection_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
@@ -180,10 +188,10 @@ static bool check_get_intersection_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_squares(void)
+static void test_get_union_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
@@ -196,10 +204,10 @@ static bool check_get_union_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_squares(void)
+static void test_get_substractionA_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
@@ -212,10 +220,10 @@ static bool check_get_substractionA_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_squares(void)
+static void test_get_substractionB_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
@@ -228,10 +236,10 @@ static bool check_get_substractionB_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_squares(void)
+static void test_get_difference_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
@@ -244,10 +252,10 @@ static bool check_get_difference_squares(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_combination_cross(void)
+static void test_get_combination_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
@@ -260,10 +268,10 @@ static bool check_get_combination_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_cross(void)
+static void test_get_intersection_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
@@ -276,10 +284,10 @@ static bool check_get_intersection_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_cross(void)
+static void test_get_union_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
@@ -292,10 +300,10 @@ static bool check_get_union_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_cross(void)
+static void test_get_substractionA_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
@@ -308,10 +316,10 @@ static bool check_get_substractionA_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_cross(void)
+static void test_get_substractionB_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
@@ -324,10 +332,10 @@ static bool check_get_substractionB_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_cross(void)
+static void test_get_difference_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
@@ -340,10 +348,10 @@ static bool check_get_difference_cross(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_combination_c(void)
+static void test_get_combination_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
@@ -356,10 +364,10 @@ static bool check_get_combination_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_c(void)
+static void test_get_intersection_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
@@ -372,10 +380,10 @@ static bool check_get_intersection_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_c(void)
+static void test_get_union_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
@@ -388,10 +396,10 @@ static bool check_get_union_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_c(void)
+static void test_get_substractionA_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
@@ -404,10 +412,10 @@ static bool check_get_substractionA_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_c(void)
+static void test_get_substractionB_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
@@ -420,10 +428,10 @@ static bool check_get_substractionB_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_c(void)
+static void test_get_difference_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
@@ -436,10 +444,10 @@ static bool check_get_difference_c(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_combination_b(void)
+static void test_get_combination_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
@@ -452,10 +460,10 @@ static bool check_get_combination_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_b(void)
+static void test_get_intersection_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
@@ -468,10 +476,10 @@ static bool check_get_intersection_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_b(void)
+static void test_get_union_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
@@ -484,10 +492,10 @@ static bool check_get_union_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_b(void)
+static void test_get_substractionA_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
@@ -500,10 +508,10 @@ static bool check_get_substractionA_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_b(void)
+static void test_get_substractionB_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
@@ -516,10 +524,10 @@ static bool check_get_substractionB_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_b(void)
+static void test_get_difference_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
@@ -532,10 +540,10 @@ static bool check_get_difference_b(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_combination_g(void)
+static void test_get_combination_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
@@ -548,10 +556,10 @@ static bool check_get_combination_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_g(void)
+static void test_get_intersection_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
@@ -564,10 +572,10 @@ static bool check_get_intersection_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_g(void)
+static void test_get_union_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
@@ -580,10 +588,10 @@ static bool check_get_union_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_g(void)
+static void test_get_substractionA_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
@@ -596,10 +604,10 @@ static bool check_get_substractionA_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_g(void)
+static void test_get_substractionB_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
@@ -612,10 +620,10 @@ static bool check_get_substractionB_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_g(void)
+static void test_get_difference_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
@@ -628,10 +636,10 @@ static bool check_get_difference_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_combination_h(void)
+static void test_get_combination_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
@@ -644,10 +652,10 @@ static bool check_get_combination_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_intersection_h(void)
+static void test_get_intersection_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
@@ -660,10 +668,10 @@ static bool check_get_intersection_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_union_h(void)
+static void test_get_union_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
@@ -676,10 +684,10 @@ static bool check_get_union_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionA_h(void)
+static void test_get_substractionA_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
@@ -692,10 +700,10 @@ static bool check_get_substractionA_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_substractionB_h(void)
+static void test_get_substractionB_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
@@ -708,10 +716,10 @@ static bool check_get_substractionB_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }
 
-static bool check_get_difference_h(void)
+static void test_get_difference_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
@@ -724,5 +732,5 @@ static bool check_get_difference_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	vcn_model_destroy(model);
-	return false;
+	CU_ASSERT(false);
 }

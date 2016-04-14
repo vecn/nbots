@@ -1,4 +1,4 @@
-See file:///home/victorc/nbots/core/build/tmp/createNbots_cairoDebugStaticLibrary/output.txt for all output for createNbots_cairoDebugStaticLibrary.
+See file:///home/victor/nbots/core/build/tmp/createNbots_cairoDebugStaticLibrary/output.txt for all output for createNbots_cairoDebugStaticLibrary.
 archiving libnbots_cairo.a successful.
 
-Finished createNbots_cairoDebugStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createNbots_cairoDebugStaticLibrary/output.txt.
+Finished createNbots_cairoDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createNbots_cairoDebugStaticLibrary/output.txt.

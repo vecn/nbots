@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="TestModel" tests="9" skipped="0" failures="0" errors="0" timestamp="2016-04-14T03:34:10" hostname="ThinkPad489" time="0.9">
+<testsuite name="TestModel" tests="9" skipped="0" failures="0" errors="0" timestamp="2016-04-14T15:23:11" hostname="victor-LANIX" time="0.84">
   <properties/>
-  <testcase name="checkIntersect" classname="TestModel" time="0.488"/>
-  <testcase name="checkDifference" classname="TestModel" time="0.076"/>
+  <testcase name="checkIntersect" classname="TestModel" time="0.27"/>
+  <testcase name="checkDifference" classname="TestModel" time="0.117"/>
   <testcase name="checkIsPointInside" classname="TestModel" time="0.001"/>
   <testcase name="checkIsContinuum" classname="TestModel" time="0.001"/>
-  <testcase name="checkUnify" classname="TestModel" time="0.083"/>
-  <testcase name="checkSubstractA" classname="TestModel" time="0.093"/>
-  <testcase name="checkSubstractB" classname="TestModel" time="0.089"/>
-  <testcase name="checkVerify" classname="TestModel" time="0.001"/>
-  <testcase name="checkCombine" classname="TestModel" time="0.067"/>
+  <testcase name="checkUnify" classname="TestModel" time="0.121"/>
+  <testcase name="checkSubstractA" classname="TestModel" time="0.107"/>
+  <testcase name="checkSubstractB" classname="TestModel" time="0.108"/>
+  <testcase name="checkVerify" classname="TestModel" time="0.002"/>
+  <testcase name="checkCombine" classname="TestModel" time="0.112"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

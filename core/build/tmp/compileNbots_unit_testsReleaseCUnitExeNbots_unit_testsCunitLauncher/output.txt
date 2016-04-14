@@ -1,4 +1,4 @@
-See file:///home/victorc/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher/output.txt for all output for compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher.
+See file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher/output.txt for all output for compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher.
 compiling gradle_cunit_main.c successful.
 
-Finished compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher, see full log file:///home/victorc/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher/output.txt.
+Finished compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher, see full log file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsCunitLauncher/output.txt.
