@@ -1,0 +1,4 @@
+See file:///home/victorc/nbots/core/build/tmp/createNbots_cairoReleaseStaticLibrary/output.txt for all output for createNbots_cairoReleaseStaticLibrary.
+archiving libnbots_cairo.a successful.
+
+Finished createNbots_cairoReleaseStaticLibrary, see full log file:///home/victorc/nbots/core/build/tmp/createNbots_cairoReleaseStaticLibrary/output.txt.

@@ -1,0 +1,12 @@
+-shared
+-Wl,-soname,libnbots_jni.so
+-o
+/home/victorc/nbots/wrappers/JNI/build/libs/nbots_jni/shared/release/libnbots_jni.so
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/520q9z9yk2xngd8ezyq2qk21y/jMesh.o
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/63dp8ncu0xmnx961gz7df1kl8/jModel.o
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/4ufse9bhiljxmrlzwkaze81t3/JNI_jGeometricBot.o
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/axi7okt518bevwt9ecaa4qkvk/JNI_jPdeBot.o
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/acskixpbpu5uvdbep2sustjif/JNI_jModel.o
+/home/victorc/nbots/wrappers/JNI/build/objs/nbots_jni/shared/release/nbots_jniC/4lwgvm8zzgu8z37yyekkqtepj/jModelStatus.o
+/home/victorc/nbots/core/build/libs/nbots/shared/release/libnbots.so
+-m64

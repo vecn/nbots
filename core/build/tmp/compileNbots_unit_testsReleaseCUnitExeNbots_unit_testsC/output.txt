@@ -1,0 +1,4 @@
+See file:///home/victorc/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC/output.txt for all output for compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC.
+compiling container_QUEUE.c successful.
+
+Finished compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC, see full log file:///home/victorc/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC/output.txt.

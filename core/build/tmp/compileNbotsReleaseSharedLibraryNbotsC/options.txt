@@ -1,0 +1,8 @@
+-x
+c
+-c
+-fPIC
+-std=c99
+-I
+/home/victorc/nbots/core/include
+-m64

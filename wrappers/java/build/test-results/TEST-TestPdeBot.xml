@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="TestPdeBot" tests="1" skipped="0" failures="0" errors="0" timestamp="2016-04-14T03:34:11" hostname="ThinkPad489" time="0.08">
+  <properties/>
+  <testcase name="test1" classname="TestPdeBot" time="0.08"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

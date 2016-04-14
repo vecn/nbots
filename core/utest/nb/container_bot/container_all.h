@@ -6,48 +6,47 @@
  * Example:
  *  #define CONTAINER_ID NB_QUEUE
  *  #define N_ITEMS 1000
- *  #include "container_TEMPLATE_UT.c"
+ *  #include "container_all.h"
  */
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/container_bot/container.h"
 #include "nb/statistics_bot.h"
 
-#include "test_library.h"
-#include "test_add.h"
+static void test_create(void);
+static void test_clone(void);
+static void test_destroy(void);
+static void test_clear(void);
+static void test_merge_with_QUEUE(void);
+static void test_merge_with_STACK(void);
+static void test_merge_with_SORTED(void);
+static void test_merge_with_HEAP(void);
+static void test_merge_with_HASH(void);
+static void test_cast_to_array(void);
+static void test_copy_to_array(void);
+static void test_set_key_generator(void);
+static void test_set_destroyer(void);
+static void test_set_comparer(void);
+static void test_set_cloner(void);
+static void test_insert(void);
+static void test_insert_repeated_item(void);
+static void test_insert_array(void);
+static void test_get_first(void);
+static void test_delete_first(void);
+static void test_exist(void);
+static void test_exist_if_not(void);
+static void test_delete(void);
+static void test_get_length(void);
+static void test_is_empty(void);
+static void test_is_not_empty(void);
+static void test_get_type(void);
+static void test_invalid_do(void);
 
-static bool check_create(void);
-static bool check_clone(void);
-static bool check_destroy(void);
-static bool check_clear(void);
-static bool check_merge_with_QUEUE(void);
-static bool check_merge_with_STACK(void);
-static bool check_merge_with_SORTED(void);
-static bool check_merge_with_HEAP(void);
-static bool check_merge_with_HASH(void);
-static bool check_cast_to_array(void);
-static bool check_copy_to_array(void);
-static bool check_set_key_generator(void);
-static bool check_set_destroyer(void);
-static bool check_set_comparer(void);
-static bool check_set_cloner(void);
-static bool check_insert(void);
-static bool check_insert_repeated_item(void);
-static bool check_insert_array(void);
-static bool check_get_first(void);
-static bool check_delete_first(void);
-static bool check_exist(void);
-static bool check_exist_if_not(void);
-static bool check_delete(void);
-static bool check_get_length(void);
-static bool check_is_empty(void);
-static bool check_is_not_empty(void);
-static bool check_get_type(void);
-static bool check_invalid_do(void);
-
-static bool check_merge_with(nb_container_type type);
+static void test_merge_with(nb_container_type type);
 static nb_container_t* get_container_by_type(int N, nb_container_type type);
 static bool insert_N_int32(nb_container_t *cnt, int N);
 static nb_container_t* get_container(int N);
@@ -57,81 +56,49 @@ static void* clone_int32(const void *const val);
 static void** get_N_array(nb_container_t *cnt, int N);
 static bool first_is_ok(int32_t *val);
 
-int TEMPLATE_get_driver_id(void)
+static void container_add_tests(CU_pSuite suite)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_add_test(suite, "create()", test_create);
+	CU_add_test(suite, "clone()", test_clone);
+	CU_add_test(suite, "destroy()", test_destroy);
+	CU_add_test(suite, "clear()", test_clear);
+	CU_add_test(suite, "merge() with QUEUE", test_merge_with_QUEUE);
+	CU_add_test(suite, "merge() with STACK", test_merge_with_STACK);
+	CU_add_test(suite, "merge() with SORTED", test_merge_with_SORTED);
+	CU_add_test(suite, "merge() with HEAP", test_merge_with_HEAP);
+	CU_add_test(suite, "merge() with HASH", test_merge_with_HASH);
+	CU_add_test(suite, "cast_to_array()", test_cast_to_array);
+	CU_add_test(suite, "copy_to_array()", test_copy_to_array);
+	CU_add_test(suite, "set_key_generator()", test_set_key_generator);
+	CU_add_test(suite, "set_destroyer()", test_set_destroyer);
+	CU_add_test(suite, "set_comparer()", test_set_comparer);
+	CU_add_test(suite, "set_cloner()", test_set_cloner);
+	CU_add_test(suite, "insert()", test_insert);
+	CU_add_test(suite, "insert() repeated items",
+		    test_insert_repeated_item);
+	CU_add_test(suite, "insert_array()", test_insert_array);
+	CU_add_test(suite, "get_first()", test_get_first);
+	CU_add_test(suite, "delete_first()", test_delete_first);
+	CU_add_test(suite, "exist()", test_exist);
+	CU_add_test(suite, "exist() if not", test_exist_if_not);
+	CU_add_test(suite, "delete()", test_delete);
+	CU_add_test(suite, "get_length()", test_get_length);
+	CU_add_test(suite, "is_empty()", test_is_empty);
+	CU_add_test(suite, "is_not_empty()", test_is_not_empty);
+	CU_add_test(suite, "get_type()", test_get_type);
+	CU_add_test(suite, "do('invalid function')", test_invalid_do);
 }
 
-void TEMPLATE_load_tests(void *tests_ptr)
-{
-	vcn_test_add(tests_ptr, check_create,
-		     "Check create()");
-	vcn_test_add(tests_ptr, check_clone,
-		     "Check clone()");
-	vcn_test_add(tests_ptr, check_destroy,
-		     "Check destroy()");
-	vcn_test_add(tests_ptr, check_clear,
-		     "Check clear()");
-	vcn_test_add(tests_ptr, check_merge_with_QUEUE,
-		     "Check merge() with QUEUE");
-	vcn_test_add(tests_ptr, check_merge_with_STACK,
-		     "Check merge() with STACK");
-	vcn_test_add(tests_ptr, check_merge_with_SORTED,
-		     "Check merge() with SORTED");
-	vcn_test_add(tests_ptr, check_merge_with_HEAP,
-		     "Check merge() with HEAP");
-	vcn_test_add(tests_ptr, check_merge_with_HASH,
-		     "Check merge() with HASH");
-	vcn_test_add(tests_ptr, check_cast_to_array,
-		     "Check cast_to_array()");
-	vcn_test_add(tests_ptr, check_copy_to_array,
-		     "Check copy_to_array()");
-	vcn_test_add(tests_ptr, check_set_key_generator,
-		     "Check set_key_generator()");
-	vcn_test_add(tests_ptr, check_set_destroyer,
-		     "Check set_destroyer()");
-	vcn_test_add(tests_ptr, check_set_comparer,
-		     "Check set_comparer()");
-	vcn_test_add(tests_ptr, check_set_cloner,
-		     "Check set_cloner()");
-	vcn_test_add(tests_ptr, check_insert,
-		     "Check insert()");
-	vcn_test_add(tests_ptr, check_insert_repeated_item,
-		     "Check insert() repeated items");
-	vcn_test_add(tests_ptr, check_insert_array,
-		     "Check insert_array()");
-	vcn_test_add(tests_ptr, check_get_first,
-		     "Check get_first()");
-	vcn_test_add(tests_ptr, check_delete_first,
-		     "Check delete_first()");
-	vcn_test_add(tests_ptr, check_exist,
-		     "Check exist()");
-	vcn_test_add(tests_ptr, check_exist_if_not,
-		     "Check exist() if not");
-	vcn_test_add(tests_ptr, check_delete,
-		     "Check delete()");
-	vcn_test_add(tests_ptr, check_get_length,
-		     "Check get_length()");
-	vcn_test_add(tests_ptr, check_is_empty,
-		     "Check is_empty()");
-	vcn_test_add(tests_ptr, check_is_not_empty,
-		     "Check is_not_empty()");
-	vcn_test_add(tests_ptr, check_get_type,
-		     "Check get_type()");
-	vcn_test_add(tests_ptr, check_invalid_do,
-		     "Check do('invalid function')");
-}
-
-static bool check_create(void)
+static void test_create(void)
 {
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
 	bool is_ok = (NULL != cnt);
 	if (is_ok)
 	  nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_clone(void)
+static void test_clone(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -142,53 +109,54 @@ static bool check_clone(void)
 	nb_container_destroy(cnt);
 	bool is_ok = (nb_container_get_type(cloned) == CONTAINER_ID);
 	nb_container_destroy(cloned);
-	return (N == length) && is_ok; 
+	CU_ASSERT(N == length);
+	CU_ASSERT(is_ok);
 }
 
-static bool check_destroy(void)
+static void test_destroy(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	nb_container_destroy(cnt);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_clear(void)
+static void test_clear(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	nb_container_clear(cnt);
 	bool is_empty = nb_container_is_empty(cnt);
 	nb_container_destroy(cnt);
-	return is_empty;
+	CU_ASSERT(is_empty);
 }
 
-static inline bool check_merge_with_QUEUE(void)
+static void test_merge_with_QUEUE(void)
 {
-	return check_merge_with(NB_QUEUE);
+	test_merge_with(NB_QUEUE);
 }
 
-static inline bool check_merge_with_STACK(void)
+static void test_merge_with_STACK(void)
 {
-	return check_merge_with(NB_STACK);
+	test_merge_with(NB_STACK);
 }
 
-static inline bool check_merge_with_SORTED(void)
+static void test_merge_with_SORTED(void)
 {
-	return check_merge_with(NB_SORTED);
+	test_merge_with(NB_SORTED);
 }
 
-static inline bool check_merge_with_HEAP(void)
+static void test_merge_with_HEAP(void)
 {
-	return check_merge_with(NB_HEAP);
+	test_merge_with(NB_HEAP);
 }
 
-static inline bool check_merge_with_HASH(void)
+static void test_merge_with_HASH(void)
 {
-	return check_merge_with(NB_HASH);
+	test_merge_with(NB_HASH);
 }
 
-static bool check_cast_to_array(void)
+static void test_cast_to_array(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -196,10 +164,10 @@ static bool check_cast_to_array(void)
 	for (int i = 0; i < N; i++)
 		free(array[i]);
 	free(array);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_copy_to_array(void)
+static void test_copy_to_array(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -208,28 +176,28 @@ static bool check_copy_to_array(void)
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
 	free(array);
-	return (N == length);
+	CU_ASSERT(N == length);
 }
 
-static bool check_set_key_generator(void)
+static void test_set_key_generator(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	nb_container_set_key_generator(cnt, keygen);
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	return (N == length);
+	CU_ASSERT(N == length);
 }
 
-static bool check_set_destroyer(void)
+static void test_set_destroyer(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	nb_container_destroy(cnt);
-	return true;
+	CU_ASSERT(true);
 }
 
-static bool check_set_comparer(void)
+static void test_set_comparer(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -240,10 +208,10 @@ static bool check_set_comparer(void)
 	if (NULL != val)
 		exist = (to_find == *val);
 	nb_container_destroy(cnt);
-	return exist;	
+	CU_ASSERT(exist);	
 }
 
-static bool check_set_cloner(void)
+static void test_set_cloner(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -253,29 +221,30 @@ static bool check_set_cloner(void)
 	nb_container_destroy(cnt);
 	uint32_t length = nb_container_get_length(cloned);
 	nb_container_destroy(cloned);
-	return (N == length);
+	CU_ASSERT(N == length);
 }
 
-static bool check_insert(void)
+static void test_insert(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	return (N == length);
+	CU_ASSERT(N == length);
 }
 
-static bool check_insert_repeated_item(void)
+static void test_insert_repeated_item(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	bool success = insert_N_int32(cnt, N);/* Again */
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	return (2 * N == length) && success;
+	CU_ASSERT(2 * N == length);
+	CU_ASSERT(success);
 }
 
-static bool check_insert_array(void)
+static void test_insert_array(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
@@ -284,20 +253,20 @@ static bool check_insert_array(void)
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
 	free(array);
-	return (N == length);
+	CU_ASSERT(N == length);
 }
 
-static bool check_get_first(void)
+static void test_get_first(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
 	int32_t *val = nb_container_get_first(cnt);
 	bool is_ok = first_is_ok(val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_delete_first(void)
+static void test_delete_first(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -305,10 +274,10 @@ static bool check_delete_first(void)
 	bool is_ok = first_is_ok(val);
 	free(val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_exist(void)
+static void test_exist(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -318,10 +287,10 @@ static bool check_exist(void)
 	if (NULL != val)
 		is_ok = (to_find == *val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_exist_if_not(void)
+static void test_exist_if_not(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -329,10 +298,10 @@ static bool check_exist_if_not(void)
 	int32_t *val = nb_container_exist(cnt, &to_find);
 	bool is_ok = (NULL == val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_delete(void)
+static void test_delete(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -342,10 +311,10 @@ static bool check_delete(void)
 	if (NULL != val)
 		is_ok = (to_delete == *val);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_get_length(void)
+static void test_get_length(void)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt = get_container(N);
@@ -353,45 +322,46 @@ static bool check_get_length(void)
 	nb_container_clear(cnt);
 	uint32_t length_zero = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	return (N == length) && (0 == length_zero);
+	CU_ASSERT(N == length);
+	CU_ASSERT(0 == length_zero);
 }
 
-static bool check_is_empty(void)
+static void test_is_empty(void)
 {
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
 	bool is_empty = nb_container_is_empty(cnt);
 	nb_container_destroy(cnt);
-	return is_empty;
+	CU_ASSERT(is_empty);
 }
 
-static bool check_is_not_empty(void)
+static void test_is_not_empty(void)
 {
 	int N = 1;
 	nb_container_t *cnt = get_container(N);
 	bool is_not_empty = nb_container_is_not_empty(cnt);
 	nb_container_destroy(cnt);
-	return is_not_empty;
+	CU_ASSERT(is_not_empty);
 }
 
-static bool check_get_type(void)
+static void test_get_type(void)
 {
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
 	bool is_ok = (nb_container_get_type(cnt) == CONTAINER_ID);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_invalid_do(void)
+static void test_invalid_do(void)
 {
 	nb_container_t *cnt = nb_container_create(CONTAINER_ID);
 	int8_t status;
 	nb_container_do(cnt, "invalid", NULL, &status);
 	bool is_ok = (0 != status);
 	nb_container_destroy(cnt);
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
-static bool check_merge_with(nb_container_type type)
+static void test_merge_with(nb_container_type type)
 {
 	int N = N_ITEMS;
 	nb_container_t *cnt1 = get_container(N);
@@ -402,7 +372,8 @@ static bool check_merge_with(nb_container_type type)
 	nb_container_set_destroyer(cnt1, free);
 	nb_container_destroy(cnt1);
 	nb_container_destroy(cnt2);
-	return (2 * N == length) && is_ok;
+	CU_ASSERT(2 * N == length);
+	CU_ASSERT(is_ok);
 }
 
 static nb_container_t* get_container_by_type(int N, nb_container_type type)

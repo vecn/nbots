@@ -1,0 +1,4 @@
+See file:///home/victorc/nbots/core/build/tmp/linkNbotsDebugSharedLibrary/output.txt for all output for linkNbotsDebugSharedLibrary.
+linking libnbots.so successful.
+
+Finished linkNbotsDebugSharedLibrary, see full log file:///home/victorc/nbots/core/build/tmp/linkNbotsDebugSharedLibrary/output.txt.

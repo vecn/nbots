@@ -1,0 +1,10 @@
+-shared
+-Wl,-soname,libnbots_cairo.so
+-o
+/home/victorc/nbots/core/build/libs/nbots_cairo/shared/release/libnbots_cairo.so
+/home/victorc/nbots/core/build/objs/nbots_cairo/shared/release/nbots_cairoC/bpwpt8176kp4rl6tbopv1w6hz/visual_cat-cairo.o
+/home/victorc/nbots/core/build/objs/nbots_cairo/shared/release/nbots_cairoC/7r1w8ubdu9ypxlma3qutd4om6/exporter_cairo.o
+/home/victorc/nbots/core/build/objs/nbots_cairo/shared/release/nbots_cairoC/qwdotyi3ca7fo0mx4a80dv9n/exporter_cairo.o
+/home/victorc/nbots/core/build/objs/nbots_cairo/shared/release/nbots_cairoC/bno2zhtwu9qek8c7logeipnn/exporter_cairo.o
+/usr/lib/x86_64-linux-gnu/libcairo.so
+-m64
