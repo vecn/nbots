@@ -10,8 +10,8 @@
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/mesh/modules2D/image_density.h"
 
-#define INPUTS_DIR "core/utest/nb/geometric_bot/mesh/modules2D/image_density_inputs"
-#define OUTPUT "core/build"
+#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/modules2D/image_density_inputs"
+#define OUTPUT "../../../"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */

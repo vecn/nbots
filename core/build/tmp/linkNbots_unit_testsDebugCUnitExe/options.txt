@@ -1,5 +1,6 @@
 -o
 /home/victor/nbots/core/build/exe/nbots_unit_tests/debug/nbots_unit_tests
+/home/victor/nbots/core/build/objs/nbots_unit_tests/debug/nbots_unit_testsC/1nz480qcmqblrlhwv4ew7twy9/static_elasticity2D.o
 /home/victor/nbots/core/build/objs/nbots_unit_tests/debug/nbots_unit_testsC/dgq9qj3d0fguzq29thp1aojdv/iterator_HASH.o
 /home/victor/nbots/core/build/objs/nbots_unit_tests/debug/nbots_unit_testsC/w0rjw2q4oytte7p5mul99kze/constrained_delaunay.o
 /home/victor/nbots/core/build/objs/nbots_unit_tests/debug/nbots_unit_testsC/clemz9xq812rwblsm87k537bk/iterator_STACK.o

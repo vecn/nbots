@@ -7,5 +7,7 @@ c
 -I
 /usr/include
 -I
+/usr/include/cairo
+-I
 /home/victor/nbots/core/build/src/nbots_unit_tests/cunitLauncher/headers
 -m64

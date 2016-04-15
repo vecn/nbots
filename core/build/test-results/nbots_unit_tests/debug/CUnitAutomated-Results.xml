@@ -1732,20 +1732,9 @@
           </CUNIT_RUN_TEST_SUCCESS> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
-          <CUNIT_RUN_TEST_FAILURE> 
+          <CUNIT_RUN_TEST_SUCCESS> 
             <TEST_NAME> get_delaunay() of cloud with 1000 vertices </TEST_NAME> 
-            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/dewall.c </FILE_NAME> 
-            <LINE_NUMBER> 373 </LINE_NUMBER> 
-            <CONDITION> N_trg_is_ok </CONDITION> 
-          </CUNIT_RUN_TEST_FAILURE> 
-        </CUNIT_RUN_TEST_RECORD> 
-        <CUNIT_RUN_TEST_RECORD> 
-          <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> get_delaunay() of cloud with 1000 vertices </TEST_NAME> 
-            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/dewall.c </FILE_NAME> 
-            <LINE_NUMBER> 374 </LINE_NUMBER> 
-            <CONDITION> N_edg_is_ok </CONDITION> 
-          </CUNIT_RUN_TEST_FAILURE> 
+          </CUNIT_RUN_TEST_SUCCESS> 
         </CUNIT_RUN_TEST_RECORD> 
       </CUNIT_RUN_SUITE_SUCCESS> 
     </CUNIT_RUN_SUITE> 
@@ -1801,7 +1790,7 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> generate_from_model() with length constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 129 </LINE_NUMBER> 
+            <LINE_NUMBER> 128 </LINE_NUMBER> 
             <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -1809,8 +1798,16 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> generate_from_model() with length constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 130 </LINE_NUMBER> 
+            <LINE_NUMBER> 129 </LINE_NUMBER> 
             <CONDITION> edg_ok </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> generate_from_model() with huge scale </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
+            <LINE_NUMBER> 145 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1818,15 +1815,15 @@
             <TEST_NAME> generate_from_model() with huge scale </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 146 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with huge scale </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with tiny scale </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 147 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 162 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1834,15 +1831,15 @@
             <TEST_NAME> generate_from_model() with tiny scale </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 163 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with tiny scale </TEST_NAME> 
+            <TEST_NAME> generate_from_model() of simple square </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 164 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 181 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1850,15 +1847,15 @@
             <TEST_NAME> generate_from_model() of simple square </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 182 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() of simple square </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with sub-segment constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 183 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 203 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1866,15 +1863,15 @@
             <TEST_NAME> generate_from_model() with sub-segment constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 204 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with sub-segment constraint </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with small local feature </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 205 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 222 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1882,15 +1879,15 @@
             <TEST_NAME> generate_from_model() with small local feature </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 223 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with small local feature </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with small local feat. v2 </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 224 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 241 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1898,15 +1895,15 @@
             <TEST_NAME> generate_from_model() with small local feat. v2 </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 242 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with small local feat. v2 </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with sub-segment const. v2 </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 243 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 260 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1914,15 +1911,15 @@
             <TEST_NAME> generate_from_model() with sub-segment const. v2 </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 261 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with sub-segment const. v2 </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with holes </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 262 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 279 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1930,15 +1927,15 @@
             <TEST_NAME> generate_from_model() with holes </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 280 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
+            <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
           <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with holes </TEST_NAME> 
+            <TEST_NAME> generate_from_model() with small angles </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 281 </LINE_NUMBER> 
-            <CONDITION> edg_ok </CONDITION> 
+            <LINE_NUMBER> 298 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1946,14 +1943,6 @@
             <TEST_NAME> generate_from_model() with small angles </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 299 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
-          </CUNIT_RUN_TEST_FAILURE> 
-        </CUNIT_RUN_TEST_RECORD> 
-        <CUNIT_RUN_TEST_RECORD> 
-          <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> generate_from_model() with small angles </TEST_NAME> 
-            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 300 </LINE_NUMBER> 
             <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -1961,7 +1950,7 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> generate_from_model() with quasi linear segments </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 305 </LINE_NUMBER> 
+            <LINE_NUMBER> 304 </LINE_NUMBER> 
             <CONDITION> false </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -1969,7 +1958,7 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> generate_from_model() with triangles constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 342 </LINE_NUMBER> 
+            <LINE_NUMBER> 341 </LINE_NUMBER> 
             <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -1977,8 +1966,16 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> generate_from_model() with triangles constraint </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 343 </LINE_NUMBER> 
+            <LINE_NUMBER> 342 </LINE_NUMBER> 
             <CONDITION> edg_ok </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> is_vtx_inside() </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
+            <LINE_NUMBER> 373 </LINE_NUMBER> 
+            <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
         <CUNIT_RUN_TEST_RECORD> 
@@ -1986,14 +1983,6 @@
             <TEST_NAME> is_vtx_inside() </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
             <LINE_NUMBER> 374 </LINE_NUMBER> 
-            <CONDITION> trg_ok </CONDITION> 
-          </CUNIT_RUN_TEST_FAILURE> 
-        </CUNIT_RUN_TEST_RECORD> 
-        <CUNIT_RUN_TEST_RECORD> 
-          <CUNIT_RUN_TEST_FAILURE> 
-            <TEST_NAME> is_vtx_inside() </TEST_NAME> 
-            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 375 </LINE_NUMBER> 
             <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -2001,7 +1990,7 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> set_density() </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 391 </LINE_NUMBER> 
+            <LINE_NUMBER> 390 </LINE_NUMBER> 
             <CONDITION> trg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -2009,7 +1998,7 @@
           <CUNIT_RUN_TEST_FAILURE> 
             <TEST_NAME> set_density() </TEST_NAME> 
             <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/mesh/mesh2D.c </FILE_NAME> 
-            <LINE_NUMBER> 392 </LINE_NUMBER> 
+            <LINE_NUMBER> 391 </LINE_NUMBER> 
             <CONDITION> edg_ok </CONDITION> 
           </CUNIT_RUN_TEST_FAILURE> 
         </CUNIT_RUN_TEST_RECORD> 
@@ -2063,3 +2052,250 @@
     <CUNIT_RUN_SUITE> 
       <CUNIT_RUN_SUITE_SUCCESS> 
         <SUITE_NAME> nb/geometric_bot/model/modules2D/clipper.c </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_combination() of squares </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 175 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_intersection() of squares </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 191 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_union() of squares </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 207 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of squares A </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 223 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of squares B </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 239 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_difference() of squares B </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 255 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_combination() of cross </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 271 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_intersection() of cross </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 287 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_union() of cross </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 303 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of cross A </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 319 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of cross B </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 335 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_difference() of cross </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 351 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_combination() of c </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 367 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_intersection() of c </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 383 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_union() of c </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 399 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of c A </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 415 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of c B </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 431 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_difference() of c </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 447 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_combination() of b </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 463 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_intersection() of b </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 479 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_union() of b </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 495 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of b A </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 511 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_substraction() of b B </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 527 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> get_difference() of b </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/geometric_bot/model/modules2D/clipper.c </FILE_NAME> 
+            <LINE_NUMBER> 543 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> nb/geometric_bot/model/modules2D/verifier.c </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> verify_consistence() of square-donut </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> nb/pde_bot/finite_element/solid_mechanics/static_elasticity.c </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> static_elasticity2D() </TEST_NAME> 
+            <FILE_NAME> /home/victor/nbots/core/utest/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.c </FILE_NAME> 
+            <LINE_NUMBER> 140 </LINE_NUMBER> 
+            <CONDITION> false </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+  </CUNIT_RESULT_LISTING>
+  <CUNIT_RUN_SUMMARY> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Suites </TYPE> 
+      <TOTAL> 22 </TOTAL> 
+      <RUN> 22 </RUN> 
+      <SUCCEEDED> - NA - </SUCCEEDED> 
+      <FAILED> 0 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Test Cases </TYPE> 
+      <TOTAL> 382 </TOTAL> 
+      <RUN> 382 </RUN> 
+      <SUCCEEDED> 335 </SUCCEEDED> 
+      <FAILED> 47 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Assertions </TYPE> 
+      <TOTAL> 507 </TOTAL> 
+      <RUN> 507 </RUN> 
+      <SUCCEEDED> 447 </SUCCEEDED> 
+      <FAILED> 60 </FAILED> 
+      <INACTIVE> n/a </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+  </CUNIT_RUN_SUMMARY> 
+  <CUNIT_FOOTER> File Generated By CUnit v2.1-2 - Fri Apr 15 12:11:32 2016
+ </CUNIT_FOOTER> 
+</CUNIT_TEST_RUN_REPORT>

@@ -6,6 +6,8 @@
 #include <math.h>
 #include <alloca.h>
 
+#include <CUnit/Basic.h>
+
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
@@ -14,10 +16,8 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
-#include "test_library.h"
-#include "test_add.h"
-
-#define INPUTS_DIR "core/tests/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_UT_inputs"
+#define INPUTS_DIR "../../../../utest/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_inputs"
+#define OUTPUT "../../../"
 
 #include "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 #include "nb/pde_bot/finite_element/modules/exporter_cairo.h" /* TEMPORAL */
@@ -29,8 +29,10 @@ typedef struct {
 	double *strain;
 } results_t;
 
+static int suite_init(void);
+static int suite_clean(void);
 
-static bool check_static_elasticity2D(void);
+static void test_static_elasticity2D(void);
 
 static void results_init(results_t *results,
 			 const vcn_msh3trg_t *msh3trg);
@@ -49,18 +51,27 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
 
-inline int vcn_test_get_driver_id(void)
+
+void cunit_nb_pde_bot_fem_sm_static_elasticity(void)
 {
-	return NB_DRIVER_UNIT_TEST;
+	CU_pSuite suite =
+		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/static_elasticity.c",
+			     suite_init, suite_clean);
+	CU_add_test(suite, "static_elasticity2D()",
+		    test_static_elasticity2D);
 }
 
-void vcn_test_load_tests(void *tests_ptr)
+static int suite_init(void)
 {
-	vcn_test_add(tests_ptr, check_static_elasticity2D,
-		     "Check static_elasticity2D()");
+	return 0;
 }
 
-static bool check_static_elasticity2D(void)
+static int suite_clean(void)
+{
+	return 0;
+}
+
+static void test_static_elasticity2D(void)
 {
 	vcn_model_t* model = alloca(vcn_model_get_memsize());
 	vcn_model_init(model);
@@ -90,8 +101,6 @@ static bool check_static_elasticity2D(void)
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	vcn_mesh_save_png(mesh,"core/build/TEMPORAL_FEM_MESH.png", 1000, 800);
-
 	vcn_msh3trg_t* delaunay = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
@@ -115,8 +124,9 @@ static bool check_static_elasticity2D(void)
 	double *total_disp = get_total_disp(delaunay->N_vertices,
 					    results.disp);
 	
-	nb_fem_save_png(delaunay, total_disp, 
-			"core/build/TEMPORAL_FEM.png", 1000, 800);/* TEMPORAL */
+	char filename[100];
+	sprintf(filename, "%s/TEMPORAL_FEM.png", OUTPUT);
+	nb_fem_save_png(delaunay, total_disp, filename, 1000, 800);/* TEMPORAL */
 
 	free(total_disp);
 CLEANUP_FEM:
@@ -127,7 +137,7 @@ CLEANUP_INPUT:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
 	vcn_fem_material_destroy(material);
-	return false;
+	CU_ASSERT(false);
 }
 
 

@@ -12,7 +12,7 @@
 
 #define POW2(a) ((a)*(a))
 
-#define INPUTS_DIR "core/utest/nb/geometric_bot/mesh/dewall_inputs"
+#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/dewall_inputs"
 
 static int suite_init(void);
 static int suite_clean(void);

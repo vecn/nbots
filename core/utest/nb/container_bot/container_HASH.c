@@ -102,7 +102,7 @@ static void test_get_collisions(void)
 		is_ok = check_collisions(collisions);
 		nb_container_destroy(collisions);
 	}
-	return is_ok;
+	CU_ASSERT(is_ok);
 }
 
 

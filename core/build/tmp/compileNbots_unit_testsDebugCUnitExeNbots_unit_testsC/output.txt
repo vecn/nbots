@@ -1,4 +1,48 @@
 See file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsDebugCUnitExeNbots_unit_testsC/output.txt for all output for compileNbots_unit_testsDebugCUnitExeNbots_unit_testsC.
+compiling image_density.c successful.
+
+compiling dewall.c successful.
+
+compiling constrained_delaunay.c successful.
+
 compiling mesh2D.c successful.
+
+compiling bins2D_iterator.c successful.
+
+compiling verifier.c successful.
+
+compiling utils2D.c successful.
+
+compiling bins2D.c successful.
+
+compiling point2D.c successful.
+
+compiling iterator_STACK.c successful.
+
+compiling clipper.c successful.
+
+compiling container_QUEUE.c successful.
+
+compiling iterator_QUEUE.c successful.
+
+compiling container_HASH.c successful.
+
+compiling iterator_HEAP.c successful.
+
+compiling container_HEAP.c successful.
+
+compiling iterator_HASH.c successful.
+
+compiling iterator_SORTED.c successful.
+
+compiling array.c successful.
+
+compiling container_STACK.c successful.
+
+compiling gradle_cunit_register.c successful.
+
+compiling static_elasticity2D.c successful.
+
+compiling container_SORTED.c successful.
 
 Finished compileNbots_unit_testsDebugCUnitExeNbots_unit_testsC, see full log file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsDebugCUnitExeNbots_unit_testsC/output.txt.

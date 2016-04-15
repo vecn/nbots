@@ -1,9 +1,29 @@
 See file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC/output.txt for all output for compileNbots_unit_testsReleaseCUnitExeNbots_unit_testsC.
-compiling iterator_QUEUE.c successful.
+compiling image_density.c successful.
+
+compiling dewall.c successful.
+
+compiling mesh2D.c successful.
+
+compiling constrained_delaunay.c successful.
+
+compiling bins2D_iterator.c successful.
+
+compiling verifier.c successful.
+
+compiling bins2D.c successful.
+
+compiling utils2D.c successful.
+
+compiling point2D.c successful.
 
 compiling iterator_STACK.c successful.
 
 compiling container_QUEUE.c successful.
+
+compiling clipper.c successful.
+
+compiling iterator_QUEUE.c successful.
 
 compiling container_HASH.c successful.
 /home/victor/nbots/core/utest/nb/container_bot/container_HASH.c: In function ‘test_get_collisions’:
@@ -18,6 +38,8 @@ compiling container_HEAP.c successful.
 compiling iterator_HASH.c successful.
 
 compiling iterator_SORTED.c successful.
+
+compiling array.c successful.
 
 compiling gradle_cunit_register.c successful.
 

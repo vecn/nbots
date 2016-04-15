@@ -9,8 +9,8 @@
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 
-#define INPUTS_DIR "core/utest/nb/geometric_bot/mesh/mesh2D_inputs"
-#define OUTPUT_DIR "core/build"
+#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/mesh2D_inputs"
+#define OUTPUT_DIR "../../../"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
@@ -42,7 +42,6 @@ static void test_is_vtx_inside(void);
 static void test_set_density(void);
 
 static double density_func(const double *const x, const void * const data);
-
 
 void cunit_nb_geometric_bot_mesh2D(void)
 {
