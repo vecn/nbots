@@ -1,9 +1,0 @@
--x
-c
--c
--std=c99
--I
-/home/victor/nbots/core/include
--I
-/usr/include/cairo
--m64
