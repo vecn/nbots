@@ -119,8 +119,6 @@ static void test_generate_from_model_length_constraint(void)
 					 1.0);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	//printf("\nCIRCLE: %i %i\n", vcn_mesh_get_N_trg(mesh),/* TEMPORAL */
-	//     vcn_mesh_get_N_edg(mesh));                 /* TEMPORAL */
 	bool trg_ok = (6468 == vcn_mesh_get_N_trg(mesh));
 	bool edg_ok = (9812 == vcn_mesh_get_N_edg(mesh));
 	TEMPORAL(mesh); /* TEMPORAL */

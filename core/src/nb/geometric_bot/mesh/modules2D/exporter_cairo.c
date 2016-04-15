@@ -12,17 +12,9 @@
 #include "nb/geometric_bot-cairo.h"
 
 #include "../mesh2D_structs.h"
+#include "exporter_cairo/quad_cairo.h"
+#include "exporter_cairo/drawing_utils.h"
 
-static double _NB_COLOR_BLACK[3] = {0.0, 0.0, 0.0};
-static double _NB_COLOR_BLUE[3] = {0.0, 0.0, 1.0};
-
-typedef struct {
-	double center[2];
-	double zoom;
-} camera_t;
-
-static void set_center_and_zoom(camera_t *cam, double box[4],
-				double width, double height);
 static void calculate_partition_centers(const vcn_msh3trg_t *const msh3trg,
 					const uint32_t *const part,
 					uint32_t kpart, double **pcenter);
@@ -80,17 +72,6 @@ static void draw_vertices_halos(cairo_t *cr,
 				const camera_t *const cam);
 static void set_camera(camera_t *cam, const vcn_mesh_t *const mesh,
 		       int width, int height);
-
-static inline void set_center_and_zoom(camera_t *cam, double box[4],
-				       double width, double height)
-{
-	cam->center[0] = (box[0] + box[2]) / 2.0;
-	cam->center[1] = (box[1] + box[3]) / 2.0;
-	cam->zoom = width / (box[2] - box[0]);
-	if (cam->zoom > height / (box[3] - box[1]))
-		cam->zoom = height / (box[3] - box[1]);
-	cam->zoom *= 0.9;
-}
 
 static void draw_triangles(cairo_t *const cr,
 			   const nb_container_t *const ht_trg,

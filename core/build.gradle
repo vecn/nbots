@@ -45,6 +45,7 @@ model {
 	    srcDirs "src"
 	    include "**/*.c"
 	    exclude "**/*cairo*"
+	    exclude  "**/*drawing*"
 	  }
 	  exportedHeaders {
 	    srcDirs "include"
@@ -60,7 +61,6 @@ model {
 	  source {
 	    srcDirs "utest"
 	    include "**/*.c"
-	    exclude "**/*UT.c" // TEMPORAL
 	  }
 	  exportedHeaders {
 	    srcDirs "include"
@@ -92,6 +92,7 @@ model {
 	  source {
 	    srcDirs "src"
 	    include "**/*cairo*"
+	    include "**/*drawing*"
 	  }
 	  exportedHeaders {
 	    srcDirs "include", "/usr/include/cairo"
