@@ -1,4 +1,0 @@
-See file:///home/victor/nbots/wrappers/JNI/build/tmp/createNbots_jniReleaseStaticLibrary/output.txt for all output for createNbots_jniReleaseStaticLibrary.
-archiving libnbots_jni.a successful.
-
-Finished createNbots_jniReleaseStaticLibrary, see full log file:///home/victor/nbots/wrappers/JNI/build/tmp/createNbots_jniReleaseStaticLibrary/output.txt.

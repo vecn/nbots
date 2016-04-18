@@ -1,4 +1,0 @@
-See file:///home/victor/nbots/core/build/tmp/createNbotsDebugStaticLibrary/output.txt for all output for createNbotsDebugStaticLibrary.
-archiving libnbots.a successful.
-
-Finished createNbotsDebugStaticLibrary, see full log file:///home/victor/nbots/core/build/tmp/createNbotsDebugStaticLibrary/output.txt.
