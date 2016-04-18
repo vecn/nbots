@@ -1,0 +1,13 @@
+See file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsDebugCUnitExeNbotsC/output.txt for all output for compileNbots_unit_testsDebugCUnitExeNbotsC.
+compiling greedy.c successful.
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c: In function ‘compare_edges’:
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c:78:18: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+  edge_t* edg_a = a;
+                  ^
+/home/victor/nbots/core/src/nb/graph_bot/matching/greedy.c:79:18: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+  edge_t* edg_b = b;
+                  ^
+
+compiling quad.c successful.
+
+Finished compileNbots_unit_testsDebugCUnitExeNbotsC, see full log file:///home/victor/nbots/core/build/tmp/compileNbots_unit_testsDebugCUnitExeNbotsC/output.txt.

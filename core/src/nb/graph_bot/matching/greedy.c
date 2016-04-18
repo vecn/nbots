@@ -25,7 +25,7 @@ void nb_graph_matching_greedy(const nb_graph_t *const graph,
 {
 	init_array(nodal_match, graph);
 	uint32_t N_edges = count_edges(graph);
-	edge_t *edges = malloc(N_edges * sizeof(edge_t));
+	edge_t *edges = malloc(N_edges * sizeof(*edges));
 	set_edges(graph, edges);
 	vcn_qsort(edges, N_edges, sizeof(edge_t), compare_edges);
 	greedy_matching(N_edges, edges, nodal_match);

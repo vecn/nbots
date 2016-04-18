@@ -26,7 +26,7 @@ typedef struct {
 
 static void set_arrays_memory(nb_mshquad_t *quad);
 static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, char *memblock);
+static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nodes(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_edges(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_elems(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
@@ -56,6 +56,7 @@ static void get_match_data(const nb_graph_t *const graph,
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
+static bool edge_is_not_boundary(const msh_edge_t *const edge);
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches);
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -125,9 +126,8 @@ void nb_mshquad_copy(void *dest, const void *const src)
 	copy_vtx(quad, src_quad);
 	copy_N_nod_x_sgm(quad, src_quad);
 
-	uint32_t nod_x_sgm_size = get_size_of_nod_x_sgm(quad);
-	char *memblock = malloc(nod_x_sgm_size);
-	set_mem_of_nod_x_sgm(quad, memblock);
+	uint32_t memsize = get_size_of_nod_x_sgm(quad);
+	set_mem_of_nod_x_sgm(quad, memsize);
 
 	copy_nod_x_sgm(quad, src_quad);
 }
@@ -140,10 +140,12 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 	uint32_t adj_size = quad->N_elems * 4 * sizeof(*(quad->adj));
 	uint32_t ngb_size = quad->N_elems * 4 * sizeof(*(quad->ngb));
 	uint32_t vtx_size = quad->N_vtx * sizeof(*(quad->vtx));
-	uint32_t sgm_size = quad->N_sgm * sizeof(*(quad->N_nod_x_sgm));
+	uint32_t N_nod_x_sgm_size = quad->N_sgm *
+		sizeof(*(quad->N_nod_x_sgm));
+	uint32_t nod_x_sgm_size = quad->N_sgm * sizeof(*(quad->nod_x_sgm));
 
-	uint32_t size = nod_size + edg_size + type_size +
-		adj_size + ngb_size + vtx_size + sgm_size;
+	uint32_t size = nod_size + edg_size + type_size + adj_size +
+		ngb_size + vtx_size + N_nod_x_sgm_size + nod_x_sgm_size;
 
 	char *memblock = malloc(size);
 
@@ -154,6 +156,8 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 	quad->ngb = (void*) ((char*)(quad->adj) + adj_size);
 	quad->vtx = (void*) ((char*)(quad->ngb) + ngb_size);
 	quad->N_nod_x_sgm = (void*) ((char*)(quad->vtx) + vtx_size);
+	quad->nod_x_sgm = (void*) ((char*)(quad->N_nod_x_sgm) +
+				   N_nod_x_sgm_size);
 }
 
 static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
@@ -165,8 +169,9 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
 	return size;
 }
 
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, char *memblock)
+static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
 {
+	char *memblock = malloc(memsize);
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
 		quad->nod_x_sgm[i] = (void*) memblock;
 		memblock += quad->N_nod_x_sgm[i] *
@@ -221,7 +226,7 @@ void nb_mshquad_finish(void *mshquad_ptr)
 {
 	nb_mshquad_t *quad = mshquad_ptr;
 	if (NULL != quad->nod) {
-		free(quad->nod_x_sgm);
+		free(quad->nod_x_sgm[0]);
 		free(quad->nod);		
 	}
 	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	
@@ -274,7 +279,7 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 
 	set_quad_quality_as_weights(mesh, graph);
 
-	uint32_t *matches = malloc(graph->N);
+	uint32_t *matches = malloc(graph->N * sizeof(*matches));
 	nb_graph_matching_greedy(graph, matches);
 	
 	set_mshquad(mshquad, graph, mesh, matches);
@@ -396,15 +401,19 @@ static double get_angle(double a[2], double b[2], double c[2])
 static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
 			      uint32_t id_adj)
 {
-	msh_trg_t *trg_adj;
-	if (id_adj == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
-		trg_adj = trg->t1;
-	else if (id_adj == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
-		trg_adj = trg->t2;
-	else if (id_adj == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
-		trg_adj = trg->t3;
-	else
-		trg_adj = NULL;
+	msh_trg_t *trg_adj = NULL;
+	if (NULL != trg->t1) {
+		if (id_adj == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
+			trg_adj = trg->t1;
+	}
+	if (NULL == trg_adj && NULL != trg->t2) {
+		if (id_adj == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
+			trg_adj = trg->t2;
+	}
+	if (NULL == trg_adj && NULL != trg->t3) {
+		if (id_adj == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
+			trg_adj = trg->t3;
+	}
 	return trg_adj;
 }
 
@@ -430,9 +439,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 	set_vtx(quad, mesh);
 
 	uint32_t nod_x_sgm_memsize = set_N_nod_x_sgm(quad, mesh);
-
-	char *memblock = malloc(nod_x_sgm_memsize);
-	set_mem_of_nod_x_sgm(quad, memblock);
+	set_mem_of_nod_x_sgm(quad, nod_x_sgm_memsize);
 	set_nod_x_sgm(quad, mesh);
 }
 
@@ -459,13 +466,20 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
-		if (edge_is_not_matched(edge, matches)) {
-			quad->edg[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
-			quad->edg[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
-			i += 1;
+		if (edge_is_not_boundary(edge)) {
+			if (edge_is_not_matched(edge, matches)) {
+				quad->edg[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
+				quad->edg[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
+				i += 1;
+			}
 		}
 	}
 	nb_iterator_finish(iter);
+}
+
+static bool edge_is_not_boundary(const msh_edge_t *const edge)
+{
+	return (NULL != edge->t1 && NULL != edge->t2);
 }
 
 static bool edge_is_not_matched(const msh_edge_t *const edge,
@@ -535,9 +549,24 @@ static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	quad->adj[elem_id*4+2] = v3;
 	quad->adj[elem_id*4+3] = vcn_mesh_get_N_vtx(mesh);
 
-	uint32_t t1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
-	uint32_t t2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
-	uint32_t t3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+	uint32_t t1;
+	if (NULL != trg->t1)
+		t1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
+	else
+		t1 = vcn_mesh_get_N_trg(mesh);
+
+	uint32_t t2;
+	if (NULL != trg->t2)
+		t2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
+	else
+		t2 = vcn_mesh_get_N_trg(mesh);
+
+	uint32_t t3;
+	if (NULL != trg->t3)
+		t3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+	else
+		t3 = vcn_mesh_get_N_trg(mesh);
+
 	quad->ngb[elem_id * 4] = t1;
 	quad->ngb[elem_id*4+1] = t2;
 	quad->ngb[elem_id*4+2] = t3;
@@ -562,15 +591,19 @@ static void set_quad_element(nb_mshquad_t *quad,
 static msh_trg_t *get_match_trg(const msh_trg_t *const trg,
 				uint32_t match_id)
 {
-	msh_trg_t *match_trg;
-	if (match_id == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
-		match_trg = trg->t1;
-	else if (match_id == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
-		match_trg = trg->t2;
-	else if (match_id == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
-		match_trg = trg->t3;
-	else
-		match_trg = NULL;
+	msh_trg_t *match_trg = NULL;
+	if (NULL != trg->t1) {
+		if (match_id == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
+			match_trg = trg->t1;
+	}
+	if (NULL != trg->t2) {
+		if (match_id == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
+			match_trg = trg->t2;
+	}
+	if (NULL != trg->t3) {
+		if (match_id == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
+			match_trg = trg->t3;
+	}
 	return match_trg;
 }
 

@@ -1,10 +1,13 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_MODULES2D_EXPORTER_CAIRO_DRAWING_UTILS_H__
 #define __NB_GEOMETRIC_BOT_MESH_MODULES2D_EXPORTER_CAIRO_DRAWING_UTILS_H__
 
-static double _NB_COLOR_BLACK[3] = {0.0, 0.0, 0.0};
-static double _NB_COLOR_BLUE[3] = {0.0, 0.0, 1.0};
+#define _NB_COLOR_BLACK {0.0, 0.0, 0.0}
+#define _NB_COLOR_BLUE {0.0, 0.0, 1.0}
+#define _NB_COLOR_SKY_BLUE {0.1, 0.1, 1.0}
 
 typedef struct {
+	int width;
+	int height;
 	double center[2];
 	double zoom;
 } camera_t;

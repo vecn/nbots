@@ -1,0 +1,4 @@
+See file:///home/victor/nbots/core/build/tmp/compileNbotsReleaseStaticLibraryNbotsC/output.txt for all output for compileNbotsReleaseStaticLibraryNbotsC.
+compiling quad.c successful.
+
+Finished compileNbotsReleaseStaticLibraryNbotsC, see full log file:///home/victor/nbots/core/build/tmp/compileNbotsReleaseStaticLibraryNbotsC/output.txt.

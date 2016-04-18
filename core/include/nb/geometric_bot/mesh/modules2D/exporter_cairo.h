@@ -87,6 +87,9 @@ void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
 void nb_mshquad_export_png(const nb_mshquad_t *const quad,
 			   const char* filename, int width, int height);
 
+void nb_mshquad_export_eps(const nb_mshquad_t *const quad,
+			   const char* filename, int width, int height);
+
 /**
  * @brief Export a PNG image of the Voronoi graph.
  * @param[in] mshpoly Voronoi graph to be displayed.
