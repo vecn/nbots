@@ -19,6 +19,14 @@
 
 #define POW2(a) ((a)*(a))
 
+typedef struct {
+	uint32_t N_subsgm;
+	uint32_t N_subsgm_nod; /* Internal nodes forming a segment */
+	uint32_t N_subsgm_cl; /* Circumcenters colineal to subsegments */
+	uint32_t N_interior_nod; /* Nodes forming interior segments */
+	uint32_t N_interior_end; /* Interior nodes ending interior segments */
+} subsgm_data;
+
 static void set_arrays_memory(nb_mshpoly_t *poly);
 static void copy_nodes(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
 static void copy_edges(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
@@ -28,7 +36,8 @@ static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_adj_and_ngb(nb_mshpoly_t* poly,
 			     const nb_mshpoly_t *const src_poly);
 
-static void copy_vtx(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
+static void copy_elem_vtx(nb_mshpoly_t* poly,
+			  const nb_mshpoly_t *const src_poly);
 static void copy_N_nod_x_sgm(nb_mshpoly_t* poly,
 			     const nb_mshpoly_t *const src_poly);
 static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly);
@@ -36,6 +45,26 @@ static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 			   const nb_mshpoly_t *const src_poly);
 static void* malloc_poly(void);
+static void set_voronoi(nb_mshpoly_t *poly,
+			const nb_graph_t *const graph,
+			const nb_mesh_t *const mesh);
+static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
+				    uint32_t *cc_with);
+static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
+static void set_nodes(nb_mshpoly_t *poly,
+		      const nb_mesh_t *const mesh);
+static void set_edges(nb_mshpoly_t *poly,
+		      const nb_mesh_t *const mesh);
+static uint32_t set_N_sides(nb_mshpoly_t *poly,
+			   const nb_mesh_t *const mesh);
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh);
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const nb_mesh_t *const mesh);
+static uint32_t set_N_nod_x_sgm(nb_mshpoly_t *poly,
+				const nb_mesh_t *const mesh);
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const nb_mesh_t *const mesh);
 
 uint32_t nb_mshpoly_get_memsize(void)
 {
@@ -63,7 +92,7 @@ void nb_mshpoly_copy(void *dest, const void *const src)
 	set_mem_of_adj_and_ngb(poly, memsize);
 	copy_adj_and_ngb(poly, src_poly);
 
-	copy_vtx(poly, src_poly);
+	copy_elem_vtx(poly, src_poly);
 	copy_N_nod_x_sgm(poly, src_poly);
 
 	memsize = get_size_of_nod_x_sgm(poly);
@@ -150,7 +179,8 @@ static void copy_adj_and_ngb(nb_mshpoly_t* poly,
 
 }
 
-static void copy_vtx(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
+static void copy_elem_vtx(nb_mshpoly_t* poly,
+			  const nb_mshpoly_t *const src_poly)
 {
 	memcpy(poly->elem_vtx, src_poly->elem_vtx,
 	       poly->N_vtx * sizeof(*(poly->elem_vtx)));
@@ -236,7 +266,77 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 }
 
 void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly,
-			       const nb_mesh_t *const mesh);
+			       const nb_mesh_t *const mesh)
+{
+	mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
+	mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
+	nb_graph_t *graph = vcn_mesh_create_vtx_graph(mesh);
+	
+	set_voronoi(mshpoly, graph, mesh);
+
+	vcn_graph_destroy(graph);
+	mesh_free_vtx_ids((vcn_mesh_t*)mesh);
+	mesh_free_trg_ids((vcn_mesh_t*)mesh);
+}
+
+static void set_voronoi(nb_mshpoly_t *poly,
+			const nb_graph_t *const graph,
+			const nb_mesh_t *const mesh)
+{
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edg = vcn_mesh_get_N_edg(mesh);
+
+	uint32_t *cc_with = malloc(N_trg * sizeof(cc_with));
+	uint32_t N_cc = map_cocircularities(mesh, cc_with);
+	subsgm_data data;
+	count_subsgm_data(mesh, &data);
+
+	uint32_t N_correction = 2 * data.N_subsgm - 
+		N_cc - data.N_subsgm_nod - data.N_subsgm_cl;
+	poly->N_nod = N_trg + N_correction;
+	poly->N_edg = N_edg + N_correction + 2 * data.N_interior_end;/* AQUI VOY */
+	poly->N_elems = vcn_mesh_get_N_vtx(mesh) +
+		data.N_interior_nod + data.N_interior_end;
+	poly->N_vtx = mesh->N_input_vtx;
+	poly->N_sgm = mesh->N_input_sgm;
+
+	set_arrays_memory(poly);
+
+	set_nodes(poly, mesh);
+	set_edges(poly, mesh);
+
+	uint32_t memsize = set_N_sides(poly, mesh);
+	set_mem_of_adj_and_ngb(poly, memsize);
+	set_adj_and_ngb(poly, mesh);
+
+	set_elem_vtx(poly, mesh);
+
+	memsize = set_N_nod_x_sgm(poly, mesh);
+	set_mem_of_nod_x_sgm(poly, memsize);
+	set_nod_x_sgm(poly, mesh);
+
+	free(cc_with);
+}
+
+static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
+				    uint32_t *cc_with);
+
+static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
+
+static void set_nodes(nb_mshpoly_t *poly,
+		      const nb_mesh_t *const mesh);
+static void set_edges(nb_mshpoly_t *poly,
+		      const nb_mesh_t *const mesh);
+static uint32_t set_N_sides(nb_mshpoly_t *poly,
+			   const nb_mesh_t *const mesh);
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh);
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const nb_mesh_t *const mesh);
+static uint32_t set_N_nod_x_sgm(nb_mshpoly_t *poly,
+				const nb_mesh_t *const mesh);
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const nb_mesh_t *const mesh);
 
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],
