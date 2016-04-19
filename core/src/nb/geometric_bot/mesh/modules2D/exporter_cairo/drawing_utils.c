@@ -9,4 +9,6 @@ void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
 	if (cam->zoom > height / (box[3] - box[1]))
 		cam->zoom = height / (box[3] - box[1]);
 	cam->zoom *= 0.9;
+	cam->width = width;
+	cam->height = height;
 }

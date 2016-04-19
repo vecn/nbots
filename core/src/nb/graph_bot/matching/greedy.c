@@ -27,7 +27,7 @@ void nb_graph_matching_greedy(const nb_graph_t *const graph,
 	uint32_t N_edges = count_edges(graph);
 	edge_t *edges = malloc(N_edges * sizeof(*edges));
 	set_edges(graph, edges);
-	vcn_qsort(edges, N_edges, sizeof(edge_t), compare_edges);
+	vcn_qsort(edges, N_edges, sizeof(*edges), compare_edges);
 	greedy_matching(N_edges, edges, nodal_match);
 	free(edges);
 }
@@ -75,8 +75,8 @@ static double get_wij(const nb_graph_t *const graph,
 
 static int8_t compare_edges(const void *const a, const void *const b)
 {
-	edge_t* edg_a = a;
-	edge_t* edg_b = b;
+	const edge_t *const edg_a = a;
+	const edge_t *const edg_b = b;
 	int8_t out = 0;
 	if (edg_a->w < edg_b->w)
 		out = 1;
@@ -90,6 +90,9 @@ static void greedy_matching(uint32_t N_edges, const edge_t *edges,
 {
 	for (uint32_t i = 0; i < N_edges; i++) {
 		edge_t edg = edges[i];
+		if (edg.w < 1e-6)
+			break; /* Does not consider null weights */
+
 		if (nodal_match[edg.id1] == edg.id1 &&
 		    nodal_match[edg.id2] == edg.id2) {
 			nodal_match[edg.id1] = edg.id2;

@@ -12,7 +12,6 @@
 #include "nb/geometric_bot-cairo.h"
 
 #include "../mesh2D_structs.h"
-#include "exporter_cairo/quad_cairo.h"
 #include "exporter_cairo/drawing_utils.h"
 
 static void calculate_partition_centers(const vcn_msh3trg_t *const msh3trg,
@@ -269,7 +268,7 @@ static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
 	cairo_set_line_width(cr, 0.5);
 	draw_triangles(cr, mesh->ht_trg, width, height,
 		       cam, true, rgba_bg, 
-		       _NB_COLOR_BLUE);
+		       _NB_RGB_BLUE);
 
 	/* Draw input segments */
 	if (true) {
@@ -281,7 +280,7 @@ static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
 	if (true) {
 		draw_input_vertices(cr, mesh->N_input_vtx, mesh->input_vtx,
 				    width, height, cam, false,
-				    _NB_COLOR_BLUE, _NB_COLOR_BLACK);
+				    _NB_RGB_BLUE, _NB_RGB_BLACK);
 	}
 }
 

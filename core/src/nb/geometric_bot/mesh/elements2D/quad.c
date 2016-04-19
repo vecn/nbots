@@ -16,6 +16,7 @@
 
 #include "../mesh2D_structs.h"
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
@@ -36,11 +37,11 @@ static void copy_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_qua
 static void* malloc_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
-
-static double get_max_angle_distortion(const msh_trg_t *const trg1,
-				       const msh_trg_t *const trg2);
-static void get_angle_vertices(const msh_trg_t *const trg1,
-			       const msh_trg_t *const trg2,
+static void get_quad_matching_vtx(const msh_trg_t *const trg,
+				  const msh_trg_t *const match_trg,
+				  const msh_vtx_t *quad_vtx[4]);
+static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
+static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id);
 static double get_angle(double a[2], double b[2], double c[2]);
@@ -64,12 +65,11 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		       const uint32_t *const matches,
 		       uint32_t *new_elem_id);
-static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+static void set_trg_element(nb_mshquad_t *quad,
 			    const msh_trg_t *const trg, uint32_t elem_id);
-static void set_quad_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+static void set_quad_element(nb_mshquad_t *quad,
 			     const msh_trg_t *const trg, 
-			     const uint32_t *const matches,
-			     uint32_t elem_id);
+			     uint32_t match_id, uint32_t elem_id);
 static msh_trg_t *get_match_trg(const msh_trg_t *const trg,
 				uint32_t match_id);
 static void set_quad_from_trg(nb_mshquad_t *quad,
@@ -77,8 +77,7 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 			      const msh_trg_t *const match_trg,
 			      uint32_t elem_id);
 static void update_neighbors_ids(nb_mshquad_t *quad,
-				 const uint32_t *const new_elem_id,
-				 uint32_t N_trg);
+				 const uint32_t *const new_elem_id);
 static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
@@ -308,7 +307,9 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
 			uint32_t id_adj = graph->adj[id][i];
 			msh_trg_t *trg_adj = get_trg_adj(trg, id_adj);
-			double maxk = get_max_angle_distortion(trg, trg_adj);
+			msh_vtx_t *quad_vtx[4];
+			get_quad_matching_vtx(trg, trg_adj, quad_vtx);
+			double maxk = get_max_angle_distortion(quad_vtx);
 			double quality = MAX(0.0, 1.0 - 2.0 * maxk / NB_PI);
 			graph->wij[id][i] = quality;
 		}
@@ -316,62 +317,62 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 	nb_iterator_finish(iter);	
 }
 
-static double get_max_angle_distortion(const msh_trg_t *const trg1,
-				       const msh_trg_t *const trg2)
+static void get_quad_matching_vtx(const msh_trg_t *const trg,
+				  const msh_trg_t *const match_trg,
+				  const msh_vtx_t *quad_vtx[4])
 {
-	double a[2], b[2], c[2];
-	get_angle_vertices(trg1, trg2, a, b, c, 0);
-	double angle = get_angle(a, b, c);
-	double max_distortion = fabs(NB_PI/2.0 - angle);
+	if (trg->t1 == match_trg) {
+		quad_vtx[0] = trg->v1;
+		quad_vtx[1] = mtrg_get_opposite_vertex(match_trg, trg->s1);
+		quad_vtx[2] = trg->v2;
+		quad_vtx[3] = trg->v3;
+	} else if (trg->t2 == match_trg) {
+		quad_vtx[0] = trg->v2;
+		quad_vtx[1] = mtrg_get_opposite_vertex(match_trg, trg->s2);
+		quad_vtx[2] = trg->v3;
+		quad_vtx[3] = trg->v1;
+	} else {
+		quad_vtx[0] = trg->v3;
+		quad_vtx[1] = mtrg_get_opposite_vertex(match_trg, trg->s3);
+		quad_vtx[2] = trg->v1;
+		quad_vtx[3] = trg->v2;
+	}
+}
 
-	get_angle_vertices(trg1, trg2, a, b, c, 1);
-	angle = get_angle(a, b, c);
-	double distortion = fabs(NB_PI/2.0 - angle);
-	max_distortion = MAX(max_distortion, distortion);
-
-	get_angle_vertices(trg1, trg2, a, b, c, 2);
-	angle = get_angle(a, b, c);
-	distortion = fabs(NB_PI/2.0 - angle);
-	max_distortion = MAX(max_distortion, distortion);
-
-	get_angle_vertices(trg1, trg2, a, b, c, 3);
-	angle = get_angle(a, b, c);
-	distortion = fabs(NB_PI/2.0 - angle);
-	max_distortion = MAX(max_distortion, distortion);
-
+static double get_max_angle_distortion(const msh_vtx_t* vtx[4])
+{
+	double max_distortion = 0.0;
+	for (int i = 0; i < 4; i++) {
+		double a[2], b[2], c[2];
+		get_angle_vertices(vtx, a, b, c, i);
+		double angle = get_angle(a, b, c);
+		double distortion = fabs(NB_PI/2.0 - angle);
+		max_distortion = MAX(max_distortion, distortion);
+	}
 	return max_distortion;
 }
 
-static void get_angle_vertices(const msh_trg_t *const trg1,
-			       const msh_trg_t *const trg2,
+static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id)
 {
 	uint16_t vtx_size = 2 * sizeof(double);
-	msh_vtx_t *trg2_vtx;
-	if (trg1->v1 == trg2->v1)
-		trg2_vtx = trg2->v2;
-	else if (trg1->v1 == trg2->v2)
-		trg2_vtx = trg2->v3;
-	else
-		trg2_vtx = trg2->v1;
-
 	if (0 == id) {
-		memcpy(a, trg1->v3->x, vtx_size);
-		memcpy(b, trg1->v1->x, vtx_size);
-		memcpy(c, trg2_vtx->x, vtx_size);
+		memcpy(a, vtx[3]->x, vtx_size);
+		memcpy(b, vtx[0]->x, vtx_size);
+		memcpy(c, vtx[1]->x, vtx_size);
 	} else if (1 == id) {
-		memcpy(a, trg1->v1->x, vtx_size);
-		memcpy(b, trg2_vtx->x, vtx_size);
-		memcpy(c, trg1->v2->x, vtx_size);
+		memcpy(a, vtx[0]->x, vtx_size);
+		memcpy(b, vtx[1]->x, vtx_size);
+		memcpy(c, vtx[2]->x, vtx_size);
 	} else if (2 == id) {
-		memcpy(a, trg2_vtx->x, vtx_size);
-		memcpy(b, trg1->v2->x, vtx_size);
-		memcpy(c, trg1->v3->x, vtx_size);
+		memcpy(a, vtx[1]->x, vtx_size);
+		memcpy(b, vtx[2]->x, vtx_size);
+		memcpy(c, vtx[3]->x, vtx_size);
 	} else {
-		memcpy(a, trg1->v2->x, vtx_size);
-		memcpy(b, trg1->v3->x, vtx_size);
-		memcpy(c, trg1->v1->x, vtx_size);
+		memcpy(a, vtx[2]->x, vtx_size);
+		memcpy(b, vtx[3]->x, vtx_size);
+		memcpy(c, vtx[0]->x, vtx_size);
 	}
 }
 
@@ -392,10 +393,19 @@ static double get_angle(double a[2], double b[2], double c[2])
 	B[0] = c[0] - b[0];
 	B[1] = c[1] - b[1];
 
-	double dotAB = (A[0] * B[0] + A[1] * B[1]);
+	double dotAB = A[0] * B[0] + A[1] * B[1];
 	double lengthA = sqrt(POW2(A[0]) + POW2(A[1]));
 	double lengthB = sqrt(POW2(B[0]) + POW2(B[1]));
-	return acos(dotAB / (lengthA * lengthB));
+	double arg = dotAB / (lengthA * lengthB);
+	arg = MAX(arg, -1.0);
+	arg = MIN(arg, 1.0);
+
+       	double angle;
+	if (vcn_utils2D_get_2x_trg_area(a, b, c) > 0)
+		angle = acos(arg);
+	else
+		angle = 2.0 * NB_PI - acos(arg);
+	return angle;
 }
 
 static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
@@ -501,7 +511,7 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
 	uint32_t *new_elem_id = malloc(N_trg * sizeof(new_elem_id));
 	init_elems(quad, mesh, matches, new_elem_id);
-	update_neighbors_ids(quad, new_elem_id, N_trg);
+	update_neighbors_ids(quad, new_elem_id);
 	free(new_elem_id);
 }
 
@@ -509,6 +519,8 @@ static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		       const uint32_t *const matches,
 		       uint32_t *new_elem_id)
 {
+	memset(new_elem_id, 0, sizeof(*new_elem_id));
+
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
 	nb_iterator_init(iter);
@@ -517,26 +529,26 @@ static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
 		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t match_id = matches[id];
 
-		if (matches[id] == id) {
-			set_trg_element(quad, mesh, trg, elem_id);
+		if (match_id == id) {
+			set_trg_element(quad, trg, elem_id);
 			new_elem_id[id] = elem_id;
 			elem_id += 1;
 		} else {
-			if (id < matches[id]) {
-				set_quad_element(quad, mesh, trg, matches, elem_id);
+			if (id < match_id) {
+				set_quad_element(quad, trg,
+						 match_id, elem_id);
 				new_elem_id[id] = elem_id;
+				new_elem_id[match_id] = elem_id;
 				elem_id += 1;
-			} else {
-				uint32_t match_id = matches[id];
-				new_elem_id[id] = new_elem_id[match_id];
 			}
 		}
 	}
 	nb_iterator_finish(iter);
 }
 
-static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
+static void set_trg_element(nb_mshquad_t *quad,
 			    const msh_trg_t *const trg, uint32_t elem_id)
 {
 	quad->type[elem_id] = 1;
@@ -547,44 +559,39 @@ static void set_trg_element(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	quad->adj[elem_id * 4] = v1;
 	quad->adj[elem_id*4+1] = v2;
 	quad->adj[elem_id*4+2] = v3;
-	quad->adj[elem_id*4+3] = vcn_mesh_get_N_vtx(mesh);
+	quad->adj[elem_id*4+3] = quad->N_nod;
 
 	uint32_t t1;
 	if (NULL != trg->t1)
 		t1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
 	else
-		t1 = vcn_mesh_get_N_trg(mesh);
+		t1 = quad->N_elems;
 
 	uint32_t t2;
 	if (NULL != trg->t2)
 		t2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
 	else
-		t2 = vcn_mesh_get_N_trg(mesh);
+		t2 = quad->N_elems;
 
 	uint32_t t3;
 	if (NULL != trg->t3)
 		t3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
 	else
-		t3 = vcn_mesh_get_N_trg(mesh);
+		t3 = quad->N_elems;
 
 	quad->ngb[elem_id * 4] = t1;
 	quad->ngb[elem_id*4+1] = t2;
 	quad->ngb[elem_id*4+2] = t3;
-	quad->ngb[elem_id*4+3] = vcn_mesh_get_N_trg(mesh);
+	quad->ngb[elem_id*4+3] = quad->N_elems;
 }
 
 static void set_quad_element(nb_mshquad_t *quad,
-			     const nb_mesh_t *const mesh,
 			     const msh_trg_t *const trg, 
-			     const uint32_t *const matches,
-			     uint32_t elem_id)
+			     uint32_t match_id, uint32_t elem_id)
 {
-	uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
-	uint32_t match_id = matches[id];
-	msh_trg_t *match_trg = get_match_trg(trg, match_id);
-
 	quad->type[elem_id] = 0;
-	
+
+	msh_trg_t *match_trg = get_match_trg(trg, match_id);
 	set_quad_from_trg(quad, trg, match_trg, elem_id);
 }
 
@@ -596,11 +603,11 @@ static msh_trg_t *get_match_trg(const msh_trg_t *const trg,
 		if (match_id == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
 			match_trg = trg->t1;
 	}
-	if (NULL != trg->t2) {
+	if (NULL == match_trg && NULL != trg->t2) {
 		if (match_id == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
 			match_trg = trg->t2;
 	}
-	if (NULL != trg->t3) {
+	if (NULL == match_trg && NULL != trg->t3) {
 		if (match_id == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
 			match_trg = trg->t3;
 	}
@@ -612,43 +619,30 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 			      const msh_trg_t *const match_trg,
 			      uint32_t elem_id)
 {
-	msh_vtx_t *v1, *v2, *v3, *v4;
+	msh_vtx_t *vtx[4];
+	get_quad_matching_vtx(trg, match_trg, vtx);
+	
 	msh_trg_t *t1, *t2, *t3, *t4;
-	if (trg->v1 == match_trg->v1) {
-		v1 = match_trg->v1;
-		v2 = match_trg->v2;
-		v3 = match_trg->v3;
-		v4 = trg->v3;
-
-		t1 = match_trg->t1;
-		t2 = match_trg->t2;
+	if (trg->t1 == match_trg) {
+		t1 = mtrg_get_left_triangle(match_trg, vtx[1]);
+		t2 = mtrg_get_right_triangle(match_trg, vtx[1]);
 		t3 = trg->t2;
 		t4 = trg->t3;
-	} else if (trg->v1 == match_trg->v2) {
-		v1 = match_trg->v2;
-		v2 = match_trg->v3;
-		v3 = match_trg->v1;
-		v4 = trg->v3;
-
-		t1 = match_trg->t2;
-		t2 = match_trg->t3;
+	} else if (trg->t2 == match_trg) {
+		t1 = mtrg_get_left_triangle(match_trg, vtx[1]);
+		t2 = mtrg_get_right_triangle(match_trg, vtx[1]);
 		t3 = trg->t2;
 		t4 = trg->t3;
 	} else {
-		v1 = match_trg->v3;
-		v2 = match_trg->v1;
-		v3 = match_trg->v2;
-		v4 = trg->v3;
-
-		t1 = match_trg->t3;
-		t2 = match_trg->t1;
+		t1 = mtrg_get_left_triangle(match_trg, vtx[1]);
+		t2 = mtrg_get_right_triangle(match_trg, vtx[1]);
 		t3 = trg->t2;
 		t4 = trg->t3;
 	}
-	quad->adj[elem_id * 4] = ((uint32_t*)((void**)v1->attr)[0])[0];
-	quad->adj[elem_id*4+1] = ((uint32_t*)((void**)v2->attr)[0])[0];
-	quad->adj[elem_id*4+2] = ((uint32_t*)((void**)v3->attr)[0])[0];
-	quad->adj[elem_id*4+3] = ((uint32_t*)((void**)v4->attr)[0])[0];
+	quad->adj[elem_id * 4] = ((uint32_t*)((void**)vtx[0]->attr)[0])[0];
+	quad->adj[elem_id*4+1] = ((uint32_t*)((void**)vtx[1]->attr)[0])[0];
+	quad->adj[elem_id*4+2] = ((uint32_t*)((void**)vtx[2]->attr)[0])[0];
+	quad->adj[elem_id*4+3] = ((uint32_t*)((void**)vtx[3]->attr)[0])[0];
 
 	if (NULL != t1)
 		quad->ngb[elem_id * 4] = ((uint32_t*)((void**)t1->attr)[0])[0];
@@ -672,14 +666,11 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 }
 
 static void update_neighbors_ids(nb_mshquad_t *quad,
-				 const uint32_t *const new_elem_id,
-				 uint32_t N_trg)
+				 const uint32_t *const new_elem_id)
 {
 	for (uint32_t i = 0; i < 4 * quad->N_elems; i++) {
-		if (quad->ngb[i] < N_trg)
+		if (quad->ngb[i] < quad->N_elems)
 			quad->ngb[i] = new_elem_id[quad->ngb[i]];
-		else
-			quad->ngb[i] = quad->N_elems;
 	}
 }
 
@@ -774,6 +765,7 @@ static void get_match_data(const nb_graph_t *const graph,
 			   match_data *data)
 {
 	data->N_matchs = 0;
+	data->N_unmatched_trg = 0;
 	for (uint32_t i = 0; i < graph->N; i++) {
 		if (matches[i] != i)
 			data->N_matchs += 1;
