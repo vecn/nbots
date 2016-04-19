@@ -53,13 +53,6 @@ static void draw_input_segments(cairo_t *const cr,
 				int width, int height,
 				const camera_t *const cam,
 				double rgb[3]);
-static void draw_polygons(cairo_t *const cr, uint32_t N_polygons,
-			  const double *const centroids,
-			  const double *const vertices,
-			  uint32_t *N_vtx_from_polygons,
-			  uint32_t **vtx_from_polygons,
-			  int width, int height,
-			  const camera_t *const cam);
 static void mesh_draw_with_cairo(const vcn_mesh_t *const mesh,
 				 cairo_t *cr, int width, int height,
 				 const camera_t *const cam);
@@ -200,56 +193,6 @@ static void draw_input_segments(cairo_t *const cr,
 			}
 		}
 		cairo_stroke(cr);
-	}
-}
-
-static void draw_polygons(cairo_t *const restrict cr, uint32_t N_polygons,
-			  const double *const restrict centroids,
-			  const double *const restrict vertices,
-			  uint32_t * restrict N_vtx_from_polygons,
-			  uint32_t ** restrict vtx_from_polygons,
-			  int width, int height,
-			  const camera_t *const cam)
-{
-	for (uint32_t i = 0; i < N_polygons; i++) {
-		/* Draw cell */
-		cairo_set_line_width(cr, 0.5);
-		uint32_t global_id = vtx_from_polygons[i][0];
-		cairo_move_to(cr, 
-			      cam->zoom * vertices[global_id * 2] - 
-			      cam->zoom * cam->center[0] + width / 2.0,
-			      -cam->zoom * vertices[global_id*2+1] + 
-			      cam->zoom * cam->center[1] + height / 2.0);
-		for (uint32_t j = 1;  j < N_vtx_from_polygons[i]; j++) {
-			global_id = vtx_from_polygons[i][j];
-			cairo_line_to(cr, 
-				      cam->zoom * vertices[global_id * 2] -
-				      cam->zoom * cam->center[0] + width / 2.0,
-				      -cam->zoom * vertices[global_id*2+1] +
-				      cam->zoom * cam->center[1] + height / 2.0);
-		}
-		cairo_close_path(cr);
-
-		cairo_set_source_rgba(cr, 0.3, 0.5, 1.0, 0.35);
-		cairo_fill_preserve(cr);
-
-		cairo_set_source_rgb(cr, 0.3, 0.5, 1.0);
-		cairo_stroke(cr);
-
-		/* Draw centroid */
-		cairo_move_to(cr, 
-			      cam->zoom * centroids[i * 2] -
-			      cam->zoom * cam->center[0] + width/2.0 + 2,
-			      -cam->zoom * centroids[i*2+1] +
-			      cam->zoom * cam->center[1] + height/2.0);
-		cairo_arc(cr, 
-			  cam->zoom * centroids[i * 2] -
-			  cam->zoom * cam->center[0] + width/2.0,
-			  -cam->zoom * centroids[i*2+1] +
-			  cam->zoom * cam->center[1] + 
-			  height/2.0, 2, 0, 2 * NB_MATH_PI);
-		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-		cairo_fill(cr);
 	}
 }
 
@@ -783,47 +726,6 @@ void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
 
 	/* Write file */
 	cairo_surface_write_to_png(surface, filename);
-	/* Free cairo structures */
-	cairo_destroy(cr);
-	cairo_surface_destroy(surface);
-}
-
-void vcn_mshpoly_save_png(const vcn_mshpoly_t *const voronoi, 
-			   char* filename,
-			   bool draw_adjacencies,
-			   int width, int height)
-{
-	/* Compute cam.center and cam.zoom */
-	double box[4];
-	vcn_utils2D_get_enveloping_box(voronoi->N_vertices,
-				       voronoi->vertices, 
-				       2 * sizeof(*(voronoi->vertices)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
-				       box);
-
-	camera_t cam;
-	set_center_and_zoom(&cam, box, width, height);
-
-	/* Create drawable surface and cairo context */
-	cairo_surface_t* surface =
-		cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-	cairo_t *cr = cairo_create(surface);
-
-	/* Draw background */
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_paint(cr);
-
-	/* Draw polygons */
-	draw_polygons(cr, voronoi->N_polygons, voronoi->centroids, 
-		      voronoi->vertices,
-		      voronoi->N_vertices_forming_polygons,
-		      voronoi->vertices_forming_polygons,
-		      width, height, &cam);
-
-	/* Write file */
-	cairo_surface_write_to_png(surface, filename);
-
 	/* Free cairo structures */
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);

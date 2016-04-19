@@ -11,9 +11,9 @@ static int suite_clean(void);
 
 static void test_load_from_mesh(void);
 
-void cunit_nb_geometric_bot_mesh_elements2D_quad(void)
+void cunit_nb_geometric_bot_mesh_elements2D_poly(void)
 {
-	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/elements2D/quad.c",
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/elements2D/polygons.c",
 				       suite_init, suite_clean);
 	CU_add_test(suite, "load_from_mesh()", test_load_from_mesh);
 }
@@ -38,15 +38,13 @@ static void test_load_from_mesh(void)
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	
-	uint32_t size = nb_mshquad_get_memsize();
-	nb_mshquad_t *quad = alloca(size);
-	nb_mshquad_init(quad);
-	nb_mshquad_load_from_mesh(quad, mesh);
+	uint32_t size = nb_mshpoly_get_memsize();
+	nb_mshpoly_t *poly = alloca(size);
+	nb_mshpoly_init(poly);
+	nb_mshpoly_load_from_mesh(poly, mesh);
 	vcn_mesh_destroy(mesh);
 	
-	CU_ASSERT(7 == quad->N_nod);
-	CU_ASSERT(9 == quad->N_edg);
-	CU_ASSERT(3 == quad->N_elems);
+	CU_ASSERT(false);
 
-	nb_mshquad_finish(quad);
+	nb_mshpoly_finish(poly);
 }

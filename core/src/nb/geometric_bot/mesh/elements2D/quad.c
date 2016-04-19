@@ -26,14 +26,16 @@ typedef struct {
 } match_data;
 
 static void set_arrays_memory(nb_mshquad_t *quad);
-static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nodes(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_edges(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_elems(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_vtx(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
-static void copy_N_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
-static void copy_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
+static void copy_N_nod_x_sgm(nb_mshquad_t* quad,
+			     const nb_mshquad_t *const src_quad);
+static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
+static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
+static void copy_nod_x_sgm(nb_mshquad_t* quad,
+			   const nb_mshquad_t *const src_quad);
 static void* malloc_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
@@ -159,25 +161,6 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 				   N_nod_x_sgm_size);
 }
 
-static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
-{
-	uint32_t size = 0;
-	for (uint32_t i = 0; i < quad->N_sgm; i++)
-		size += quad->N_nod_x_sgm[i] *
-			sizeof(**(quad->nod_x_sgm));
-	return size;
-}
-
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
-{
-	char *memblock = malloc(memsize);
-	for (uint32_t i = 0; i < quad->N_sgm; i++) {
-		quad->nod_x_sgm[i] = (void*) memblock;
-		memblock += quad->N_nod_x_sgm[i] *
-			sizeof(**(quad->nod_x_sgm));
-	}
-}
-
 static void copy_nodes(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad)
 {
 	memcpy(quad->nod, src_quad->nod,
@@ -206,13 +189,33 @@ static void copy_vtx(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad)
 	       quad->N_vtx * sizeof(*(quad->vtx)));
 }
 
-static void copy_N_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad)
+static void copy_N_nod_x_sgm(nb_mshquad_t* quad,
+			     const nb_mshquad_t *const src_quad)
 {
 	memcpy(quad->N_nod_x_sgm, src_quad->N_nod_x_sgm,
 	       quad->N_sgm * sizeof(*(quad->N_nod_x_sgm)));
 }
+static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
+{
+	uint32_t size = 0;
+	for (uint32_t i = 0; i < quad->N_sgm; i++)
+		size += quad->N_nod_x_sgm[i] *
+			sizeof(**(quad->nod_x_sgm));
+	return size;
+}
 
-static void copy_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad)
+static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
+{
+	char *memblock = malloc(memsize);
+	for (uint32_t i = 0; i < quad->N_sgm; i++) {
+		quad->nod_x_sgm[i] = (void*) memblock;
+		memblock += quad->N_nod_x_sgm[i] *
+			sizeof(**(quad->nod_x_sgm));
+	}
+}
+
+static void copy_nod_x_sgm(nb_mshquad_t* quad,
+			   const nb_mshquad_t *const src_quad)
 {	
 	for (int i = 0; i < quad->N_sgm; i++) {
 		memcpy(&(quad->nod_x_sgm[i]), &(src_quad->nod_x_sgm[i]),
@@ -223,12 +226,7 @@ static void copy_nod_x_sgm(nb_mshquad_t* quad, const nb_mshquad_t *const src_qua
 
 void nb_mshquad_finish(void *mshquad_ptr)
 {
-	nb_mshquad_t *quad = mshquad_ptr;
-	if (NULL != quad->nod) {
-		free(quad->nod_x_sgm[0]);
-		free(quad->nod);		
-	}
-	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	
+	nb_mshquad_clear(mshquad_ptr);
 }
 
 void* nb_mshquad_create(void)
@@ -262,7 +260,7 @@ void nb_mshquad_clear(void *mshquad_ptr)
 {
 	nb_mshquad_t *quad = mshquad_ptr;
 	if (NULL != quad->nod) {
-		free(quad->nod_x_sgm);
+		free(quad->nod_x_sgm[0]);
 		free(quad->nod);		
 	}
 	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	

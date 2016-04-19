@@ -90,18 +90,11 @@ void nb_mshquad_export_png(const nb_mshquad_t *const quad,
 void nb_mshquad_export_eps(const nb_mshquad_t *const quad,
 			   const char* filename, int width, int height);
 
-/**
- * @brief Export a PNG image of the Voronoi graph.
- * @param[in] mshpoly Voronoi graph to be displayed.
- * @param[in] filename Name of the image file.
- * @param[in] draw_adjacencies Enable or disable drawing adjacencies.
- * @param[in] width Image width.
- * @param[in] height Image height.
- */
-void vcn_mshpoly_save_png(const vcn_mshpoly_t *const mshpoly, 
-			  char* filename,
-			  bool draw_adjacencies,
-			  int width, int height);
+void nb_mshpoly_export_png(const nb_mshpoly_t *const poly,
+			   const char* filename, int width, int height);
+
+void nb_mshpoly_export_eps(const nb_mshpoly_t *const poly,
+			   const char* filename, int width, int height);
 
 /**
  * @brief Export a PNG image of the sphere-pack.
