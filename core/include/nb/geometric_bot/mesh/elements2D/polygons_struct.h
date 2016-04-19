@@ -19,5 +19,4 @@ typedef struct vcn_mshpoly_s {
 	uint32_t** adjacencies;
 } vcn_mshpoly_t;
 
-
 #endif
