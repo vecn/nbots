@@ -89,6 +89,42 @@ inline msh_edge_t* medge_subsgm_next(const msh_edge_t *const restrict sgm)
 	return attr->next;
 }
 
+void medge_subsgm_get_extreme_vtx(const msh_edge_t *const sgm,
+				  msh_vtx_t *vtx[2])
+{
+	msh_edge_t *first = sgm;
+	while (NULL != medge_subsgm_prev(first))
+		first = medge_subsgm_prev(first);
+
+	msh_edge_t *last = sgm;
+	while (NULL != medge_subsgm_next(last))
+		last = medge_subsgm_next(last);
+
+	if (first == last) {
+		vtx[0] = sgm->v1;
+		vtx[1] = sgm->v2;
+	} else {
+		msh_edge_t *fnext = medge_subsgm_next(first);
+		vtx[0] =  medge_subsgm_get_opposite_vtx(first, fnext);
+
+		msh_edge_t *lprev = medge_subsgm_prev(last);
+		vtx[1] =  medge_subsgm_get_opposite_vtx(last, lprev);
+	}
+}
+
+msh_vtx_t* medge_subsgm_get_opposite_vtx(const msh_edge_t *const sgm,
+					 const msh_edge_t *const adj)
+{
+	msh_vtx_t *vtx;
+	if (sgm->v1 == adj->v1 || sgm->v1 == adj->v2)
+		vtx = sgm->v2;
+	else if (sgm->v2 == adj->v1 || sgm->v2 == adj->v2)
+		vtx = sgm->v1;
+	else
+		vtx = NULL;
+	return vtx;
+}
+
 inline void medge_subsgm_set_attribute(msh_edge_t* sgm, void* attr)
 {
 	input_sgm_attr_t* in_attr = 

@@ -19,6 +19,12 @@
 
 #define POW2(a) ((a)*(a))
 
+enum {
+	VTX_END,
+	VTX_INTERNAL_JOIN,
+	VTX_EXTERNAL_JOIN
+};
+
 typedef struct {
 	uint32_t N_subsgm;
 	uint32_t N_subsgm_nod; /* Internal nodes forming a segment */
@@ -51,10 +57,21 @@ static void set_voronoi(nb_mshpoly_t *poly,
 static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
 				    uint32_t *cc_map);
 static void init_map_cocircularities(uint32_t *cc_map, uint32_t N);
-static bool adj_are_cocircular(const msh_edge_t *const edg);
+static bool adj_is_cocircular(const msh_edge_t *const edg);
 static void add_cc_to_map(uint32_t *cc_map, uint32_t N,
 			  const msh_edge_t *const edg);
 static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
+static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg);
+static uint8_t sgm_get_N_internal_ends(const nb_mesh_t *const mesh,
+				       uint32_t sgm_id, 
+				       nb_container_t *joins);
+static uint8_t vtx_is_end(nb_container_t *joins,
+			  const nb_mesh_t *const mesh,
+			  uint32_t sgm_id,
+			  const msh_vtx_t *const vtx);
+static int vtx_get_status(const nb_mesh_t *const mesh,
+			  uint32_t sgm_id,
+			  const msh_vtx_t *const vtx);
 static void set_nodes(nb_mshpoly_t *poly,
 		      const nb_mesh_t *const mesh);
 static void set_edges(nb_mshpoly_t *poly,
@@ -296,11 +313,11 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	subsgm_data data;
 	count_subsgm_data(mesh, &data);
 
-	uint32_t N_correction = 2 * data.N_subsgm - 
-		N_cc - data.N_subsgm_nod - data.N_subsgm_cl;
+	uint32_t N_correction = N_cc + data.N_subsgm_cl;
 	
-	poly->N_nod = N_trg + N_correction;
-	poly->N_edg = N_edg + N_correction + 2 * data.N_interior_end;
+	poly->N_nod = N_trg + 2 * data.N_subsgm - N_correction;
+	poly->N_edg = N_edg + 3 * data.N_subsgm - N_correction -
+		data.N_subsgm_nod + 2 * data.N_interior_end;
 	poly->N_elems = vcn_mesh_get_N_vtx(mesh) +
 		data.N_interior_nod + data.N_interior_end;
 	poly->N_vtx = mesh->N_input_vtx;
@@ -337,7 +354,7 @@ static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
-		if (adj_are_cocircular(edge)) {
+		if (adj_is_cocircular(edge)) {
 			add_cc_to_map(cc_map, N_trg, edge);
 			N_cc += 1;
 		}
@@ -353,13 +370,17 @@ static void init_map_cocircularities(uint32_t *cc_map, uint32_t N)
 }
 				     
 
-static bool adj_are_cocircular(const msh_edge_t *const edg)
+static bool adj_is_cocircular(const msh_edge_t *const edg)
 {
 	bool out;
 	if (medge_is_boundary(edg)) {
 		out = false;
 	} else {
-		/* PENDING */
+		msh_vtx_t *v4 = medge_get_opposite_vertex(edg->t2, edg);
+		out = nb_utils2D_pnt_is_cocircular(edg->t1->v1->x,
+						   edg->t1->v2->x,
+						   edg->t1->v3->x,
+						   v4->x);
 	}
 	return out;
 }
@@ -388,7 +409,108 @@ static void add_cc_to_map(uint32_t *cc_map, uint32_t N,
 	}
 }
 
-static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
+static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data)
+{
+	nb_container_t *joins = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(joins, NB_SORTED);
+
+	memset(data, 0, sizeof(*data));
+	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
+		uint32_t N_subsgm = 0;
+		uint32_t N_interior = 0;
+		msh_edge_t *sgm_iter = mesh->input_sgm[i];
+		while (NULL != sgm_iter) {
+			N_subsgm += 1;
+			N_colineal += 
+				edge_has_trg_with_cl_ccenter(sgm_iter)? 1 : 0;
+			N_interior += medge_is_boundary(sgm_iter)? 0 : 1;
+			sgm_iter = medge_subsgm_next(sgm_iter);
+		}
+		uint8_t N_end = 0;
+		if (NULL != mesh->input_sgm[i])
+			N_end += sgm_get_N_internal_ends(mesh, i, joins);
+
+		data->N_subsgm += N_subsgm;
+		data->N_subsgm_nod += N_subsgm - 1;
+		data->N_subsgm_cl = N_colineal;
+		data->N_interior_nod += N_interior + 1;
+		data->N_interior_end += N_end;
+	}
+	data->N_interior_nod -= nb_container_get_length(joins);
+	nb_container_finish(joins);
+}
+
+static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg)
+/* Has a colinear circumcenter of the adjacent triangles? */
+{
+	/* PENDING */
+}
+
+static uint8_t sgm_get_N_internal_ends(const nb_mesh_t *const mesh,
+				       uint32_t sgm_id,
+				       nb_container_t *joins)
+{
+	uint8_t N_end;
+	if (medge_is_boundary(mesh->input_sgm[sgm_id])) {
+		N_end = 0;
+	} else {
+		msh_vtx_t *end_vtx[2];
+		medge_subsgm_get_extreme_vtx(mesh->input_sgm[sgm_id],
+					     end_vtx);
+		N_end = vtx_is_end(joins, mesh, sgm_id, end_vtx[0]) + 
+			vtx_is_end(joins, mesh, sgm_id, end_vtx[1]);
+	}
+	return N_end;
+}
+
+static uint8_t vtx_is_end(nb_container_t *joins,
+			  const nb_mesh_t *const mesh,
+			  uint32_t sgm_id,
+			  const msh_vtx_t *const vtx)
+{
+	uint8_t is_end;
+	if (container_exist(joins, vtx)) {
+		is_end = 0;
+	} else {
+		int8_t vtx_status = vtx_get_end_status(mesh, sgm_id, vtx)
+		if (VTX_INTERNAL_JOIN == vtx_status) {
+			nb_container_insert(joins, vtx);
+			is_end = 0;
+		} else {
+			if (VTX_END == vtx_status)
+				is_end = 1;
+			else
+				is_end = 0;
+		}
+	}
+	return is_end;
+}
+
+static int vtx_get_status(const nb_mesh_t *const mesh,
+			  uint32_t sgm_id,
+			  const msh_vtx_t *const vtx)
+{
+	int status = VTX_END;
+	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
+		msh_edg_t *sgm = mesh->input_sgm[i];
+		if (i != sgm_id && NULL != sgm) {
+			msh_vtx_t *end_vtx[2];
+			medge_subsgm_get_extreme_vtx(sgm, end_vtx);
+			if (medge_is_boundary(sgm)) {
+				if (vtx == end_vtx[0] || vtx == end_vtx[1]) {
+					status = VTX_EXTERNAL_JOIN;
+					break;
+				}
+			} else {
+				if (vtx == end_vtx[0] || vtx == end_vtx[1]) {
+					status = VTX_INTERNAL_JOIN;
+					break;
+				}		
+			}
+		}
+	}
+	return status;
+}
 
 static void set_nodes(nb_mshpoly_t *poly,
 		      const nb_mesh_t *const mesh);

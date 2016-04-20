@@ -107,6 +107,10 @@ void medge_update_subsgm_prev(msh_edge_t *const sgm,
 uint32_t medge_subsgm_idx(const msh_edge_t *const sgm);
 msh_edge_t* medge_subsgm_prev(const msh_edge_t *const sgm);
 msh_edge_t* medge_subsgm_next(const msh_edge_t *const sgm);
+void medge_subsgm_get_extreme_vtx(const msh_edge_t *const sgm,
+				  msh_vtx_t *vtx[2]);
+msh_vtx_t* medge_subsgm_get_opposite_vtx(const msh_edge_t *const sgm,
+					 const msh_edge_t *const adj);
 void medge_subsgm_set_attribute(msh_edge_t* sgm, void* attr);
 void* medge_subsgm_get_attribute(const msh_edge_t* const sgm);
 void medge_destroy_subsgm_attribute(msh_edge_t *const sgm);
