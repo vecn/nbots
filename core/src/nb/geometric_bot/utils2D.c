@@ -20,6 +20,11 @@
 #define POW2(a) ((a)*(a))
 
 
+static double det_circumcircle(const double t1[2],
+			       const double t2[2],
+			       const double t3[2],
+			       const double p[2]);
+
 inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
 {
 	const double *const vtx = vtx_ptr;
@@ -522,6 +527,15 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 						   const double t3[2],
 						   const double p[2])
 {
+	double det = det_circumcircle(t1, t2, t3, p);
+	return (det > NB_GEOMETRIC_TOL);
+}
+
+static double det_circumcircle(const double t1[2],
+			       const double t2[2],
+			       const double t3[2],
+			       const double p[2])
+{
 	const double a11 = t1[0] - p[0];
 	const double a12 = t1[1] - p[1];
 	const double a21 = t2[0] - p[0];
@@ -540,10 +554,16 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 	const double d4 = a13*a22*a31;
 	const double d5 = a23*a32*a11;
 	const double d6 = a33*a12*a21;
-	const double det = d1 + d2 + d3 - d4 - d5 - d6;
+	return d1 + d2 + d3 - d4 - d5 - d6;
+}
 
-	/* Verify sentence */
-	return (det > NB_GEOMETRIC_TOL);
+bool nb_utils2D_pnt_is_cocircular(const double t1[2],
+				  const double t2[2],
+				  const double t3[2],
+				  const double p[2])
+{
+	double det = det_circumcircle(t1, t2, t3, p);
+	return (fabs(det) < NB_GEOMETRIC_TOL);
 }
 
 bool vcn_utils2D_pnt_lies_in_box(const double box[4],

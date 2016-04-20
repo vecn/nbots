@@ -49,7 +49,11 @@ static void set_voronoi(nb_mshpoly_t *poly,
 			const nb_graph_t *const graph,
 			const nb_mesh_t *const mesh);
 static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
-				    uint32_t *cc_with);
+				    uint32_t *cc_map);
+static void init_map_cocircularities(uint32_t *cc_map, uint32_t N);
+static bool adj_are_cocircular(const msh_edge_t *const edg);
+static void add_cc_to_map(uint32_t *cc_map, uint32_t N,
+			  const msh_edge_t *const edg);
 static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
 static void set_nodes(nb_mshpoly_t *poly,
 		      const nb_mesh_t *const mesh);
@@ -286,15 +290,17 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
 	uint32_t N_edg = vcn_mesh_get_N_edg(mesh);
 
-	uint32_t *cc_with = malloc(N_trg * sizeof(cc_with));
-	uint32_t N_cc = map_cocircularities(mesh, cc_with);
+	uint32_t *cc_map = malloc(N_trg * sizeof(cc_map));
+	uint32_t N_cc = map_cocircularities(mesh, cc_map);
+
 	subsgm_data data;
 	count_subsgm_data(mesh, &data);
 
 	uint32_t N_correction = 2 * data.N_subsgm - 
 		N_cc - data.N_subsgm_nod - data.N_subsgm_cl;
+	
 	poly->N_nod = N_trg + N_correction;
-	poly->N_edg = N_edg + N_correction + 2 * data.N_interior_end;/* AQUI VOY */
+	poly->N_edg = N_edg + N_correction + 2 * data.N_interior_end;
 	poly->N_elems = vcn_mesh_get_N_vtx(mesh) +
 		data.N_interior_nod + data.N_interior_end;
 	poly->N_vtx = mesh->N_input_vtx;
@@ -315,11 +321,72 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	set_mem_of_nod_x_sgm(poly, memsize);
 	set_nod_x_sgm(poly, mesh);
 
-	free(cc_with);
+	free(cc_map);
 }
 
 static uint32_t map_cocircularities(const nb_mesh_t *const mesh,
-				    uint32_t *cc_with);
+				    uint32_t *cc_map)
+{
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	init_map_cocircularities(cc_map, N_trg);
+	uint32_t N_cc = 0;
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
+		if (adj_are_cocircular(edge)) {
+			add_cc_to_map(cc_map, N_trg, edge);
+			N_cc += 1;
+		}
+	}
+	nb_iterator_finish(iter);
+	return N_cc;
+}
+
+static void init_map_cocircularities(uint32_t *cc_map, uint32_t N)
+{
+	for (uint32_t i = 0; i < N; i++)
+		cc_map[i] = N;
+}
+				     
+
+static bool adj_are_cocircular(const msh_edge_t *const edg)
+{
+	bool out;
+	if (medge_is_boundary(edg)) {
+		out = false;
+	} else {
+		/* PENDING */
+	}
+	return out;
+}
+
+static void add_cc_to_map(uint32_t *cc_map, uint32_t N,
+			  const msh_edge_t *const edg)
+{
+	uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
+	uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
+	if (cc_map[id1] == N && cc_map[id2] == N) {
+		cc_map[id1] = id1;
+		cc_map[id2] = id1;
+	} else if (cc_map[id1] != N && cc_map[id2] == N) {
+		cc_map[id2] = cc_map[id1];
+	} else if (cc_map[id1] == N && cc_map[id2] != N) {
+		cc_map[id1] = cc_map[id2];
+	} else {
+		uint32_t root_id = cc_map[id1];
+		uint32_t update_id = id2;
+		while (cc_map[update_id] != update_id) {
+			uint32_t next_id = cc_map[update_id];
+			cc_map[update_id] = root_id;
+			update_id = next_id;
+		}
+		cc_map[update_id] = root_id;
+	}
+}
 
 static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
 

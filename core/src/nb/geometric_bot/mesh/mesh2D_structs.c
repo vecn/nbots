@@ -18,6 +18,12 @@ static bool mesh_remove_edge
 			const msh_vtx_t *const v1,
 			const msh_vtx_t *const v2);
 
+
+bool medge_is_boundary(const msh_edge_t *const edge)
+{
+	return (NULL == edge->t1 || NULL == edge->t2);
+}
+
 inline bool medge_is_subsgm(const msh_edge_t *const restrict sgm)
 {
 	if (NULL == sgm->attr)

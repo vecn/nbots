@@ -15,7 +15,7 @@ typedef struct {
 	uint32_t** adj;   /* Connectivity matrix */
 	uint32_t** ngb;   /* Neighbours */
 
-	uint32_t N_elem_vtx;
+	uint32_t N_vtx;
 	uint32_t *elem_vtx; /* Ids of elems corresponding to input vtx */
 
 	uint32_t N_sgm;

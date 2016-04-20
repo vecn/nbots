@@ -94,6 +94,7 @@ struct vcn_mesh_s {
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
 
+bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
 void medge_set_as_subsgm(msh_edge_t *const sgm,
 			 uint32_t idx,

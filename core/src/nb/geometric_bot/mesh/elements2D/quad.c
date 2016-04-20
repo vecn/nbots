@@ -39,6 +39,10 @@ static void copy_nod_x_sgm(nb_mshquad_t* quad,
 static void* malloc_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
+static double get_quality(const msh_trg_t *trg1,
+			  const msh_trg_t *trg2);
+static bool adj_is_input_sgm(const msh_trg_t *trg1,
+			     const msh_trg_t *trg2);
 static void get_quad_matching_vtx(const msh_trg_t *const trg,
 				  const msh_trg_t *const match_trg,
 				  const msh_vtx_t *quad_vtx[4]);
@@ -59,7 +63,6 @@ static void get_match_data(const nb_graph_t *const graph,
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
-static bool edge_is_not_boundary(const msh_edge_t *const edge);
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches);
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -305,14 +308,44 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
 			uint32_t id_adj = graph->adj[id][i];
 			msh_trg_t *trg_adj = get_trg_adj(trg, id_adj);
-			msh_vtx_t *quad_vtx[4];
-			get_quad_matching_vtx(trg, trg_adj, quad_vtx);
-			double maxk = get_max_angle_distortion(quad_vtx);
-			double quality = MAX(0.0, 1.0 - 2.0 * maxk / NB_PI);
-			graph->wij[id][i] = quality;
+			graph->wij[id][i] = get_quality(trg, trg_adj);
 		}
 	}
 	nb_iterator_finish(iter);	
+}
+
+static double get_quality(const msh_trg_t *trg1,
+			  const msh_trg_t *trg2)
+{
+	double quality;
+	if (adj_is_input_sgm(trg1, trg2)) {
+		quality = 0.0;
+	} else {
+		msh_vtx_t *quad_vtx[4];
+		get_quad_matching_vtx(trg1, trg2, quad_vtx);
+		double maxk = get_max_angle_distortion(quad_vtx);
+		quality = MAX(0.0, 1.0 - 2.0 * maxk / NB_PI);
+	}
+	return quality;
+}
+
+static bool adj_is_input_sgm(const msh_trg_t *trg1,
+			     const msh_trg_t *trg2)
+{
+	bool out;
+	if (trg1->t1 == trg2) {
+		msh_edge_t *edg = trg1->s1;
+		out = medge_is_subsgm(edg);
+	} else if (trg1->t2 == trg2) {
+		msh_edge_t *edg = trg1->s2;
+		out = medge_is_subsgm(edg);
+	} else if (trg1->t3 == trg2) {
+		msh_edge_t *edg = trg1->s3;
+		out = medge_is_subsgm(edg);
+	} else {
+		out = false;
+	}
+	return out;
 }
 
 static void get_quad_matching_vtx(const msh_trg_t *const trg,
@@ -474,32 +507,29 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
-		if (edge_is_not_boundary(edge)) {
-			if (edge_is_not_matched(edge, matches)) {
-				quad->edg[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
-				quad->edg[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
-				i += 1;
-			}
+		if (edge_is_not_matched(edge, matches)) {
+			quad->edg[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
+			quad->edg[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
+			i += 1;
 		}
 	}
 	nb_iterator_finish(iter);
 }
 
-static bool edge_is_not_boundary(const msh_edge_t *const edge)
-{
-	return (NULL != edge->t1 && NULL != edge->t2);
-}
-
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches)
 {
-	int id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
-	int id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
 	bool out;
-	if (matches[id1] != id2)
+	if (medge_is_boundary(edge)) {
 		out = true;
-	else
-		out = false;
+	} else {
+		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
+		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
+		if (matches[id1] != id2)
+			out = true;
+		else
+			out = false;
+	}
 	return out;
 }
 

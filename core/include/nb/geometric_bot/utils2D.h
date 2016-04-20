@@ -134,6 +134,12 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 						   const double t2[2],
 						   const double t3[2],
 						   const double p[2]);
+
+bool nb_utils2D_pnt_is_cocircular(const double t1[2],
+				  const double t2[2],
+				  const double t3[2],
+				  const double p[2]);
+
 bool vcn_utils2D_pnt_lies_in_box(const double box[4],
 				 const double p[2]);
 
