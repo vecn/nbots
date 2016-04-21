@@ -546,6 +546,16 @@ bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
 		side_edge3 > NB_GEOMETRIC_TOL);
 }
 
+inline bool vcn_utils2D_pnt_lies_in_diametral_circle
+					(const double s1[2],
+					 const double s2[2],
+					 const double p[2])
+{
+	return NB_GEOMETRIC_TOL >
+		(s1[0] - p[0]) * (s2[0] - p[0]) +
+		(s1[1] - p[1]) * (s2[1] - p[1]);
+}
+
 inline bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle
 					(const double s1[2],
 					 const double s2[2],

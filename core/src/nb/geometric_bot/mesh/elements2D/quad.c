@@ -125,18 +125,20 @@ void nb_mshquad_copy(void *dest, const void *const src)
 	nb_mshquad_t *quad = dest;
 	const nb_mshquad_t *const src_quad = src;
 	
-	set_arrays_memory(quad);
+	if (dest->N_elems > 0) {
+		set_arrays_memory(quad);
 
-	copy_nodes(quad, src_quad);
-	copy_edges(quad, src_quad);
-	copy_elems(quad, src_quad);
-	copy_vtx(quad, src_quad);
-	copy_N_nod_x_sgm(quad, src_quad);
+		copy_nodes(quad, src_quad);
+		copy_edges(quad, src_quad);
+		copy_elems(quad, src_quad);
+		copy_vtx(quad, src_quad);
+		copy_N_nod_x_sgm(quad, src_quad);
 
-	uint32_t memsize = get_size_of_nod_x_sgm(quad);
-	set_mem_of_nod_x_sgm(quad, memsize);
+		uint32_t memsize = get_size_of_nod_x_sgm(quad);
+		set_mem_of_nod_x_sgm(quad, memsize);
 
-	copy_nod_x_sgm(quad, src_quad);
+		copy_nod_x_sgm(quad, src_quad);
+	}
 }
 
 static void set_arrays_memory(nb_mshquad_t *quad)
@@ -275,25 +277,27 @@ void nb_mshquad_clear(void *mshquad_ptr)
 void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 			       const nb_mesh_t *const mesh)
 {
-	mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
-	mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
-	nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
-	nb_graph_init_edge_weights(graph);
+	if (vcn_mesh_get_N_trg(mesh) > 0) {
+		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
+		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
+		nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
+		nb_graph_init_edge_weights(graph);
 
-	set_quad_quality_as_weights(mesh, graph);
+		set_quad_quality_as_weights(mesh, graph);
 
-	uint32_t *matches = malloc(graph->N * sizeof(*matches));
-	nb_graph_matching_greedy(graph, matches);
+		uint32_t *matches = malloc(graph->N * sizeof(*matches));
+		nb_graph_matching_greedy(graph, matches);
 	
-	set_mshquad(mshquad, graph, mesh, matches);
+		set_mshquad(mshquad, graph, mesh, matches);
 
-	free(matches);
+		free(matches);
 
-	nb_graph_finish_edge_weights(graph);
-	vcn_graph_destroy(graph);
+		nb_graph_finish_edge_weights(graph);
+		vcn_graph_destroy(graph);
 
-	mesh_free_vtx_ids((vcn_mesh_t*)mesh);
-	mesh_free_trg_ids((vcn_mesh_t*)mesh);
+		mesh_free_vtx_ids((vcn_mesh_t*)mesh);
+		mesh_free_trg_ids((vcn_mesh_t*)mesh);
+	}
 }
 
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
