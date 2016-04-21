@@ -20,6 +20,8 @@ void nb_mshquad_clear(void *mshquad_ptr);
 void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 			       const nb_mesh_t *const mesh);
 
+void nb_mshquad_set_fem_graph(const nb_mshquad_t *mshquad,
+			      nb_graph_t *graph);
 void nb_mshquad_set_nodal_graph(const nb_mshquad_t *mshquad,
 				nb_graph_t *graph);
 void nb_mshquad_set_elemental_graph(const nb_mshquad_t *mshquad,

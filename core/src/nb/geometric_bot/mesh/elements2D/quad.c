@@ -92,9 +92,13 @@ static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
 static void nodal_graph_allocate_adj(nb_graph_t *graph,
 				     const nb_mshquad_t *mshquad);
+static void fem_graph_count_adj(nb_graph_t *graph,
+				const nb_mshquad_t *mshquad);
+static void graph_assign_mem_adj(nb_graph_t *graph);
+static void fem_graph_set_adj(nb_graph_t *graph,
+			      const nb_mshquad_t *mshquad);
 static void nodal_graph_count_adj(nb_graph_t *graph,
 				  const nb_mshquad_t *mshquad);
-static void graph_assign_mem_adj(nb_graph_t *graph);
 static void nodal_graph_set_adj(nb_graph_t *graph,
 				const nb_mshquad_t *mshquad);
 static void elemental_graph_allocate_adj(nb_graph_t *graph,
@@ -770,6 +774,95 @@ static void get_match_data(const nb_graph_t *const graph,
 	data->N_matchs /= 2; /* Double counting */
 }
 
+void nb_mshquad_set_fem_graph(const nb_mshquad_t *mshquad,
+			      nb_graph_t *graph)
+{
+	graph->N = mshquad->N_nod;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	nodal_graph_allocate_adj(graph, mshquad);
+	fem_graph_count_adj(graph, mshquad);
+	graph_assign_mem_adj(graph);
+	fem_graph_set_adj(graph, mshquad);
+
+}
+
+static void nodal_graph_allocate_adj(nb_graph_t *graph,
+				     const nb_mshquad_t *mshquad)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+}
+
+static void fem_graph_count_adj(nb_graph_t *graph,
+				const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (0 == mshquad->type[i]) {
+			uint32_t id1 = mshquad->adj[i * 4];
+			uint32_t id2 = mshquad->adj[i*4+1];
+			uint32_t id3 = mshquad->adj[i*4+2];
+			uint32_t id4 = mshquad->adj[i*4+3];
+			graph->N_adj[id1] += 1;
+			graph->N_adj[id2] += 1;
+			graph->N_adj[id3] += 1;
+			graph->N_adj[id4] += 1;
+		}
+	}
+}
+
+static void graph_assign_mem_adj(nb_graph_t *graph)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	char *block = (char*) graph->N_adj + memsize_N_adj;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->adj[i] = (void*) block;
+		block += graph->N_adj[i] * sizeof(**(graph->adj));
+	}
+}
+
+static void fem_graph_set_adj(nb_graph_t *graph,
+			      const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->adj[id1][graph->N_adj[id1]] = id2;
+		graph->adj[id2][graph->N_adj[id2]] = id1;
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (0 == mshquad->type[i]) {
+			uint32_t id1 = mshquad->adj[i * 4];
+			uint32_t id2 = mshquad->adj[i*4+1];
+			uint32_t id3 = mshquad->adj[i*4+2];
+			uint32_t id4 = mshquad->adj[i*4+3];
+
+			graph->adj[id1][graph->N_adj[id1]] = id3;
+			graph->adj[id3][graph->N_adj[id3]] = id1;
+
+			graph->adj[id2][graph->N_adj[id2]] = id4;
+			graph->adj[id4][graph->N_adj[id4]] = id2;
+
+			graph->N_adj[id1] += 1;
+			graph->N_adj[id2] += 1;
+			graph->N_adj[id3] += 1;
+			graph->N_adj[id4] += 1;
+		}
+	}
+}
+
 void nb_mshquad_set_nodal_graph(const nb_mshquad_t *mshquad,
 				nb_graph_t *graph)
 {
@@ -780,16 +873,6 @@ void nb_mshquad_set_nodal_graph(const nb_mshquad_t *mshquad,
 	nodal_graph_count_adj(graph, mshquad);
 	graph_assign_mem_adj(graph);
 	nodal_graph_set_adj(graph, mshquad);
-}
-
-
-static void nodal_graph_allocate_adj(nb_graph_t *graph,
-				     const nb_mshquad_t *mshquad)
-{
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
-	graph->N_adj = (void*) memblock;
 }
 
 static void nodal_graph_count_adj(nb_graph_t *graph,
@@ -805,17 +888,6 @@ static void nodal_graph_count_adj(nb_graph_t *graph,
 }
 
 
-static void graph_assign_mem_adj(nb_graph_t *graph)
-{
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	char *block = (char*) graph->N_adj + memsize_N_adj;
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->adj[i] = (void*) block;
-		block += graph->N_adj[i] * sizeof(**(graph->adj));
-	}
-}
-
-
 static void nodal_graph_set_adj(nb_graph_t *graph,
 				const nb_mshquad_t *mshquad)
 {
@@ -827,7 +899,7 @@ static void nodal_graph_set_adj(nb_graph_t *graph,
 		graph->adj[id2][graph->N_adj[id2]] = id1;
 		graph->N_adj[id1] += 1;
 		graph->N_adj[id2] += 1;
-	}	
+	}
 }
 
 void nb_mshquad_set_elemental_graph(const nb_mshquad_t *mshquad,

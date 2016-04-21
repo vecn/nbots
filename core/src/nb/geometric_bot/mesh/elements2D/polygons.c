@@ -34,9 +34,12 @@ typedef struct {
 } subsgm_data;
 
 static void set_arrays_memory(nb_mshpoly_t *poly);
-static void copy_nodes(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
-static void copy_edges(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
-static void copy_N_side(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly);
+static void copy_nodes(nb_mshpoly_t* poly,
+		       const nb_mshpoly_t *const src_poly);
+static void copy_edges(nb_mshpoly_t* poly,
+		       const nb_mshpoly_t *const src_poly);
+static void copy_N_side(nb_mshpoly_t* poly,
+			const nb_mshpoly_t *const src_poly);
 static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly);
 static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_adj_and_ngb(nb_mshpoly_t* poly,
@@ -74,7 +77,8 @@ static int vtx_get_status(const nb_mesh_t *const mesh,
 			  uint32_t sgm_id,
 			  const msh_vtx_t *const vtx);
 static void set_nodes(nb_mshpoly_t *poly,
-		      const nb_mesh_t *const mesh);
+		      const nb_mesh_t *const mesh,
+		      const uint32_t *cc_map);
 static void set_edges(nb_mshpoly_t *poly,
 		      const nb_mesh_t *const mesh);
 static uint32_t set_N_sides(nb_mshpoly_t *poly,
@@ -325,7 +329,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 
 	set_arrays_memory(poly);
 
-	set_nodes(poly, mesh);
+	set_nodes(poly, mesh, cc_map);
 	set_edges(poly, mesh);
 
 	uint32_t memsize = set_N_sides(poly, mesh);
@@ -542,7 +546,20 @@ static int vtx_get_status(const nb_mesh_t *const mesh,
 }
 
 static void set_nodes(nb_mshpoly_t *poly,
-		      const nb_mesh_t *const mesh);
+		      const nb_mesh_t *const mesh,
+		      const uint32_t *cc_map)
+{
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	uint32_t elem_id = 0;
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+	}
+	nb_iterator_finish(iter);
+}
+
 static void set_edges(nb_mshpoly_t *poly,
 		      const nb_mesh_t *const mesh);
 static uint32_t set_N_sides(nb_mshpoly_t *poly,
@@ -561,6 +578,8 @@ void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
 						  const void *data),
 				const void *density_data);
 
+void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph);
 void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
 				nb_graph_t *graph);
 void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,
