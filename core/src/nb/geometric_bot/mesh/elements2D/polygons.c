@@ -62,6 +62,7 @@ static void add_cc_to_map(uint32_t *cc_map, uint32_t N,
 			  const msh_edge_t *const edg);
 static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data);
 static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg);
+static bool trg_is_cl_to_sgm(const msh_edge_t *edg, const msh_trg_t *trg);
 static uint8_t sgm_get_N_internal_ends(const nb_mesh_t *const mesh,
 				       uint32_t sgm_id, 
 				       nb_container_t *joins);
@@ -313,10 +314,9 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	subsgm_data data;
 	count_subsgm_data(mesh, &data);
 
-	uint32_t N_correction = N_cc + data.N_subsgm_cl;
-	
-	poly->N_nod = N_trg + 2 * data.N_subsgm - N_correction;
-	poly->N_edg = N_edg + 3 * data.N_subsgm - N_correction -
+	uint32_t N_correction = 3 * data.N_subsgm - N_cc - data.N_subsgm_cl;
+	poly->N_nod = N_trg + N_correction;
+	poly->N_edg = N_edg + N_correction -
 		data.N_subsgm_nod + 2 * data.N_interior_end;
 	poly->N_elems = vcn_mesh_get_N_vtx(mesh) +
 		data.N_interior_nod + data.N_interior_end;
@@ -443,9 +443,38 @@ static void count_subsgm_data(const nb_mesh_t *const mesh, subsgm_data *data)
 static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg)
 /* Has a colinear circumcenter of the adjacent triangles? */
 {
-	/* PENDING */
+	bool is_cl;
+	if (NULL != edg->t1)
+		is_cl = trg_is_cl_to_sgm(edg->t1, edg);
+	else
+		is_cl = false;
+
+	if (!is_cl) {
+		if (NULL != edg->t2)
+			is_cl = trg_is_cl_to_sgm(edg->t2, edg);
+	}
+	return is_cl;
 }
 
+static bool trg_is_cl_to_sgm(const msh_edge_t *edg, const msh_trg_t *trg)
+{
+	msh_vtx_t *v1, *v2, *v3;
+	if (trg->s1 == edg) {
+		v1 = trg->v2;
+		v2 = trg->v3;
+		v3 = trg->v1;
+	} else if (trg->s2 == edg) {
+		v1 = trg->v3;
+		v2 = trg->v1;
+		v3 = trg->v2;
+	} else {
+		v1 = trg->v1;
+		v2 = trg->v2;
+		v3 = trg->v3;
+	}
+	double angle = nb_utils2D_get_2vec_angle(v1->x, v2->x, v3->x);
+	return (fabs(angle - NB_PI/2.0) < 1e-6);
+}
 static uint8_t sgm_get_N_internal_ends(const nb_mesh_t *const mesh,
 				       uint32_t sgm_id,
 				       nb_container_t *joins)

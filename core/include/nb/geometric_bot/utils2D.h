@@ -29,6 +29,9 @@ double vcn_utils2D_get_dist2(const double p1[2], const double p2[2]);
 double vcn_utils2D_get_delaunay_dist(const double p1[2],
 				     const double p2[2],
 				     const double p3[2]);
+double nb_utils2D_get_2vec_angle(const double a[2],
+				 const double b[2],
+				 const double c[2]);
 void vcn_utils2D_get_enveloping_box
 (uint32_t N_vertices,
  const void* vertices,

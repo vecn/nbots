@@ -50,7 +50,6 @@ static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
 static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id);
-static double get_angle(double a[2], double b[2], double c[2]);
 static msh_trg_t * get_trg_adj(const msh_trg_t *const trg,
 			       uint32_t id_adj);
 static void set_mshquad(nb_mshquad_t *quad,
@@ -376,7 +375,7 @@ static double get_max_angle_distortion(const msh_vtx_t* vtx[4])
 	for (int i = 0; i < 4; i++) {
 		double a[2], b[2], c[2];
 		get_angle_vertices(vtx, a, b, c, i);
-		double angle = get_angle(a, b, c);
+		double angle = nb_utils2D_get_2vec_angle(a, b, c);
 		double distortion = fabs(NB_PI/2.0 - angle);
 		max_distortion = MAX(max_distortion, distortion);
 	}
@@ -405,38 +404,6 @@ static void get_angle_vertices(const msh_vtx_t* vtx[4],
 		memcpy(b, vtx[3]->x, vtx_size);
 		memcpy(c, vtx[0]->x, vtx_size);
 	}
-}
-
-static double get_angle(double a[2], double b[2], double c[2])
-{
-	/* Angle between segments A and B, formed by vtx a, b and c
-	 *           a       c
-	 *            \     /
-	 *           A \___/ B
-	 *              \ /
-	 *               b
-	 */
-	double A[2];
-	A[0] = a[0] - b[0];
-	A[1] = a[1] - b[1];
-
-	double B[2];
-	B[0] = c[0] - b[0];
-	B[1] = c[1] - b[1];
-
-	double dotAB = A[0] * B[0] + A[1] * B[1];
-	double lengthA = sqrt(POW2(A[0]) + POW2(A[1]));
-	double lengthB = sqrt(POW2(B[0]) + POW2(B[1]));
-	double arg = dotAB / (lengthA * lengthB);
-	arg = MAX(arg, -1.0);
-	arg = MIN(arg, 1.0);
-
-       	double angle;
-	if (vcn_utils2D_get_2x_trg_area(a, b, c) > 0)
-		angle = acos(arg);
-	else
-		angle = 2.0 * NB_PI - acos(arg);
-	return angle;
 }
 
 static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
