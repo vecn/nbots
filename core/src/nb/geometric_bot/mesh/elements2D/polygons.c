@@ -45,7 +45,8 @@ static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 			   const nb_mshpoly_t *const src_poly);
 static void* malloc_poly(void);
-static void init_voronoi_graph(vgraph_t *vgraph,
+static void init_voronoi_graph(nb_mshpoly_t *mshpoly,
+			       vgraph_t *vgraph,
 			       const nb_mesh_t *const mesh);
 static void count_vgraph_adj(vgraph_t *vgraph, const nb_mesh_t *const mesh);
 static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock);
@@ -57,8 +58,6 @@ static bool edge_is_encroached(const msh_edge_t *edg, const msh_trg_t *trg);
 static void finish_voronoi_graph(vgraph_t *vgraph);
 static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const graph);
-static void count_voronoi_data(nb_mshpoly_t *poly,
-			       const vgraph_t *const vgraph);
 static bool cell_is_boundary(const vgraph_t *const graph,
 			     uint32_t i);
 static void set_nodes(nb_mshpoly_t *poly,
@@ -285,7 +284,7 @@ void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly,
 		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
 	
 		vgraph_t vgraph;
-		init_voronoi_graph(&vgraph, mesh);
+		init_voronoi_graph(mshpoly, &vgraph, mesh);
 
 		set_voronoi(mshpoly, &vgraph);
 
@@ -295,7 +294,8 @@ void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly,
 	}
 }
 
-static void init_voronoi_graph(vgraph_t *vgraph,
+static void init_voronoi_graph(nb_mshpoly_t *mshpoly,
+			       vgraph_t *vgraph,
 			       const nb_mesh_t *const mesh)
 {
 	vgraph->N = vcn_mesh_get_N_vtx(mesh);
@@ -313,11 +313,16 @@ static void init_voronoi_graph(vgraph_t *vgraph,
 	count_vgraph_adj(vgraph, mesh);
 	set_vgraph_adj_mem(vgraph, memblock + size1 + size2);
 	set_vgraph_adj(vgraph, mesh);
+
+	poly->N_nod = N_duplicate_edg / 2;/* AQUI VOY */
+	poly->N_edg = N_duplicate_edg / 2 + 2 * N_boundary_cells;
+	poly->N_elems = vgraph->N;
+	poly->N_vtx = mesh->N_input_vtx;
+	poly->N_sgm = mesh->N_input_sgm;
 }
 
 static void count_vgraph_adj(vgraph_t *vgraph, const nb_mesh_t *const mesh)
 {
-	/* AQUI VOY */
 	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
 
 	uint16_t iter_size = nb_iterator_get_memsize();
@@ -371,7 +376,7 @@ static bool adj_is_cocircular(const msh_edge_t *const edg)
 {
 	bool out;
 	if (medge_is_boundary(edg)) {
-		out = edge_has_trg_with_cl_ccenter(edg);
+		out = false;
 	} else {
 		msh_vtx_t *v4 = medge_get_opposite_vertex(edg->t2, edg);
 		out = nb_utils2D_pnt_is_cocircular(edg->t1->v1->x,
@@ -420,11 +425,6 @@ static void finish_voronoi_graph(vgraph_t *vgraph)
 static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const vgraph)
 {
-	count_voronoi_data(poly, vgraph);
-
-	poly->N_vtx = mesh->N_input_vtx;
-	poly->N_sgm = mesh->N_input_sgm;
-
 	set_arrays_memory(poly);
 
 	set_nodes(poly, mesh, cc_map);
@@ -441,25 +441,9 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	set_nod_x_sgm(poly, mesh);
 }
 
-static void count_voronoi_data(nb_mshpoly_t *poly,
-			       const vgraph_t *const vgraph)
-{
-	uint32_t N_duplicate_edg = 0;
-	uint32_t N_boundary_cells = 0;
-	for (uint32_t i = 0; i < vgraph->N; i++) {
-		N_duplicate_edg += vgraph->N_adj[i];
-		if (cell_is_boundary(vgraph, i))
-			N_boundary_cells += 1;
-	}
-	poly->N_nod = N_duplicate_edg / 2;
-	poly->N_edg = N_duplicate_edg / 2 + 2 * N_boundary_cells;
-	poly->N_elems = vgraph->N;
-}
-
 static bool cell_is_boundary(const vgraph_t *const vgraph,
 			     uint32_t i)
 {
-/* NOT ALWAYS WORK (Colineal boundary ccenters */
 	bool out = false;
 	for (uint16_t j = 0; j < vgraph->N_adj[i]; j++) {
 		if (medge_is_boundary(vgraph->adj[i][j])) {
