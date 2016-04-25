@@ -288,10 +288,11 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
 }
 
-void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly,
-			       const nb_mesh_t *const mesh)
+void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
+		mesh_split_trg_formed_by_input_vtx(mesh, true);		
+
 		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
 		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
 	

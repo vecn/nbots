@@ -191,4 +191,8 @@ void mesh_free_vtx_ids(vcn_mesh_t *mesh);
 void mesh_alloc_trg_ids(vcn_mesh_t *mesh);
 void mesh_free_trg_ids(vcn_mesh_t *mesh);
 
+void mesh_split_trg_formed_by_input_vtx(nb_mesh_t *mesh,
+					bool detect_isolated_input_vtx);
+					
+
 #endif
