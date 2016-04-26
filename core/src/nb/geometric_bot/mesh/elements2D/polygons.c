@@ -19,17 +19,20 @@
 #define POW2(a) ((a)*(a))
 
 typedef struct {
-	uint32_t N;  
+	uint32_t N;
+	int8_t *type; /* 0: Interior, 1: Subsegment */
 	msh_vtx_t *vtx;
-	uint32_t *N_adj;
+	uint16_t *N_adj;
 	msh_edge_t **adj;
 } vgraph_t;
 
 typedef struct {
-	uint32_t N_cocircularities;
-	uint32_t N_sgm_colinear_cc;
-	uint32_t N_boundary_cells;
-	uint32_t N_boundary_sgm;
+	uint32_t N_trg_in;  /* # interior trg */
+	uint32_t N_vtx_in;  /* # interior vtx */
+	uint32_t N_vtx_out; /* # vtx on input sgm  */
+	uint32_t N_edg_in;  /* # interior edges */
+	uint32_t N_edg_out; /* # edg on input sgm */
+	uint32_t N_cc_in;   /* # Cocircularities between interior trg */
 } vinfo_t;
 
 static void set_arrays_memory(nb_mshpoly_t *poly);
@@ -291,7 +294,7 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		mesh_split_trg_formed_by_input_vtx(mesh, true);		
+		mesh_split_trg_formed_by_input_sgm(mesh);
 
 		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
 		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
@@ -372,8 +375,10 @@ static void set_vgraph_adj(vgraph_t *vgraph, const nb_mesh_t *const mesh)
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
 		bool without_cc = !adj_is_cocircular(edge);
 		if (without_cc) {
-			uint32_t id1 = *(uint32_t*)((void**)edge->v1->attr)[0];
-			uint32_t id2 = *(uint32_t*)((void**)edge->v2->attr)[0];
+			uint32_t id1 = *(uint32_t*)
+				((void**)edge->v1->attr)[0];
+			uint32_t id2 = *(uint32_t*)
+				((void**)edge->v2->attr)[0];
 
 			vgraph->adj[id1][vgraph->N_adj[id1]] = edge;
 			vgraph->adj[id2][vgraph->N_adj[id2]] = edge;
