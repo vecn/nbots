@@ -664,6 +664,19 @@ msh_edge_t* medge_get_CCW_subsgm(const msh_edge_t *const restrict sgm,
 	return (msh_edge_t*) sgm;
 }
 
+msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
+				 const msh_vtx_t *const vtx)
+{
+	msh_vtx_t *out;
+	if (edge->v1 == vtx)
+		out = edge->v2;
+	else if (edge->v2 == vtx)
+		out = edge->v1;
+	else
+		out = NULL;
+	return out;
+}
+
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm)
 /* WARNING: The hash tables of the mesh are not updated. */
 {

@@ -134,6 +134,8 @@ msh_edge_t* medge_get_CW_subsgm(const msh_edge_t *const sgm,
 				const msh_vtx_t *const vtx);
 msh_edge_t* medge_get_CCW_subsgm(const msh_edge_t *const sgm,
 				 const msh_vtx_t *const vtx);
+msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
+				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 msh_trg_t* mtrg_create(void);
 void mtrg_set_quality_and_size(msh_trg_t *const trg);
