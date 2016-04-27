@@ -95,6 +95,10 @@ static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const vgraph,
 			const vinfo_t *const vinfo,
 			const nb_mesh_t *const mesh);
+static void set_nodes(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh);
 static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg);
 static bool edge_is_encroached(const msh_edge_t *edg, const msh_trg_t *trg);
 static void set_quantities(nb_mshpoly_t *poly,
@@ -315,7 +319,7 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		mesh_split_trg_formed_by_input_sgm(mesh);
+		/* POR IMPLEMENTAR */mesh_split_trg_formed_by_input_sgm(mesh);
 
 		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
 		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
@@ -529,7 +533,6 @@ static bool adj_is_cocircular(const msh_edge_t *const edg)
 static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 			  uint32_t *trg_cc_map, uint32_t N_trg)
 {
-	/* AQUI VOY: Considera solo interior trg */
 	if (is_cc) {
 		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
 		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
@@ -642,7 +645,67 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	
 	set_arrays_memory(poly);
 
-	/* AQUI VOY (ya tengo los mappings) */
+	set_nodes(poly, vgraph, vinfo, mesh);
+	/* POR IMPLEMENTAR */set_edges(poly);
+	/* POR IMPLEMENTAR */set_centroids(poly);
+	/* POR IMPLEMENTAR */set_N_adj(poly);
+	
+	uint32_t memsize = get_size_of_adj_and_ngb(poly);
+	set_mem_of_adj_and_ngb(poly, memsize);
+	/* POR IMPLEMENTAR */set_adj_and_ngb(poly);
+
+	/* POR IMPLEMENTAR */set_elem_vtx(poly);
+	/* POR IMPLEMENTAR */set_N_nod_x_sgm(poly);
+
+	memsize = get_size_of_nod_x_sgm(poly);
+	set_mem_of_nod_x_sgm(poly, memsize);
+	/* POR IMPLEMENTAR */set_nod_x_sgm(poly);
+}
+
+static void set_nodes(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh)
+{
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		uint32_t id = *(uint32_t*)((void**)vtx->attr)[0];
+		bool vtx_is_not_interior = 0 != vgraph->type[id];
+		if (vtx_is_not_interior) {
+			uint32_t inode = vinfo->vtx_map[id];
+			memcpy(&(poly->nod[inode * 2]), vtx->x,
+			       2 * sizeof(*(vtx->x)));
+		}
+	}
+	vcn_bins2D_iter_destroy(iter);
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		uint32_t v1 = *(uint32_t*)((void**)trg->v1->attr)[0];
+		uint32_t v2 = *(uint32_t*)((void**)trg->v2->attr)[0];
+		uint32_t v3 = *(uint32_t*)((void**)trg->v3->attr)[0];
+		bool trg_is_interior = (0 == vgraph->type[v1]) &&
+			(0 == vgraph->type[v2]) && (0 == vgraph->type[v3]);
+		if (trg_is_interior) {
+			uint32_t inode = vinfo->trg_map[id];
+			double circumcenter[2];
+			vcn_utils2D_get_circumcenter(trg->v1->x,
+						     trg->v2->x,
+						     trg->v3->x,
+						     circumcenter);
+			memcpy(&(poly->nod[inode * 2]), circumcenter,
+			       2 * sizeof(*(trg->v1->x)));
+		}
+	}
+	nb_iterator_finish(iter);
+
 }
 
 static void set_quantities(nb_mshpoly_t *poly,

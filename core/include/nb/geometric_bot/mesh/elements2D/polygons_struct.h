@@ -17,7 +17,8 @@ typedef struct {
 	uint32_t **ngb;   /* Neighbours */
 
 	uint32_t N_vtx;
-	uint32_t *elem_vtx; /* Ids of elems corresponding to input vtx */
+	uint32_t *elem_vtx; /* Ids of elems corresponding to input vtx.
+			     * NULL for input vtx on the boundary. */
 
 	uint32_t N_sgm;
 	/* Number of nodes forming the input segment */
