@@ -311,7 +311,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 			get_quad_matching_vtx(trg, trg_adj, quad_vtx);
 			double maxk = get_max_angle_distortion(quad_vtx);
 			double quality = MAX(0.0, 1.0 - 2.0 * maxk / NB_PI);
-			graph->wij[id][i] = quality;
+			graph->wij[id][i] = POW2(quality);
 		}
 	}
 	nb_iterator_finish(iter);	
