@@ -21,7 +21,6 @@
 typedef struct {
 	uint32_t N;
 	int8_t *type; /* 0: Interior, 1: Subsegment */
-	msh_vtx_t *vtx;
 	uint16_t *N_adj;
 	msh_edge_t ***adj;
 } vgraph_t;
@@ -84,8 +83,7 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 			  uint32_t *trg_cc_map, uint32_t N_trg);
 static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 			      bool is_cc);
-static void insert_adj_sorted_by_angle(msh_edge_t **adj, uint16_t id,
-				       msh_vtx_t *vtx,
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
 				       msh_edge_t *edge);
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 				  const msh_edge_t *edge, bool is_cc);
@@ -95,15 +93,26 @@ static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const vgraph,
 			const vinfo_t *const vinfo,
 			const nb_mesh_t *const mesh);
-static void set_nodes(nb_mshpoly_t *poly,
-		      const vgraph_t *const vgraph,
-		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh);
-static bool edge_has_trg_with_cl_ccenter(const msh_edge_t *const edg);
-static bool edge_is_encroached(const msh_edge_t *edg, const msh_trg_t *trg);
 static void set_quantities(nb_mshpoly_t *poly,
 			   const vinfo_t *const vinfo,
 			   const nb_mesh_t *const mesh);
+static void set_nodes_and_centroids(nb_mshpoly_t *poly,
+				    const vgraph_t *const vgraph,
+				    const vinfo_t *const vinfo,
+				    const nb_mesh_t *const mesh);
+static void set_edges(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh);
+
+static void process_interior_edge(nb_mshpoly_t *poly,
+				  const vgraph_t *const vgraph,
+				  const vinfo_t *const vinfo,
+				  const msh_edge_t *const edg,
+				  uint32_t iedge);
+static void set_N_adj(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo);
 
 uint32_t nb_mshpoly_get_memsize(void)
 {
@@ -378,21 +387,18 @@ static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 	vgraph->N = vcn_mesh_get_N_vtx(mesh);
 	
 	uint32_t size1 = vgraph->N * sizeof(*(vgraph->type));
-	uint32_t size2 = vgraph->N * sizeof(*(vgraph->vtx));
-	uint32_t size3 = vgraph->N * sizeof(*(vgraph->N_adj));
-	uint32_t size4 = vgraph->N * sizeof(*(vgraph->adj));
-	uint32_t memsize = size1 + size2 + size3 + size4 +
+	uint32_t size2 = vgraph->N * sizeof(*(vgraph->N_adj));
+	uint32_t size3 = vgraph->N * sizeof(*(vgraph->adj));
+	uint32_t memsize = size1 + size2 + size3 +
 		2 * N_edg * sizeof(**(vgraph->adj));
 	char *memblock = malloc(memsize);
 
 	vgraph->type = (void*) memblock;
-	vgraph->vtx = (void*) (memblock +  size1);
-	vgraph->N_adj = (void*) (memblock +  size1 + size2);
-	vgraph->adj = (void*) (memblock +  size1 + size2 + size3);
+	vgraph->N_adj = (void*) (memblock +  size1);
+	vgraph->adj = (void*) (memblock +  size1 + size2);
 
 	count_vgraph_adj(vgraph, vinfo, mesh);
-	set_vgraph_adj_mem(vgraph, memblock +
-			   size1 + size2 + size3);
+	set_vgraph_adj_mem(vgraph, memblock + size1 + size2 + size3);
 	set_vgraph_adj(vgraph, vinfo, trg_cc_map, mesh);
 }
 
@@ -460,9 +466,6 @@ static void count_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		uint32_t id1 = *(uint32_t*)((void**)edge->v1->attr)[0];
 		uint32_t id2 = *(uint32_t*)((void**)edge->v2->attr)[0];
-
-		vgraph->vtx[id1] = edge->v1;
-		vgraph->vtx[id2] = edge->v2;
 
 		vgraph->N_adj[id1] += 1;
 		vgraph->N_adj[id2] += 1;
@@ -563,40 +566,46 @@ static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 	bool semi_interior =
 		0 == vgraph->type[id1] || 0 == vgraph->type[id2];
 	if (not_interior_cocircular_edg && semi_interior) {
-		insert_adj_sorted_by_angle(vgraph->adj[id1],
-					   vgraph->N_adj[id1],
-					   vgraph->vtx[id1], edge);
-		insert_adj_sorted_by_angle(vgraph->adj[id2],
-					   vgraph->N_adj[id2],
-					   vgraph->vtx[id2], edge);
-
-		vgraph->N_adj[id1] += 1;
-		vgraph->N_adj[id2] += 1;
+		insert_adj_sorted_by_angle(vgraph, id1, edge);
+		insert_adj_sorted_by_angle(vgraph, id2, edge);
 	}
 }
 
-static void insert_adj_sorted_by_angle(msh_edge_t **adj, uint16_t id,
-				       msh_vtx_t *vtx,
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
 				       msh_edge_t *edge)
 {
+	msh_vtx_t *v1, v2;
+	if (igraph == *(uint32_t*)((void**)edge->v1->attr)[0]) {
+		v1 = edge->v1;
+		v2 = edge->v2;
+	} else {
+		v1 = edge->v2;
+		v2 = edge->v1;
+	}
+
+	uint32_t id = vgraph->N_adj[igraph];
 	double angle_id;
 	if (0 < id) {
-		msh_vtx_t *v = medge_get_partner_vtx(edge, vtx);
-		angle_id = atan2(v->x[1], v->x[0]);
+		double x = v2->x[0] - v1->x[0];
+		double y = v2->x[1] - v1->x[1];
+		angle_id = atan2(y, x);
 	}
 
 	uint16_t j = 0;
 	while (j < id) {
-		msh_vtx_t *v = medge_get_partner_vtx(adj[j], vtx);
-		double angle_j = atan2(v->x[1], v->x[0]);
+		msh_vtx_t *v2 = medge_get_partner_vtx(vgraph->adj[igraph][j], v1);
+		double x = v2->x[0] - v1->x[0];
+		double y = v2->x[1] - v1->x[1];
+		double angle_j = atan2(y, x);
 		if (angle_j > angle_id) {
-			msh_edge_t *aux = adj[j];
-			adj[j] = edge;
+			msh_edge_t *aux = vgraph->adj[igraph][j];
+			vgraph->adj[igraph][j] = edge;
 			edge = aux;
 			angle_id = angle_j;
 		}
 	}
-	adj[id] = edge;
+	vgraph->adj[igraph][id] = edge;
+	vgraph->N_adj[igraph] += 1;
 }
 
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
@@ -645,10 +654,9 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	
 	set_arrays_memory(poly);
 
-	set_nodes(poly, vgraph, vinfo, mesh);
-	/* POR IMPLEMENTAR */set_edges(poly);
-	/* POR IMPLEMENTAR */set_centroids(poly);
-	/* POR IMPLEMENTAR */set_N_adj(poly);
+	set_nodes_and_centroids(poly, vgraph, vinfo, mesh);
+	set_edges(poly, vgraph, vinfo, mesh);
+	set_N_adj(poly, vgraph, vinfo);
 	
 	uint32_t memsize = get_size_of_adj_and_ngb(poly);
 	set_mem_of_adj_and_ngb(poly, memsize);
@@ -662,18 +670,35 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	/* POR IMPLEMENTAR */set_nod_x_sgm(poly);
 }
 
-static void set_nodes(nb_mshpoly_t *poly,
-		      const vgraph_t *const vgraph,
-		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh)
+
+static void set_quantities(nb_mshpoly_t *poly,
+			   const vinfo_t *const vinfo,
+			   const nb_mesh_t *const mesh)
+{
+	poly->N_nod = vinfo->N_trg_in + vinfo->N_vtx_out - vinfo->N_cc_in;
+	poly->N_edg = vinfo->N_edg_int + vinfo->N_edg_out - vinfo->N_cc_in;
+	poly->N_elems = vinfo->N_vtx_in;
+
+	poly->N_vtx = mesh->N_input_vtx;
+	poly->N_sgm = mesh->N_input_sgm;
+}
+
+static void set_nodes_and_centroids(nb_mshpoly_t *poly,
+				    const vgraph_t *const vgraph,
+				    const vinfo_t *const vinfo,
+				    const nb_mesh_t *const mesh)
 {
 	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
 		uint32_t id = *(uint32_t*)((void**)vtx->attr)[0];
-		bool vtx_is_not_interior = 0 != vgraph->type[id];
-		if (vtx_is_not_interior) {
+		bool vtx_is_interior = 0 == vgraph->type[id];
+		if (vtx_is_interior) {
+			uint32_t ielem = vinfo->vtx_map[id];
+			memcpy(&(poly->cen[ielem * 2]), vtx->x,
+			       2 * sizeof(*(vtx->x)));
+		} else {
 			uint32_t inode = vinfo->vtx_map[id];
 			memcpy(&(poly->nod[inode * 2]), vtx->x,
 			       2 * sizeof(*(vtx->x)));
@@ -705,19 +730,84 @@ static void set_nodes(nb_mshpoly_t *poly,
 		}
 	}
 	nb_iterator_finish(iter);
-
 }
 
-static void set_quantities(nb_mshpoly_t *poly,
-			   const vinfo_t *const vinfo,
-			   const nb_mesh_t *const mesh)
+static void set_edges(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh)
 {
-	poly->N_nod = vinfo->N_trg_in + vinfo->N_vtx_out - vinfo->N_cc_in;
-	poly->N_edg = vinfo->N_edg_int + vinfo->N_edg_out - vinfo->N_cc_in;
-	poly->N_elems = vinfo->N_vtx_in;
+	uint32_t iedge = 0;
 
-	poly->N_vtx = mesh->N_input_vtx;
-	poly->N_sgm = mesh->N_input_sgm;
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		const msh_edge_t *edg= nb_iterator_get_next(iter);
+		uint32_t v1 = *(uint32_t*)((void**)edge->v1->attr)[0];
+		uint32_t v2 = *(uint32_t*)((void**)edge->v2->attr)[0];
+		if (0 == vgraph->type[v1] && 0 == vgraph->type[v2]) {
+			iedge = process_interior_edge(poly, vgraph, vinfo, edg);
+			iedge += 1;
+		} else if (1 == vgraph->type[v1] && 1 == vgraph->type[v2]) {
+			/* Process not interior edges */
+			poly->edg[iedge * 2] = vinfo->vtx_map[v1];
+			poly->edg[iedge*2+1] = vinfo->vtx_map[v2];
+			iedge += 1;
+		}
+	}
+	nb_iterator_finish(iter);
+}
+
+static void process_interior_edge(nb_mshpoly_t *poly,
+				  const vgraph_t *const vgraph,
+				  const vinfo_t *const vinfo,
+				  const msh_edge_t *const edg,
+				  uint32_t iedge)
+{
+	msh_vtx_t *opp_t1 = mtrg_get_opposite_vertex(edg->t1, edg);
+	msh_vtx_t *opp_t2 = mtrg_get_opposite_vertex(edg->t2, edg);
+	uint32_t opp1 = *(uint32_t*)((void**)opp_t1->attr)[0];
+	uint32_t opp2 = *(uint32_t*)((void**)opp_t2->attr)[0];
+	bool trg_are_interior =
+		0 == vgraph->type[opp1] && 0 == vgraph->type[opp2];
+
+	uint32_t t1 = *(uint32_t*)((void**)edg->t1->attr)[0];
+	uint32_t t2 = *(uint32_t*)((void**)edg->t2->attr)[0];
+	bool is_not_cc = vinfo->trg_map[t1] != vinfo->trg_map[t2];
+	if (is_not_cc && trg_are_interior(edg, vgraph)) {
+		/* Interior triangles (No cocircular) */
+		poly->edg[iedge * 2] = vinfo->trg_map[t1];
+		poly->edg[iedge*2+1] = vinfo->trg_map[t2];		
+	} else {
+		/* At least a triangle is not interior */
+		uint32_t node1;
+		if (0 == vgraph->type[opp1])
+			node1 = vinfo->trg_map[t1];
+		else
+			node1 = vinfo->vtx_map[opp1];
+		uint32_t node2;
+		if (0 == vgraph->type[opp2])
+			node2 = vinfo->trg_map[t2];
+		else
+			node2 = vinfo->vtx_map[opp2];
+
+		poly->edg[iedge * 2] = node1;
+		poly->edg[iedge*2+1] = node2;			
+	}
+}
+
+static void set_N_adj(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo)
+{
+	for (uint32_t i = 0; i < vgraph->N; i++) {
+		if (0 == vgraph->type[i]) {
+			uint32_t elem_id = vinfo->vtx_map[i];
+			poly->N_adj[elem_id] = vgraph->N_adj[i];
+		}
+	}
 }
 
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
