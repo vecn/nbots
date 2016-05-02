@@ -114,6 +114,20 @@ static void set_N_adj(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo);
 
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const vgraph_t *const vgraph,
+			    const vinfo_t *const vinfo);
+static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
+				const vgraph_t *const vgraph,
+				const vinfo_t *const vinfo,
+				uint32_t i, uint16_t j, uint16_t id_adj);
+static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
+			      const vinfo_t *const vinfo,
+			      uint32_t i, uint16_t j);
+static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
+			       const vinfo_t *const vinfo,
+			       uint32_t i, uint16_t j);
+
 uint32_t nb_mshpoly_get_memsize(void)
 {
 	return sizeof(nb_mshpoly_t);
@@ -660,7 +674,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	
 	uint32_t memsize = get_size_of_adj_and_ngb(poly);
 	set_mem_of_adj_and_ngb(poly, memsize);
-	/* POR IMPLEMENTAR */set_adj_and_ngb(poly);
+	set_adj_and_ngb(poly, vgraph, vinfo);
 
 	/* POR IMPLEMENTAR */set_elem_vtx(poly);
 	/* POR IMPLEMENTAR */set_N_nod_x_sgm(poly);
@@ -744,9 +758,9 @@ static void set_edges(nb_mshpoly_t *poly,
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
-		const msh_edge_t *edg= nb_iterator_get_next(iter);
-		uint32_t v1 = *(uint32_t*)((void**)edge->v1->attr)[0];
-		uint32_t v2 = *(uint32_t*)((void**)edge->v2->attr)[0];
+		const msh_edge_t *edg = nb_iterator_get_next(iter);
+		uint32_t v1 = *(uint32_t*)((void**)edg->v1->attr)[0];
+		uint32_t v2 = *(uint32_t*)((void**)edg->v2->attr)[0];
 		if (0 == vgraph->type[v1] && 0 == vgraph->type[v2]) {
 			iedge = process_interior_edge(poly, vgraph, vinfo, edg);
 			iedge += 1;
@@ -808,6 +822,75 @@ static void set_N_adj(nb_mshpoly_t *poly,
 			poly->N_adj[elem_id] = vgraph->N_adj[i];
 		}
 	}
+}
+
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const vgraph_t *const vgraph,
+			    const vinfo_t *const vinfo)
+{
+	for (uint32_t i = 0; i < vgraph->N; i++) {
+		if (0 == vgraph->type[i]) {
+			uint32_t elem_id = vinfo->vtx_map[i];
+			uint16_t id_adj = 0;
+			for (uint16_t j = 0; j < vgraph->N_adj[i]; j++) {
+				id_adj = add_adj_and_ngb(poly, vgraph,
+							 vinfo, i, j,
+							 id_adj);
+			}
+		}
+	}
+}
+
+static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
+				const vgraph_t *const vgraph,
+				const vinfo_t *const vinfo,
+				uint32_t i, uint16_t j, uint16_t id_adj)
+{
+	uint16_t id_prev = (j + vgraph->N_adj[i] - 1) % vgraph->N_adj[i];
+	msh_vtx_t *v1 = get_partner(vgraph, i, id_prev);
+	msh_vtx_t *v2 = get_partner(vgraph, i, j);
+
+	uint32_t id1 = *(uint32_t*)((void**)v1->attr)[0];
+	uint32_t id2 = *(uint32_t*)((void**)v2->attr)[0];
+	if (0 == vgraph->type[id2]) {
+		if (0 == vgraph->type[id1]) {
+			/* Interior trg case */
+			uint32_t trg_id = get_prev_trg(vgraph, i, j);
+			poly->adj[i][id_adj] = vinfo->trg_map[trg_id];
+		} else {
+			/* A node in the boundary */
+			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
+		}
+		poly->ngb[i][id_adj] = v2;
+	} else {
+		poly->adj[i][id_adj] = vinfo->vtx_map[id_ngb];
+		poly->ngb[i][id_adj] = poly->N_elems;
+		id_adj += 1;
+	}
+}
+
+static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
+			      const vinfo_t *const vinfo,
+			      uint32_t i, uint16_t j)
+{
+	msh_vtx_t *out = NULL;
+	if (j < vgraph->N_adj[i]) {
+		msh_edge_t *edge = vgraph->adj[i][j];
+		if (NULL != edge) {
+			if (i == *(uint32_t*)((void**)edge->v1->attr)[0])
+				out = edge->v2;
+			else
+				out = edge->v1;
+		}
+	}
+	return out;
+}
+
+static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
+			       const vinfo_t *const vinfo,
+			       uint32_t i, uint16_t j)
+{
+/* AQUI VOY */
 }
 
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
