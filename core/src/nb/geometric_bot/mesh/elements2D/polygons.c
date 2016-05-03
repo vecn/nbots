@@ -127,6 +127,18 @@ static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
 static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 			       const vinfo_t *const vinfo,
 			       uint32_t i, uint16_t j);
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const vgraph_t *const vgraph,
+			 const vinfo_t *const vinfo,
+			 const nb_mesh_t *const mesh);
+static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh);
+static void set_nod_x_sgm(nb_mshpoly_t *poly, const nb_mesh_t *const mesh);
+static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vcn_mesh_t *const mesh,
+			  uint32_t sgm_id);
+static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
+			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
 
 uint32_t nb_mshpoly_get_memsize(void)
 {
@@ -676,12 +688,12 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	set_mem_of_adj_and_ngb(poly, memsize);
 	set_adj_and_ngb(poly, vgraph, vinfo);
 
-	/* POR IMPLEMENTAR */set_elem_vtx(poly);
-	/* POR IMPLEMENTAR */set_N_nod_x_sgm(poly);
+	set_elem_vtx(poly, vinfo, mesh);
+	set_N_nod_x_sgm(poly, mesh);
 
 	memsize = get_size_of_nod_x_sgm(poly);
 	set_mem_of_nod_x_sgm(poly, memsize);
-	/* POR IMPLEMENTAR */set_nod_x_sgm(poly);
+	set_nod_x_sgm(poly, mesh);
 }
 
 
@@ -855,17 +867,25 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 	if (0 == vgraph->type[id2]) {
 		if (0 == vgraph->type[id1]) {
 			/* Interior trg case */
-			uint32_t trg_id = get_prev_trg(vgraph, i, j);
+			msh_trg_t *trg = get_prev_trg(vgraph, i, j);
+			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
 			poly->adj[i][id_adj] = vinfo->trg_map[trg_id];
 		} else {
-			/* A node in the boundary */
+			/* First node in the boundary */
 			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
 		}
 		poly->ngb[i][id_adj] = v2;
-	} else {
-		poly->adj[i][id_adj] = vinfo->vtx_map[id_ngb];
-		poly->ngb[i][id_adj] = poly->N_elems;
 		id_adj += 1;
+	} else {
+		if (0 == vgraph->type[id1]) {
+			/* Second node in the boundary */
+			; /* NULL statement: Do nothing */
+		} else {
+			/* Both nodes are in the boundary */
+			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
+			poly->ngb[i][id_adj] = poly->N_elems;
+			id_adj += 1;
+		}
 	}
 }
 
@@ -890,7 +910,102 @@ static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 			       const vinfo_t *const vinfo,
 			       uint32_t i, uint16_t j)
 {
-/* AQUI VOY */
+	msh_trg_t *trg;
+	msh_edge_t *edge = vgraph->adj[i][j];
+	if (i ==  *(uint32_t*)((void**)edge->v1->attr)[0])
+		trg = edge->t1;
+	else if (i ==  *(uint32_t*)((void**)edge->v2->attr)[0])
+		trg = edge->t2;
+	else
+		trg = NULL;
+	return trg;
+}
+
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const vgraph_t *const vgraph,
+			 const vinfo_t *const vinfo,
+			 const nb_mesh_t *const mesh)
+{
+	for (uint32_t i = 0; i < poly->N_vtx; i++) {
+		msh_vtx_t *vtx = mesh->input_vtx[i];
+		int id =  *(uint32_t*)((void**)vtx->attr)[0];
+		if (0 == vgraph->type[id])
+			poly->elem_vtx[i] = vinfo->vtx_map[id];
+		else
+			poly->elem_vtx[i] = poly->N_elems;
+	}
+}
+
+static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh)
+{
+	for (uint32_t i = 0; i < poly->N_sgm; i++) {
+		msh_edge_t* sgm = mesh->input_sgm[i];
+		uint32_t counter = 0;
+		while (NULL != sgm) {
+			counter++;
+			sgm = medge_subsgm_next(sgm);
+		}
+		poly->N_nod_x_sgm[i] = counter + 1;
+	}
+
+}
+
+static void set_nod_x_sgm(nb_mshpoly_t *poly, const nb_mesh_t *const mesh)
+{/* AQUI VOY */
+	for (uint32_t i = 0; i < quad->N_sgm; i++) {
+		if (NULL != mesh->input_sgm[i])
+			set_sgm_nodes(quad, mesh, i);
+	}
+}
+
+static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vcn_mesh_t *const mesh,
+			  uint32_t sgm_id)
+{/* AQUI VOY */
+	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
+	msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
+	if (NULL == sgm) {
+		quad->nod_x_sgm[sgm_id][0] = 
+			((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
+		quad->nod_x_sgm[sgm_id][1] =
+			((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+	} else {
+		assemble_sgm_wire(quad, sgm_id, sgm_prev, sgm);
+	}
+}
+
+static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
+			      msh_edge_t *sgm_prev, msh_edge_t *sgm)
+{/* AQUI VOY */
+	uint32_t idx = 0;
+	uint32_t id_chain;
+	uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
+	uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+	uint32_t id1n = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
+	uint32_t id2n = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
+	if (id2 == id1n || id2 == id2n) {
+		quad->nod_x_sgm[sgm_id][idx++] =  id1;
+		quad->nod_x_sgm[sgm_id][idx++] =  id2;
+		id_chain = id2;
+	} else {
+		quad->nod_x_sgm[sgm_id][idx++] =  id2;
+		quad->nod_x_sgm[sgm_id][idx++] =  id1;
+		id_chain = id1;
+	}
+	while (NULL != sgm) {
+		sgm_prev = sgm;
+		uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
+		uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+		if (id1 == id_chain) {
+			quad->nod_x_sgm[sgm_id][idx++] =  id2;
+			id_chain = id2;
+		} else {
+			quad->nod_x_sgm[sgm_id][idx++] =  id1;
+			id_chain = id1;
+		}
+		sgm = medge_subsgm_next(sgm);
+	}
 }
 
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
