@@ -45,7 +45,7 @@ static bool adj_is_input_sgm(const msh_trg_t *trg1,
 			     const msh_trg_t *trg2);
 static void get_quad_matching_vtx(const msh_trg_t *const trg,
 				  const msh_trg_t *const match_trg,
-				  const msh_vtx_t *quad_vtx[4]);
+				  msh_vtx_t *quad_vtx[4]);
 static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
 static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
@@ -125,7 +125,7 @@ void nb_mshquad_copy(void *dest, const void *const src)
 	nb_mshquad_t *quad = dest;
 	const nb_mshquad_t *const src_quad = src;
 	
-	if (dest->N_elems > 0) {
+	if (quad->N_elems > 0) {
 		set_arrays_memory(quad);
 
 		copy_nodes(quad, src_quad);
@@ -357,7 +357,7 @@ static bool adj_is_input_sgm(const msh_trg_t *trg1,
 
 static void get_quad_matching_vtx(const msh_trg_t *const trg,
 				  const msh_trg_t *const match_trg,
-				  const msh_vtx_t *quad_vtx[4])
+				  msh_vtx_t *quad_vtx[4])
 {
 	if (trg->t1 == match_trg) {
 		quad_vtx[0] = trg->v1;

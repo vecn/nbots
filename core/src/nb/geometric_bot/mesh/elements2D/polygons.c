@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -15,6 +16,7 @@
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
 
 #include "../mesh2D_structs.h"
+#include "../ruppert/ruppert.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -84,7 +86,7 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 			      bool is_cc);
 static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
-				       msh_edge_t *edge);
+				       const msh_edge_t *edge);
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 				  const msh_edge_t *edge, bool is_cc);
 static void finish_voronoi_info(vinfo_t *vinfo);
@@ -156,7 +158,7 @@ void nb_mshpoly_copy(void *dest, const void *const src)
 	nb_mshpoly_t *poly = dest;
 	const nb_mshpoly_t *const src_poly = src;
 
-	if (dest->N_elems > 0) {
+	if (poly->N_elems > 0) {
 		set_arrays_memory(poly);
 
 		copy_nodes(poly, src_poly);
@@ -362,8 +364,9 @@ void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 		vinfo_t vinfo;
 		init_voronoi_info(&vinfo, mesh);
 
-		uint32_t *trg_cc_map = malloc(vcn_mesh_get_N_trg(mesh) * sizeof(uint32_t));
-		init_trg_cc_map(trg_cc_map);
+		uint32_t Nt = vcn_mesh_get_N_trg(mesh);
+		uint32_t *trg_cc_map = malloc(Nt * sizeof(uint32_t));
+		init_trg_cc_map(trg_cc_map, Nt);
 
 		vgraph_t vgraph;
 		init_voronoi_graph(&vgraph, &vinfo, trg_cc_map, mesh);
@@ -385,8 +388,8 @@ static void init_voronoi_info(vinfo_t *vinfo,
 			      const nb_mesh_t *const mesh)
 {
 	memset(vinfo, 0,  sizeof(*vinfo));
-	uint32_t Nv = vcn_mesh_get_N_vtx();
-	uint32_t Nt = vcn_mesh_get_N_trg();
+	uint32_t Nv = vcn_mesh_get_N_vtx(mesh);
+	uint32_t Nt = vcn_mesh_get_N_trg(mesh);
 	uint32_t size1 = Nv * sizeof(uint32_t);
 	uint32_t size2 = Nt * sizeof(uint32_t);
 	char *memblock = malloc(2 * size1 + size2);
@@ -412,6 +415,8 @@ static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 {
 	vgraph->N = vcn_mesh_get_N_vtx(mesh);
 	
+	uint32_t N_edg = vcn_mesh_get_N_edg(mesh);
+
 	uint32_t size1 = vgraph->N * sizeof(*(vgraph->type));
 	uint32_t size2 = vgraph->N * sizeof(*(vgraph->N_adj));
 	uint32_t size3 = vgraph->N * sizeof(*(vgraph->adj));
@@ -450,7 +455,7 @@ static void create_mapping(vinfo_t *vinfo,
 			inode += 1;
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_destroy(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
@@ -466,7 +471,7 @@ static void create_mapping(vinfo_t *vinfo,
 			(0 == vgraph->type[v2]) && (0 == vgraph->type[v3]);
 		if (trg_is_interior) {
 			if (id != trg_cc_map[id]) {
-				cc_id = trg_cc_map[id];
+				uint32_t cc_id = trg_cc_map[id];
 				vinfo->trg_map[id] = vinfo->trg_map[cc_id];
 			} else {
 				vinfo->trg_map[id] = inode;
@@ -550,7 +555,7 @@ static bool adj_is_cocircular(const msh_edge_t *const edg)
 	if (medge_is_boundary(edg)) {
 		out = false;
 	} else {
-		msh_vtx_t *v4 = medge_get_opposite_vertex(edg->t2, edg);
+		msh_vtx_t *v4 = mtrg_get_opposite_vertex(edg->t2, edg);
 		out = nb_utils2D_pnt_is_cocircular(edg->t1->v1->x,
 						   edg->t1->v2->x,
 						   edg->t1->v3->x,
@@ -598,9 +603,9 @@ static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 }
 
 static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
-				       msh_edge_t *edge)
+				       const msh_edge_t *edge)
 {
-	msh_vtx_t *v1, v2;
+	msh_vtx_t *v1, *v2;
 	if (igraph == *(uint32_t*)((void**)edge->v1->attr)[0]) {
 		v1 = edge->v1;
 		v2 = edge->v2;
@@ -625,12 +630,12 @@ static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
 		double angle_j = atan2(y, x);
 		if (angle_j > angle_id) {
 			msh_edge_t *aux = vgraph->adj[igraph][j];
-			vgraph->adj[igraph][j] = edge;
+			vgraph->adj[igraph][j] = (msh_edge_t*) edge;
 			edge = aux;
 			angle_id = angle_j;
 		}
 	}
-	vgraph->adj[igraph][id] = edge;
+	vgraph->adj[igraph][id] = (msh_edge_t*) edge;
 	vgraph->N_adj[igraph] += 1;
 }
 
@@ -650,7 +655,7 @@ static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 		uint32_t opp2 = *(uint32_t*)((void**)opp_t2->attr)[0];
 		bool trg_are_interior =
 			0 == vgraph->type[opp1] && 0 == vgraph->type[opp2];
-		if (cc && trg_are_interior)
+		if (is_cc && trg_are_interior)
 			vinfo->N_cc_in += 1;
 
 		if (0 == vgraph->type[opp1])
@@ -676,7 +681,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 			const vinfo_t *const vinfo,
 			const nb_mesh_t *const mesh)
 {
-	set_quantities(poly, &vinfo, mesh);
+	set_quantities(poly, vinfo, mesh);
 	
 	set_arrays_memory(poly);
 
@@ -688,7 +693,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	set_mem_of_adj_and_ngb(poly, memsize);
 	set_adj_and_ngb(poly, vgraph, vinfo);
 
-	set_elem_vtx(poly, vinfo, mesh);
+	set_elem_vtx(poly, vgraph, vinfo, mesh);
 	set_N_nod_x_sgm(poly, mesh);
 
 	memsize = get_size_of_nod_x_sgm(poly);
@@ -702,7 +707,7 @@ static void set_quantities(nb_mshpoly_t *poly,
 			   const nb_mesh_t *const mesh)
 {
 	poly->N_nod = vinfo->N_trg_in + vinfo->N_vtx_out - vinfo->N_cc_in;
-	poly->N_edg = vinfo->N_edg_int + vinfo->N_edg_out - vinfo->N_cc_in;
+	poly->N_edg = vinfo->N_edg_in + vinfo->N_edg_out - vinfo->N_cc_in;
 	poly->N_elems = vinfo->N_vtx_in;
 
 	poly->N_vtx = mesh->N_input_vtx;
@@ -730,7 +735,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 			       2 * sizeof(*(vtx->x)));
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_destroy(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
@@ -774,7 +779,7 @@ static void set_edges(nb_mshpoly_t *poly,
 		uint32_t v1 = *(uint32_t*)((void**)edg->v1->attr)[0];
 		uint32_t v2 = *(uint32_t*)((void**)edg->v2->attr)[0];
 		if (0 == vgraph->type[v1] && 0 == vgraph->type[v2]) {
-			iedge = process_interior_edge(poly, vgraph, vinfo, edg);
+			process_interior_edge(poly, vgraph, vinfo, edg, iedge);
 			iedge += 1;
 		} else if (1 == vgraph->type[v1] && 1 == vgraph->type[v2]) {
 			/* Process not interior edges */
@@ -802,7 +807,7 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 	uint32_t t1 = *(uint32_t*)((void**)edg->t1->attr)[0];
 	uint32_t t2 = *(uint32_t*)((void**)edg->t2->attr)[0];
 	bool is_not_cc = vinfo->trg_map[t1] != vinfo->trg_map[t2];
-	if (is_not_cc && trg_are_interior(edg, vgraph)) {
+	if (is_not_cc && trg_are_interior) {
 		/* Interior triangles (No cocircular) */
 		poly->edg[iedge * 2] = vinfo->trg_map[t1];
 		poly->edg[iedge*2+1] = vinfo->trg_map[t2];		
@@ -859,22 +864,22 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 				uint32_t i, uint16_t j, uint16_t id_adj)
 {
 	uint16_t id_prev = (j + vgraph->N_adj[i] - 1) % vgraph->N_adj[i];
-	msh_vtx_t *v1 = get_partner(vgraph, i, id_prev);
-	msh_vtx_t *v2 = get_partner(vgraph, i, j);
+	msh_vtx_t *v1 = get_partner(vgraph, vinfo, i, id_prev);
+	msh_vtx_t *v2 = get_partner(vgraph, vinfo, i, j);
 
 	uint32_t id1 = *(uint32_t*)((void**)v1->attr)[0];
 	uint32_t id2 = *(uint32_t*)((void**)v2->attr)[0];
 	if (0 == vgraph->type[id2]) {
 		if (0 == vgraph->type[id1]) {
 			/* Interior trg case */
-			msh_trg_t *trg = get_prev_trg(vgraph, i, j);
+			msh_trg_t *trg = get_prev_trg(vgraph, vinfo, i, j);
 			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
 			poly->adj[i][id_adj] = vinfo->trg_map[trg_id];
 		} else {
 			/* First node in the boundary */
 			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
 		}
-		poly->ngb[i][id_adj] = v2;
+		poly->ngb[i][id_adj] = id2;
 		id_adj += 1;
 	} else {
 		if (0 == vgraph->type[id1]) {

@@ -19,8 +19,7 @@ void nb_mshpoly_destroy(void *mshpoly_ptr);
 
 void nb_mshpoly_clear(void *mshpoly_ptr);
 
-void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly,
-			       const nb_mesh_t *const mesh);
+void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh);
 
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],
