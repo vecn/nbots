@@ -18,6 +18,44 @@ static bool mesh_remove_edge
 			const msh_vtx_t *const v1,
 			const msh_vtx_t *const v2);
 
+void mvtx_set_as_input_vtx(msh_vtx_t *vtx)
+{
+	vtx->attr = _NB_INPUT_VTX;
+}
+
+void mvtx_set_as_subsgm_vtx(msh_vtx_t *vtx)
+{
+	vtx->attr = _NB_SUBSGM_VTX;
+}
+
+void mvtx_set_as_input_subsgm_vtx(msh_vtx_t *vtx)
+{
+	vtx->attr = _NB_INPUT_SUBSGM_VTX;
+}
+
+bool mvtx_is_input_vtx(const msh_vtx_t *const vtx)
+{
+	return _NB_INPUT_VTX == vtx->attr;
+}
+
+bool mvtx_is_input_subsgm_vtx(const msh_vtx_t *const vtx)
+{
+	return _NB_INPUT_SUBSGM_VTX == vtx->attr;
+
+}
+
+bool mvtx_is_forming_input(const msh_vtx_t *const vtx)
+{
+	return (_NB_INPUT_VTX == vtx->attr ||
+		_NB_SUBSGM_VTX == vtx->attr ||
+		_NB_INPUT_SUBSGM_VTX == vtx->attr);
+}
+
+bool mvtx_is_forming_input_sgm(const msh_vtx_t *const vtx)
+{
+	return (_NB_SUBSGM_VTX == vtx->attr ||
+		_NB_INPUT_SUBSGM_VTX == vtx->attr);
+}
 
 bool medge_is_boundary(const msh_edge_t *const edge)
 {
@@ -1013,10 +1051,4 @@ void mesh_free_trg_ids(vcn_mesh_t *mesh)
 		free(attr);
 	}
 	nb_iterator_destroy(iter);
-}
-
-
-void mesh_split_trg_formed_by_input_sgm(nb_mesh_t *mesh)
-{
-	/* PENDING */
 }

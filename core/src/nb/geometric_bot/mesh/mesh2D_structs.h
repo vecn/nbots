@@ -6,6 +6,8 @@
 #include "nb/geometric_bot/knn/bins2D.h"
 
 #define _NB_INPUT_VTX ((void*)0x1)
+#define _NB_SUBSGM_VTX ((void*)0x2)
+#define _NB_INPUT_SUBSGM_VTX ((void*)0x3)
 
 typedef vcn_point2D_t msh_vtx_t;
 typedef struct msh_edge_s msh_edge_t;
@@ -93,6 +95,14 @@ struct vcn_mesh_s {
 	void (*do_after_insert_trg)(const vcn_mesh_t *const);
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
+
+void mvtx_set_as_input_vtx(msh_vtx_t *vtx);
+void mvtx_set_as_subsgm_vtx(msh_vtx_t *vtx);
+void mvtx_set_as_input_subsgm_vtx(msh_vtx_t *vtx);
+bool mvtx_is_input_vtx(const msh_vtx_t *const vtx);
+bool mvtx_is_input_subsgm_vtx(const msh_vtx_t *const vtx);
+bool mvtx_is_forming_input(const msh_vtx_t *const vtx);
+bool mvtx_is_forming_input_sgm(const msh_vtx_t *const vtx);
 
 bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
@@ -191,9 +201,6 @@ void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 void mesh_alloc_vtx_ids(vcn_mesh_t *mesh);
 void mesh_free_vtx_ids(vcn_mesh_t *mesh);
 void mesh_alloc_trg_ids(vcn_mesh_t *mesh);
-void mesh_free_trg_ids(vcn_mesh_t *mesh);
-
-void mesh_split_trg_formed_by_input_sgm(nb_mesh_t *mesh);
-					
+void mesh_free_trg_ids(vcn_mesh_t *mesh);					
 
 #endif

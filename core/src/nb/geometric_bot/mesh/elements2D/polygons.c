@@ -354,7 +354,7 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		/* POR IMPLEMENTAR */mesh_split_trg_formed_by_input_sgm(mesh);
+		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
 
 		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
 		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
@@ -952,32 +952,32 @@ static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
 }
 
 static void set_nod_x_sgm(nb_mshpoly_t *poly, const nb_mesh_t *const mesh)
-{/* AQUI VOY */
-	for (uint32_t i = 0; i < quad->N_sgm; i++) {
+{
+	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		if (NULL != mesh->input_sgm[i])
-			set_sgm_nodes(quad, mesh, i);
+			set_sgm_nodes(poly, mesh, i);
 	}
 }
 
 static void set_sgm_nodes(nb_mshpoly_t *poly,
 			  const vcn_mesh_t *const mesh,
 			  uint32_t sgm_id)
-{/* AQUI VOY */
+{
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
 	msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
 	if (NULL == sgm) {
-		quad->nod_x_sgm[sgm_id][0] = 
+		poly->nod_x_sgm[sgm_id][0] = 
 			((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-		quad->nod_x_sgm[sgm_id][1] =
+		poly->nod_x_sgm[sgm_id][1] =
 			((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
 	} else {
-		assemble_sgm_wire(quad, sgm_id, sgm_prev, sgm);
+		assemble_sgm_wire(poly, sgm_id, sgm_prev, sgm);
 	}
 }
 
 static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm)
-{/* AQUI VOY */
+{
 	uint32_t idx = 0;
 	uint32_t id_chain;
 	uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
@@ -985,12 +985,12 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
 	uint32_t id1n = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
 	uint32_t id2n = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
 	if (id2 == id1n || id2 == id2n) {
-		quad->nod_x_sgm[sgm_id][idx++] =  id1;
-		quad->nod_x_sgm[sgm_id][idx++] =  id2;
+		poly->nod_x_sgm[sgm_id][idx++] =  id1;
+		poly->nod_x_sgm[sgm_id][idx++] =  id2;
 		id_chain = id2;
 	} else {
-		quad->nod_x_sgm[sgm_id][idx++] =  id2;
-		quad->nod_x_sgm[sgm_id][idx++] =  id1;
+		poly->nod_x_sgm[sgm_id][idx++] =  id2;
+		poly->nod_x_sgm[sgm_id][idx++] =  id1;
 		id_chain = id1;
 	}
 	while (NULL != sgm) {
@@ -998,10 +998,10 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
 		uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
 		uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
 		if (id1 == id_chain) {
-			quad->nod_x_sgm[sgm_id][idx++] =  id2;
+			poly->nod_x_sgm[sgm_id][idx++] =  id2;
 			id_chain = id2;
 		} else {
-			quad->nod_x_sgm[sgm_id][idx++] =  id1;
+			poly->nod_x_sgm[sgm_id][idx++] =  id1;
 			id_chain = id1;
 		}
 		sgm = medge_subsgm_next(sgm);

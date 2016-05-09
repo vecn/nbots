@@ -149,7 +149,7 @@ void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
 		for (uint32_t i = 0; i < N_vertices; i++) {
 			msh_vtx_t* vtx = calloc(1, sizeof(*vtx));
 			mesh->input_vtx[i] = vtx;
-			vtx->attr = _NB_INPUT_VTX;
+			mvtx_set_as_input_vtx(vtx);
 			vtx->x[0] = mesh->scale *
 				(vertices[i * 2] - mesh->xdisp);
 			vtx->x[1] = mesh->scale *
