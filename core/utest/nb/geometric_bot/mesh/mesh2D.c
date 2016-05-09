@@ -47,6 +47,7 @@ void cunit_nb_geometric_bot_mesh2D(void)
 {
 	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/mesh2D.c",
 				       suite_init, suite_clean);
+
 	CU_add_test(suite, "generate_from_model() with angle constraint",
 		    test_generate_from_model_angle_constraint);
 	CU_add_test(suite, "generate_from_model() with length constraint",
