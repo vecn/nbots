@@ -21,6 +21,8 @@
 
 static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh);
 
+bool vtx_is_forming_input(const msh_vtx_t *const vtx);
+
 static vcn_mshpack_t* spack_create(uint32_t N_spheres)
 {
 	vcn_mshpack_t* spack = calloc(1, sizeof(*spack));
@@ -43,8 +45,8 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t* sgm = (msh_edge_t*)nb_iterator_get_next(iter);
-		if (mvtx_is_forming_input(sgm->v1) != 
-		    mvtx_is_forming_input(sgm->v2))
+		if (vtx_is_forming_input(sgm->v1) != 
+		    vtx_is_forming_input(sgm->v2))
 			/* A != B : A XOR B (XOR Operator) */
 			continue;
 		/* Store segments joining inner/inner       segments
@@ -55,8 +57,8 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 		uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
 		uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
 
-		if (mvtx_is_forming_input(sgm->v1) &&
-		    mvtx_is_forming_input(sgm->v2)) {
+		if (vtx_is_forming_input(sgm->v1) &&
+		    vtx_is_forming_input(sgm->v2)) {
 			msh_vtx_t* vtx;
 			if (NULL != sgm->t1) {
 				vtx = mtrg_get_opposite_vertex(sgm->t1, sgm);
@@ -65,7 +67,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 				idx1 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
 				idx2 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
 			}
-			if (mvtx_is_forming_input(vtx))
+			if (vtx_is_forming_input(vtx))
 				/* Does not consider the nodes on the boundary */
 				continue;
 
@@ -114,6 +116,13 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 	}
 	nb_iterator_destroy(sgm_iter);
 	free(adj_matrix_next_idx);
+}
+
+bool vtx_is_forming_input(const msh_vtx_t *const vtx)
+{
+	return (_NB_INPUT_VTX == ((void**)vtx->attr)[1] ||
+		_NB_SUBSGM_VTX == ((void**)vtx->attr)[1] ||
+		_NB_INPUT_SUBSGM_VTX == ((void**)vtx->attr)[1]);
 }
 
 static double spack_optimize_assemble_system(nb_container_t *segments,
@@ -249,7 +258,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		void** iattr = (void**)ivtx->attr;
 		/* Get ID */
 		int id = *((int*)iattr[0]);
-		if (mvtx_is_forming_input(ivtx)) {
+		if (vtx_is_forming_input(ivtx)) {
 			Xb[id * 2] = ivtx->x[0];
 			Xb[id*2+1] = ivtx->x[1];
 			/* Does not consider nodes in the boundary */
@@ -497,7 +506,7 @@ static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		void** attr = (void**)vtx->attr;
 		int id = *((int*)attr[0]);
-		if (mvtx_is_forming_input(vtx))
+		if (vtx_is_forming_input(vtx))
 			continue;
 		if (id % id_divisor_porosity != 0 ||
 		    id / id_divisor_porosity >= N_removed_by_porosity) {
@@ -525,7 +534,7 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		void** attr = (void**)vtx->attr;
 		int id = *((int*)attr[0]);
-		if (mvtx_is_forming_input(vtx))
+		if (vtx_is_forming_input(vtx))
 			continue;    
 		spack->centers[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
 		spack->centers[id*2+1] = Xk[id*3+1]/mesh->scale + mesh->ydisp;
@@ -613,7 +622,7 @@ static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
 		int* id = malloc(sizeof(*id));
 		void** attr = malloc(2 * sizeof(*attr));
-		if (!mvtx_is_forming_input(vtx))
+		if (!vtx_is_forming_input(vtx))
 			id[0] = N_steiner ++; /* Numeration for steiner points */
 		else
 			id[0] = N_input ++; /* Numeration for fixed nodes in the boundary */
