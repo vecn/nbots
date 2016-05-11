@@ -533,7 +533,7 @@ static inline msh_vtx_t* get_midpoint
 	v->x[0] = 0.5 * (sgm->v1->x[0] + sgm->v2->x[0]);
 	v->x[1] = 0.5 * (sgm->v1->x[1] + sgm->v2->x[1]);
 
-	if (mvtx_is_input_subsgm_vtx(sgm->v1) || mvtx_is_input_subsgm_vtx(sgm->v2)) 
+	if (mvtx_is_original_input(sgm->v1) || mvtx_is_original_input(sgm->v2)) 
 		concentric_shell(sgm, v);
 	return v;
 }
@@ -544,7 +544,7 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
 	 * concentric shells */
 	msh_vtx_t* v1 = sgm->v1;
 	msh_vtx_t* v2 = sgm->v2;
-	if (!mvtx_is_forming_input(sgm->v1)) {
+	if (!mvtx_is_original_input(sgm->v1)) {
 		v1 = sgm->v2;
 		v2 = sgm->v1;
 	}

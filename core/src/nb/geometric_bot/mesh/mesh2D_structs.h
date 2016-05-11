@@ -96,13 +96,15 @@ struct vcn_mesh_s {
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
 
-void mvtx_set_as_input_vtx(msh_vtx_t *vtx);
-void mvtx_set_as_subsgm_vtx(msh_vtx_t *vtx);
-void mvtx_set_as_input_subsgm_vtx(msh_vtx_t *vtx);
-bool mvtx_is_input_vtx(const msh_vtx_t *const vtx);
-bool mvtx_is_input_subsgm_vtx(const msh_vtx_t *const vtx);
-bool mvtx_is_forming_input(const msh_vtx_t *const vtx);
-bool mvtx_is_forming_input_sgm(const msh_vtx_t *const vtx);
+/* TEMPORAL: Change to Type: INPUT, STEINER; and IN: SGM or INTERIOR */
+/**/  void mvtx_set_as_input_vtx(msh_vtx_t *vtx);
+/**/  void mvtx_set_as_subsgm_vtx(msh_vtx_t *vtx);
+/**/  void mvtx_set_as_input_subsgm_vtx(msh_vtx_t *vtx);
+/**/  bool mvtx_is_input_vtx(const msh_vtx_t *const vtx);
+/**/  bool mvtx_is_input_subsgm_vtx(const msh_vtx_t *const vtx);
+/**/  bool mvtx_is_original_input(const msh_vtx_t *const vtx);
+/**/  bool mvtx_is_forming_input(const msh_vtx_t *const vtx);
+/**/  bool mvtx_is_forming_input_sgm(const msh_vtx_t *const vtx);
 
 bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);

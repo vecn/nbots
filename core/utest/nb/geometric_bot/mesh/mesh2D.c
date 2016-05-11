@@ -9,10 +9,10 @@
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 
-//#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/mesh2D_inputs"
-//#define OUTPUT_DIR "../../../"
-#define INPUTS_DIR "../utest/nb/geometric_bot/mesh/mesh2D_inputs"
-#define OUTPUT_DIR "./"
+#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/mesh2D_inputs"
+#define OUTPUT_DIR "../../../"
+//#define INPUTS_DIR "../utest/nb/geometric_bot/mesh/mesh2D_inputs"
+//#define OUTPUT_DIR "./"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */

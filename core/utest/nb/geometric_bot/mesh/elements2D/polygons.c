@@ -30,7 +30,6 @@ static int suite_clean(void)
 
 static void test_load_from_mesh(void)
 {
-	CU_ASSERT(false);return;/* TEMPORAL */
 	vcn_model_t *model = vcn_model_create_polygon(1, 0, 0, 6);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,

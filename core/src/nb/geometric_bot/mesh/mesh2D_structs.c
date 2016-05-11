@@ -44,6 +44,12 @@ bool mvtx_is_input_subsgm_vtx(const msh_vtx_t *const vtx)
 
 }
 
+bool mvtx_is_original_input(const msh_vtx_t *const vtx)
+{
+	return (_NB_INPUT_VTX == vtx->attr ||
+		_NB_INPUT_SUBSGM_VTX == vtx->attr);
+}
+
 bool mvtx_is_forming_input(const msh_vtx_t *const vtx)
 {
 	return (_NB_INPUT_VTX == vtx->attr ||
