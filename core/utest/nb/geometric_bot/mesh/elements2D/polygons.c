@@ -37,7 +37,6 @@ static void test_load_from_mesh(void)
 					 1.5);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	
 	uint32_t size = nb_mshpoly_get_memsize();
 	nb_mshpoly_t *poly = alloca(size);
 	nb_mshpoly_init(poly);
