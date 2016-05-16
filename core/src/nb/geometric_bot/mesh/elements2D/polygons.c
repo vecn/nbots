@@ -534,21 +534,15 @@ static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
 	nb_iterator_init(iter);
-	printf("\n");/* TEMPORAL */
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 
-		printf("  A,  ");fflush(stdout);/* TEMPORAL */
 		bool cc = adj_is_cocircular(edge);
-		printf("  B,  ");fflush(stdout);/* TEMPORAL */
 		update_cc_map(edge, cc, trg_cc_map,
 			      vcn_mesh_get_N_trg(mesh));
-		printf("  C,  ");fflush(stdout);/* TEMPORAL */
-		insert_edg_as_adj(vgraph, edge, cc);/* AQUI ESTA EL PEDO */
-		printf("  D,  ");fflush(stdout);/* TEMPORAL */
+		insert_edg_as_adj(vgraph, edge, cc);
 		counting_edg_in_vinfo(vinfo, vgraph, edge, cc);
-		printf("  E\n");fflush(stdout);/* TEMPORAL */
 	}
 	nb_iterator_finish(iter);
 	
@@ -640,6 +634,7 @@ static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
 			edge = aux;
 			angle_id = angle_j;
 		}
+		j += 1;
 	}
 	vgraph->adj[igraph][id] = (msh_edge_t*) edge;
 	vgraph->N_adj[igraph] += 1;
