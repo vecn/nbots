@@ -6,6 +6,8 @@
 
 #include "nb/geometric_bot.h"
 
+#include "nb/geometric_bot-cairo.h" /* TEMPORAL */
+
 static int suite_init(void);
 static int suite_clean(void);
 
@@ -33,8 +35,8 @@ static void test_load_from_mesh(void)
 	vcn_model_t *model = vcn_model_create_polygon(1, 0, 0, 6);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					 1.5);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  0.5);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	uint32_t size = nb_mshpoly_get_memsize();

@@ -334,7 +334,7 @@ static void set_camera(camera_t *cam, const vcn_mesh_t *const mesh,
 				       sizeof(*(mesh->input_vtx)),
 				       msh_vtx_get_x, msh_vtx_get_y,
 				       box);
-	set_center_and_zoom(cam, box, width, height);
+	nb_drawing_utils_set_center_and_zoom(cam, box, width, height);
 }
 
 void vcn_mesh_save_eps(const vcn_mesh_t *const mesh,
@@ -387,7 +387,7 @@ void vcn_msh3trg_save_png(const vcn_msh3trg_t *const restrict msh3trg,
 						   box);
 
 	camera_t cam;
-	set_center_and_zoom(&cam, box, width, height);
+	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 
 	/* Create drawable surface and cairo context */
 	cairo_surface_t* surface =
@@ -605,7 +605,7 @@ void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
 						   box);
 
 	camera_t cam;
-	set_center_and_zoom(&cam, box, width, height);
+	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 
 	/* Calculate cam.center of partitions */
 	double** pcenter = NULL;

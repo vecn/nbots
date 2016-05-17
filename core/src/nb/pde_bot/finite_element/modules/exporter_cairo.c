@@ -12,13 +12,8 @@
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/finite_element/modules/exporter_cairo.h"
 
-typedef struct {
-	double center[2];
-	double zoom;
-} camera_t;
+#include "../../../geometric_bot/mesh/modules2D/exporter_cairo/drawing_utils.h"
 
-static void set_center_and_zoom(camera_t *cam, double box[4],
-				double width, double height);
 static void set_camera_vtx(double v_dest[2], const double v_src[2],
 			   camera_t *cam, double width, double height);
 static void set_pattern_patch(cairo_pattern_t *pat, const double v1[2],
@@ -47,7 +42,7 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 		 box);
 
 	camera_t cam;
-	set_center_and_zoom(&cam, box, width, height);
+	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 
 	/* Create drawable surface and cairo context */
 	cairo_surface_t* surface =
@@ -128,17 +123,6 @@ void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
 	/* Free cairo structures */
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
-}
-
-static void set_center_and_zoom(camera_t *cam, double box[4],
-				double width, double height)
-{
-	cam->center[0] = (box[0] + box[2]) / 2.0;
-	cam->center[1] = (box[1] + box[3]) / 2.0;
-	cam->zoom = width / (box[2] - box[0]);
-	if (cam->zoom > height / (box[3] - box[1]))
-		cam->zoom = height / (box[3] - box[1]);
-	cam->zoom *= 0.9;
 }
 
 static void set_camera_vtx(double v_dest[2], const double v_src[2],

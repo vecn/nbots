@@ -74,6 +74,8 @@ static void create_mapping(vinfo_t *vinfo,
 			   const vgraph_t *const vgraph,
 			   const nb_mesh_t *const mesh,
 			   const uint32_t *trg_cc_map);
+static bool trg_is_interior(const msh_trg_t *const trg,
+			    const vgraph_t *const vgraph);
 static void count_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 			     const nb_mesh_t *const mesh);
 static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock);
@@ -183,7 +185,7 @@ static void set_arrays_memory(nb_mshpoly_t *poly)
 {
 	uint32_t nod_size = poly->N_nod * 2 * sizeof(*(poly->nod));
 	uint32_t edg_size = poly->N_edg * 2 * sizeof(*(poly->edg));
-	uint32_t cen_size = poly->N_elems * sizeof(*(poly->cen));
+	uint32_t cen_size = poly->N_elems * 2 * sizeof(*(poly->cen));
 	uint32_t N_adj_size = poly->N_elems * sizeof(*(poly->N_adj));
 	uint32_t adj_size = poly->N_elems * sizeof(*(poly->adj));
 	uint32_t ngb_size = poly->N_elems * sizeof(*(poly->ngb));
@@ -238,16 +240,16 @@ static void copy_N_adj(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
 static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly)
 {
 	uint32_t size = 0;
-	for (uint32_t i = 0; i < poly->N_sgm; i++)
-		size += poly->N_adj[i] * sizeof(**(poly->adj));
-	return 2 * size;
+	for (uint32_t i = 0; i < poly->N_elems; i++)
+		size += poly->N_adj[i];
+	return 2 * size * sizeof(**(poly->adj));
 }
 
 static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
 {
 	char *memblock1 = malloc(memsize);
 	char *memblock2 = memblock1 + memsize / 2;
-	for (uint32_t i = 0; i < poly->N_sgm; i++) {
+	for (uint32_t i = 0; i < poly->N_elems; i++) {
 		poly->adj[i] = (void*) memblock1;
 		poly->ngb[i] = (void*) memblock2;
 		memblock1 += poly->N_adj[i] * sizeof(**(poly->adj));
@@ -258,7 +260,7 @@ static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
 static void copy_adj_and_ngb(nb_mshpoly_t* poly,
 			     const nb_mshpoly_t *const src_poly)
 {
-	for (int i = 0; i < poly->N_sgm; i++) {
+	for (int i = 0; i < poly->N_elems; i++) {
 		memcpy(&(poly->adj[i]), &(src_poly->adj[i]),
 		       poly->N_adj[i] * sizeof(**(poly->adj)));
 		memcpy(&(poly->ngb[i]), &(src_poly->ngb[i]),
@@ -464,12 +466,7 @@ static void create_mapping(vinfo_t *vinfo,
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
-		uint32_t v1 = *(uint32_t*)((void**)trg->v1->attr)[0];
-		uint32_t v2 = *(uint32_t*)((void**)trg->v2->attr)[0];
-		uint32_t v3 = *(uint32_t*)((void**)trg->v3->attr)[0];
-		bool trg_is_interior = (0 == vgraph->type[v1]) &&
-			(0 == vgraph->type[v2]) && (0 == vgraph->type[v3]);
-		if (trg_is_interior) {
+		if (trg_is_interior(trg, vgraph)) {
 			if (id != trg_cc_map[id]) {
 				uint32_t cc_id = trg_cc_map[id];
 				vinfo->trg_map[id] = vinfo->trg_map[cc_id];
@@ -481,6 +478,18 @@ static void create_mapping(vinfo_t *vinfo,
 	}
 	nb_iterator_finish(iter);
 	
+}
+
+static bool trg_is_interior(const msh_trg_t *const trg,
+			    const vgraph_t *const vgraph)
+{
+	uint32_t v1 = *(uint32_t*)((void**)trg->v1->attr)[0];
+	uint32_t v2 = *(uint32_t*)((void**)trg->v2->attr)[0];
+	uint32_t v3 = *(uint32_t*)((void**)trg->v3->attr)[0];
+	return (0 == vgraph->type[v1]) &&
+		(0 == vgraph->type[v2]) &&
+		(0 == vgraph->type[v3]);
+
 }
 
 static void count_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
@@ -745,12 +754,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
-		uint32_t v1 = *(uint32_t*)((void**)trg->v1->attr)[0];
-		uint32_t v2 = *(uint32_t*)((void**)trg->v2->attr)[0];
-		uint32_t v3 = *(uint32_t*)((void**)trg->v3->attr)[0];
-		bool trg_is_interior = (0 == vgraph->type[v1]) &&
-			(0 == vgraph->type[v2]) && (0 == vgraph->type[v3]);
-		if (trg_is_interior) {
+		if (trg_is_interior(trg, vgraph)) {
 			uint32_t inode = vinfo->trg_map[id];
 			double circumcenter[2];
 			vcn_utils2D_get_circumcenter(trg->v1->x,
@@ -848,13 +852,14 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 {
 	for (uint32_t i = 0; i < vgraph->N; i++) {
 		if (0 == vgraph->type[i]) {
-			uint32_t elem_id = vinfo->vtx_map[i];
 			uint16_t id_adj = 0;
 			for (uint16_t j = 0; j < vgraph->N_adj[i]; j++) {
 				id_adj = add_adj_and_ngb(poly, vgraph,
 							 vinfo, i, j,
 							 id_adj);
 			}
+			uint32_t elem_id = vinfo->vtx_map[i];
+			poly->N_adj[elem_id] = id_adj;
 		}
 	}
 }
@@ -864,6 +869,7 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 				const vinfo_t *const vinfo,
 				uint32_t i, uint16_t j, uint16_t id_adj)
 {
+	uint32_t elem_id = vinfo->vtx_map[i];
 	uint16_t id_prev = (j + vgraph->N_adj[i] - 1) % vgraph->N_adj[i];
 	msh_vtx_t *v1 = get_partner(vgraph, vinfo, i, id_prev);
 	msh_vtx_t *v2 = get_partner(vgraph, vinfo, i, j);
@@ -875,24 +881,23 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 			/* Interior trg case */
 			msh_trg_t *trg = get_prev_trg(vgraph, vinfo, i, j);
 			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
-			poly->adj[i][id_adj] = vinfo->trg_map[trg_id];
+			poly->adj[elem_id][id_adj] = vinfo->trg_map[trg_id];
 		} else {
 			/* First node in the boundary */
-			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
+			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
 		}
-		poly->ngb[i][id_adj] = id2;
+		poly->ngb[elem_id][id_adj] = vinfo->vtx_map[id2];
 		id_adj += 1;
 	} else {
-		if (0 == vgraph->type[id1]) {
-			/* Second node in the boundary */
-			; /* NULL statement: Do nothing */
-		} else {
+		/* If only the second node in the boundary: Do nothing */
+		if (0 != vgraph->type[id1]) {
 			/* Both nodes are in the boundary */
-			poly->adj[i][id_adj] = vinfo->vtx_map[id1];
-			poly->ngb[i][id_adj] = poly->N_elems;
+			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
+			poly->ngb[elem_id][id_adj] = poly->N_elems;
 			id_adj += 1;
 		}
 	}
+	return id_adj;
 }
 
 static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
