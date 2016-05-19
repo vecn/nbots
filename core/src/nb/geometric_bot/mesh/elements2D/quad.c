@@ -278,7 +278,7 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 			       const nb_mesh_t *const mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
+		mesh_enumerate_vtx((vcn_mesh_t*)mesh);
 		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
 		nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
 		nb_graph_init_edge_weights(graph);
@@ -295,7 +295,6 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 		nb_graph_finish_edge_weights(graph);
 		vcn_graph_destroy(graph);
 
-		mesh_free_vtx_ids((vcn_mesh_t*)mesh);
 		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 	}
 }
@@ -465,7 +464,7 @@ static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		uint32_t id = *(uint32_t*)((void**)vtx->attr)[0];
+		uint32_t id = mvtx_get_id(vtx);
 		quad->nod[id * 2] = vtx->x[0] / mesh->scale + mesh->xdisp;
 		quad->nod[id*2+1] = vtx->x[1] / mesh->scale + mesh->ydisp;
 	}
@@ -483,8 +482,8 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
 		if (edge_is_not_matched(edge, matches)) {
-			quad->edg[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
-			quad->edg[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
+			quad->edg[i * 2] = mvtx_get_id(edge->v1);
+			quad->edg[i*2+1] = mvtx_get_id(edge->v2);
 			i += 1;
 		}
 	}
@@ -556,9 +555,9 @@ static void set_trg_element(nb_mshquad_t *quad,
 {
 	quad->type[elem_id] = 1;
 
-	uint32_t v1 = ((uint32_t*)((void**)trg->v1->attr)[0])[0];
-	uint32_t v2 = ((uint32_t*)((void**)trg->v2->attr)[0])[0];
-	uint32_t v3 = ((uint32_t*)((void**)trg->v3->attr)[0])[0];
+	uint32_t v1 = mvtx_get_id(trg->v1);
+	uint32_t v2 = mvtx_get_id(trg->v2);
+	uint32_t v3 = mvtx_get_id(trg->v3);
 	quad->adj[elem_id * 4] = v1;
 	quad->adj[elem_id*4+1] = v2;
 	quad->adj[elem_id*4+2] = v3;
@@ -642,10 +641,10 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 		t3 = trg->t2;
 		t4 = trg->t3;
 	}
-	quad->adj[elem_id * 4] = ((uint32_t*)((void**)vtx[0]->attr)[0])[0];
-	quad->adj[elem_id*4+1] = ((uint32_t*)((void**)vtx[1]->attr)[0])[0];
-	quad->adj[elem_id*4+2] = ((uint32_t*)((void**)vtx[2]->attr)[0])[0];
-	quad->adj[elem_id*4+3] = ((uint32_t*)((void**)vtx[3]->attr)[0])[0];
+	quad->adj[elem_id * 4] = mvtx_get_id(vtx[0]);
+	quad->adj[elem_id*4+1] = mvtx_get_id(vtx[1]);
+	quad->adj[elem_id*4+2] = mvtx_get_id(vtx[2]);
+	quad->adj[elem_id*4+3] = mvtx_get_id(vtx[3]);
 
 	if (NULL != t1)
 		quad->ngb[elem_id * 4] = ((uint32_t*)((void**)t1->attr)[0])[0];
@@ -682,8 +681,7 @@ static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 	for (uint32_t i = 0; i < quad->N_vtx; i++) {
 		if (NULL != mesh->input_vtx[i]) {
 			msh_vtx_t *vtx = mesh->input_vtx[i];
-			uint32_t id = ((uint32_t*)((void**)vtx->attr)[0])[0];
-			quad->vtx[i] = id;
+			quad->vtx[i] = mvtx_get_id(vtx);
 		} else {
 			quad->vtx[i] = quad->N_nod;
 		}
@@ -721,10 +719,8 @@ static void set_sgm_nodes(nb_mshquad_t *quad,
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
 	msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
 	if (NULL == sgm) {
-		quad->nod_x_sgm[sgm_id][0] = 
-			((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-		quad->nod_x_sgm[sgm_id][1] =
-			((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+		quad->nod_x_sgm[sgm_id][0] = mvtx_get_id(sgm_prev->v1);
+		quad->nod_x_sgm[sgm_id][1] = mvtx_get_id(sgm_prev->v2);
 	} else {
 		assemble_sgm_wire(quad, sgm_id, sgm_prev, sgm);
 	}
@@ -735,10 +731,10 @@ static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 {
 	uint32_t idx = 0;
 	uint32_t id_chain;
-	uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-	uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
-	uint32_t id1n = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
-	uint32_t id2n = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
+	uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+	uint32_t id2 = mvtx_get_id(sgm_prev->v2);
+	uint32_t id1n = mvtx_get_id(sgm->v1);
+	uint32_t id2n = mvtx_get_id(sgm->v2);
 	if (id2 == id1n || id2 == id2n) {
 		quad->nod_x_sgm[sgm_id][idx++] =  id1;
 		quad->nod_x_sgm[sgm_id][idx++] =  id2;
@@ -750,8 +746,8 @@ static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 	}
 	while (NULL != sgm) {
 		sgm_prev = sgm;
-		uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-		uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+		uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+		uint32_t id2 = mvtx_get_id(sgm_prev->v2);
 		if (id1 == id_chain) {
 			quad->nod_x_sgm[sgm_id][idx++] =  id2;
 			id_chain = id2;

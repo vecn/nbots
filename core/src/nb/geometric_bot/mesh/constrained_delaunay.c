@@ -78,8 +78,8 @@ static void set_constraints(vcn_mesh_t *mesh,
 		for (uint32_t i = 0; i < N_input_sgm; i++) {
 			msh_vtx_t* v1 = mesh->input_vtx[input_sgm[i * 2]];
 			msh_vtx_t* v2 = mesh->input_vtx[input_sgm[i*2+1]];
-			mvtx_set_as_input_subsgm_vtx(v1);
-			mvtx_set_as_input_subsgm_vtx(v2);
+			mvtx_set_type_location(v1, ONSEGMENT);
+			mvtx_set_type_location(v2, ONSEGMENT);
 			msh_edge_t* sgm = 
 				mesh_exist_edge(mesh->ht_edge, v1, v2);
 			if (NULL == sgm) {

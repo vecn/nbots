@@ -68,6 +68,7 @@ vcn_mesh_t* vcn_mesh_create(void)
 {
 	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
+	vcn_bins2D_set_destroyer(mesh->ug_vtx, mvtx_destroy);
 
 	mesh->ht_edge = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(mesh->ht_edge, hash_key_edge);
@@ -606,33 +607,23 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	msh_vtx_t** vertices = malloc(N_vertices * sizeof(*vertices));
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	clone->ug_vtx = vcn_bins2D_create(bins_size);
-	uint32_t i = 0;
+	uint32_t id = 0;
 	vcn_bins2D_iter_t* giter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(giter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(giter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(giter);
 		/* Create the vertex clone */
-		msh_vtx_t* vtx_clone = vcn_point2D_create();
-		memcpy(vtx_clone->x, vtx->x, 2 * sizeof(*(vtx->x)));
-		vtx_clone->attr = vtx->attr;
-
-		/* Set an index to the original vertex */
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
-		attr[1] = vtx->attr;
-		vtx->attr = attr;
-		/* Set cloned and original vertices to the built-in hash table */
-		vertices[id[0]] = vtx_clone;
-		/* Insert the clone vertex into the clone grid */
+		msh_vtx_t* vtx_clone = mvtx_clone(vtx);
+		mvtx_set_id(vtx_clone, id);
+		vertices[id] = vtx_clone;
 		vcn_bins2D_insert(clone->ug_vtx, vtx_clone);
+		id += 1;
 	}
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
 	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
 	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
-	i = 0;
+	id = 0;
 	nb_iterator_t* trg_iter = nb_iterator_create();
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
@@ -642,18 +633,18 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		trg_clone->attr = trg->attr;
 		/* Set an index to the original */
 		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
+		uint32_t *pid = malloc(sizeof(*pid));
+		pid[0] = id++;
+		attr[0] = pid;
 		attr[1] = trg->attr;
 		trg->attr = attr;
 		/* Set cloned and original to the built-in hash table */
-		triangles[id[0]] = trg_clone;
+		triangles[pid[0]] = trg_clone;
 	}
 
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
 	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
-	i = 0;
+	id = 0;
 	nb_iterator_t* sgm_iter = nb_iterator_create();
 	nb_iterator_set_container(sgm_iter, mesh->ht_edge);
 	while (nb_iterator_has_more(sgm_iter)) {
@@ -663,13 +654,13 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 
 		/* Set an index to the original */
 		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
+		uint32_t *pid = malloc(sizeof(*pid));
+		pid[0] = id++;
+		attr[0] = pid;
 		attr[1] = sgm->attr;
 		sgm->attr = attr;
 		/* Set cloned and original to the built-in hash table */
-		segments[id[0]] = sgm_clone;
+		segments[pid[0]] = sgm_clone;
 	}
 
 	/* Clone data structures and hash tables used to handle mesh */
@@ -681,9 +672,9 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		const msh_trg_t *trg = nb_iterator_get_next(trg_iter);
 		msh_trg_t *trg_clone = 
 			triangles[((uint32_t*)((void**)trg->attr)[0])[0]];
-		trg_clone->v1 = vertices[((uint32_t*)((void**)trg->v1->attr)[0])[0]];
-		trg_clone->v2 = vertices[((uint32_t*)((void**)trg->v2->attr)[0])[0]];
-		trg_clone->v3 = vertices[((uint32_t*)((void**)trg->v3->attr)[0])[0]];
+		trg_clone->v1 = vertices[mvtx_get_id(trg->v1)];
+		trg_clone->v2 = vertices[mvtx_get_id(trg->v2)];
+		trg_clone->v3 = vertices[mvtx_get_id(trg->v3)];
 
 		trg_clone->s1 = segments[((uint32_t*)((void**)trg->s1->attr)[0])[0]];
 		trg_clone->s2 = segments[((uint32_t*)((void**)trg->s2->attr)[0])[0]];
@@ -705,8 +696,8 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	while (nb_iterator_has_more(sgm_iter)) {
 		const msh_edge_t *sgm = nb_iterator_get_next(sgm_iter);
 		msh_edge_t *sgm_clone = segments[((uint32_t*)((void**)sgm->attr)[0])[0]];
-		sgm_clone->v1 = vertices[((uint32_t*)((void**)sgm->v1->attr)[0])[0]];
-		sgm_clone->v2 = vertices[((uint32_t*)((void**)sgm->v2->attr)[0])[0]];
+		sgm_clone->v1 = vertices[mvtx_get_id(sgm->v1)];
+		sgm_clone->v2 = vertices[mvtx_get_id(sgm->v2)];
 		if (NULL != sgm->t1)
 			sgm_clone->t1 = triangles[((uint32_t*)((void**)sgm->t1->attr)[0])[0]];
 		if (NULL != sgm->t2)
@@ -732,7 +723,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 	for (uint32_t i = 0; i < clone->N_input_vtx; i++)
 		clone->input_vtx[i] = 
-			vertices[((uint32_t*)((void**)mesh->input_vtx[i]->attr)[0])[0]];
+			vertices[mvtx_get_id(mesh->input_vtx[i])];
 
 	for (uint32_t i = 0; i < clone->N_input_sgm; i++)
 		clone->input_sgm[i] = 
@@ -762,16 +753,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		free(attr);
 	}
 	nb_iterator_destroy(trg_iter);
-
-	vcn_bins2D_iter_restart(giter);
-	while (vcn_bins2D_iter_has_more(giter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(giter);
-		void** attr = vtx->attr;
-		vtx->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-	vcn_bins2D_iter_destroy(giter);
 
 	/* Return clone */
 	return clone;

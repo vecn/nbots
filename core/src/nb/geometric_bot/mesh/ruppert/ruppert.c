@@ -168,8 +168,9 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
 				    nb_container_t *exterior_trg);
-static void insert_trg_if_is_exterior(const msh_trg_t *trg,
-				      nb_container_t *exterior_trg);
+static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
+				      const msh_trg_t *trg);
+static bool is_input_onsgm_vtx(const msh_vtx_t *const vtx);
 static void delete_exterior_trg(nb_mesh_t *mesh,
 				nb_container_t *exterior_trg);
 
@@ -275,7 +276,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 
 bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 {
-	msh_vtx_t* new_vtx = (msh_vtx_t*) vcn_point2D_create();
+	msh_vtx_t* new_vtx = mvtx_create();
 
 	/* Move and scale new vertex */
 	new_vtx->x[0] = mesh->scale * (vertex[0] - mesh->xdisp);
@@ -284,7 +285,7 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 	msh_trg_t* trg = mesh_locate_vtx(mesh, new_vtx);
 
 	if (NULL == trg) {
-		vcn_point2D_destroy(new_vtx);
+		mvtx_destroy(new_vtx);
 		return false;
 	}
 
@@ -315,7 +316,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			trg = hash_trg_remove_first(poor_quality_trg);
 
 		/* Get circumcenter */
-		msh_vtx_t *restrict cc = (msh_vtx_t*) vcn_point2D_create();
+		msh_vtx_t *restrict cc = mvtx_create();
 		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
     
 		msh_trg_t *restrict trg_containing_cc =
@@ -526,14 +527,15 @@ static inline msh_vtx_t* get_midpoint
                          (const msh_edge_t *const restrict sgm)
 {
 	/* Calculate the new vertex (using concentric shells) */
-	msh_vtx_t *v = (msh_vtx_t*) vcn_point2D_create();
-	mvtx_set_as_subsgm_vtx(v);
+	msh_vtx_t *v = mvtx_create();
+	mvtx_set_type_location(v, ONSEGMENT);
   
 	/* Use midpoint */
 	v->x[0] = 0.5 * (sgm->v1->x[0] + sgm->v2->x[0]);
 	v->x[1] = 0.5 * (sgm->v1->x[1] + sgm->v2->x[1]);
 
-	if (mvtx_is_original_input(sgm->v1) || mvtx_is_original_input(sgm->v2)) 
+	if (mvtx_is_type_origin(sgm->v1, INPUT) ||
+	    mvtx_is_type_origin(sgm->v2, INPUT)) 
 		concentric_shell(sgm, v);
 	return v;
 }
@@ -544,7 +546,7 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
 	 * concentric shells */
 	msh_vtx_t* v1 = sgm->v1;
 	msh_vtx_t* v2 = sgm->v2;
-	if (!mvtx_is_original_input(sgm->v1)) {
+	if (mvtx_is_type_origin(sgm->v1, STEINER)) {
 		v1 = sgm->v2;
 		v2 = sgm->v1;
 	}
@@ -1355,52 +1357,44 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t *restrict trg =
-			(msh_trg_t*) nb_iterator_get_next(iter);
+		const msh_trg_t *restrict trg =
+			nb_iterator_get_next(iter);
 		insert_trg_if_is_exterior(exterior_trg, trg);
 	}
 	nb_iterator_finish(iter);
 }
 
-static void insert_trg_if_is_exterior(const msh_trg_t *trg,
-				      nb_container_t *exterior_trg)
+static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
+				      const msh_trg_t *trg)
 {
-	if (mvtx_is_input_subsgm_vtx(trg->v1)) {
-		if (mvtx_is_input_subsgm_vtx(trg->v2)) {
-			if (mvtx_is_input_subsgm_vtx(trg->v3)) {
+	if (is_input_onsgm_vtx(trg->v1)) {
+		if (is_input_onsgm_vtx(trg->v2)) {
+			if (is_input_onsgm_vtx(trg->v3)) {
 				nb_container_insert(exterior_trg, trg);
 			}
 		}
 	}
 }
 
+static bool is_input_onsgm_vtx(const msh_vtx_t *const vtx)
+{
+	return mvtx_is_type_origin(vtx, INPUT) &&
+		mvtx_is_type_location(vtx, ONSEGMENT);
+}
+
 static void delete_exterior_trg(nb_mesh_t *mesh,
 				nb_container_t *exterior_trg)
 {
-	uint32_t iter = 0;
 	while (nb_container_is_not_empty(exterior_trg)) {
-		/* Re-allocate hash tables if they are too small */
-		if (iter % 5000 == 0) {
-			if (vcn_bins2D_get_min_points_x_bin(mesh->ug_vtx) > 100)
-				reallocate_bins(mesh);
-		}
-		iter ++;
-
 		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
 
-		/* Get circumcenter */
-		msh_vtx_t *restrict cc = (msh_vtx_t*) vcn_point2D_create();
+		msh_vtx_t *restrict cc = mvtx_create();
 		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
     
 		msh_trg_t *restrict trg_containing_cc =
 			get_trg_containing_circumcenter(mesh, trg, cc);
 
-		/* Circumcenter is always accepted */
-		nb_container_t *new_trg = nb_container_create(NB_QUEUE);
-
 		insert_vertex(mesh, trg_containing_cc, cc, NULL, NULL, NULL);
-
-		nb_container_destroy(new_trg);
 	}
 
 }

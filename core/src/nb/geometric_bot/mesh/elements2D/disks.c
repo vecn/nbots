@@ -19,7 +19,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh);
+static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh);
 
 bool vtx_is_forming_input(const msh_vtx_t *const vtx);
 
@@ -54,8 +54,8 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 		 * Discard                inner/boundary    segments.
 		 */
 
-		uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
-		uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
+		uint32_t idx1 = mvtx_get_id(sgm->v1);
+		uint32_t idx2 = mvtx_get_id(sgm->v2);
 
 		if (vtx_is_forming_input(sgm->v1) &&
 		    vtx_is_forming_input(sgm->v2)) {
@@ -64,8 +64,8 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 				vtx = mtrg_get_opposite_vertex(sgm->t1, sgm);
 			} else {
 				vtx = mtrg_get_opposite_vertex(sgm->t2, sgm);
-				idx1 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
-				idx2 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
+				idx1 = mvtx_get_id(sgm->v2);
+				idx2 = mvtx_get_id(sgm->v1);
 			}
 			if (vtx_is_forming_input(vtx))
 				/* Does not consider the nodes on the boundary */
@@ -74,7 +74,7 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 			uint32_t* sgm_struct = malloc(3 * sizeof(*sgm_struct));
 			nb_container_insert(segments, sgm_struct);
 
-			uint32_t idx_vtx = ((uint32_t*)((void**)vtx->attr)[0])[0];
+			uint32_t idx_vtx = mvtx_get_id(vtx);
 			sgm_struct[0] = idx1;
 			sgm_struct[1] = idx2;
 			/* Opposite vtx id (boundary/boundary segment) */
@@ -120,9 +120,8 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 
 bool vtx_is_forming_input(const msh_vtx_t *const vtx)
 {
-	return (_NB_INPUT_VTX == ((void**)vtx->attr)[1] ||
-		_NB_SUBSGM_VTX == ((void**)vtx->attr)[1] ||
-		_NB_INPUT_SUBSGM_VTX == ((void**)vtx->attr)[1]);
+	return mvtx_is_type_origin(vtx, INPUT) ||
+		mvtx_is_type_location(vtx, ONSEGMENT);
 }
 
 static double spack_optimize_assemble_system(nb_container_t *segments,
@@ -254,19 +253,18 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* ivtx = vcn_bins2D_iter_get_next(iter);
-		void** iattr = (void**)ivtx->attr;
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		/* Get ID */
-		int id = *((int*)iattr[0]);
-		if (vtx_is_forming_input(ivtx)) {
-			Xb[id * 2] = ivtx->x[0];
-			Xb[id*2+1] = ivtx->x[1];
+		uint32_t id = mvtx_get_id(vtx);
+		if (vtx_is_forming_input(vtx)) {
+			Xb[id * 2] = vtx->x[0];
+			Xb[id*2+1] = vtx->x[1];
 			/* Does not consider nodes in the boundary */
 			continue;
 		}
 		/* Fill 'Xk' */
-		Xk[id * 3] = ivtx->x[0];
-		Xk[id*3+1] = ivtx->x[1];
+		Xk[id * 3] = vtx->x[0];
+		Xk[id*3+1] = vtx->x[1];
 	}
 	vcn_bins2D_iter_destroy(iter);
 
@@ -504,20 +502,19 @@ static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		void** attr = (void**)vtx->attr;
-		int id = *((int*)attr[0]);
-		if (vtx_is_forming_input(vtx))
-			continue;
-		if (id % id_divisor_porosity != 0 ||
-		    id / id_divisor_porosity >= N_removed_by_porosity) {
-			uint32_t id_corrected = id - 
-				MIN(id/id_divisor_porosity + 1, N_removed_by_porosity);
-			/* Export centroids */
-			spack->centers[id_corrected * 2] = 
-				Xk[id * 3]/mesh->scale + mesh->xdisp;
-			spack->centers[id_corrected*2+1] = 
-				Xk[id*3+1]/mesh->scale + mesh->ydisp;
-			spack->radii[id_corrected] = Xk[id*3+2] / mesh->scale;
+		if (!vtx_is_forming_input(vtx)) {
+			uint32_t id = mvtx_get_id(vtx);
+			if (id % id_divisor_porosity != 0 ||
+			    id / id_divisor_porosity >= N_removed_by_porosity) {
+				uint32_t id_corrected = id - 
+					MIN(id/id_divisor_porosity + 1, N_removed_by_porosity);
+				/* Export centroids */
+				spack->centers[id_corrected * 2] = 
+					Xk[id * 3]/mesh->scale + mesh->xdisp;
+				spack->centers[id_corrected*2+1] = 
+					Xk[id*3+1]/mesh->scale + mesh->ydisp;
+				spack->radii[id_corrected] = Xk[id*3+2] / mesh->scale;
+			}
 		}
 	}
 	vcn_bins2D_iter_destroy(iter);
@@ -532,13 +529,12 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		void** attr = (void**)vtx->attr;
-		int id = *((int*)attr[0]);
-		if (vtx_is_forming_input(vtx))
-			continue;    
-		spack->centers[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
-		spack->centers[id*2+1] = Xk[id*3+1]/mesh->scale + mesh->ydisp;
-		spack->radii[id] = Xk[id*3+2] / mesh->scale;
+		if (!vtx_is_forming_input(vtx)) {
+			uint32_t id = mvtx_get_id(vtx);
+			spack->centers[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
+			spack->centers[id*2+1] = Xk[id*3+1]/mesh->scale + mesh->ydisp;
+			spack->radii[id] = Xk[id*3+2] / mesh->scale;
+		}
 	}
 	vcn_bins2D_iter_destroy(iter);
 }
@@ -552,10 +548,9 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 	 uint32_t* (*labeling)(const vcn_graph_t *const))
 {
 	uint32_t N_spheres =  /* Casting mesh to non-const */
-		mesh_alloc_input_and_steiner_vtx_ids((vcn_mesh_t*)mesh);
+		mesh_enumerate_input_and_steiner_vtx((vcn_mesh_t*)mesh);
 
 	if (N_spheres == 0) {
-		mesh_free_vtx_ids((vcn_mesh_t*)mesh); /* Casting mesh to non-const */
 		return NULL;
 	}
 
@@ -582,7 +577,6 @@ vcn_mshpack_t* vcn_mesh_get_mshpack
 		spack_update_disks(mesh, spack, Xk);
 	
 	/* Free memory */
-	mesh_free_vtx_ids((vcn_mesh_t*)mesh); /* Casting mesh to non-const */
 	nb_container_set_destroyer(segments, free);
 	nb_container_destroy(segments);
 	free(Xk);
@@ -612,7 +606,7 @@ void vcn_mshpack_destroy(vcn_mshpack_t* spack)
 	free(spack);
 }
 
-static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
+static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh)
 {
 	uint32_t N_steiner = 0;
 	uint32_t N_input = 0;
@@ -620,27 +614,12 @@ static uint32_t mesh_alloc_input_and_steiner_vtx_ids(vcn_mesh_t *mesh)
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		int* id = malloc(sizeof(*id));
-		void** attr = malloc(2 * sizeof(*attr));
+		uint32_t id;
 		if (!vtx_is_forming_input(vtx))
-			id[0] = N_steiner ++; /* Numeration for steiner points */
+			id = N_steiner ++; /* Numeration for steiner points */
 		else
-			id[0] = N_input ++; /* Numeration for fixed nodes in the boundary */
-		attr[1] = vtx->attr;
-		attr[0] = id;
-		vtx->attr = attr;
-	}
-  
-	if (N_steiner == 0) {
-		vcn_bins2D_iter_restart(iter);
-		while (vcn_bins2D_iter_has_more(iter)) {
-			msh_vtx_t* vtx = (msh_vtx_t*)
-				vcn_bins2D_iter_get_next(iter);
-			void** attr = (void**)vtx->attr;
-			vtx->attr = attr[1];
-			free(attr[0]);
-			free(attr);
-		}
+			id = N_input ++; /* Numeration for fixed nodes in the boundary */
+		mvtx_set_id(vtx, id);
 	}
 	vcn_bins2D_iter_destroy(iter);
 	return N_steiner;

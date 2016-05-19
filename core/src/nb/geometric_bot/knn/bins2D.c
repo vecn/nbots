@@ -192,6 +192,13 @@ void vcn_bins2D_clear(vcn_bins2D_t* bins2D)
 	bins2D->length = 0;
 }
 
+void vcn_bins2D_set_destroyer(vcn_bins2D_t* bins2D,
+			      void (*destroy)(void*))
+{
+	bins2D->destroy = destroy;
+
+}
+
 inline void vcn_bins2D_enable_point_destroyer(vcn_bins2D_t* bins2D)
 {
 	bins2D->destroy = (void (*)(void*)) vcn_point2D_destroy;

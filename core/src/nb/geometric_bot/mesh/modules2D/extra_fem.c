@@ -71,7 +71,7 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 			continue;
 		}
     
-		msh_vtx_t* new_vtx = vcn_point2D_create();
+		msh_vtx_t* new_vtx = mvtx_create();
 		memcpy(new_vtx->x, vtx->x, 2 * sizeof(*(vtx->x)));
 		new_vtx->attr = ((void**)vtx->attr)[1];
 		nb_container_insert(new_vertices, new_vtx);
