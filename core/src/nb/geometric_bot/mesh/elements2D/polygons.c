@@ -115,11 +115,13 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 				  uint32_t iedge);
 static void set_N_adj(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
-		      const vinfo_t *const vinfo);
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh);
 
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vgraph_t *const vgraph,
-			    const vinfo_t *const vinfo);
+			    const vinfo_t *const vinfo,
+			    const nb_mesh_t *const mesh);
 static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 				const vgraph_t *const vgraph,
 				const vinfo_t *const vinfo,
@@ -581,11 +583,14 @@ static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 {
 	uint32_t id1 = mvtx_get_id(edge->v1);
 	uint32_t id2 = mvtx_get_id(edge->v2);
-	bool not_interior_cocircular_edg = !is_cc ||
-		1 == vgraph->type[id1] || 1 == vgraph->type[id2];/* AQUI VOY */
+	bool semi_onsegment =
+		mvtx_is_type_location(edge->v1, ONSEGMENT) ||
+		mvtx_is_type_location(edge->v2, ONSEGMENT);
+	bool not_interior_cocircular = !is_cc || semi_onsegment;
 	bool semi_interior =
-		0 == vgraph->type[id1] || 0 == vgraph->type[id2];
-	if (not_interior_cocircular_edg && semi_interior) {
+		mvtx_is_type_location(edge->v1, INTERIOR) ||
+		mvtx_is_type_location(edge->v2, INTERIOR);
+	if (not_interior_cocircular && semi_interior) {
 		insert_adj_sorted_by_angle(vgraph, id1, edge);
 		insert_adj_sorted_by_angle(vgraph, id2, edge);
 	}
@@ -594,6 +599,7 @@ static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
 				       const msh_edge_t *edge)
 {
+/* TEMPORAL: Simplify this AQUI VOY */
 	msh_vtx_t *v1, *v2;
 	if (igraph == mvtx_get_id(edge->v1)) {
 		v1 = edge->v1;
@@ -634,24 +640,28 @@ static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 {
 	uint32_t id1 = mvtx_get_id(edge->v1);
 	uint32_t id2 = mvtx_get_id(edge->v2);
-	if (1 == vgraph->type[id1] && 1 == vgraph->type[id2]) {
+	bool extremes_onsegment =
+		mvtx_is_type_location(edge->v1, ONSEGMENT) &&
+		mvtx_is_type_location(edge->v2, ONSEGMENT);
+	bool edge_is_interior =
+		mvtx_is_type_location(edge->v1, INTERIOR) &&
+		mvtx_is_type_location(edge->v2, INTERIOR);
+	if (extremes_onsegment) {
 		vinfo->N_edg_out += 1;
-	} else if (0 == vgraph->type[id1] && 0 == vgraph->type[id2]) {
+	} else if (edge_is_interior) {
 		vinfo->N_edg_in += 1;
 
-		msh_vtx_t *opp_t1 = mtrg_get_opposite_vertex(edge->t1, edge);
-		msh_vtx_t *opp_t2 = mtrg_get_opposite_vertex(edge->t2, edge);
-		uint32_t opp1 = mvtx_get_id(opp_t1);
-		uint32_t opp2 = mvtx_get_id(opp_t2);
-		bool trg_are_interior =
-			0 == vgraph->type[opp1] && 0 == vgraph->type[opp2];
-		if (is_cc && trg_are_interior)
+		msh_vtx_t *opp1 = mtrg_get_opposite_vertex(edge->t1, edge);
+		msh_vtx_t *opp2 = mtrg_get_opposite_vertex(edge->t2, edge);
+		bool t1_is_interior = mvtx_is_type_location(opp1, INTERIOR);
+		bool t2_is_interior = mvtx_is_type_location(opp2, INTERIOR);
+		if (is_cc && t1_is_interior && t2_is_interior)
 			vinfo->N_cc_in += 1;
 
-		if (0 == vgraph->type[opp1])
+		if (t1_is_interior)
 			vinfo->N_trg_in += 1;
 
-		if (0 == vgraph->type[opp2])
+		if (t2_is_interior)
 			vinfo->N_trg_in += 1;
 	}
 }
@@ -663,7 +673,7 @@ static void finish_voronoi_info(vinfo_t *vinfo)
 
 static void finish_voronoi_graph(vgraph_t *vgraph)
 {
-	free(vgraph->type);
+	free(vgraph->N_adj);
 }
 
 static void set_voronoi(nb_mshpoly_t *poly,
@@ -677,11 +687,11 @@ static void set_voronoi(nb_mshpoly_t *poly,
 
 	set_nodes_and_centroids(poly, vgraph, vinfo, mesh);
 	set_edges(poly, vgraph, vinfo, mesh);
-	set_N_adj(poly, vgraph, vinfo);
+	set_N_adj(poly, vgraph, vinfo, mesh);
 	
 	uint32_t memsize = get_size_of_adj_and_ngb(poly);
 	set_mem_of_adj_and_ngb(poly, memsize);
-	set_adj_and_ngb(poly, vgraph, vinfo);
+	set_adj_and_ngb(poly, vgraph, vinfo, mesh);
 
 	set_elem_vtx(poly, vgraph, vinfo, mesh);
 	set_N_nod_x_sgm(poly, mesh);
@@ -714,8 +724,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
 		uint32_t id = mvtx_get_id(vtx);
-		bool vtx_is_interior = 0 == vgraph->type[id];
-		if (vtx_is_interior) {
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t ielem = vinfo->vtx_map[id];
 			memcpy(&(poly->cen[ielem * 2]), vtx->x,
 			       2 * sizeof(*(vtx->x)));
@@ -763,14 +772,20 @@ static void set_edges(nb_mshpoly_t *poly,
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		uint32_t v1 = mvtx_get_id(edge->v1);
 		uint32_t v2 = mvtx_get_id(edge->v2);
-		if (0 == vgraph->type[v1] && 0 == vgraph->type[v2]) {
-			process_interior_edge(poly, vgraph, vinfo,
-					      edge, iedge);
-			iedge += 1;
-		} else if (1 == vgraph->type[v1] && 1 == vgraph->type[v2]) {
+		bool extremes_onsegment =
+			mvtx_is_type_location(edge->v1, ONSEGMENT) &&
+			mvtx_is_type_location(edge->v2, ONSEGMENT);
+		bool edge_is_interior =
+			mvtx_is_type_location(edge->v1, INTERIOR) &&
+			mvtx_is_type_location(edge->v2, INTERIOR);
+		if (extremes_onsegment) {
 			/* Process not interior edges */
 			poly->edg[iedge * 2] = vinfo->vtx_map[v1];
 			poly->edg[iedge*2+1] = vinfo->vtx_map[v2];
+			iedge += 1;
+		} else if (edge_is_interior) {
+			process_interior_edge(poly, vgraph, vinfo,
+					      edge, iedge);
 			iedge += 1;
 		}
 	}
@@ -787,25 +802,25 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 	msh_vtx_t *opp_t2 = mtrg_get_opposite_vertex(edg->t2, edg);
 	uint32_t opp1 = mvtx_get_id(opp_t1);
 	uint32_t opp2 = mvtx_get_id(opp_t2);
-	bool trg_are_interior =
-		0 == vgraph->type[opp1] && 0 == vgraph->type[opp2];
+	bool t1_is_interior = mvtx_is_type_location(opp_t1, INTERIOR);
+	bool t2_is_interior = mvtx_is_type_location(opp_t2, INTERIOR);
 
 	uint32_t t1 = *(uint32_t*)((void**)edg->t1->attr)[0];
 	uint32_t t2 = *(uint32_t*)((void**)edg->t2->attr)[0];
 	bool is_not_cc = vinfo->trg_map[t1] != vinfo->trg_map[t2];
-	if (is_not_cc && trg_are_interior) {
+	if (is_not_cc && t1_is_interior && t2_is_interior) {
 		/* Interior triangles (No cocircular) */
 		poly->edg[iedge * 2] = vinfo->trg_map[t1];
 		poly->edg[iedge*2+1] = vinfo->trg_map[t2];		
 	} else {
 		/* At least a triangle is not interior */
 		uint32_t node1;
-		if (0 == vgraph->type[opp1])
+		if (t1_is_interior)
 			node1 = vinfo->trg_map[t1];
 		else
 			node1 = vinfo->vtx_map[opp1];
 		uint32_t node2;
-		if (0 == vgraph->type[opp2])
+		if (t2_is_interior)
 			node2 = vinfo->trg_map[t2];
 		else
 			node2 = vinfo->vtx_map[opp2];
@@ -817,34 +832,44 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 
 static void set_N_adj(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
-		      const vinfo_t *const vinfo)
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh)
 {
-	for (uint32_t i = 0; i < vgraph->N; i++) {
-		if (0 == vgraph->type[i]) {
-			uint32_t elem_id = vinfo->vtx_map[i];
-			poly->N_adj[elem_id] = vgraph->N_adj[i];
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			uint32_t id = mvtx_get_id(vtx);
+			uint32_t elem_id = vinfo->vtx_map[id];
+			poly->N_adj[elem_id] = vgraph->N_adj[id];
 		}
 	}
+	vcn_bins2D_iter_destroy(biter);
 }
 
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vgraph_t *const vgraph,
-			    const vinfo_t *const vinfo)
+			    const vinfo_t *const vinfo,
+			    const nb_mesh_t *const mesh)
 {
-	for (uint32_t i = 0; i < vgraph->N; i++) {
-		if (0 == vgraph->type[i]) {
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			uint32_t id = mvtx_get_id(vtx);
 			uint16_t id_adj = 0;
-			for (uint16_t j = 0; j < vgraph->N_adj[i]; j++) {
+			for (uint16_t j = 0; j < vgraph->N_adj[id]; j++) {
 				id_adj = add_adj_and_ngb(poly, vgraph,
-							 vinfo, i, j,
+							 vinfo, id, j,
 							 id_adj);
 			}
-			uint32_t elem_id = vinfo->vtx_map[i];
+			uint32_t elem_id = vinfo->vtx_map[id];
 			poly->N_adj[elem_id] = id_adj;
-			if (vgraph->N_adj[i] != id_adj) /* TEMPORAL */
-				printf("\nFUCK: %i %i\n",vgraph->N_adj[i], id_adj); /* TEMPORAL */
 		}
 	}
+	vcn_bins2D_iter_destroy(biter);
 }
 
 static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
@@ -856,19 +881,16 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 	uint16_t id_prev = (j + vgraph->N_adj[i] - 1) % vgraph->N_adj[i];
 	msh_vtx_t *v1 = get_partner(vgraph, vinfo, i, id_prev);
 	msh_vtx_t *v2 = get_partner(vgraph, vinfo, i, j);
-
 	uint32_t id1 = mvtx_get_id(v1);
 	uint32_t id2 = mvtx_get_id(v2);
-	if (0 == vgraph->type[id2]) {
-		if (0 == vgraph->type[id1]) {
-			printf("\nA\n");/* TEMPORAL */
+	bool v1_is_interior = mvtx_is_type_location(v1, INTERIOR);
+	bool v2_is_interior = mvtx_is_type_location(v2, INTERIOR);
+	if (v2_is_interior) {
+		if (v1_is_interior) {
 			/* Interior trg case */
 			msh_trg_t *trg = get_prev_trg(vgraph, vinfo, i, j);
-			printf("B %p\n", trg);/* TEMPORAL */
 			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
-			printf("C\n");/* TEMPORAL */
 			poly->adj[elem_id][id_adj] = vinfo->trg_map[trg_id];
-			printf("D\n");/* TEMPORAL */
 		} else {
 			/* First node in the boundary */
 			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
@@ -877,7 +899,7 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 		id_adj += 1;
 	} else {
 		/* If only the second node in the boundary: Do nothing */
-		if (0 != vgraph->type[id1]) {
+		if (v1_is_interior) {
 			/* Both nodes are in the boundary */
 			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
 			poly->ngb[elem_id][id_adj] = poly->N_elems;
@@ -912,7 +934,7 @@ static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 	msh_edge_t *edge = vgraph->adj[i][j];
 	if (i == mvtx_get_id(edge->v1))
 		trg = edge->t1;
-	else if (i == mvtx_get_id(edge->v1))
+	else if (i == mvtx_get_id(edge->v2))
 		trg = edge->t2;
 	else
 		trg = NULL;
@@ -926,11 +948,12 @@ static void set_elem_vtx(nb_mshpoly_t *poly,
 {
 	for (uint32_t i = 0; i < poly->N_vtx; i++) {
 		msh_vtx_t *vtx = mesh->input_vtx[i];
-		int id = mvtx_get_id(vtx);
-		if (0 == vgraph->type[id])
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			int id = mvtx_get_id(vtx);
 			poly->elem_vtx[i] = vinfo->vtx_map[id];
-		else
+		} else {
 			poly->elem_vtx[i] = poly->N_elems;
+		}
 	}
 }
 

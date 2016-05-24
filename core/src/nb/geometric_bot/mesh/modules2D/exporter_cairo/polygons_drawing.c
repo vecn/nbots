@@ -50,7 +50,7 @@ static void draw_mesh(void *draw_ptr, int width, int height,
 	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 	draw_polygons(draw_ptr, poly, &cam);
 	draw_centroids(draw_ptr, poly, &cam);
-	/* draw_input_sgm(draw_ptr, poly, &cam); COMMENTED TEMPORARY */
+	/* draw_input_sgm(draw_ptr, poly, &cam); COMMENTED TEMPORAL */
 }
 
 static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
@@ -59,6 +59,7 @@ static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
 	nb_drawing_set_line_width(draw_ptr, 0.5);
 	for (uint32_t i = 0; i < poly->N_elems; i++) {
 		uint32_t id = poly->adj[i][0];
+		printf("N: %i (%i)\n", poly->N_adj[i], poly->N_elems);/* TEMPORAL AQUI VOY */
 		double x = poly->nod[id * 2];
 		double y = poly->nod[id*2+1];
 		nb_drawing_move_to(draw_ptr, cam, x, y);

@@ -36,7 +36,7 @@ static void test_load_from_mesh(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					  0.5);
+					  1.5);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	uint32_t size = nb_mshpoly_get_memsize();
