@@ -26,8 +26,6 @@ typedef struct {
 } match_data;
 
 static void set_arrays_memory(nb_mshquad_t *quad);
-static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nodes(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_edges(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
 static void copy_elems(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad);
@@ -52,7 +50,6 @@ static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
 static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id);
-static double get_angle(double a[2], double b[2], double c[2]);
 static msh_trg_t * get_trg_adj(const msh_trg_t *const trg,
 			       uint32_t id_adj);
 static void set_mshquad(nb_mshquad_t *quad,
@@ -65,7 +62,6 @@ static void get_match_data(const nb_graph_t *const graph,
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
-static bool edge_is_not_boundary(const msh_edge_t *const edge);
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches);
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -103,7 +99,6 @@ static void fem_graph_set_adj(nb_graph_t *graph,
 			      const nb_mshquad_t *mshquad);
 static void nodal_graph_count_adj(nb_graph_t *graph,
 				  const nb_mshquad_t *mshquad);
-static void graph_assign_mem_adj(nb_graph_t *graph);
 static void nodal_graph_set_adj(nb_graph_t *graph,
 				const nb_mshquad_t *mshquad);
 static void elemental_graph_allocate_adj(nb_graph_t *graph,
@@ -172,25 +167,6 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 	quad->N_nod_x_sgm = (void*) ((char*)(quad->vtx) + vtx_size);
 	quad->nod_x_sgm = (void*) ((char*)(quad->N_nod_x_sgm) +
 				   N_nod_x_sgm_size);
-}
-
-static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
-{
-	uint32_t size = 0;
-	for (uint32_t i = 0; i < quad->N_sgm; i++)
-		size += quad->N_nod_x_sgm[i] *
-			sizeof(**(quad->nod_x_sgm));
-	return size;
-}
-
-static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
-{
-	char *memblock = malloc(memsize);
-	for (uint32_t i = 0; i < quad->N_sgm; i++) {
-		quad->nod_x_sgm[i] = (void*) memblock;
-		memblock += quad->N_nod_x_sgm[i] *
-			sizeof(**(quad->nod_x_sgm));
-	}
 }
 
 static void copy_nodes(nb_mshquad_t* quad, const nb_mshquad_t *const src_quad)
@@ -437,38 +413,6 @@ static void get_angle_vertices(const msh_vtx_t* vtx[4],
 	}
 }
 
-static double get_angle(double a[2], double b[2], double c[2])
-{
-	/* Angle between segments A and B, formed by vtx a, b and c
-	 *           a       c
-	 *            \     /
-	 *           A \___/ B
-	 *              \ /
-	 *               b
-	 */
-	double A[2];
-	A[0] = a[0] - b[0];
-	A[1] = a[1] - b[1];
-
-	double B[2];
-	B[0] = c[0] - b[0];
-	B[1] = c[1] - b[1];
-
-	double dotAB = A[0] * B[0] + A[1] * B[1];
-	double lengthA = sqrt(POW2(A[0]) + POW2(A[1]));
-	double lengthB = sqrt(POW2(B[0]) + POW2(B[1]));
-	double arg = dotAB / (lengthA * lengthB);
-	arg = MAX(arg, -1.0);
-	arg = MIN(arg, 1.0);
-
-       	double angle;
-	if (vcn_utils2D_get_2x_trg_area(a, b, c) > 0)
-		angle = acos(arg);
-	else
-		angle = 2.0 * NB_PI - acos(arg);
-	return angle;
-}
-
 static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
 			      uint32_t id_adj)
 {
@@ -546,16 +490,9 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	nb_iterator_finish(iter);
 }
 
-static bool edge_is_not_boundary(const msh_edge_t *const edge)
-{
-	return (NULL != edge->t1 && NULL != edge->t2);
-}
-
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches)
 {
-	int id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
-	int id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
 	bool out;
 	if (medge_is_boundary(edge)) {
 		out = true;
@@ -850,7 +787,6 @@ void nb_mshquad_set_fem_graph(const nb_mshquad_t *mshquad,
 
 }
 
-
 static void nodal_graph_allocate_adj(nb_graph_t *graph,
 				     const nb_mshquad_t *mshquad)
 {
@@ -883,7 +819,6 @@ static void fem_graph_count_adj(nb_graph_t *graph,
 		}
 	}
 }
-
 
 static void graph_assign_mem_adj(nb_graph_t *graph)
 {
