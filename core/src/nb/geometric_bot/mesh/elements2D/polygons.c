@@ -897,7 +897,6 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 		poly->ngb[elem_id][id_adj] = vinfo->vtx_map[id2];
 		id_adj += 1;
 	} else {
-		/* If only the second node in the boundary: Do nothing */
 		if (!v1_is_interior) {
 			/* Both nodes are in the boundary */
 			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];

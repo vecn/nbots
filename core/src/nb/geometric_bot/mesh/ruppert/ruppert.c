@@ -170,7 +170,6 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 				    nb_container_t *exterior_trg);
 static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
 				      const msh_trg_t *trg);
-static bool is_input_onsgm_vtx(const msh_vtx_t *const vtx);
 static void delete_exterior_trg(nb_mesh_t *mesh,
 				nb_container_t *exterior_trg);
 
@@ -1367,19 +1366,13 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
 				      const msh_trg_t *trg)
 {
-	if (is_input_onsgm_vtx(trg->v1)) {
-		if (is_input_onsgm_vtx(trg->v2)) {
-			if (is_input_onsgm_vtx(trg->v3)) {
+	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
+		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
+			if (mvtx_is_type_location(trg->v3, ONSEGMENT)) {
 				nb_container_insert(exterior_trg, trg);
 			}
 		}
 	}
-}
-
-static bool is_input_onsgm_vtx(const msh_vtx_t *const vtx)
-{
-	return mvtx_is_type_origin(vtx, INPUT) &&
-		mvtx_is_type_location(vtx, ONSEGMENT);
 }
 
 static void delete_exterior_trg(nb_mesh_t *mesh,
