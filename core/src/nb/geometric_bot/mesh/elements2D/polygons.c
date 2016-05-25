@@ -86,8 +86,10 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 			  uint32_t *trg_cc_map, uint32_t N_trg);
 static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 			      bool is_cc);
-static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
-				       const msh_edge_t *edge);
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
+				       const msh_edge_t *edge,
+				       const msh_vtx_t *v1,
+				       const msh_vtx_t *v2);
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 				  const msh_edge_t *edge, bool is_cc);
 static void finish_voronoi_info(vinfo_t *vinfo);
@@ -103,6 +105,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vgraph_t *const vgraph,
 				    const vinfo_t *const vinfo,
 				    const nb_mesh_t *const mesh);
+
 static void set_edges(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
@@ -138,11 +141,16 @@ static void set_elem_vtx(nb_mshpoly_t *poly,
 			 const nb_mesh_t *const mesh);
 static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
 			    const nb_mesh_t *const mesh);
-static void set_nod_x_sgm(nb_mshpoly_t *poly, const nb_mesh_t *const mesh);
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const nb_mesh_t *const mesh);
 static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
 			  const vcn_mesh_t *const mesh,
 			  uint32_t sgm_id);
-static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
+static void assemble_sgm_wire(nb_mshpoly_t *poly,
+			      const vinfo_t *const vinfo,
+			      uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
 
 uint32_t nb_mshpoly_get_memsize(void)
@@ -581,8 +589,6 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 			      bool is_cc)
 {
-	uint32_t id1 = mvtx_get_id(edge->v1);
-	uint32_t id2 = mvtx_get_id(edge->v2);
 	bool semi_onsegment =
 		mvtx_is_type_location(edge->v1, ONSEGMENT) ||
 		mvtx_is_type_location(edge->v2, ONSEGMENT);
@@ -591,48 +597,40 @@ static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
 		mvtx_is_type_location(edge->v1, INTERIOR) ||
 		mvtx_is_type_location(edge->v2, INTERIOR);
 	if (not_interior_cocircular && semi_interior) {
-		insert_adj_sorted_by_angle(vgraph, id1, edge);
-		insert_adj_sorted_by_angle(vgraph, id2, edge);
+		insert_adj_sorted_by_angle(vgraph, edge, edge->v1, edge->v2);
+		insert_adj_sorted_by_angle(vgraph, edge, edge->v2, edge->v1);
 	}
 }
 
-static void insert_adj_sorted_by_angle(vgraph_t *vgraph, uint16_t igraph,
-				       const msh_edge_t *edge)
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
+				       const msh_edge_t *edge,
+				       const msh_vtx_t *v1,
+				       const msh_vtx_t *v2)
 {
-/* TEMPORAL: Simplify this AQUI VOY */
-	msh_vtx_t *v1, *v2;
-	if (igraph == mvtx_get_id(edge->v1)) {
-		v1 = edge->v1;
-		v2 = edge->v2;
-	} else {
-		v1 = edge->v2;
-		v2 = edge->v1;
-	}
-
-	uint32_t id = vgraph->N_adj[igraph];
+	uint32_t id_global = mvtx_get_id(v1);
+	uint32_t id_local = vgraph->N_adj[id_global];
 	double angle_id;
-	if (0 < id) {
+	if (0 < id_local) {
 		double x = v2->x[0] - v1->x[0];
 		double y = v2->x[1] - v1->x[1];
 		angle_id = atan2(y, x);
 	}
 
-	uint16_t j = 0;
-	while (j < id) {
-		msh_vtx_t *v2 = medge_get_partner_vtx(vgraph->adj[igraph][j], v1);
+	for (uint16_t j = 0; j < id_local; j++) {
+		msh_edge_t *jedge = vgraph->adj[id_global][j];
+		v2 = medge_get_partner_vtx(jedge, v1);
 		double x = v2->x[0] - v1->x[0];
 		double y = v2->x[1] - v1->x[1];
 		double angle_j = atan2(y, x);
-		if (angle_j > angle_id) {
-			msh_edge_t *aux = vgraph->adj[igraph][j];
-			vgraph->adj[igraph][j] = (msh_edge_t*) edge;
+		if (angle_j < angle_id) {
+			msh_edge_t *aux = vgraph->adj[id_global][j];
+			vgraph->adj[id_global][j] = (msh_edge_t*) edge;
 			edge = aux;
 			angle_id = angle_j;
 		}
-		j += 1;
 	}
-	vgraph->adj[igraph][id] = (msh_edge_t*) edge;
-	vgraph->N_adj[igraph] += 1;
+	vgraph->adj[id_global][id_local] = (msh_edge_t*) edge;
+	vgraph->N_adj[id_global] += 1;
 }
 
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
@@ -698,7 +696,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 
 	memsize = get_size_of_nod_x_sgm(poly);
 	set_mem_of_nod_x_sgm(poly, memsize);
-	set_nod_x_sgm(poly, mesh);
+	set_nod_x_sgm(poly, vinfo, mesh);
 }
 
 
@@ -729,6 +727,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 			memcpy(&(poly->cen[ielem * 2]), vtx->x,
 			       2 * sizeof(*(vtx->x)));
 		} else {
+			/* TEMPORAL: Enhance estimation at boundaries */
 			uint32_t inode = vinfo->vtx_map[id];
 			memcpy(&(poly->nod[inode * 2]), vtx->x,
 			       2 * sizeof(*(vtx->x)));
@@ -744,14 +743,14 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
 		if (trg_is_interior(trg, vgraph)) {
-			uint32_t inode = vinfo->trg_map[id];
 			double circumcenter[2];
 			vcn_utils2D_get_circumcenter(trg->v1->x,
 						     trg->v2->x,
 						     trg->v3->x,
 						     circumcenter);
+			uint32_t inode = vinfo->trg_map[id];
 			memcpy(&(poly->nod[inode * 2]), circumcenter,
-			       2 * sizeof(*(trg->v1->x)));
+			       2 * sizeof(*circumcenter));
 		}
 	}
 	nb_iterator_finish(iter);
@@ -899,7 +898,7 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 		id_adj += 1;
 	} else {
 		/* If only the second node in the boundary: Do nothing */
-		if (v1_is_interior) {
+		if (!v1_is_interior) {
 			/* Both nodes are in the boundary */
 			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
 			poly->ngb[elem_id][id_adj] = poly->N_elems;
@@ -972,29 +971,35 @@ static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
 
 }
 
-static void set_nod_x_sgm(nb_mshpoly_t *poly, const nb_mesh_t *const mesh)
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const nb_mesh_t *const mesh)
 {
-	for (uint32_t i = 0; i < poly->N_sgm; i++) {
-		if (NULL != mesh->input_sgm[i])
-			set_sgm_nodes(poly, mesh, i);
-	}
+	for (uint32_t i = 0; i < poly->N_sgm; i++)
+		set_sgm_nodes(poly, vinfo, mesh, i);
 }
 
 static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
 			  const vcn_mesh_t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
-	msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
-	if (NULL == sgm) {
-		poly->nod_x_sgm[sgm_id][0] = mvtx_get_id(sgm_prev->v1);
-		poly->nod_x_sgm[sgm_id][1] = mvtx_get_id(sgm_prev->v2);
-	} else {
-		assemble_sgm_wire(poly, sgm_id, sgm_prev, sgm);
+	if (NULL != sgm_prev) {
+		msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
+		if (NULL == sgm) {
+			poly->nod_x_sgm[sgm_id][0] = mvtx_get_id(sgm_prev->v1);
+			poly->nod_x_sgm[sgm_id][1] = mvtx_get_id(sgm_prev->v2);
+		} else {
+			assemble_sgm_wire(poly, vinfo,
+					  sgm_id, sgm_prev, sgm);
+		}
 	}
 }
 
-static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
+static void assemble_sgm_wire(nb_mshpoly_t *poly,
+			      const vinfo_t *const vinfo,
+			      uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm)
 {
 	uint32_t idx = 0;
@@ -1004,12 +1009,12 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
 	uint32_t id1n = mvtx_get_id(sgm->v1);
 	uint32_t id2n = mvtx_get_id(sgm->v2);
 	if (id2 == id1n || id2 == id2n) {
-		poly->nod_x_sgm[sgm_id][idx++] =  id1;
-		poly->nod_x_sgm[sgm_id][idx++] =  id2;
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id1];
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id2];
 		id_chain = id2;
 	} else {
-		poly->nod_x_sgm[sgm_id][idx++] =  id2;
-		poly->nod_x_sgm[sgm_id][idx++] =  id1;
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id2];
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id1];
 		id_chain = id1;
 	}
 	while (NULL != sgm) {
@@ -1017,10 +1022,10 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly, uint32_t sgm_id,
 		uint32_t id1 = mvtx_get_id(sgm_prev->v1);
 		uint32_t id2 = mvtx_get_id(sgm_prev->v2);
 		if (id1 == id_chain) {
-			poly->nod_x_sgm[sgm_id][idx++] =  id2;
+			poly->nod_x_sgm[sgm_id][idx++] = vinfo->vtx_map[id2];
 			id_chain = id2;
 		} else {
-			poly->nod_x_sgm[sgm_id][idx++] =  id1;
+			poly->nod_x_sgm[sgm_id][idx++] = vinfo->vtx_map[id1];
 			id_chain = id1;
 		}
 		sgm = medge_subsgm_next(sgm);

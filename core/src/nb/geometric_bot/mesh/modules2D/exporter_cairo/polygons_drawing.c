@@ -50,7 +50,7 @@ static void draw_mesh(void *draw_ptr, int width, int height,
 	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 	draw_polygons(draw_ptr, poly, &cam);
 	draw_centroids(draw_ptr, poly, &cam);
-	/* draw_input_sgm(draw_ptr, poly, &cam); COMMENTED TEMPORAL */
+	draw_input_sgm(draw_ptr, poly, &cam);
 }
 
 static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
@@ -59,7 +59,6 @@ static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
 	nb_drawing_set_line_width(draw_ptr, 0.5);
 	for (uint32_t i = 0; i < poly->N_elems; i++) {
 		uint32_t id = poly->adj[i][0];
-		printf("N: %i (%i)\n", poly->N_adj[i], poly->N_elems);/* TEMPORAL AQUI VOY */
 		double x = poly->nod[id * 2];
 		double y = poly->nod[id*2+1];
 		nb_drawing_move_to(draw_ptr, cam, x, y);
@@ -90,21 +89,13 @@ static void draw_centroids(void *draw_ptr, const nb_mshpoly_t *const poly,
 		nb_drawing_set_circle(draw_ptr, cam, x, y, r, true);
 		nb_drawing_fill(draw_ptr);
 	}
-	
-	/* TEMPORAL */nb_drawing_set_source_rgb(draw_ptr, 1, 0.2, 0.0);
-	/* TEMPORAL */for (uint32_t i = 0; i < poly->N_nod; i++) {
-	/* TEMPORAL */	double x = poly->nod[i * 2];
-	/* TEMPORAL */	double y = poly->nod[i*2+1];
-	/* TEMPORAL */	nb_drawing_set_circle(draw_ptr, cam, x, y, r, true);
-	/* TEMPORAL */	nb_drawing_fill(draw_ptr);
-	/* TEMPORAL */}
 }
 
 static void draw_input_sgm(void *draw_ptr, const nb_mshpoly_t *const poly,
 			  const camera_t *cam)
 {
 	nb_drawing_set_line_width(draw_ptr, 1.0);
-	nb_drawing_set_source_rgb(draw_ptr, 0.5, 0.3, 1.0);
+	nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.3, 0.5);
 	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		if (0 < poly->N_nod_x_sgm[i]) {
 			uint32_t nj = poly->nod_x_sgm[i][0];
