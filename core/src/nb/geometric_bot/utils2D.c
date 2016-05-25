@@ -20,6 +20,11 @@
 #define POW2(a) ((a)*(a))
 
 
+static double det_circumcircle(const double t1[2],
+			       const double t2[2],
+			       const double t3[2],
+			       const double p[2]);
+
 inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
 {
 	const double *const vtx = vtx_ptr;
@@ -73,6 +78,40 @@ double vcn_utils2D_get_delaunay_dist(const double p1[2], const double p2[2],
 	if(sign < 0.0)
 		circumradius *= -1;
 	return circumradius;
+}
+
+double nb_utils2D_get_2vec_angle(const double a[2],
+				 const double b[2],
+				 const double c[2])
+{
+	/* Angle between segments A and B, formed by vtx a, b and c
+	 *           a       c
+	 *            \     /
+	 *           A \___/ B
+	 *              \ /
+	 *               b
+	 */
+	double A[2];
+	A[0] = a[0] - b[0];
+	A[1] = a[1] - b[1];
+
+	double B[2];
+	B[0] = c[0] - b[0];
+	B[1] = c[1] - b[1];
+
+	double dotAB = A[0] * B[0] + A[1] * B[1];
+	double lengthA = sqrt(POW2(A[0]) + POW2(A[1]));
+	double lengthB = sqrt(POW2(B[0]) + POW2(B[1]));
+	double arg = dotAB / (lengthA * lengthB);
+	arg = MAX(arg, -1.0);
+	arg = MIN(arg, 1.0);
+
+       	double angle;
+	if (vcn_utils2D_get_2x_trg_area(a, b, c) > 0)
+		angle = acos(arg);
+	else
+		angle = 2.0 * NB_PI - acos(arg);
+	return angle;
 }
 
 void vcn_utils2D_get_enveloping_box(uint32_t N_vertices,
@@ -507,6 +546,16 @@ bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
 		side_edge3 > NB_GEOMETRIC_TOL);
 }
 
+inline bool vcn_utils2D_pnt_lies_in_diametral_circle
+					(const double s1[2],
+					 const double s2[2],
+					 const double p[2])
+{
+	return NB_GEOMETRIC_TOL >
+		(s1[0] - p[0]) * (s2[0] - p[0]) +
+		(s1[1] - p[1]) * (s2[1] - p[1]);
+}
+
 inline bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle
 					(const double s1[2],
 					 const double s2[2],
@@ -521,6 +570,15 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 						   const double t2[2],
 						   const double t3[2],
 						   const double p[2])
+{
+	double det = det_circumcircle(t1, t2, t3, p);
+	return (det > NB_GEOMETRIC_TOL);
+}
+
+static double det_circumcircle(const double t1[2],
+			       const double t2[2],
+			       const double t3[2],
+			       const double p[2])
 {
 	const double a11 = t1[0] - p[0];
 	const double a12 = t1[1] - p[1];
@@ -540,10 +598,16 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 	const double d4 = a13*a22*a31;
 	const double d5 = a23*a32*a11;
 	const double d6 = a33*a12*a21;
-	const double det = d1 + d2 + d3 - d4 - d5 - d6;
+	return d1 + d2 + d3 - d4 - d5 - d6;
+}
 
-	/* Verify sentence */
-	return (det > NB_GEOMETRIC_TOL);
+bool nb_utils2D_pnt_is_cocircular(const double t1[2],
+				  const double t2[2],
+				  const double t3[2],
+				  const double p[2])
+{
+	double det = det_circumcircle(t1, t2, t3, p);
+	return (fabs(det) < NB_GEOMETRIC_TOL);
 }
 
 bool vcn_utils2D_pnt_lies_in_box(const double box[4],

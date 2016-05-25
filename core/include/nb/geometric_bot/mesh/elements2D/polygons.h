@@ -8,15 +8,30 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
 
-vcn_mshpoly_t* vcn_mesh_get_mshpoly
-(const vcn_mesh_t *const mesh,
- bool include_adjacencies,
- bool central_voronoi,
- uint32_t central_voronoi_max_iter,
- /* NULL for a constant density */
- double (*central_voronoi_density)(double*),
- uint32_t* (*labeling)(const vcn_graph_t *const));/* NULL for an arbitrary labeling */
+uint32_t nb_mshpoly_get_memsize(void);
+void nb_mshpoly_init(void *mshpoly_ptr);
+void nb_mshpoly_copy(void *dest, const void *const src);
+void nb_mshpoly_finish(void *mshpoly_ptr);
 
-void vcn_mshpoly_destroy(vcn_mshpoly_t* voronoi);
+void* nb_mshpoly_create(void);
+void* nb_mshpoly_clone(const void *const mshpoly_ptr);
+void nb_mshpoly_destroy(void *mshpoly_ptr);  
+
+void nb_mshpoly_clear(void *mshpoly_ptr);
+
+void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh);
+
+void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
+				double (*density)(const double[2],
+						  const void *data),
+				const void *density_data);
+
+void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph);
+void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph);
+void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,
+				    nb_graph_t *graph);
+
 
 #endif

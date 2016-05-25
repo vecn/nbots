@@ -11,6 +11,8 @@
 
 #define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/mesh2D_inputs"
 #define OUTPUT_DIR "../../../"
+//#define INPUTS_DIR "../utest/nb/geometric_bot/mesh/mesh2D_inputs"
+//#define OUTPUT_DIR "./"
 
 #include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
@@ -50,37 +52,37 @@ void cunit_nb_geometric_bot_mesh2D(void)
 	CU_add_test(suite, "generate_from_model() with angle constraint",
 		    test_generate_from_model_angle_constraint);
 	CU_add_test(suite, "generate_from_model() with length constraint",
-		    test_generate_from_model_length_constraint);
+	 	    test_generate_from_model_length_constraint);
 	CU_add_test(suite, "generate_from_model() with huge scale",
-		    test_generate_from_model_huge_scale);
+	 	    test_generate_from_model_huge_scale);
 	CU_add_test(suite, "generate_from_model() with tiny scale",
-		    test_generate_from_model_tiny_scale);
+	 	    test_generate_from_model_tiny_scale);
 	CU_add_test(suite, "generate_from_model() of simple square",
-		    test_generate_from_model_simple_square);
+	 	    test_generate_from_model_simple_square);
 	CU_add_test(suite,
-		    "generate_from_model() with sub-segment constraint",
-		    test_generate_from_model_subsgm_constraint);
+	 	    "generate_from_model() with sub-segment constraint",
+	 	    test_generate_from_model_subsgm_constraint);
 	CU_add_test(suite,
-		    "generate_from_model() with small local feature",
-		    test_generate_from_model_small_local_feature);
+	 	    "generate_from_model() with small local feature",
+	 	    test_generate_from_model_small_local_feature);
 	CU_add_test(suite,
-		    "generate_from_model() with small local feat. v2",
-		    test_generate_from_model_small_localf_v2);
+	 	    "generate_from_model() with small local feat. v2",
+	 	    test_generate_from_model_small_localf_v2);
 	CU_add_test(suite,
-		    "generate_from_model() with sub-segment const. v2",
-		    test_generate_from_model_subsgm_const_v2);
+	 	    "generate_from_model() with sub-segment const. v2",
+	 	    test_generate_from_model_subsgm_const_v2);
 	CU_add_test(suite, "generate_from_model() with holes",
-		    test_generate_from_model_holes);
+	 	    test_generate_from_model_holes);
 	CU_add_test(suite, "generate_from_model() with small angles",
-		    test_generate_from_model_small_angles);
+	 	    test_generate_from_model_small_angles);
 	CU_add_test(suite,
-		    "generate_from_model() with quasi linear segments",
-		    test_generate_from_model_quasi_linear);
+	 	    "generate_from_model() with quasi linear segments",
+	 	    test_generate_from_model_quasi_linear);
 	CU_add_test(suite,
-		    "generate_from_model() with triangles constraint",
-		    test_generate_from_model_trg_constraint);
+	 	    "generate_from_model() with triangles constraint",
+	 	    test_generate_from_model_trg_constraint);
 	CU_add_test(suite, "is_vtx_inside()", test_is_vtx_inside);
-	CU_add_test(suite, "set_density()", test_set_density);
+	 CU_add_test(suite, "set_density()", test_set_density);
 }
 
 static int suite_init(void)

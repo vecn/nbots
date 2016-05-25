@@ -18,6 +18,72 @@ static bool mesh_remove_edge
 			const msh_vtx_t *const v1,
 			const msh_vtx_t *const v2);
 
+msh_vtx_t *mvtx_create(void)
+{
+	uint16_t size_point = sizeof(vcn_point2D_t);
+	char *memblock = calloc(size_point + sizeof(vtx_attr_t), 1);
+	msh_vtx_t* vtx = (void*) memblock;
+	vtx->attr = (void*)(memblock + size_point);
+	return vtx;
+}
+
+msh_vtx_t *mvtx_clone(msh_vtx_t *vtx)
+{
+	msh_vtx_t *clone = mvtx_create();
+	vtx_attr_t *attr = vtx->attr;
+	vtx_attr_t *clone_attr = clone->attr;
+	clone_attr->ori = attr->ori;
+	clone_attr->loc = attr->loc;
+	clone_attr->id = attr->id;
+	return clone;
+}
+
+void mvtx_destroy(void *vtx)
+{
+	free(vtx);
+}
+
+void mvtx_set_id(msh_vtx_t *vtx, uint32_t id)
+{
+	vtx_attr_t *vtx_attr = vtx->attr;
+	vtx_attr->id = id;
+}
+
+uint32_t mvtx_get_id(const msh_vtx_t *const vtx)
+{
+	vtx_attr_t *vtx_attr = vtx->attr;
+	return vtx_attr->id;
+}
+
+bool mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin)
+{
+	vtx_attr_t *attr = vtx->attr;
+	attr->ori = origin;
+}
+
+bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location)
+{
+	vtx_attr_t *attr = vtx->attr;
+	attr->loc = location;
+}
+
+bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin)
+{
+	const vtx_attr_t *const attr = vtx->attr;
+	return (origin == attr->ori);
+}
+
+bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
+{
+	const vtx_attr_t *const attr = vtx->attr;
+	return (location == attr->loc);
+}
+
+bool medge_is_boundary(const msh_edge_t *const edge)
+{
+	return (NULL == edge->t1 || NULL == edge->t2);
+}
+
 inline bool medge_is_subsgm(const msh_edge_t *const restrict sgm)
 {
 	if (NULL == sgm->attr)
@@ -81,6 +147,42 @@ inline msh_edge_t* medge_subsgm_next(const msh_edge_t *const restrict sgm)
 	input_sgm_attr_t* attr = 
 		(input_sgm_attr_t*)((attr_t*)sgm->attr)->data;
 	return attr->next;
+}
+
+void medge_subsgm_get_extreme_vtx(const msh_edge_t *const sgm,
+				  msh_vtx_t *vtx[2])
+{
+	msh_edge_t *first = (msh_edge_t*) sgm;
+	while (NULL != medge_subsgm_prev(first))
+		first = medge_subsgm_prev(first);
+
+	msh_edge_t *last = (msh_edge_t*) sgm;
+	while (NULL != medge_subsgm_next(last))
+		last = medge_subsgm_next(last);
+
+	if (first == last) {
+		vtx[0] = sgm->v1;
+		vtx[1] = sgm->v2;
+	} else {
+		msh_edge_t *fnext = medge_subsgm_next(first);
+		vtx[0] =  medge_subsgm_get_opposite_vtx(first, fnext);
+
+		msh_edge_t *lprev = medge_subsgm_prev(last);
+		vtx[1] =  medge_subsgm_get_opposite_vtx(last, lprev);
+	}
+}
+
+msh_vtx_t* medge_subsgm_get_opposite_vtx(const msh_edge_t *const sgm,
+					 const msh_edge_t *const adj)
+{
+	msh_vtx_t *vtx;
+	if (sgm->v1 == adj->v1 || sgm->v1 == adj->v2)
+		vtx = sgm->v2;
+	else if (sgm->v2 == adj->v1 || sgm->v2 == adj->v2)
+		vtx = sgm->v1;
+	else
+		vtx = NULL;
+	return vtx;
 }
 
 inline void medge_subsgm_set_attribute(msh_edge_t* sgm, void* attr)
@@ -375,13 +477,9 @@ inline void mtrg_destroy_quality_and_size_attributes
 
 inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
 {
-	if (trg->v1->attr == (void*)1)
-		return true;
-	if (trg->v2->attr == (void*)1)
-		return true;
-	if (trg->v3->attr == (void*)1)
-		return true;
-	return false;
+	return mvtx_is_type_origin(trg->v1, INPUT) ||
+		mvtx_is_type_origin(trg->v2, INPUT) ||
+		mvtx_is_type_origin(trg->v3, INPUT);
 }
 
 inline msh_edge_t* mtrg_get_largest_edge(const msh_trg_t *const trg)
@@ -620,6 +718,19 @@ msh_edge_t* medge_get_CCW_subsgm(const msh_edge_t *const restrict sgm,
 			return edge;
 	} while (edge != sgm);
 	return (msh_edge_t*) sgm;
+}
+
+msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
+				 const msh_vtx_t *const vtx)
+{
+	msh_vtx_t *out;
+	if (edge->v1 == vtx)
+		out = edge->v2;
+	else if (edge->v2 == vtx)
+		out = edge->v1;
+	else
+		out = NULL;
+	return out;
 }
 
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm)
@@ -895,33 +1006,15 @@ inline void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 	external[1] = internal[1] / mesh->scale + mesh->ydisp;
 }
 
-void mesh_alloc_vtx_ids(vcn_mesh_t * restrict mesh)
+void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
 {
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	int i = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-	  msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t* id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
-		attr[1] = vtx->attr;
-		vtx->attr = attr;
-	}
-	vcn_bins2D_iter_destroy(iter);
-}
-
-void mesh_free_vtx_ids(vcn_mesh_t *mesh)
-{
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	int id = 0;
 	while (vcn_bins2D_iter_has_more(iter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = vtx->attr;
-		vtx->attr = attr[1];
-		free(attr[0]);
-		free(attr);
+		mvtx_set_id(vtx, id);
+		id += 1;
 	}
 	vcn_bins2D_iter_destroy(iter);
 }
@@ -936,8 +1029,8 @@ void mesh_alloc_trg_ids(vcn_mesh_t *mesh)
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		char *memblock = malloc(2 * sizeof(void*) + sizeof(uint32_t*));
-		void** attr = memblock;
-		uint32_t* id = memblock + 2 * sizeof(void*);
+		void** attr = (void*) memblock;
+		uint32_t* id = (void*)(memblock + 2 * sizeof(void*));
 		id[0] = i;
 		attr[0] = id;
 		attr[1] = trg->attr;

@@ -12,8 +12,6 @@ typedef struct {
 	double zoom;
 } camera_t;
 
-#define set_center_and_zoom nb_drawing_utils_set_center_and_zoom
-
 void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
 					  double width, double height);
 

@@ -10,7 +10,6 @@
 
 #include "../../mesh2D_structs.h"
 #include "drawing_utils.h"
-#include "quad_drawing.h"
 #include "drawing_tools.h"
 
 static void draw_mesh(void *draw_ptr, int width, int height,
@@ -47,7 +46,7 @@ static void draw_mesh(void *draw_ptr, int width, int height,
 						   vcn_utils2D_get_y_from_darray,
 						   box);
 	camera_t cam;
-	set_center_and_zoom(&cam, box, width, height);
+	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 	draw_quads(draw_ptr, quad, &cam);
 	draw_input_sgm(draw_ptr, quad, &cam);
 	draw_input_vtx(draw_ptr, quad, &cam);

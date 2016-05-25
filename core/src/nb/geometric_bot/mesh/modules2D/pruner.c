@@ -14,8 +14,6 @@
 
 #include "../mesh2D_structs.h"
 
-#define _NB_SUBSEGMENT_VTX ((void*)0x2) /* REFACTOR: Taken from ruppert.c */
-
 #define POW2(a) ((a)*(a))
 
 typedef struct {
@@ -560,8 +558,8 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(bins2D_iter);
 		if(!nb_container_exist(useful_vtx, vtx)){
 			vcn_bins2D_delete(mesh->ug_vtx, vtx);
-			if (_NB_INPUT_VTX == vtx->attr ||
-			    _NB_SUBSEGMENT_VTX == vtx->attr) {
+			if (mvtx_is_type_origin(vtx, INPUT) ||
+			    mvtx_is_type_location(vtx, ONSEGMENT)) {
 				for (uint32_t i=0; i < mesh->N_input_vtx; i++) {
 					if (vtx == mesh->input_vtx[i]) {
 						mesh->input_vtx[i] = NULL;

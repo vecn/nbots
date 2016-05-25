@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
@@ -15,7 +16,6 @@
 
 #define _NB_MAX_LH_TOLERATED (1.0)
 #define _NB_MAX_GRADING_RATIO (10.0)
-#define _NB_SUBSEGMENT_VTX ((void*)0x2)
 #define _NB_CC_SHELL_UNIT (1e-3)
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -45,6 +45,7 @@ static bool check_max_vtx(const vcn_mesh_t *const mesh);
 static bool check_max_trg(const vcn_mesh_t *const mesh);
 static bool is_encroached(const msh_edge_t *const sgm);
 static msh_vtx_t* get_midpoint(const msh_edge_t *const sgm);
+static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v);
 static nb_container_t* get_encroached_triangles
                              (const msh_trg_t *const first_trg_to_check,
 			      const msh_vtx_t *const v);
@@ -165,6 +166,13 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
+static void initialize_exterior_trg(const nb_mesh_t *mesh,
+				    nb_container_t *exterior_trg);
+static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
+				      const msh_trg_t *trg);
+static void delete_exterior_trg(nb_mesh_t *mesh,
+				nb_container_t *exterior_trg);
+
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
@@ -177,7 +185,7 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 
 	hash_trg_t *restrict poor_quality_trg = hash_trg_create();
 
-	/* Initialize FIFO with encroached segments */
+	/* Initialize container with encroached segments */
 	initialize_encroached_sgm(mesh, encroached_sgm);
 
 	/* Calculate max circumradius to shortest edge ratio allowed */
@@ -267,7 +275,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 
 bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 {
-	msh_vtx_t* new_vtx = (msh_vtx_t*) vcn_point2D_create();
+	msh_vtx_t* new_vtx = mvtx_create();
 
 	/* Move and scale new vertex */
 	new_vtx->x[0] = mesh->scale * (vertex[0] - mesh->xdisp);
@@ -276,7 +284,7 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 	msh_trg_t* trg = mesh_locate_vtx(mesh, new_vtx);
 
 	if (NULL == trg) {
-		vcn_point2D_destroy(new_vtx);
+		mvtx_destroy(new_vtx);
 		return false;
 	}
 
@@ -289,7 +297,6 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			   nb_container_t *big_trg,
 			   hash_trg_t *poor_quality_trg)
 {
-	/* Remove poor quality triangles */
 	uint32_t iter = 0;
 	while ((nb_container_is_not_empty(big_trg) ||
 		hash_trg_length(poor_quality_trg) > 0) &&
@@ -308,7 +315,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			trg = hash_trg_remove_first(poor_quality_trg);
 
 		/* Get circumcenter */
-		msh_vtx_t *restrict cc = (msh_vtx_t*) vcn_point2D_create();
+		msh_vtx_t *restrict cc = mvtx_create();
 		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
     
 		msh_trg_t *restrict trg_containing_cc =
@@ -519,25 +526,29 @@ static inline msh_vtx_t* get_midpoint
                          (const msh_edge_t *const restrict sgm)
 {
 	/* Calculate the new vertex (using concentric shells) */
-	msh_vtx_t *v = (msh_vtx_t*) vcn_point2D_create();
-	v->attr = _NB_SUBSEGMENT_VTX; 
+	msh_vtx_t *v = mvtx_create();
+	mvtx_set_type_location(v, ONSEGMENT);
   
 	/* Use midpoint */
 	v->x[0] = 0.5 * (sgm->v1->x[0] + sgm->v2->x[0]);
 	v->x[1] = 0.5 * (sgm->v1->x[1] + sgm->v2->x[1]);
 
-	if (sgm->v1->attr != _NB_INPUT_VTX && sgm->v2->attr != _NB_INPUT_VTX)
-		return v;
-  
+	if (mvtx_is_type_origin(sgm->v1, INPUT) ||
+	    mvtx_is_type_origin(sgm->v2, INPUT)) 
+		concentric_shell(sgm, v);
+	return v;
+}
+
+static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
+{
 	/* Use the input vertex, stored in v1,  as the centroid of the 
 	 * concentric shells */
 	msh_vtx_t* v1 = sgm->v1;
 	msh_vtx_t* v2 = sgm->v2;
-	if (sgm->v1->attr != _NB_INPUT_VTX) {
+	if (mvtx_is_type_origin(sgm->v1, STEINER)) {
 		v1 = sgm->v2;
 		v2 = sgm->v1;
 	}
-
 	/* Use concentric shells */
 	double length = vcn_utils2D_get_dist(v->x, v1->x);
 	double k_real = vcn_math_log2(length / _NB_CC_SHELL_UNIT);
@@ -546,7 +557,6 @@ static inline msh_vtx_t* get_midpoint
 	double factor = _NB_CC_SHELL_UNIT * pow(2.0, k_int - 1.0) / length;
 	v->x[0] = v1->x[0] * (1.0 - factor) + v2->x[0] * factor;
 	v->x[1] = v1->x[1] * (1.0 - factor) + v2->x[1] * factor;
-	return v;
 }
 
 static inline nb_container_t* get_encroached_triangles
@@ -947,14 +957,16 @@ static void initialize_big_and_poor_quality_trg
 			   nb_container_t *const restrict big_trg,
 			   hash_trg_t *const restrict poor_quality_trg)
 {
-	nb_iterator_t *const restrict iter = nb_iterator_create();
+	uint32_t size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(size);
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t *restrict trg =
 			(msh_trg_t*) nb_iterator_get_next(iter);
 		check_trg(trg, mesh, big_trg, poor_quality_trg);
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 }
 
 static inline msh_trg_t* get_trg_containing_circumcenter
@@ -1324,4 +1336,58 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	if(NULL != big_ratio)
 		*big_ratio = size_ratio;
 	return is_too_big;
+}
+
+void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)
+{
+	nb_container_t *exterior_trg = nb_container_create(NB_QUEUE);
+	
+	initialize_exterior_trg(mesh, exterior_trg);
+	delete_exterior_trg(mesh, exterior_trg);
+
+	nb_container_destroy(exterior_trg);
+}
+
+static void initialize_exterior_trg(const nb_mesh_t *mesh,
+				    nb_container_t *exterior_trg)
+{
+	uint32_t size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *restrict trg =
+			nb_iterator_get_next(iter);
+		insert_trg_if_is_exterior(exterior_trg, trg);
+	}
+	nb_iterator_finish(iter);
+}
+
+static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
+				      const msh_trg_t *trg)
+{
+	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
+		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
+			if (mvtx_is_type_location(trg->v3, ONSEGMENT)) {
+				nb_container_insert(exterior_trg, trg);
+			}
+		}
+	}
+}
+
+static void delete_exterior_trg(nb_mesh_t *mesh,
+				nb_container_t *exterior_trg)
+{
+	while (nb_container_is_not_empty(exterior_trg)) {
+		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
+
+		msh_vtx_t *restrict cc = mvtx_create();
+		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
+    
+		msh_trg_t *restrict trg_containing_cc =
+			get_trg_containing_circumcenter(mesh, trg, cc);
+
+		insert_vertex(mesh, trg_containing_cc, cc, NULL, NULL, NULL);
+	}
+
 }

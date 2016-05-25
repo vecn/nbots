@@ -241,7 +241,7 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 		  bool include_input_segments)
 {
 	vcn_msh3trg_t* msh3trg = vcn_msh3trg_create();
-	mesh_alloc_vtx_ids((vcn_mesh_t*)mesh);
+	mesh_enumerate_vtx((vcn_mesh_t*)mesh);
 
 	mesh_2_msh3trg_cast_vertices(mesh, msh3trg);
 
@@ -260,8 +260,6 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 		mesh_2_msh3trg_cast_input_sgm(mesh, msh3trg);
 
 	/* Free memory */
-	mesh_free_vtx_ids((vcn_mesh_t*)mesh);
-
 	if (include_neighbours)
 		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 
@@ -423,7 +421,7 @@ static void mesh_2_msh3trg_cast_vertices(const vcn_mesh_t *const restrict mesh,
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		uint32_t id = *(uint32_t*)((void**)vtx->attr)[0];
+		uint32_t id = mvtx_get_id(vtx);
 		msh3trg->vertices[id * 2] = vtx->x[0]/mesh->scale + mesh->xdisp;
 		msh3trg->vertices[id*2+1] = vtx->x[1]/mesh->scale + mesh->ydisp;
 	}
@@ -441,8 +439,8 @@ static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const restrict mesh,
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
-		msh3trg->edges[i * 2] = *(uint32_t*)((void**)edge->v1->attr)[0];
-		msh3trg->edges[i*2+1] = *(uint32_t*)((void**)edge->v2->attr)[0];
+		msh3trg->edges[i * 2] = mvtx_get_id(edge->v1);
+		msh3trg->edges[i*2+1] = mvtx_get_id(edge->v2);
 		i += 1;
 	}
 	nb_iterator_destroy(iter);
@@ -492,12 +490,13 @@ static void mesh_2_msh3trg_cast_trg_and_alloc_id
 	uint32_t i = 0;
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
-		msh3trg->vertices_forming_triangles[i * 3] =
-			*((uint32_t*)((void**)trg->v1->attr)[0]);
-		msh3trg->vertices_forming_triangles[i*3+1] = 
-			*((uint32_t*)((void**)trg->v2->attr)[0]);
+		msh3trg->vertices_forming_triangles[i * 3] = 
+			mvtx_get_id(trg->v1);
+		msh3trg->vertices_forming_triangles[i*3+1] =
+			mvtx_get_id(trg->v2);
 		msh3trg->vertices_forming_triangles[i*3+2] =
-			*((uint32_t*)((void**)trg->v3->attr)[0]);
+			mvtx_get_id(trg->v3);
+
 		if (include_neighbours) {
 			void** attr = malloc(2 * sizeof(*attr));
 			uint32_t* id = malloc(sizeof(*id));
@@ -519,15 +518,14 @@ static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const restrict mesh,
 {
 	msh3trg->N_input_vertices = mesh->N_input_vtx;
 	msh3trg->input_vertices = 
-		malloc(msh3trg->N_input_vertices * sizeof(*(msh3trg->input_vertices)));
+		malloc(msh3trg->N_input_vertices *
+		       sizeof(*(msh3trg->input_vertices)));
 	for (uint32_t i = 0; i < msh3trg->N_input_vertices; i++) {
 		if (NULL == mesh->input_vtx[i]) {
 			msh3trg->input_vertices[i] = msh3trg->N_vertices;
 			continue;
 		}
-		void** attr = mesh->input_vtx[i]->attr;
-		uint32_t* id = (uint32_t*)attr[0];
-		msh3trg->input_vertices[i] = id[0];
+		msh3trg->input_vertices[i] = mvtx_get_id(mesh->input_vtx[i]);
 	}
 }
 
@@ -566,16 +564,16 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 		sgm = medge_subsgm_next(sgm);
 		if (NULL == sgm) {
 			msh3trg->meshvtx_x_inputsgm[i][0] = 
-				((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
+				mvtx_get_id(sgm_prev->v1);
 			msh3trg->meshvtx_x_inputsgm[i][1] =
-				((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+				mvtx_get_id(sgm_prev->v2);
 		} else {
 			uint32_t idx = 0;
 			uint32_t id_chain;
-			uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-			uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
-			uint32_t id1n = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
-			uint32_t id2n = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
+			uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+			uint32_t id2 = mvtx_get_id(sgm_prev->v2);
+			uint32_t id1n = mvtx_get_id(sgm->v1);
+			uint32_t id2n = mvtx_get_id(sgm->v2);
 			if (id2 == id1n || id2 == id2n) {
 				msh3trg->meshvtx_x_inputsgm[i][idx++] =  id1;
 				msh3trg->meshvtx_x_inputsgm[i][idx++] =  id2;
@@ -587,8 +585,8 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 			}
 			while (NULL != sgm) {
 				sgm_prev = sgm;
-				uint32_t id1 = ((uint32_t*)((void**)sgm_prev->v1->attr)[0])[0];
-				uint32_t id2 = ((uint32_t*)((void**)sgm_prev->v2->attr)[0])[0];
+				uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+				uint32_t id2 = mvtx_get_id(sgm_prev->v2);
 				if (id1 == id_chain) {
 					msh3trg->meshvtx_x_inputsgm[i][idx++] =  id2;
 					id_chain = id2;

@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
-#include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -16,974 +16,1029 @@
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
 
 #include "../mesh2D_structs.h"
+#include "../ruppert/ruppert.h"
 
 #define POW2(a) ((a)*(a))
 
 typedef struct {
-	msh_edge_t* sgm;
-	msh_vtx_t* v1;
-	uint32_t N_vertices; /* 1 or 2 vertices */
-	vcn_point2D_t* vertices[2];
-	bool vtx_inserted[2];
-} voronoi_boundary_sgm_t;
+	uint32_t N;
+	uint16_t *N_adj;
+	msh_edge_t ***adj;
+} vgraph_t;
 
-static vcn_point2D_t* voronoi_insert_global(vcn_bins2D_t* grid, vcn_point2D_t* point);
+typedef struct {
+	uint32_t N_trg_in;  /* # interior trg */
+	uint32_t N_vtx_in;  /* # interior vtx */
+	uint32_t N_vtx_out; /* # vtx on input sgm  */
+	uint32_t N_edg_in;  /* # interior edges */
+	uint32_t N_edg_out; /* # edg on input sgm */
+	uint32_t N_cc_in;   /* # Interior edg joining
+			     *   cocircular interior trg
+			     */
+	uint32_t *vtx_map;
+	uint32_t *trg_map;
+} vinfo_t;
 
-static void voronoi_get_patched_circumcenter(double* v1,
-					     double* v2,
-					     double* v3,
-					     /* Output */
-					     double* circumcenter);
-static nb_container_t* voronoi_get_boundary_segments_with_vertices
-                                        (const vcn_mesh_t* const mesh);
-		
-static int8_t voronoi_vtx_compare(const void* const A,
-				  const void *const B);
+static void set_arrays_memory(nb_mshpoly_t *poly);
+static void copy_nodes(nb_mshpoly_t* poly,
+		       const nb_mshpoly_t *const src_poly);
+static void copy_edges(nb_mshpoly_t* poly,
+		       const nb_mshpoly_t *const src_poly);
+static void copy_centroids(nb_mshpoly_t* poly,
+			   const nb_mshpoly_t *const src_poly);
+static void copy_N_adj(nb_mshpoly_t* poly,
+			const nb_mshpoly_t *const src_poly);
+static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly);
+static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize);
+static void copy_adj_and_ngb(nb_mshpoly_t* poly,
+			     const nb_mshpoly_t *const src_poly);
 
-static int8_t compare_voronoi_sgm(const void *const sgmA, 
-				  const void *const sgmB);
+static void copy_elem_vtx(nb_mshpoly_t* poly,
+			  const nb_mshpoly_t *const src_poly);
+static void copy_N_nod_x_sgm(nb_mshpoly_t* poly,
+			     const nb_mshpoly_t *const src_poly);
+static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly);
+static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize);
+static void copy_nod_x_sgm(nb_mshpoly_t* poly,
+			   const nb_mshpoly_t *const src_poly);
+static void* malloc_poly(void);
 
-static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
-				 msh_edge_t** segments, uint32_t N_segments,
-				 msh_trg_t** triangles, uint32_t N_triangles,
-				 /* NULL for a constant density */
-				 double (*density)(double*),
-				 const nb_container_t *const avl_boundary_sgm,
-				 uint32_t max_iter);
+static void init_voronoi_info(vinfo_t *vinfo,
+			      const nb_mesh_t *const mesh);
+static void init_trg_cc_map(uint32_t *trg_cc_map, uint32_t Nt);
+static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
+			       uint32_t *trg_cc_map,
+			       const nb_mesh_t *const mesh);
+static void create_mapping(vinfo_t *vinfo,
+			   const vgraph_t *const vgraph,
+			   const nb_mesh_t *const mesh,
+			   const uint32_t *trg_cc_map);
+static bool trg_is_interior(const msh_trg_t *const trg,
+			    const vgraph_t *const vgraph);
+static void count_vgraph_adj(vgraph_t *vgraph,
+			     const nb_mesh_t *const mesh);
+static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock);
+static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
+			   uint32_t *trg_cc_map,
+			   const nb_mesh_t *const mesh);
+static bool adj_is_cocircular(const msh_edge_t *const edg);
+static void update_cc_map(const msh_edge_t *edge, bool is_cc,
+			  uint32_t *trg_cc_map, uint32_t N_trg);
+static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
+			      bool is_cc);
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
+				       const msh_edge_t *edge,
+				       const msh_vtx_t *v1,
+				       const msh_vtx_t *v2);
+static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
+				  const msh_edge_t *edge, bool is_cc);
+static void finish_voronoi_info(vinfo_t *vinfo);
+static void finish_voronoi_graph(vgraph_t *vgraph);
+static void set_voronoi(nb_mshpoly_t *poly,
+			const vgraph_t *const vgraph,
+			const vinfo_t *const vinfo,
+			const nb_mesh_t *const mesh);
+static void set_quantities(nb_mshpoly_t *poly,
+			   const vinfo_t *const vinfo,
+			   const nb_mesh_t *const mesh);
+static void set_nodes_and_centroids(nb_mshpoly_t *poly,
+				    const vgraph_t *const vgraph,
+				    const vinfo_t *const vinfo,
+				    const nb_mesh_t *const mesh);
 
-vcn_mshpoly_t* vcn_mesh_get_mshpoly(const vcn_mesh_t *const mesh,
-				    bool include_adjacencies,
-				    bool central_voronoi,
-				    uint32_t central_voronoi_max_iter,
-				    /* NULL for a constant density */
-				    double (*central_voronoi_density)(double*),
-				    uint32_t* (*labeling)
-				    		(const vcn_graph_t *const))
+static void set_edges(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh);
+
+static void process_interior_edge(nb_mshpoly_t *poly,
+				  const vgraph_t *const vgraph,
+				  const vinfo_t *const vinfo,
+				  const msh_edge_t *const edg,
+				  uint32_t iedge);
+static void set_N_adj(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh);
+
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const vgraph_t *const vgraph,
+			    const vinfo_t *const vinfo,
+			    const nb_mesh_t *const mesh);
+static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
+				const vgraph_t *const vgraph,
+				const vinfo_t *const vinfo,
+				uint32_t i, uint16_t j, uint16_t id_adj);
+static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
+			      const vinfo_t *const vinfo,
+			      uint32_t i, uint16_t j);
+static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
+			       const vinfo_t *const vinfo,
+			       uint32_t i, uint16_t j);
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const vgraph_t *const vgraph,
+			 const vinfo_t *const vinfo,
+			 const nb_mesh_t *const mesh);
+static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh);
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const nb_mesh_t *const mesh);
+static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const vcn_mesh_t *const mesh,
+			  uint32_t sgm_id);
+static void assemble_sgm_wire(nb_mshpoly_t *poly,
+			      const vinfo_t *const vinfo,
+			      uint32_t sgm_id,
+			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
+
+uint32_t nb_mshpoly_get_memsize(void)
 {
-	/* Allocate Voronoi mesh */
-	vcn_mshpoly_t* voronoi = calloc(1, sizeof(*voronoi));
-
-	/* Clone the mesh if the central Voronoi is selected
-	 * to allow the vertices modification */
-	vcn_mesh_t* aux_mesh = (vcn_mesh_t*) mesh;
-	if(central_voronoi)
-		aux_mesh = vcn_mesh_clone(mesh);
-
-	/* Put vertices, segments and triangles into
-	 * arrays, because the hash key generated is
-	 * based on the position of the vertices, which
-	 * is changing,  and they can not be accessed 
-	 * via hash table. 
-	 */
-	uint32_t N_vertices = vcn_bins2D_get_length(aux_mesh->ug_vtx);
-	msh_vtx_t** vertices =  malloc(2 * voronoi->N_polygons *
-				       sizeof(*vertices));
-	uint32_t N_segments = nb_container_get_length(aux_mesh->ht_edge);
-	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
-	uint32_t N_triangles = nb_container_get_length(aux_mesh->ht_trg);
-	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
-
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(iter, aux_mesh->ug_vtx);
-	int i = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		/* Allocate the ID */
-		void **attr = malloc(2 * sizeof(*attr));
-		uint32_t *id = malloc(sizeof(*id));
-		id[0] = i++;
-		attr[0] = id;
-		attr[1] = vtx->attr;
-		vtx->attr = attr;
-	}
-	nb_iterator_t *sgm_iter = nb_iterator_create();
-	nb_iterator_set_container(sgm_iter, aux_mesh->ht_edge);
-	i = 0;
-	while (nb_iterator_has_more(sgm_iter)) {
-		msh_edge_t* sgm = (msh_edge_t*)nb_iterator_get_next(sgm_iter);
-		segments[i++] = sgm;
-	}
-	nb_iterator_destroy(sgm_iter);
-
-	nb_iterator_t *trg_iter = nb_iterator_create();
-	nb_iterator_set_container(trg_iter, aux_mesh->ht_trg);
-	i = 0;
-	while (nb_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
-		/* Allocate the ID */
-		void **attr = malloc(2 * sizeof(*attr));
-		uint32_t *id = malloc(sizeof(*id));
-		id[0] = i;
-		attr[0] = id;
-		attr[1] = trg->attr;
-		trg->attr = attr;
-		/* Put the triangle into the array */
-		triangles[i++] = trg;
-	}
-	nb_iterator_destroy(trg_iter);
-
-	uint32_t *perm = NULL; /* Dummy initialization */
-	if (NULL != labeling) {
-		vcn_graph_t *graph = vcn_mesh_create_vtx_graph(mesh);
-		perm = labeling(graph);
-		vcn_graph_destroy(graph);
-	}
-
-	/* Allocate Voronoi data */
-	voronoi->N_polygons = N_vertices;
-	voronoi->centroids = 
-		malloc(2 * voronoi->N_polygons * sizeof(*(voronoi->centroids)));
-	voronoi->N_vertices_forming_polygons =
-		calloc(voronoi->N_polygons,
-		       sizeof(*(voronoi->N_vertices_forming_polygons)));
-	voronoi->vertices_forming_polygons =
-		malloc(voronoi->N_polygons * 
-		       sizeof(*(voronoi->vertices_forming_polygons)));
-
-	/* Set the vertices into the array */
-	vcn_bins2D_iter_restart(iter);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*)vcn_bins2D_iter_get_next(iter);
-		uint32_t* id = (uint32_t*)((void**)vtx->attr)[0];
-		if (NULL != labeling)
-			id[0] = perm[id[0]];
-		/* Put the vertex in the array */
-		vertices[id[0]] = vtx;
-	}
-	vcn_bins2D_iter_destroy(iter);
-
-	/* Free permutation vector used for labeling */
-	if (NULL != labeling)
-		free(perm);
-
-	/* Compute vertices of polygons which lies on the boundary */
-	nb_container_t* avl_boundary_sgm = 
-		voronoi_get_boundary_segments_with_vertices(aux_mesh);
-
-	/* Lloyd Iteration */
-	if(central_voronoi)
-		mesh_Lloyd_iteration(vertices, N_vertices,
-				     segments, N_segments,
-				     triangles, N_triangles,
-				     central_voronoi_density,
-				     avl_boundary_sgm, 
-				     central_voronoi_max_iter);
-
-	/* Array to access the triangles connected to each vertex */
-	msh_trg_t** trg_x_vtx = calloc(N_vertices, sizeof(*trg_x_vtx));
-
-	/* Array with the nodes conforming each Voronoi polygon */
-	nb_container_t** node_x_vtx = malloc(N_vertices * sizeof(*node_x_vtx));
-	for (uint32_t i = 0; i < N_vertices; i++)
-		node_x_vtx[i] = nb_container_create(NB_STACK);
-
-	/* Array to store the circumcenter of the triangles */
-	vcn_point2D_t** trg_center = calloc(N_triangles, sizeof(*trg_center));
-
-	/* Relate the triangle with its vertices */  
-	for (uint32_t i = 0; i < N_triangles; i++) {
-		msh_trg_t* trg = triangles[i];
-		trg_x_vtx[((uint32_t*)((void**)trg->v1->attr)[0])[0]] = trg;
-		trg_x_vtx[((uint32_t*)((void**)trg->v2->attr)[0])[0]] = trg;
-		trg_x_vtx[((uint32_t*)((void**)trg->v3->attr)[0])[0]] = trg;
-	}
-
-
-	/* Compute vertices of polygons */
-	vcn_bins2D_t* voronoi_vtx = vcn_bins2D_create(1.0);
-	for (uint32_t i = 0; i < voronoi->N_polygons; i++) {
-		msh_trg_t* first_trg = trg_x_vtx[i];
-		/* Check if the flower is complete */
-		msh_trg_t* trg = first_trg;
-		while (NULL != trg) {
-			/* Next triangle */
-			trg = mtrg_get_left_triangle(trg, vertices[i]);
-			if(trg == first_trg)
-				break;      
-		}
-		if (trg != first_trg) {
-			trg = first_trg;
-			while (NULL != trg) {
-				first_trg = trg;
-				/* Prev triangle */
-				trg = mtrg_get_right_triangle(trg, vertices[i]);
-			}
-			msh_edge_t* ext_sgm = first_trg->s1;
-			if (first_trg->v2 == vertices[i])
-				ext_sgm = first_trg->s2;
-			else if (first_trg->v3 == vertices[i])
-				ext_sgm = first_trg->s3;
-			/* Fix boundary */
-			if (medge_is_subsgm(ext_sgm)) {
-				/* Insert boundary vertex */
-				voronoi_boundary_sgm_t aux_bsgm;
-				aux_bsgm.sgm = ext_sgm;
-				voronoi_boundary_sgm_t* bsgm =
-					nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-      
-				/* Insert centroid */
-				vcn_point2D_t *centroid = bsgm->v1;
-				vcn_point2D_t* centroid_cpy = centroid;
-				centroid = voronoi_insert_global(voronoi_vtx, centroid_cpy);
-				if (centroid != centroid_cpy)
-					vcn_point2D_destroy(centroid_cpy);
-				nb_container_insert(node_x_vtx[i], centroid);
-				if (bsgm->N_vertices > 0) {
-					/* Case 1 & 2 */
-					if (!bsgm->vtx_inserted[0]) {
-						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
-						bsgm->vtx_inserted[0] = true;
-					}
-					nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
-					if (bsgm->N_vertices == 2) {
-						/* Case 2 */
-						/* Next triangle */
-						msh_trg_t* next_trg = first_trg->t3;
-						if (first_trg->v2 == vertices[i])
-							next_trg = first_trg->t1;
-						else if (first_trg->v3 == vertices[i])
-							next_trg = first_trg->t2;
-						if (next_trg == NULL) {
-							/* Corner triangle, Case 1, next boundary */
-							msh_edge_t* corner_ext_sgm = first_trg->s3;
-							if (first_trg->v2 == vertices[i])
-								corner_ext_sgm = first_trg->s1;
-							else if (first_trg->v3 == vertices[i])
-								corner_ext_sgm = first_trg->s2;
-							aux_bsgm.sgm = corner_ext_sgm;
-							bsgm = nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-							if (!bsgm->vtx_inserted[0]) {
-								vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
-								bsgm->vtx_inserted[0] = true;
-							}
-							nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
-							continue; /* Iteration over Voronoi polygons */
-						} else {
-							first_trg = next_trg;
-						}
-					}
-				}
-			}
-		}
-		/* Start composition of polygon */
-		trg = first_trg;
-		msh_trg_t* last_trg = NULL;
-		
-		while (NULL != trg) {
-			uint32_t* trg_id = (uint32_t*)((void**)trg->attr)[0];
-			msh_edge_t* op_sgm = mtrg_get_opposite_edge(trg, vertices[i]);
-			voronoi_boundary_sgm_t* bsgm = NULL; /* Dummy initialization */
-			bool insert_circumcenter_flag = false;
-			if (medge_is_subsgm(op_sgm)) {
-				if (op_sgm->t1 == NULL || op_sgm->t2 == NULL) {
-					/* Insert boundary vertex */
-					voronoi_boundary_sgm_t aux_bsgm;
-					aux_bsgm.sgm = op_sgm;
-					bsgm =
-						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-					if (bsgm->N_vertices == 0 || bsgm->N_vertices == 1)
-						insert_circumcenter_flag = true;
-				} else {
-					insert_circumcenter_flag = true;
-				}
-			} else {
-				insert_circumcenter_flag = true;
-			}
-      
-			if (insert_circumcenter_flag) {
-				if (NULL == trg_center[trg_id[0]]) {
-					/* Compute circumcenter */
-					vcn_point2D_t* circumcenter = vcn_point2D_create();
-					voronoi_get_patched_circumcenter(trg->v1->x,
-									 trg->v2->x,
-									 trg->v3->x,
-									 circumcenter->x);
-					vcn_point2D_t* circumcenter_cpy = circumcenter;
-					circumcenter = voronoi_insert_global(voronoi_vtx, circumcenter_cpy);
-					if (circumcenter != circumcenter_cpy)
-						vcn_point2D_destroy(circumcenter_cpy);
-					trg_center[trg_id[0]] = circumcenter;
-				}
-				if(!nb_container_exist(node_x_vtx[i], trg_center[trg_id[0]]))
-					nb_container_insert(node_x_vtx[i], trg_center[trg_id[0]]);
-			} else {
-				if (!bsgm->vtx_inserted[0]) {
-					vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
-					bsgm->vtx_inserted[0] = true;
-				}
-				if (!bsgm->vtx_inserted[1]) {
-					vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[1]);
-					bsgm->vtx_inserted[1] = true;
-				}
-				nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
-				nb_container_insert(node_x_vtx[i], bsgm->vertices[1]);
-			}
-
-			/* Next triangle */
-			last_trg = trg;
-			trg = mtrg_get_left_triangle(trg, vertices[i]);
-			if (trg == first_trg)
-				break;      
-		}
-
-		if (NULL == trg) {
-			/* Fix boundary */
-			msh_edge_t* ext_sgm = last_trg->s3;
-			if (last_trg->v2 == vertices[i])
-				ext_sgm = last_trg->s1;
-			else if (last_trg->v3 == vertices[i])
-				ext_sgm = last_trg->s2;
-			if (medge_is_subsgm(ext_sgm)) {
-				/* Insert boundary vertex */
-				voronoi_boundary_sgm_t aux_bsgm;
-				aux_bsgm.sgm = ext_sgm;
-				voronoi_boundary_sgm_t* bsgm =
-					nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-
-				if (bsgm->N_vertices == 1) {
-					/* Case 1 */
-					if (!bsgm->vtx_inserted[0]) {
-						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[0]);
-						bsgm->vtx_inserted[0] = true;
-					}
-					nb_container_insert(node_x_vtx[i], bsgm->vertices[0]);
-				} else if (bsgm->N_vertices == 2) {
-					/* Case 2 */
-					uint32_t* last_trg_id = (uint32_t*)((void**)last_trg->attr)[0];
-					vcn_point2D_t* last_vtx = nb_container_delete_first(node_x_vtx[i]);
-					vcn_bins2D_delete(voronoi_vtx, last_vtx);
-					free(trg_center[last_trg_id[0]]);
-					trg_center[last_trg_id[0]] = NULL;
-
-					if (!bsgm->vtx_inserted[1]) {
-						vcn_bins2D_insert(voronoi_vtx, bsgm->vertices[1]);
-						bsgm->vtx_inserted[1] = true;
-					}
-					nb_container_insert(node_x_vtx[i], bsgm->vertices[1]);
-				}
-			}
-		}
-	}
-	free(trg_center);
-
-	/* Store local and global info of vertices and centroids*/
-	voronoi->N_vertices = vcn_bins2D_get_length(voronoi_vtx);
-	voronoi->vertices = malloc(2 * voronoi->N_vertices * sizeof(*(voronoi->vertices)));
-	uint32_t vtx_counter = 0;
-	for (uint32_t i=0; i < voronoi->N_polygons; i++) {
-		/* Store centroids */
-		voronoi->centroids[i * 2] = 
-			vertices[i]->x[0]/aux_mesh->scale + aux_mesh->xdisp;
-		voronoi->centroids[i*2+1] = 
-			vertices[i]->x[1]/aux_mesh->scale + aux_mesh->ydisp;
-		/* Store vertices (boundaries of polygons) */
-		voronoi->N_vertices_forming_polygons[i] = nb_container_get_length(node_x_vtx[i]);
-		voronoi->vertices_forming_polygons[i] =
-			malloc(voronoi->N_vertices_forming_polygons[i] *
-			       sizeof(*(voronoi->vertices_forming_polygons[i])));
-		for (uint32_t j = 0; j < voronoi->N_vertices_forming_polygons[i]; j++) {
-			vcn_point2D_t* vtx = nb_container_delete_first(node_x_vtx[i]);
-			uint32_t* id;
-			if (NULL == vtx->attr) {
-				id = malloc(sizeof(*id));
-				id[0] = vtx_counter++;
-				vtx->attr = id;
-
-				voronoi->vertices[id[0] * 2] = 
-					vtx->x[0]/aux_mesh->scale + aux_mesh->xdisp;
-				voronoi->vertices[id[0]*2+1] = 
-					vtx->x[1]/aux_mesh->scale + aux_mesh->ydisp;
-			} else {
-				id = (uint32_t*) vtx->attr;
-			}
-			voronoi->vertices_forming_polygons[i][j] = id[0];
-		}
-		/* Free memory */
-		nb_container_destroy(node_x_vtx[i]);
-	}
-
-	/* Get adjacencies */
-	if (include_adjacencies) {
-		/* Create adjacencies matrix */
-		voronoi->N_adjacencies = 
-			calloc(N_vertices, sizeof(*(voronoi->N_adjacencies)));
-		voronoi->adjacencies = 
-			malloc(N_vertices * sizeof(*(voronoi->adjacencies)));
-  
-		for (uint32_t i = 0; i < N_segments; i++) {
-			msh_edge_t* sgm = segments[i];
-			uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
-			uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
-			voronoi->N_adjacencies[idx1] += 1;
-			voronoi->N_adjacencies[idx2] += 1;
-		}
-
-		for (uint32_t i = 0; i < N_vertices; i++)
-			voronoi->adjacencies[i] =
-				malloc(voronoi->N_adjacencies[i] * 
-				       sizeof(*(voronoi->adjacencies[i])));
-
-		uint32_t* adj_matrix_next_idx = calloc(N_vertices,
-						       sizeof(*adj_matrix_next_idx));
-
-		for (uint32_t i = 0; i < N_segments; i++) {
-			msh_edge_t* sgm = segments[i];
-			uint32_t idx1 = ((uint32_t*)((void**)sgm->v1->attr)[0])[0];
-			uint32_t idx2 = ((uint32_t*)((void**)sgm->v2->attr)[0])[0];
-			voronoi->adjacencies[idx1][adj_matrix_next_idx[idx1]] = idx2;
-			voronoi->adjacencies[idx2][adj_matrix_next_idx[idx2]] = idx1;
-			adj_matrix_next_idx[idx1] += 1;
-			adj_matrix_next_idx[idx2] += 1;
-		}
-		free(adj_matrix_next_idx);
-	}
-
-	/* Free memory */
-	free(node_x_vtx);
-	free(trg_x_vtx);
-	vcn_bins2D_set_attribute_destroyer(voronoi_vtx, free);
-	vcn_bins2D_destroy(voronoi_vtx);
-	nb_container_set_destroyer(avl_boundary_sgm, free);
-	nb_container_destroy(avl_boundary_sgm);
-
-	for (uint32_t i = 0; i < N_vertices; i++) {
-		msh_vtx_t* vtx = vertices[i];
-		void** attr = (void**)vtx->attr;
-		vtx->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-
-	for (uint32_t i = 0; i < N_triangles; i++) {
-		msh_trg_t* trg = triangles[i];
-		void** attr = (void**)trg->attr;
-		trg->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-
-	free(vertices);
-	free(segments);
-	free(triangles);
-
-	if (central_voronoi)
-		vcn_mesh_destroy(aux_mesh);
-
-	/* Return Voronoi mesh */
-	return voronoi;
+	return sizeof(nb_mshpoly_t);
 }
 
-void vcn_mshpoly_destroy(vcn_mshpoly_t* voronoi)
+void nb_mshpoly_init(void *mshpoly_ptr)
 {
-	free(voronoi->centroids);
-	free(voronoi->vertices);
-	free(voronoi->N_vertices_forming_polygons);
-	for (uint32_t i = 0; i < voronoi->N_polygons; i++)
-		free(voronoi->vertices_forming_polygons[i]);
-	free(voronoi->vertices_forming_polygons);
-	if (voronoi->adjacencies != NULL) {
-		for (uint32_t i = 0; i < voronoi->N_polygons; i++)
-			free(voronoi->adjacencies[i]);
-		free(voronoi->N_adjacencies);
-		free(voronoi->adjacencies);
-	}
-	free(voronoi);
+	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
 }
 
-static int8_t compare_voronoi_sgm(const void *const sgmA, 
-				  const void *const sgmB)
+void nb_mshpoly_copy(void *dest, const void *const src)
 {
-	msh_edge_t* sA = ((voronoi_boundary_sgm_t*)sgmA)->sgm;
-	msh_edge_t* sB = ((voronoi_boundary_sgm_t*)sgmB)->sgm;
-	int8_t out;
-	if (sA < sB)
-		out = -1;
-	if (sA > sB)
-		out = 1;
-	else
-		out = 0;
+	memcpy(dest, src, nb_mshpoly_get_memsize());
+	nb_mshpoly_t *poly = dest;
+	const nb_mshpoly_t *const src_poly = src;
+
+	if (poly->N_elems > 0) {
+		set_arrays_memory(poly);
+
+		copy_nodes(poly, src_poly);
+		copy_edges(poly, src_poly);
+		copy_centroids(poly, src_poly);
+		copy_N_adj(poly, src_poly);
+
+		uint32_t memsize = get_size_of_adj_and_ngb(poly);
+		set_mem_of_adj_and_ngb(poly, memsize);
+		copy_adj_and_ngb(poly, src_poly);
+
+		copy_elem_vtx(poly, src_poly);
+		copy_N_nod_x_sgm(poly, src_poly);
+
+		memsize = get_size_of_nod_x_sgm(poly);
+		set_mem_of_nod_x_sgm(poly, memsize);
+		copy_nod_x_sgm(poly, src_poly);
+	}
+}
+
+static void set_arrays_memory(nb_mshpoly_t *poly)
+{
+	uint32_t nod_size = poly->N_nod * 2 * sizeof(*(poly->nod));
+	uint32_t edg_size = poly->N_edg * 2 * sizeof(*(poly->edg));
+	uint32_t cen_size = poly->N_elems * 2 * sizeof(*(poly->cen));
+	uint32_t N_adj_size = poly->N_elems * sizeof(*(poly->N_adj));
+	uint32_t adj_size = poly->N_elems * sizeof(*(poly->adj));
+	uint32_t ngb_size = poly->N_elems * sizeof(*(poly->ngb));
+	uint32_t elem_vtx_size = poly->N_vtx * sizeof(*(poly->elem_vtx));
+	uint32_t N_nod_x_sgm_size = poly->N_sgm * sizeof(*(poly->N_nod_x_sgm));
+	uint32_t nod_x_sgm_size = poly->N_sgm * sizeof(*(poly->nod_x_sgm));
+
+	uint32_t size = nod_size + edg_size + cen_size + N_adj_size +
+		adj_size + ngb_size + elem_vtx_size +
+		N_nod_x_sgm_size + nod_x_sgm_size;
+
+	char *memblock = malloc(size);
+
+	poly->nod = (void*) memblock;
+	poly->edg = (void*) ((char*)(poly->nod) + nod_size);
+	poly->cen = (void*) ((char*)(poly->edg) + edg_size);
+	poly->N_adj = (void*) ((char*)(poly->cen) + cen_size);
+	poly->adj = (void*) ((char*)(poly->N_adj) + N_adj_size);
+	poly->ngb = (void*) ((char*)(poly->adj) + adj_size);
+	poly->elem_vtx = (void*) ((char*)(poly->ngb) + ngb_size);
+	poly->N_nod_x_sgm = (void*) ((char*)(poly->elem_vtx) +
+				     elem_vtx_size);
+	poly->nod_x_sgm = (void*) ((char*)(poly->N_nod_x_sgm) +
+				   N_nod_x_sgm_size);
+}
+
+static void copy_nodes(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->nod, src_poly->nod,
+	       2 * poly->N_nod * sizeof(*(poly->nod)));
+}
+
+static void copy_edges(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->edg, src_poly->edg,
+	       2 * poly->N_edg * sizeof(*(poly->edg)));
+}
+
+static void copy_centroids(nb_mshpoly_t* poly,
+			   const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->cen, src_poly->cen,
+	       2 * poly->N_elems * sizeof(*(poly->cen)));
+}
+
+static void copy_N_adj(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->N_adj, src_poly->N_adj,
+	       poly->N_elems * sizeof(*(poly->N_adj)));
+}
+
+static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly)
+{
+	uint32_t size = 0;
+	for (uint32_t i = 0; i < poly->N_elems; i++)
+		size += poly->N_adj[i];
+	return 2 * size * sizeof(**(poly->adj));
+}
+
+static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
+{
+	char *memblock1 = malloc(memsize);
+	char *memblock2 = memblock1 + memsize / 2;
+	for (uint32_t i = 0; i < poly->N_elems; i++) {
+		poly->adj[i] = (void*) memblock1;
+		poly->ngb[i] = (void*) memblock2;
+		memblock1 += poly->N_adj[i] * sizeof(**(poly->adj));
+		memblock2 += poly->N_adj[i] * sizeof(**(poly->ngb));
+	}
+}
+
+static void copy_adj_and_ngb(nb_mshpoly_t* poly,
+			     const nb_mshpoly_t *const src_poly)
+{
+	for (int i = 0; i < poly->N_elems; i++) {
+		memcpy(&(poly->adj[i]), &(src_poly->adj[i]),
+		       poly->N_adj[i] * sizeof(**(poly->adj)));
+		memcpy(&(poly->ngb[i]), &(src_poly->ngb[i]),
+		       poly->N_adj[i] * sizeof(**(poly->ngb)));
+	}
+
+}
+
+static void copy_elem_vtx(nb_mshpoly_t* poly,
+			  const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->elem_vtx, src_poly->elem_vtx,
+	       poly->N_vtx * sizeof(*(poly->elem_vtx)));
+}
+
+static void copy_N_nod_x_sgm(nb_mshpoly_t* poly,
+			     const nb_mshpoly_t *const src_poly)
+{
+	memcpy(poly->N_nod_x_sgm, src_poly->N_nod_x_sgm,
+	       poly->N_sgm * sizeof(*(poly->N_nod_x_sgm)));
+}
+
+
+static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly)
+{
+	uint32_t size = 0;
+	for (uint32_t i = 0; i < poly->N_sgm; i++)
+		size += poly->N_nod_x_sgm[i] *
+			sizeof(**(poly->nod_x_sgm));
+	return size;
+}
+
+static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize)
+{
+	char *memblock = malloc(memsize);
+	for (uint32_t i = 0; i < poly->N_sgm; i++) {
+		poly->nod_x_sgm[i] = (void*) memblock;
+		memblock += poly->N_nod_x_sgm[i] *
+			sizeof(**(poly->nod_x_sgm));
+	}
+}
+
+static void copy_nod_x_sgm(nb_mshpoly_t* poly,
+			   const nb_mshpoly_t *const src_poly)
+{
+	for (int i = 0; i < poly->N_sgm; i++) {
+		memcpy(&(poly->nod_x_sgm[i]), &(src_poly->nod_x_sgm[i]),
+		       poly->N_nod_x_sgm[i] * sizeof(**(poly->nod_x_sgm)));
+	}
+}
+
+void nb_mshpoly_finish(void *mshpoly_ptr)
+{
+	nb_mshpoly_clear(mshpoly_ptr);
+}
+
+void* nb_mshpoly_create(void)
+{
+	nb_mshpoly_t *poly = malloc_poly();
+	nb_mshpoly_init(poly);
+	return poly;
+}
+
+static void* malloc_poly(void)
+{
+	uint32_t size = nb_mshpoly_get_memsize();
+	nb_mshpoly_t *poly = malloc(size);
+	return poly;
+}
+
+void* nb_mshpoly_clone(const void *const mshpoly_ptr)
+{
+	nb_mshpoly_t *poly = malloc_poly();
+	nb_mshpoly_copy(poly, mshpoly_ptr);
+	return poly;
+}
+
+void nb_mshpoly_destroy(void *mshpoly_ptr)
+{
+	nb_mshpoly_finish(mshpoly_ptr);
+	free(mshpoly_ptr);
+}
+
+void nb_mshpoly_clear(void *mshpoly_ptr)
+{
+	nb_mshpoly_t *poly = mshpoly_ptr;
+	if (NULL != poly->nod) {
+		free(poly->adj[0]);
+		free(poly->nod_x_sgm[0]);
+		free(poly->nod);		
+	}
+	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
+}
+
+void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
+{
+	if (vcn_mesh_get_N_trg(mesh) > 0) {
+		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
+
+		mesh_enumerate_vtx(mesh);
+		mesh_alloc_trg_ids(mesh);
+	
+		vinfo_t vinfo;
+		init_voronoi_info(&vinfo, mesh);
+
+		uint32_t Nt = vcn_mesh_get_N_trg(mesh);
+		uint32_t *trg_cc_map = malloc(Nt * sizeof(uint32_t));
+		init_trg_cc_map(trg_cc_map, Nt);
+
+		vgraph_t vgraph;
+		init_voronoi_graph(&vgraph, &vinfo, trg_cc_map, mesh);
+
+		create_mapping(&vinfo, &vgraph, mesh, trg_cc_map);
+		free(trg_cc_map);
+
+		set_voronoi(mshpoly, &vgraph, &vinfo, mesh);
+
+		finish_voronoi_info(&vinfo);
+		finish_voronoi_graph(&vgraph);
+
+		mesh_free_trg_ids((vcn_mesh_t*)mesh);
+	}
+}
+
+static void init_voronoi_info(vinfo_t *vinfo,
+			      const nb_mesh_t *const mesh)
+{
+	memset(vinfo, 0,  sizeof(*vinfo));
+	uint32_t Nv = vcn_mesh_get_N_vtx(mesh);
+	uint32_t Nt = vcn_mesh_get_N_trg(mesh);
+	uint32_t size1 = Nv * sizeof(uint32_t);
+	uint32_t size2 = Nt * sizeof(uint32_t);
+	char *memblock = malloc(2 * size1 + size2);
+	vinfo->vtx_map = (void*) memblock;
+	vinfo->trg_map = (void*) (memblock + size1);
+
+	for (uint32_t i = 0; i < Nv; i++)
+		vinfo->vtx_map[i] = Nv;
+
+	for (uint32_t i = 0; i < Nt; i++)
+		vinfo->trg_map[i] = Nt;
+}
+
+static void init_trg_cc_map(uint32_t *trg_cc_map, uint32_t Nt)
+{
+	for (uint32_t i = 0; i < Nt; i++)
+		trg_cc_map[i] = i;
+}
+
+static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
+			       uint32_t *trg_cc_map,
+			       const nb_mesh_t *const mesh)
+{
+	vgraph->N = vcn_mesh_get_N_vtx(mesh);
+	
+	uint32_t N_edg = vcn_mesh_get_N_edg(mesh);
+
+	uint32_t size1 = vgraph->N * sizeof(*(vgraph->N_adj));
+	uint32_t size2 = vgraph->N * sizeof(*(vgraph->adj));
+	uint32_t memsize = size1 + size2 +
+		2 * N_edg * sizeof(**(vgraph->adj));
+	char *memblock = malloc(memsize);
+
+	vgraph->N_adj = (void*) (memblock);
+	vgraph->adj = (void*) (memblock +  size1);
+
+	count_vgraph_adj(vgraph, mesh);
+	set_vgraph_adj_mem(vgraph, memblock + size1 + size2);
+	set_vgraph_adj(vgraph, vinfo, trg_cc_map, mesh);
+}
+
+static void create_mapping(vinfo_t *vinfo,
+			   const vgraph_t *const vgraph,
+			   const nb_mesh_t *const mesh,
+			   const uint32_t *trg_cc_map)
+{
+	uint32_t ielem = 0;
+	uint32_t inode = 0;
+
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		uint32_t id = mvtx_get_id(vtx);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			vinfo->N_vtx_in += 1;
+			vinfo->vtx_map[id] = ielem;
+			ielem += 1;
+		} else {
+			vinfo->N_vtx_out += 1;
+			vinfo->vtx_map[id] = inode;
+			inode += 1;
+		}
+	}
+	vcn_bins2D_iter_destroy(biter);
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		if (trg_is_interior(trg, vgraph)) {
+			if (id != trg_cc_map[id]) {
+				uint32_t cc_id = trg_cc_map[id];
+				vinfo->trg_map[id] = vinfo->trg_map[cc_id];
+			} else {
+				vinfo->trg_map[id] = inode;
+				inode += 1;
+			}
+		}
+	}
+	nb_iterator_finish(iter);
+	
+}
+
+static bool trg_is_interior(const msh_trg_t *const trg,
+			    const vgraph_t *const vgraph)
+{
+	return mvtx_is_type_location(trg->v1, INTERIOR) &&
+		mvtx_is_type_location(trg->v2, INTERIOR) &&
+		mvtx_is_type_location(trg->v3, INTERIOR);
+
+}
+
+static void count_vgraph_adj(vgraph_t *vgraph,
+			     const nb_mesh_t *const mesh)
+{
+	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		const msh_edge_t *edge = nb_iterator_get_next(iter);
+		uint32_t id1 = mvtx_get_id(edge->v1);
+		uint32_t id2 = mvtx_get_id(edge->v2);
+
+		vgraph->N_adj[id1] += 1;
+		vgraph->N_adj[id2] += 1;
+	}
+	nb_iterator_finish(iter);
+}
+
+static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock)
+{
+	for (uint32_t i = 0; i < vgraph->N; i++) {
+		vgraph->adj[i] = (void*) memblock;
+		memblock += vgraph->N_adj[i] * sizeof(**(vgraph->adj));
+	}
+}
+
+static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
+			   uint32_t *trg_cc_map,
+			   const nb_mesh_t *const mesh)
+{
+	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		const msh_edge_t *edge = nb_iterator_get_next(iter);
+
+		bool cc = adj_is_cocircular(edge);
+		update_cc_map(edge, cc, trg_cc_map,
+			      vcn_mesh_get_N_trg(mesh));
+		insert_edg_as_adj(vgraph, edge, cc);
+		counting_edg_in_vinfo(vinfo, vgraph, edge, cc);
+	}
+	nb_iterator_finish(iter);
+	
+	vinfo->N_trg_in /= 3;
+}
+
+static bool adj_is_cocircular(const msh_edge_t *const edg)
+{
+	bool out;
+	if (medge_is_boundary(edg)) {
+		out = false;
+	} else {
+		msh_vtx_t *v4 = mtrg_get_opposite_vertex(edg->t2, edg);
+		out = nb_utils2D_pnt_is_cocircular(edg->t1->v1->x,
+						   edg->t1->v2->x,
+						   edg->t1->v3->x,
+						   v4->x);
+	}
 	return out;
 }
 
-static vcn_point2D_t* voronoi_insert_global(vcn_bins2D_t* bins, vcn_point2D_t* point)
+static void update_cc_map(const msh_edge_t *edge, bool is_cc,
+			  uint32_t *trg_cc_map, uint32_t N_trg)
 {
-	if(vcn_bins2D_are_points_inside_circle(bins, point->x, 
-					       2.0 * NB_GEOMETRIC_TOL)) {
-		vcn_point2D_t* point_out = NULL;
-		double dist;
-		vcn_bins2D_get_knn(bins, point, 1, &point_out, &dist);
-		return point_out;
+	if (is_cc) {
+		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
+		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
+		if (id1 == trg_cc_map[id1] && id2 == trg_cc_map[id2]) {
+			trg_cc_map[id1] = id2;
+		} else if (id1 == trg_cc_map[id1] && id2 != trg_cc_map[id2]) {
+			trg_cc_map[id1] = trg_cc_map[id2];
+		} else if (id1 != trg_cc_map[id1] && id2 == trg_cc_map[id2]) {
+			trg_cc_map[id2] = trg_cc_map[id1];
+		} else {
+			uint32_t new_cc = trg_cc_map[id1];
+			uint32_t old_cc = trg_cc_map[id2];
+			for (uint32_t i = 0; i < N_trg; i++) {
+				if (old_cc == trg_cc_map[i])
+					trg_cc_map[i] = new_cc;
+			}				
+		}
 	}
-	vcn_bins2D_insert(bins, point);
-	return point;
 }
 
-static void voronoi_get_patched_circumcenter(double* v1,
-					     double* v2,
-					     double* v3,
-					     /* Output */
-					     double* circumcenter){
-  /* Patch for bad quality triangles (Almost in boundaries) */
-  double l1 = vcn_utils2D_get_dist(v1, v2);
-  double l2 = vcn_utils2D_get_dist(v2, v3);
-  double l3 = vcn_utils2D_get_dist(v3, v1);
-  double* sv1 = v3;
-  double* sv2 = v1;
-  double cond;
-  if(l1 > l2){
-    if(l1 > l3){
-      cond = l1 / (l2 + l3);
-      sv1 = v1;
-      sv2 = v2;
-    }else
-      cond = l3 / (l1 + l2);
-  }else{
-    if(l2 > l3){
-      cond = l2 / (l1 + l3);
-      sv1 = v2;
-      sv2 = v3;
-    }else
-      cond = l3 / (l1 + l2);	      
-  }
-  if(cond > 0.8){
-    /* Estimate the intersection made by the real
-       circumcenter */
-    circumcenter[0] = (sv1[0] + sv2[0]) * 0.5;
-    circumcenter[1] = (sv1[1] + sv2[1]) * 0.5;	      
-  }else{
-    vcn_utils2D_get_circumcenter(v1, v2, v3,
-		     circumcenter);
-  }
-}
-
-static nb_container_t* voronoi_get_boundary_segments_with_vertices
-(const vcn_mesh_t* const mesh)
+static void insert_edg_as_adj(vgraph_t *vgraph, const msh_edge_t *edge,
+			      bool is_cc)
 {
-	/* The size must not be zero if there are not input segments */
-	nb_container_t* avl_boundary_sgm = nb_container_create(NB_SORTED);
-	nb_container_set_comparer(avl_boundary_sgm, compare_voronoi_sgm);
-	for (uint32_t i=0; i < mesh->N_input_sgm; i++) {
-		if (NULL == mesh->input_sgm[i])
-			continue;
-		if (NULL != mesh->input_sgm[i]->t1 && 
-		    NULL != mesh->input_sgm[i]->t2)
-			/* The input segment is not a boundary */
-			continue;
-		/* Compute boundary vertices of the segment */
-		msh_edge_t* sgm = mesh->input_sgm[i];
-		while (NULL != sgm) {
-			voronoi_boundary_sgm_t* bsgm = calloc(1, sizeof(*bsgm));
-			bsgm->sgm = sgm;
-			bsgm->v1 = vcn_point2D_create();
-			nb_container_insert(avl_boundary_sgm, bsgm);
-			msh_trg_t* trg;
-			if (sgm->t1 == NULL) {
-				memcpy(bsgm->v1->x, sgm->v2->x,
-				       2 * sizeof(double));
-				trg = sgm->t2;
-			} else {
-				memcpy(bsgm->v1->x, sgm->v1->x,
-				       2 * sizeof(double));
-				trg = sgm->t1;
-			}
-			vcn_point2D_t* circumcenter = vcn_point2D_create();
+	bool semi_onsegment =
+		mvtx_is_type_location(edge->v1, ONSEGMENT) ||
+		mvtx_is_type_location(edge->v2, ONSEGMENT);
+	bool not_interior_cocircular = !is_cc || semi_onsegment;
+	bool semi_interior =
+		mvtx_is_type_location(edge->v1, INTERIOR) ||
+		mvtx_is_type_location(edge->v2, INTERIOR);
+	if (not_interior_cocircular && semi_interior) {
+		insert_adj_sorted_by_angle(vgraph, edge, edge->v1, edge->v2);
+		insert_adj_sorted_by_angle(vgraph, edge, edge->v2, edge->v1);
+	}
+}
+
+static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
+				       const msh_edge_t *edge,
+				       const msh_vtx_t *v1,
+				       const msh_vtx_t *v2)
+{
+	uint32_t id_global = mvtx_get_id(v1);
+	uint32_t id_local = vgraph->N_adj[id_global];
+	double angle_id;
+	if (0 < id_local) {
+		double x = v2->x[0] - v1->x[0];
+		double y = v2->x[1] - v1->x[1];
+		angle_id = atan2(y, x);
+	}
+
+	for (uint16_t j = 0; j < id_local; j++) {
+		msh_edge_t *jedge = vgraph->adj[id_global][j];
+		v2 = medge_get_partner_vtx(jedge, v1);
+		double x = v2->x[0] - v1->x[0];
+		double y = v2->x[1] - v1->x[1];
+		double angle_j = atan2(y, x);
+		if (angle_j < angle_id) {
+			msh_edge_t *aux = vgraph->adj[id_global][j];
+			vgraph->adj[id_global][j] = (msh_edge_t*) edge;
+			edge = aux;
+			angle_id = angle_j;
+		}
+	}
+	vgraph->adj[id_global][id_local] = (msh_edge_t*) edge;
+	vgraph->N_adj[id_global] += 1;
+}
+
+static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
+				  const msh_edge_t *edge, bool is_cc)
+{
+	uint32_t id1 = mvtx_get_id(edge->v1);
+	uint32_t id2 = mvtx_get_id(edge->v2);
+	bool extremes_onsegment =
+		mvtx_is_type_location(edge->v1, ONSEGMENT) &&
+		mvtx_is_type_location(edge->v2, ONSEGMENT);
+	bool edge_is_interior =
+		mvtx_is_type_location(edge->v1, INTERIOR) &&
+		mvtx_is_type_location(edge->v2, INTERIOR);
+	if (extremes_onsegment) {
+		vinfo->N_edg_out += 1;
+	} else if (edge_is_interior) {
+		vinfo->N_edg_in += 1;
+
+		msh_vtx_t *opp1 = mtrg_get_opposite_vertex(edge->t1, edge);
+		msh_vtx_t *opp2 = mtrg_get_opposite_vertex(edge->t2, edge);
+		bool t1_is_interior = mvtx_is_type_location(opp1, INTERIOR);
+		bool t2_is_interior = mvtx_is_type_location(opp2, INTERIOR);
+		if (is_cc && t1_is_interior && t2_is_interior)
+			vinfo->N_cc_in += 1;
+
+		if (t1_is_interior)
+			vinfo->N_trg_in += 1;
+
+		if (t2_is_interior)
+			vinfo->N_trg_in += 1;
+	}
+}
+
+static void finish_voronoi_info(vinfo_t *vinfo)
+{
+	free(vinfo->vtx_map);
+}
+
+static void finish_voronoi_graph(vgraph_t *vgraph)
+{
+	free(vgraph->N_adj);
+}
+
+static void set_voronoi(nb_mshpoly_t *poly,
+			const vgraph_t *const vgraph,
+			const vinfo_t *const vinfo,
+			const nb_mesh_t *const mesh)
+{
+	set_quantities(poly, vinfo, mesh);
+	
+	set_arrays_memory(poly);
+
+	set_nodes_and_centroids(poly, vgraph, vinfo, mesh);
+	set_edges(poly, vgraph, vinfo, mesh);
+	set_N_adj(poly, vgraph, vinfo, mesh);
+	
+	uint32_t memsize = get_size_of_adj_and_ngb(poly);
+	set_mem_of_adj_and_ngb(poly, memsize);
+	set_adj_and_ngb(poly, vgraph, vinfo, mesh);
+
+	set_elem_vtx(poly, vgraph, vinfo, mesh);
+	set_N_nod_x_sgm(poly, mesh);
+
+	memsize = get_size_of_nod_x_sgm(poly);
+	set_mem_of_nod_x_sgm(poly, memsize);
+	set_nod_x_sgm(poly, vinfo, mesh);
+}
+
+
+static void set_quantities(nb_mshpoly_t *poly,
+			   const vinfo_t *const vinfo,
+			   const nb_mesh_t *const mesh)
+{
+	poly->N_nod = vinfo->N_trg_in + vinfo->N_vtx_out - vinfo->N_cc_in;
+	poly->N_edg = vinfo->N_edg_in + vinfo->N_edg_out - vinfo->N_cc_in;
+	poly->N_elems = vinfo->N_vtx_in;
+
+	poly->N_vtx = mesh->N_input_vtx;
+	poly->N_sgm = mesh->N_input_sgm;
+}
+
+static void set_nodes_and_centroids(nb_mshpoly_t *poly,
+				    const vgraph_t *const vgraph,
+				    const vinfo_t *const vinfo,
+				    const nb_mesh_t *const mesh)
+{
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		uint32_t id = mvtx_get_id(vtx);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			uint32_t ielem = vinfo->vtx_map[id];
+			memcpy(&(poly->cen[ielem * 2]), vtx->x,
+			       2 * sizeof(*(vtx->x)));
+		} else {
+			/* TEMPORAL: Enhance estimation at boundaries */
+			uint32_t inode = vinfo->vtx_map[id];
+			memcpy(&(poly->nod[inode * 2]), vtx->x,
+			       2 * sizeof(*(vtx->x)));
+		}
+	}
+	vcn_bins2D_iter_destroy(biter);
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		if (trg_is_interior(trg, vgraph)) {
+			double circumcenter[2];
 			vcn_utils2D_get_circumcenter(trg->v1->x,
-					 trg->v2->x,
-					 trg->v3->x,
-					 circumcenter->x);
-			double area_test;
-			if (sgm->t1 == trg)
-				area_test = vcn_utils2D_get_2x_trg_area(sgm->v1->x,
-							       sgm->v2->x,
-							       circumcenter->x);
-			else
-				area_test = vcn_utils2D_get_2x_trg_area(sgm->v2->x,
-							       sgm->v1->x,
-							       circumcenter->x);
-            
-			if (area_test > NB_GEOMETRIC_TOL) {
-				/* Case 1: The circumcenter is inside the boundary */
-				bsgm->N_vertices = 1;
-				circumcenter->x[0] = (sgm->v1->x[0] +
-						      sgm->v2->x[0]) * 0.5;
-				circumcenter->x[1] = (sgm->v1->x[1] +
-						      sgm->v2->x[1]) * 0.5;
-				bsgm->vertices[0] = circumcenter;
-			} else if (area_test < 0) {
-				/* Case 2: The circumcenter is outside the boundary */
-				bsgm->N_vertices = 2;
-				vcn_point2D_t* v1 = vcn_point2D_create();
-				vcn_point2D_t* v2 = vcn_point2D_create();
-				if (NULL == sgm->t2) {
-					msh_vtx_t* sgm_v3 = 
-						mtrg_get_opposite_vertex_guided
-						(sgm->t1, sgm, true);
-					double half1[2];
-					half1[0] = (sgm->v1->x[0] +
-						    sgm_v3->x[0])/2.0;
-					half1[1] = (sgm->v1->x[1] +
-						    sgm_v3->x[1])/2.0;
-					vcn_utils2D_are_sgm_intersected
-						(half1, circumcenter->x,
-						 sgm->v1->x, sgm->v2->x,
-						 v1->x);
-					double half2[2];
-					half2[0] = (sgm->v2->x[0] + 
-						    sgm_v3->x[0])/2.0;
-					half2[1] = (sgm->v2->x[1] +
-						    sgm_v3->x[1])/2.0;
-					vcn_utils2D_are_sgm_intersected
-						(half2, circumcenter->x,
-						 sgm->v1->x, sgm->v2->x,
-						 v2->x);
-				} else {
-					msh_vtx_t* sgm_v3 = 
-						mtrg_get_opposite_vertex_guided
-						(sgm->t2, sgm, false);
-					double half1[2];
-					half1[0] = (sgm->v2->x[0] + 
-						    sgm_v3->x[0])/2.0;
-					half1[1] = (sgm->v2->x[1] +
-						    sgm_v3->x[1])/2.0;
-					vcn_utils2D_are_sgm_intersected
-						(half1, circumcenter->x,
-						 sgm->v1->x, sgm->v2->x,
-						 v1->x);
-					double half2[2];
-					half2[0] = (sgm->v1->x[0] + 
-						    sgm_v3->x[0])/2.0;
-					half2[1] = (sgm->v1->x[1] +
-						    sgm_v3->x[1])/2.0;
-					vcn_utils2D_are_sgm_intersected
-						(half2, circumcenter->x,
-						 sgm->v1->x, sgm->v2->x,
-						 v2->x);
-				}
-				bsgm->vertices[0] = v1;
-				bsgm->vertices[1] = v2;
-				free(circumcenter);
-			} else {
-				bsgm->N_vertices = 0;
+						     trg->v2->x,
+						     trg->v3->x,
+						     circumcenter);
+			uint32_t inode = vinfo->trg_map[id];
+			memcpy(&(poly->nod[inode * 2]), circumcenter,
+			       2 * sizeof(*circumcenter));
+		}
+	}
+	nb_iterator_finish(iter);
+}
+
+static void set_edges(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh)
+{
+	uint32_t iedge = 0;
+
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_edge);
+	while (nb_iterator_has_more(iter)) {
+		const msh_edge_t *edge = nb_iterator_get_next(iter);
+		uint32_t v1 = mvtx_get_id(edge->v1);
+		uint32_t v2 = mvtx_get_id(edge->v2);
+		bool extremes_onsegment =
+			mvtx_is_type_location(edge->v1, ONSEGMENT) &&
+			mvtx_is_type_location(edge->v2, ONSEGMENT);
+		bool edge_is_interior =
+			mvtx_is_type_location(edge->v1, INTERIOR) &&
+			mvtx_is_type_location(edge->v2, INTERIOR);
+		if (extremes_onsegment) {
+			/* Process not interior edges */
+			poly->edg[iedge * 2] = vinfo->vtx_map[v1];
+			poly->edg[iedge*2+1] = vinfo->vtx_map[v2];
+			iedge += 1;
+		} else if (edge_is_interior) {
+			process_interior_edge(poly, vgraph, vinfo,
+					      edge, iedge);
+			iedge += 1;
+		}
+	}
+	nb_iterator_finish(iter);
+}
+
+static void process_interior_edge(nb_mshpoly_t *poly,
+				  const vgraph_t *const vgraph,
+				  const vinfo_t *const vinfo,
+				  const msh_edge_t *const edg,
+				  uint32_t iedge)
+{
+	msh_vtx_t *opp_t1 = mtrg_get_opposite_vertex(edg->t1, edg);
+	msh_vtx_t *opp_t2 = mtrg_get_opposite_vertex(edg->t2, edg);
+	uint32_t opp1 = mvtx_get_id(opp_t1);
+	uint32_t opp2 = mvtx_get_id(opp_t2);
+	bool t1_is_interior = mvtx_is_type_location(opp_t1, INTERIOR);
+	bool t2_is_interior = mvtx_is_type_location(opp_t2, INTERIOR);
+
+	uint32_t t1 = *(uint32_t*)((void**)edg->t1->attr)[0];
+	uint32_t t2 = *(uint32_t*)((void**)edg->t2->attr)[0];
+	bool is_not_cc = vinfo->trg_map[t1] != vinfo->trg_map[t2];
+	if (is_not_cc && t1_is_interior && t2_is_interior) {
+		/* Interior triangles (No cocircular) */
+		poly->edg[iedge * 2] = vinfo->trg_map[t1];
+		poly->edg[iedge*2+1] = vinfo->trg_map[t2];		
+	} else {
+		/* At least a triangle is not interior */
+		uint32_t node1;
+		if (t1_is_interior)
+			node1 = vinfo->trg_map[t1];
+		else
+			node1 = vinfo->vtx_map[opp1];
+		uint32_t node2;
+		if (t2_is_interior)
+			node2 = vinfo->trg_map[t2];
+		else
+			node2 = vinfo->vtx_map[opp2];
+
+		poly->edg[iedge * 2] = node1;
+		poly->edg[iedge*2+1] = node2;			
+	}
+}
+
+static void set_N_adj(nb_mshpoly_t *poly,
+		      const vgraph_t *const vgraph,
+		      const vinfo_t *const vinfo,
+		      const nb_mesh_t *const mesh)
+{
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			uint32_t id = mvtx_get_id(vtx);
+			uint32_t elem_id = vinfo->vtx_map[id];
+			poly->N_adj[elem_id] = vgraph->N_adj[id];
+		}
+	}
+	vcn_bins2D_iter_destroy(biter);
+}
+
+static void set_adj_and_ngb(nb_mshpoly_t *poly,
+			    const vgraph_t *const vgraph,
+			    const vinfo_t *const vinfo,
+			    const nb_mesh_t *const mesh)
+{
+	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			uint32_t id = mvtx_get_id(vtx);
+			uint16_t id_adj = 0;
+			for (uint16_t j = 0; j < vgraph->N_adj[id]; j++) {
+				id_adj = add_adj_and_ngb(poly, vgraph,
+							 vinfo, id, j,
+							 id_adj);
 			}
+			uint32_t elem_id = vinfo->vtx_map[id];
+			poly->N_adj[elem_id] = id_adj;
+		}
+	}
+	vcn_bins2D_iter_destroy(biter);
+}
+
+static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
+				const vgraph_t *const vgraph,
+				const vinfo_t *const vinfo,
+				uint32_t i, uint16_t j, uint16_t id_adj)
+{
+	uint32_t elem_id = vinfo->vtx_map[i];
+	uint16_t id_prev = (j + vgraph->N_adj[i] - 1) % vgraph->N_adj[i];
+	msh_vtx_t *v1 = get_partner(vgraph, vinfo, i, id_prev);
+	msh_vtx_t *v2 = get_partner(vgraph, vinfo, i, j);
+	uint32_t id1 = mvtx_get_id(v1);
+	uint32_t id2 = mvtx_get_id(v2);
+	bool v1_is_interior = mvtx_is_type_location(v1, INTERIOR);
+	bool v2_is_interior = mvtx_is_type_location(v2, INTERIOR);
+	if (v2_is_interior) {
+		if (v1_is_interior) {
+			/* Interior trg case */
+			msh_trg_t *trg = get_prev_trg(vgraph, vinfo, i, j);
+			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
+			poly->adj[elem_id][id_adj] = vinfo->trg_map[trg_id];
+		} else {
+			/* First node in the boundary */
+			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
+		}
+		poly->ngb[elem_id][id_adj] = vinfo->vtx_map[id2];
+		id_adj += 1;
+	} else {
+		if (!v1_is_interior) {
+			/* Both nodes are in the boundary */
+			poly->adj[elem_id][id_adj] = vinfo->vtx_map[id1];
+			poly->ngb[elem_id][id_adj] = poly->N_elems;
+			id_adj += 1;
+		}
+	}
+	return id_adj;
+}
+
+static msh_vtx_t *get_partner(const vgraph_t *const vgraph,
+			      const vinfo_t *const vinfo,
+			      uint32_t i, uint16_t j)
+{
+	msh_vtx_t *out = NULL;
+	if (j < vgraph->N_adj[i]) {
+		msh_edge_t *edge = vgraph->adj[i][j];
+		if (NULL != edge) {
+			if (i == mvtx_get_id(edge->v1))
+				out = edge->v2;
+			else
+				out = edge->v1;
+		}
+	}
+	return out;
+}
+
+static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
+			       const vinfo_t *const vinfo,
+			       uint32_t i, uint16_t j)
+{
+	msh_trg_t *trg;
+	msh_edge_t *edge = vgraph->adj[i][j];
+	if (i == mvtx_get_id(edge->v1))
+		trg = edge->t1;
+	else if (i == mvtx_get_id(edge->v2))
+		trg = edge->t2;
+	else
+		trg = NULL;
+	return trg;
+}
+
+static void set_elem_vtx(nb_mshpoly_t *poly,
+			 const vgraph_t *const vgraph,
+			 const vinfo_t *const vinfo,
+			 const nb_mesh_t *const mesh)
+{
+	for (uint32_t i = 0; i < poly->N_vtx; i++) {
+		msh_vtx_t *vtx = mesh->input_vtx[i];
+		if (mvtx_is_type_location(vtx, INTERIOR)) {
+			int id = mvtx_get_id(vtx);
+			poly->elem_vtx[i] = vinfo->vtx_map[id];
+		} else {
+			poly->elem_vtx[i] = poly->N_elems;
+		}
+	}
+}
+
+static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
+			    const nb_mesh_t *const mesh)
+{
+	for (uint32_t i = 0; i < poly->N_sgm; i++) {
+		msh_edge_t* sgm = mesh->input_sgm[i];
+		uint32_t counter = 0;
+		while (NULL != sgm) {
+			counter++;
 			sgm = medge_subsgm_next(sgm);
 		}
+		poly->N_nod_x_sgm[i] = counter + 1;
 	}
-	return avl_boundary_sgm;
+
 }
 
-
-static int8_t voronoi_vtx_compare(const void *const A,
-				  const void *const B)
+static void set_nod_x_sgm(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const nb_mesh_t *const mesh)
 {
-	const double *const a = A;
-	const double *const b = B;
-	return ((fabs(a[0] - b[0]) < NB_GEOMETRIC_TOL &&
-		 fabs(a[1] - b[1]) < NB_GEOMETRIC_TOL)) ? 1:0;
+	for (uint32_t i = 0; i < poly->N_sgm; i++)
+		set_sgm_nodes(poly, vinfo, mesh, i);
 }
 
-static void mesh_Lloyd_iteration(msh_vtx_t** vertices, uint32_t N_vertices,
-				 msh_edge_t** segments, uint32_t N_segments,
-				 msh_trg_t** triangles, uint32_t N_triangles,
-				 /* NULL for a constant density */
-				 double (*density)(double*),
-				 const nb_container_t *const avl_boundary_sgm,
-				 uint32_t max_iter)
+static void set_sgm_nodes(nb_mshpoly_t *poly,
+			  const vinfo_t *const vinfo,
+			  const vcn_mesh_t *const mesh,
+			  uint32_t sgm_id)
 {
-	/* Initialize lists to store triangles connections */
-	for (uint32_t i = 0; i < N_vertices; i++) {
-		msh_vtx_t* vtx = vertices[i];
-		void** attr = malloc(2 * sizeof(*attr));
-		attr[0] = nb_container_create(NB_QUEUE);
-		attr[1] = vtx->attr;
-		vtx->attr = attr;
-	}
-	/* Get triangles connections per vertex */
-	for (uint32_t i = 0; i < N_triangles; i++) {
-		msh_trg_t* trg = triangles[i];
-		/* Allocate circumcenter as an attribute */
-		void** attr = malloc(2 * sizeof(*attr));
-		double* circumcenter = malloc(2 * sizeof(*circumcenter));
-		attr[0] = circumcenter;
-		attr[1] = trg->attr;
-		trg->attr = attr;
-		/* Compute circumcenter */    
-		voronoi_get_patched_circumcenter(trg->v1->x,
-						 trg->v2->x,
-						 trg->v3->x,
-						 circumcenter);
-
-		/* Set triangle to its vertices */
-		nb_container_insert((nb_container_t*)((void**)trg->v1->attr)[0], trg);
-		nb_container_insert((nb_container_t*)((void**)trg->v2->attr)[0], trg);
-		nb_container_insert((nb_container_t*)((void**)trg->v3->attr)[0], trg);
-	}
-	/* Lloyd's iteration */
-	double norm2 = 1e10;
-	uint32_t k=0;
-	while (true) {
-		/* Move vertices to Voronoi centers of mass */
-		norm2 = 0;
-		for (uint32_t i=0; i < N_vertices; i++) {
-			msh_vtx_t* vtx = vertices[i];
-      
-			/* Get vertices to calculate center of mass */
-			nb_container_t* l_vtx = nb_container_create(NB_QUEUE);
-			nb_container_set_comparer(l_vtx, voronoi_vtx_compare);
-			nb_container_insert(l_vtx, vtx->x);
-			nb_container_t* list = (nb_container_t*)((void**)vtx->attr)[0];
-			nb_iterator_t* liter = nb_iterator_create();
-			nb_iterator_set_container(liter, list);
-			while (nb_iterator_has_more(liter)) {
-				msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(liter);
-				double* circumcenter = (double*)((void**)trg->attr)[0];
-	
-				msh_edge_t* sgm_right = mtrg_get_right_edge(trg, vtx);
-				msh_edge_t* sgm_left = mtrg_get_left_edge(trg, vtx);
-				msh_edge_t* sgm_opposite = mtrg_get_opposite_edge(trg, vtx);
-				if (medge_is_subsgm(sgm_opposite) &&
-				    (sgm_opposite->t1 == NULL || sgm_opposite->t2 == NULL)) {
-					voronoi_boundary_sgm_t aux_bsgm;
-					aux_bsgm.sgm = sgm_opposite;
-					voronoi_boundary_sgm_t* bsgm =
-						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-					if (bsgm->N_vertices == 2) {
-						/* Case 2, opposite side */
-						if (!nb_container_exist(l_vtx, bsgm->vertices[0]->x))
-							nb_container_insert(l_vtx, bsgm->vertices[0]->x);
-						if (!nb_container_exist(l_vtx, bsgm->vertices[1]->x))
-							nb_container_insert(l_vtx, bsgm->vertices[1]->x);
-					}
-				}
-	
-				if (medge_is_subsgm(sgm_right) &&
-				   (sgm_right->t1 == NULL || sgm_right->t2 == NULL)) {
-					voronoi_boundary_sgm_t aux_bsgm;
-					aux_bsgm.sgm = sgm_right;
-					voronoi_boundary_sgm_t* bsgm =
-						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-					/* Add centroid to case 1 and 2 */
-					if (!nb_container_exist(l_vtx, bsgm->v1->x))
-						nb_container_insert(l_vtx, bsgm->v1->x);
-					if (bsgm->N_vertices > 0) {
-						if (!nb_container_exist(l_vtx, bsgm->vertices[0]->x))
-							nb_container_insert(l_vtx, bsgm->vertices[0]->x);
-					}
-				}
-				if (medge_is_subsgm(sgm_left) &&
-				    (sgm_left->t1 == NULL || sgm_left->t2 == NULL)) {
-					voronoi_boundary_sgm_t aux_bsgm;
-					aux_bsgm.sgm = sgm_left;
-					voronoi_boundary_sgm_t* bsgm =
-						nb_container_exist(avl_boundary_sgm, &aux_bsgm);
-	  
-					/* Case 1 and 2 */
-					if (bsgm->N_vertices > 0) {
-						msh_vtx_t* bvtx = bsgm->vertices[0];
-						if (bsgm->N_vertices == 2)
-							bvtx = bsgm->vertices[1];
-						if (!nb_container_exist(l_vtx, bvtx->x))
-							nb_container_insert(l_vtx, bvtx->x);
-					}
-				}
-	
-				/* Always consider the circumcenter to compute the center of mass */
-				if (!nb_container_exist(l_vtx, circumcenter))
-					nb_container_insert(l_vtx, circumcenter);
-			}
-			nb_iterator_destroy(liter);
-
-			/* Compute center of mass */
-			double* internal_vtx =
-				malloc(nb_container_get_length(l_vtx) * 2 * sizeof(*internal_vtx));
-			uint32_t id = 0;
-			liter = nb_iterator_create();
-			nb_iterator_set_container(liter, l_vtx);
-			while (nb_iterator_has_more(liter)) {
-				double* p = (double*)nb_iterator_get_next(liter);
-				memcpy(&(internal_vtx[id*2]), p, 2*sizeof(double));
-				id++;
-			}
-			nb_iterator_destroy(liter);
-			nb_container_destroy(l_vtx);
-      			
-			vcn_mesh_t* mesh_center_of_mass = vcn_mesh_create(); 
-			vcn_mesh_get_delaunay(mesh_center_of_mass, id,
-					      internal_vtx);
-
-			free(internal_vtx);
-
-			double next_x[2] = {0.0, 0.0};
-			double normalizer = 0.0;
-			nb_iterator_t* trg_iter = nb_iterator_create();
-			nb_iterator_set_container(trg_iter, mesh_center_of_mass->ht_trg);
-			while (nb_iterator_has_more(trg_iter)) {
-				msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
-				double trg_center[2];
-				double trg_v1[2];
-				trg_v1[0] = trg->v1->x[0]/mesh_center_of_mass->scale + mesh_center_of_mass->xdisp;
-				trg_v1[1] = trg->v1->x[1]/mesh_center_of_mass->scale + mesh_center_of_mass->ydisp;
-				double trg_v2[2];
-				trg_v2[0] = trg->v2->x[0]/mesh_center_of_mass->scale + mesh_center_of_mass->xdisp;
-				trg_v2[1] = trg->v2->x[1]/mesh_center_of_mass->scale + mesh_center_of_mass->ydisp;
-				double trg_v3[2];
-				trg_v3[0] = trg->v3->x[0]/mesh_center_of_mass->scale + mesh_center_of_mass->xdisp;
-				trg_v3[1] = trg->v3->x[1]/mesh_center_of_mass->scale + mesh_center_of_mass->ydisp;
-				if (density == NULL) {
-					trg_center[0] = (trg_v1[0] + trg_v2[0] + trg_v3[0]) / 3.0;
-					trg_center[1] = (trg_v1[1] + trg_v2[1] + trg_v3[1]) / 3.0;
-				} else {
-					double d1 = density(trg_v1);
-					double d2 = density(trg_v2);
-					double d3 = density(trg_v3);
-					double density_sum = d1 + d2 + d3;
-					trg_center[0] = 
-						(trg_v1[0] * d1 + trg_v2[0] * d2 + trg_v3[0] * d3) / density_sum;
-					trg_center[1] = 
-						(trg_v1[1] * d1 + trg_v2[1] * d2 + trg_v3[1] * d3) / density_sum;
-				}
-	
-				double area = 0.5 * vcn_utils2D_get_2x_trg_area(trg_v1, trg_v2, trg_v3);
-				if (NULL == density) {
-					next_x[0] += area * trg_center[0];
-					next_x[1] += area * trg_center[1];
-					normalizer += area;
-				} else {
-					double density_center = density(trg_center);
-					next_x[0] += area * trg_center[0] * density_center;
-					next_x[1] += area * trg_center[1] * density_center;
-					normalizer += area * density_center;
-				}
-			}
-			nb_iterator_destroy(trg_iter);
-			vcn_mesh_destroy(mesh_center_of_mass);
-      			
-			next_x[0] /= normalizer;
-			next_x[1] /= normalizer;
-
-			/* Calculate norm for the stop criterion */
-			norm2 += POW2(next_x[0] - vtx->x[0]) + 
-				POW2(next_x[1] - vtx->x[1]);
-      			
-			/* Update position */
-			memcpy(vtx->x, next_x, 2 * sizeof(*next_x));
-		}
-    
-		/* Check stop criterion */
-		k++;
-		printf("min(voronoi): %e     (%i/%i) \r", norm2, k, max_iter); /* TEMPORAL */
-		fflush(stdout);                                                /* TEMPORAL */
-		if (norm2 < NB_GEOMETRIC_TOL)
-			break;
-		if (k > max_iter)
-			break;
-
-		/* Recompute circumcenters of triangles */
-		for (uint32_t i = 0; i < N_triangles; i++) {
-			msh_trg_t* trg = triangles[i];
-			double center[2];
-			vcn_utils2D_get_circumcenter(trg->v1->x,
-					 trg->v2->x,
-					 trg->v3->x,
-					 center);
-			double radii = vcn_utils2D_get_dist(trg->v1->x, center);
-			bool flipped =  false;
-			if (trg->t1 != NULL) {
-				if (!medge_is_subsgm(trg->s1)) {
-					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t1, trg->s1);
-					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
-						msh_edge_t* shared_sgm = trg->s1;
-						msh_trg_t* t1 = shared_sgm->t1;
-						msh_trg_t* t2 = shared_sgm->t2;
-						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
-						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
-						nb_container_t* list3 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						nb_container_t* list4 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
-						/* Flip segment */
-						medge_flip_without_dealloc(shared_sgm);
-						/* Update triangular lists */
-						nb_container_delete(list1, t1);
-						nb_container_delete(list2, t2);
-						nb_container_insert(list3, t2);
-						nb_container_insert(list4, t1);
-
-						flipped = true;
-					}
-				}
-			}
-			if (NULL != trg->t2 && !flipped){
-				if (!medge_is_subsgm(trg->s2)) {
-					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t2, trg->s2);
-					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
-						msh_edge_t* shared_sgm = trg->s2;
-						msh_trg_t* t1 = shared_sgm->t1;
-						msh_trg_t* t2 = shared_sgm->t2;
-						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
-						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
-						nb_container_t* list3 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						nb_container_t* list4 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
-						/* Flip segment */
-						medge_flip_without_dealloc(shared_sgm);
-						/* Update triangular lists */
-						nb_container_delete(list1, t1);
-						nb_container_delete(list2, t2);
-						nb_container_insert(list3, t2);
-						nb_container_insert(list4, t1);
-
-						flipped = true;
-					}
-				}
-			}
-			if (NULL != trg->t3 && !flipped) {
-				if (!medge_is_subsgm(trg->s3)) {
-					msh_vtx_t* vtx = mtrg_get_opposite_vertex(trg->t3, trg->s3);
-					if (radii - vcn_utils2D_get_dist(vtx->x, center) > NB_GEOMETRIC_TOL) {
-						msh_edge_t* shared_sgm = trg->s3;
-						msh_trg_t* t1 = shared_sgm->t1;
-						msh_trg_t* t2 = shared_sgm->t2;
-						nb_container_t* list1 = (nb_container_t*)((void**)shared_sgm->v1->attr)[0];
-						nb_container_t* list2 = (nb_container_t*)((void**)shared_sgm->v2->attr)[0];
-						nb_container_t* list3 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t1, shared_sgm)->attr)[0];
-						nb_container_t* list4 = (nb_container_t*)
-							((void**)mtrg_get_opposite_vertex(t2, shared_sgm)->attr)[0];
-						/* Flip segment */
-						medge_flip_without_dealloc(shared_sgm);
-						/* Update triangular lists */
-						nb_container_delete(list1, t1);
-						nb_container_delete(list2, t2);
-						nb_container_insert(list3, t2);
-						nb_container_insert(list4, t1);
-					}
-				}
-			}
-      
-			double* circumcenter = (double*)((void**)trg->attr)[0];
-			voronoi_get_patched_circumcenter(trg->v1->x,
-							 trg->v2->x,
-							 trg->v3->x,
-							 circumcenter);
+	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
+	if (NULL != sgm_prev) {
+		msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
+		if (NULL == sgm) {
+			poly->nod_x_sgm[sgm_id][0] = mvtx_get_id(sgm_prev->v1);
+			poly->nod_x_sgm[sgm_id][1] = mvtx_get_id(sgm_prev->v2);
+		} else {
+			assemble_sgm_wire(poly, vinfo,
+					  sgm_id, sgm_prev, sgm);
 		}
 	}
-	printf("                                     \r"); fflush(stdout);/* Erase status */
+}
 
-	/* Free memory */
-	for (uint32_t i = 0; i < N_vertices; i++) {
-		msh_vtx_t* vtx = vertices[i];
-		void** attr = (void**)vtx->attr;
-		vtx->attr = attr[1];
-		nb_container_destroy((nb_container_t*)attr[0]);
-		free(attr);
+static void assemble_sgm_wire(nb_mshpoly_t *poly,
+			      const vinfo_t *const vinfo,
+			      uint32_t sgm_id,
+			      msh_edge_t *sgm_prev, msh_edge_t *sgm)
+{
+	uint32_t idx = 0;
+	uint32_t id_chain;
+	uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+	uint32_t id2 = mvtx_get_id(sgm_prev->v2);
+	uint32_t id1n = mvtx_get_id(sgm->v1);
+	uint32_t id2n = mvtx_get_id(sgm->v2);
+	if (id2 == id1n || id2 == id2n) {
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id1];
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id2];
+		id_chain = id2;
+	} else {
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id2];
+		poly->nod_x_sgm[sgm_id][idx++] =  vinfo->vtx_map[id1];
+		id_chain = id1;
 	}
-
-	for (uint32_t i = 0; i < N_triangles; i++) {
-		msh_trg_t* trg = triangles[i];
-		void** attr = (void**)trg->attr;
-		trg->attr = attr[1];
-		free(attr[0]);
-		free(attr);
+	while (NULL != sgm) {
+		sgm_prev = sgm;
+		uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+		uint32_t id2 = mvtx_get_id(sgm_prev->v2);
+		if (id1 == id_chain) {
+			poly->nod_x_sgm[sgm_id][idx++] = vinfo->vtx_map[id2];
+			id_chain = id2;
+		} else {
+			poly->nod_x_sgm[sgm_id][idx++] = vinfo->vtx_map[id1];
+			id_chain = id1;
+		}
+		sgm = medge_subsgm_next(sgm);
 	}
 }
+
+void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
+				double (*density)(const double[2],
+						  const void *data),
+				const void *density_data);
+
+void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph);
+void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph);
+void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,
+				    nb_graph_t *graph);

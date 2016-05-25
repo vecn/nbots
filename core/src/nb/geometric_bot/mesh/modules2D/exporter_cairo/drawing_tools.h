@@ -1,6 +1,8 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_MODULES2D_EXPORTER_CAIRO_DRAWING_TOOLS_H__
 #define __NB_GEOMETRIC_BOT_MESH_MODULES2D_EXPORTER_CAIRO_DRAWING_TOOLS_H__
 
+#include <stdbool.h>
+
 #include "drawing_utils.h"
 
 void nb_drawing_export_png(const char* filename, int width, int height,
@@ -22,6 +24,9 @@ void nb_drawing_line_to(void *draw_ptr, const camera_t *cam,
 void nb_drawing_arc(void *draw_ptr, const camera_t *cam,
 		    double x, double y, double r,
 		    double a0, double a1);
+
+void nb_drawing_set_circle(void *draw_ptr, const camera_t *cam,
+			   double x, double y, double r, bool r_fixed);
 
 void nb_drawing_close_path(void *draw_ptr);
 

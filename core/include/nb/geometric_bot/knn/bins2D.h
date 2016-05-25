@@ -13,6 +13,8 @@ void vcn_bins2D_destroy(vcn_bins2D_t* bins2D);
 void vcn_bins2D_clear(vcn_bins2D_t* bins2D);
 void vcn_bins2D_enable_point_destroyer(vcn_bins2D_t* bins2D);
 void vcn_bins2D_disable_point_destroyer(vcn_bins2D_t* bins2D);
+void vcn_bins2D_set_destroyer(vcn_bins2D_t* bins2D,
+			      void (*destroy)(void*));
 void vcn_bins2D_set_attribute_destroyer(vcn_bins2D_t* bins2D,
 					void (*destroy)(void*));
 void vcn_bins2D_insert(vcn_bins2D_t *const bins2D,

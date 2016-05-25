@@ -1,0 +1,159 @@
+See file:///home/victor/nbots/core/build/tmp/compileNbotsDebugSharedLibraryNbotsC/output.txt for all output for compileNbotsDebugSharedLibraryNbotsC.
+compiling math_bot.c successful.
+
+compiling cfreader_cat.c successful.
+
+compiling dewall.c successful.
+
+compiling mesh2D_structs.c successful.
+
+compiling triangles.c successful.
+
+compiling polygons.c successful.
+
+compiling quad.c failed.
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:230:17: error: redefinition of ‘get_size_of_nod_x_sgm’
+ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
+                 ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:177:17: note: previous definition of ‘get_size_of_nod_x_sgm’ was here
+ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
+                 ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:239:13: error: redefinition of ‘set_mem_of_nod_x_sgm’
+ static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
+             ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:186:13: note: previous definition of ‘set_mem_of_nod_x_sgm’ was here
+ static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
+             ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c: In function ‘get_quality’:
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:356:3: warning: passing argument 1 of ‘get_max_angle_distortion’ from incompatible pointer type [enabled by default]
+   double maxk = get_max_angle_distortion(quad_vtx);
+   ^
+/home/victor/nbots/core/src/nb/geometric_bot/mesh/elements2D/quad.c:51:15: note: expected ‘const struct msh_vtx_t **’ but argument is of type ‘struct msh_vtx_t **’
+ static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
+               ^
+
+compiling disks.c successful.
+
+compiling image_density.c successful.
+
+compiling extra_fem.c successful.
+
+compiling graph_generator.c successful.
+
+compiling ruppert.c successful.
+
+compiling pruner.c successful.
+
+compiling constrained_delaunay.c successful.
+
+compiling bins2D_iterator.c successful.
+
+compiling mesh2D.c successful.
+
+compiling model2D_struct.c successful.
+
+compiling utils2D.c successful.
+
+compiling exporter_asymptote.c successful.
+
+compiling bins2D.c successful.
+
+compiling regularizer.c successful.
+
+compiling verifier.c successful.
+
+compiling model2D.c successful.
+
+compiling vtx.c successful.
+
+compiling edge.c successful.
+
+compiling point2D.c successful.
+
+compiling simplifier.c successful.
+
+compiling exceptions.c successful.
+
+compiling binding.c successful.
+
+compiling visual_cat.c successful.
+
+compiling heap_iterator.c successful.
+
+compiling clipper.c successful.
+
+compiling heap_tree.c successful.
+
+compiling binding.c successful.
+
+compiling heap_dst.c successful.
+
+compiling avl_iterator.c successful.
+
+compiling avl_dst.c successful.
+
+compiling avl_tree.c successful.
+
+compiling iterator.c successful.
+
+compiling binding.c successful.
+
+compiling container.c successful.
+
+compiling hash_iterator.c successful.
+
+compiling binding.c successful.
+
+compiling hash_dst.c successful.
+
+compiling queue_node.c successful.
+
+compiling queue_iterator.c successful.
+
+compiling queue_dst.c successful.
+
+compiling binding.c successful.
+
+compiling stack_iterator.c successful.
+
+compiling stack_node.c successful.
+
+compiling stack_dst.c successful.
+
+compiling array.c successful.
+
+compiling element.c successful.
+
+compiling trg_linear.c successful.
+
+compiling gaussp_to_nodes.c successful.
+
+compiling static_elasticity2D.c successful.
+
+compiling image.c successful.
+
+compiling material.c successful.
+
+compiling static_damage2D.c successful.
+
+compiling bcond_read.c successful.
+
+compiling bcond_iter.c successful.
+
+compiling bc_get_container.c successful.
+
+compiling pipeline.c successful.
+
+compiling bcond.c successful.
+
+compiling bc_atom.c successful.
+
+compiling statistics_bot.c successful.
+
+compiling greedy.c successful.
+
+compiling sparse.c successful.
+
+compiling graph.c successful.
+
+Finished compileNbotsDebugSharedLibraryNbotsC, see full log file:///home/victor/nbots/core/build/tmp/compileNbotsDebugSharedLibraryNbotsC/output.txt.

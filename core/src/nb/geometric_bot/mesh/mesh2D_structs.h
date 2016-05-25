@@ -5,7 +5,13 @@
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 
-#define _NB_INPUT_VTX ((void*)0x1)
+typedef enum {
+	STEINER = 0, INPUT
+} mvtx_origin_t;
+
+typedef enum {
+	INTERIOR = 0, ONSEGMENT
+} mvtx_location_t;
 
 typedef vcn_point2D_t msh_vtx_t;
 typedef struct msh_edge_s msh_edge_t;
@@ -22,6 +28,12 @@ typedef struct {
 	msh_edge_t* prev;
 	msh_edge_t* next;
 } input_sgm_attr_t;
+
+typedef struct {
+	mvtx_origin_t ori:4;
+	mvtx_location_t loc:4;
+	uint32_t id;
+} vtx_attr_t;
 
 struct msh_edge_s {
 	void* attr;
@@ -94,6 +106,19 @@ struct vcn_mesh_s {
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
 
+msh_vtx_t *mvtx_create(void);
+msh_vtx_t *mvtx_clone(msh_vtx_t *vtx);
+void mvtx_destroy(void *vtx);
+
+void mvtx_set_id(msh_vtx_t *vtx, uint32_t id);
+uint32_t mvtx_get_id(const msh_vtx_t *const vtx);
+
+bool mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin);
+bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
+bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin);
+bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location);
+
+bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
 void medge_set_as_subsgm(msh_edge_t *const sgm,
 			 uint32_t idx,
@@ -106,6 +131,10 @@ void medge_update_subsgm_prev(msh_edge_t *const sgm,
 uint32_t medge_subsgm_idx(const msh_edge_t *const sgm);
 msh_edge_t* medge_subsgm_prev(const msh_edge_t *const sgm);
 msh_edge_t* medge_subsgm_next(const msh_edge_t *const sgm);
+void medge_subsgm_get_extreme_vtx(const msh_edge_t *const sgm,
+				  msh_vtx_t *vtx[2]);
+msh_vtx_t* medge_subsgm_get_opposite_vtx(const msh_edge_t *const sgm,
+					 const msh_edge_t *const adj);
 void medge_subsgm_set_attribute(msh_edge_t* sgm, void* attr);
 void* medge_subsgm_get_attribute(const msh_edge_t* const sgm);
 void medge_destroy_subsgm_attribute(msh_edge_t *const sgm);
@@ -128,6 +157,8 @@ msh_trg_t* medge_get_opposite_triangle(const msh_edge_t *const sgm,
 msh_edge_t* medge_get_CW_subsgm(const msh_edge_t *const sgm,
 				const msh_vtx_t *const vtx);
 msh_edge_t* medge_get_CCW_subsgm(const msh_edge_t *const sgm,
+				 const msh_vtx_t *const vtx);
+msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 msh_trg_t* mtrg_create(void);
@@ -181,9 +212,8 @@ msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
 void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 				    const double *const internal,
 				    double external[2]);
-void mesh_alloc_vtx_ids(vcn_mesh_t *mesh);
-void mesh_free_vtx_ids(vcn_mesh_t *mesh);
+void mesh_enumerate_vtx(vcn_mesh_t *mesh);
 void mesh_alloc_trg_ids(vcn_mesh_t *mesh);
-void mesh_free_trg_ids(vcn_mesh_t *mesh);
+void mesh_free_trg_ids(vcn_mesh_t *mesh);					
 
 #endif

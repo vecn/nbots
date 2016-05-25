@@ -1,6 +1,8 @@
 #include <cairo.h>
 #include <cairo-ps.h>
 
+#include "nb/geometric_bot.h"
+
 #include "drawing_tools.h"
 
 void nb_drawing_export_png(const char* filename, int width, int height,
@@ -75,6 +77,18 @@ void nb_drawing_arc(void *draw_ptr, const camera_t *cam,
 	double cam_x = cam->zoom * (x - cam->center[0]) + cam->width / 2.0;
 	double cam_y = cam->zoom * (cam->center[1] - y) + cam->height / 2.0;
 	cairo_arc(draw_ptr, cam_x, cam_y, r, a0, a1);
+}
+
+void nb_drawing_set_circle(void *draw_ptr, const camera_t *cam,
+			   double x, double y, double r, bool r_fixed)
+{
+	double cam_x = cam->zoom * (x - cam->center[0]) + cam->width / 2.0;
+	double cam_y = cam->zoom * (cam->center[1] - y) + cam->height / 2.0;
+	if (!r_fixed)
+		r *= cam->zoom;
+
+	cairo_move_to(draw_ptr, cam_x + r, cam_y);
+	cairo_arc(draw_ptr, cam_x, cam_y, r, 0, 2.0 * NB_PI);
 }
 
 void nb_drawing_close_path(void *draw_ptr)
