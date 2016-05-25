@@ -6,6 +6,8 @@
 
 #include "nb/geometric_bot.h"
 
+#include "nb/geometric_bot-cairo.h" /* TEMPORAL */
+
 static int suite_init(void);
 static int suite_clean(void);
 
@@ -34,7 +36,7 @@ static void test_load_from_mesh(void)
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					 1.5);
+					 0.1);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	
@@ -47,6 +49,8 @@ static void test_load_from_mesh(void)
 	CU_ASSERT(7 == quad->N_nod);
 	CU_ASSERT(9 == quad->N_edg);
 	CU_ASSERT(3 == quad->N_elems);
+
+	nb_mshquad_export_png(quad, "../../../QUAD.png", 1000, 800);/* TEMPORAL */
 
 	nb_mshquad_finish(quad);
 }
