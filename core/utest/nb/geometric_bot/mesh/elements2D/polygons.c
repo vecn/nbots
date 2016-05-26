@@ -47,11 +47,11 @@ static void test_load_from_mesh(void)
 	nb_mshpoly_init(poly);
 	nb_mshpoly_load_from_mesh(poly, mesh);
 
-	vcn_mesh_save_png(mesh, "./POLY_trg.png", 1000, 800);/* TEMPORAL */
+	vcn_mesh_save_png(mesh, "../../../POLY_trg.png", 1000, 800);/* TEMPORAL */
 
 	vcn_mesh_destroy(mesh);
 
-	nb_mshpoly_export_png(poly, "./POLY.png", 1000, 800);/* TEMPORAL */
+	nb_mshpoly_export_png(poly, "../../../POLY.png", 1000, 800);/* TEMPORAL */
 	
 	CU_ASSERT(false);
 
