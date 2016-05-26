@@ -395,86 +395,6 @@ inline msh_trg_t* mtrg_create(void)
 	return (msh_trg_t*) calloc(1, sizeof(msh_trg_t));
 }
 
-void mtrg_set_quality_and_size(msh_trg_t *const restrict trg)
-/* This function assumes that the segments has the length stored as an attribute */
-{
-  /* Set attribute */
-  attr_t* attr = (attr_t*) calloc(1, sizeof(attr_t));
-  attr->id = 1;
-  double* data = (double*) malloc(2 * sizeof(double));
-
-  /* Compute the double of the area */
-  const double area2 = vcn_utils2D_get_2x_trg_area(trg->v1->x, trg->v2->x, trg->v3->x);
-
-  /* Calculate quality */
-  const double circumradius = 
-    (medge_get_computed_length(trg->s1) *
-     medge_get_computed_length(trg->s2) *
-     medge_get_computed_length(trg->s3))/(2.0 * area2);
-  const msh_edge_t* min_sgm = mtrg_get_shortest_edge(trg);
-  const double min_length = medge_get_computed_length(min_sgm);
-  data[0] = NB_MATH_INV_SQRT3 * (min_length/circumradius);
-
-  /* Calculate area */
-  data[1] = 0.5 * area2;
-
-  attr->data = data;
-  trg->attr = attr;
-}
-
-double mtrg_get_computed_quality(const msh_trg_t *const restrict trg)
-{
-  if(trg->attr == NULL) 
-    /* TEMPORAL: This should never happen
-     * The func mesh_insert_vertex doesn't allocate quality
-     */
-    return vcn_utils2D_get_trg_quality(trg->v1->x,
-				       trg->v2->x,
-				       trg->v3->x);
-  attr_t* attr = (attr_t*) trg->attr;
-  if(attr->id != 1) 
-    /* TEMPORAL: This should never happen
-     * The func mesh_insert_vertex doesn't allocate quality
-     */
-    return vcn_utils2D_get_trg_quality(trg->v1->x,
-				       trg->v2->x,
-				       trg->v3->x);
-  return ((double*)attr->data)[0];
-}
-
-double mtrg_get_computed_size(const msh_trg_t *const restrict trg)
-{
-  if(trg->attr == NULL)
-    /* TEMPORAL: This should never happen
-     * The func mesh_insert_vertex doesn't allocate quality
-     */
-    return vcn_utils2D_get_2x_trg_area(trg->v1->x,
-				       trg->v2->x,
-				       trg->v3->x);
-  attr_t* attr = (attr_t*) trg->attr;
-  if(attr->id != 1)
-    /* TEMPORAL: This should never happen
-     * The func mesh_insert_vertex doesn't allocate quality
-     */
-    return vcn_utils2D_get_2x_trg_area(trg->v1->x,
-				       trg->v2->x,
-				       trg->v3->x);
-  return ((double*)attr->data)[1];
-}
-
-inline void mtrg_destroy_quality_and_size_attributes
-                  (msh_trg_t *const trg)
-{
-	if (NULL == trg->attr)
-		return;
-	attr_t* attr = (attr_t*) trg->attr;
-	if (attr->id != 1)
-		return;
-	free(attr->data);
-	free(attr);
-	trg->attr = NULL;
-}
-
 inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
 {
 	return mvtx_is_type_origin(trg->v1, INPUT) ||
@@ -1019,7 +939,7 @@ void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
 	vcn_bins2D_iter_destroy(iter);
 }
 
-void mesh_alloc_trg_ids(vcn_mesh_t *mesh)
+void mesh_enumerate_trg(vcn_mesh_t *mesh)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t* trg_iter = alloca(iter_size);
@@ -1028,27 +948,7 @@ void mesh_alloc_trg_ids(vcn_mesh_t *mesh)
 	uint32_t i = 0;
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
-		char *memblock = malloc(2 * sizeof(void*) + sizeof(uint32_t*));
-		void** attr = (void*) memblock;
-		uint32_t* id = (void*)(memblock + 2 * sizeof(void*));
-		id[0] = i;
-		attr[0] = id;
-		attr[1] = trg->attr;
-		trg->attr = attr;
-		i++;
+		trg->id = i++;
 	}
 	nb_iterator_finish(trg_iter);
-}
-
-void mesh_free_trg_ids(vcn_mesh_t *mesh)
-{
-	nb_iterator_t* iter = nb_iterator_create();
-	nb_iterator_set_container(iter, mesh->ht_trg);
-	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		void** attr = trg->attr;
-		trg->attr = attr[1];
-		free(attr);
-	}
-	nb_iterator_destroy(iter);
 }

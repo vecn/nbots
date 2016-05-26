@@ -13,6 +13,10 @@ typedef enum {
 	INTERIOR = 0, ONSEGMENT
 } mvtx_location_t;
 
+typedef enum {
+	CLEAN = 0, INFECTED
+} mtrg_status_t;
+
 typedef vcn_point2D_t msh_vtx_t;
 typedef struct msh_edge_s msh_edge_t;
 typedef struct msh_trg_s msh_trg_t;
@@ -30,10 +34,13 @@ typedef struct {
 } input_sgm_attr_t;
 
 typedef struct {
-	mvtx_origin_t ori:4;
-	mvtx_location_t loc:4;
+	mvtx_origin_t ori:1;
+	mvtx_location_t loc:1;
 	uint32_t id;
 } vtx_attr_t;
+
+typedef struct {
+} trg_attr_t;
 
 struct msh_edge_s {
 	void* attr;
@@ -60,10 +67,14 @@ struct msh_trg_s {
 	 *                    V2
 	 *
 	 */
-	void *attr;
 	msh_trg_t *t1, *t2, *t3;   /* Neighbouring triangles */
 	msh_edge_t *s1, *s2, *s3;  /* Subsegments */
 	msh_vtx_t *v1, *v2, *v3;   /* Vertex */
+
+	mtrg_status_t status:8;
+	uint8_t area_id; /* Max 256 areas */
+	float feature;
+	uint32_t id;
 };
 
 struct vcn_mesh_s {
@@ -161,11 +172,8 @@ msh_edge_t* medge_get_CCW_subsgm(const msh_edge_t *const sgm,
 msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
+
 msh_trg_t* mtrg_create(void);
-void mtrg_set_quality_and_size(msh_trg_t *const trg);
-double mtrg_get_computed_quality(const msh_trg_t *const trg);
-double mtrg_get_computed_size(const msh_trg_t *const trg);
-void mtrg_destroy_quality_and_size_attributes(msh_trg_t *const trg);
 bool mtrg_has_an_input_vertex(const msh_trg_t *const trg);
 msh_vtx_t* mtrg_get_opposite_vertex_guided(const msh_trg_t *const trg, 
 					   const msh_edge_t *const sgm,
@@ -213,7 +221,6 @@ void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 				    const double *const internal,
 				    double external[2]);
 void mesh_enumerate_vtx(vcn_mesh_t *mesh);
-void mesh_alloc_trg_ids(vcn_mesh_t *mesh);
-void mesh_free_trg_ids(vcn_mesh_t *mesh);					
+void mesh_enumerate_trg(vcn_mesh_t *mesh);
 
 #endif

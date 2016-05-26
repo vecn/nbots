@@ -25,7 +25,6 @@ typedef struct {
 	uint32_t length;
 } hash_trg_t;
 
-static void clear_container_trg_attr(nb_container_t *cnt);
 static int8_t compare_edge_size(const void *const edge1_ptr,
 				const void *const edge2_ptr);
 static int8_t compare_trg_attr(const void *const trg1_ptr,
@@ -33,8 +32,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 static hash_trg_t* hash_trg_create(void);
 static uint32_t hash_trg_length(const hash_trg_t *const htrg);
 static void hash_trg_insert(hash_trg_t *const htrg,
-				   msh_trg_t *const trg,
-				   double cr2se_ratio);
+			    msh_trg_t *const trg);
 static msh_trg_t* hash_trg_remove_first(hash_trg_t *const htrg);
 static void hash_trg_remove(hash_trg_t *const htrg,
 			    msh_trg_t *const trg);
@@ -209,20 +207,11 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
-	clear_container_trg_attr(encroached_sgm);
-	clear_container_trg_attr(big_trg);
+	nb_container_destroy(encroached_sgm);
+	nb_container_destroy(big_trg);
 	nb_container_destroy(encroached_sgm);
 	nb_container_destroy(big_trg);
 	hash_trg_destroy(poor_quality_trg);
-}
-
-static void clear_container_trg_attr(nb_container_t *cnt)
-{
-	while (nb_container_is_not_empty(cnt)) {
-		msh_trg_t* trg = nb_container_delete_first(cnt);
-		free(trg->attr);
-		trg->attr = NULL; 
-	}
 }
 
 static int8_t compare_edge_size(const void *const edge1_ptr,
@@ -255,8 +244,8 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 {
 	const msh_trg_t *const trg1 = trg1_ptr;
 	const msh_trg_t *const trg2 = trg2_ptr;
-	uint32_t a1 = *(uint32_t*)(trg1->attr);
-	uint32_t a2 = *(uint32_t*)(trg2->attr);
+	uint32_t a1 = (uint32_t)(1e6 * trg1->cr2se);
+	uint32_t a2 = (uint32_t)(1e6 * trg2->cr2se);
 	int8_t out;
 	if (a1 > a2) {
 		out = -1;
@@ -407,77 +396,46 @@ static inline uint32_t hash_trg_length(const hash_trg_t *const restrict htrg)
 }
 
 static inline void hash_trg_insert(hash_trg_t *const restrict htrg,
-				   msh_trg_t *const restrict trg,
-				   double cr2se_ratio)
+				   msh_trg_t *const restrict trg)
 {
-	if (NULL == trg->attr) {
-		/* It is not inserted */
-		uint32_t hash_key = (uint32_t) cr2se_ratio;
-		if (hash_key > 63)
-			hash_key = 63;
-  
-		/* Set circumradius to shortest edge ratio as attribute */
-		uint32_t* attr = malloc(sizeof(uint32_t));
-		*attr = (uint32_t)(cr2se_ratio * 1e6);
-		trg->attr = attr;
+	uint32_t hash_key = ((uint32_t) trg->cr2se) % 64;
 
-		bool is_inserted =
-			nb_container_insert(htrg->avl[hash_key], trg);
+	bool is_inserted =
+		nb_container_insert(htrg->avl[hash_key], trg);
 
-		if (is_inserted) {
-			htrg->length += 1;
-		} else {
-			free(trg->attr);
-			trg->attr = NULL;
-		}
-	}
+	if (is_inserted)
+		htrg->length += 1;
 }
 
 static inline msh_trg_t* hash_trg_remove_first
                          (hash_trg_t *const restrict htrg)
 {
+	msh_trg_t *trg = NULL;
 	for (int i = 63; i >= 0; i--) {
 		if (nb_container_is_not_empty(htrg->avl[i])) {
 			htrg->length -= 1;
-			msh_trg_t *trg = 
-				nb_container_delete_first(htrg->avl[i]);
-			free(trg->attr);
-			trg->attr = NULL;
-			return trg;
+			trg = nb_container_delete_first(htrg->avl[i]);
+			break;
 		}
 	}
-	return NULL;
+	return trg;
 }
 
 static inline void hash_trg_remove(hash_trg_t *const restrict htrg,
 				   msh_trg_t *const restrict trg)
 {
-	if (NULL != trg->attr) {
-		double cr2se_ratio = *((uint32_t*)trg->attr) / 1e6;
-		uint32_t hash_key = (uint32_t) cr2se_ratio;
-		if (hash_key > 63)
-			hash_key = 63;
+	uint32_t hash_key = ((uint32_t) trg->cr2se) % 64;
 
-		bool is_removed = nb_container_delete(htrg->avl[hash_key], trg);
+	bool is_removed = nb_container_delete(htrg->avl[hash_key], trg);
 
-		if (is_removed) {
-			htrg->length -= 1;
-			free(trg->attr);
-			trg->attr = NULL;
-		}
-	}
+	if (is_removed)
+		htrg->length -= 1;
 }
 
 static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
 {
-	for (uint32_t i = 0; i < 64; i++) {
-		while (nb_container_is_not_empty(htrg->avl[i])) {
-			msh_trg_t* trg = nb_container_delete_first(htrg->avl[i]);
-			free(trg->attr);
-			trg->attr = NULL; 
-		}		
+	for (uint32_t i = 0; i < 64; i++)
 		nb_container_destroy(htrg->avl[i]);
-	}
 	free(htrg);
 }
 
@@ -646,8 +604,6 @@ static inline nb_container_t* remove_encroached_triangles
 		if (NULL != big_trg)
 			remove_big_trg(big_trg, trg);
 
-		if (NULL != trg->attr)
-			free(trg->attr);
 		free(trg);
 	}
 	nb_container_destroy(encroached_trg);
@@ -941,13 +897,14 @@ static inline void check_trg(msh_trg_t *const restrict trg,
 		insert_big_trg(big_trg, trg, big_ratio);
 	} else {
 		if (1e30 > mesh->cr2se_ratio) {
-			double trg_cr2se_ratio =
+			double cr2se_ratio =
 				vcn_utils2D_get_cr2se_ratio(trg->v1->x,
 							    trg->v2->x,
 							    trg->v3->x);
-			if (trg_cr2se_ratio > mesh->cr2se_ratio)
-				hash_trg_insert(poor_quality_trg,
-						trg, trg_cr2se_ratio);
+			if (cr2se_ratio > mesh->cr2se_ratio) {
+				trg->cr2se = cr2se_ratio;
+				hash_trg_insert(poor_quality_trg, trg);
+			}
 		}
 	}
 }

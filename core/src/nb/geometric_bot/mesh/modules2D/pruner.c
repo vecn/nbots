@@ -73,10 +73,7 @@ static void subarea_clear(void *subarea_ptr)
 	subarea_t *subarea = subarea_ptr;
 	while (nb_container_is_not_empty(subarea->trgs)) {
 		msh_trg_t *trg = nb_container_delete_first(subarea->trgs);
-		/* Restore color */
-		attr_t* trg_attr = trg->attr;
-		trg->attr = trg_attr->data;
-		free(trg_attr);
+		trg->status = CLEAN;
 	}
 }
 
@@ -119,15 +116,12 @@ static void group_trg_by_areas(const vcn_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (NULL != trg->attr) {
-			attr_t* attr = trg->attr;
-			if (attr->id == 0x19FEC7ED)
-				continue;
+		if (CLEAN == trg->status) {
+			subarea_t *subarea = subarea_create();
+			subarea->area =
+				colorize_infected_triangles(trg, subarea->trgs, true);
+			nb_container_insert(areas, subarea);
 		}
-		subarea_t *subarea = subarea_create();
-		subarea->area =
-			colorize_infected_triangles(trg, subarea->trgs, true);
-		nb_container_insert(areas, subarea);
 	}
 	nb_iterator_finish(iter);
 }
@@ -164,10 +158,7 @@ static void calculate_area_centroid(const vcn_mesh_t *mesh,
 		double max_length2 = 0;
 		while (nb_container_is_not_empty(area_trg)) {
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
-			/* Restore color */
-			attr_t* trg_attr = trg->attr;
-			trg->attr = trg_attr->data;
-			free(trg_attr);
+			trg->status = CLEAN;
 		
 			max_edge = check_if_internal_edge_is_longer(trg->s1, max_edge,
 								    &max_length2);
@@ -207,57 +198,38 @@ static double colorize_infected_triangles(msh_trg_t* trg_infected,
 	/* Colorize triangle */
 	if (NULL != infected_trg)
 		nb_container_insert(infected_trg, trg_infected);
-	attr_t* trg_attr = calloc(1, sizeof(*trg_attr));
-	trg_attr->id = 0x19FEC7ED;
-	trg_attr->data = trg_infected->attr;
-	trg_infected->attr = trg_attr;
+
+	trg_infected->status = INFECTED;
+
 	bool segment_nonblock = !blocking_with_input_segments;
 	if (blocking_with_input_segments)
 		segment_nonblock = !medge_is_subsgm(trg_infected->s1);
 	if (trg_infected->t1 != NULL && segment_nonblock) {
 		msh_trg_t* nb_trg = trg_infected->t1;
-		if (NULL == nb_trg->attr) {
+		if (CLEAN == nb_trg->status) {
 			area += colorize_infected_triangles(nb_trg,
 							    infected_trg,
 							    blocking_with_input_segments);
-		} else {
-			attr_t* nb_attr = (attr_t*)nb_trg->attr;
-			if (nb_attr->id != 0x19FEC7ED)
-				area += colorize_infected_triangles(nb_trg,
-								    infected_trg,
-								    blocking_with_input_segments);
 		}
 	}
 	if (blocking_with_input_segments)
 		segment_nonblock = !medge_is_subsgm(trg_infected->s2);
 	if (NULL != trg_infected->t2 && segment_nonblock) {
 		msh_trg_t* nb_trg = trg_infected->t2;
-		if (NULL == nb_trg->attr) {
+		if (CLEAN == nb_trg->status) {
 			area += colorize_infected_triangles(nb_trg,
 							    infected_trg,
 							    blocking_with_input_segments);
-		} else {
-			attr_t* nb_attr = nb_trg->attr;
-			if (nb_attr->id != 0x19FEC7ED)
-				area += colorize_infected_triangles(nb_trg,
-								    infected_trg,
-								    blocking_with_input_segments);
 		}
 	}
 	if (blocking_with_input_segments)
 		segment_nonblock = !medge_is_subsgm(trg_infected->s3);
 	if (NULL != trg_infected->t3 && segment_nonblock) {
 		msh_trg_t* nb_trg = trg_infected->t3;
-		if (NULL == nb_trg->attr) {
+		if (CLEAN == nb_trg->status) {
 			area += colorize_infected_triangles(nb_trg,
 							    infected_trg,
 							    blocking_with_input_segments);
-		} else {
-			attr_t* nb_attr = (attr_t*)nb_trg->attr;
-			if (nb_attr->id != 0x19FEC7ED)
-				area += colorize_infected_triangles(nb_trg,
-								    infected_trg,
-								    blocking_with_input_segments);
 		}
 	}
 
@@ -355,18 +327,15 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (NULL != trg->attr) {
-			attr_t* attr = trg->attr;
-			if(attr->id == 0x19FEC7ED)
-				continue;
+		if (CLEAN == trg->status) {
+			nb_container_t* area_trg = nb_container_create(NB_SORTED);
+			double* area = malloc(sizeof(*area));
+			area[0] = colorize_infected_triangles(trg, area_trg, true);
+			void** obj = malloc(2 * sizeof(*obj));
+			obj[0] = area;
+			obj[1] = area_trg;
+			nb_container_insert(areas, obj);
 		}
-		nb_container_t* area_trg = nb_container_create(NB_SORTED);
-		double* area = malloc(sizeof(*area));
-		area[0] = colorize_infected_triangles(trg, area_trg, true);
-		void** obj = malloc(2 * sizeof(*obj));
-		obj[0] = area;
-		obj[1] = area_trg;
-		nb_container_insert(areas, obj);
 	}
 	nb_iterator_destroy(iter);
 
@@ -383,9 +352,6 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			if(NULL != ((attr_t*)trg->attr)->data)
-				free(((attr_t*)trg->attr)->data);
-			free(trg->attr);
 			free(trg);
 		}
 		nb_container_destroy(area_trg);
@@ -398,9 +364,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
-		attr_t* attr = (attr_t*)trg->attr;
-		trg->attr = attr->data;
-		free(attr);
+		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
 	free(main_obj);
@@ -425,18 +389,15 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while( nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		if (NULL != trg->attr) {
-			attr_t* attr = trg->attr;
-			if(attr->id == 0x19FEC7ED)
-				continue;
+		if (CLEAN == trg->status) {
+			nb_container_t* area_trg = nb_container_create(NB_SORTED);
+			double* area = malloc(sizeof(*area));
+			area[0] = colorize_infected_triangles(trg, area_trg, false);
+			void** obj = malloc(2*sizeof(*obj));
+			obj[0] = area;
+			obj[1] = area_trg;
+			nb_container_insert(areas, obj);
 		}
-		nb_container_t* area_trg = nb_container_create(NB_SORTED);
-		double* area = malloc(sizeof(*area));
-		area[0] = colorize_infected_triangles(trg, area_trg, false);
-		void** obj = malloc(2*sizeof(*obj));
-		obj[0] = area;
-		obj[1] = area_trg;
-		nb_container_insert(areas, obj);
 	}
 	nb_iterator_destroy(iter);
 	/* Remove separated areas */
@@ -452,11 +413,6 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			/* Restore color */
-			attr_t* trg_attr = (attr_t*)trg->attr;
-			if (NULL != trg_attr->data)
-				free(trg_attr->data);
-			free(trg_attr);
 			free(trg);
 		}
 		nb_container_destroy(area_trg);
@@ -469,10 +425,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
-		/* Restore color */
-		attr_t* trg_attr = (attr_t*)trg->attr;
-		trg->attr = trg_attr->data;
-		free(trg_attr);
+		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
 	free(main_obj);
@@ -604,13 +557,10 @@ static uint16_t get_N_areas(const vcn_mesh_t *mesh,
 	uint16_t counter = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (NULL != trg->attr) {
-			attr_t* attr = trg->attr;
-			if (attr->id == 0x19FEC7ED)
-				continue;
+		if (CLEAN != trg->status) {
+			colorize_infected_triangles(trg, NULL,
+						    block_with_input_sgm);
 		}
-		colorize_infected_triangles(trg, NULL,
-					    block_with_input_sgm);
 		counter += 1;
 	}
 	nb_iterator_finish(iter);

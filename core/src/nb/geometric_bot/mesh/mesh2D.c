@@ -402,9 +402,9 @@ static inline int compare_trgA_isBetterThan_trgB
 				 const void *const restrict trgB)
 {
 	const uint64_t QA = 
-		(uint64_t)(1e6 * mtrg_get_computed_quality((msh_trg_t*)trgA));
+		(uint64_t)(1e6 * ((msh_trg_t*)trgA)->cr2se);
 	const uint64_t QB = 
-		(uint64_t)(1e6 * mtrg_get_computed_quality((msh_trg_t*)trgB));
+		(uint64_t)(1e6 * ((msh_trg_t*)trgB)->cr2se);
 	if (QA > QB)
 		return 1;
 	else if (QB > QA)
@@ -417,9 +417,9 @@ static inline int compare_trgA_isSmallerThan_trgB
 				 const void *const restrict trgB)
 {
 	const uint64_t SA = 
-		(uint64_t)(1e8 * mtrg_get_computed_size((msh_trg_t*)trgA));
+		(uint64_t)(1e8 * ((msh_trg_t*)trgA)->size);
 	const uint64_t SB = 
-		(uint64_t)(1e8 * mtrg_get_computed_size((msh_trg_t*)trgB));
+		(uint64_t)(1e8 * ((msh_trg_t*)trgB)->size);
 	if (SA < SB)
 		return 1;
 	else if (SB < SA)
@@ -630,16 +630,14 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		/* Clone the triangle */
 		msh_trg_t* trg_clone = calloc(1, sizeof(*trg_clone));
-		trg_clone->attr = trg->attr;
-		/* Set an index to the original */
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *pid = malloc(sizeof(*pid));
-		pid[0] = id++;
-		attr[0] = pid;
-		attr[1] = trg->attr;
-		trg->attr = attr;
+		trg_clone->id = trg->id;
+		trg_clone->cr2se = trg->cr2se;
+		trg_clone->size = trg->size;
+		trg_clone->area_id = trg->area_id;
+		trg_clone->status = trg->status;
 		/* Set cloned and original to the built-in hash table */
-		triangles[pid[0]] = trg_clone;
+		triangles[id] = trg_clone;
+		id++;
 	}
 
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
@@ -670,8 +668,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	nb_iterator_restart(trg_iter);
 	while (nb_iterator_has_more(trg_iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(trg_iter);
-		msh_trg_t *trg_clone = 
-			triangles[((uint32_t*)((void**)trg->attr)[0])[0]];
+		msh_trg_t *trg_clone = triangles[trg->id];
 		trg_clone->v1 = vertices[mvtx_get_id(trg->v1)];
 		trg_clone->v2 = vertices[mvtx_get_id(trg->v2)];
 		trg_clone->v3 = vertices[mvtx_get_id(trg->v3)];
@@ -681,13 +678,15 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		trg_clone->s3 = segments[((uint32_t*)((void**)trg->s3->attr)[0])[0]];
 
 		if (NULL != trg->t1)
-			trg_clone->t1 = triangles[((uint32_t*)((void**)trg->t1->attr)[0])[0]];
+			trg_clone->t1 = triangles[trg->t1->id];
 		if (NULL != trg->t2)
-			trg_clone->t2 = triangles[((uint32_t*)((void**)trg->t2->attr)[0])[0]];
+			trg_clone->t2 = triangles[trg->t2->id];
 		if (NULL != trg->t3)
-			trg_clone->t3 = triangles[((uint32_t*)((void**)trg->t3->attr)[0])[0]];
+			trg_clone->t3 = triangles[trg->t3->id];
 		nb_container_insert(clone->ht_trg, trg_clone);
 	}
+	nb_iterator_destroy(trg_iter);
+
 	clone->ht_edge = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(clone->ht_edge, hash_key_edge);
 	nb_container_set_destroyer(clone->ht_edge, free);
@@ -699,9 +698,9 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		sgm_clone->v1 = vertices[mvtx_get_id(sgm->v1)];
 		sgm_clone->v2 = vertices[mvtx_get_id(sgm->v2)];
 		if (NULL != sgm->t1)
-			sgm_clone->t1 = triangles[((uint32_t*)((void**)sgm->t1->attr)[0])[0]];
+			sgm_clone->t1 = triangles[sgm->t1->id];
 		if (NULL != sgm->t2)
-			sgm_clone->t2 = triangles[((uint32_t*)((void**)sgm->t2->attr)[0])[0]];
+			sgm_clone->t2 = triangles[sgm->t2->id];
 		attr_t* sgm_attr = (attr_t*)((void**)sgm->attr)[1];
 		if (NULL != sgm_attr) {
 			if (1 == sgm_attr->id) {
@@ -743,16 +742,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		free(attr);
 	}
 	nb_iterator_destroy(sgm_iter);
-
-	nb_iterator_restart(trg_iter);
-	while (nb_iterator_has_more(trg_iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
-		void** attr = trg->attr;
-		trg->attr = attr[1];
-		free(attr[0]);
-		free(attr);
-	}
-	nb_iterator_destroy(trg_iter);
 
 	/* Return clone */
 	return clone;
