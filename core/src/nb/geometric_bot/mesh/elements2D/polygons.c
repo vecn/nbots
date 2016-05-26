@@ -569,19 +569,12 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 	if (is_cc) {
 		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
 		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
-		if (id1 == trg_cc_map[id1] && id2 == trg_cc_map[id2]) {
-			trg_cc_map[id1] = id2;
-		} else if (id1 == trg_cc_map[id1] && id2 != trg_cc_map[id2]) {
-			trg_cc_map[id1] = trg_cc_map[id2];
-		} else if (id1 != trg_cc_map[id1] && id2 == trg_cc_map[id2]) {
-			trg_cc_map[id2] = trg_cc_map[id1];
-		} else {
-			uint32_t new_cc = trg_cc_map[id1];
-			uint32_t old_cc = trg_cc_map[id2];
-			for (uint32_t i = 0; i < N_trg; i++) {
-				if (old_cc == trg_cc_map[i])
-					trg_cc_map[i] = new_cc;
-			}				
+
+		uint32_t new_cc = trg_cc_map[id1];
+		uint32_t old_cc = trg_cc_map[id2];
+		for (uint32_t i = 0; i < N_trg; i++) {
+			if (old_cc == trg_cc_map[i])
+				trg_cc_map[i] = new_cc;
 		}
 	}
 }
