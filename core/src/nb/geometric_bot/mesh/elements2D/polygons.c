@@ -474,12 +474,20 @@ static void create_mapping(vinfo_t *vinfo,
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
 		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
 		if (trg_is_interior(trg, vgraph)) {
+			if (id == trg_cc_map[id]) {
+				vinfo->trg_map[id] = inode;
+				inode += 1;
+			}
+		}
+	}
+	nb_iterator_restart(iter);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		if (trg_is_interior(trg, vgraph)) {
 			if (id != trg_cc_map[id]) {
 				uint32_t cc_id = trg_cc_map[id];
 				vinfo->trg_map[id] = vinfo->trg_map[cc_id];
-			} else {
-				vinfo->trg_map[id] = inode;
-				inode += 1;
 			}
 		}
 	}

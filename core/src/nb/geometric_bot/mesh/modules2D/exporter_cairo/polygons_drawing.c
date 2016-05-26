@@ -17,8 +17,6 @@ static void draw_mesh(void *draw_ptr, int width, int height,
 		      const void *const poly_ptr);
 static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
 			  const camera_t *cam);
-static void draw_centroids(void *draw_ptr, const nb_mshpoly_t *const poly,
-			  const camera_t *cam);
 static void draw_input_sgm(void *draw_ptr, const nb_mshpoly_t *const poly,
 			  const camera_t *cam);
 
@@ -49,7 +47,6 @@ static void draw_mesh(void *draw_ptr, int width, int height,
 	camera_t cam;
 	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 	draw_polygons(draw_ptr, poly, &cam);
-	draw_centroids(draw_ptr, poly, &cam);
 	draw_input_sgm(draw_ptr, poly, &cam);
 }
 
@@ -75,19 +72,6 @@ static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
 
 		nb_drawing_set_source_rgb(draw_ptr, 0, 0, 0);
 		nb_drawing_stroke(draw_ptr);
-	}
-}
-
-static void draw_centroids(void *draw_ptr, const nb_mshpoly_t *const poly,
-			  const camera_t *cam)
-{
-	double r = 3.0;
-	nb_drawing_set_source_rgb(draw_ptr, 0.2, 0.2, 1.0);
-	for (uint32_t i = 0; i < poly->N_elems; i++) {
-		double x = poly->cen[i * 2];
-		double y = poly->cen[i*2+1];
-		nb_drawing_set_circle(draw_ptr, cam, x, y, r, true);
-		nb_drawing_fill(draw_ptr);
 	}
 }
 
