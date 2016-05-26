@@ -2,7 +2,7 @@
 *~
 
 # Gradle files
-.gradle/*
+.gradle/
 
 # Object files
 *.o
@@ -48,5 +48,4 @@
 *.toc
 
 # Output of doxygen
-doxygen_doc/html/*
-doxygen_doc/latex/*
+doxygen_doc/
