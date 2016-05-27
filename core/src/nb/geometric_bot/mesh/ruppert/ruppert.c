@@ -73,8 +73,8 @@ static void retriangulate_fan
 			      nb_container_t *orfan_vtx,
 			      /* l_new_trg: NULL if not required */
 			      nb_container_t *const l_new_trg);
-static void insert_vertex(vcn_mesh_t *const mesh,
-				  msh_trg_t *const trg_containing_cc,
+static void insert_vertex(vcn_mesh_t *mesh,
+			  msh_trg_t *const trg_containing_cc,
 			  const msh_vtx_t *const cc,
 			  /* big_trg: NULL if not required */
 			  nb_container_t *const big_trg,
@@ -766,7 +766,7 @@ static inline void verify_new_encroachments
 	}
 }
 
-void insert_vertex(vcn_mesh_t *const restrict mesh,
+void insert_vertex(vcn_mesh_t *mesh,
 		   msh_trg_t *const restrict trg_containing_cc,
 		   const msh_vtx_t *const restrict cc,
 		   /* big_trg: NULL if not required */

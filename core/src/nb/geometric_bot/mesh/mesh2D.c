@@ -120,8 +120,6 @@ void vcn_mesh_clear(vcn_mesh_t *mesh)
 	vcn_bins2D_clear(mesh->ug_vtx);
 	nb_container_clear(mesh->ht_trg);
 	nb_container_clear(mesh->ht_edge);
-
-	init_tasks(mesh);
 }
 
 void vcn_mesh_destroy(vcn_mesh_t* mesh)
