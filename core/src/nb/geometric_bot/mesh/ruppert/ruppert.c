@@ -199,11 +199,6 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
-<<<<<<< HEAD
-=======
-	nb_container_destroy(encroached_sgm);
-	nb_container_destroy(big_trg);
->>>>>>> 4e19f676a02a66d6b5bca27e23ec6a650cd9f435
 	nb_container_destroy(encroached_sgm);
 	nb_container_destroy(big_trg);
 	hash_trg_destroy(poor_quality_trg);
