@@ -500,7 +500,7 @@ static void mesh_2_msh3trg_cast_and_enumerate_trg
 	}
 	nb_iterator_destroy(trg_iter);
   
-	if(include_neighbours)
+	if (include_neighbours)
 		mesh_2_msh3trg_cast_trg_neighbours(mesh, msh3trg);
 }
 

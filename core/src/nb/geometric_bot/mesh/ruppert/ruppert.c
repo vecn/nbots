@@ -167,14 +167,13 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
-	nb_container_t *restrict encroached_sgm =
-		nb_container_create(NB_SORTED);
+	nb_container_t *encroached_sgm = nb_container_create(NB_SORTED);
 	nb_container_set_comparer(encroached_sgm, compare_edge_size);
 
-	nb_container_t *restrict big_trg = nb_container_create(NB_SORTED);
+	nb_container_t *big_trg = nb_container_create(NB_SORTED);
 	nb_container_set_comparer(big_trg, compare_trg_attr);
 
-	hash_trg_t *restrict poor_quality_trg = hash_trg_create();
+	hash_trg_t *poor_quality_trg = hash_trg_create();
 
 	/* Initialize container with encroached segments */
 	initialize_encroached_sgm(mesh, encroached_sgm);
@@ -200,8 +199,6 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
-	nb_container_destroy(encroached_sgm);
-	nb_container_destroy(big_trg);
 	nb_container_destroy(encroached_sgm);
 	nb_container_destroy(big_trg);
 	hash_trg_destroy(poor_quality_trg);
