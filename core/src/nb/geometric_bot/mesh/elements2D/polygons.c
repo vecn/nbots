@@ -370,7 +370,7 @@ void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
 
 		mesh_enumerate_vtx(mesh);
-		mesh_alloc_trg_ids(mesh);
+		mesh_enumerate_trg(mesh);
 	
 		vinfo_t vinfo;
 		init_voronoi_info(&vinfo, mesh);
@@ -389,8 +389,6 @@ void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
 
 		finish_voronoi_info(&vinfo);
 		finish_voronoi_graph(&vgraph);
-
-		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 	}
 }
 
@@ -472,7 +470,7 @@ static void create_mapping(vinfo_t *vinfo,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		uint32_t id = trg->id;
 		if (trg_is_interior(trg, vgraph)) {
 			if (id == trg_cc_map[id]) {
 				vinfo->trg_map[id] = inode;
@@ -483,7 +481,7 @@ static void create_mapping(vinfo_t *vinfo,
 	nb_iterator_restart(iter);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		uint32_t id = trg->id;
 		if (trg_is_interior(trg, vgraph)) {
 			if (id != trg_cc_map[id]) {
 				uint32_t cc_id = trg_cc_map[id];
@@ -575,8 +573,8 @@ static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 			  uint32_t *trg_cc_map, uint32_t N_trg)
 {
 	if (is_cc) {
-		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
-		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
+		uint32_t id1 = edge->t1->id;
+		uint32_t id2 = edge->t2->id;
 
 		uint32_t new_cc = trg_cc_map[id1];
 		uint32_t old_cc = trg_cc_map[id2];
@@ -742,7 +740,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		uint32_t id = *(uint32_t*)((void**)trg->attr)[0];
+		uint32_t id = trg->id;
 		if (trg_is_interior(trg, vgraph)) {
 			double circumcenter[2];
 			vcn_utils2D_get_circumcenter(trg->v1->x,
@@ -805,8 +803,8 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 	bool t1_is_interior = mvtx_is_type_location(opp_t1, INTERIOR);
 	bool t2_is_interior = mvtx_is_type_location(opp_t2, INTERIOR);
 
-	uint32_t t1 = *(uint32_t*)((void**)edg->t1->attr)[0];
-	uint32_t t2 = *(uint32_t*)((void**)edg->t2->attr)[0];
+	uint32_t t1 = edg->t1->id;
+	uint32_t t2 = edg->t2->id;
 	bool is_not_cc = vinfo->trg_map[t1] != vinfo->trg_map[t2];
 	if (is_not_cc && t1_is_interior && t2_is_interior) {
 		/* Interior triangles (No cocircular) */
@@ -889,7 +887,7 @@ static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 		if (v1_is_interior) {
 			/* Interior trg case */
 			msh_trg_t *trg = get_prev_trg(vgraph, vinfo, i, j);
-			uint32_t trg_id = *(uint32_t*)((void**)trg->attr)[0];
+			uint32_t trg_id = trg->id;
 			poly->adj[elem_id][id_adj] = vinfo->trg_map[trg_id];
 		} else {
 			/* First node in the boundary */

@@ -400,9 +400,9 @@ static inline int compare_trgA_isBetterThan_trgB
 				 const void *const restrict trgB)
 {
 	const uint64_t QA = 
-		(uint64_t)(1e6 * ((msh_trg_t*)trgA)->cr2se);
+		(uint64_t)(1e6 * ((msh_trg_t*)trgA)->feature);
 	const uint64_t QB = 
-		(uint64_t)(1e6 * ((msh_trg_t*)trgB)->cr2se);
+		(uint64_t)(1e6 * ((msh_trg_t*)trgB)->feature);
 	if (QA > QB)
 		return 1;
 	else if (QB > QA)
@@ -415,9 +415,9 @@ static inline int compare_trgA_isSmallerThan_trgB
 				 const void *const restrict trgB)
 {
 	const uint64_t SA = 
-		(uint64_t)(1e8 * ((msh_trg_t*)trgA)->size);
+		(uint64_t)(1e8 * ((msh_trg_t*)trgA)->feature);
 	const uint64_t SB = 
-		(uint64_t)(1e8 * ((msh_trg_t*)trgB)->size);
+		(uint64_t)(1e8 * ((msh_trg_t*)trgB)->feature);
 	if (SA < SB)
 		return 1;
 	else if (SB < SA)
@@ -629,8 +629,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		/* Clone the triangle */
 		msh_trg_t* trg_clone = calloc(1, sizeof(*trg_clone));
 		trg_clone->id = trg->id;
-		trg_clone->cr2se = trg->cr2se;
-		trg_clone->size = trg->size;
+		trg_clone->feature = trg->feature;
 		trg_clone->area_id = trg->area_id;
 		trg_clone->status = trg->status;
 		/* Set cloned and original to the built-in hash table */

@@ -106,13 +106,6 @@ static void initialize_encroached_sgm
                           (vcn_mesh_t *const mesh,
 			   nb_container_t *const encroached_sgm);
 
-static void insert_big_trg(nb_container_t *big_trg, msh_trg_t *trg,
-			   double big_ratio);
-
-static msh_trg_t* remove_bigger_trg(nb_container_t *big_trg);
-
-static void remove_big_trg(nb_container_t *big_trg, msh_trg_t *trg);
-
 static void check_trg(msh_trg_t *const trg, vcn_mesh_t *const mesh,
 			   nb_container_t *const big_trg,
 			   hash_trg_t *const poor_quality_trg);
@@ -244,8 +237,8 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 {
 	const msh_trg_t *const trg1 = trg1_ptr;
 	const msh_trg_t *const trg2 = trg2_ptr;
-	uint32_t a1 = (uint32_t)(1e6 * trg1->cr2se);
-	uint32_t a2 = (uint32_t)(1e6 * trg2->cr2se);
+	uint32_t a1 = (uint32_t)(1e6 * trg1->feature);
+	uint32_t a2 = (uint32_t)(1e6 * trg2->feature);
 	int8_t out;
 	if (a1 > a2) {
 		out = -1;
@@ -299,7 +292,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 		/* Get next poor-quality triangle */
 		msh_trg_t *trg;
 		if (nb_container_is_not_empty(big_trg))
-			trg = remove_bigger_trg(big_trg);
+			trg = nb_container_delete_first(big_trg);
 		else
 			trg = hash_trg_remove_first(poor_quality_trg);
 
@@ -398,7 +391,7 @@ static inline uint32_t hash_trg_length(const hash_trg_t *const restrict htrg)
 static inline void hash_trg_insert(hash_trg_t *const restrict htrg,
 				   msh_trg_t *const restrict trg)
 {
-	uint32_t hash_key = ((uint32_t) trg->cr2se) % 64;
+	uint32_t hash_key = ((uint32_t) trg->feature) % 64;
 
 	bool is_inserted =
 		nb_container_insert(htrg->avl[hash_key], trg);
@@ -424,7 +417,7 @@ static inline msh_trg_t* hash_trg_remove_first
 static inline void hash_trg_remove(hash_trg_t *const restrict htrg,
 				   msh_trg_t *const restrict trg)
 {
-	uint32_t hash_key = ((uint32_t) trg->cr2se) % 64;
+	uint32_t hash_key = ((uint32_t) trg->feature) % 64;
 
 	bool is_removed = nb_container_delete(htrg->avl[hash_key], trg);
 
@@ -602,7 +595,7 @@ static inline nb_container_t* remove_encroached_triangles
 
 		/* Substract from big triangles set (if exist) */
 		if (NULL != big_trg)
-			remove_big_trg(big_trg, trg);
+			nb_container_delete(big_trg, trg);
 
 		free(trg);
 	}
@@ -856,37 +849,6 @@ static inline void initialize_encroached_sgm
 	}
 }
 
-static inline void insert_big_trg
-                         (nb_container_t * restrict big_trg,
-			  msh_trg_t * restrict trg,
-			  double big_ratio)
-{
-	uint32_t *attr = malloc(sizeof(uint32_t));
-	*attr = (uint32_t) (big_ratio * 1e6);
-	trg->attr = attr;
-	nb_container_insert(big_trg, trg);
-}
-
-static inline msh_trg_t* remove_bigger_trg(nb_container_t * restrict big_trg)
-{
-	msh_trg_t *trg = nb_container_delete_first(big_trg);
-	if (NULL != trg) {
-		free(trg->attr);
-		trg->attr = NULL;
-	}
-	return trg;  
-}
-
-static inline void remove_big_trg(nb_container_t *big_trg, msh_trg_t *trg)
-{
-	if (NULL != trg->attr) {
-		if (trg == nb_container_delete(big_trg, trg)) {
-			free(trg->attr);
-			trg->attr = NULL;
-		}
-	}
-}
-
 static inline void check_trg(msh_trg_t *const restrict trg,
 			     vcn_mesh_t *const restrict mesh,
 			     nb_container_t *const restrict big_trg,
@@ -894,7 +856,8 @@ static inline void check_trg(msh_trg_t *const restrict trg,
 {
 	double big_ratio;
 	if (mtrg_is_too_big(mesh, trg, &big_ratio)) {
-		insert_big_trg(big_trg, trg, big_ratio);
+		trg->feature = big_ratio;
+		nb_container_insert(big_trg, trg);
 	} else {
 		if (1e30 > mesh->cr2se_ratio) {
 			double cr2se_ratio =
@@ -902,7 +865,7 @@ static inline void check_trg(msh_trg_t *const restrict trg,
 							    trg->v2->x,
 							    trg->v3->x);
 			if (cr2se_ratio > mesh->cr2se_ratio) {
-				trg->cr2se = cr2se_ratio;
+				trg->feature = cr2se_ratio;
 				hash_trg_insert(poor_quality_trg, trg);
 			}
 		}
