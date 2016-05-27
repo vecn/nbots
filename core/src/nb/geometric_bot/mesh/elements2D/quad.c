@@ -279,7 +279,7 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
 		mesh_enumerate_vtx((vcn_mesh_t*)mesh);
-		mesh_alloc_trg_ids((vcn_mesh_t*)mesh);
+		mesh_enumerate_trg((vcn_mesh_t*)mesh);
 		nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
 		nb_graph_init_edge_weights(graph);
 
@@ -294,8 +294,6 @@ void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
 
 		nb_graph_finish_edge_weights(graph);
 		vcn_graph_destroy(graph);
-
-		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 	}
 }
 
@@ -309,7 +307,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id = trg->id;
 
 		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
 			uint32_t id_adj = graph->adj[id][i];
@@ -418,15 +416,15 @@ static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
 {
 	msh_trg_t *trg_adj = NULL;
 	if (NULL != trg->t1) {
-		if (id_adj == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
+		if (id_adj == trg->t1->id)
 			trg_adj = trg->t1;
 	}
 	if (NULL == trg_adj && NULL != trg->t2) {
-		if (id_adj == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
+		if (id_adj == trg->t2->id)
 			trg_adj = trg->t2;
 	}
 	if (NULL == trg_adj && NULL != trg->t3) {
-		if (id_adj == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
+		if (id_adj == trg->t3->id)
 			trg_adj = trg->t3;
 	}
 	return trg_adj;
@@ -497,8 +495,8 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 	if (medge_is_boundary(edge)) {
 		out = true;
 	} else {
-		uint32_t id1 = *(uint32_t*)((void**)edge->t1->attr)[0];
-		uint32_t id2 = *(uint32_t*)((void**)edge->t2->attr)[0];
+		uint32_t id1 = edge->t1->id;
+		uint32_t id2 = edge->t2->id;
 		if (matches[id1] != id2)
 			out = true;
 		else
@@ -530,7 +528,7 @@ static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id = trg->id;
 		uint32_t match_id = matches[id];
 
 		if (match_id == id) {
@@ -565,19 +563,19 @@ static void set_trg_element(nb_mshquad_t *quad,
 
 	uint32_t t1;
 	if (NULL != trg->t1)
-		t1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
+		t1 = trg->t1->id;
 	else
 		t1 = quad->N_elems;
 
 	uint32_t t2;
 	if (NULL != trg->t2)
-		t2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
+		t2 = trg->t2->id;
 	else
 		t2 = quad->N_elems;
 
 	uint32_t t3;
 	if (NULL != trg->t3)
-		t3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+		t3 = trg->t3->id;
 	else
 		t3 = quad->N_elems;
 
@@ -602,15 +600,15 @@ static msh_trg_t *get_match_trg(const msh_trg_t *const trg,
 {
 	msh_trg_t *match_trg = NULL;
 	if (NULL != trg->t1) {
-		if (match_id == ((uint32_t*)((void**)trg->t1->attr)[0])[0])
+		if (match_id == trg->t1->id)
 			match_trg = trg->t1;
 	}
 	if (NULL == match_trg && NULL != trg->t2) {
-		if (match_id == ((uint32_t*)((void**)trg->t2->attr)[0])[0])
+		if (match_id == trg->t2->id)
 			match_trg = trg->t2;
 	}
 	if (NULL == match_trg && NULL != trg->t3) {
-		if (match_id == ((uint32_t*)((void**)trg->t3->attr)[0])[0])
+		if (match_id == trg->t3->id)
 			match_trg = trg->t3;
 	}
 	return match_trg;
@@ -647,22 +645,22 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 	quad->adj[elem_id*4+3] = mvtx_get_id(vtx[3]);
 
 	if (NULL != t1)
-		quad->ngb[elem_id * 4] = ((uint32_t*)((void**)t1->attr)[0])[0];
+		quad->ngb[elem_id * 4] = t1->id;
 	else
 		quad->ngb[elem_id * 4] = quad->N_elems;
 
 	if (NULL != t2)
-		quad->ngb[elem_id*4+1] = ((uint32_t*)((void**)t2->attr)[0])[0];
+		quad->ngb[elem_id*4+1] = t2->id;
 	else
 		quad->ngb[elem_id*4+1] = quad->N_elems;
 
 	if (NULL != t3)
-		quad->ngb[elem_id*4+2] = ((uint32_t*)((void**)t3->attr)[0])[0];
+		quad->ngb[elem_id*4+2] = t3->id;
 	else
 		quad->ngb[elem_id*4+2] = quad->N_elems;
 
 	if (NULL != t4)
-		quad->ngb[elem_id*4+3] = ((uint32_t*)((void**)t4->attr)[0])[0];
+		quad->ngb[elem_id*4+3] = t4->id;
 	else
 		quad->ngb[elem_id*4+3] = quad->N_elems;
 }

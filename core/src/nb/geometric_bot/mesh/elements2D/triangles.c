@@ -26,9 +26,9 @@ static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const mesh,
 				      vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const mesh,
 					       vcn_msh3trg_t *msh3trg);
-static void mesh_2_msh3trg_cast_trg_and_alloc_id(vcn_mesh_t *mesh,
-						 vcn_msh3trg_t *msh3trg,
-						 bool include_neighbours);
+static void mesh_2_msh3trg_cast_and_enumerate_trg(vcn_mesh_t *mesh,
+						  vcn_msh3trg_t *msh3trg,
+						  bool include_neighbours);
 static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const mesh,
 					  vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const mesh,
@@ -249,8 +249,9 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 		mesh_2_msh3trg_cast_edges(mesh, msh3trg);
 
 	if(include_triangles && nb_container_is_not_empty(mesh->ht_trg))
-		mesh_2_msh3trg_cast_trg_and_alloc_id((vcn_mesh_t*)mesh, msh3trg, 
-						     include_neighbours);
+		mesh_2_msh3trg_cast_and_enumerate_trg((vcn_mesh_t*)mesh,
+						      msh3trg, 
+						      include_neighbours);
 
 
 	if (include_input_vertices)
@@ -259,9 +260,6 @@ vcn_msh3trg_t* vcn_mesh_get_msh3trg
 	if (include_input_segments && mesh->N_input_sgm > 0)
 		mesh_2_msh3trg_cast_input_sgm(mesh, msh3trg);
 
-	/* Free memory */
-	if (include_neighbours)
-		mesh_free_trg_ids((vcn_mesh_t*)mesh);
 
 	/* Return data */
 	return msh3trg;
@@ -457,16 +455,16 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
-		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id = trg->id;
 		uint32_t id1 = msh3trg->N_triangles;
 		if (NULL != trg->t1)
-			id1 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
+			id1 = trg->t1->id;
 		uint32_t id2 = msh3trg->N_triangles;
 		if (NULL != trg->t2)
-			id2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
+			id2 = trg->t2->id;
 		uint32_t id3 = msh3trg->N_triangles;
 		if (NULL != trg->t3)
-			id3 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+			id3 = trg->t3->id;
 
 		msh3trg->triangles_sharing_sides[id * 3] = id1;
 		msh3trg->triangles_sharing_sides[id*3+1] = id2;
@@ -475,7 +473,7 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 	nb_iterator_destroy(trg_iter);
 }
 
-static void mesh_2_msh3trg_cast_trg_and_alloc_id
+static void mesh_2_msh3trg_cast_and_enumerate_trg
                                    (vcn_mesh_t * restrict mesh,
 				    vcn_msh3trg_t * restrict msh3trg,
 				    bool include_neighbours)
@@ -497,14 +495,7 @@ static void mesh_2_msh3trg_cast_trg_and_alloc_id
 		msh3trg->vertices_forming_triangles[i*3+2] =
 			mvtx_get_id(trg->v3);
 
-		if (include_neighbours) {
-			void** attr = malloc(2 * sizeof(*attr));
-			uint32_t* id = malloc(sizeof(*id));
-			id[0] = i;
-			attr[0] = id;
-			attr[1] = trg->attr;
-			trg->attr = attr;
-		}
+		trg->id = i;
 		i++;
 	}
 	nb_iterator_destroy(trg_iter);

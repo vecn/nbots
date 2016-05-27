@@ -18,8 +18,8 @@ vcn_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const restrict mesh)
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t* edge = (msh_edge_t*)nb_iterator_get_next(iter);
-		uint32_t idx1 = ((uint32_t*)((void**)edge->v1->attr)[0])[0];
-		uint32_t idx2 = ((uint32_t*)((void**)edge->v2->attr)[0])[0];
+		uint32_t idx1 = mvtx_get_id(edge->v1);
+		uint32_t idx2 = mvtx_get_id(edge->v2);
 		graph->N_adj[idx1] += 1;
 		graph->N_adj[idx2] += 1;
 	}
@@ -31,8 +31,8 @@ vcn_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const restrict mesh)
 	nb_iterator_restart(iter);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t* edge = (msh_edge_t*)nb_iterator_get_next(iter);
-		uint32_t idx1 = ((uint32_t*)((void**)edge->v1->attr)[0])[0];
-		uint32_t idx2 = ((uint32_t*)((void**)edge->v2->attr)[0])[0];
+		uint32_t idx1 = mvtx_get_id(edge->v1);
+		uint32_t idx2 = mvtx_get_id(edge->v2);
 		graph->adj[idx1][adj_next_idx[idx1]] = idx2;
 		graph->adj[idx2][adj_next_idx[idx2]] = idx1;
 		adj_next_idx[idx1] += 1;
@@ -54,7 +54,7 @@ vcn_graph_t* vcn_mesh_create_elem_graph(const vcn_mesh_t *const restrict mesh)
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id = trg->id;
 		if (NULL != trg->t1)
 			graph->N_adj[id] += 1;
 		if (NULL != trg->t2)
@@ -66,19 +66,19 @@ vcn_graph_t* vcn_mesh_create_elem_graph(const vcn_mesh_t *const restrict mesh)
 	nb_iterator_restart(iter);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		uint32_t id = ((uint32_t*)((void**)trg->attr)[0])[0];
+		uint32_t id = trg->id;
 		graph->adj[id] = malloc(graph->N_adj[id] * sizeof(*(graph->adj[id])));
 		int cnt = 0;
 		if (NULL != trg->t1) {
-			uint32_t id2 = ((uint32_t*)((void**)trg->t1->attr)[0])[0];
+			uint32_t id2 = trg->t1->id;
 			graph->adj[id][cnt++] = id2;
 		}
 		if (NULL != trg->t2) {
-			uint32_t id2 = ((uint32_t*)((void**)trg->t2->attr)[0])[0];
+			uint32_t id2 = trg->t2->id;
 			graph->adj[id][cnt++] = id2;
 		}
 		if (NULL != trg->t3){
-			uint32_t id2 = ((uint32_t*)((void**)trg->t3->attr)[0])[0];
+			uint32_t id2 = trg->t3->id;
 			graph->adj[id][cnt++] = id2;
 		}
 	}
