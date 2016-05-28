@@ -41,14 +41,17 @@ static void calculate_area_centroid(const vcn_mesh_t *mesh,
 static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
 						    msh_edge_t *longest_edge,
 						    double *max_length2);
-static double colorize_infected_triangles(msh_trg_t* trg_infected,
+static double spread_infection(msh_trg_t* trg_infected,
 	       /* NULL if not required */ nb_container_t* infected_trg,
 					  bool blocking_with_input_segments);
 
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
-static uint16_t get_N_areas(const vcn_mesh_t *mesh,
+static uint16_t get_N_areas(const nb_mesh_t *mesh,
 			    bool block_with_input_sgm);
+static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
+					 bool block_with_input_sgm);
+static void uninfect(nb_mesh_t *mesh);
 
 static void* subarea_create(void)
 {
@@ -119,7 +122,7 @@ static void group_trg_by_areas(const vcn_mesh_t *const mesh,
 		if (CLEAN == trg->status) {
 			subarea_t *subarea = subarea_create();
 			subarea->area =
-				colorize_infected_triangles(trg, subarea->trgs, true);
+				spread_infection(trg, subarea->trgs, true);
 			nb_container_insert(areas, subarea);
 		}
 	}
@@ -190,52 +193,49 @@ static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
 	return longest;
 }
 
-static double colorize_infected_triangles(msh_trg_t* trg_infected,
+static double spread_infection(msh_trg_t* trg_infected,
 	       /* NULL if not required */ nb_container_t* infected_trg,
 					  bool blocking_with_input_segments)
 {
 	double area = 0.0;
-	/* Colorize triangle */
-	if (NULL != infected_trg)
-		nb_container_insert(infected_trg, trg_infected);
+	if (CLEAN == trg_infected->status) {
+		trg_infected->status = INFECTED;
 
-	trg_infected->status = INFECTED;
+		if (NULL != infected_trg)
+			nb_container_insert(infected_trg, trg_infected);
 
-	bool segment_nonblock = !blocking_with_input_segments;
-	if (blocking_with_input_segments)
-		segment_nonblock = !medge_is_subsgm(trg_infected->s1);
-	if (trg_infected->t1 != NULL && segment_nonblock) {
-		msh_trg_t* nb_trg = trg_infected->t1;
-		if (CLEAN == nb_trg->status) {
-			area += colorize_infected_triangles(nb_trg,
-							    infected_trg,
-							    blocking_with_input_segments);
+		bool segment_nonblock = !blocking_with_input_segments;
+		if (blocking_with_input_segments)
+			segment_nonblock = !medge_is_subsgm(trg_infected->s1);
+		if (trg_infected->t1 != NULL && segment_nonblock) {
+			msh_trg_t* nb_trg = trg_infected->t1;
+			area += spread_infection(nb_trg,
+						 infected_trg,
+						 blocking_with_input_segments);
 		}
-	}
-	if (blocking_with_input_segments)
-		segment_nonblock = !medge_is_subsgm(trg_infected->s2);
-	if (NULL != trg_infected->t2 && segment_nonblock) {
-		msh_trg_t* nb_trg = trg_infected->t2;
-		if (CLEAN == nb_trg->status) {
-			area += colorize_infected_triangles(nb_trg,
-							    infected_trg,
-							    blocking_with_input_segments);
-		}
-	}
-	if (blocking_with_input_segments)
-		segment_nonblock = !medge_is_subsgm(trg_infected->s3);
-	if (NULL != trg_infected->t3 && segment_nonblock) {
-		msh_trg_t* nb_trg = trg_infected->t3;
-		if (CLEAN == nb_trg->status) {
-			area += colorize_infected_triangles(nb_trg,
-							    infected_trg,
-							    blocking_with_input_segments);
-		}
-	}
 
-	area += vcn_utils2D_get_trg_area(trg_infected->v1->x,
-					 trg_infected->v2->x,
-					 trg_infected->v3->x);
+		if (blocking_with_input_segments)
+			segment_nonblock = !medge_is_subsgm(trg_infected->s2);
+		if (NULL != trg_infected->t2 && segment_nonblock) {
+			msh_trg_t* nb_trg = trg_infected->t2;
+			area += spread_infection(nb_trg,
+						 infected_trg,
+						 blocking_with_input_segments);
+		}
+
+		if (blocking_with_input_segments)
+			segment_nonblock = !medge_is_subsgm(trg_infected->s3);
+		if (NULL != trg_infected->t3 && segment_nonblock) {
+			msh_trg_t* nb_trg = trg_infected->t3;
+			area += spread_infection(nb_trg,
+						 infected_trg,
+						 blocking_with_input_segments);
+		}
+
+		area += vcn_utils2D_get_trg_area(trg_infected->v1->x,
+						 trg_infected->v2->x,
+						 trg_infected->v3->x);
+	}
 	return area;
 }
 
@@ -330,7 +330,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg = nb_container_create(NB_SORTED);
 			double* area = malloc(sizeof(*area));
-			area[0] = colorize_infected_triangles(trg, area_trg, true);
+			area[0] = spread_infection(trg, area_trg, true);
 			void** obj = malloc(2 * sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
@@ -392,7 +392,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg = nb_container_create(NB_SORTED);
 			double* area = malloc(sizeof(*area));
-			area[0] = colorize_infected_triangles(trg, area_trg, false);
+			area[0] = spread_infection(trg, area_trg, false);
 			void** obj = malloc(2*sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
@@ -547,8 +547,17 @@ inline uint16_t vcn_mesh_get_N_subareas(const vcn_mesh_t *mesh)
 	return get_N_areas(mesh, true);
 }
 
-static uint16_t get_N_areas(const vcn_mesh_t *mesh,
+static uint16_t get_N_areas(const nb_mesh_t *mesh,
 			    bool block_with_input_sgm)
+{
+	uint16_t counter = count_areas_by_infection((nb_mesh_t*)mesh,
+						    block_with_input_sgm);
+	uninfect((nb_mesh_t*)mesh);
+	return counter;
+}
+
+static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
+					 bool block_with_input_sgm)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
@@ -557,14 +566,42 @@ static uint16_t get_N_areas(const vcn_mesh_t *mesh,
 	uint16_t counter = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (CLEAN != trg->status) {
-			colorize_infected_triangles(trg, NULL,
-						    block_with_input_sgm);
-		}
+		spread_infection(trg, NULL, block_with_input_sgm);
 		counter += 1;
 	}
 	nb_iterator_finish(iter);
 	return counter;
+}
+
+static void uninfect(nb_mesh_t *mesh)
+{
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		trg->status = CLEAN;
+	}
+	nb_iterator_finish(iter);	
+}
+
+uint16_t nb_mesh_get_subareas(const vcn_mesh_t *mesh, uint16_t *area_id)
+{
+/* AQUI VOY use: group_trg_by_areas */
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+
+	uint16_t counter = 0;
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		spread_infection(trg, NULL, true);
+		counter += 1;
+	}
+	nb_iterator_finish(iter);
+
+	uninfect((nb_mesh_t*) mesh);
 }
 
 inline uint16_t vcn_mesh_get_N_continuum_areas(const vcn_mesh_t *mesh)

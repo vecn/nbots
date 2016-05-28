@@ -630,7 +630,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		msh_trg_t* trg_clone = calloc(1, sizeof(*trg_clone));
 		trg_clone->id = trg->id;
 		trg_clone->feature = trg->feature;
-		trg_clone->area_id = trg->area_id;
 		trg_clone->status = trg->status;
 		/* Set cloned and original to the built-in hash table */
 		triangles[id] = trg_clone;

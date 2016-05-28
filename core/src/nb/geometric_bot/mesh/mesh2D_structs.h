@@ -72,7 +72,6 @@ struct msh_trg_s {
 	msh_vtx_t *v1, *v2, *v3;   /* Vertex */
 
 	mtrg_status_t status:8;
-	uint8_t area_id; /* Max 256 areas */
 	float feature;
 	uint32_t id;
 };

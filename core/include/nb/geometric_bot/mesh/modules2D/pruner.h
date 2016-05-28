@@ -84,6 +84,8 @@ bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh);
 
 uint16_t vcn_mesh_get_N_subareas(const vcn_mesh_t *mesh);
 
+uint16_t nb_mesh_get_subareas(const vcn_mesh_t *mesh, uint16_t *area_id);
+
 uint16_t vcn_mesh_get_N_continuum_areas(const vcn_mesh_t *mesh);
 
 #endif
