@@ -10,7 +10,7 @@
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/modules2D/pruner.h"
+#include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"

@@ -11,7 +11,7 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
-#include "nb/geometric_bot/mesh/modules2D/pruner.h"
+#include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "vtx.h"
 #include "edge.h"
