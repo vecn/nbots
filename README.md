@@ -17,12 +17,6 @@ Compilation
 Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat for Windows) if gradle is not installed in your system.
 
 
-Developers
------------
-- Víctor E Cardoso Nungaray
-- Miguel Vargas Félix. (Linear algebra routines)
-
-
 Contact
 -----------
 Victor E. Cardoso

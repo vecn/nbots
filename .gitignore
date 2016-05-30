@@ -3,7 +3,7 @@
 
 # Gradle files
 .gradle/
-*/build/
+*build/
 
 # Object files
 *.o
