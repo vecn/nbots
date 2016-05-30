@@ -1,6 +1,0 @@
-// http://www.petrikainulainen.net/programming/gradle/getting-started-with-gradle-creating-a-multi-project-build/
-// https://docs.gradle.org/current/userguide/multi_project_builds.html
-
-include 'core'
-include 'wrappers:JNI'
-include 'wrappers:java'

@@ -14,14 +14,17 @@ The project nbots is a self-contained ecosystem of numerical bots.
 
 Compilation
 -----------
-Run 'gradle build' or use the shell script './gradlew build' (gradlew.bat for Windows) if gradle is not installed in your system.
+Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat for Windows) if gradle is not installed in your system.
+
+
+Developers
+-----------
+- Víctor E Cardoso Nungaray
+- Miguel Vargas Félix. (Linear algebra routines)
 
 
 Contact
---------
+-----------
 Victor E. Cardoso
 - Email: victorc@cimat.mx
 - Twitter: @victore_cardoso
-
-Miguel Vargas Felix
-- Email: miguelvargas@cimat.mx
