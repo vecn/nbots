@@ -29,16 +29,6 @@ void vcn_model_clear(void *model_ptr);
  */
 vcn_model_t* vcn_model_load(const char* filename);
 
-void vcn_model_load_from_arrays(vcn_model_t *model,
-				double vertices[], uint32_t N_vertices,
-				uint32_t segments[], uint32_t N_segments,
-				double holes[], uint32_t N_holes);
-
-void vcn_model_load_from_farrays(vcn_model_t *model,
-				 float vertices[], uint32_t N_vertices,
-				 uint32_t segments[], uint32_t N_segments,
-				 float holes[], uint32_t N_holes);
-
 /**
  * @brief Creates a geometry model of a rectangle.
  * @param[in] x_min X coordinate of the inferior left corner.

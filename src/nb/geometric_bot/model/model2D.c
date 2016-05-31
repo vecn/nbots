@@ -160,31 +160,6 @@ vcn_model_t* vcn_model_load(const char* filename)
 	return model;
 }
 
-void vcn_model_load_from_arrays(vcn_model_t *model,
-				double vertices[], uint32_t N_vertices,
-				uint32_t segments[], uint32_t N_segments,
-				double holes[], uint32_t N_holes)
-{
-	model->N = N_vertices;
-	model->M = N_segments;
-	model->H = N_holes;
-	if (0 < N_vertices) {
-		nb_model_alloc_vertices(model);
-		memcpy(model->vertex, vertices,
-		       2 * N_vertices * sizeof(*(model->vertex)));
-	}
-	if (0 < N_segments) {
-		nb_model_alloc_edges(model);
-		memcpy(model->edge, segments,
-		       2 * N_segments * sizeof(*(model->edge)));
-	}
-	if (0 < N_holes ) {
-		nb_model_alloc_holes(model);
-		memcpy(model->holes, holes,
-		       2 * N_holes * sizeof(*(model->holes)));
-	}
-}
-
 void vcn_model_load_from_farrays(vcn_model_t *model,
 				 float vertices[], uint32_t N_vertices,
 				 uint32_t segments[], uint32_t N_segments,
