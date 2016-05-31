@@ -21,6 +21,7 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/exporter_asymptote.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"

@@ -9,7 +9,7 @@
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 
-#include "../model2D_struct.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/regularizer.h"
 

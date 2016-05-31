@@ -7,7 +7,7 @@
 #include "nb/container_bot/container.h"
 #include "nb/geometric_bot/utils2D.h"
 
-#include "../model2D_struct.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/simplifier.h"
 #include "nb/geometric_bot/model/modules2D/exporter_asymptote.h"

@@ -11,8 +11,6 @@
 #include "nb/geometric_bot.h"
 #include "nb/geometric_bot-cairo.h"
 
-#include "../model2D_struct.h"
-
 static inline double get_center_and_zoom(double box[4], double width,
 					 double height, double center[2]);
 static void draw_edges(cairo_t *const cr,

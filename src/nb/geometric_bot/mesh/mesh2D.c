@@ -19,11 +19,11 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/mesh/constrained_delaunay.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 
-#include "../model/model2D_struct.h"
 #include "ruppert/ruppert.h"
 #include "mesh2D_structs.h"
 

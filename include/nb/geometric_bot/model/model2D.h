@@ -4,13 +4,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/graph_bot.h"
 
 /**
  * @brief Geometry model defining the domain.
  */
-typedef struct vcn_model_s vcn_model_t;
+typedef nb_model_t vcn_model_t;/* TEMPORAL */
 
 uint16_t vcn_model_get_memsize(void);
 void vcn_model_init(void *model_ptr);

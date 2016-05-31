@@ -15,7 +15,7 @@
 
 #include "vtx.h"
 #include "edge.h"
-#include "../model2D_struct.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"
 #include "nb/geometric_bot/model/modules2D/clipper.h"
@@ -204,9 +204,9 @@ void vcn_model_get_combination(vcn_model_t *model,
 
 	/* Allocate new model */
 	model->N = nb_container_get_length(ht_vtx);
-	model_alloc_vertices(model);
+	nb_model_alloc_vertices(model);
 	model->M = nb_container_get_length(avl_sgm);
-	model_alloc_edges(model);
+	nb_model_alloc_edges(model);
 
 	/* Set vertices to the model */
 	uint32_t vtx_id = 0;
@@ -272,7 +272,7 @@ void vcn_model_get_combination(vcn_model_t *model,
 		vcn_mesh_destroy(mesh2);
 
 		if (model->H > 0) {
-			model_alloc_holes(model);
+			nb_model_alloc_holes(model);
 			model->H = 0;
 			for (uint32_t i = 0; i < N_centroids; i++) {
 				if (mask_centroids[i] == 0)

@@ -12,7 +12,7 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
-#include "../model2D_struct.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"
 

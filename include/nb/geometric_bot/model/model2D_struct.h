@@ -2,9 +2,8 @@
 #define __NB_GEOMETRIC_BOT_MODEL_MODEL2D_STRUCT_H__
 
 #include <stdint.h>
-#include "nb/geometric_bot/model/model2D.h"
 
-struct vcn_model_s {
+typedef struct {
 	/* Planar Straight Line Graph (PSLG) */
 	uint32_t N;              /* Number of vertices */
 	uint32_t M;              /* Number of edges */
@@ -13,10 +12,10 @@ struct vcn_model_s {
 	uint32_t *edge;          /* Pairs of vertex ids forming an edge 
 			      * sorted by id */
 	double *holes;       /* Coordinates inside holes */
-};
+} nb_model_t;
 
-void model_alloc_vertices(vcn_model_t *model);
-void model_alloc_edges(vcn_model_t *model);
-void model_alloc_holes(vcn_model_t *model);
+void nb_model_alloc_vertices(nb_model_t *model);
+void nb_model_alloc_edges(nb_model_t *model);
+void nb_model_alloc_holes(nb_model_t *model);
 
 #endif

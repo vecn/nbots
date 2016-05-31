@@ -12,7 +12,7 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
-#include "model2D_struct.h"
+#include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 
 #define GET_PVTX(model, i) (&((model)->vertex[(i)*2]))
@@ -122,7 +122,7 @@ vcn_model_t* vcn_model_load(const char* filename)
 		return NULL;
 	if (0 == model->N)
 		return NULL;
-	model_alloc_vertices(model);
+	nb_model_alloc_vertices(model);
 	/* Read vertices */
 	for (int32_t i = 0; i < model->N; i++) {
 		if (fscanf(fp, "%lf %lf",
@@ -134,7 +134,7 @@ vcn_model_t* vcn_model_load(const char* filename)
 	if (fscanf(fp, "%u", &(model->M)) != 1)
 		return NULL;
 
-	model_alloc_edges(model);
+	nb_model_alloc_edges(model);
 	/* Read segments */
 	for (int32_t i = 0; i < model->M; i++) {
 	  if (fscanf(fp, "%u %u",
@@ -147,7 +147,7 @@ vcn_model_t* vcn_model_load(const char* filename)
 	if (fscanf(fp, "%u", &(model->H)) != 1)
 		return NULL;
 
-	model_alloc_holes(model);
+	nb_model_alloc_holes(model);
 	for (int32_t i = 0; i < model->H; i++) {
 	  if (fscanf(fp, "%lf %lf",
 		     &(model->holes[i * 2]),
@@ -169,17 +169,17 @@ void vcn_model_load_from_arrays(vcn_model_t *model,
 	model->M = N_segments;
 	model->H = N_holes;
 	if (0 < N_vertices) {
-		model_alloc_vertices(model);
+		nb_model_alloc_vertices(model);
 		memcpy(model->vertex, vertices,
 		       2 * N_vertices * sizeof(*(model->vertex)));
 	}
 	if (0 < N_segments) {
-		model_alloc_edges(model);
+		nb_model_alloc_edges(model);
 		memcpy(model->edge, segments,
 		       2 * N_segments * sizeof(*(model->edge)));
 	}
 	if (0 < N_holes ) {
-		model_alloc_holes(model);
+		nb_model_alloc_holes(model);
 		memcpy(model->holes, holes,
 		       2 * N_holes * sizeof(*(model->holes)));
 	}
@@ -194,15 +194,15 @@ void vcn_model_load_from_farrays(vcn_model_t *model,
 	model->M = N_segments;
 	model->H = N_holes;
 
-	model_alloc_vertices(model);
+	nb_model_alloc_vertices(model);
 	for (uint32_t i = 0; i < 2 * N_vertices; i++)
 	  model->vertex[i] = vertices[i];
 
-	model_alloc_edges(model);
+	nb_model_alloc_edges(model);
 	for (uint32_t i = 0; i < 2 * N_segments; i++)
 	  model->edge[i] = segments[i];
 
-	model_alloc_holes(model);
+	nb_model_alloc_holes(model);
 	for (uint32_t i = 0; i < 2 * N_holes; i++)
 	  model->holes[i] = holes[i];
 }
@@ -213,8 +213,8 @@ vcn_model_t* vcn_model_create_rectangle(double x_min, double y_min,
 	vcn_model_t* model = vcn_model_create();
 	model->N = 4;
 	model->M = 4;
-	model_alloc_vertices(model);
-	model_alloc_edges(model);
+	nb_model_alloc_vertices(model);
+	nb_model_alloc_edges(model);
   
 	/* Set vertices */
 	model->vertex[0] = x_min;
@@ -248,8 +248,8 @@ vcn_model_t* vcn_model_create_polygon(double radius,
 	double angle_step = (NB_MATH_PI * 2.0) / N_sides;
 	model->N = N_sides;
 	model->M = N_sides;
-	model_alloc_vertices(model);
-	model_alloc_edges(model);
+	nb_model_alloc_vertices(model);
+	nb_model_alloc_edges(model);
 	for (uint32_t i = 0; i < model->N; i++) {
 		double angle = i * angle_step;
 		model->vertex[i * 2] = x_center + radius * cos(angle);
@@ -430,8 +430,8 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 	}
 
 	/* Allocate segments and vertices */
-	model_alloc_vertices(model);
-	model_alloc_edges(model);
+	nb_model_alloc_vertices(model);
+	nb_model_alloc_edges(model);
 
 	real_vtx_boundaries[0] = malloc(N_real_vtx_boundaries[0] * 
 					sizeof(uint32_t));
