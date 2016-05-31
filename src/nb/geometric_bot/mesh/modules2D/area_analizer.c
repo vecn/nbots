@@ -213,6 +213,7 @@ static double spread_infection(msh_trg_t* trg_infected,
 		bool segment_nonblock = !blocking_with_input_segments;
 		if (blocking_with_input_segments)
 			segment_nonblock = !medge_is_subsgm(trg_infected->s1);
+
 		if (trg_infected->t1 != NULL && segment_nonblock) {
 			msh_trg_t* nb_trg = trg_infected->t1;
 			area += spread_infection(nb_trg,
@@ -222,6 +223,7 @@ static double spread_infection(msh_trg_t* trg_infected,
 
 		if (blocking_with_input_segments)
 			segment_nonblock = !medge_is_subsgm(trg_infected->s2);
+
 		if (NULL != trg_infected->t2 && segment_nonblock) {
 			msh_trg_t* nb_trg = trg_infected->t2;
 			area += spread_infection(nb_trg,
@@ -231,6 +233,7 @@ static double spread_infection(msh_trg_t* trg_infected,
 
 		if (blocking_with_input_segments)
 			segment_nonblock = !medge_is_subsgm(trg_infected->s3);
+
 		if (NULL != trg_infected->t3 && segment_nonblock) {
 			msh_trg_t* nb_trg = trg_infected->t3;
 			area += spread_infection(nb_trg,
@@ -393,7 +396,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
 	nb_iterator_t* iter = nb_iterator_create();
 	nb_iterator_set_container(iter, mesh->ht_trg);
-	while( nb_iterator_has_more(iter)) {
+	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg = nb_container_create(NB_SORTED);
@@ -572,8 +575,10 @@ static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
 	uint16_t counter = 0;
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		spread_infection(trg, NULL, block_with_input_sgm);
-		counter += 1;
+		if (CLEAN == trg->status) {
+			spread_infection(trg, NULL, block_with_input_sgm);
+			counter += 1;
+		}
 	}
 	nb_iterator_finish(iter);
 	return counter;
