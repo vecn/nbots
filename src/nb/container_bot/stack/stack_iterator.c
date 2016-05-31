@@ -80,7 +80,7 @@ void stack_iter_set_dst(void *iter_ptr, const void *const stack_ptr)
 	iter_t *iter = iter_ptr;
 	iter->start = NULL;
 	if (NULL != stack_ptr) {
-		const stack_t* stack = stack_ptr;
+		const nb_stack_t* stack = stack_ptr;
 		if (NULL != stack->end)
 			iter->start = stack->end->next;
 	}

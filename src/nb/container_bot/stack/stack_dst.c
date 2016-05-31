@@ -12,26 +12,26 @@
 #include "stack_struct.h"
 #include "stack_dst.h"
 
-static bool is_not_empty(const stack_t *const list);
-static stack_node_t* get_first(const stack_t *const list);
+static bool is_not_empty(const nb_stack_t *const list);
+static stack_node_t* get_first(const nb_stack_t *const list);
 static void* malloc_stack(void);
-static void insert_stack_node_as_starting(stack_t *list, const void *const val);
-static void add_node(stack_t *list, stack_node_t *node);
-static void add_first_node(stack_t *list, stack_node_t *node);
+static void insert_stack_node_as_starting(nb_stack_t *list, const void *const val);
+static void add_node(nb_stack_t *list, stack_node_t *node);
+static void add_first_node(nb_stack_t *list, stack_node_t *node);
 static void null_destroy(void *val);
-static void link_node(stack_t *stack, stack_node_t *node);
-static stack_node_t* exist_node(const stack_t *const stack, const void *val,
+static void link_node(nb_stack_t *stack, stack_node_t *node);
+static stack_node_t* exist_node(const nb_stack_t *const stack, const void *val,
 			  int8_t (*compare)(const void*, const void*));
-static void unlink_node(stack_t *stack, const stack_node_t *const node);
+static void unlink_node(nb_stack_t *stack, const stack_node_t *const node);
 
 inline uint16_t stack_get_memsize(void)
 {
-	return sizeof(stack_t);
+	return sizeof(nb_stack_t);
 }
 
 inline void stack_init(void *stack_ptr)
 {
-	stack_t *stack = stack_ptr;
+	nb_stack_t *stack = stack_ptr;
 	stack->length = 0;
 	stack->end = NULL;
 }
@@ -39,8 +39,8 @@ inline void stack_init(void *stack_ptr)
 void stack_copy(void *stack_ptr, const void *src_stack_ptr,
 		void* (*clone)(const void*))
 {
-	stack_t *stack = stack_ptr;
-	const stack_t *src_stack = src_stack_ptr;
+	nb_stack_t *stack = stack_ptr;
+	const nb_stack_t *src_stack = src_stack_ptr;
 	
 	stack->length = src_stack->length;
 
@@ -62,12 +62,12 @@ void stack_copy(void *stack_ptr, const void *src_stack_ptr,
 }
 
 
-static inline bool is_not_empty(const stack_t *const restrict stack)
+static inline bool is_not_empty(const nb_stack_t *const restrict stack)
 {
 	return (stack->end != NULL);
 }
 
-static inline stack_node_t* get_first(const stack_t *const restrict stack)
+static inline stack_node_t* get_first(const nb_stack_t *const restrict stack)
 {
 	return stack->end->next;
 }
@@ -109,7 +109,7 @@ inline void stack_destroy(void *stack_ptr,
 void stack_clear(void *stack_ptr,
 		 void (*destroy)(void*))
 {
-	stack_t *stack = stack_ptr;
+	nb_stack_t *stack = stack_ptr;
 	if (is_not_empty(stack)) {
 		stack_node_t* iter = get_first(stack);
 		stack->end->next = NULL;
@@ -127,8 +127,8 @@ void stack_merge(void *stack1_ptr, void *stack2_ptr,
 		 uint32_t (*key)(const void*),
 		 int8_t (*compare)(const void*, const void*))
 {
-	stack_t *stack1 = stack1_ptr;
-	stack_t *stack2 = stack2_ptr;
+	nb_stack_t *stack1 = stack1_ptr;
+	nb_stack_t *stack2 = stack2_ptr;
 	if (is_not_empty(stack2)) {
 		stack1->length += stack2->length;
 		if (is_not_empty(stack1)) {
@@ -146,12 +146,12 @@ inline bool stack_insert(void *stack_ptr, const void *val,
 			 uint32_t (*key)(const void*),
 			 int8_t (*compare)(const void*, const void*))
 {
-	stack_t *stack = stack_ptr;
+	nb_stack_t *stack = stack_ptr;
 	insert_stack_node_as_starting(stack, val);
 	return true;
 }
 
-static inline void insert_stack_node_as_starting(stack_t *restrict stack,
+static inline void insert_stack_node_as_starting(nb_stack_t *restrict stack,
 					   const void *const restrict val)
 {
 	stack_node_t *const restrict node = stack_node_create();
@@ -160,7 +160,7 @@ static inline void insert_stack_node_as_starting(stack_t *restrict stack,
 	stack->length += 1;
 }
 
-static inline void add_node(stack_t *restrict stack,
+static inline void add_node(nb_stack_t *restrict stack,
 			    stack_node_t *restrict node)
 {
 	if (stack_is_empty(stack))
@@ -169,14 +169,14 @@ static inline void add_node(stack_t *restrict stack,
 		link_node(stack, node);
 }
 
-static inline void add_first_node(stack_t *restrict stack,
+static inline void add_first_node(nb_stack_t *restrict stack,
 				  stack_node_t *restrict node)
 {
 	stack->end = node;
 	node->next = node;
 }
 
-static inline void link_node(stack_t *restrict stack, 
+static inline void link_node(nb_stack_t *restrict stack, 
 			     stack_node_t *restrict node)
 {
 	node->next = get_first(stack);
@@ -185,7 +185,7 @@ static inline void link_node(stack_t *restrict stack,
 
 inline void* stack_get_first(const void *const stack_ptr)
 {
-	const stack_t *const stack = stack_ptr;
+	const nb_stack_t *const stack = stack_ptr;
 	void *val = NULL;
 	if (is_not_empty(stack)) {
 		stack_node_t *first = get_first(stack);
@@ -197,7 +197,7 @@ inline void* stack_get_first(const void *const stack_ptr)
 void* stack_delete_first(void *stack_ptr,
 			uint32_t (*key)(const void*))
 {
-	stack_t *stack = stack_ptr;
+	nb_stack_t *stack = stack_ptr;
 	void *val = NULL;
 	if (is_not_empty(stack)) {
 		stack_node_t *first = get_first(stack);
@@ -221,7 +221,7 @@ void* stack_exist(const void *const stack_ptr, const void *val,
 		  uint32_t (*key)(const void*),
 		  int8_t (*compare)(const void*, const void*))
 {
-	const stack_t *const stack = stack_ptr;
+	const nb_stack_t *const stack = stack_ptr;
 	void *existing_val = NULL;
 	if (is_not_empty(stack)) {
 		stack_node_t *node = exist_node(stack, val, compare);
@@ -231,7 +231,7 @@ void* stack_exist(const void *const stack_ptr, const void *val,
 	return existing_val;
 }
 
-static stack_node_t* exist_node(const stack_t *const stack, const void *val,
+static stack_node_t* exist_node(const nb_stack_t *const stack, const void *val,
 			  int8_t (*compare)(const void*, const void*))
 {
 	stack_node_t *first = get_first(stack);
@@ -255,7 +255,7 @@ void* stack_delete(void *stack_ptr, const void *val,
 		  uint32_t (*key)(const void*),
 		  int8_t (*compare)(const void*, const void*))
 {
-	stack_t *stack = stack_ptr;
+	nb_stack_t *stack = stack_ptr;
 	void *deleted_val = NULL;
 	if (is_not_empty(stack)) {
 		stack_node_t *node = exist_node(stack, val, compare);
@@ -269,7 +269,7 @@ void* stack_delete(void *stack_ptr, const void *val,
 	return deleted_val;
 }
 
-static void unlink_node(stack_t *stack, const stack_node_t *const node)
+static void unlink_node(nb_stack_t *stack, const stack_node_t *const node)
 {
 	stack_node_t *prev = stack_node_get_prev(node);
 	if (node == prev /* implies node is equal to stack->end */)
@@ -281,13 +281,13 @@ static void unlink_node(stack_t *stack, const stack_node_t *const node)
 
 inline uint32_t stack_get_length(const void *const stack_ptr)
 {
-	const stack_t *const stack = stack_ptr;
+	const nb_stack_t *const stack = stack_ptr;
 	return stack->length;
 }
 
 inline bool stack_is_empty(const void *const stack_ptr)
 {
-	const stack_t *const stack = stack_ptr;
+	const nb_stack_t *const stack = stack_ptr;
 	return (NULL == stack->end);
 }
 

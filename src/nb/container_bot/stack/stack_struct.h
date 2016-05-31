@@ -9,6 +9,6 @@ typedef struct {
 	/* Circular linked list */
 	uint32_t length;
 	stack_node_t *end;
-} stack_t;
+} nb_stack_t;
 
 #endif
