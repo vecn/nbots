@@ -5,7 +5,13 @@
 #include "nb/image_bot/image.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "ext/stb_image.h"
+#include "stb_libs/stb_image.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_libs/stb_image_write.h"
+
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_libs/stb_image_resize.h"
 
 struct vcn_image_s {
 	uint32_t width;
