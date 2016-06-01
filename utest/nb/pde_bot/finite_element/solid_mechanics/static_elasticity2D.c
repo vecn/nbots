@@ -217,57 +217,64 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 {
 	int status = 1;
 	/* Read modele vertices */
-	uint32_t N_model_vtx = 0;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N_model_vtx))
+	uint32_t N = 0;
+	if (0 != vcn_cfreader_read_uint(cfreader, &N))
 		goto EXIT;
 
-	if (1 > N_model_vtx)
+	if (1 > N)
 		goto EXIT;
+	model->N = N;
 
-	double *model_vtx = malloc(2 * N_model_vtx * sizeof(double));
-	for (uint32_t i = 0; i < 2 * N_model_vtx; i++) {
-		if (0 != vcn_cfreader_read_double(cfreader, &(model_vtx[i])))
+	model->vertex = malloc(2 * model->N * sizeof(*(model->vertex)));
+	for (uint32_t i = 0; i < 2 * model->N; i++) {
+		if (0 != vcn_cfreader_read_double(cfreader, &(model->vertex[i])))
 			goto CLEANUP_VERTICES;
 	}
 	/* Read model segments */
-	uint32_t N_model_sgm = 0;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N_model_sgm))
+	N = 0;
+	if (0 != vcn_cfreader_read_uint(cfreader, &N))
 		goto CLEANUP_VERTICES;
 
-	if (1 > N_model_sgm)
+	if (1 > N)
 		goto CLEANUP_VERTICES;
+	model->M = N;
 
-	uint32_t *model_sgm = malloc(2 * N_model_sgm * sizeof(*model_sgm));
-	for (uint32_t i = 0; i < 2 * N_model_sgm; i++) {
-		if (0 != vcn_cfreader_read_uint(cfreader, &(model_sgm[i])))
+	uint32_t *model_sgm = malloc(2 * model->M * sizeof(*model->edge));
+	for (uint32_t i = 0; i < 2 * model->M; i++) {
+		if (0 != vcn_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
 	}
 	/* Read model holes */
-	uint32_t N_model_holes;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N_model_holes))
+	N = 0;
+	if (0 != vcn_cfreader_read_uint(cfreader, &N))
 		goto CLEANUP_SEGMENTS;
+	model->H = N;
 
-	double *model_holes = NULL;
-	if (0 < N_model_holes) {
-		model_holes = malloc(2 * N_model_holes * sizeof(double));
-		for (uint32_t i = 0; i < 2 * N_model_holes; i++) {
+	model->holes = NULL;
+	if (0 < model->H) {
+		model->holes = malloc(2 * model->H * sizeof(*(model->holes)));
+		for (uint32_t i = 0; i < 2 * model->H; i++) {
 			if (0 != vcn_cfreader_read_double(cfreader,
-							  &(model_holes[i])))
+							  &(model->holes[i])))
 				goto CLEANUP_HOLES;
 		}
 	}
-	vcn_model_load_from_arrays(model,
-				   model_vtx, N_model_vtx,
-				   model_sgm, N_model_sgm,
-				   model_holes, N_model_holes);
+
 	status = 0;
 CLEANUP_HOLES:
-	if (0 < N_model_holes)
-		free(model_holes);
+	if (0 < model->H) {
+		free(model->holes);
+		model->H = 0;
+		model->holes = NULL;
+	}
 CLEANUP_SEGMENTS:
-	free(model_sgm);
+	model->M = 0;
+	free(model->edge);
+	model->edge = 0;
 CLEANUP_VERTICES:
-	free(model_vtx);
+	model->N = 0;
+	free(model->vertex);
+	model->vertex = NULL;
 EXIT:
 	return status;
 }
