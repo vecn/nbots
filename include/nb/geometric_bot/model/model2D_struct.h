@@ -8,9 +8,9 @@ typedef struct {
 	uint32_t N;              /* Number of vertices */
 	uint32_t M;              /* Number of edges */
 	uint32_t H;              /* Number of holes */
-	double *vertex;      /* Vertex coordinates sorted by id */
+	double *vertex;          /* Vertex coordinates sorted by id */
 	uint32_t *edge;          /* Pairs of vertex ids forming an edge 
-			      * sorted by id */
+				  * sorted by id */
 	double *holes;       /* Coordinates inside holes */
 } nb_model_t;
 

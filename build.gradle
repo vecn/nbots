@@ -37,6 +37,20 @@ model {
 }
 
 model {
+
+  repositories {
+    libs(PrebuiltLibraries) {
+      cairo {
+	binaries.withType(SharedLibraryBinary) {
+	  //def arch = binaries.targetPlatform.architecture.name
+	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libcairo.so")
+	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libcairo.so")
+	}
+      }
+    }
+  }
+
+
   components {
     nbots(NativeLibrarySpec) {
       sources {
@@ -44,12 +58,11 @@ model {
 	  source {
 	    srcDirs "src"
 	    include "**/*.c"
-	    exclude "**/*cairo*"
-	    exclude  "**/*drawing*"
 	  }
 	  exportedHeaders {
-	    srcDirs "include"
+	    srcDirs "include", "/usr/include/cairo"//TEMPORAL
 	  }
+	  lib library: 'cairo' // TEMPORAL
 	}
       }
     }
@@ -65,41 +78,9 @@ model {
 	  exportedHeaders {
 	    srcDirs "include"
 	  }
-	  lib library: 'nbots_cairo' //TEMPORAL
 	}
       }
       testing $.components.nbots
-    }
-  }
-}
-
-model {
-  repositories {
-    libs(PrebuiltLibraries) {
-      cairo {
-	binaries.withType(SharedLibraryBinary) {
-	  //def arch = binaries.targetPlatform.architecture.name
-	  sharedLibraryFile = file("/usr/lib/i386-linux-gnu/libcairo.so")
-	  sharedLibraryFile = file("/usr/lib/x86_64-linux-gnu/libcairo.so")
-	}
-      }
-    }
-  }
-  components {
-    nbots_cairo(NativeLibrarySpec) {
-      sources {
-	c {
-	  source {
-	    srcDirs "src"
-	    include "**/*cairo*"
-	    include "**/*drawing*"
-	  }
-	  exportedHeaders {
-	    srcDirs "include", "/usr/include/cairo"
-	  }
-	  lib library: 'cairo'
-	}
-      }
     }
   }
 }
