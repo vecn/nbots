@@ -32,7 +32,6 @@ static int suite_clean(void)
 static void test_load_from_mesh(void)
 {
 	nb_model_t *model  = alloca(vcn_model_get_memsize());
-	vcn_model_init(model);
 	model->N = 5;
 	model->M = 5;
 	double vtx[10] = {-4, -1,
@@ -50,7 +49,6 @@ static void test_load_from_mesh(void)
 	
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);
-	vcn_model_finish(model);
 
 	vcn_msh3trg_t *msh3trg = vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 
@@ -60,5 +58,5 @@ static void test_load_from_mesh(void)
 	
 	CU_ASSERT(false);
 
-	nb_mshpoly_destroy(msh3trg);
+	vcn_msh3trg_destroy(msh3trg);
 }
