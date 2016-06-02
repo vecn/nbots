@@ -37,7 +37,7 @@ static void test_load_from_mesh(void)
 	model->M = 5;
 	double vtx[10] = {-4, -1,
 			  2.2, -2.6,
-			  3.9, -1.7,
+			  3.9, -1.8,
 			  4, 1,
 			  -4.0, 1};
 	model->vertex = vtx;
