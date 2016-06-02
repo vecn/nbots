@@ -11,6 +11,7 @@
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
+#include "nb/graphics_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_read.h"
 #include "nb/pde_bot/material.h"
@@ -18,9 +19,6 @@
 
 #define INPUTS_DIR "../../../../utest/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_inputs"
 #define OUTPUT "../../../"
-
-#include "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
-#include "nb/pde_bot/finite_element/modules/exporter_cairo.h" /* TEMPORAL */
 
 #define POW2(a) ((a)*(a))
 

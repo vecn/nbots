@@ -10,9 +10,8 @@
 #include "nb/visual_cat.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot.h"
+#include "nb/graphics_bot.h"
 #include "nb/pde_bot/finite_element/modules/exporter_cairo.h"
-
-#include "../../../geometric_bot/mesh/modules2D/exporter_cairo/drawing_utils.h"
 
 static void set_camera_vtx(double v_dest[2], const double v_src[2],
 			   camera_t *cam, double width, double height);

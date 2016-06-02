@@ -5,13 +5,13 @@
 #include <alloca.h>
 #include <math.h>
 
+#include "nb/math_bot.h"
+#include "nb/graph_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
-#include "nb/graph_bot.h"
-
 #include "nb/geometric_bot/mesh/elements2D/quad.h"
 
 #include "../mesh2D_structs.h"

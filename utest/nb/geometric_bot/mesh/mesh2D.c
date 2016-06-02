@@ -6,15 +6,15 @@
 
 #include <CUnit/Basic.h>
 
-#include  "nb/math_bot.h"
-#include  "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/math_bot.h"
+#include "nb/graphics_bot.h"
+#include "nb/geometric_bot.h"
 
 #define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/mesh2D_inputs"
 #define OUTPUT_DIR "../../../"
 //#define INPUTS_DIR "../utest/nb/geometric_bot/mesh/mesh2D_inputs"
 //#define OUTPUT_DIR "./"
 
-#include  "nb/geometric_bot/mesh/modules2D/exporter_cairo.h" /* TEMPORAL */
 static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
 static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
 {							      /* TEMPORAL */

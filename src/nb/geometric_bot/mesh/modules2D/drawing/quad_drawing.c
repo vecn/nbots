@@ -7,10 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot.h"
-
-#include "../../mesh2D_structs.h"
-#include "drawing_utils.h"
-#include "drawing_tools.h"
+#include "nb/graphics_bot.h"
 
 static void draw_mesh(void *draw_ptr, int width, int height,
 		      const void *const quad_ptr);
@@ -76,10 +73,10 @@ static void draw_quads(void *draw_ptr, const nb_mshquad_t *const quad,
 					   quad->nod[n4*2+1]);
 		nb_drawing_close_path(draw_ptr);
 
-		nb_drawing_set_source_rgba(draw_ptr, 0.3, 0.5, 1.0, 0.25);
+		nb_drawing_set_source_rgba(draw_ptr, 0.1, 0.3, 1.0, 0.5);
 		nb_drawing_fill_preserve(draw_ptr);
 
-		nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.3, 1.0);
+		nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 1.0);
 		nb_drawing_stroke(draw_ptr);
 	}
 }
@@ -88,7 +85,7 @@ static void draw_input_sgm(void *draw_ptr, const nb_mshquad_t *const quad,
 			   const camera_t *cam)
 {
 	nb_drawing_set_line_width(draw_ptr, 1.0);
-	nb_drawing_set_source_rgb(draw_ptr, 0.5, 0.3, 1.0);
+	nb_drawing_set_source_rgb(draw_ptr, 0.9, 0.2, 0.4);
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
 		if (0 < quad->N_nod_x_sgm[i]) {
 			uint32_t nj = quad->nod_x_sgm[i][0];
@@ -110,7 +107,7 @@ static void draw_input_vtx(void *draw_ptr, const nb_mshquad_t *const quad,
 			   const camera_t *cam)
 {
 	double r = 3.0;
-	nb_drawing_set_source_rgb(draw_ptr, 0.5, 0.3, 1.0);
+	nb_drawing_set_source_rgb(draw_ptr, 0.9, 0.2, 0.4);
 	for (uint32_t i = 0; i < quad->N_vtx; i++) {
 		uint32_t ni = quad->vtx[i];
 		if (ni < quad->N_nod) {

@@ -1,9 +1,9 @@
+#include <stdint.h>
 #include <cairo.h>
 #include <cairo-ps.h>
 
-#include "nb/geometric_bot.h"
-
-#include "drawing_tools.h"
+#include "nb/math_bot.h"
+#include "nb/graphics_bot/drawing_tools.h"
 
 void nb_drawing_export_png(const char* filename, int width, int height,
 			   void (*draw)(void *draw_ptr, int w, int h,
@@ -52,6 +52,16 @@ void nb_drawing_export_eps(const char* filename, int width, int height,
 	cairo_destroy(cr);
 	cairo_surface_finish(surface);
 	cairo_surface_destroy(surface);
+}
+
+void nb_drawing_raw_move_to(void *draw_ptr, double x, double y)
+{
+	cairo_move_to(draw_ptr, x, y);
+}
+
+void nb_drawing_raw_line_to(void *draw_ptr, double x, double y)
+{
+	cairo_line_to(draw_ptr, x, y);
 }
 
 void nb_drawing_move_to(void *draw_ptr, const camera_t *cam,
@@ -126,4 +136,26 @@ void nb_drawing_fill_preserve(void *draw_ptr)
 void nb_drawing_stroke(void *draw_ptr)
 {
 	cairo_stroke(draw_ptr);
+}
+
+void nb_drawing_paint(void *draw_ptr)
+{
+	cairo_paint(draw_ptr);
+}
+
+void nb_drawing_set_font_type(void *draw_ptr, const char *type)
+{
+	cairo_select_font_face(draw_ptr, type,
+			       CAIRO_FONT_SLANT_NORMAL,
+			       CAIRO_FONT_WEIGHT_NORMAL);
+}
+
+void nb_drawing_set_font_size(void *draw_ptr, uint16_t size)
+{
+	cairo_set_font_size(draw_ptr, size);
+}
+
+void nb_drawing_show_text(void *draw_ptr, const char *str)
+{
+	cairo_show_text(draw_ptr, str);
 }

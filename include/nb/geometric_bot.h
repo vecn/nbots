@@ -23,7 +23,7 @@
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
-#include "nb/geometric_bot/model/modules2D/exporter_asymptote.h"
+#include "nb/geometric_bot/model/modules2D/drawing.h"
 #include "nb/geometric_bot/model/modules2D/verifier.h"
 #include "nb/geometric_bot/model/modules2D/regularizer.h"
 #include "nb/geometric_bot/model/modules2D/simplifier.h"
@@ -35,9 +35,14 @@
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 #include "nb/geometric_bot/mesh/modules2D/extra_fem.h"
+#include "nb/geometric_bot/mesh/modules2D/drawing.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/quad.h"
+#include "nb/geometric_bot/mesh/elements2D/quad_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
+#include "nb/geometric_bot/mesh/elements2D/polygons_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/disks.h"
+#include "nb/geometric_bot/mesh/elements2D/disks_struct.h"
 
 #endif

@@ -4,9 +4,8 @@
 
 #include <CUnit/Basic.h>
 
+#include "nb/graphics_bot.h"
 #include "nb/geometric_bot.h"
-
-#include "nb/geometric_bot-cairo.h" /* TEMPORAL */
 
 static int suite_init(void);
 static int suite_clean(void);

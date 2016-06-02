@@ -5,6 +5,7 @@
 
 #include <CUnit/Basic.h>
 
+#include "nb/math_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/constrained_delaunay.h"

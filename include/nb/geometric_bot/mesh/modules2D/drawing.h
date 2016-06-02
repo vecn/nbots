@@ -3,7 +3,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nb/geometric_bot.h"
+#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
+#include "nb/geometric_bot/mesh/elements2D/polygons_struct.h"
+#include "nb/geometric_bot/mesh/elements2D/quad_struct.h"
+#include "nb/geometric_bot/mesh/elements2D/disks_struct.h"
 
 /**
  * @brief Export a PNG image of the mesh.
@@ -37,22 +40,9 @@ void vcn_mesh_save_eps(const vcn_mesh_t *const mesh,
  * @param[in] filename Name of the image file.
  * @param[in] width Image width.
  * @param[in] height Image height.
- * @param[in] rgba_bg Background color, NULL to set white.
- * @n Color channels: Red, Green, Blue and Alpha.
- * @param[in] rgba_fg Triangles color, NULL to set default color.
- * @n Color channels: Red, Green, Blue and Alpha.
- * @param[in] rgb_edge Edges line color, NULL to set default color.
- * @n Color channels: Red, Green and Blue.
- * @param[in] rgb_sgm Segments line color, NULL to set default color.
- * @n Color channels: Red, Green and Blue.
- * @param [in] edge_width Line width to draw edges.
- * @param [in] sgm_width Line width to draw input segments.
  */
 void vcn_msh3trg_save_png(const vcn_msh3trg_t *const msh3trg,
-			  const char* filename, int width, int height,
-			  double rgba_bg[4], double rgba_fg[4],
-			  double rgb_edge[3], double rgb_sgm[3],
-			  double edge_width, double sgm_width);
+			  const char* filename, int width, int height);
 
 /**
  * @brief Export a PNG image of the triangulation and its partitions.
@@ -64,25 +54,11 @@ void vcn_msh3trg_save_png(const vcn_msh3trg_t *const msh3trg,
  * @param[in] height Image height.
  * @param[in] k_to_draw Partition to draw. Zero to draw all of them.
  * @param[in] scale_partitions Scale of the size of the partitions, in (0,1].
- * @param[in] rgba_bg Background color, NULL to set white.
- * @n Color channels: Red, Green, Blue and Alpha.
- * @param[in] alpha_fg Alpha channel for triangles color.
- * @n Color channels: Red, Green, Blue and Alpha.
- * @param[in] rgb_edge Edges line color, NULL to set default color.
- * @n Color channels: Red, Green and Blue.
- * @param[in] rgb_sgm Segments line color, NULL to set default color.
- * @n Color channels: Red, Green and Blue.
- * @param [in] edge_width Line width to draw edges.
- * @param [in] sgm_width Line width to draw input segments.
  */
 void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
 				    const char* filename, int width, int height,
 				    uint32_t k_part, const uint32_t *const part,
-				    uint32_t k_to_draw, double scale_partitions,
-				    double rgba_bg[4], double alpha_fg,
-				    double rgb_edge[3], double rgb_sgm[3],
-				    double edge_width, double sgm_width,
-				    bool use_colors);
+				    uint32_t k_to_draw, double scale_partitions);
 
 void nb_mshquad_export_png(const nb_mshquad_t *const quad,
 			   const char* filename, int width, int height);

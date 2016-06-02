@@ -1,23 +1,10 @@
-/******************************************************************************
- *   Math Cat: Math utilities.                                                *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
-/**
- * @file math_cat.h
- * @brief Simple math routines.
- * @author Victor Eduardo Cardoso Nungaray
- * @n victorc@@cimat.mx
- * @n @@victore_cardoso
- * @date 10 August 2015
- */
-
-#ifndef __NB_MATH_CAT_H__
-#define __NB_MATH_CAT_H__
+#ifndef __NB_MATH_BOT_H__
+#define __NB_MATH_BOT_H__
 
 #include <stdint.h>
+
+#define NB_PI (3.14159265359)
+#define NB_PHI (1.61803398875)
 
 #define NB_MATH_PI (3.14159265358979323846264338327)
 #define NB_MATH_MAX_UINT32_T ((unsigned int)(-1))

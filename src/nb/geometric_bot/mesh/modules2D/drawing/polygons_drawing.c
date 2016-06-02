@@ -7,11 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot.h"
-
-#include "drawing_utils.h"
-#include "drawing_tools.h"
-
-#include "../../mesh2D_structs.h"
+#include "nb/graphics_bot.h"
 
 static void draw_mesh(void *draw_ptr, int width, int height,
 		      const void *const poly_ptr);
@@ -67,10 +63,10 @@ static void draw_polygons(void *draw_ptr, const nb_mshpoly_t *const poly,
 		}
 		nb_drawing_close_path(draw_ptr);
 
-		nb_drawing_set_source_rgba(draw_ptr, 0.2, 0.3, 1.0, 0.5);
+		nb_drawing_set_source_rgba(draw_ptr, 0.1, 0.3, 1.0, 0.5);
 		nb_drawing_fill_preserve(draw_ptr);
 
-		nb_drawing_set_source_rgb(draw_ptr, 0, 0, 0);
+		nb_drawing_set_source_rgb(draw_ptr, 0, 0, 1);
 		nb_drawing_stroke(draw_ptr);
 	}
 }
@@ -79,7 +75,7 @@ static void draw_input_sgm(void *draw_ptr, const nb_mshpoly_t *const poly,
 			  const camera_t *cam)
 {
 	nb_drawing_set_line_width(draw_ptr, 1.0);
-	nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.3, 0.5);
+	nb_drawing_set_source_rgb(draw_ptr, 0.9, 0.2, 0.4);
 	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		if (0 < poly->N_nod_x_sgm[i]) {
 			uint32_t nj = poly->nod_x_sgm[i][0];

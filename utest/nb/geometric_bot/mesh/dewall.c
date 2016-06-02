@@ -6,9 +6,8 @@
 
 #include <CUnit/Basic.h>
 
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
-#include "nb/geometric_bot/mesh/dewall.h"
+#include "nb/math_bot.h"
+#include "nb/geometric_bot.h"
 
 #define POW2(a) ((a)*(a))
 

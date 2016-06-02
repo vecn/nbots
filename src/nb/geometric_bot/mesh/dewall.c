@@ -4,9 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "nb/container_bot/array.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"

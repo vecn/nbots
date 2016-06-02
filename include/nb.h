@@ -1,5 +1,5 @@
 /**
- * @file nbots.h
+ * @file nb.h
  * @brief Numerical Bots
  * @author Victor Eduardo Cardoso Nungaray
  * @n victorc@@cimat.mx
@@ -19,6 +19,7 @@
 #include "nb/eigen_bot.h"
 #include "nb/image_bot.h"
 #include "nb/geometric_bot.h"
+#include "nb/graphics_bot.h"
 #include "nb/pde_bot.h"
 #include "nb/visual_cat.h"
 

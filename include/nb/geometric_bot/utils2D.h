@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define NB_PI (3.14159265359)
-#define NB_PHI (1.61803398875)
 #define NB_GEOMETRIC_TOL (1.5e-8)
 #define NB_GEOMETRIC_TOL_POW2 (2.25e-16)
 

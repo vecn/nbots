@@ -1,4 +1,4 @@
-#include "drawing_utils.h"
+#include "nb/graphics_bot/drawing_utils.h"
 
 void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
 					  double width, double height)
