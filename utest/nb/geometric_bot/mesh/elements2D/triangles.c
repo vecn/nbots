@@ -37,7 +37,7 @@ static void test_load_from_mesh(void)
 	model->H = 0;
 	double vtx[10] = {-4, -1,
 			  2.2, -2.6,
-			  3.9, -1.8,
+			  3.9, -2.7,
 			  4, 1,
 			  -4.0, 1};
 	model->vertex = vtx;
@@ -55,10 +55,10 @@ static void test_load_from_mesh(void)
 	vcn_msh3trg_t *msh3trg = vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 
 	vcn_mesh_destroy(mesh);
-
-	vcn_msh3trg_save_png(msh3trg, "../../../TRGS.png", 1000, 800);/* TEMPORAL */
 	
-	CU_ASSERT(false);
+	CU_ASSERT(9 == msh3trg->N_vertices);
+	CU_ASSERT(15 == msh3trg->N_edges);
+	CU_ASSERT(7 == msh3trg->N_triangles);
 
 	vcn_msh3trg_destroy(msh3trg);
 }
