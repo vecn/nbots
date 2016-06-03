@@ -96,24 +96,23 @@ static uint32_t dewall_recursion
 			uint16_t deep_level,
 			nb_container_t* AFL);
 static uint32_t triangulate_wall(vcn_mesh_t *mesh,
-				 search_vtx_t *search_vtx,
+				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
-				 nb_container_t *AFL_2,
-				 int8_t axe, double alpha);
+				 nb_container_t *AFL_2);
 static void update_AFLs(const msh_trg_t *const trg,
 			const msh_edge_t *const edge,
 			nb_container_t *AFL_alpha,
 			nb_container_t *AFL_1,
 			nb_container_t *AFL_2,
-			int8_t axe, double alpha);
+			const search_vtx_t *search_vtx);
 static double get_alpha(msh_vtx_t **vertices,
 			int8_t axe, uint32_t N_mid);
 static nb_container_t* get_side_AFL(const msh_edge_t *const edge,
-				     int8_t axe, double alpha,
-				     nb_container_t *AFL_neg,
-				     nb_container_t *AFL_zero,
-				     nb_container_t *AFL_pos);
+				    const search_vtx_t *search_vtx,
+				    nb_container_t *AFL_neg,
+				    nb_container_t *AFL_zero,
+				    nb_container_t *AFL_pos);
 
 static uint32_t split_vtx_array(const nb_container_t *const AFL,
 				uint32_t N, msh_vtx_t **vertices,
@@ -508,13 +507,14 @@ static uint32_t dewall_recursion
 	/* Redistribute segments from the main AFL to the three AFLs */
 	while (nb_container_is_not_empty(AFL)) {
 		msh_edge_t* edge = nb_container_delete_first(AFL);
-		nb_container_t *side_AFL = get_side_AFL(edge, axe, alpha, 
-							 AFL_1, AFL_alpha, AFL_2);
+		nb_container_t *side_AFL = get_side_AFL(edge, &search_vtx, 
+							 AFL_1, AFL_alpha,
+							AFL_2);
 		nb_container_insert(side_AFL, edge);
 	}
 	
 	n_trg_alpha += triangulate_wall(mesh, &search_vtx, AFL_alpha,
-					AFL_1, AFL_2, axe, alpha);
+					AFL_1, AFL_2);
 	nb_container_destroy(AFL_alpha);
 
 	clear_search_vtx(&search_vtx);
@@ -549,13 +549,13 @@ static inline double get_alpha(msh_vtx_t **vertices,
 }
 
 static inline nb_container_t* get_side_AFL(const msh_edge_t *const edge,
-					    int8_t axe, double alpha,
-					    nb_container_t *AFL_neg,
-					    nb_container_t *AFL_zero,
-					    nb_container_t *AFL_pos)
+					   const search_vtx_t *search_vtx,
+					   nb_container_t *AFL_neg,
+					   nb_container_t *AFL_zero,
+					   nb_container_t *AFL_pos)
 {
-	bool v1 = (edge->v1->x[axe] - alpha > 0.0);
-	bool v2 = (edge->v2->x[axe] - alpha > 0.0);
+	bool v1 = (edge->v1->x[search_vtx->axe] - search_vtx->alpha > 0.0);
+	bool v2 = (edge->v2->x[search_vtx->axe] - search_vtx->alpha > 0.0);
 	nb_container_t *AFL;
 	if (v1 != v2)
 		AFL = AFL_zero;
@@ -690,6 +690,15 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 			nb_container_insert(AFL, first_trg->s3);		
 			mesh->do_after_insert_trg(mesh);
 			trg_created = true;
+
+			char file[100];                           /* TEMP */
+			sprintf(file, "dela_%02i.png",            /* TEMP */
+				vcn_mesh_get_N_trg(mesh));	  /* TEMP */
+			vcn_dewall_save_png(mesh, file, 1000, 800,/* TEMP */
+					    search_vtx->axe,	  /* TEMP */
+					    search_vtx->alpha,	  /* TEMP */
+					    search_vtx->N,	  /* TEMP */
+					    search_vtx->vtx_array);/* TEMP */
 		} /* else [the points are collinear] */
 	} /* else [if all points are collinear]*/
 	return trg_created;
@@ -702,11 +711,10 @@ static void clear_search_vtx(search_vtx_t *search_vtx)
 }
 
 static uint32_t triangulate_wall(vcn_mesh_t *mesh,
-				 search_vtx_t *search_vtx,
+				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
-				 nb_container_t *AFL_2,
-				 int8_t axe, double alpha)
+				 nb_container_t *AFL_2)
 {
 	uint32_t n_trg_alpha = 0;
 	while (nb_container_is_not_empty(AFL_alpha)) {
@@ -716,9 +724,18 @@ static uint32_t triangulate_wall(vcn_mesh_t *mesh,
 		if (NULL != trg) {
 			mesh_add_triangle(mesh, trg);
 			update_AFLs(trg, edge, AFL_alpha, AFL_1, AFL_2,
-				    axe, alpha);
+				    search_vtx);
 			n_trg_alpha += 1;
 			mesh->do_after_insert_trg(mesh);
+
+			char file[100];                           /* TEMP */
+			sprintf(file, "dela_%02i.png",            /* TEMP */
+				vcn_mesh_get_N_trg(mesh));	  /* TEMP */
+			vcn_dewall_save_png(mesh, file, 1000, 800,/* TEMP */
+					    search_vtx->axe,	  /* TEMP */
+					    search_vtx->alpha,	  /* TEMP */
+					    search_vtx->N,	  /* TEMP */
+					    search_vtx->vtx_array);/* TEMP */
 		}
 	}
 	return n_trg_alpha;
@@ -729,13 +746,13 @@ static void update_AFLs(const msh_trg_t *const trg,
 			nb_container_t *AFL_alpha,
 			nb_container_t *AFL_1,
 			nb_container_t *AFL_2,
-			int8_t axe, double alpha)
+			const search_vtx_t *search_vtx)
 {
 	msh_edge_t* complement[2];
 	mtrg_get_complement_edges(trg, edge, complement);
 	for (int8_t s = 0; s < 2; s++) {
 		nb_container_t *side_AFL = 
-			get_side_AFL(complement[s], axe, alpha, 
+			get_side_AFL(complement[s], search_vtx, 
 				     AFL_1, AFL_alpha, AFL_2);
 		update_AFL(side_AFL, complement[s]);
 	}
