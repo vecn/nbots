@@ -481,11 +481,18 @@ static uint32_t dewall_recursion
 	vcn_qsort_wd(vertices, N, sizeof(*vertices), compare_using_axe, &axe);
 	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
 	double alpha;
-	if (nb_container_is_empty(AFL) || N > 3) {
+	if (N > 3) {
 		alpha = get_alpha(vertices, axe, N_mid);
 	} else {
-		msh_edge_t* edge = nb_container_get_first(AFL);
-		alpha = (edge->v1->x[axe] + edge->v2->x[axe]) / 2.0;
+		double min = vertices[0]->x[axe];
+		double max = vertices[0]->x[axe];
+		if (min > vertices[1]->x[axe])
+			min = vertices[1]->x[axe];
+		if (max < vertices[1]->x[axe])
+			max = vertices[1]->x[axe];
+		if (max < vertices[2]->x[axe])
+			max = vertices[2]->x[axe];
+		alpha = (min + max)/2.0;
 	}
 
 	search_vtx_t search_vtx;
