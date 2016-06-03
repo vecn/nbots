@@ -480,7 +480,13 @@ static uint32_t dewall_recursion
 
 	vcn_qsort_wd(vertices, N, sizeof(*vertices), compare_using_axe, &axe);
 	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
-	double alpha = get_alpha(vertices, axe, N_mid);
+	double alpha;
+	if (nb_container_is_empty(AFL) || N > 3) {
+		alpha = get_alpha(vertices, axe, N_mid);
+	} else {
+		msh_edge_t* edge = nb_container_get_first(AFL);
+		alpha = (edge->v1->x[axe] + edge->v2->x[axe]) / 2.0;
+	}
 
 	search_vtx_t search_vtx;
 	init_search_vtx(&search_vtx, N, vertices, axe, alpha, N_mid);
@@ -690,15 +696,6 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 			nb_container_insert(AFL, first_trg->s3);		
 			mesh->do_after_insert_trg(mesh);
 			trg_created = true;
-
-			char file[100];                           /* TEMP */
-			sprintf(file, "dela_%02i.png",            /* TEMP */
-				vcn_mesh_get_N_trg(mesh));	  /* TEMP */
-			vcn_dewall_save_png(mesh, file, 1000, 800,/* TEMP */
-					    search_vtx->axe,	  /* TEMP */
-					    search_vtx->alpha,	  /* TEMP */
-					    search_vtx->N,	  /* TEMP */
-					    search_vtx->vtx_array);/* TEMP */
 		} /* else [the points are collinear] */
 	} /* else [if all points are collinear]*/
 	return trg_created;
@@ -727,15 +724,6 @@ static uint32_t triangulate_wall(vcn_mesh_t *mesh,
 				    search_vtx);
 			n_trg_alpha += 1;
 			mesh->do_after_insert_trg(mesh);
-
-			char file[100];                           /* TEMP */
-			sprintf(file, "dela_%02i.png",            /* TEMP */
-				vcn_mesh_get_N_trg(mesh));	  /* TEMP */
-			vcn_dewall_save_png(mesh, file, 1000, 800,/* TEMP */
-					    search_vtx->axe,	  /* TEMP */
-					    search_vtx->alpha,	  /* TEMP */
-					    search_vtx->N,	  /* TEMP */
-					    search_vtx->vtx_array);/* TEMP */
 		}
 	}
 	return n_trg_alpha;

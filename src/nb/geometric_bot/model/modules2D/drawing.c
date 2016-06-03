@@ -21,7 +21,9 @@ static void draw_model(void *draw_ptr, int width, int height,
 static void draw_edges(void *draw_ptr, const camera_t *cam,
 		       const vcn_model_t *const model)
 {
-	for (uint32_t i = 0; i < model->H; i++) {
+	nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.0, 0.8);
+	nb_drawing_set_line_width(draw_ptr, 1.0);
+	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id1 = model->edge[i * 2];
 		uint32_t id2 = model->edge[i*2+1];
 		nb_drawing_move_to(draw_ptr, cam,
@@ -67,6 +69,7 @@ static void draw_vertices(void *draw_ptr, const camera_t *cam,
 static void draw_holes(void *draw_ptr, const camera_t *cam,
 		       const vcn_model_t *const model)
 {
+	nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 1.0);
 	for (uint32_t i = 0; i < model->H; i++) {
 		nb_drawing_move_to(draw_ptr, cam,
 				   model->holes[i * 2],
@@ -83,7 +86,7 @@ static void draw_model(void *draw_ptr, int width, int height,
 		       const void *const model_ptr)
 {
 	const vcn_model_t *const model = model_ptr;
-	if (0 < model->N) 
+	if (0 == model->N) 
 		goto EXIT;
 
 	/* Compute center and zoom */
@@ -97,23 +100,8 @@ static void draw_model(void *draw_ptr, int width, int height,
 	camera_t cam;
 	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
 
-	/* Draw background */
-	nb_drawing_set_source_rgb(draw_ptr, 1.0, 1.0, 1.0);
-	nb_drawing_paint(draw_ptr);
-
-	/* Draw input segments */
-	nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.0, 0.8);
-	nb_drawing_set_line_width(draw_ptr, 0.75);
 	draw_edges(draw_ptr, &cam, model);
-
-	/* Draw input vertices */
-	double rgb_bg[3] = {1.0, 0.0, 0.0};
-	double rgb_fg[3] = {0.0, 0.0, 0.0};
-	nb_drawing_set_line_width(draw_ptr, 0.75);
 	draw_vertices(draw_ptr, &cam, model);
-
-	/* Draw holes */
-	nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 1.0);
 	draw_holes(draw_ptr, &cam, model);
 	
 EXIT:

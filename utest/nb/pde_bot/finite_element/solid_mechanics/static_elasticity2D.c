@@ -99,7 +99,7 @@ static void test_static_elasticity2D(void)
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	vcn_msh3trg_t* delaunay = 
+	vcn_msh3trg_t* msh3trg = 
 		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
 	vcn_mesh_destroy(mesh);
 
@@ -107,10 +107,10 @@ static void test_static_elasticity2D(void)
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	results_t results;
-	results_init(&results, delaunay);
+	results_init(&results, msh3trg);
 
 	int status_fem =
-		vcn_fem_compute_2D_Solid_Mechanics(delaunay, elemtype,
+		vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype,
 						   material, bcond,
 						   false, NULL,
 						   analysis2D,
@@ -119,16 +119,16 @@ static void test_static_elasticity2D(void)
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
 	
-	double *total_disp = get_total_disp(delaunay->N_vertices,
+	double *total_disp = get_total_disp(msh3trg->N_vertices,
 					    results.disp);
 	
 	char filename[100];
 	sprintf(filename, "%s/TEMPORAL_FEM.png", OUTPUT);
-	nb_fem_save_png(delaunay, total_disp, filename, 1000, 800);/* TEMPORAL */
+	nb_fem_save_png(msh3trg, total_disp, filename, 1000, 800);/* TEMPORAL */
 
 	free(total_disp);
 CLEANUP_FEM:
-	vcn_msh3trg_destroy(delaunay);
+	vcn_msh3trg_destroy(msh3trg);
 	vcn_fem_elem_destroy(elemtype);
 	results_finish(&results);
 CLEANUP_INPUT:
@@ -237,7 +237,7 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 		goto CLEANUP_VERTICES;
 	model->M = N;
 
-	uint32_t *model_sgm = malloc(2 * model->M * sizeof(*model->edge));
+	model->edge = malloc(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
 		if (0 != vcn_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
@@ -259,6 +259,8 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 	}
 
 	status = 0;
+	goto EXIT;
+
 CLEANUP_HOLES:
 	if (0 < model->H) {
 		free(model->holes);

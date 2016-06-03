@@ -34,6 +34,7 @@ static void test_load_from_mesh(void)
 	nb_model_t *model  = alloca(vcn_model_get_memsize());
 	model->N = 5;
 	model->M = 5;
+	model->H = 0;
 	double vtx[10] = {-4, -1,
 			  2.2, -2.6,
 			  3.9, -1.8,
@@ -46,6 +47,7 @@ static void test_load_from_mesh(void)
 			     3, 4,
 			     4, 0};
 	model->edge = edge;
+	model->holes = NULL;
 	
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);
