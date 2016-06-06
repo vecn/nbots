@@ -207,7 +207,7 @@ static msh_trg_t* create_trg_constrained
 			continue;
     
 		/* Check for positive area */
-		const double Sk = vcn_utils2D_get_2x_trg_area(v1->x, v2->x, v3->x);
+		const double Sk = vcn_utils2D_orient(v1->x, v2->x, v3->x);
 		if (Sk < NB_GEOMETRIC_TOL)
 			continue;
 

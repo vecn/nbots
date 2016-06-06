@@ -17,6 +17,8 @@ typedef enum {
 	NB_INTERSECT_ON_B2
 } nb_intersect_t;
 
+void vcn_utils2D_init(void);
+
 double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr);
 double vcn_utils2D_get_y_from_darray(const void *const vtx_ptr);
 void vcn_utils2D_get_normal(const double x1[2],
@@ -45,9 +47,12 @@ void vcn_utils2D_get_enveloping_box_from_subset
  double (*get_x)(const void *const vtx),
  double (*get_y)(const void *const vtx),
  double box[4]);
-double vcn_utils2D_get_2x_trg_area(const double t1[2],
-				   const double t2[2],
-				   const double t3[2]);
+double vcn_utils2D_orient(const double t1[2],
+			  const double t2[2],
+			  const double t3[2]);
+bool vcn_utils2D_is_in_half_side(const double v1[2],
+				 const double v2[2],
+				 const double v3[2]);
 double vcn_utils2D_get_trg_area(const double t1[2],
 				const double t2[2],
 				const double t3[2]);

@@ -506,11 +506,11 @@ static ipack_t* get_intersection_pack(const edge_t *sgm1,
 
 	if (NB_PARALLEL == status) {
 		/* Segments parallel or coincident */
-		double area = vcn_utils2D_get_2x_trg_area(sgm1->v1->x,
-						 sgm1->v2->x,
-						 sgm2->v1->x);
+		double orient = vcn_utils2D_orient(sgm1->v1->x,
+						   sgm1->v2->x,
+						   sgm2->v1->x);
 		/* Check if them are parallel */
-		if (fabs(area) < NB_GEOMETRIC_TOL) {
+		if (fabs(orient) < NB_GEOMETRIC_TOL) {
 			/* Collineal segments */
 			double length1 = edge_get_length(sgm1);
 			double length2 = edge_get_length(sgm2);

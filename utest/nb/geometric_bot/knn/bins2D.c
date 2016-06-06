@@ -459,8 +459,7 @@ static bool all_in_half_space(const nb_container_t *const cnt,
 	nb_iterator_set_container(iter, cnt);
 	while (nb_iterator_has_more(iter)) {
 		const vcn_point2D_t *p3 = nb_iterator_get_next(iter);
-		double area = vcn_utils2D_get_2x_trg_area(p1->x, p2->x, p3->x);
-		if (0 > area) {
+		if (vcn_utils2D_orient(p1->x, p2->x, p3->x) < 0.0) {
 			is_ok = false;
 			break;
 		}
@@ -525,10 +524,9 @@ static double get_min_dd_in_bins(const vcn_bins2D_t *const bins,
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const vcn_point2D_t *p3 = vcn_bins2D_iter_get_next(iter);
 		if (p1 != p3 && p2 != p3) {
-			double area = vcn_utils2D_get_2x_trg_area(p1->x,
-								  p2->x,
-								  p3->x);
-			if (area > 0.0) {
+			double orient =
+				vcn_utils2D_orient(p1->x, p2->x, p3->x);
+			if (orient > 0.0) {
 				double min = 
 					vcn_utils2D_get_delaunay_dist(p1->x,
 								      p2->x,

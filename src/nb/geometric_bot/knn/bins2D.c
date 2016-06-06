@@ -99,9 +99,6 @@ static void delaunay_insert_if_is_candidate
 				 const vcn_point2D_t *const restrict p2,
 				 const circle_t *const circle,
 				 const vcn_point2D_t *const restrict p);
-static bool is_in_half_side(const vcn_point2D_t *const p1,
-			    const vcn_point2D_t *const p2,
-			    const vcn_point2D_t *const p);
 static bool is_inside_circle(const circle_t *const circle,
 			     const vcn_point2D_t *const p);
 static void set_circle_from_layer(circle_t *circle,
@@ -572,22 +569,33 @@ static inline int8_t bin_which_half_side(const bin2D_t* const bin,
 					 const vcn_point2D_t *const p1,
 					 const vcn_point2D_t *const p2)
 {
-	vcn_point2D_t bin_p;
-	bin_p.x[0] = get_bin_cartesian_coord(bin->x, bin_size);
-	bin_p.x[1] = get_bin_cartesian_coord(bin->y, bin_size);
-	double cp[2];
-	vcn_utils2D_get_closest_pnt_to_sgm(p1->x, p2->x,
-					   bin_p.x, cp);
-	double dist2 = vcn_utils2D_get_dist2(bin_p.x, cp);
-	int8_t half_side;
-	if (dist2 < POW2(bin_size)) {
-		half_side = 0;
-	} else {
-		if (is_in_half_side(p1, p2, &bin_p))
-			half_side = 1;
-		else
-			half_side = -1;
-	}
+
+        double c[2];
+	c[0] = get_bin_cartesian_coord(bin->x, bin_size);
+	c[1] = get_bin_cartesian_coord(bin->y, bin_size);
+
+	double mid_size = bin_size/2.0;
+	double x1[2], x2[2], x3[3], x4[4];
+	x1[0] = c[0] + midsize;
+	x1[1] = c[1] + midsize;
+	x2[0] = c[0] - midsize;
+	x2[1] = c[1] + midsize;
+	x3[0] = c[0] - midsize;
+	x3[1] = c[1] - midsize;
+	x4[0] = c[0] + midsize;
+	x4[1] = c[1] - midsize;
+
+	bool h1 = vcn_utils2D_is_in_half_side(p1, p2, x1);
+	bool h2 = vcn_utils2D_is_in_half_side(p1, p2, x2);
+	bool h3 = vcn_utils2D_is_in_half_side(p1, p2, x3);
+	bool h4 = vcn_utils2D_is_in_half_side(p1, p2, x4);
+
+	if (h1 && h2 && h3 && h4)
+		half_side = 1;
+	else if (!h1 && !h2 && !h3 && !h4)
+		half_side = -1;
+	else
+		half_side = 0;/* AQUI VOY... corrige todos los vcn_utils2D_is_in_half_side() de este archivo */
 	return half_side;
 }
 
@@ -600,7 +608,7 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 	bool have_points = false;
 	while (nb_iterator_has_more(iter)) {
 		const vcn_point2D_t *p = nb_iterator_get_next(iter);
-		if (is_in_half_side(p1, p2, p)) {
+		if (vcn_utils2D_is_in_half_side(p1, p2, p)) {
 			have_points = true;
 			break;
 		}
@@ -667,21 +675,13 @@ static void delaunay_insert_if_is_candidate
 				 const vcn_point2D_t *const restrict p)
 {
 	if (p1 != p && p2 != p) {
-		if (is_in_half_side(p1, p2, p)) {
+		if (vcn_utils2D_is_in_half_side(p1, p2, p)) {
 			if (is_inside_circle(circle, p))
 				nb_container_insert(vertices, p);
 			else
 				nb_container_insert(outside_vtx, p);
 		}
 	}
-}
-
-static inline bool is_in_half_side(const vcn_point2D_t *const restrict p1,
-				   const vcn_point2D_t *const restrict p2,
-				   const vcn_point2D_t *const restrict p)
-{
-	double sign = vcn_utils2D_get_2x_trg_area(p1->x, p2->x, p->x);
-	return (sign >= NB_GEOMETRIC_TOL);
 }
 
 static inline bool is_inside_circle(const circle_t *const circle,
@@ -750,7 +750,8 @@ static void set_circle_from_layer(circle_t *circle,
 	n[0] /= dist;
 	n[1] /= dist;
 
-	circle->r = dist + layer * MAX(dist, bins2D->size_of_bins);
+	double discret_dist = MAX(dist, bins2D->size_of_bins);
+	circle->r = dist + layer * discret_dist;
 	double a = sqrt(POW2(circle->r) - 0.25 * POW2(dist));
 	circle->c[0] = 0.5 * (p1->x[0] + p2->x[0]) + a * n[0];
 	circle->c[1] = 0.5 * (p1->x[1] + p2->x[1]) + a * n[1];

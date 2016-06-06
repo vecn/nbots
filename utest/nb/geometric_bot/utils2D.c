@@ -27,7 +27,7 @@ static void test_get_delaunay_dist(void);
 static void test_get_delaunay_dist_neg(void);
 static void test_get_enveloping_box(void);
 static void test_get_enveloping_box_from_subset(void);
-static void test_get_2x_trg_area(void);
+static void test_orient(void);
 static void test_get_trg_area(void);
 static void test_get_trg_centroid(void);
 static void test_get_circumradius(void);
@@ -93,7 +93,7 @@ void cunit_nb_geometric_bot_utils2D(void)
 		    test_get_enveloping_box);
 	CU_add_test(suite, "get_enveloping_box_from_subset()",
 		    test_get_enveloping_box_from_subset);
-	CU_add_test(suite, "get_2x_trg_area()", test_get_2x_trg_area);
+	CU_add_test(suite, "orient()", test_orient);
 	CU_add_test(suite, "get_trg_area()", test_get_trg_area);
 	CU_add_test(suite, "get_trg_centroid()",
 		    test_get_trg_centroid);
@@ -322,13 +322,13 @@ static void test_get_enveloping_box_from_subset(void)
 	CU_ASSERT(fabs(box[3] - 0.5) < TOLERANCE);
 }
 
-static void test_get_2x_trg_area(void)
+static void test_orient(void)
 {
 	double t1[2] = {0, 0};
 	double t2[2] = {1, 0};
 	double t3[2] = {1, 1};
-	double area_x2 = vcn_utils2D_get_2x_trg_area(t1, t2, t3);
-	CU_ASSERT(fabs(area_x2 - 1) < TOLERANCE);
+	double orient = vcn_utils2D_orient(t1, t2, t3);
+	CU_ASSERT(fabs(orient - 1.0) < TOLERANCE);
 }
 
 static void test_get_trg_area(void)

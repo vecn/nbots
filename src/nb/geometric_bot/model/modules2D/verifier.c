@@ -180,11 +180,11 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 							     GET_PVTX(model, v4));
 
 				/* Segments parallel or coincident */
-				double area = vcn_utils2D_get_2x_trg_area(GET_PVTX(model, v1),
-									  GET_PVTX(model, v2),
-									  GET_PVTX(model, v3));
+				double orient = vcn_utils2D_orient(GET_PVTX(model, v1),
+								   GET_PVTX(model, v2),
+								   GET_PVTX(model, v3));
 				/* Check if them are parallel */
-				if (fabs(area) < NB_GEOMETRIC_TOL) {
+				if (fabs(orient) < NB_GEOMETRIC_TOL) {
 					/* Collineal segments */
 					double length1 = vcn_utils2D_get_dist(GET_PVTX(model, v1),
 									      GET_PVTX(model, v2));

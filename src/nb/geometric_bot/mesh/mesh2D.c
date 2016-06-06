@@ -66,6 +66,7 @@ static uint32_t hash_key_trg(const void *const  triangle);
 
 vcn_mesh_t* vcn_mesh_create(void)
 {
+	vcn_utils2D_init();
 	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
 	vcn_bins2D_set_destroyer(mesh->ug_vtx, mvtx_destroy);
@@ -328,9 +329,9 @@ double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(iter);
-		area += vcn_utils2D_get_2x_trg_area(trg->v1->x,
-						    trg->v2->x,
-						    trg->v3->x);
+		area += vcn_utils2D_orient(trg->v1->x,
+					   trg->v2->x,
+					   trg->v3->x);
 	}
 	nb_iterator_finish(iter);
 	return (0.5 * area) / vcn_math_pow2(mesh->scale);

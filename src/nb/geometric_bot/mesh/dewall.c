@@ -76,9 +76,6 @@ static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edge
 static double set_v3(const nb_container_t *const edges,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
 		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist);
-static bool is_3rd_vtx_in_half_side(const msh_vtx_t *const restrict v1,
-				    const msh_vtx_t *const restrict v2,
-				    const msh_vtx_t *const restrict v3);
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const vcn_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
@@ -339,7 +336,8 @@ static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edge
 	double min_dist = 0.0;
 	for (uint32_t i = 0; i < N; i++) {
 		if (vertices[i] != v1 && vertices[i] != v2) {
-			if (is_3rd_vtx_in_half_side(v1, v2, vertices[i]))
+			if (vcn_utils2D_is_in_half_side(v1->x, v2->x,
+							vertices[i]->x))
 				min_dist = set_v3(edges, v1, v2, vertices[i],
 						  &v3, min_dist);
 		}
@@ -367,14 +365,6 @@ static double set_v3(const nb_container_t *const edges,
 	}
 	return min_dist;
 
-}
-
-static bool is_3rd_vtx_in_half_side(const msh_vtx_t *const restrict v1,
-				    const msh_vtx_t *const restrict v2,
-				    const msh_vtx_t *const restrict v3)
-{
-	double sign = vcn_utils2D_get_2x_trg_area(v1->x, v2->x, v3->x);
-	return (sign >= NB_GEOMETRIC_TOL);
 }
 
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
@@ -430,8 +420,8 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 }
 
 static msh_trg_t* create_trg(const nb_container_t *const edges,
-				    search_vtx_t *search_vtx,
-				    msh_edge_t *edge)
+			     search_vtx_t *search_vtx,
+			     msh_edge_t *edge)
 {
 	/* Select the correct segment orientation */
 	msh_vtx_t *restrict v1;

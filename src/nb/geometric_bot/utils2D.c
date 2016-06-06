@@ -15,15 +15,23 @@
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 
+#include "tiny_libs/predicates.h"
+
+#define INCIRCLE_TOLERANCE 1e-9
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
-
 
 static double det_circumcircle(const double t1[2],
 			       const double t2[2],
 			       const double t3[2],
 			       const double p[2]);
+
+void vcn_utils2D_init(void)
+{
+	exactinit();
+}
 
 inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
 {
@@ -74,7 +82,7 @@ double vcn_utils2D_get_delaunay_dist(const double p1[2], const double p2[2],
 	double cc[2];
 	vcn_utils2D_get_circumcenter(p1, p2, p3, cc);
 	double circumradius = vcn_utils2D_get_dist2(cc, p1);
-	double sign = vcn_utils2D_get_2x_trg_area(p1, p2, cc);
+	double sign = vcn_utils2D_orient(p1, p2, cc);
 	if(sign < 0.0)
 		circumradius *= -1;
 	return circumradius;
@@ -107,7 +115,7 @@ double nb_utils2D_get_2vec_angle(const double a[2],
 	arg = MIN(arg, 1.0);
 
        	double angle;
-	if (vcn_utils2D_get_2x_trg_area(a, b, c) > 0)
+	if (vcn_utils2D_orient(a, b, c) > 0.0)
 		angle = acos(arg);
 	else
 		angle = 2.0 * NB_PI - acos(arg);
@@ -178,13 +186,21 @@ void vcn_utils2D_get_enveloping_box_from_subset
 	}
 }
 
-inline double vcn_utils2D_get_2x_trg_area
-                     (const double t1[2],
-		      const double t2[2],
-		      const double t3[2])
+inline double vcn_utils2D_orient(const double t1[2],
+				 const double t2[2],
+				 const double t3[2])
 {
 	return (t2[0] - t1[0]) * (t3[1] - t1[1]) -    
 		(t2[1] - t1[1]) * (t3[0] - t1[0]);
+	// return orient2d(t1, t2, t3);/* Robust predicate */
+}
+
+bool vcn_utils2D_is_in_half_side(const double v1[2],
+				 const double v2[2],
+				 const double v3[2])
+{
+	double sign = vcn_utils2D_orient(v1, v2, v3);
+	return (sign >= NB_GEOMETRIC_TOL);
 }
 
 inline double vcn_utils2D_get_trg_area
@@ -192,7 +208,7 @@ inline double vcn_utils2D_get_trg_area
 		      const double t2[2],
 		      const double t3[2])
 {
-	return 0.5 * vcn_utils2D_get_2x_trg_area(t1, t2, t3);
+	return 0.5 * vcn_utils2D_orient(t1, t2, t3);
 }
 
 inline void vcn_utils2D_get_trg_centroid(const double t1[2],
@@ -208,7 +224,7 @@ double vcn_utils2D_get_circumradius(const double t1[2],
 			const double t2[2],
 			const double t3[2])
 {
-	const double Sk = vcn_utils2D_get_2x_trg_area(t1, t2, t3);
+	const double Sk = vcn_utils2D_orient(t1, t2, t3);
 	/* Compute distance between vertices */
 	const double L1 = vcn_utils2D_get_dist(t1, t2);
 	const double L2 = vcn_utils2D_get_dist(t3, t2);
@@ -572,7 +588,7 @@ bool vcn_utils2D_pnt_lies_strictly_in_circumcircle(const double t1[2],
 						   const double p[2])
 {
 	double det = det_circumcircle(t1, t2, t3, p);
-	return (det > NB_GEOMETRIC_TOL);
+	return (det > INCIRCLE_TOLERANCE);
 }
 
 static double det_circumcircle(const double t1[2],
@@ -599,6 +615,7 @@ static double det_circumcircle(const double t1[2],
 	const double d5 = a23*a32*a11;
 	const double d6 = a33*a12*a21;
 	return d1 + d2 + d3 - d4 - d5 - d6;
+	// return incircle(t1, t2, t3, p);/* Robust predicate */
 }
 
 bool nb_utils2D_pnt_is_cocircular(const double t1[2],
@@ -607,7 +624,7 @@ bool nb_utils2D_pnt_is_cocircular(const double t1[2],
 				  const double p[2])
 {
 	double det = det_circumcircle(t1, t2, t3, p);
-	return (fabs(det) < NB_GEOMETRIC_TOL);
+	return (fabs(det) < INCIRCLE_TOLERANCE);
 }
 
 bool vcn_utils2D_pnt_lies_in_box(const double box[4],
