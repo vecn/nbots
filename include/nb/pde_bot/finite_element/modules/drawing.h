@@ -1,5 +1,5 @@
-#ifndef __NB_PDE_BOT_FINITE_ELEMENT_MODULES_EXPORTER_CAIRO_H__
-#define __NB_PDE_BOT_FINITE_ELEMENT_MODULES_EXPORTER_CAIRO_H__
+#ifndef __NB_PDE_BOT_FINITE_ELEMENT_MODULES_drawing_H__
+#define __NB_PDE_BOT_FINITE_ELEMENT_MODULES_drawing_H__
 
 #include <stdint.h>
 #include <stdbool.h>

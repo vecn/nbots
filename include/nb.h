@@ -21,6 +21,5 @@
 #include "nb/geometric_bot.h"
 #include "nb/graphics_bot.h"
 #include "nb/pde_bot.h"
-#include "nb/visual_cat.h"
 
 #endif
