@@ -281,8 +281,8 @@ static void test_generate_from_model_small_angles(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(7100 < N_trg && 7200 > N_trg);
-	CU_ASSERT(10750 < N_edge && 10850 > N_edge);
+	CU_ASSERT(7000 < N_trg && 7200 > N_trg);
+	CU_ASSERT(10650 < N_edge && 10850 > N_edge);
 }
 
 static void test_generate_from_model_quasi_linear(void)

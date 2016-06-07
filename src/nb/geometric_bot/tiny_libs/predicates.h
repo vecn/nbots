@@ -80,17 +80,6 @@
 /*    not the output expansion may be the same array as one of the input     */
 /*    expansions.                                                            */
 /*                                                                           */
-/*                                                                           */
-/*  If you look around below, you'll also find macros for a bunch of         */
-/*    simple unrolled arithmetic operations, and procedures for printing     */
-/*    expansions (commented out because they don't work with all C           */
-/*    compilers) and for generating random floating-point numbers whose      */
-/*    significand bits are all random.  Most of the macros have undocumented */
-/*    requirements that certain of their parameters should not be the same   */
-/*    variable; for safety, better to make sure all the parameters are       */
-/*    distinct variables.  Feel free to send email to jrs@cs.cmu.edu if you  */
-/*    have questions.                                                        */
-/*                                                                           */
 /*****************************************************************************/
 
 #include <stdio.h>

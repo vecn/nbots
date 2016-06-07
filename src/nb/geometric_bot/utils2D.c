@@ -15,7 +15,7 @@
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 
-//#include "tiny_libs/predicates.h"
+#include "tiny_libs/predicates.h"
 
 #define INCIRCLE_TOLERANCE 1e-9
 
@@ -23,15 +23,13 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
+static void init_robust_predicates_if_not(void);
+static char init_id = 0;
+
 static double det_circumcircle(const double t1[2],
 			       const double t2[2],
 			       const double t3[2],
 			       const double p[2]);
-
-void vcn_utils2D_init(void)
-{
-	;//exactinit();
-}
 
 inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
 {
@@ -190,9 +188,16 @@ inline double vcn_utils2D_orient(const double t1[2],
 				 const double t2[2],
 				 const double t3[2])
 {
-	return (t2[0] - t1[0]) * (t3[1] - t1[1]) -    
-		(t2[1] - t1[1]) * (t3[0] - t1[0]);
-	// return orient2d(t1, t2, t3);/* Robust predicate */
+	init_robust_predicates_if_not();
+	return orient2d(t1, t2, t3);/* Robust predicate */
+}
+
+static void init_robust_predicates_if_not(void)
+{
+	if (init_id != 1) {
+		exactinit();/* Init robust predicates */
+		init_id = 1;
+	}
 }
 
 bool vcn_utils2D_is_in_half_side(const double v1[2],
@@ -563,26 +568,8 @@ static double det_circumcircle(const double t1[2],
 			       const double t3[2],
 			       const double p[2])
 {
-	const double a11 = t1[0] - p[0];
-	const double a12 = t1[1] - p[1];
-	const double a21 = t2[0] - p[0];
-	const double a22 = t2[1] - p[1];
-	const double a31 = t3[0] - p[0];
-	const double a32 = t3[1] - p[1];
-
-	const double a13 = a11*a11 + a12*a12;
-	const double a23 = a21*a21 + a22*a22;
-	const double a33 = a31*a31 + a32*a32;
-
-	/* Compute determinant */
-	const double d1 = a11*a22*a33;
-	const double d2 = a21*a32*a13;
-	const double d3 = a31*a12*a23;
-	const double d4 = a13*a22*a31;
-	const double d5 = a23*a32*a11;
-	const double d6 = a33*a12*a21;
-	return d1 + d2 + d3 - d4 - d5 - d6;
-	// return incircle(t1, t2, t3, p);/* Robust predicate */
+	init_robust_predicates_if_not();
+	return incircle(t1, t2, t3, p);/* Robust predicate */
 }
 
 bool nb_utils2D_pnt_is_cocircular(const double t1[2],

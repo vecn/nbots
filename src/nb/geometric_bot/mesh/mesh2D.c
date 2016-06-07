@@ -66,7 +66,6 @@ static uint32_t hash_key_trg(const void *const  triangle);
 
 vcn_mesh_t* vcn_mesh_create(void)
 {
-	vcn_utils2D_init();
 	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
 	vcn_bins2D_set_destroyer(mesh->ug_vtx, mvtx_destroy);

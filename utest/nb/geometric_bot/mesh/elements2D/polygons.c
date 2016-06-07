@@ -48,8 +48,8 @@ static void test_load_from_mesh(void)
 	vcn_mesh_destroy(mesh);
 
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(2850 < poly->N_elems && 3150 > poly->N_elems);
-	CU_ASSERT(8800 < poly->N_edg && 9200 > poly->N_edg);
+	CU_ASSERT(2750 < poly->N_elems && 3150 > poly->N_elems);
+	CU_ASSERT(8700 < poly->N_edg && 9200 > poly->N_edg);
 
 	nb_mshpoly_finish(poly);
 }
