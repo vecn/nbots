@@ -1151,8 +1151,6 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 	}
 }
 
-#include "nb/geometric_bot/model/modules2D/drawing.h"/* TEMPORAL */
-#include "nb/geometric_bot/mesh/modules2D/drawing.h"/* TEMPORAL */
 static void delete_isolated_elements(vcn_model_t *model)
 {
 	vcn_mesh_t *mesh = vcn_mesh_create();
@@ -1181,8 +1179,7 @@ static void delete_isolated_elements(vcn_model_t *model)
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)
 {
-	char* mask = malloc(model->N);
-	memset(mask, 0, model->N);
+	char* mask = calloc(model->N, 1);
 	for(uint32_t i = 0; i < model->M; i++){
 		mask[model->edge[i * 2]] = 1;
 		mask[model->edge[i*2+1]] = 1;
@@ -1191,19 +1188,19 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 	uint32_t N_vtx = 0;
 	uint32_t* perm = malloc(model->N * sizeof(*perm));
 	for (uint32_t i = 0; i < model->N; i++){
-		if (mask[i] == 0)
-			continue;
-		perm[i] = N_vtx;
-		N_vtx ++;
+		if (1 == mask[i]) {
+			perm[i] = N_vtx;
+			N_vtx ++;
+		}
 	}
 	if (N_vtx < model->N) {
 		double* vertices = calloc(N_vtx * 2, sizeof(*vertices));
 		for (uint32_t i = 0; i < model->N; i++) {
-			if (0 == mask[i])
-				continue;
-			memcpy(&(vertices[perm[i] * 2]),
-			       &(model->vertex[i * 2]), 
-			       2 * sizeof(double));
+			if (1 == mask[i]) {
+				memcpy(&(vertices[perm[i] * 2]),
+				       &(model->vertex[i * 2]), 
+				       2 * sizeof(double));
+			}
 		}  
     
 		for(uint32_t i = 0; i < model->M; i++){

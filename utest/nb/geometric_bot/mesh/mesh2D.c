@@ -186,8 +186,8 @@ static void test_generate_from_model_subsgm_constraint(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(6800 < N_trg && 7000 > N_trg);
-	CU_ASSERT(11000 < N_edge && 11200 > N_edge);
+	CU_ASSERT(6600 < N_trg && 7000 > N_trg);
+	CU_ASSERT(10500 < N_edge && 11200 > N_edge);
 }
 
 static void test_generate_from_model_small_local_feature(void)
@@ -225,7 +225,7 @@ static void test_generate_from_model_small_localf_v2(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(5050 < N_trg && 5250 > N_trg);
-	CU_ASSERT(7700 < N_edge && 7900 > N_edge);
+	CU_ASSERT(7700 < N_edge && 8100 > N_edge);
 }
 
 static void test_generate_from_model_subsgm_const_v2(void)
@@ -262,8 +262,8 @@ static void test_generate_from_model_holes(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(11000 < N_trg && 11400 > N_trg);
-	CU_ASSERT(17700 < N_edge && 18100 > N_edge);
+	CU_ASSERT(11000 < N_trg && 11500 > N_trg);
+	CU_ASSERT(17700 < N_edge && 18500 > N_edge);
 }
 
 static void test_generate_from_model_small_angles(void)

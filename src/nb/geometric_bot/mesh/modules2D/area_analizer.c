@@ -454,18 +454,18 @@ uint32_t vcn_mesh_delete_isolated_segments(vcn_mesh_t *const restrict mesh)
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
 		msh_edge_t* restrict sgm = mesh->input_sgm[i];
-		if (NULL == sgm)
-			continue;
-		if (NULL != sgm->t1 || NULL != sgm->t2)
-			continue;
-		mesh->input_sgm[i] = NULL;
-		while (sgm != NULL) {
-			msh_edge_t* to_free = sgm;
-			sgm = medge_subsgm_next(sgm);
-			nb_container_delete(mesh->ht_edge, to_free);
-			medge_destroy_subsgm_attribute(to_free);
-			free(to_free);
-			removed += 1;
+		if (NULL != sgm) {
+			if (NULL == sgm->t1 && NULL == sgm->t2) {
+				mesh->input_sgm[i] = NULL;
+				while (NULL != sgm) {
+					msh_edge_t* to_free = sgm;
+					sgm = medge_subsgm_next(sgm);
+					nb_container_delete(mesh->ht_edge, to_free);
+					medge_destroy_subsgm_attribute(to_free);
+					free(to_free);
+					removed += 1;
+				}
+			}
 		}
 	}
 	return removed;
@@ -476,16 +476,16 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
 		msh_edge_t* restrict sgm = mesh->input_sgm[i];
-		if (NULL == sgm)
-			continue;
-		if (NULL == sgm->t1 || NULL == sgm->t2)
-			continue;    
-		mesh->input_sgm[i] = NULL;      
-		while (NULL != sgm) {
-			msh_edge_t* prev_sgm = sgm;
-			sgm = medge_subsgm_next(sgm);
-			medge_destroy_subsgm_attribute(prev_sgm);
-			removed += 1;
+		if (NULL != sgm) {
+			if (NULL != sgm->t1 && NULL != sgm->t2) {
+				mesh->input_sgm[i] = NULL;      
+				while (NULL != sgm) {
+					msh_edge_t* prev_sgm = sgm;
+					sgm = medge_subsgm_next(sgm);
+					medge_destroy_subsgm_attribute(prev_sgm);
+					removed += 1;
+				}
+			}
 		}
 	}
 	return removed;
@@ -494,7 +494,7 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh
 uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 {
 	nb_container_t* useful_vtx =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		alloca(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(useful_vtx, NB_SORTED);
 
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
