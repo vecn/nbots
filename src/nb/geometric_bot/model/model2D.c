@@ -322,11 +322,46 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 	vcn_mesh_generate_from_model(mesh, model);
 	
 	/* Get holes and destroy mesh */
-	uint32_t N_holes;
-	double* holes =
-		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
+	uint32_t N_centroids;
+	double* centroids =
+		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
 	vcn_mesh_destroy(mesh);
 
+	uint32_t N_holes = 0;
+	double *holes = NULL;
+
+	if (0 < N_centroids) {
+		char* mask_centroids = malloc(N_centroids);
+		/* get mask */
+		for (uint32_t i = 0; i < N_centroids; i++) {
+			bool not_inside =
+				!nb_msh3trg_is_vtx_inside(msh3trg,
+							  &(centroids[i*2]));
+			if (not_inside) {
+				mask_centroids[i] = 1;
+				N_holes += 1;
+			} else {
+				mask_centroids[i] = 0;
+			}
+		}
+
+		if (0 < N_holes) {
+			uint32_t i = 0;
+			holes = malloc(2 * N_holes * sizeof(*holes));
+			for (uint32_t j = 0; j < N_centroids; j++) {
+				if (1 == mask_centroids[j]) {
+					memcpy(&(holes[i*2]),
+					       &(centroids[j*2]),
+					       2 * sizeof(*holes));
+					i += 1;
+				}
+			}
+		}
+
+		free(mask_centroids);
+		free(centroids);
+	}
+	
 	/* Build model with holes */
 	model->H = N_holes;
 	model->holes = holes;

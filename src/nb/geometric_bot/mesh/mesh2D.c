@@ -284,7 +284,8 @@ inline bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh)
 }
 
 bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
-				 const double *const restrict vtx){
+			    const double *const restrict vtx)
+{
 	msh_vtx_t v; 
 	v.x[0] = mesh->scale * (vtx[0] - mesh->xdisp);
 	v.x[1] = mesh->scale * (vtx[1] - mesh->ydisp);

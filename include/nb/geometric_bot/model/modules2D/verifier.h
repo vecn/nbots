@@ -42,4 +42,7 @@ bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model);
 bool vcn_model_is_continuum(const vcn_model_t *model);
 
+uint16_t vcn_model_get_N_subareas(const vcn_model_t *model);
+
+
 #endif

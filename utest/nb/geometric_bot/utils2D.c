@@ -61,9 +61,6 @@ static void test_pnt_lies_on_sgm_false(void);
 static void test_pnt_lies_in_trg_true(void);
 static void test_pnt_lies_in_trg_true_on_limit(void);
 static void test_pnt_lies_in_trg_false(void);
-static void test_pnt_lies_strictly_in_trg_true(void);
-static void test_pnt_lies_strictly_in_trg_false_on_limit(void);
-static void test_pnt_lies_strictly_in_trg_false(void);
 static void test_pnt_lies_strictly_in_diametral_circle_true(void);
 static void test_pnt_lies_strictly_in_diametral_circle_false_on_limit(void);
 static void test_pnt_lies_strictly_in_diametral_circle_false(void);
@@ -177,15 +174,6 @@ void cunit_nb_geometric_bot_utils2D(void)
 	CU_add_test(suite,
 		    "pnt_lies_in_trg() if lies outside",
 		    test_pnt_lies_in_trg_false);
-	CU_add_test(suite,
-		    "pnt_lies_strictly_in_trg() if lies inside",
-		    test_pnt_lies_strictly_in_trg_true);
-	CU_add_test(suite,
-		    "pnt_lies_strictly_in_trg() if lies in the edge",
-		    test_pnt_lies_strictly_in_trg_false_on_limit);
-	CU_add_test(suite,
-		    "pnt_lies_strictly_in_trg() if lies outside",
-		    test_pnt_lies_strictly_in_trg_false);
 	CU_add_test(suite,
 		    "pnt_lies_strict_in_diam_circ() if lies inside",
 		    test_pnt_lies_strictly_in_diametral_circle_true);
@@ -694,39 +682,6 @@ static void test_pnt_lies_in_trg_false(void)
 	double p[2] = {0.4, 0.5};
 	bool lies_outside =
 		!vcn_utils2D_pnt_lies_in_trg(t1, t2, t3, p);
-	CU_ASSERT(lies_outside);
-}
-
-static void test_pnt_lies_strictly_in_trg_true(void)
-{
-	double t1[2] = {0, 0};
-	double t2[2] = {1, 0};
-	double t3[2] = {1, 1};
-	double p[2] = {0.6, 0.5};
-	bool lies_inside =
-		vcn_utils2D_pnt_lies_strictly_in_trg(t1, t2, t3, p);
-	CU_ASSERT(lies_inside);
-}
-
-static void test_pnt_lies_strictly_in_trg_false_on_limit(void)
-{
-	double t1[2] = {0, 0};
-	double t2[2] = {1, 0};
-	double t3[2] = {1, 1};
-	double p[2] = {0.5, 0.5};
-	bool lies_outside =
-		!vcn_utils2D_pnt_lies_strictly_in_trg(t1, t2, t3, p);
-	CU_ASSERT(lies_outside);
-}
-
-static void test_pnt_lies_strictly_in_trg_false(void)
-{
-	double t1[2] = {0, 0};
-	double t2[2] = {1, 0};
-	double t3[2] = {1, 1};
-	double p[2] = {0.4, 0.5};
-	bool lies_outside =
-		!vcn_utils2D_pnt_lies_strictly_in_trg(t1, t2, t3, p);
 	CU_ASSERT(lies_outside);
 }
 

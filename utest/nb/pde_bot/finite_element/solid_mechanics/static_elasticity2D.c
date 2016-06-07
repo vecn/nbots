@@ -11,14 +11,12 @@
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
-#include "nb/graphics_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_read.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
 #define INPUTS_DIR "../../../../utest/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_inputs"
-#define OUTPUT "../../../"
 
 #define POW2(a) ((a)*(a))
 
@@ -121,11 +119,14 @@ static void test_static_elasticity2D(void)
 	
 	double *total_disp = get_total_disp(msh3trg->N_vertices,
 					    results.disp);
-	
-	char filename[100];
-	sprintf(filename, "%s/TEMPORAL_FEM.png", OUTPUT);
-	nb_fem_save_png(msh3trg, total_disp, filename, 1000, 800);/* TEMPORAL */
 
+	double max_disp = 0;
+	for (uint32_t i = 0; i < msh3trg->N_vertices; i++) {
+		if (max_disp < total_disp[i])
+			max_disp = total_disp[i];
+	}
+	CU_ASSERT(fabs(max_disp - 1.00708e-1) < 1e-6);
+	
 	free(total_disp);
 CLEANUP_FEM:
 	vcn_msh3trg_destroy(msh3trg);
@@ -135,7 +136,6 @@ CLEANUP_INPUT:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
 	vcn_fem_material_destroy(material);
-	CU_ASSERT(false);
 }
 
 

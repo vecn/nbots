@@ -279,3 +279,19 @@ bool vcn_model_is_continuum(const vcn_model_t *model)
 
 	return is_continuum;	
 }
+
+uint16_t vcn_model_get_N_subareas(const vcn_model_t *model)
+{
+	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     model->N);
+	vcn_mesh_generate_from_model(mesh, model);
+
+	uint16_t N_subareas = vcn_mesh_get_N_subareas(mesh);
+
+	vcn_mesh_destroy(mesh);
+
+	return N_subareas;
+
+}

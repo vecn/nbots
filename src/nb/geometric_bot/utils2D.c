@@ -15,7 +15,7 @@
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 
-#include "tiny_libs/predicates.h"
+//#include "tiny_libs/predicates.h"
 
 #define INCIRCLE_TOLERANCE 1e-9
 
@@ -30,7 +30,7 @@ static double det_circumcircle(const double t1[2],
 
 void vcn_utils2D_init(void)
 {
-	exactinit();
+	;//exactinit();
 }
 
 inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
@@ -520,46 +520,13 @@ bool vcn_utils2D_pnt_lies_in_trg(const double t1[2],
 				 const double t3[2],
 				 const double p [2])
 {
-  /* Return 1 if the point lies in the triangle */
-	if (p[0] == t1[0] && p[1] == t1[1])
-		return true;
-	if (p[0] == t2[0] && p[1] == t2[1])
-		return true;
-	if (p[0] == t3[0] && p[1] == t3[1])
-		return true;
-	const double side_edge1 = (t1[0]-p[0])*(t2[1]-p[1]) -
-		(t1[1]-p[1])*(t2[0]-p[0]);
-	const double side_edge2 = (t2[0]-p[0])*(t3[1]-p[1]) -
-		(t2[1]-p[1])*(t3[0]-p[0]);
-	const double side_edge3 = (t3[0]-p[0])*(t1[1]-p[1]) -
-		(t3[1]-p[1])*(t1[0]-p[0]);
+	const double edge1 = vcn_utils2D_orient(t1, t2, p);
+	const double edge2 = vcn_utils2D_orient(t2, t3, p);
+	const double edge3 = vcn_utils2D_orient(t3, t1, p);
 
-	return (side_edge1 > -NB_GEOMETRIC_TOL &&
-		side_edge2 > -NB_GEOMETRIC_TOL &&
-		side_edge3 > -NB_GEOMETRIC_TOL);
-}
-
-bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
-					  const double t2[2],
-					  const double t3[2],
-					  const double p [2])
-{
-	/* Return 1 if the point lies strictly inside the triangle */
-	if (p[0] == t1[0] && p[1] == t1[1])
-		return false;
-	if (p[0] == t2[0] && p[1] == t2[1])
-		return false;
-	if (p[0] == t3[0] && p[1] == t3[1])
-		return false;
-	const double side_edge1 = (t1[0]-p[0])*(t2[1]-p[1]) -
-		(t1[1]-p[1])*(t2[0]-p[0]);
-	const double side_edge2 = (t2[0]-p[0])*(t3[1]-p[1]) -
-		(t2[1]-p[1])*(t3[0]-p[0]);
-	const double side_edge3 = (t3[0]-p[0])*(t1[1]-p[1]) -
-		(t3[1]-p[1])*(t1[0]-p[0]);
-	return (side_edge1 > NB_GEOMETRIC_TOL &&
-		side_edge2 > NB_GEOMETRIC_TOL &&
-		side_edge3 > NB_GEOMETRIC_TOL);
+	return (edge1 > -NB_GEOMETRIC_TOL &&
+		edge2 > -NB_GEOMETRIC_TOL &&
+		edge3 > -NB_GEOMETRIC_TOL);
 }
 
 inline bool vcn_utils2D_pnt_lies_in_diametral_circle

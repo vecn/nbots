@@ -24,7 +24,6 @@ typedef struct {
 
 
 static int get_bin_coord(double x, double bin_size);
-static double get_bin_cartesian_coord(int x, double bin_size);
 static uint32_t bin_hash_key(const void *const bin_ptr);
 static int8_t bin_compare(const void* restrict bin1_ptr,
 			  const void* restrict bin2_ptr);
@@ -116,11 +115,6 @@ static inline int get_bin_coord(double x, double bin_size)
 {
 	/* Shifting the values to avoid the double zero coordinates */
 	return (int)(((x < 0)?(x - bin_size):x)/bin_size);
-}
-
-static inline double get_bin_cartesian_coord(int x, double bin_size)
-{
-	return bin_size * ((x < 0)?(x + 1):x);
 }
 
 static inline uint32_t bin_hash_key(const void *const bin_ptr)
@@ -548,15 +542,18 @@ static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
 	bool have_points = false;
 	while (nb_iterator_has_more(iter)) {
 		const bin2D_t* bin = nb_iterator_get_next(iter);
-		int8_t half_side = 
-			bin_which_half_side(bin, bins2D->size_of_bins, p1, p2);
-		if (1 == half_side && nb_container_is_not_empty(bin->points)) {
-			have_points = true;
-			break;
-		} else if (0 == half_side) {
-			if (bin_have_points_in_half_side(bin, p1, p2)) {
+		if (nb_container_is_not_empty(bin->points)) {
+			int8_t half_side = 
+				bin_which_half_side(bin, bins2D->size_of_bins,
+						    p1, p2);
+			if (1 == half_side) {
 				have_points = true;
 				break;
+			} else if (0 == half_side) {
+				if (bin_have_points_in_half_side(bin, p1, p2)) {
+					have_points = true;
+					break;
+				}
 			}
 		}
 	}
@@ -564,38 +561,35 @@ static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
 	return have_points;
 }
 
-static inline int8_t bin_which_half_side(const bin2D_t* const bin,
-					 double bin_size,
-					 const vcn_point2D_t *const p1,
-					 const vcn_point2D_t *const p2)
+static int8_t bin_which_half_side(const bin2D_t* const bin,
+				  double bin_size,
+				  const vcn_point2D_t *const p1,
+				  const vcn_point2D_t *const p2)
 {
+        double x1[2];
+	x1[0] = bin->x * bin_size;
+	x1[1] = bin->y * bin_size;
 
-        double c[2];
-	c[0] = get_bin_cartesian_coord(bin->x, bin_size);
-	c[1] = get_bin_cartesian_coord(bin->y, bin_size);
+	double x2[2], x3[2], x4[2];
+	x2[0] = x1[0] + bin_size;
+	x2[1] = x1[1];
+	x3[0] = x1[0] + bin_size;
+	x3[1] = x1[1] + bin_size;
+	x4[0] = x1[0];
+	x4[1] = x1[1] + bin_size;
 
-	double mid_size = bin_size/2.0;
-	double x1[2], x2[2], x3[3], x4[4];
-	x1[0] = c[0] + midsize;
-	x1[1] = c[1] + midsize;
-	x2[0] = c[0] - midsize;
-	x2[1] = c[1] + midsize;
-	x3[0] = c[0] - midsize;
-	x3[1] = c[1] - midsize;
-	x4[0] = c[0] + midsize;
-	x4[1] = c[1] - midsize;
+	bool h1 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x1);
+	bool h2 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x2);
+	bool h3 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x3);
+	bool h4 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x4);
 
-	bool h1 = vcn_utils2D_is_in_half_side(p1, p2, x1);
-	bool h2 = vcn_utils2D_is_in_half_side(p1, p2, x2);
-	bool h3 = vcn_utils2D_is_in_half_side(p1, p2, x3);
-	bool h4 = vcn_utils2D_is_in_half_side(p1, p2, x4);
-
+	int8_t half_side;
 	if (h1 && h2 && h3 && h4)
 		half_side = 1;
 	else if (!h1 && !h2 && !h3 && !h4)
 		half_side = -1;
 	else
-		half_side = 0;/* AQUI VOY... corrige todos los vcn_utils2D_is_in_half_side() de este archivo */
+		half_side = 0;
 	return half_side;
 }
 
@@ -608,7 +602,7 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 	bool have_points = false;
 	while (nb_iterator_has_more(iter)) {
 		const vcn_point2D_t *p = nb_iterator_get_next(iter);
-		if (vcn_utils2D_is_in_half_side(p1, p2, p)) {
+		if (vcn_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
 			have_points = true;
 			break;
 		}
@@ -675,7 +669,7 @@ static void delaunay_insert_if_is_candidate
 				 const vcn_point2D_t *const restrict p)
 {
 	if (p1 != p && p2 != p) {
-		if (vcn_utils2D_is_in_half_side(p1, p2, p)) {
+		if (vcn_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
 			if (is_inside_circle(circle, p))
 				nb_container_insert(vertices, p);
 			else

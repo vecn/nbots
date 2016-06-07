@@ -126,12 +126,6 @@ bool vcn_utils2D_pnt_lies_in_trg(const double t1[2],
 				 const double t3[2],
 				 const double p[2]);
 
-bool vcn_utils2D_pnt_lies_strictly_in_trg(const double t1[2],
-					  const double t2[2],
-					  const double t3[2],
-					  const double p[2]);
-
-
 bool vcn_utils2D_pnt_lies_in_diametral_circle
 					(const double s1[2],
 					 const double s2[2],

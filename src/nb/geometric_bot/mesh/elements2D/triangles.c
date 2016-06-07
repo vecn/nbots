@@ -132,6 +132,25 @@ void vcn_msh3trg_destroy(vcn_msh3trg_t* msh3trg)
 	free(msh3trg);
 }
 
+bool nb_msh3trg_is_vtx_inside(const vcn_msh3trg_t *msh3trg,
+			      const double x[2])
+{
+	bool is_inside = false;
+	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+		uint32_t id1 = msh3trg->vertices_forming_triangles[i * 3];
+		uint32_t id2 = msh3trg->vertices_forming_triangles[i*3+1];
+		uint32_t id3 = msh3trg->vertices_forming_triangles[i*3+2];
+		double *v1 = &(msh3trg->vertices[id1*2]);
+		double *v2 = &(msh3trg->vertices[id2*2]);
+		double *v3 = &(msh3trg->vertices[id3*2]);
+		if (vcn_utils2D_pnt_lies_in_trg(v1, v2, v3, x)) {
+			is_inside = true;
+			break;
+		}
+	}
+	return is_inside;
+}
+
 vcn_graph_t* vcn_msh3trg_create_vtx_graph
                 (const vcn_msh3trg_t *const restrict msh3trg)
 {

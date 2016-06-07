@@ -364,8 +364,8 @@ static void test_get_delaunay_1000_cloud(void)
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_get_delaunay(mesh, N, vertices);
 	free(vertices);
-	int N_expected_trg = 1968;
-	int N_expected_edg = 2967;
+	int N_expected_trg = 1981;
+	int N_expected_edg = 2980;
 	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (N_expected_edg == vcn_mesh_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);

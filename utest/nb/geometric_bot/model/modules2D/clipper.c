@@ -19,7 +19,7 @@ static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
 {							      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
 	sprintf(label, "%s/TEMP_MODEL_%02i.png",
-		OUTPUT_DIR, TEMPORAL_++);                    /* TEMPORAL */
+		OUTPUT_DIR, TEMPORAL_);                    /* TEMPORAL */
 	vcn_model_export_png(model, label, 1000, 800, false);
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);
@@ -95,9 +95,10 @@ void cunit_nb_geometric_bot_model2D_clipper(void)
 	CU_add_test(suite, "get_substraction() of cross A",
 		    test_get_substractionA_cross);
 	CU_add_test(suite, "get_substraction() of cross B",
-		    test_get_substractionB_cross);
+	test_get_substractionB_cross);
 	CU_add_test(suite, "get_difference() of cross",
 		    test_get_difference_cross);
+	return;/* TEMPORAL */
 	CU_add_test(suite, "get_combination() of c",
 		    test_get_combination_c);
 	CU_add_test(suite, "get_intersection() of c",
@@ -109,7 +110,6 @@ void cunit_nb_geometric_bot_model2D_clipper(void)
 		    test_get_substractionB_c);
 	CU_add_test(suite, "get_difference() of c",
 		    test_get_difference_c);
-	return;/* TEMPORAL */
 	CU_add_test(suite, "get_combination() of b",
 		    test_get_combination_b);
 	CU_add_test(suite, "get_intersection() of b",
@@ -167,11 +167,16 @@ static void test_get_combination_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_combination(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(16 == model->N);
+	CU_ASSERT(24 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(9 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_intersection_squares(void)
@@ -183,11 +188,16 @@ static void test_get_intersection_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_intersection(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(8 == model->N);
+	CU_ASSERT(8 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(1 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_union_squares(void)
@@ -199,11 +209,16 @@ static void test_get_union_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_union(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(16 == model->N);
+	CU_ASSERT(16 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(1 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_substractionA_squares(void)
@@ -215,11 +230,16 @@ static void test_get_substractionA_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_substraction(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(12 == model->N);
+	CU_ASSERT(12 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(4 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_substractionB_squares(void)
@@ -231,11 +251,16 @@ static void test_get_substractionB_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_substraction(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(12 == model->N);
+	CU_ASSERT(12 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(4 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_difference_squares(void)
@@ -247,11 +272,16 @@ static void test_get_difference_squares(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_difference(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(16 == model->N);
+	CU_ASSERT(24 == model->M);
+	CU_ASSERT(1 == model->H);
+	CU_ASSERT(8 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_combination_cross(void)
@@ -263,11 +293,16 @@ static void test_get_combination_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_combination(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(36 == model->N);
+	CU_ASSERT(52 == model->M);
+	CU_ASSERT(4 == model->H);
+	CU_ASSERT(13 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_intersection_cross(void)
@@ -279,11 +314,16 @@ static void test_get_intersection_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_intersection(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(16 == model->N);
+	CU_ASSERT(16 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(4 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_union_cross(void)
@@ -295,11 +335,16 @@ static void test_get_union_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_union(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(36 == model->N);
+	CU_ASSERT(36 == model->M);
+	CU_ASSERT(4 == model->H);
+	CU_ASSERT(1 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_substractionA_cross(void)
@@ -311,11 +356,16 @@ static void test_get_substractionA_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_substraction(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(24 == model->N);
+	CU_ASSERT(24 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(4 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_substractionB_cross(void)
@@ -327,11 +377,16 @@ static void test_get_substractionB_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_substraction(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(28 == model->N);
+	CU_ASSERT(28 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(5 == N_areas);
+
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_difference_cross(void)
@@ -343,11 +398,17 @@ static void test_get_difference_cross(void)
 	vcn_model_t *model2 = vcn_model_load(input_name);
 	vcn_model_t *model = vcn_model_create();
 	vcn_model_get_difference(model, model1, model2, 0);
-	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
+	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	CU_ASSERT(36 == model->N);
+	CU_ASSERT(52 == model->M);
+	CU_ASSERT(8 == model->H);
+	CU_ASSERT(9 == N_areas);
+
+	TEMPORAL(model); /* TEMPORAL */
 	vcn_model_destroy(model);
-	CU_ASSERT(false);
 }
 
 static void test_get_combination_c(void)

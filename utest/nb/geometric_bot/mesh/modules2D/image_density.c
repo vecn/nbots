@@ -7,19 +7,8 @@
 #include <CUnit/Basic.h>
 
 #include "nb/geometric_bot.h"
-#include "nb/graphics_bot.h"
 
 #define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/modules2D/image_density_inputs"
-#define OUTPUT "../../../"
-
-static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
-static void TEMPORAL(const vcn_mesh_t *const mesh)	      /* TEMPORAL */
-{							      /* TEMPORAL */
-	char label[100];				      /* TEMPORAL */
-	sprintf(label, "%s/TEMP_IMG_%02i.png", OUTPUT,
-		TEMPORAL_++);                                 /* TEMPORAL */
-	vcn_mesh_save_png(mesh, label, 1000, 800);	      /* TEMPORAL */
-}                                                             /* TEMPORAL */
 
 static int suite_init(void);
 static int suite_clean(void);
@@ -77,9 +66,12 @@ static void test_set_img_density_jpg_eye(void)
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	TEMPORAL(mesh); /* TEMPORAL */
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(3700 < N_trg && 3900 > N_trg);
+	CU_ASSERT(5600 < N_edge && 5800 > N_edge);
 }
 
 static void test_set_img_density_jpg_gnome(void)
@@ -98,9 +90,12 @@ static void test_set_img_density_jpg_gnome(void)
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	TEMPORAL(mesh); /* TEMPORAL */
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(12200 < N_trg && 12900 > N_trg);
+	CU_ASSERT(18400 < N_edge && 19500 > N_edge);
 }
 
 static void test_set_img_density_png_jolie(void)
@@ -122,9 +117,12 @@ static void test_set_img_density_png_jolie(void)
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	TEMPORAL(mesh); /* TEMPORAL */
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(11300 < N_trg && 11500 > N_trg);
+	CU_ASSERT(17100 < N_edge && 17300 > N_edge);
 }
 
 static void test_set_img_density_jpg_hand(void)
@@ -145,9 +143,12 @@ static void test_set_img_density_jpg_hand(void)
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
-	TEMPORAL(mesh); /* TEMPORAL */
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(13300 < N_trg && 13500 > N_trg);
+	CU_ASSERT(20000 < N_edge && 20300 > N_edge);
 }
 
 static void test_set_img_density_jpg_size_const(void)
@@ -172,7 +173,10 @@ static void test_set_img_density_jpg_size_const(void)
 	vcn_model_destroy(model);
 	vcn_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	TEMPORAL(mesh); /* TEMPORAL */
+	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(5800 < N_trg && 6000 > N_trg);
+	CU_ASSERT(8800 < N_edge && 10000 > N_edge);
 }

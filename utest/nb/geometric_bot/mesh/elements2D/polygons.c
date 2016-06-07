@@ -4,7 +4,6 @@
 
 #include <CUnit/Basic.h>
 
-#include "nb/graphics_bot.h"
 #include "nb/geometric_bot.h"
 
 static int suite_init(void);
@@ -14,8 +13,9 @@ static void test_load_from_mesh(void);
 
 void cunit_nb_geometric_bot_mesh_elements2D_poly(void)
 {
-	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/elements2D/polygons.c",
-				       suite_init, suite_clean);
+	CU_pSuite suite =
+		CU_add_suite("nb/geometric_bot/mesh/elements2D/polygons.c",
+			     suite_init, suite_clean);
 	CU_add_test(suite, "load_from_mesh()", test_load_from_mesh);
 }
 
@@ -45,14 +45,11 @@ static void test_load_from_mesh(void)
 	nb_mshpoly_t *poly = alloca(size);
 	nb_mshpoly_init(poly);
 	nb_mshpoly_load_from_mesh(poly, mesh);
-
-	vcn_mesh_save_png(mesh, "../../../POLY_trg.png", 1000, 800);/* TEMPORAL */
-
 	vcn_mesh_destroy(mesh);
 
-	nb_mshpoly_export_png(poly, "../../../POLY.png", 1000, 800);/* TEMPORAL */
-	
-	CU_ASSERT(false);
+	/* TEMPORAL FAIL: Produce different triangles each time */
+	CU_ASSERT(2850 < poly->N_elems && 3050 > poly->N_elems);
+	CU_ASSERT(8900 < poly->N_edg && 9000 > poly->N_edg);
 
 	nb_mshpoly_finish(poly);
 }

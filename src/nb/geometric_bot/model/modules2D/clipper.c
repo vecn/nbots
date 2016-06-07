@@ -1151,6 +1151,8 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 	}
 }
 
+#include "nb/geometric_bot/model/modules2D/drawing.h"/* TEMPORAL */
+#include "nb/geometric_bot/mesh/modules2D/drawing.h"/* TEMPORAL */
 static void delete_isolated_elements(vcn_model_t *model)
 {
 	vcn_mesh_t *mesh = vcn_mesh_create();
@@ -1166,15 +1168,15 @@ static void delete_isolated_elements(vcn_model_t *model)
 	if (0 == vcn_mesh_get_N_trg(mesh)) {
 		vcn_mesh_destroy(mesh);
 		vcn_model_clear(model);
-		return;
+	} else {
+		vcn_msh3trg_t* msh3trg =
+			vcn_mesh_get_msh3trg(mesh, false, true, 
+					     false, true, true);
+		vcn_mesh_destroy(mesh);
+
+		vcn_model_generate_from_msh3trg(model, msh3trg);
+		vcn_msh3trg_destroy(msh3trg);
 	}
-
-	vcn_msh3trg_t* msh3trg =
-		vcn_mesh_get_msh3trg(mesh, false, true, false, true, true);
-	vcn_mesh_destroy(mesh);
-
-	vcn_model_generate_from_msh3trg(model, msh3trg);
-	vcn_msh3trg_destroy(msh3trg);
 }
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)
@@ -1291,7 +1293,7 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     model2->N);
 	vcn_mesh_generate_from_model(mesh2, model2);
- 
+
 	for (uint32_t i = 0; i < N_centroids; i++) {
 		if (vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) &&
 		    vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {

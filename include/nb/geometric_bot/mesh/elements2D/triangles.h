@@ -32,6 +32,9 @@ void vcn_msh3trg_clear(vcn_msh3trg_t* msh3trg);
  */
 void vcn_msh3trg_destroy(vcn_msh3trg_t* msh3trg);
 
+bool nb_msh3trg_is_vtx_inside(const vcn_msh3trg_t *msh3trg,
+			      const double x[2]);
+
 /**
  * @brief Build a graph from the vertices of the mesh.
  * @param[in] msh3trg Mesh representing the graph.
