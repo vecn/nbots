@@ -6,7 +6,13 @@
 
 #include "nb/graphics_bot/drawing_utils.h"
 
+typedef nb_graphics_context_s nb_graphics_context_t;
 typedef void nb_pattern_t;
+
+typedef enum {
+	LINEAR, RADIAL
+} nb_graphics_grad_t;
+
 typedef struct {
 	double width;
 	double height;
@@ -14,77 +20,74 @@ typedef struct {
 	double y_top;
 } nb_text_attr_t;
 
-void nb_drawing_export_png(const char* filename, int width, int height,
-			   void (*draw)(void *draw_ptr, int w, int h,
+typedef struct {
+	int width;
+	int height;
+	double center[2];
+	double zoom;
+} camera_t;
+
+void nb_graphics_export_png(const char* filename, int width, int height,
+			   void (*draw)(nb_graphics_context_t *g, int w, int h,
 					const void *const data),
 			   const void *const data);
 
-void nb_drawing_export_eps(const char* filename, int width, int height,
-			   void (*draw)(void *draw_ptr, int w, int h,
+void nb_graphics_export_eps(const char* filename, int width, int height,
+			   void (*draw)(nb_graphics_context_t *g, int w, int h,
 					const void *const data),
 			   const void *const data);
 
-void nb_drawing_raw_move_to(void *draw_ptr, double x, double y);
+void nb_graphics_export_asy(const char* filename, int width, int height,
+			   void (*draw)(nb_graphics_context_t *g, int w, int h,
+					const void *const data),
+			   const void *const data);
 
-void nb_drawing_raw_line_to(void *draw_ptr, double x, double y);
+void nb_graphics_set_camera(nb_graphics_context_t *g, const camera_t *cam);
+void nb_graphics_unset_camera(nb_graphics_context_t *g);
 
-void nb_drawing_move_to(void *draw_ptr, const camera_t *cam,
-			double x, double y);
-
-void nb_drawing_line_to(void *draw_ptr, const camera_t *cam,
-			double x, double y);
-
-void nb_drawing_arc(void *draw_ptr, const camera_t *cam,
-		    double x, double y, double r,
+void nb_graphics_move_to(nb_graphics_context_t *g, double x, double y);
+void nb_graphics_line_to(nb_graphics_context_t *g, double x, double y);
+void nb_graphics_arc(nb_graphics_context_t *g, double x, double y, double r,
 		    double a0, double a1);
 
-void nb_drawing_set_circle(void *draw_ptr, const camera_t *cam,
-			   double x, double y, double r, bool r_fixed);
+void nb_graphics_set_circle(nb_graphics_context_t *g,
+			    double x, double y, double r);
 
-void nb_drawing_raw_set_rectangle(void *draw_ptr, double x1, double y1,
+void nb_graphics_set_point(nb_graphics_context_t *g,
+			   double x, double y, double size);
+
+void nb_graphics_set_rectangle(nb_graphics_context_t *g, double x1, double y1,
 				  double x2, double y2);
 
-void nb_drawing_close_path(void *draw_ptr);
+void nb_graphics_close_path(nb_graphics_context_t *g);
 
-void nb_drawing_set_line_width(void *draw_ptr, double w);
+void nb_graphics_set_line_width(nb_graphics_context_t *g, double w);
 
-void nb_drawing_set_source_rgb(void *draw_ptr, double r,
-			       double g, double b);
+void nb_graphics_set_source_rgb(nb_graphics_context_t *g,
+				 uint8_t r, uint8_t g, uint8_t b);
 
-void nb_drawing_set_source_rgba(void *draw_ptr, double r,
-				double g, double b, double a);
+void nb_graphics_set_source_rgba(nb_graphics_context_t *g,
+				 uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
-void nb_drawing_set_source(void *draw_ptr, nb_pattern_t *pat);
+void nb_graphics_set_source_grad(nb_graphics_context_t *g,/* AQUI VOY */
+				 nb_graphics_grad_t grad, nb_palette_t *pat);
 
-void nb_drawing_fill(void *draw_ptr);
+void nb_graphics_set_source_trg(nb_graphics_context_t *g,/* AQUI VOY */
+				 nb_graphics_grad_t grad, nb_palette_t *pat);
 
-void nb_drawing_fill_preserve(void *draw_ptr);
+void nb_graphics_fill(nb_graphics_context_t *g);
 
-void nb_drawing_stroke(void *draw_ptr);
+void nb_graphics_fill_preserve(nb_graphics_context_t *g);
 
-void nb_drawing_paint(void *draw_ptr);
+void nb_graphics_stroke(nb_graphics_context_t *g);
 
-void nb_drawing_set_font_type(void *draw_ptr, const char *type);
+void nb_graphics_set_font_type(nb_graphics_context_t *g, const char *type);
 
-void nb_drawing_set_font_size(void *draw_ptr, uint16_t size);
+void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size);
 
-void nb_drawing_show_text(void *draw_ptr, const char *str);
-void nb_drawing_get_text_attr(void *draw_ptr, const char *label,
+void nb_graphics_show_text(nb_graphics_context_t *g, const char *str);
+void nb_graphics_get_text_attr(nb_graphics_context_t *g, const char *label,
 			      nb_text_attr_t *attr);
 
-nb_pattern_t* nb_pattern_create(void);
-nb_pattern_t* nb_pattern_create_linear(double x1, double y1,
-				       double x2, double y2);
-void nb_pattern_destroy(nb_pattern_t *pat);
-void nb_pattern_add_color_stop_rgb(nb_pattern_t *pat, float stop,
-				   double r, double g, double b);
-void nb_pattern_begin_patch(nb_pattern_t *pat);
-void nb_pattern_move_to(nb_pattern_t *pat, const camera_t *cam,
-			double x, double y);
-void nb_pattern_line_to(nb_pattern_t *pat, const camera_t *cam,
-			double x, double y);
-void nb_pattern_end_patch(nb_pattern_t *pat);
-void nb_pattern_set_corner_color_rgb(nb_pattern_t *pat, int vtx_id,
-				     double r, double g, double b);
 
 #endif

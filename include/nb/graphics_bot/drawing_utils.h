@@ -2,6 +2,7 @@
 #define __NB_GRAPHICS_BOT_DRAWING_UTILS_H__
 
 #include <stdint.h>
+#include "nb/graphics_bot/drawing_tools.h"
 
 static double _NB_RGB_BLACK[4] = {0.0, 0.0, 0.0};
 static double _NB_RGB_RED[3] = {0.0, 0.0, 1.0};
@@ -13,14 +14,8 @@ typedef enum {
 	NB_FRENCH
 }nb_palette_preset;
 
-typedef struct {
-	int width;
-	int height;
-	double center[2];
-	double zoom;
-} camera_t;
-
-typedef struct vcn_palette_s vcn_palette_t;
+typedef struct nb_palette_s vcn_palette_t;/* DEPRECATED (TEMPORAL) */
+typedef struct nb_palette_s nb_palette_t;
 
 void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
 					  double width, double height);

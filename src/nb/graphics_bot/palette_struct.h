@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct vcn_palette_s {
+struct nb_palette_s {
 	/* The palette defines a serie of RGB colors to
 	 * colorize values in [0,1]
 	 *
