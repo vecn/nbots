@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "nb/image_bot/image.h"
 
@@ -20,16 +21,51 @@ struct vcn_image_s {
 	uint8_t* pixels;
 };
 
+uint32_t vcn_image_get_memsize(void)
+{
+	return sizeof(vcn_image_t);
+}
+
+void vcn_image_init(vcn_image_t *img)
+{
+	uint32_t memsize = vcn_image_get_memsize();
+	memset(img, 0, memsize);
+}
+
+void vcn_image_finish(vcn_image_t *img)
+{
+	vcn_image_clear(img);
+}
+
+void vcn_image_clear(vcn_image_t *img)
+{
+	if (NULL != img->pixels)
+		stbi_image_free(img->pixels);
+	uint32_t memsize = vcn_image_get_memsize();
+	memset(img, 0, memsize);
+}
+
 inline vcn_image_t* vcn_image_create(void)
 {
-	return calloc(1, sizeof(vcn_image_t));
+	uint32_t memsize = vcn_image_get_memsize();
+	return calloc(1, memsize);
 }
 
 void vcn_image_destroy(vcn_image_t *img)
 {
-	if (NULL != img->pixels)
-		stbi_image_free(img->pixels);
+	vcn_image_clear(img);
 	free(img);
+}
+
+void vcn_image_init_white(vcn_image_t *img,
+			  int width, int height,
+			  int comp_x_pixel)
+{
+	img->width = width;
+	img->height = height;
+	img->comp_x_pixel;
+	uint32_t memsize = width * height * comp_x_pixel;
+	img->pixels = calloc(memsize);
 }
 
 void vcn_image_read(vcn_image_t *img, const char* filename)
@@ -68,4 +104,50 @@ void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 		uint32_t col = c * img->comp_x_pixel;
 		memcpy(pixel, &(img->pixels[r * w + col]), img->comp_x_pixel);
 	}
+}
+
+void vcn_image_resize(const vcn_image_t *input_img,
+		      vcn_image_t *output_img,
+		      int out_width, int out_height)
+{
+	output_img->width = out_width;
+	output_img->height = out_height;
+	output_img->comp_x_pixel = img->comp_x_pixel;
+	uint32_t memsize = img->comp_x_pixel * out_width * out_height;
+	output_img->pixels = malloc(memsize);
+
+	int stride_in_bytes = img->width * img->comp_x_pixel;
+	int output_stride_in_bytes = out_width * img->comp_x_pixel;
+	int status = stbir_resize_uint8(img->pixels,
+					img->width, img->height,
+					stride_in_bytes,
+					output_img->pixels,
+					out_width, out_height,
+					output_stride_in_bytes,
+					img->comp_x_pixel);
+	assert(0 != status);
+}
+
+void vcn_image_write_png(const vcn_image_t *img, const char *filename)
+{  
+	int stride_in_bytes = img->width * img->comp_x_pixel;
+	int status = stbi_write_png(filename,
+				    img->width,
+				    img->height,
+				    img->comp_x_pixel,
+				    img->pixels,
+				    stride_in_bytes);
+	assert(0 != status);
+}
+
+void vcn_image_render_ascii(const vcn_image_t *img, const char *filename)
+{
+	/* LUMA conversion: TEMPORAL */
+	" .'`,^:\";~";
+	"-_+<>i!lI?";
+	"/\|()1{}[]";
+	"rcvunxzjft";
+	"LCJUYXZO0Q";
+	"oahkbdpqwm";
+	"*WMB8&%$#@";
 }

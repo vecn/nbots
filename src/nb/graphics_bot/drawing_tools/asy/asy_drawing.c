@@ -56,7 +56,22 @@ void nb_graphics_asy_set_source_rgba(void *draw_ptr, uint8_t r, uint8_t g,
 	;
 }
 
-void nb_graphics_asy_set_source(void *draw_ptr, nb_palette_t *pat)
+void nb_graphics_asy_set_source_grad(void *draw_ptr,
+				     nb_graphics_grad_t grad,
+				     double x1, double y1,
+				     double x2, double y2,
+				     nb_palette_t *pat)
+{
+	;
+}
+
+void nb_graphics_asy_set_source_trg(void *draw_ptr,
+				    double x1, double y1,
+				    double x2, double y2,
+				    double x3, double y3,
+				    uint8_t r1, uint8_t g1, uint8_t b1,
+				    uint8_t r2, uint8_t g2, uint8_t b2,
+				    uint8_t r3, uint8_t g3, uint8_t b3)
 {
 	;
 }

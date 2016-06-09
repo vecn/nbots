@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdint.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
@@ -30,7 +32,18 @@ struct nb_graphics_context_s {
 	void (*set_source_rgb)(void *draw_ptr, uint8_t r, uint8_t g, uint8_t b);
 	void (*set_source_rgba)(void *draw_ptr, uint8_t r, uint8_t g,
 				uint8_t b, uint8_t a);
-	void (*set_source)(void *draw_ptr, nb_palette_t *pat);
+	void (*set_source_grad)(nb_graphics_context_t *g,
+				nb_graphics_grad_t grad,
+				double x1, double y1,
+				double x2, double y2,
+				nb_palette_t *pat);
+	void (*set_source_trg)(nb_graphics_context_t *g,
+			       double x1, double y1,
+			       double x2, double y2,
+			       double x3, double y3,
+			       uint8_t r1, uint8_t g1, uint8_t b1,
+			       uint8_t r2, uint8_t g2, uint8_t b2,
+			       uint8_t r3, uint8_t g3, uint8_t b3);
 	void (*fill)(void *draw_ptr);
 	void (*fill_preserve)(void *draw_ptr);
 	void (*stroke)(void *draw_ptr);
@@ -46,13 +59,23 @@ void nb_graphics_export_png(const char* filename, int width, int height,
 					const void *const data),
 			   const void *const data)
 {
-	/* PENDING */
+	uint32_t memsize = vcn_image_get_memsize();
+	vcn_image_t *img = alloca(memsize);
+	vcn_image_init_white(img, width, height, 4);
+	
+	nb_graphics_context_t g;
+	set_pix_tools(&g);
+	g.cam = NULL;
+	g.draw_ptr = img;
+	draw(&g, width, height, data);
+
+	vcn_image_write_png(img);
+	vcn_image_finish(img);
+	fclose(fp);
 }
 
 static void set_pix_tools(nb_graphics_context_t *g)
 {
-	g->cam = NULL;
-	g->draw_ptr = /* PENDING */;
 	g->move_to = nb_graphics_pix_move_to;
 	g->line_to = nb_graphics_pix_line_to;
 	g->arc = nb_graphics_pix_arc;
@@ -62,7 +85,8 @@ static void set_pix_tools(nb_graphics_context_t *g)
 	g->set_line_width = nb_graphics_pix_line_width;
 	g->set_source_rgb = nb_graphics_pix_source_rgb;
 	g->set_source_rgba = nb_graphics_pix_source_rgba;
-	g->set_source = nb_graphics_pix_source;
+	g->set_source_grad = nb_graphics_pix_source_grad;
+	g->set_source_trg = nb_graphics_pix_source_trg;
 	g->fill = nb_graphics_pix_fill;
 	g->fill_preserve = nb_graphics_pix_fill_preserve;
 	g->stroke = nb_graphics_pix_stroke;
@@ -77,13 +101,19 @@ void nb_graphics_export_eps(const char* filename, int width, int height,
 					const void *const data),
 			   const void *const data)
 {
-	/* PENDING */
+	FILE *fp = fopen(filename, "w");
+	if (NULL != fp) {
+		nb_graphics_context_t g;
+		set_eps_tools(&g);
+		g.cam = NULL;
+		g.draw_ptr = fp;
+		draw(&g, width, height, data);
+	}
+	fclose(fp);
 }
 
 static void set_eps_tools(nb_graphics_context_t *g)
 {
-	g->cam = NULL;
-	g->draw_ptr = /* PENDING */;
 	g->move_to = nb_graphics_eps_move_to;
 	g->line_to = nb_graphics_eps_line_to;
 	g->arc = nb_graphics_eps_arc;
@@ -93,7 +123,8 @@ static void set_eps_tools(nb_graphics_context_t *g)
 	g->set_line_width = nb_graphics_eps_line_width;
 	g->set_source_rgb = nb_graphics_eps_source_rgb;
 	g->set_source_rgba = nb_graphics_eps_source_rgba;
-	g->set_source = nb_graphics_eps_source;
+	g->set_source_grad = nb_graphics_eps_source_grad;
+	g->set_source_trg = nb_graphics_eps_source_trg;
 	g->fill = nb_graphics_eps_fill;
 	g->fill_preserve = nb_graphics_eps_fill_preserve;
 	g->stroke = nb_graphics_eps_stroke;
@@ -108,13 +139,19 @@ void nb_graphics_export_asy(const char* filename, int width, int height,
 					const void *const data),
 			   const void *const data)
 {
-	/* PENDING */
+	FILE *fp = fopen(filename, "w");
+	if (NULL != fp) {
+		nb_graphics_context_t g;
+		set_asy_tools(&g);
+		g.cam = NULL;
+		g.draw_ptr = fp;
+		draw(&g, width, height, data);
+	}
+	fclose(fp);
 }
 
 static void set_asy_tools(nb_graphics_context_t *g)
 {
-	g->cam = NULL;
-	g->draw_ptr = /* PENDING */;
 	g->move_to = nb_graphics_asy_move_to;
 	g->line_to = nb_graphics_asy_line_to;
 	g->arc = nb_graphics_asy_arc;
@@ -124,7 +161,8 @@ static void set_asy_tools(nb_graphics_context_t *g)
 	g->set_line_width = nb_graphics_asy_line_width;
 	g->set_source_rgb = nb_graphics_asy_source_rgb;
 	g->set_source_rgba = nb_graphics_asy_source_rgba;
-	g->set_source = nb_graphics_asy_source;
+	g->set_source_grad = nb_graphics_asy_source_grad;
+	g->set_source_trg = nb_graphics_asy_source_trg;
 	g->fill = nb_graphics_asy_fill;
 	g->fill_preserve = nb_graphics_asy_fill_preserve;
 	g->stroke = nb_graphics_asy_stroke;
@@ -227,9 +265,25 @@ void nb_graphics_set_source_rgba(nb_graphics_context_t *g,
 	g->set_source_rgb(g->draw_ptr, r, g, b, a);
 }
 
-void nb_graphics_set_source(nb_graphics_context_t *g, nb_palette_t *pat)
+void nb_graphics_set_source_grad(nb_graphics_context_t *g,
+				 nb_graphics_grad_t grad,
+				 double x1, double y1,
+				 double x2, double y2,
+				 nb_palette_t *pat)
 {
-	g->set_source(g->draw_ptr, pat);
+	g->set_source_grad(g->draw_ptr, grad, x1, y1, x2, y2, pat);
+}
+
+void nb_graphics_set_source_trg(nb_graphics_context_t *g,
+				double x1, double y1,
+				double x2, double y2,
+				double x3, double y3,
+				uint8_t r1, uint8_t g1, uint8_t b1,
+				uint8_t r2, uint8_t g2, uint8_t b2,
+				uint8_t r3, uint8_t g3, uint8_t b3)
+{
+	g->set_source_trg(g->draw_ptr, x1, y1, x2, y2, x3, y3,
+			  r1, g1, b1, r2, g2, b2, r3, g3, b3);
 }
 
 void nb_graphics_fill(nb_graphics_context_t *g)
