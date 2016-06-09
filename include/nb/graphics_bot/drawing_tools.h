@@ -10,8 +10,16 @@ typedef nb_graphics_context_s nb_graphics_context_t;
 typedef void nb_pattern_t;
 
 typedef enum {
-	LINEAR, RADIAL
+	NB_LINEAR, NB_RADIAL
 } nb_graphics_grad_t;
+
+typedef enum {
+	NB_WHITE, NB_BLACK,
+	NB_RED, NB_GREEN, NB_BLUE,
+	NB_YELLOW, NB_CYAN, NB_MAGENTA,
+	NB_ORANGE, NB_AQUAMARIN, NB_VIOLET,
+	NB_ROSE, NB_CHARTREUSE, NB_AZURE
+} nb_graphics_color_t;
 
 typedef struct {
 	double width;
@@ -25,15 +33,17 @@ typedef struct {
 	int height;
 	double center[2];
 	double zoom;
-} camera_t;
+} nb_graphics_camera_t;
 
 void nb_graphics_export(const char* filename, int width, int height,
 			void (*draw)(nb_graphics_context_t *g, int w, int h,
 				     const void *const data),
 			const void *const data);
 
-void nb_graphics_set_camera(nb_graphics_context_t *g, const camera_t *cam);
-void nb_graphics_unset_camera(nb_graphics_context_t *g);
+nb_graphics_camera_t* nb_graphics_get_camera(nb_graphics_context_t *g);
+bool nb_graphics_is_camera_enabled(const nb_graphics_context_t *g);
+void nb_graphics_disable_camera(nb_graphics_context_t *g);
+void nb_graphics_enable_camera(nb_graphics_context_t *g);
 
 void nb_graphics_move_to(nb_graphics_context_t *g, double x, double y);
 void nb_graphics_line_to(nb_graphics_context_t *g, double x, double y);
@@ -53,6 +63,8 @@ void nb_graphics_close_path(nb_graphics_context_t *g);
 
 void nb_graphics_set_line_width(nb_graphics_context_t *g, double w);
 
+void nb_graphics_set_source(nb_graphics_context_t *g,
+			    nb_graphics_color_t color);
 void nb_graphics_set_source_rgb(nb_graphics_context_t *g,
 				uint8_t r, uint8_t g, uint8_t b);
 

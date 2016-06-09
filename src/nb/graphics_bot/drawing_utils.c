@@ -15,20 +15,20 @@ static vcn_palette_t* palette_get_rainbow(void);
 static vcn_palette_t* palette_get_sunset(void);
 static vcn_palette_t* palette_get_french(void);
 
-static void palette_draw_rectangle(void *draw_ptr,
+static void palette_draw_rectangle(nb_graphics_context_t *g,
 				   const vcn_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float border);
-static void palette_draw_zero_mark(void* draw_ptr,
+static void palette_draw_zero_mark(nb_graphics_context_t *g,
 				   const vcn_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   double min_v, double max_v);
-static void palette_draw_labels(void *draw_ptr, float font_size,
-				float x, float y, float w, float h,
-				double min_v, double max_v);
+static void palette_draw_labels(nb_graphics_context_t *g,
+				float font_size, float x, float y,
+				float w, float h, double min_v, double max_v);
 
-void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
-					  double width, double height)
+void nb_graphics_cam_fit_box(camera_t *cam, const double box[4],
+			     double width, double height)
 {
 	cam->center[0] = (box[0] + box[2]) / 2.0;
 	cam->center[1] = (box[1] + box[3]) / 2.0;
@@ -188,92 +188,82 @@ static vcn_palette_t* palette_get_french()
 	return palette;
 }
 
-void nb_drawing_draw_palette(void *draw_ptr, 
-			     const vcn_palette_t *const palette,
-			     float x, float y, float w, float h,
-			     float border, double min_v, double max_v)
+void nb_graphics_draw_palette(nb_graphics_context_t *g,
+			      const vcn_palette_t *const palette,
+			      float x, float y, float w, float h,
+			      float border, double min_v, double max_v)
 {
-	palette_draw_rectangle(draw_ptr, palette, x, y, w, h, border);
-	palette_draw_zero_mark(draw_ptr, palette, x, y, w, h, min_v, max_v);
-	palette_draw_labels(draw_ptr, 10.0f, x, y, w, h, min_v, max_v);
+	bool cam_status = nb_graphics_is_camera_enabled(g);
+	if (cam_status)
+		nb_graphics_disable_camera(g);
+
+	palette_draw_rectangle(g, palette, x, y, w, h, border);
+	palette_draw_zero_mark(g, palette, x, y, w, h, min_v, max_v);
+	palette_draw_labels(g, 10.0f, x, y, w, h, min_v, max_v);
+
+	if (cam_status)
+		nb_graphics_enable_camera(g);
 }
 
-static void palette_draw_rectangle(void *draw_ptr,
+static void palette_draw_rectangle(nb_graphics_context_t *g,
 				   const vcn_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float border)
-{
-	nb_pattern_t *pat;
-	pat = nb_pattern_create_linear(x, y+h, x, y);
-	for (int i = 0; i < palette->ntics; i++) {
-		nb_pattern_add_color_stop_rgb(pat, palette->tics[i],
-					      palette->rgb[i * 3]/255.0,
-					      palette->rgb[i*3+1]/255.0,
-					      palette->rgb[i*3+2]/255.0);
-	}
-  
+{  
 	if (0.0f < border) {
-		nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 0.0);
-		nb_drawing_raw_set_rectangle(draw_ptr, x-border, y-border,
-					     w+2*border, h+2*border);
-		nb_drawing_fill(draw_ptr);
+		nb_graphics_set_source(g, NB_BLACK);
+		nb_graphics_set_rectangle(g, x-border, y-border,
+					  w+2*border, h+2*border);
+		nb_graphics_fill(g);
 	}
-	nb_drawing_raw_set_rectangle(draw_ptr, x, y, w, h);
-	nb_drawing_set_source(draw_ptr, pat);
-	nb_drawing_fill(draw_ptr);
-	nb_pattern_destroy(pat);
+
+	nb_graphics_set_source_grad(g, NB_LINEAR, x, y+h, x, y, palette);
+	nb_graphics_set_rectangle(g, x, y, w, h);
+	nb_graphics_fill(g);
 }
 
-static void palette_draw_zero_mark(void* draw_ptr,
+static void palette_draw_zero_mark(nb_graphics_context_t *g,
 				   const vcn_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   double min_v, double max_v)
 {
-	if (min_v * max_v >= 0.0)
-		return;
+	if (0 > min_v * max_v) {
+		float factor = - min_v / (max_v - min_v);
+		uint8_t rgb[3];
+		vcn_palette_get_colour(palette, factor, rgb);
+	
+		rgb[0] = (rgb[0] + 128) % 256;
+		rgb[1] = (rgb[1] + 128) % 256;
+		rgb[2] = (rgb[2] + 128) % 256;
 
-	float factor = - min_v / (max_v - min_v);
-	uint8_t rgb[3];
-	vcn_palette_get_colour(palette, factor, rgb);
-    
-	float rcol = rgb[0] / 255.0f + 0.5f;
-	float gcol = rgb[1] / 255.0f + 0.5f;
-	float bcol = rgb[2] / 255.0f + 0.5f;
+		nb_graphics_set_source_rgb(g, rgb[0], rgb[1], rgb[2]);
 
-	if (rcol > 1.0)
-		rcol -= 1.0;
-	if (gcol > 1.0)
-		gcol -= 1.0;
-	if (bcol > 1.0)
-		bcol -= 1.0;
-
-	nb_drawing_set_source_rgb(draw_ptr, rcol, gcol, bcol);
-
-	double yzero = h * factor;
-	nb_drawing_raw_move_to(draw_ptr, x, y + h - yzero);
-	nb_drawing_raw_line_to(draw_ptr, x + w, y + h - yzero);
-	nb_drawing_stroke(draw_ptr);
+		double yzero = h * factor;
+		nb_graphics_move_to(g, x, y + h - yzero);
+		nb_graphics_line_to(g, x + w, y + h - yzero);
+		nb_graphics_stroke(g);
+	}
 }
 
-static void palette_draw_labels(void *draw_ptr, float font_size,
-				float x, float y, float w, float h,
-				double min_v, double max_v)
+static void palette_draw_labels(nb_graphics_context_t *g,
+				float font_size, float x, float y,
+				float w, float h, double min_v, double max_v)
 {
-	nb_drawing_set_font_type(draw_ptr, "Sans");
-	nb_drawing_set_font_size(draw_ptr, font_size);
-	nb_text_attr_t text_attr;;
-	nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 0.0);
+	nb_graphics_set_font_type(g, "Sans");
+	nb_graphics_set_font_size(g, font_size);
+	nb_text_attr_t text_attr;
+	nb_graphics_set_source(g, NB_BLACK);
 
 	char label[15];
 	int n_labels = MIN((int)(h / (font_size + 2)), 10);
 	double step_v = (max_v - min_v) / (n_labels - 1.0);
 	for (int i = 0; i < n_labels; i++) {
 		sprintf(label, "%.3e", max_v - i * step_v);
-		nb_drawing_get_text_attr(draw_ptr, label, &text_attr);
+		nb_graphics_get_text_attr(g, label, &text_attr);
 
-		nb_drawing_raw_move_to(draw_ptr, x + w + 5.0f, 
-				       y + text_attr.height/2.0 + 
-				       i * h / (n_labels-1.0));
-		nb_drawing_show_text(draw_ptr, label);
+		nb_graphics_move_to(g, x + w + 5.0f, 
+				    y + text_attr.height/2.0 + 
+				    i * h / (n_labels-1.0));
+		nb_graphics_show_text(g, label);
 	}
 }

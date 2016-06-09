@@ -12,13 +12,13 @@ typedef enum {
 	NB_RAINBOW,
 	NB_SUNSET,
 	NB_FRENCH
-}nb_palette_preset;
+} nb_palette_preset;
 
 typedef struct nb_palette_s vcn_palette_t;/* DEPRECATED (TEMPORAL) */
 typedef struct nb_palette_s nb_palette_t;
 
-void nb_drawing_utils_set_center_and_zoom(camera_t *cam, const double box[4],
-					  double width, double height);
+void nb_graphics_cam_fit_box(camera_t *cam, const double box[4],
+			     double width, double height);
 
 vcn_palette_t* vcn_palette_create();
 vcn_palette_t* vcn_palette_create_preset(nb_palette_preset preset);
@@ -30,9 +30,9 @@ void vcn_palette_get_colour(const vcn_palette_t *const palette,
 			    float factor,
 			    uint8_t rgb[3]);
 
-void nb_drawing_draw_palette(void *draw_ptr, 
-			     const vcn_palette_t *const palette,
-			     float x, float y, float w, float h,
-			     float border, double min_v, double max_v);
+void nb_graphics_draw_palette(nb_graphics_context_t *g, 
+			      const vcn_palette_t *const palette,
+			      float x, float y, float w, float h,
+			      float border, double min_v, double max_v);
 
 #endif

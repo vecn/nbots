@@ -23,11 +23,13 @@ static void set_asy_tools(nb_graphics_context_t *g);
 static void init_gctx(nb_graphics_context_t *g, int width, int height);
 static void write_gctx(nb_graphics_context_t *g, const char *filename);
 static void clear_gctx(nb_graphics_context_t *g);
-static void get_camera_view(const camera_t *cam, double cam_vtx[2],
+static void get_camera_view(const nb_graphics_context_t *g,
+			    double cam_vtx[2],
 			    double x, double y);
 
 struct nb_graphics_context_s {
-	const camera_t *cam;
+	const nb_graphics_camera_t cam;
+	bool using_cam;
 	void *ctx;
 	void* (*create_context)(int width, int height);
 	void (*destroy_context)(void *ctx);
@@ -210,7 +212,12 @@ static void set_asy_tools(nb_graphics_context_t *g)
 
 static void init_gctx(nb_graphics_context_t *g, int width, int height)
 {
-	g->cam = NULL;
+	g->cam.width = width;
+	g->cam.height = height;
+	g->cam.center[0] = width / 2.0;
+	g->cam.center[1] = height / 2.0;
+	g->cam.zoom = 1.0;
+	g->using_cam = false;
 	g->ctx = g->create_context(width, height);
 }
 
@@ -225,24 +232,35 @@ static void clear_gctx(nb_graphics_context_t *g)
 	g->ctx = NULL;
 }
 
-void nb_graphics_set_camera(nb_graphics_context_t *g, const camera_t *cam)
+nb_graphics_camera_t* nb_graphics_get_camera(nb_graphics_context_t *g);
 {
-	g->cam = cam;
+	return &(g->cam);
 }
 
-void nb_graphics_unset_camera(nb_graphics_context_t *g)
+bool nb_graphics_is_camera_enabled(const nb_graphics_context_t *g)
 {
-	g->cam = NULL;
+	return g->using_cam;
 }
 
-static void get_camera_view(const camera_t *cam, double cam_vtx[2],
+void nb_graphics_disable_camera(nb_graphics_context_t *g)
+{
+	g->using_cam = false;
+}
+
+void nb_graphics_enable_camera(nb_graphics_context_t *g)
+{
+	g->using_cam = true;
+}
+
+static void get_camera_view(const nb_graphics_context_t *g,
+			    double cam_vtx[2],
 			    double x, double y)
 {
-	if (NULL != camera) {
-		cam_vtx[0] = cam->zoom * (x - cam->center[0]) +
-			cam->width / 2.0;
-		cam_vtx[1] = cam->zoom * (cam->center[1] - y) +
-			cam->height / 2.0;
+	if (g->using_cam) {
+		cam_vtx[0] = g->cam.zoom * (x - g->cam.center[0]) +
+			g->cam.width / 2.0;
+		cam_vtx[1] = g->cam.zoom * (g->cam.center[1] - y) +
+			g->cam.height / 2.0;
 	} else {
 		cam_vtx[0] = x;
 		cam_vtx[1] = y;
@@ -304,6 +322,30 @@ void nb_graphics_close_path(nb_graphics_context_t *g)
 void nb_graphics_set_line_width(nb_graphics_context_t *g, double w)
 {
 	g->set_line_width(g->ctx, w);
+}
+
+void nb_graphics_set_source(nb_graphics_context_t *g,
+			    nb_graphics_color_t color)
+{
+	uint8_t r, g, b;
+	switch(color) {
+	case NB_BLACK:
+		r = 0; g = 0; b = 0;
+		break;
+	case NB_WHITE:
+		r = 255; g = 255; b = 255;
+		break;
+	case NB_RED:
+		r = 255; g = 255; b = 255;
+		break;
+		/* AQUI VOY */
+	default:
+		r = 0;
+		g = 0;
+		b = 0;
+		break;
+	}
+	g->set_source_rgb(g->ctx, r, g, b);
 }
 
 void nb_graphics_set_source_rgb(nb_graphics_context_t *g,
