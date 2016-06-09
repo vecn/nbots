@@ -27,20 +27,10 @@ typedef struct {
 	double zoom;
 } camera_t;
 
-void nb_graphics_export_png(const char* filename, int width, int height,
-			   void (*draw)(nb_graphics_context_t *g, int w, int h,
-					const void *const data),
-			   const void *const data);
-
-void nb_graphics_export_eps(const char* filename, int width, int height,
-			   void (*draw)(nb_graphics_context_t *g, int w, int h,
-					const void *const data),
-			   const void *const data);
-
-void nb_graphics_export_asy(const char* filename, int width, int height,
-			   void (*draw)(nb_graphics_context_t *g, int w, int h,
-					const void *const data),
-			   const void *const data);
+void nb_graphics_export(const char* filename, int width, int height,
+			void (*draw)(nb_graphics_context_t *g, int w, int h,
+				     const void *const data),
+			const void *const data);
 
 void nb_graphics_set_camera(nb_graphics_context_t *g, const camera_t *cam);
 void nb_graphics_unset_camera(nb_graphics_context_t *g);

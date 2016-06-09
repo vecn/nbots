@@ -140,14 +140,25 @@ void vcn_image_write_png(const vcn_image_t *img, const char *filename)
 	assert(0 != status);
 }
 
-void vcn_image_render_ascii(const vcn_image_t *img, const char *filename)
+void vcn_image_render_ascii(const vcn_image_t *img, const char *filename,
+			    int pixels_x_char)
 {
 	/* LUMA conversion: TEMPORAL */
-	" .'`,^:\";~";
-	"-_+<>i!lI?";
-	"/\|()1{}[]";
-	"rcvunxzjft";
-	"LCJUYXZO0Q";
+  
+	/* Long gray scale */
+	"$@B%8&WM#*";
 	"oahkbdpqwm";
-	"*WMB8&%$#@";
+	"ZO0QLCJUYX";
+	"zcvunxrjft";
+	"/\|()1{}[]";
+	"?-_+~<>i!l";
+	"I;:,\"^`'. ";
+
+	/* Short gray scale */
+	"@%#*+=:-. ";
+
+	/* Faltan: */
+	"egsyADEFGH";
+	"KNPRSTV234";
+	"5679=";
 }
