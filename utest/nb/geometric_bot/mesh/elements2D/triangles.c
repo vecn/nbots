@@ -49,16 +49,21 @@ static void test_load_from_mesh(void)
 	model->edge = edge;
 	model->holes = NULL;
 	
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	uint32_t mesh_memsize = vcn_mesh_get_memsize();
+	vcn_mesh_t* mesh = alloca(mesh_memsize);
+	vcn_mesh_init(mesh);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	vcn_msh3trg_t *msh3trg = vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
+	uint32_t msh_memsize = vcn_msh3trg_get_memsize();
+	vcn_msh3trg_t *msh3trg = alloca(msh_memsize);
+	vcn_msh3trg_init(msh3trg);
+	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
 
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 	
 	CU_ASSERT(9 == msh3trg->N_vertices);
 	CU_ASSERT(15 == msh3trg->N_edges);
 	CU_ASSERT(7 == msh3trg->N_triangles);
-
-	vcn_msh3trg_destroy(msh3trg);
+	
+	vcn_msh3trg_finish(msh3trg);
 }

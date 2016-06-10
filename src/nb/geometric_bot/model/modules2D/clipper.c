@@ -1135,7 +1135,10 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 
 static void delete_isolated_elements(vcn_model_t *model)
 {
-	vcn_mesh_t *mesh = vcn_mesh_create();
+	uint32_t mesh_memsize = vcn_mesh_get_memsize();
+	vcn_mesh_t *mesh = alloca(mesh_memsize);
+	vcn_mesh_init(mesh);
+
 	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	vcn_mesh_delete_isolated_segments(mesh);
@@ -1143,17 +1146,17 @@ static void delete_isolated_elements(vcn_model_t *model)
 	vcn_mesh_delete_isolated_vertices(mesh);
 
 	if (0 == vcn_mesh_get_N_trg(mesh)) {
-		vcn_mesh_destroy(mesh);
 		vcn_model_clear(model);
 	} else {
-		vcn_msh3trg_t* msh3trg =
-			vcn_mesh_get_msh3trg(mesh, false, true, 
-					     false, true, true);
-		vcn_mesh_destroy(mesh);
+		uint32_t msh_memsize = vcn_msh3trg_get_memsize();
+		vcn_msh3trg_t* msh3trg = alloca(msh_memsize);
+		vcn_msh3trg_init(msh3trg);
+		vcn_msh3trg_load_from_mesh(msh3trg, mesh);
 
 		vcn_model_generate_from_msh3trg(model, msh3trg);
-		vcn_msh3trg_destroy(msh3trg);
+		vcn_msh3trg_finish(msh3trg);
 	}
+	vcn_mesh_finish(mesh);
 }
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)

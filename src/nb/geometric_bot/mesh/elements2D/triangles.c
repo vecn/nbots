@@ -27,8 +27,7 @@ static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const mesh,
 static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const mesh,
 					       vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_and_enumerate_trg(vcn_mesh_t *mesh,
-						  vcn_msh3trg_t *msh3trg,
-						  bool include_neighbours);
+						  vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const mesh,
 					  vcn_msh3trg_t *msh3trg);
 static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const mesh,
@@ -270,43 +269,31 @@ vcn_graph_t* vcn_msh3trg_create_elem_graph
 	return graph;
 }
 
-vcn_msh3trg_t* vcn_mesh_get_msh3trg
-                 (const vcn_mesh_t *const mesh,
-		  bool include_edges,
-		  bool include_triangles,
-		  bool include_neighbours,
-		  bool include_input_vertices,
-		  bool include_input_segments)
+void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
+				const vcn_mesh_t *const mesh)
 {
-	vcn_msh3trg_t* msh3trg = vcn_msh3trg_create();
 	mesh_enumerate_vtx((vcn_mesh_t*)mesh);
 
 	mesh_2_msh3trg_cast_vertices(mesh, msh3trg);
 
-	if (include_edges)
-		mesh_2_msh3trg_cast_edges(mesh, msh3trg);
+	mesh_2_msh3trg_cast_edges(mesh, msh3trg);
 
-	if(include_triangles && nb_container_is_not_empty(mesh->ht_trg))
+	if (nb_container_is_not_empty(mesh->ht_trg)) {
 		mesh_2_msh3trg_cast_and_enumerate_trg((vcn_mesh_t*)mesh,
-						      msh3trg, 
-						      include_neighbours);
+						      msh3trg);
+  		mesh_2_msh3trg_cast_trg_neighbours(mesh, msh3trg);
+	}
 
+	mesh_2_msh3trg_cast_input_vtx(mesh, msh3trg);
 
-	if (include_input_vertices)
-		mesh_2_msh3trg_cast_input_vtx(mesh, msh3trg);
-
-	if (include_input_segments && mesh->N_input_sgm > 0)
+	if (mesh->N_input_sgm > 0)
 		mesh_2_msh3trg_cast_input_sgm(mesh, msh3trg);
-
-
-	/* Return data */
-	return msh3trg;
 }
 
-void vcn_mesh_trg2D_relabel(vcn_msh3trg_t* msh3trg,
+void vcn_msh3trg_relabel(vcn_msh3trg_t* msh3trg,
 			    uint32_t* (*labeling)(const vcn_graph_t *const))
 {
-
+	;/* PENDING */
 }
 
 void vcn_msh3trg_disable_single_point_connections
@@ -513,8 +500,7 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 
 static void mesh_2_msh3trg_cast_and_enumerate_trg
                                    (vcn_mesh_t * restrict mesh,
-				    vcn_msh3trg_t * restrict msh3trg,
-				    bool include_neighbours)
+				    vcn_msh3trg_t * restrict msh3trg)
 {
 	msh3trg->N_triangles = nb_container_get_length(mesh->ht_trg);
 	msh3trg->vertices_forming_triangles =
@@ -537,9 +523,6 @@ static void mesh_2_msh3trg_cast_and_enumerate_trg
 		i++;
 	}
 	nb_iterator_destroy(trg_iter);
-  
-	if (include_neighbours)
-		mesh_2_msh3trg_cast_trg_neighbours(mesh, msh3trg);
 }
 
 static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const restrict mesh,

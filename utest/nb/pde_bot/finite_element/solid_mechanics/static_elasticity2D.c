@@ -88,7 +88,9 @@ static void test_static_elasticity2D(void)
 		goto CLEANUP_INPUT;
 
 	/* Mesh domain */
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	uint32_t mesh_memsize = vcn_mesh_get_memsize();
+	vcn_mesh_t* mesh = alloca(mesh_memsize);
+	vcn_mesh_init(mesh);
 	vcn_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     100);
@@ -97,9 +99,12 @@ static void test_static_elasticity2D(void)
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	vcn_msh3trg_t* msh3trg = 
-		vcn_mesh_get_msh3trg(mesh, true, true, true, true, true);
-	vcn_mesh_destroy(mesh);
+	uint32_t msh_memsize = vcn_msh3trg_get_memsize();
+	vcn_msh3trg_t *msh3trg = alloca(msh_memsize);
+	vcn_msh3trg_init(msh3trg);
+	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
+
+	vcn_mesh_finish(mesh);
 
 	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
@@ -129,7 +134,7 @@ static void test_static_elasticity2D(void)
 	
 	free(total_disp);
 CLEANUP_FEM:
-	vcn_msh3trg_destroy(msh3trg);
+	vcn_msh3trg_finish(msh3trg);
 	vcn_fem_elem_destroy(elemtype);
 	results_finish(&results);
 CLEANUP_INPUT:

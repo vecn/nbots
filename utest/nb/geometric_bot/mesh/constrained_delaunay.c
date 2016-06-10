@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
@@ -303,8 +304,11 @@ static void input_clear(input_t *input)
 
 static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
 {
-	vcn_msh3trg_t *msh3trg = vcn_mesh_get_msh3trg(mesh, true, true,
-						      false, false, false);
+	uint32_t memsize = vcn_msh3trg_get_memsize();
+	vcn_msh3trg_t *msh3trg = alloca(memsize);
+	vcn_msh3trg_init(msh3trg);
+	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
+
 	bool all_delaunay = true;
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
 		uint32_t id1 = vcn_msh3trg_get_1st_vtx_id_of_trg(msh3trg, i);
@@ -323,7 +327,7 @@ static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
 			}
 		}
 	}
-	vcn_msh3trg_destroy(msh3trg);
+	vcn_msh3trg_finish(msh3trg);
 	return all_delaunay;
 }
 

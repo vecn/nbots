@@ -49,34 +49,12 @@ vcn_graph_t* vcn_msh3trg_create_vtx_graph(const vcn_msh3trg_t *const msh3trg);
  */
 vcn_graph_t* vcn_msh3trg_create_elem_graph(const vcn_msh3trg_t *const msh3trg);
 
-/**
- * @brief Create a read-only triangular mesh from the write-only mesh.
- * @param[in] include_triangles Include or exclude the connectivity 
- * matrix from the output.
- * @param[in] include_input_segments Include or exclude the correspondence-
- * table relating input segments ids with mesh edges ids.
- * @param[in] include_input_vertices Include or exclude the correspondence-
- * table relating input vertices ids with mesh vertices ids.
- * @n<b>WARNING</b>: If a vertex was deleted by the function
- * vcn_mesh_delete_isolated_vertices(), the corresponding id will be
- * out of bounds.
- * @param[in] include_neighbours Include or exclude the triangle's neighbours
- * relation from the output.
- * @param[in] labeling Labeling function. This function computes the
- * best permutation of labels for a particular operation, such as LU decomposition
- * or to minimize the band-width of the corresponding sparse-matrix.
- * NULL to generate an arbitrary labeling.
- * @return The triangular mesh if success, NULL if something goes wrong.
- */
-vcn_msh3trg_t* vcn_mesh_get_msh3trg(const vcn_mesh_t *const mesh,
-				    bool include_edges,
-				    bool include_triangles,
-				    bool include_neighbours,
-				    bool include_input_vertices,
-				    bool include_input_segments);
 
-void vcn_mesh_trg2D_relabel(vcn_msh3trg_t* msh3trg,
-			    uint32_t* (*labeling)(const vcn_graph_t *const));
+void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
+				const vcn_mesh_t *const mesh);
+
+void vcn_msh3trg_relabel(vcn_msh3trg_t* msh3trg,
+			 uint32_t* (*labeling)(const vcn_graph_t *const));
 
 /**
  * @brief Disable the elements sharing single point connections.
