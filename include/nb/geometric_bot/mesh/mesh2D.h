@@ -99,6 +99,9 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh);
 void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
 				  const vcn_model_t *const model);
 
+void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
+				      const vcn_model_t *const  model);
+
 /**
  * @brief Check if the vertex lies inside the mesh.
  * @param[in] mesh Discretization of the domain.

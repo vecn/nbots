@@ -234,10 +234,7 @@ void vcn_model_get_combination(vcn_model_t *model,
 
 	/* Get holes */
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	uint32_t N_centroids;
 	double* centroids = vcn_mesh_get_centroids_of_subareas(mesh, &N_centroids);
@@ -248,16 +245,10 @@ void vcn_model_get_combination(vcn_model_t *model,
 		memset(mask_centroids, 0, N_centroids);
 
 		vcn_mesh_t* mesh1 = vcn_mesh_create();
-		vcn_mesh_set_size_constraint(mesh1,
-					     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-					     model1->N);
-		vcn_mesh_generate_from_model(mesh1, model1);
+		vcn_mesh_get_simplest_from_model(mesh1, model1);
 
 		vcn_mesh_t* mesh2 = vcn_mesh_create();
-		vcn_mesh_set_size_constraint(mesh2,
-					     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-					     model2->N);
-		vcn_mesh_generate_from_model(mesh2, model2);
+		vcn_mesh_get_simplest_from_model(mesh2, model2);
 
 		model->H = 0;
 		for (uint32_t i = 0; i < N_centroids; i++) {
@@ -1078,10 +1069,7 @@ static double* get_centroids_of_model_subareas(const vcn_model_t *model,
 						uint32_t *N_centroids)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 	double* centroids = 
 		vcn_mesh_get_centroids_of_subareas(mesh, N_centroids);
 	vcn_mesh_destroy(mesh);
@@ -1096,16 +1084,10 @@ static uint32_t mask_intersection_holes(const vcn_model_t *model1,
 {
 	uint32_t N_new_holes = 0;
 	vcn_mesh_t* mesh1 = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh1,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model1->N);
-	vcn_mesh_generate_from_model(mesh1, model1);
+	vcn_mesh_get_simplest_from_model(mesh1, model1);
 
 	vcn_mesh_t* mesh2 = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh2,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model2->N);
-	vcn_mesh_generate_from_model(mesh2, model2);
+	vcn_mesh_get_simplest_from_model(mesh2, model2);
  
 	for (uint32_t i = 0; i < N_centroids; i++) {
 		if (!vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) ||
@@ -1154,10 +1136,7 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 static void delete_isolated_elements(vcn_model_t *model)
 {
 	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	vcn_mesh_delete_isolated_segments(mesh);
 	vcn_mesh_delete_internal_input_segments(mesh);
@@ -1280,16 +1259,10 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 {
 	uint32_t N_new_holes = 0;
 	vcn_mesh_t* mesh1 = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh1,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model1->N);
-	vcn_mesh_generate_from_model(mesh1, model1);
+	vcn_mesh_get_simplest_from_model(mesh1, model1);
 
 	vcn_mesh_t* mesh2 = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh2,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model2->N);
-	vcn_mesh_generate_from_model(mesh2, model2);
+	vcn_mesh_get_simplest_from_model(mesh2, model2);
 
 	for (uint32_t i = 0; i < N_centroids; i++) {
 		if (vcn_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) &&
@@ -1352,10 +1325,7 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 	uint32_t N_new_holes = 0;
 
 	vcn_mesh_t* mesh2 = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh2,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model2->N);
-	vcn_mesh_generate_from_model(mesh2, model2);
+	vcn_mesh_get_simplest_from_model(mesh2, model2);
 	for (uint32_t i = 0; i < N_centroids; i++) {
 		if (vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
 			mask_centroids[i] = 1;

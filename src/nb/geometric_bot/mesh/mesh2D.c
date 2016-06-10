@@ -745,16 +745,21 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 }
 
 void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
-				  const vcn_model_t *const restrict model)
+				  const vcn_model_t *const model)
+{
+	vcn_mesh_get_simplest_from_model(mesh, model);
+
+	if (size_constraints_allow_refine(mesh))
+		vcn_mesh_refine(mesh);
+}
+
+void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
+				      const vcn_model_t *const  model)
 {
 	vcn_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
 					  model->M, model->edge);
-
 	delete_trg_in_holes(mesh, model);
 	remove_concavities_triangles(mesh);
-	
-	if (size_constraints_allow_refine(mesh))
-		vcn_mesh_refine(mesh);
 }
 
 static void delete_trg_in_holes(vcn_mesh_t *mesh,

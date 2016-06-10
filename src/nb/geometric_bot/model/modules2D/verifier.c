@@ -253,10 +253,7 @@ bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	bool is_unclosed = vcn_mesh_is_empty(mesh);
 
@@ -268,10 +265,7 @@ bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 bool vcn_model_is_continuum(const vcn_model_t *model)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	bool is_continuum = vcn_mesh_is_continuum(mesh);
 
@@ -283,10 +277,7 @@ bool vcn_model_is_continuum(const vcn_model_t *model)
 uint16_t vcn_model_get_N_subareas(const vcn_model_t *model)
 {
 	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     model->N);
-	vcn_mesh_generate_from_model(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	uint16_t N_subareas = vcn_mesh_get_N_subareas(mesh);
 
