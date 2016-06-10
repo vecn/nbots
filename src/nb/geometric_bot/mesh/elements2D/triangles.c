@@ -34,10 +34,29 @@ static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const mesh,
 static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const mesh,
 					  vcn_msh3trg_t * msh3trg);
 
-inline vcn_msh3trg_t* vcn_msh3trg_create(void)
+
+uint32_t vcn_msh3trg_get_memsize(void)
 {
-	vcn_msh3trg_t* delaunay = calloc(1, sizeof(*delaunay));
-	return delaunay;
+	return sizeof(vcn_msh3trg_t);
+}
+
+void vcn_msh3trg_init(vcn_msh3trg_t *msh3trg)
+{
+	uint32_t memsize = vcn_msh3trg_get_memsize();
+	memset(msh3trg, 0, memsize);
+}
+
+void vcn_msh3trg_finish(vcn_msh3trg_t *msh3trg)
+{
+	vcn_msh3trg_clear(msh3trg);
+}
+
+vcn_msh3trg_t* vcn_msh3trg_create(void)
+{
+	uint32_t memsize = vcn_msh3trg_get_memsize();
+	vcn_msh3trg_t* msh3trg = malloc(memsize);
+	vcn_msh3trg_init(msh3trg);
+	return msh3trg;
 }
 
 vcn_msh3trg_t* vcn_msh3trg_clone(vcn_msh3trg_t* msh3trg)
@@ -128,7 +147,7 @@ void vcn_msh3trg_clear(vcn_msh3trg_t* msh3trg)
 
 void vcn_msh3trg_destroy(vcn_msh3trg_t* msh3trg)
 {
-	vcn_msh3trg_clear(msh3trg);
+	vcn_msh3trg_finish(msh3trg);
 	free(msh3trg);
 }
 

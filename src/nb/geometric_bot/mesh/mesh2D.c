@@ -64,9 +64,14 @@ static int compare_sgm_by_dist_and_by_vtx_pointer
 static uint32_t hash_key_vtx(const void *const  vertex);
 static uint32_t hash_key_trg(const void *const  triangle);
 
-vcn_mesh_t* vcn_mesh_create(void)
+uint32_t vcn_mesh_get_memsize(void)
 {
-	vcn_mesh_t *mesh = calloc(1, sizeof(*mesh));
+	return sizeof(vcn_mesh_t);
+}
+
+void vcn_mesh_init(vcn_mesh_t *mesh)
+{
+	memset(mesh, 0, vcn_mesh_get_memsize());
 	mesh->ug_vtx = vcn_bins2D_create(1.0);
 	vcn_bins2D_set_destroyer(mesh->ug_vtx, mvtx_destroy);
 
@@ -85,6 +90,21 @@ vcn_mesh_t* vcn_mesh_create(void)
 	init_tasks(mesh);
 
 	mesh->refiner_type = NB_MESH_REFINE_RUPPERT;
+}
+
+void vcn_mesh_finish(vcn_mesh_t *mesh)
+{
+	vcn_mesh_clear(mesh);
+	vcn_bins2D_destroy(mesh->ug_vtx);
+	nb_container_destroy(mesh->ht_trg);
+	nb_container_destroy(mesh->ht_edge);
+}
+
+vcn_mesh_t* vcn_mesh_create(void)
+{
+	uint32_t memsize = vcn_mesh_get_memsize();
+	vcn_mesh_t *mesh = malloc(memsize);
+	vcn_mesh_init(mesh);
 	return mesh;
 }
 
@@ -124,10 +144,7 @@ void vcn_mesh_clear(vcn_mesh_t *mesh)
 
 void vcn_mesh_destroy(vcn_mesh_t* mesh)
 {
-	vcn_mesh_clear(mesh);
-	vcn_bins2D_destroy(mesh->ug_vtx);
-	nb_container_destroy(mesh->ht_trg);
-	nb_container_destroy(mesh->ht_edge);
+	vcn_mesh_finish(mesh);
 	free(mesh);
 }
 

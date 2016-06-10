@@ -45,6 +45,10 @@ enum {
 typedef struct vcn_mesh_s vcn_mesh_t; /* DEPRECATED */
 typedef struct vcn_mesh_s nb_mesh_t;
 
+uint32_t vcn_mesh_get_memsize(void);
+void vcn_mesh_init(vcn_mesh_t *mesh);
+void vcn_mesh_finish(vcn_mesh_t *mesh);
+
 vcn_mesh_t* vcn_mesh_create(void);
 void vcn_mesh_clear(vcn_mesh_t* mesh);
 void vcn_mesh_destroy(vcn_mesh_t* mesh);

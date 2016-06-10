@@ -7,10 +7,10 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
 
-/**
- * @brief Create an empty structure to store triangulations.
- * @return The empty structure.
- */
+uint32_t vcn_msh3trg_get_memsize(void);
+void vcn_msh3trg_init(vcn_msh3trg_t *msh3trg);
+void vcn_msh3trg_finish(vcn_msh3trg_t *msh3trg);
+
 vcn_msh3trg_t* vcn_msh3trg_create(void);
 
 /**
