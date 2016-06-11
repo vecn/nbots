@@ -9,80 +9,79 @@
 #include "nb/graphics_bot.h"
 #include "nb/geometric_bot.h"
 
-static void draw_edges(void *draw_ptr, const camera_t *cam,
+static void draw_edges(nb_graphics_context_t *g,
 		       const vcn_model_t *const model);
-static void draw_vertices(void *draw_ptr, const camera_t *cam,
+static void draw_vertices(nb_graphics_context_t *g,
 			  const vcn_model_t *const model);
-static void draw_holes(void *draw_ptr, const camera_t *cam,
+static void draw_holes(nb_graphics_context_t *g,
 		       const vcn_model_t *const model);
-static void draw_model(void *draw_ptr, int width, int height,
+static void draw_model(nb_graphics_context_t *g, int width, int height,
 		       const void *const model_ptr);
 
-static void draw_edges(void *draw_ptr, const camera_t *cam,
+static void draw_edges(nb_graphics_context_t *g,
 		       const vcn_model_t *const model)
 {
-	nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.0, 0.8);
-	nb_drawing_set_line_width(draw_ptr, 1.0);
+	nb_graphics_set_source(g, NB_CHARTREUSE);
+	nb_graphics_set_line_width(g, 1.0);
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id1 = model->edge[i * 2];
 		uint32_t id2 = model->edge[i*2+1];
-		nb_drawing_move_to(draw_ptr, cam,
-				   model->vertex[id1 * 2],
-				   model->vertex[id1*2+1]);
-		nb_drawing_line_to(draw_ptr, cam,
-				   model->vertex[id2 * 2],
-				   model->vertex[id2*2+1]);
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_move_to(g,
+				    model->vertex[id1 * 2],
+				    model->vertex[id1*2+1]);
+		nb_graphics_line_to(g,
+				    model->vertex[id2 * 2],
+				    model->vertex[id2*2+1]);
+		nb_graphics_stroke(g);
 	}
 }
 
-static void draw_vertices(void *draw_ptr, const camera_t *cam,
+static void draw_vertices(nb_graphics_context_t *g,
 			  const vcn_model_t *const model)
 {
 	for (uint32_t i = 0; i < model->N; i++) {
-		nb_drawing_set_source_rgb(draw_ptr, 0.0, 1.0, 0.4);
+		nb_graphics_set_source(g, NB_AQUAMARIN);
 
-		nb_drawing_move_to(draw_ptr, cam,
-				   model->vertex[i * 2],
-				   model->vertex[i*2+1]);
-		nb_drawing_set_circle(draw_ptr, cam,
+		nb_graphics_move_to(g,
+				    model->vertex[i * 2],
+				    model->vertex[i*2+1]);
+		nb_graphics_set_point(g,
 				      model->vertex[i * 2],
 				      model->vertex[i*2+1],
-				      3.0, true);
-		nb_drawing_fill(draw_ptr);
+				      6.0);
+		nb_graphics_fill(g);
 
-		/* Draw labels */
-		nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 0.0);
+		/* Draw id-labels */
+		nb_graphics_set_source(g, NB_BLACK);
 
-		/* Show id */
 		char str_id[5];
 		sprintf(str_id, "%i", i);
-		nb_drawing_set_font_type(draw_ptr, "Sans");
-		nb_drawing_set_font_size(draw_ptr, 9);
-		nb_drawing_move_to(draw_ptr, cam,
-				   model->vertex[i * 2],
-				   model->vertex[i*2+1]);
-		nb_drawing_show_text(draw_ptr, str_id);
+		nb_graphics_set_font_type(g, "Sans");
+		nb_graphics_set_font_size(g, 9);
+		nb_graphics_move_to(g,
+				    model->vertex[i * 2],
+				    model->vertex[i*2+1]);
+		nb_graphics_show_text(g, str_id);
 	}
 }
 
-static void draw_holes(void *draw_ptr, const camera_t *cam,
+static void draw_holes(nb_graphics_context_t *g,
 		       const vcn_model_t *const model)
 {
-	nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 1.0);
+	nb_graphics_set_source_rgb(g, NB_BLUE);
 	for (uint32_t i = 0; i < model->H; i++) {
-		nb_drawing_move_to(draw_ptr, cam,
-				   model->holes[i * 2],
-				   model->holes[i*2+1]);
-		nb_drawing_set_circle(draw_ptr, cam,
+		nb_graphics_move_to(g,
+				    model->holes[i * 2],
+				    model->holes[i*2+1]);
+		nb_graphics_set_point(g,
 				      model->holes[i * 2],
 				      model->holes[i*2+1], 
-				      3.0, true);
-		nb_drawing_fill(draw_ptr);
+				      6.0);
+		nb_graphics_fill(g);
 	}
 }
 
-static void draw_model(void *draw_ptr, int width, int height,
+static void draw_model(nb_graphics_context_t *g, int width, int height,
 		       const void *const model_ptr)
 {
 	const vcn_model_t *const model = model_ptr;
@@ -97,12 +96,13 @@ static void draw_model(void *draw_ptr, int width, int height,
 				       vcn_utils2D_get_y_from_darray,
 				       box);
 
-	camera_t cam;
-	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
+	nb_graphics_enable_camera(g);
+	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_cam_fit_box(cam, box, width, height);
 
-	draw_edges(draw_ptr, &cam, model);
-	draw_vertices(draw_ptr, &cam, model);
-	draw_holes(draw_ptr, &cam, model);
+	draw_edges(g, model);
+	draw_vertices(g, model);
+	draw_holes(g, model);
 	
 EXIT:
 	return;
@@ -112,12 +112,12 @@ void vcn_model_export_png(const vcn_model_t *const model,
 			  const char* filename,
 			  int width, int height)
 {
-	nb_drawing_export_png(filename, width, height, draw_model, model);
+	nb_graphics_export_png(filename, width, height, draw_model, model);
 }
 
 void vcn_model_export_eps(const vcn_model_t *const model,
 			  const char* filename,
 			  int width, int height) 
 {
-	nb_drawing_export_eps(filename, width, height, draw_model, model);
+	nb_graphics_export_eps(filename, width, height, draw_model, model);
 }

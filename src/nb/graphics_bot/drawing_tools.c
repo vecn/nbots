@@ -11,6 +11,12 @@
 #include "drawing_tools/eps/eps_drawing.h";
 #include "drawing_tools/asy/asy_drawing.h";
 
+#define _SET_RGB(gctx,r,g,b)				\
+	do {						\
+		(gctx)->set_source_rgb((gctx)->ctx,	\
+				       (r), (g), (b));	\
+	} while(0)
+
 enum {
 	PIX, EPS, ASY, UNKNOWN;
 };
@@ -327,25 +333,64 @@ void nb_graphics_set_line_width(nb_graphics_context_t *g, double w)
 void nb_graphics_set_source(nb_graphics_context_t *g,
 			    nb_graphics_color_t color)
 {
-	uint8_t r, g, b;
 	switch(color) {
 	case NB_BLACK:
-		r = 0; g = 0; b = 0;
+		_SET_RGB(g, 0, 0, 0);
 		break;
 	case NB_WHITE:
-		r = 255; g = 255; b = 255;
+		_SET_RGB(g, 255, 255, 255);
+		break;
+	case NB_GRAY:
+		_SET_RGB(g, 128, 128, 128);
+		break;
+	case NB_LIGHT_GRAY:
+		_SET_RGB(g, 200, 200, 200);
+		break;
+	case NB_DARK_GRAY:
+		_SET_RGB(g, 50, 50, 50);
 		break;
 	case NB_RED:
-		r = 255; g = 255; b = 255;
+		_SET_RGB(g, 255, 0, 0);
 		break;
-		/* AQUI VOY */
+	case NB_GREEN:
+		_SET_RGB(g, 0, 255, 0);
+		break;
+	case NB_BLUE:
+		_SET_RGB(g, 0, 0, 255);
+		break;
+	case NB_YELLOW:
+		_SET_RGB(g, 255, 255, 0);
+		break;
+	case NB_CYAN:
+		_SET_RGB(g, 0, 255, 255);
+		break;
+	case NB_MAGENTA:
+		_SET_RGB(g, 255, 0, 255);
+		break;
+	case NB_ORANGE:
+		_SET_RGB(g, 255, 128, 0);
+		break;
+	case NB_AQUAMARIN:
+		_SET_RGB(g, 0, 255, 128);
+		break;
+	case NB_VIOLET:
+		_SET_RGB(g, 128, 0, 255);
+		break;
+	case NB_ROSE:
+		_SET_RGB(g, 255, 0, 128);
+		break;
+	case NB_CHARTREUSE:
+		_SET_RGB(g, 128, 255, 0);
+		break;
+	case NB_AZURE:
+		_SET_RGB(g, 0, 128, 255);
+		break;
 	default:
 		r = 0;
 		g = 0;
 		b = 0;
 		break;
 	}
-	g->set_source_rgb(g->ctx, r, g, b);
 }
 
 void nb_graphics_set_source_rgb(nb_graphics_context_t *g,
