@@ -65,7 +65,7 @@ void vcn_image_init_white(vcn_image_t *img,
 	img->height = height;
 	img->comp_x_pixel;
 	uint32_t memsize = width * height * comp_x_pixel;
-	img->pixels = calloc(memsize);
+	img->pixels = calloc(memsize, 1);
 }
 
 void vcn_image_read(vcn_image_t *img, const char* filename)
@@ -112,19 +112,20 @@ void vcn_image_resize(const vcn_image_t *input_img,
 {
 	output_img->width = out_width;
 	output_img->height = out_height;
-	output_img->comp_x_pixel = img->comp_x_pixel;
-	uint32_t memsize = img->comp_x_pixel * out_width * out_height;
+	output_img->comp_x_pixel = input_img->comp_x_pixel;
+	uint32_t memsize = input_img->comp_x_pixel * out_width * out_height;
 	output_img->pixels = malloc(memsize);
 
-	int stride_in_bytes = img->width * img->comp_x_pixel;
-	int output_stride_in_bytes = out_width * img->comp_x_pixel;
-	int status = stbir_resize_uint8(img->pixels,
-					img->width, img->height,
+	int stride_in_bytes = input_img->width * input_img->comp_x_pixel;
+	int output_stride_in_bytes = out_width * input_img->comp_x_pixel;
+	int status = stbir_resize_uint8(input_img->pixels,
+					input_img->width,
+					input_img->height,
 					stride_in_bytes,
 					output_img->pixels,
 					out_width, out_height,
 					output_stride_in_bytes,
-					img->comp_x_pixel);
+					input_img->comp_x_pixel);
 	assert(0 != status);
 }
 
@@ -143,22 +144,23 @@ void vcn_image_write_png(const vcn_image_t *img, const char *filename)
 void vcn_image_render_ascii(const vcn_image_t *img, const char *filename,
 			    int pixels_x_char)
 {
+	;
 	/* LUMA conversion: TEMPORAL */
   
 	/* Long gray scale */
-	"$@B%8&WM#*";
-	"oahkbdpqwm";
-	"ZO0QLCJUYX";
-	"zcvunxrjft";
-	"/\|()1{}[]";
-	"?-_+~<>i!l";
-	"I;:,\"^`'. ";
+	//"$@B%8&WM#*";
+	//"oahkbdpqwm";
+	//"ZO0QLCJUYX";
+	//"zcvunxrjft";
+	//"/\|()1{}[]";
+	//"?-_+~<>i!l";
+	//"I;:,\"^`'. ";
 
 	/* Short gray scale */
-	"@%#*+=:-. ";
+	//"@%#*+=:-. ";
 
 	/* Faltan: */
-	"egsyADEFGH";
-	"KNPRSTV234";
-	"5679=";
+	//"egsyADEFGH";
+	//"KNPRSTV234";
+	//"5679=";
 }

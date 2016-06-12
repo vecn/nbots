@@ -35,7 +35,7 @@ static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 				       vcn_utils2D_get_y_from_darray,
 				       box);
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	draw_polygons(g, poly);

@@ -7,9 +7,11 @@
 #include "nb/math_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
-#include "drawing_tools/pix/pix_drawing.h";
-#include "drawing_tools/eps/eps_drawing.h";
-#include "drawing_tools/asy/asy_drawing.h";
+#include "drawing_tools/pix/pix_drawing.h"
+#include "drawing_tools/eps/eps_drawing.h"
+#include "drawing_tools/asy/asy_drawing.h"
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
 
 #define _SET_RGB(gctx,r,g,b)				\
 	do {						\
@@ -18,23 +20,24 @@
 	} while(0)
 
 enum {
-	PIX, EPS, ASY, UNKNOWN;
+	PIX, EPS, ASY, UNKNOWN
 };
 
-static int get_format(const char *filename);
-static const char *get_filename_ext(const char *filename);
-static void set_pix_tools(nb_graphics_context_t *g);
-static void set_eps_tools(nb_graphics_context_t *g);
-static void set_asy_tools(nb_graphics_context_t *g);
-static void init_gctx(nb_graphics_context_t *g, int width, int height);
-static void write_gctx(nb_graphics_context_t *g, const char *filename);
-static void clear_gctx(nb_graphics_context_t *g);
-static void get_camera_view(const nb_graphics_context_t *g,
-			    double cam_vtx[2],
-			    double x, double y);
+struct nb_graphics_palette_s {
+	/* The palette defines a serie of RGB colors to
+	 * colorize values in [0,1]
+	 *
+	 *  c1    c2       c3         c4  <- RGB colors
+	 *   |_____|________|__________|
+	 *   0    0.25     0.57        1  <- Tics
+	 */
+	uint8_t ntics;   /* Number of tics */
+	float* tics;   /* Sorted tics in [0,1] */
+	uint8_t* rgb;    /* RGB Colors definition */
+};
 
 struct nb_graphics_context_s {
-	const nb_graphics_camera_t cam;
+	nb_graphics_camera_t cam;
 	bool using_cam;
 	void *ctx;
 	void* (*create_context)(int width, int height);
@@ -53,12 +56,12 @@ struct nb_graphics_context_s {
 	void (*set_source_rgb)(void *ctx, uint8_t r, uint8_t g, uint8_t b);
 	void (*set_source_rgba)(void *ctx, uint8_t r, uint8_t g,
 				uint8_t b, uint8_t a);
-	void (*set_source_grad)(nb_graphics_context_t *g,
+	void (*set_source_grad)(void *ctx,
 				nb_graphics_grad_t grad,
 				double x1, double y1,
 				double x2, double y2,
-				nb_palette_t *pat);
-	void (*set_source_trg)(nb_graphics_context_t *g,
+				nb_graphics_palette_t *pal);
+	void (*set_source_trg)(void *ctx,
 			       double x1, double y1,
 			       double x2, double y2,
 			       double x3, double y3,
@@ -74,6 +77,40 @@ struct nb_graphics_context_s {
 	void (*get_text_attr)(void *ctx, const char *label,
 			      nb_text_attr_t *attr);
 };
+
+static int get_format(const char *filename);
+static const char *get_filename_ext(const char *filename);
+static void to_lowercase(char *str);
+static void full_pipeline(const char* filename, int width, int height,
+			  void (*set_tools)(nb_graphics_context_t *g),
+			  void (*draw)(nb_graphics_context_t *g, int w, int h,
+				       const void *const data),
+			  const void *const data);
+static void set_pix_tools(nb_graphics_context_t *g);
+static void set_eps_tools(nb_graphics_context_t *g);
+static void set_asy_tools(nb_graphics_context_t *g);
+static void init_gctx(nb_graphics_context_t *g, int width, int height);
+static void write_gctx(nb_graphics_context_t *g, const char *filename);
+static void clear_gctx(nb_graphics_context_t *g);
+static void get_camera_view(const nb_graphics_context_t *g,
+			    double cam_vtx[2],
+			    double x, double y);
+
+static nb_graphics_palette_t* palette_get_rainbow(void);
+static nb_graphics_palette_t* palette_get_sunset(void);
+static nb_graphics_palette_t* palette_get_french(void);
+
+static void palette_draw_rectangle(nb_graphics_context_t *g,
+				   const nb_graphics_palette_t *const palette,
+				   float x, float y, float w, float h,
+				   float border);
+static void palette_draw_zero_mark(nb_graphics_context_t *g,
+				   const nb_graphics_palette_t *const palette,
+				   float x, float y, float w, float h,
+				   double min_v, double max_v);
+static void palette_draw_labels(nb_graphics_context_t *g,
+				float font_size, float x, float y,
+				float w, float h, double min_v, double max_v);
 
 void nb_graphics_export(const char* filename, int width, int height,
 			void (*draw)(nb_graphics_context_t *g, int w, int h,
@@ -103,12 +140,12 @@ static int get_format(const char *filename)
 	const char *raw_ext = get_filename_ext(filename);
 	char ext[10];
 	strcpy(ext, raw_ext);
-	tolower(ext);
+	to_lowercase(ext);
 	int format;
 	if (0 == strcmp(ext, "png"))
 		format = PIX;
 	else if (0 == strcmp(ext, "eps"))
-		format = EPS
+		format = EPS;
 	else if (0 == strcmp(ext, "asy"))
 		format = ASY;
 	else
@@ -123,6 +160,15 @@ static const char *get_filename_ext(const char *filename)
 		return "";
 	else
 		return dot + 1;
+}
+
+static void to_lowercase(char *str)
+{
+	int i = 0;
+	while (str[i] != '\0' && str[i] != '\n') {
+		str[i] = tolower(str[i]);
+		i++;
+	}
 }
 
 static void full_pipeline(const char* filename, int width, int height,
@@ -152,11 +198,11 @@ static void set_pix_tools(nb_graphics_context_t *g)
 	g->set_circle = nb_graphics_pix_set_circle;
 	g->set_rectangle = nb_graphics_pix_set_rectangle;
 	g->close_path = nb_graphics_pix_close_path;
-	g->set_line_width = nb_graphics_pix_line_width;
-	g->set_source_rgb = nb_graphics_pix_source_rgb;
-	g->set_source_rgba = nb_graphics_pix_source_rgba;
-	g->set_source_grad = nb_graphics_pix_source_grad;
-	g->set_source_trg = nb_graphics_pix_source_trg;
+	g->set_line_width = nb_graphics_pix_set_line_width;
+	g->set_source_rgb = nb_graphics_pix_set_source_rgb;
+	g->set_source_rgba = nb_graphics_pix_set_source_rgba;
+	g->set_source_grad = nb_graphics_pix_set_source_grad;
+	g->set_source_trg = nb_graphics_pix_set_source_trg;
 	g->fill = nb_graphics_pix_fill;
 	g->fill_preserve = nb_graphics_pix_fill_preserve;
 	g->stroke = nb_graphics_pix_stroke;
@@ -177,11 +223,11 @@ static void set_eps_tools(nb_graphics_context_t *g)
 	g->set_circle = nb_graphics_eps_set_circle;
 	g->set_rectangle = nb_graphics_eps_set_rectangle;
 	g->close_path = nb_graphics_eps_close_path;
-	g->set_line_width = nb_graphics_eps_line_width;
-	g->set_source_rgb = nb_graphics_eps_source_rgb;
-	g->set_source_rgba = nb_graphics_eps_source_rgba;
-	g->set_source_grad = nb_graphics_eps_source_grad;
-	g->set_source_trg = nb_graphics_eps_source_trg;
+	g->set_line_width = nb_graphics_eps_set_line_width;
+	g->set_source_rgb = nb_graphics_eps_set_source_rgb;
+	g->set_source_rgba = nb_graphics_eps_set_source_rgba;
+	g->set_source_grad = nb_graphics_eps_set_source_grad;
+	g->set_source_trg = nb_graphics_eps_set_source_trg;
 	g->fill = nb_graphics_eps_fill;
 	g->fill_preserve = nb_graphics_eps_fill_preserve;
 	g->stroke = nb_graphics_eps_stroke;
@@ -202,11 +248,11 @@ static void set_asy_tools(nb_graphics_context_t *g)
 	g->set_circle = nb_graphics_asy_set_circle;
 	g->set_rectangle = nb_graphics_asy_set_rectangle;
 	g->close_path = nb_graphics_asy_close_path;
-	g->set_line_width = nb_graphics_asy_line_width;
-	g->set_source_rgb = nb_graphics_asy_source_rgb;
-	g->set_source_rgba = nb_graphics_asy_source_rgba;
-	g->set_source_grad = nb_graphics_asy_source_grad;
-	g->set_source_trg = nb_graphics_asy_source_trg;
+	g->set_line_width = nb_graphics_asy_set_line_width;
+	g->set_source_rgb = nb_graphics_asy_set_source_rgb;
+	g->set_source_rgba = nb_graphics_asy_set_source_rgba;
+	g->set_source_grad = nb_graphics_asy_set_source_grad;
+	g->set_source_trg = nb_graphics_asy_set_source_trg;
 	g->fill = nb_graphics_asy_fill;
 	g->fill_preserve = nb_graphics_asy_fill_preserve;
 	g->stroke = nb_graphics_asy_stroke;
@@ -238,7 +284,7 @@ static void clear_gctx(nb_graphics_context_t *g)
 	g->ctx = NULL;
 }
 
-nb_graphics_camera_t* nb_graphics_get_camera(nb_graphics_context_t *g);
+nb_graphics_camera_t* nb_graphics_get_camera(nb_graphics_context_t *g)
 {
 	return &(g->cam);
 }
@@ -276,14 +322,14 @@ static void get_camera_view(const nb_graphics_context_t *g,
 void nb_graphics_move_to(nb_graphics_context_t *g, double x, double y)
 {
 	double c[2];
-	get_camera_view(g->cam, c, x, y);
+	get_camera_view(g, c, x, y);
 	g->move_to(g->ctx, c[0], c[1]);
 }
 
 void nb_graphics_line_to(nb_graphics_context_t *g, double x, double y)
 {
 	double c[2];
-	get_camera_view(g->cam, c, x, y);
+	get_camera_view(g, c, x, y);
 	g->line_to(g->ctx, c[0], c[1]);
 }
 
@@ -291,23 +337,23 @@ void nb_graphics_arc(nb_graphics_context_t *g, double x, double y, double r,
 		    double a0, double a1)
 {
 	double c[2];
-	get_camera_view(g->cam, c, x, y);
-	g->arc(g->ctx, c[0], c[1], r * cam->zoom, a0, a1);
+	get_camera_view(g, c, x, y);
+	g->arc(g->ctx, c[0], c[1], r * g->cam.zoom, a0, a1);
 }
 
 void nb_graphics_set_circle(nb_graphics_context_t *g, double x,
 			    double y, double r)
 {
 	double c[2];
-	get_camera_view(g->cam, c, x, y);
-	g->set_circle(g->ctx, c[0], c[1], r * cam->zoom);
+	get_camera_view(g, c, x, y);
+	g->set_circle(g->ctx, c[0], c[1], r * g->cam.zoom);
 }
 
 void nb_graphics_set_point(nb_graphics_context_t *g,
 			   double x, double y, double size)
 {
 	double c[2];
-	get_camera_view(g->cam, c, x, y);
+	get_camera_view(g, c, x, y);
 	g->set_circle(g->ctx, c[0], c[1], 0.5 * size);
 }
 
@@ -315,8 +361,8 @@ void nb_graphics_set_rectangle(nb_graphics_context_t *g, double x1, double y1,
 			       double x2, double y2)
 {
 	double c1[2], c2[2];
-	get_camera_view(g->cam, c1, x1, y1);
-	get_camera_view(g->cam, c2, x2, y2);
+	get_camera_view(g, c1, x1, y1);
+	get_camera_view(g, c2, x2, y2);
 	g->set_rectangle(g->ctx, c1[0], c1[1], c2[0], c2[1]);
 }
 
@@ -386,32 +432,30 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 		_SET_RGB(g, 0, 128, 255);
 		break;
 	default:
-		r = 0;
-		g = 0;
-		b = 0;
+		_SET_RGB(g, 0, 0, 0);
 		break;
 	}
 }
 
-void nb_graphics_set_source_rgb(nb_graphics_context_t *g,
+void nb_graphics_set_source_rgb(nb_graphics_context_t *gctx,
 				uint8_t r, uint8_t g, uint8_t b)
 {
-	g->set_source_rgb(g->ctx, r, g, b);
+	gctx->set_source_rgb(gctx->ctx, r, g, b);
 }
 
-void nb_graphics_set_source_rgba(nb_graphics_context_t *g,
+void nb_graphics_set_source_rgba(nb_graphics_context_t *gctx,
 				 uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-	g->set_source_rgb(g->ctx, r, g, b, a);
+	gctx->set_source_rgba(gctx->ctx, r, g, b, a);
 }
 
 void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
 				 double x1, double y1,
 				 double x2, double y2,
-				 nb_palette_t *pat)
+				 nb_graphics_palette_t *pal)
 {
-	g->set_source_grad(g->ctx, grad, x1, y1, x2, y2, pat);
+	g->set_source_grad(g->ctx, grad, x1, y1, x2, y2, pal);
 }
 
 void nb_graphics_set_source_trg(nb_graphics_context_t *g,
@@ -453,11 +497,251 @@ void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size)
 
 void nb_graphics_show_text(nb_graphics_context_t *g, const char *str)
 {
-	g->set_show_text(g->ctx, str);
+	g->show_text(g->ctx, str);
 }
 
 void nb_graphics_get_text_attr(nb_graphics_context_t *g, const char *label,
 			       nb_text_attr_t *attr)
 {
 	g->get_text_attr(g->ctx, label, attr);
+}
+void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
+			     double width, double height)
+{
+	cam->center[0] = (box[0] + box[2]) / 2.0;
+	cam->center[1] = (box[1] + box[3]) / 2.0;
+	cam->zoom = width / (box[2] - box[0]);
+	if (cam->zoom > height / (box[3] - box[1]))
+		cam->zoom = height / (box[3] - box[1]);
+	cam->zoom *= 0.9;
+	cam->width = width;
+	cam->height = height;
+}
+
+nb_graphics_palette_t* nb_graphics_palette_create(void)
+{
+	return calloc(1, sizeof(nb_graphics_palette_t));
+}
+
+nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_preset preset)
+{
+	if (NB_RAINBOW == preset)
+		return palette_get_rainbow();
+
+	if (NB_SUNSET == preset)
+		return palette_get_sunset();
+
+	if (NB_FRENCH == preset)
+		return palette_get_french();
+
+	return NULL;
+}
+
+void nb_graphics_palette_destroy(nb_graphics_palette_t* palette)
+{
+	if (palette->ntics > 0) {
+		free(palette->tics);
+		free(palette->rgb);
+	}
+	free(palette);
+}
+
+void nb_graphics_palette_clear(nb_graphics_palette_t *palette)
+{
+	if (palette->ntics > 0) {
+		free(palette->tics);
+		free(palette->rgb);
+		palette->tics = NULL;
+		palette->rgb = NULL;
+	}
+	palette->ntics = 0;
+}
+
+void nb_graphics_palette_add_colour(nb_graphics_palette_t* palette, float tic,
+			    uint8_t r, uint8_t g, uint8_t b)
+{
+	if (tic < 0)
+		tic = 0;
+	if (tic > 1)
+		tic = 1;
+	if (palette->ntics == 0) {
+		/* Insert first color */
+		palette->tics = (float*)malloc(sizeof(float));
+		palette->tics[0] = tic;
+		palette->rgb = (uint8_t*)malloc(3);
+		palette->rgb[0] = r;
+		palette->rgb[1] = g;
+		palette->rgb[2] = b;
+		palette->ntics = 1;
+	} else {
+		/* create a new space */
+		float* tics = (float*)malloc(palette->ntics*sizeof(float));
+		uint8_t* rgb = (uint8_t*)malloc(palette->ntics*3);
+		memcpy(tics, palette->tics, palette->ntics*sizeof(float));
+		memcpy(rgb, palette->rgb, palette->ntics*3);
+		free(palette->tics);
+		free(palette->rgb);
+		palette->ntics += 1;
+		palette->tics = (float*)malloc(palette->ntics*sizeof(float));
+		palette->rgb = (uint8_t*)malloc(palette->ntics*3);
+		memcpy(palette->tics, tics, (palette->ntics-1)*sizeof(float));
+		memcpy(palette->rgb, rgb, (palette->ntics-1)*3);
+		free(rgb);
+		free(tics);
+		/* Insert new color */
+		palette->tics[palette->ntics-1] = 2;
+		for (uint32_t i=0; i<palette->ntics; i++) {
+			if (tic < palette->tics[i]) {
+				float aux1 = tic;
+				tic = palette->tics[i];
+				palette->tics[i] = aux1;
+				uint8_t aux2[3] = {r, g, b};
+				r = palette->rgb[i * 3];
+				g = palette->rgb[i*3+1];
+				b = palette->rgb[i*3+2];
+				palette->rgb[i * 3] = aux2[0];
+				palette->rgb[i*3+1] = aux2[1];
+				palette->rgb[i*3+2] = aux2[2];
+			}
+		}
+	}
+}
+
+void nb_graphics_palette_get_colour(const nb_graphics_palette_t *const palette,
+			    float factor,
+			    uint8_t rgb[3])
+{
+	if (factor <= palette->tics[0]) {
+		memcpy(rgb, palette->rgb, 3);
+	} else if (factor >= palette->tics[palette->ntics-1]) {
+		memcpy(rgb, &(palette->rgb[(palette->ntics-1)*3]), 3);
+	} else {
+		uint32_t i = 1;
+		while(factor > palette->tics[i])
+			i++;
+		float w1 = (palette->tics[i]-factor)/(palette->tics[i]-palette->tics[i-1]);
+		float w2 = (factor-palette->tics[i-1])/(palette->tics[i]-palette->tics[i-1]);
+		rgb[0] = w1 * palette->rgb[(i-1) * 3] + w2 * palette->rgb[i * 3];
+		rgb[1] = w1 * palette->rgb[(i-1)*3+1] + w2 * palette->rgb[i*3+1];
+		rgb[2] = w1 * palette->rgb[(i-1)*3+2] + w2 * palette->rgb[i*3+2];
+	}
+}
+
+static nb_graphics_palette_t* palette_get_rainbow()
+{
+	nb_graphics_palette_t* palette = nb_graphics_palette_create();
+	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0, 128);
+	nb_graphics_palette_add_colour(palette, 0.10f,   0,   0, 255);
+	nb_graphics_palette_add_colour(palette, 0.20f,   0, 128, 255);
+	nb_graphics_palette_add_colour(palette, 0.37f,   0, 255, 255);
+	nb_graphics_palette_add_colour(palette, 0.50f,   0, 255,   0);
+	nb_graphics_palette_add_colour(palette, 0.63f, 255, 255,   0);
+	nb_graphics_palette_add_colour(palette, 0.80f, 255, 128,   0);
+	nb_graphics_palette_add_colour(palette, 0.90f, 255,   0,   0);
+	nb_graphics_palette_add_colour(palette, 1.00f, 100,   0,   0);
+	return palette;
+}
+
+static nb_graphics_palette_t* palette_get_sunset()
+{
+	nb_graphics_palette_t* palette = nb_graphics_palette_create();
+	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0,   0);
+	nb_graphics_palette_add_colour(palette, 0.15f,  20,   0, 100);
+	nb_graphics_palette_add_colour(palette, 0.30f, 100,   0, 200);
+	nb_graphics_palette_add_colour(palette, 0.80f, 220, 100,   0);
+	nb_graphics_palette_add_colour(palette, 1.00f, 255, 255,   0);
+	return palette;
+}
+
+static nb_graphics_palette_t* palette_get_french()
+{
+	nb_graphics_palette_t* palette = nb_graphics_palette_create();
+	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0, 150);
+	nb_graphics_palette_add_colour(palette, 0.20f,   0,   0, 255);
+	nb_graphics_palette_add_colour(palette, 0.30f, 180, 180, 255);
+	nb_graphics_palette_add_colour(palette, 0.50f, 255, 255, 255);
+	nb_graphics_palette_add_colour(palette, 0.70f, 255, 180, 180);
+	nb_graphics_palette_add_colour(palette, 0.80f, 255,   0,   0);
+	nb_graphics_palette_add_colour(palette, 1.00f, 150,   0,   0);
+	return palette;
+}
+
+void nb_graphics_draw_palette(nb_graphics_context_t *g,
+			      const nb_graphics_palette_t *const palette,
+			      float x, float y, float w, float h,
+			      float border, double min_v, double max_v)
+{
+	bool cam_status = nb_graphics_is_camera_enabled(g);
+	if (cam_status)
+		nb_graphics_disable_camera(g);
+
+	palette_draw_rectangle(g, palette, x, y, w, h, border);
+	palette_draw_zero_mark(g, palette, x, y, w, h, min_v, max_v);
+	palette_draw_labels(g, 10.0f, x, y, w, h, min_v, max_v);
+
+	if (cam_status)
+		nb_graphics_enable_camera(g);
+}
+
+static void palette_draw_rectangle(nb_graphics_context_t *g,
+				   const nb_graphics_palette_t *const palette,
+				   float x, float y, float w, float h,
+				   float border)
+{  
+	if (0.0f < border) {
+		nb_graphics_set_source(g, NB_BLACK);
+		nb_graphics_set_rectangle(g, x-border, y-border,
+					  w+2*border, h+2*border);
+		nb_graphics_fill(g);
+	}
+
+	nb_graphics_set_source_grad(g, NB_LINEAR, x, y+h, x, y, palette);
+	nb_graphics_set_rectangle(g, x, y, w, h);
+	nb_graphics_fill(g);
+}
+
+static void palette_draw_zero_mark(nb_graphics_context_t *g,
+				   const nb_graphics_palette_t *const palette,
+				   float x, float y, float w, float h,
+				   double min_v, double max_v)
+{
+	if (0 > min_v * max_v) {
+		float factor = - min_v / (max_v - min_v);
+		uint8_t rgb[3];
+		nb_graphics_palette_get_colour(palette, factor, rgb);
+	
+		rgb[0] = (rgb[0] + 128) % 256;
+		rgb[1] = (rgb[1] + 128) % 256;
+		rgb[2] = (rgb[2] + 128) % 256;
+
+		nb_graphics_set_source_rgb(g, rgb[0], rgb[1], rgb[2]);
+
+		double yzero = h * factor;
+		nb_graphics_move_to(g, x, y + h - yzero);
+		nb_graphics_line_to(g, x + w, y + h - yzero);
+		nb_graphics_stroke(g);
+	}
+}
+
+static void palette_draw_labels(nb_graphics_context_t *g,
+				float font_size, float x, float y,
+				float w, float h, double min_v, double max_v)
+{
+	nb_graphics_set_font_type(g, "Sans");
+	nb_graphics_set_font_size(g, font_size);
+	nb_text_attr_t text_attr;
+	nb_graphics_set_source(g, NB_BLACK);
+
+	char label[15];
+	int n_labels = MIN((int)(h / (font_size + 2)), 10);
+	double step_v = (max_v - min_v) / (n_labels - 1.0);
+	for (int i = 0; i < n_labels; i++) {
+		sprintf(label, "%.3e", max_v - i * step_v);
+		nb_graphics_get_text_attr(g, label, &text_attr);
+
+		nb_graphics_move_to(g, x + w + 5.0f, 
+				    y + text_attr.height/2.0 + 
+				    i * h / (n_labels-1.0));
+		nb_graphics_show_text(g, label);
+	}
 }

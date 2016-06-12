@@ -68,7 +68,7 @@ static void draw_vertices(nb_graphics_context_t *g,
 static void draw_holes(nb_graphics_context_t *g,
 		       const vcn_model_t *const model)
 {
-	nb_graphics_set_source_rgb(g, NB_BLUE);
+	nb_graphics_set_source(g, NB_BLUE);
 	for (uint32_t i = 0; i < model->H; i++) {
 		nb_graphics_move_to(g,
 				    model->holes[i * 2],
@@ -97,7 +97,7 @@ static void draw_model(nb_graphics_context_t *g, int width, int height,
 				       box);
 
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	draw_edges(g, model);

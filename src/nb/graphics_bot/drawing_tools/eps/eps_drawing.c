@@ -8,7 +8,7 @@
 
 void* nb_graphics_eps_create_context(int width, int height)
 {
-	return NULL;
+	return 0;
 }
 
 void nb_graphics_eps_destroy_context(void *ctx)
@@ -76,7 +76,7 @@ void nb_graphics_eps_set_source_grad(void *ctx,
 				     nb_graphics_grad_t grad,
 				     double x1, double y1,
 				     double x2, double y2,
-				     nb_palette_t *pat)
+				     nb_graphics_palette_t *pat)
 {
 	;
 }

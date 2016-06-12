@@ -16,30 +16,30 @@ typedef struct {
 	const double *results;
 } fem_data_t;
 
-static void draw_fem(void *draw_ptr, int width, int height,
+static void draw_fem(nb_graphics_context_t *g, int width, int height,
 		     const void *const data);
-static void set_pattern_patch(nb_pattern_t *pat, const camera_t *const cam,
-			      const double v1[2], const double v2[2],
-			      const double v3[2]);
-static void set_pattern_color(nb_pattern_t *pat,
-			      const vcn_palette_t *palette,
-			      const double *results,
-			      uint32_t min_id, uint32_t max_id,
-			      uint32_t id1, uint32_t id2, uint32_t id3);
+static void set_source_trg(nb_graphics_context_t *g,
+			   const double v1[2],
+			   const double v2[2],
+			   const double v3[2],
+			   const nb_graphics_palette_t *palette,
+			   const double *results,
+			   uint32_t min_id, uint32_t max_id,
+			   uint32_t id1, uint32_t id2, uint32_t id3);
 
-void nb_fem_save_png(const vcn_msh3trg_t *const msh3trg,
-		     const double *results,
-		     const char* filename,
-		     int width, int height)
+void nb_fem_save(const vcn_msh3trg_t *const msh3trg,
+		 const double *results,
+		 const char* filename,
+		 int width, int height)
 {
 	fem_data_t data;
 	data.mesh = msh3trg;
 	data.results = results;
-	nb_drawing_export_png(filename, width, height, draw_fem,
-			      &data);
+	nb_graphics_export(filename, width, height, draw_fem,
+			   &data);
 }
 
-static void draw_fem(void *draw_ptr, int width, int height,
+static void draw_fem(nb_graphics_context_t *g, int width, int height,
 		     const void *const data)
 {
 	const fem_data_t *const fem_data = data;
@@ -56,11 +56,13 @@ static void draw_fem(void *draw_ptr, int width, int height,
 		 vcn_utils2D_get_x_from_darray,
 		 vcn_utils2D_get_y_from_darray,
 		 box);
+	
+	nb_graphics_enable_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_cam_fit_box(cam, box, width, height);
 
-	camera_t cam;
-	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
-
-	vcn_palette_t *palette = vcn_palette_create_preset(NB_RAINBOW);
+	nb_graphics_palette_t *palette = 
+		nb_graphics_palette_create_preset(NB_RAINBOW);
 
 	uint32_t min_id;
 	uint32_t max_id;
@@ -68,7 +70,7 @@ static void draw_fem(void *draw_ptr, int width, int height,
 				  vcn_compare_double, &min_id, &max_id);
 
 	/* Draw triangles */
-	nb_drawing_set_line_width(draw_ptr, 0.5);
+	nb_graphics_set_line_width(g, 0.5);
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
 		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
 		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
@@ -76,78 +78,62 @@ static void draw_fem(void *draw_ptr, int width, int height,
 		double *v1 = &(msh3trg->vertices[n1*2]);
 		double *v2 = &(msh3trg->vertices[n2*2]);
 		double *v3 = &(msh3trg->vertices[n3*2]);
-		nb_drawing_move_to(draw_ptr, &cam, v1[0], v1[1]);
-		nb_drawing_line_to(draw_ptr, &cam, v2[0], v2[1]);
-		nb_drawing_line_to(draw_ptr, &cam, v3[0], v3[1]);
-		nb_drawing_close_path(draw_ptr);
+		nb_graphics_move_to(g, v1[0], v1[1]);
+		nb_graphics_line_to(g, v2[0], v2[1]);
+		nb_graphics_line_to(g, v3[0], v3[1]);
+		nb_graphics_close_path(g);
 
-		nb_pattern_t *pat = nb_pattern_create();
-		nb_pattern_begin_patch(pat);
-		set_pattern_patch(pat, &cam, v1, v2, v3);
-		set_pattern_color(pat, palette, results,
-				  min_id, max_id, n1, n2, n3);
-		nb_pattern_end_patch(pat);
-		nb_drawing_set_source(draw_ptr, pat);
-		nb_drawing_fill_preserve(draw_ptr);
-		nb_pattern_destroy(pat);
+		set_source_trg(g, v1, v2, v3, palette, results,
+			       min_id, max_id, n1, n2, n3);
+		nb_graphics_fill_preserve(g);
 
-		nb_drawing_set_source_rgb(draw_ptr, 0.0, 0.0, 0.0);
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_set_source(g, NB_BLACK);
+		nb_graphics_stroke(g);
 	}
 
 	/* Draw input segments */
-	nb_drawing_set_source_rgb(draw_ptr, 0.9, 0.0, 0.8);
+	nb_graphics_set_source_rgb(g, 0.9, 0.0, 0.8);
 
-	nb_drawing_set_line_width(draw_ptr, 1.0);
+	nb_graphics_set_line_width(g, 1.0);
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
 		if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
 			continue;
 
 		uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
 		double *v1 = &(msh3trg->vertices[n1*2]);
-		nb_drawing_move_to(draw_ptr, &cam, v1[0], v1[1]);
+		nb_graphics_move_to(g, v1[0], v1[1]);
 		for (uint32_t j = 0; j < msh3trg->N_subsgm_x_inputsgm[i]; j++) {
 			uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j+1];
 			double *v2 = &(msh3trg->vertices[n2*2]);
-			nb_drawing_line_to(draw_ptr, &cam, v2[0], v2[1]);
+			nb_graphics_line_to(g, v2[0], v2[1]);
 		}
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_stroke(g);
 	}
 }
 
-static void set_pattern_patch(nb_pattern_t *pat, const camera_t *const cam,
-			      const double v1[2], const double v2[2],
-			      const double v3[2])
-{
-	nb_pattern_move_to(pat, cam, v1[0], v1[1]);
-	nb_pattern_line_to(pat, cam, v2[0], v2[1]);
-	nb_pattern_line_to(pat, cam, v3[0], v3[1]);
-}
-
-static void set_pattern_color(nb_pattern_t *pat,
-			      const vcn_palette_t *palette,
-			      const double *results,
-			      uint32_t min_id, uint32_t max_id,
-			      uint32_t id1, uint32_t id2, uint32_t id3)
+static void set_source_trg(nb_graphics_context_t *g,
+			   const double v1[2],
+			   const double v2[2],
+			   const double v3[2],
+			   const nb_graphics_palette_t *palette,
+			   const double *results,
+			   uint32_t min_id, uint32_t max_id,
+			   uint32_t id1, uint32_t id2, uint32_t id3)
 {
 	double results_range = results[max_id] - results[min_id];
-	uint8_t rgb[3];
+	uint8_t c1[3], c2[3], c3[3];
 	double val = (results[id1] - results[min_id]) / results_range;
-	vcn_palette_get_colour(palette, val, rgb);
-	nb_pattern_set_corner_color_rgb(pat, 0, 
-					rgb[0]/255.0f, 
-					rgb[1]/255.0f, 
-					rgb[2]/255.0f);
+	nb_graphics_palette_get_colour(palette, val, c1);
+
 	val = (results[id2] - results[min_id]) / results_range;
-	vcn_palette_get_colour(palette, val, rgb);
-	nb_pattern_set_corner_color_rgb(pat, 1, 
-					rgb[0]/255.0f,
-					rgb[1]/255.0f, 
-					rgb[2]/255.0f);
+	nb_graphics_palette_get_colour(palette, val, c2);
+
 	val = (results[id3] - results[min_id]) / results_range;
-	vcn_palette_get_colour(palette, val, rgb);
-	nb_pattern_set_corner_color_rgb(pat, 2, 
-					rgb[0]/255.0f, 
-					rgb[1]/255.0f,
-					rgb[2]/255.0f);
+	nb_graphics_palette_get_colour(palette, val, c3);
+
+	nb_graphics_set_source_trg(g, v1[0], v1[1], v2[0],
+				   v2[1], v3[0], v3[1],
+				   c1[0], c1[1], c1[2],
+				   c2[0], c2[1], c2[2],
+				   c3[0], c3[1], c3[2]);
 }

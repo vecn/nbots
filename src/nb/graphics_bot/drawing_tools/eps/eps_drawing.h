@@ -38,7 +38,7 @@ void nb_graphics_eps_set_source_grad(void *ctx,
 				     nb_graphics_grad_t grad,
 				     double x1, double y1,
 				     double x2, double y2,
-				     nb_palette_t *pat);
+				     nb_graphics_palette_t *pat);
 
 void nb_graphics_eps_set_source_trg(void *ctx,
 				    double x1, double y1,

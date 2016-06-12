@@ -24,6 +24,7 @@ void vcn_image_resize(const vcn_image_t *input_img,
 		      vcn_image_t *output_img,
 		      int out_width, int out_height);
 void vcn_image_write_png(const vcn_image_t *img, const char *filename);
-void vcn_image_render_ascii(const vcn_image_t *img, const char *filename);
+void vcn_image_render_ascii(const vcn_image_t *img, const char *filename,
+			    int pixels_x_char);
 
 #endif

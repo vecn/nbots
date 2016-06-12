@@ -105,7 +105,7 @@ static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 				       box);
 
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	draw_triangles(g, mesh->ht_trg);
@@ -162,7 +162,7 @@ static void draw_dewall(nb_graphics_context_t *g, int width, int height,
 				       box);
 
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	draw_mesh(g, width, height, data->mesh);

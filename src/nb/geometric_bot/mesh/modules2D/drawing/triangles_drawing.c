@@ -17,7 +17,7 @@ typedef struct {
 	double scale;
 } part_data_t;
 
-static void draw_msh3trg(nb_graphics_context_t *g,
+static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr);
 static void calculate_partition_centers(const vcn_msh3trg_t *const msh3trg,
 					const uint32_t *const part,
@@ -36,6 +36,7 @@ static void draw_triangle_partition_border(nb_graphics_context_t *g,
 					   uint32_t trg_id);
 
 static void draw_msh3trg_partition(nb_graphics_context_t *g,
+				   int width, int height,
 				   const void *const part_data);
 
 static void scale_vtx(double vtx[2], double center[2], double zoom);
@@ -47,7 +48,7 @@ void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
 			   draw_msh3trg, msh3trg);
 }
 
-static void draw_msh3trg(nb_graphics_context_t *g,
+static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr)
 {
 	const vcn_msh3trg_t *const msh3trg = msh3trg_ptr;
@@ -63,7 +64,7 @@ static void draw_msh3trg(nb_graphics_context_t *g,
 						   box);
 
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	/* Draw triangles */
@@ -147,7 +148,7 @@ static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 					 const uint32_t *const part,
 					 uint32_t kpart, double **pcenter,
 					 double scale_partitions,
-					 int trg_id, int edge_id,)
+					 int trg_id, int edge_id)
 {
 	double vtx[2];
 	uint32_t n1 = msh3trg->vertices_forming_triangles[trg_id*3+edge_id];
@@ -219,7 +220,8 @@ void vcn_msh3trg_partition_draw(const vcn_msh3trg_t *const msh3trg,
 	}
 }
 
-static void draw_msh3trg_partition(nb_graphics_context_t *g,		   
+static void draw_msh3trg_partition(nb_graphics_context_t *g,
+				   int width, int height,
 				   const void *const part_data)
 {
 	const part_data_t *const data = part_data;
@@ -236,7 +238,7 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 						   box);
 
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	/* Calculate center of partitions */

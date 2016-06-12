@@ -37,7 +37,7 @@ static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 						   vcn_utils2D_get_y_from_darray,
 						   box);
 	nb_graphics_enable_camera(g);
-	camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	draw_quads(g, quad);
@@ -108,7 +108,6 @@ static void draw_input_vtx(nb_graphics_context_t *g,
 		if (ni < quad->N_nod) {
 			double x = quad->nod[ni * 2];
 			double y = quad->nod[ni*2+1];
-			nb_graphics_move_to(g, x + r, y);
 			nb_graphics_set_point(g, x, y, 6.0);
 			nb_graphics_fill(g);
 		}
