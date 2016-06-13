@@ -1,23 +1,52 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
+#include "nb/container_bot.h"
+#include "nb/image_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
 #include "pix_drawing.h"
 
+#define TURTLE_STRUCT NB_QUEUE
+
+typedef struct {
+	vcn_image_t *img;
+	nb_container_t *turtle;
+} context_t;
+
 void* nb_graphics_pix_create_context(int width, int height)
 {
-	return 0;
+	uint32_t ctx_size = sizeof(context_t);
+	uint32_t img_size = sizeof(vcn_image_t);
+	uint32_t pix_size = 4 * width * height;
+	uint32_t cnt_size = nb_container_get_memsize(TURTLE_STRUCT);
+	uint32_t memsize = ctx_size + img_size + pix_size + cnt_size;
+	char *memblock = malloc(memsize);
+	context_t *ctx = (void*) memblock;
+
+	ctx->img = (void*) (memblock + ctx_size);
+	vcn_image_init(ctx->img);
+	ctx->img->width = width;
+	ctx->img->height = height;
+	ctx->img->comp_x_pixel = 4;
+	ctx->img->pixels = (void*) (memblock + ctx_size + img_size);
+
+	ctx->turtle = (void*) (memblock + ctx_size + img_size + pix_size);
+	nb_container_init(ctx->turtle, TURTLE_STRUCT);
+	
+	return ctx;
 }
 
 void nb_graphics_pix_destroy_context(void *ctx)
 {
-	;
+	free(ctx);
 }
 
 void nb_graphics_pix_export_context(void *ctx, const char *filename)
 {
-	;
+	/* PNG, BMP, TXT */;
 }
 
 void nb_graphics_pix_move_to(void *ctx, double x, double y)

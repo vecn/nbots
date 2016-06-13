@@ -31,18 +31,6 @@ static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c);
 static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c);
 static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c);
 
-struct vcn_image_s {
-	uint32_t width;
-	uint32_t height;
-	uint8_t comp_x_pixel;
-	/* 1: grey
-	 * 2: grey, alpha
-	 * 3: red, green, blue
-	 * 4: red, green, blue, alpha
-	 */
-	uint8_t* pixels;
-};
-
 uint32_t vcn_image_get_memsize(void)
 {
 	return sizeof(vcn_image_t);

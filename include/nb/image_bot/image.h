@@ -3,7 +3,17 @@
 
 #include <stdint.h>
 
-typedef struct vcn_image_s vcn_image_t;
+typedef struct {
+	uint32_t width;
+	uint32_t height;
+	uint8_t comp_x_pixel;
+	/* 1: grey
+	 * 2: grey, alpha
+	 * 3: red, green, blue
+	 * 4: red, green, blue, alpha
+	 */
+	uint8_t* pixels;
+} vcn_image_t;
 
 uint32_t vcn_image_get_memsize(void);
 void vcn_image_init(vcn_image_t *img);
