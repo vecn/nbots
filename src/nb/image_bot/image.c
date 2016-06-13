@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,10 +15,31 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "tiny_libs/stb_image_resize.h"
 
+#define _LUMA_R_WEIGHT 0.299
+#define _LUMA_G_WEIGHT 0.587
+#define _LUMA_B_WEIGHT 0.114
+#define _ASCII_CHAR_ASPECT_RATIO 0.5
+
+static const char *get_ascii_scale(void);
+static uint8_t get_block_luma(const vcn_image_t *img, uint32_t i, uint32_t j,
+			      uint16_t block_width, uint16_t block_height);
+static char get_ascii_from_luma(uint8_t luma, const char *scale,
+				uint8_t *next_char);
+static uint8_t get_luma(const vcn_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_1comp(const vcn_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c);
+
 struct vcn_image_s {
 	uint32_t width;
 	uint32_t height;
 	uint8_t comp_x_pixel;
+	/* 1: grey
+	 * 2: grey, alpha
+	 * 3: red, green, blue
+	 * 4: red, green, blue, alpha
+	 */
 	uint8_t* pixels;
 };
 
@@ -53,7 +75,7 @@ inline vcn_image_t* vcn_image_create(void)
 
 void vcn_image_destroy(vcn_image_t *img)
 {
-	vcn_image_clear(img);
+	vcn_image_finish(img);
 	free(img);
 }
 
@@ -141,26 +163,137 @@ void vcn_image_write_png(const vcn_image_t *img, const char *filename)
 	assert(0 != status);
 }
 
-void vcn_image_render_ascii(const vcn_image_t *img, const char *filename,
-			    int pixels_x_char)
+void vcn_image_write_ascii(const vcn_image_t *img, const char *filename,
+			   uint16_t N_chars_width)
 {
-	;
-	/* LUMA conversion: TEMPORAL */
-  
-	/* Long gray scale */
-	//"$@B%8&WM#*";
-	//"oahkbdpqwm";
-	//"ZO0QLCJUYX";
-	//"zcvunxrjft";
-	//"/\|()1{}[]";
-	//"?-_+~<>i!l";
-	//"I;:,\"^`'. ";
+	FILE *fp = fopen(filename, "w");
+	if (NULL == fp)
+		goto EXIT;
 
-	/* Short gray scale */
-	//"@%#*+=:-. ";
+	const char *scale = get_ascii_scale();
+	uint16_t block_width = img->width / N_chars_width;
+	uint16_t block_height = block_width / _ASCII_CHAR_ASPECT_RATIO;
+	uint32_t w = img->width / block_width;
+	uint32_t h = img->height / block_height;
+	uint8_t next_char = 0;
+	for (uint32_t i = 0; i < h; i++) {
+		for (uint32_t j = 0; j < w; j++) {
+			uint8_t luma = get_block_luma(img, i, j,
+						      block_width,
+						      block_height);
+			char c = get_ascii_from_luma(luma, scale,
+						     &next_char);
+			fprintf(fp, "%c", c);
+		}
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+EXIT:
+	return;
+}
 
-	/* Faltan: */
-	//"egsyADEFGH";
-	//"KNPRSTV234";
-	//"5679=";
+static const char *get_ascii_scale(void)
+{
+	return  "W%o*+~:-. "   \
+		"Wgeu+~:-. "  \
+		"W$rz+~:-. "  \
+		"@#xj+~:-. "  \
+		"@#Qv+~:-. "  \
+		"B$pc+~:-. "  \
+		"Bkqw+~:-. "  \
+		"Mhos+~:-. "  \
+		"8&bai~:-. ";
+
+}
+
+static uint8_t get_block_luma(const vcn_image_t *img, uint32_t i, uint32_t j,
+			      uint16_t block_width, uint16_t block_height)
+{
+	uint16_t pix_jump = 1;
+	uint16_t Nbh = block_height;
+	uint16_t Nbw = block_width;
+	if (block_height > 10) {
+		pix_jump = block_height / 10;
+		Nbh = 10;
+		Nbw = block_width / pix_jump;
+	}
+		
+	uint32_t sum_luma = 0;	
+	for (uint16_t m = 0; m < Nbh; m++) {
+		uint32_t r = i * block_height + pix_jump * m;
+		for (uint16_t n = 0; n < Nbw; n++) {
+			uint32_t c = j * block_width + pix_jump * n;
+			sum_luma += get_luma(img, r, c);			
+		}
+	}
+	return sum_luma / (Nbw * Nbh);
+}
+
+static char get_ascii_from_luma(uint8_t luma, const char *scale,
+				uint8_t *next_char)
+{
+	float factor = luma / 256.0;
+	uint8_t ascii_id = (uint8_t)(factor * 10);
+	char c = scale[*next_char * 10 + ascii_id];
+	*next_char = (*next_char + 1) % 8;
+	return c;
+}
+
+static uint8_t get_luma(const vcn_image_t *img, uint32_t r, uint32_t c)
+{
+	uint8_t luma;
+	switch (img->comp_x_pixel) {
+	case 1:
+		luma = get_luma_1comp(img, r, c);
+		break;
+	case 2:
+		luma = get_luma_2comp(img, r, c);
+		break;
+	case 3:
+		luma = get_luma_3comp(img, r, c);
+		break;
+	case 4:
+		luma = get_luma_4comp(img, r, c);
+		break;
+	}
+	return  luma;
+}
+
+static uint8_t get_luma_1comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+{
+	uint32_t w = img->width;
+	return img->pixels[r * w + c];
+}
+
+static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+{
+	uint32_t w = 2 * img->width;
+	uint8_t g = img->pixels[r * w + (c * 2)];
+	uint8_t a = img->pixels[r * w + (c*2+1)];
+	double weight = a / 255.0;
+	return weight * g;
+}
+
+static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+{
+	uint32_t w = 3 * img->width;
+	uint8_t red = img->pixels[r * w + (c * 3)];
+	uint8_t g = img->pixels[r * w + (c*3+1)];
+	uint8_t b = img->pixels[r * w + (c*3+2)];
+	return (uint8_t)(_LUMA_R_WEIGHT * red + 0.5) +
+		(uint8_t)(_LUMA_G_WEIGHT * g + 0.5) +
+		(uint8_t)(_LUMA_B_WEIGHT * b + 0.5);
+}
+
+static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+{
+	uint32_t w = 4 * img->width;
+	uint8_t red = img->pixels[r * w + (c * 4)];
+	uint8_t g = img->pixels[r * w + (c*4+1)];
+	uint8_t b = img->pixels[r * w + (c*4+2)];
+	uint8_t a = img->pixels[r * w + (c*4+3)];
+	double weight = a / 255.0;
+	return weight * (uint8_t)(_LUMA_R_WEIGHT * red + 0.5) +
+		(uint8_t)(_LUMA_G_WEIGHT * g + 0.5) +
+		(uint8_t)(_LUMA_B_WEIGHT * b + 0.5);
 }

@@ -20,12 +20,12 @@ static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
 	char label[100];				      /* TEMPORAL */
 	sprintf(label, "%s/TEMP_MODEL_%02i.png",
 		OUTPUT_DIR, TEMPORAL_);                    /* TEMPORAL */
-	vcn_model_export_png(model, label, 1000, 800, false);
+	vcn_model_draw(model, label, 1000, 800, false);
 	vcn_mesh_t *mesh = vcn_mesh_create();
 	vcn_mesh_generate_from_model(mesh, model);
 	sprintf(label, "%s/TEMP_MODEL_%02i_MSH.png", OUTPUT_DIR,
 		TEMPORAL_++);	                             /* TEMPORAL */
-	vcn_mesh_save_png(mesh, label, 1000, 800);  /* TEMPORAL */
+	vcn_mesh_draw(mesh, label, 1000, 800);  /* TEMPORAL */
 	vcn_mesh_destroy(mesh);
 }                                                             /* TEMPORAL */
 

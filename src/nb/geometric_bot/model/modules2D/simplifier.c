@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <assert.h>
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
@@ -153,12 +154,7 @@ static inline void insert_at_start(nb_container_t *wire,
 {
 	int8_t status;
 	nb_container_do(wire, "insert_first", (void*) val, &status);
-	if (0 != status) {
-		printf("\nERROR in vcn_model_export_to_asymptote().\n");
-		printf("      in nb_container_do().\n");
-		printf("      with function 'insert_first'.\n");
-		exit(1);
-	}
+	assert(0 == status);
 }
 
 static inline uint32_t update_end_point(const vcn_model_t *const model,

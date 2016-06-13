@@ -108,16 +108,9 @@ EXIT:
 	return;
 }
 
-void vcn_model_export_png(const vcn_model_t *const model,
-			  const char* filename,
-			  int width, int height)
+void vcn_model_draw(const vcn_model_t *const model,
+		    const char* filename,
+		    int width, int height)
 {
-	nb_graphics_export_png(filename, width, height, draw_model, model);
-}
-
-void vcn_model_export_eps(const vcn_model_t *const model,
-			  const char* filename,
-			  int width, int height) 
-{
-	nb_graphics_export_eps(filename, width, height, draw_model, model);
+	nb_graphics_export(filename, width, height, draw_model, model);
 }
