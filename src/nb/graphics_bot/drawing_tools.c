@@ -13,6 +13,24 @@
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
+#define GET_FILENAME_EXT(filename, ext)				\
+	do {							\
+		const char *dot = strrchr((filename), '.');	\
+		if (!dot || dot == (filename))			\
+			(ext) = "";				\
+		else						\
+			(ext) = dot + 1;			\
+	} while(0)
+
+#define TO_LOWERCASE(str)					\
+	do {							\
+	        int i = 0;					\
+		while ((str)[i] != '\0' && (str)[i] != '\n') {	\
+			(str)[i] = tolower((str)[i]);		\
+			i++;					\
+		}						\
+	} while(0)
+
 #define _SET_RGB(gctx,r,g,b)				\
 	do {						\
 		(gctx)->set_source_rgb((gctx)->ctx,	\
@@ -42,29 +60,29 @@ struct nb_graphics_context_s {
 	void *ctx;
 	void* (*create_context)(int width, int height);
 	void (*destroy_context)(void *ctx);
-	void (*export_context)(void *ctx, const char *filename);
+	void (*export_context)(const void *ctx, const char *filename);
 
-	void (*move_to)(void *ctx, double x, double y);
-	void (*line_to)(void *ctx, double x, double y);
-	void (*arc)(void *ctx, double x, double y, double r,
-		    double a0, double a1);
-	void (*set_circle)(void *ctx, double x, double y, double r);
-	void (*set_rectangle)(void *ctx, double x1, double y1,
-				  double x2, double y2);
+	void (*move_to)(void *ctx, float x, float y);
+	void (*line_to)(void *ctx, float x, float y);
+	void (*arc)(void *ctx, float x, float y, float r,
+		    float a0, float a1);
 	void (*close_path)(void *ctx);
-	void (*set_line_width)(void *ctx, double w);
+	void (*set_circle)(void *ctx, float x, float y, float r);
+	void (*set_rectangle)(void *ctx, float x1, float y1,
+				  float x2, float y2);
+	void (*set_line_width)(void *ctx, float w);
 	void (*set_source_rgb)(void *ctx, uint8_t r, uint8_t g, uint8_t b);
 	void (*set_source_rgba)(void *ctx, uint8_t r, uint8_t g,
 				uint8_t b, uint8_t a);
 	void (*set_source_grad)(void *ctx,
 				nb_graphics_grad_t grad,
-				double x1, double y1,
-				double x2, double y2,
+				float x1, float y1,
+				float x2, float y2,
 				nb_graphics_palette_t *pal);
 	void (*set_source_trg)(void *ctx,
-			       double x1, double y1,
-			       double x2, double y2,
-			       double x3, double y3,
+			       float x1, float y1,
+			       float x2, float y2,
+			       float x3, float y3,
 			       uint8_t r1, uint8_t g1, uint8_t b1,
 			       uint8_t r2, uint8_t g2, uint8_t b2,
 			       uint8_t r3, uint8_t g3, uint8_t b3);
@@ -74,13 +92,11 @@ struct nb_graphics_context_s {
 	void (*set_font_type)(void *ctx, const char *type);
 	void (*set_font_size)(void *ctx, uint16_t size);
 	void (*show_text)(void *ctx, const char *str);
-	void (*get_text_attr)(void *ctx, const char *label,
+	void (*get_text_attr)(const void *ctx, const char *label,
 			      nb_text_attr_t *attr);
 };
 
 static int get_format(const char *filename);
-static const char *get_filename_ext(const char *filename);
-static void to_lowercase(char *str);
 static void full_pipeline(const char* filename, int width, int height,
 			  void (*set_tools)(nb_graphics_context_t *g),
 			  void (*draw)(nb_graphics_context_t *g, int w, int h,
@@ -93,8 +109,8 @@ static void init_gctx(nb_graphics_context_t *g, int width, int height);
 static void write_gctx(nb_graphics_context_t *g, const char *filename);
 static void clear_gctx(nb_graphics_context_t *g);
 static void get_camera_view(const nb_graphics_context_t *g,
-			    double cam_vtx[2],
-			    double x, double y);
+			    float cam_vtx[2],
+			    float x, float y);
 
 static nb_graphics_palette_t* palette_get_rainbow(void);
 static nb_graphics_palette_t* palette_get_sunset(void);
@@ -107,10 +123,10 @@ static void palette_draw_rectangle(nb_graphics_context_t *g,
 static void palette_draw_zero_mark(nb_graphics_context_t *g,
 				   const nb_graphics_palette_t *const palette,
 				   float x, float y, float w, float h,
-				   double min_v, double max_v);
+				   float min_v, float max_v);
 static void palette_draw_labels(nb_graphics_context_t *g,
 				float font_size, float x, float y,
-				float w, float h, double min_v, double max_v);
+				float w, float h, float min_v, float max_v);
 
 void nb_graphics_export(const char* filename, int width, int height,
 			void (*draw)(nb_graphics_context_t *g, int w, int h,
@@ -137,12 +153,16 @@ void nb_graphics_export(const char* filename, int width, int height,
 
 static int get_format(const char *filename)
 {
-	const char *raw_ext = get_filename_ext(filename);
+	const char *raw_ext;
+	GET_FILENAME_EXT(filename, raw_ext);
 	char ext[10];
 	strcpy(ext, raw_ext);
-	to_lowercase(ext);
+	TO_LOWERCASE(ext);
 	int format;
-	if (0 == strcmp(ext, "png"))
+	if (0 == strcmp(ext, "png") ||
+	    0 == strcmp(ext, "bmp") ||
+	    0 == strcmp(ext, "tga") ||
+	    0 == strcmp(ext, "hdr"))
 		format = PIX;
 	else if (0 == strcmp(ext, "eps"))
 		format = EPS;
@@ -151,24 +171,6 @@ static int get_format(const char *filename)
 	else
 		format = UNKNOWN;
 	return format;
-}
-
-static const char *get_filename_ext(const char *filename)
-{
-	const char *dot = strrchr(filename, '.');
-	if (!dot || dot == filename)
-		return "";
-	else
-		return dot + 1;
-}
-
-static void to_lowercase(char *str)
-{
-	int i = 0;
-	while (str[i] != '\0' && str[i] != '\n') {
-		str[i] = tolower(str[i]);
-		i++;
-	}
 }
 
 static void full_pipeline(const char* filename, int width, int height,
@@ -305,8 +307,8 @@ void nb_graphics_enable_camera(nb_graphics_context_t *g)
 }
 
 static void get_camera_view(const nb_graphics_context_t *g,
-			    double cam_vtx[2],
-			    double x, double y)
+			    float cam_vtx[2],
+			    float x, float y)
 {
 	if (g->using_cam) {
 		cam_vtx[0] = g->cam.zoom * (x - g->cam.center[0]) +
@@ -319,48 +321,48 @@ static void get_camera_view(const nb_graphics_context_t *g,
 	}
 }
 
-void nb_graphics_move_to(nb_graphics_context_t *g, double x, double y)
+void nb_graphics_move_to(nb_graphics_context_t *g, float x, float y)
 {
-	double c[2];
+	float c[2];
 	get_camera_view(g, c, x, y);
 	g->move_to(g->ctx, c[0], c[1]);
 }
 
-void nb_graphics_line_to(nb_graphics_context_t *g, double x, double y)
+void nb_graphics_line_to(nb_graphics_context_t *g, float x, float y)
 {
-	double c[2];
+	float c[2];
 	get_camera_view(g, c, x, y);
 	g->line_to(g->ctx, c[0], c[1]);
 }
 
-void nb_graphics_arc(nb_graphics_context_t *g, double x, double y, double r,
-		    double a0, double a1)
+void nb_graphics_arc(nb_graphics_context_t *g, float x, float y, float r,
+		    float a0, float a1)
 {
-	double c[2];
+	float c[2];
 	get_camera_view(g, c, x, y);
 	g->arc(g->ctx, c[0], c[1], r * g->cam.zoom, a0, a1);
 }
 
-void nb_graphics_set_circle(nb_graphics_context_t *g, double x,
-			    double y, double r)
+void nb_graphics_set_circle(nb_graphics_context_t *g, float x,
+			    float y, float r)
 {
-	double c[2];
+	float c[2];
 	get_camera_view(g, c, x, y);
 	g->set_circle(g->ctx, c[0], c[1], r * g->cam.zoom);
 }
 
 void nb_graphics_set_point(nb_graphics_context_t *g,
-			   double x, double y, double size)
+			   float x, float y, float size)
 {
-	double c[2];
+	float c[2];
 	get_camera_view(g, c, x, y);
 	g->set_circle(g->ctx, c[0], c[1], 0.5 * size);
 }
 
-void nb_graphics_set_rectangle(nb_graphics_context_t *g, double x1, double y1,
-			       double x2, double y2)
+void nb_graphics_set_rectangle(nb_graphics_context_t *g, float x1, float y1,
+			       float x2, float y2)
 {
-	double c1[2], c2[2];
+	float c1[2], c2[2];
 	get_camera_view(g, c1, x1, y1);
 	get_camera_view(g, c2, x2, y2);
 	g->set_rectangle(g->ctx, c1[0], c1[1], c2[0], c2[1]);
@@ -371,7 +373,7 @@ void nb_graphics_close_path(nb_graphics_context_t *g)
 	g->close_path(g->ctx);
 }
 
-void nb_graphics_set_line_width(nb_graphics_context_t *g, double w)
+void nb_graphics_set_line_width(nb_graphics_context_t *g, float w)
 {
 	g->set_line_width(g->ctx, w);
 }
@@ -451,17 +453,17 @@ void nb_graphics_set_source_rgba(nb_graphics_context_t *gctx,
 
 void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
-				 double x1, double y1,
-				 double x2, double y2,
+				 float x1, float y1,
+				 float x2, float y2,
 				 nb_graphics_palette_t *pal)
 {
 	g->set_source_grad(g->ctx, grad, x1, y1, x2, y2, pal);
 }
 
 void nb_graphics_set_source_trg(nb_graphics_context_t *g,
-				double x1, double y1,
-				double x2, double y2,
-				double x3, double y3,
+				float x1, float y1,
+				float x2, float y2,
+				float x3, float y3,
 				uint8_t r1, uint8_t g1, uint8_t b1,
 				uint8_t r2, uint8_t g2, uint8_t b2,
 				uint8_t r3, uint8_t g3, uint8_t b3)
@@ -500,13 +502,13 @@ void nb_graphics_show_text(nb_graphics_context_t *g, const char *str)
 	g->show_text(g->ctx, str);
 }
 
-void nb_graphics_get_text_attr(nb_graphics_context_t *g, const char *label,
+void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
 			       nb_text_attr_t *attr)
 {
 	g->get_text_attr(g->ctx, label, attr);
 }
-void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
-			     double width, double height)
+void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const float box[4],
+			     float width, float height)
 {
 	cam->center[0] = (box[0] + box[2]) / 2.0;
 	cam->center[1] = (box[1] + box[3]) / 2.0;
@@ -669,7 +671,7 @@ static nb_graphics_palette_t* palette_get_french()
 void nb_graphics_draw_palette(nb_graphics_context_t *g,
 			      const nb_graphics_palette_t *const palette,
 			      float x, float y, float w, float h,
-			      float border, double min_v, double max_v)
+			      float border, float min_v, float max_v)
 {
 	bool cam_status = nb_graphics_is_camera_enabled(g);
 	if (cam_status)
@@ -703,7 +705,7 @@ static void palette_draw_rectangle(nb_graphics_context_t *g,
 static void palette_draw_zero_mark(nb_graphics_context_t *g,
 				   const nb_graphics_palette_t *const palette,
 				   float x, float y, float w, float h,
-				   double min_v, double max_v)
+				   float min_v, float max_v)
 {
 	if (0 > min_v * max_v) {
 		float factor = - min_v / (max_v - min_v);
@@ -716,7 +718,7 @@ static void palette_draw_zero_mark(nb_graphics_context_t *g,
 
 		nb_graphics_set_source_rgb(g, rgb[0], rgb[1], rgb[2]);
 
-		double yzero = h * factor;
+		float yzero = h * factor;
 		nb_graphics_move_to(g, x, y + h - yzero);
 		nb_graphics_line_to(g, x + w, y + h - yzero);
 		nb_graphics_stroke(g);
@@ -725,7 +727,7 @@ static void palette_draw_zero_mark(nb_graphics_context_t *g,
 
 static void palette_draw_labels(nb_graphics_context_t *g,
 				float font_size, float x, float y,
-				float w, float h, double min_v, double max_v)
+				float w, float h, float min_v, float max_v)
 {
 	nb_graphics_set_font_type(g, "Sans");
 	nb_graphics_set_font_size(g, font_size);
@@ -734,7 +736,7 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 
 	char label[15];
 	int n_labels = MIN((int)(h / (font_size + 2)), 10);
-	double step_v = (max_v - min_v) / (n_labels - 1.0);
+	float step_v = (max_v - min_v) / (n_labels - 1.0);
 	for (int i = 0; i < n_labels; i++) {
 		sprintf(label, "%.3e", max_v - i * step_v);
 		nb_graphics_get_text_attr(g, label, &text_attr);

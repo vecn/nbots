@@ -27,17 +27,17 @@ typedef enum {
 } nb_graphics_color_t;
 
 typedef struct {
-	double width;
-	double height;
-	double x_left;
-	double y_top;
+	float width;
+	float height;
+	float x_left;
+	float y_top;
 } nb_text_attr_t;
 
 typedef struct {
 	int width;
 	int height;
-	double center[2];
-	double zoom;
+	float center[2];
+	float zoom;
 } nb_graphics_camera_t;
 
 void nb_graphics_export(const char* filename, int width, int height,
@@ -50,23 +50,23 @@ bool nb_graphics_is_camera_enabled(const nb_graphics_context_t *g);
 void nb_graphics_disable_camera(nb_graphics_context_t *g);
 void nb_graphics_enable_camera(nb_graphics_context_t *g);
 
-void nb_graphics_move_to(nb_graphics_context_t *g, double x, double y);
-void nb_graphics_line_to(nb_graphics_context_t *g, double x, double y);
-void nb_graphics_arc(nb_graphics_context_t *g, double x, double y, double r,
-		    double a0, double a1);
+void nb_graphics_move_to(nb_graphics_context_t *g, float x, float y);
+void nb_graphics_line_to(nb_graphics_context_t *g, float x, float y);
+void nb_graphics_arc(nb_graphics_context_t *g, float x, float y, float r,
+		    float a0, float a1);
 
 void nb_graphics_set_circle(nb_graphics_context_t *g,
-			    double x, double y, double r);
+			    float x, float y, float r);
 
 void nb_graphics_set_point(nb_graphics_context_t *g,
-			   double x, double y, double size);
+			   float x, float y, float size);
 
-void nb_graphics_set_rectangle(nb_graphics_context_t *g, double x1, double y1,
-				  double x2, double y2);
+void nb_graphics_set_rectangle(nb_graphics_context_t *g, float x1, float y1,
+				  float x2, float y2);
 
 void nb_graphics_close_path(nb_graphics_context_t *g);
 
-void nb_graphics_set_line_width(nb_graphics_context_t *g, double w);
+void nb_graphics_set_line_width(nb_graphics_context_t *g, float w);
 
 void nb_graphics_set_source(nb_graphics_context_t *g,
 			    nb_graphics_color_t color);
@@ -78,14 +78,14 @@ void nb_graphics_set_source_rgba(nb_graphics_context_t *gctx,
 
 void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
-				 double x1, double y1,
-				 double x2, double y2,
+				 float x1, float y1,
+				 float x2, float y2,
 				 nb_graphics_palette_t *pat);
 
 void nb_graphics_set_source_trg(nb_graphics_context_t *g,
-				double x1, double y1,
-				double x2, double y2,
-				double x3, double y3,
+				float x1, float y1,
+				float x2, float y2,
+				float x3, float y3,
 				uint8_t r1, uint8_t g1, uint8_t b1,
 				uint8_t r2, uint8_t g2, uint8_t b2,
 				uint8_t r3, uint8_t g3, uint8_t b3);
@@ -101,25 +101,25 @@ void nb_graphics_set_font_type(nb_graphics_context_t *g, const char *type);
 void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size);
 
 void nb_graphics_show_text(nb_graphics_context_t *g, const char *str);
-void nb_graphics_get_text_attr(nb_graphics_context_t *g, const char *label,
+void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
 			      nb_text_attr_t *attr);
 
-void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
-			     double width, double height);
+void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const float box[4],
+			     float width, float height);
 
 nb_graphics_palette_t* nb_graphics_palette_create();
 nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_preset preset);
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette);
 void nb_graphics_palette_clear(nb_graphics_palette_t* palette);
 void nb_graphics_palette_add_colour(nb_graphics_palette_t* palette, float tic,
-			    uint8_t r, uint8_t g, uint8_t b);
+				    uint8_t r, uint8_t g, uint8_t b);
 void nb_graphics_palette_get_colour(const nb_graphics_palette_t *const palette,
-			    float factor,
-			    uint8_t rgb[3]);
+				    float factor,
+				    uint8_t rgb[3]);
 
 void nb_graphics_palette_draw(nb_graphics_context_t *g, 
 			      const nb_graphics_palette_t *const palette,
 			      float x, float y, float w, float h,
-			      float border, double min_v, double max_v);
+			      float border, float min_v, float max_v);
 
 #endif

@@ -30,10 +30,16 @@ uint32_t vcn_image_get_height(const vcn_image_t *const img);
 uint8_t vcn_image_get_N_channels(const vcn_image_t *const img);
 void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 			 uint32_t c,  uint8_t pixel[]);
+uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,
+				 uint32_t r, uint32_t c);
 void vcn_image_resize(const vcn_image_t *input_img,
 		      vcn_image_t *output_img,
 		      int out_width, int out_height);
+void vcn_image_write(const vcn_image_t *img, const char *filename);
 void vcn_image_write_png(const vcn_image_t *img, const char *filename);
+void vcn_image_write_bmp(const vcn_image_t *img, const char *filename);
+void vcn_image_write_hdr(const vcn_image_t *img, const char *filename);
+void vcn_image_write_tga(const vcn_image_t *img, const char *filename);
 void vcn_image_write_ascii(const vcn_image_t *img, const char *filename,
 			   uint16_t N_chars_width);
 
