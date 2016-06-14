@@ -104,7 +104,7 @@ void nb_graphics_show_text(nb_graphics_context_t *g, const char *str);
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
 			      nb_text_attr_t *attr);
 
-void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const float box[4],
+void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 			     float width, float height);
 
 nb_graphics_palette_t* nb_graphics_palette_create(void);

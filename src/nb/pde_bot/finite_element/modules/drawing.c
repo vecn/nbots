@@ -121,19 +121,17 @@ static void set_source_trg(nb_graphics_context_t *g,
 			   uint32_t id1, uint32_t id2, uint32_t id3)
 {
 	double results_range = results[max_id] - results[min_id];
-	uint8_t c1[3], c2[3], c3[3];
+	uint8_t c1[4], c2[4], c3[4];
 	double val = (results[id1] - results[min_id]) / results_range;
-	nb_graphics_palette_get_colour(palette, val, c1);
+	nb_graphics_palette_get_rgba(palette, val, c1);
 
 	val = (results[id2] - results[min_id]) / results_range;
-	nb_graphics_palette_get_colour(palette, val, c2);
+	nb_graphics_palette_get_rgba(palette, val, c2);
 
 	val = (results[id3] - results[min_id]) / results_range;
-	nb_graphics_palette_get_colour(palette, val, c3);
+	nb_graphics_palette_get_rgba(palette, val, c3);
 
 	nb_graphics_set_source_trg(g, v1[0], v1[1], v2[0],
 				   v2[1], v3[0], v3[1],
-				   c1[0], c1[1], c1[2],
-				   c2[0], c2[1], c2[2],
-				   c3[0], c3[1], c3[2]);
+				   c1, c2, c3);
 }

@@ -175,7 +175,7 @@ static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c)
 	uint8_t g = img->pixels[r * w + (c * 2)];
 	uint8_t a = img->pixels[r * w + (c*2+1)];
 	double weight = a / 255.0;
-	return weight * g;
+	return (1 - weight) * 255 + weight * g;
 }
 
 static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c)
@@ -197,9 +197,10 @@ static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c)
 	uint8_t b = img->pixels[r * w + (c*4+2)];
 	uint8_t a = img->pixels[r * w + (c*4+3)];
 	double weight = a / 255.0;
-	return weight * (uint8_t)(_LUMA_R_WEIGHT * red + 0.5) +
-		(uint8_t)(_LUMA_G_WEIGHT * g + 0.5) +
-		(uint8_t)(_LUMA_B_WEIGHT * b + 0.5);
+	return (1 - weight) * 255 +
+		weight * ((uint8_t)(_LUMA_R_WEIGHT * red + 0.5) +
+			  (uint8_t)(_LUMA_G_WEIGHT * g + 0.5) +
+			  (uint8_t)(_LUMA_B_WEIGHT * b + 0.5));
 }
 
 

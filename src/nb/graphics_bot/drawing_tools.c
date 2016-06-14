@@ -496,7 +496,7 @@ void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label
 {
 	g->get_text_attr(g->ctx, label, attr);
 }
-void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const float box[4],
+void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 			     float width, float height)
 {
 	cam->center[0] = (box[0] + box[2]) / 2.0;
