@@ -7,6 +7,8 @@
 #include "nb/math_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
+#include "palette_struct.h"
+
 #include "drawing_tools/pix/pix_drawing.h"
 #include "drawing_tools/eps/eps_drawing.h"
 #include "drawing_tools/asy/asy_drawing.h"
@@ -41,19 +43,6 @@ enum {
 	PIX, EPS, ASY, UNKNOWN
 };
 
-struct nb_graphics_palette_s {
-	/* The palette defines a serie of RGB colors to
-	 * colorize values in [0,1]
-	 *
-	 *  c1    c2       c3         c4  <- RGB colors
-	 *   |_____|________|__________|
-	 *   0    0.25     0.57        1  <- Tics
-	 */
-	uint8_t ntics;   /* Number of tics */
-	float* tics;   /* Sorted tics in [0,1] */
-	uint8_t* rgb;    /* RGB Colors definition */
-};
-
 struct nb_graphics_context_s {
 	nb_graphics_camera_t cam;
 	bool using_cam;
@@ -83,9 +72,9 @@ struct nb_graphics_context_s {
 			       float x1, float y1,
 			       float x2, float y2,
 			       float x3, float y3,
-			       uint8_t r1, uint8_t g1, uint8_t b1,
-			       uint8_t r2, uint8_t g2, uint8_t b2,
-			       uint8_t r3, uint8_t g3, uint8_t b3);
+			       const uint8_t rgba1[4],
+			       const uint8_t rgba2[4],
+			       const uint8_t rgba3[4]);
 	void (*fill)(void *ctx);
 	void (*fill_preserve)(void *ctx);
 	void (*stroke)(void *ctx);
@@ -464,12 +453,12 @@ void nb_graphics_set_source_trg(nb_graphics_context_t *g,
 				float x1, float y1,
 				float x2, float y2,
 				float x3, float y3,
-				uint8_t r1, uint8_t g1, uint8_t b1,
-				uint8_t r2, uint8_t g2, uint8_t b2,
-				uint8_t r3, uint8_t g3, uint8_t b3)
+				const uint8_t rgba1[4],
+				const uint8_t rgba2[4],
+				const uint8_t rgba3[4])
 {
 	g->set_source_trg(g->ctx, x1, y1, x2, y2, x3, y3,
-			  r1, g1, b1, r2, g2, b2, r3, g3, b3);
+			  rgba1, rgba2, rgba3);
 }
 
 void nb_graphics_fill(nb_graphics_context_t *g)
@@ -525,7 +514,8 @@ nb_graphics_palette_t* nb_graphics_palette_create(void)
 	return calloc(1, sizeof(nb_graphics_palette_t));
 }
 
-nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_preset preset)
+nb_graphics_palette_t* nb_graphics_palette_create_preset
+				(nb_graphics_palette_preset preset)
 {
 	if (NB_RAINBOW == preset)
 		return palette_get_rainbow();
@@ -541,130 +531,111 @@ nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_pre
 
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette)
 {
-	if (palette->ntics > 0) {
-		free(palette->tics);
-		free(palette->rgb);
-	}
 	free(palette);
 }
 
 void nb_graphics_palette_clear(nb_graphics_palette_t *palette)
 {
-	if (palette->ntics > 0) {
-		free(palette->tics);
-		free(palette->rgb);
-		palette->tics = NULL;
-		palette->rgb = NULL;
-	}
 	palette->ntics = 0;
 }
 
-void nb_graphics_palette_add_colour(nb_graphics_palette_t* palette, float tic,
-			    uint8_t r, uint8_t g, uint8_t b)
+void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,
+				  uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	if (tic < 0)
 		tic = 0;
 	if (tic > 1)
 		tic = 1;
-	if (palette->ntics == 0) {
-		/* Insert first color */
-		palette->tics = (float*)malloc(sizeof(float));
-		palette->tics[0] = tic;
-		palette->rgb = (uint8_t*)malloc(3);
-		palette->rgb[0] = r;
-		palette->rgb[1] = g;
-		palette->rgb[2] = b;
-		palette->ntics = 1;
-	} else {
-		/* create a new space */
-		float* tics = (float*)malloc(palette->ntics*sizeof(float));
-		uint8_t* rgb = (uint8_t*)malloc(palette->ntics*3);
-		memcpy(tics, palette->tics, palette->ntics*sizeof(float));
-		memcpy(rgb, palette->rgb, palette->ntics*3);
-		free(palette->tics);
-		free(palette->rgb);
-		palette->ntics += 1;
-		palette->tics = (float*)malloc(palette->ntics*sizeof(float));
-		palette->rgb = (uint8_t*)malloc(palette->ntics*3);
-		memcpy(palette->tics, tics, (palette->ntics-1)*sizeof(float));
-		memcpy(palette->rgb, rgb, (palette->ntics-1)*3);
-		free(rgb);
-		free(tics);
-		/* Insert new color */
-		palette->tics[palette->ntics-1] = 2;
-		for (uint32_t i=0; i<palette->ntics; i++) {
+	if (10 > palette->ntics) {
+		for (uint32_t i = 0; i < palette->ntics; i++) {
 			if (tic < palette->tics[i]) {
 				float aux1 = tic;
 				tic = palette->tics[i];
 				palette->tics[i] = aux1;
-				uint8_t aux2[3] = {r, g, b};
-				r = palette->rgb[i * 3];
-				g = palette->rgb[i*3+1];
-				b = palette->rgb[i*3+2];
-				palette->rgb[i * 3] = aux2[0];
-				palette->rgb[i*3+1] = aux2[1];
-				palette->rgb[i*3+2] = aux2[2];
+				uint8_t aux2[4] = {r, g, b, a};
+				r = palette->rgba[i * 4];
+				g = palette->rgba[i*4+1];
+				b = palette->rgba[i*4+2];
+				a = palette->rgba[i*4+3];
+				palette->rgba[i * 4] = aux2[0];
+				palette->rgba[i*4+1] = aux2[1];
+				palette->rgba[i*4+2] = aux2[2];
+				palette->rgba[i*4+3] = aux2[3];
 			}
 		}
+		uint8_t N = palette->ntics;
+		palette->tics[N] = tic;
+		palette->rgba[N * 4] = r;
+		palette->rgba[N*4+1] = g;
+		palette->rgba[N*4+2] = b;
+		palette->rgba[N*4+3] = a;
+		palette->ntics += 1;
 	}
 }
 
-void nb_graphics_palette_get_colour(const nb_graphics_palette_t *const palette,
-			    float factor,
-			    uint8_t rgb[3])
+void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
+				  float factor,
+				  uint8_t rgba[4])
 {
 	if (factor <= palette->tics[0]) {
-		memcpy(rgb, palette->rgb, 3);
+		memcpy(rgba, palette->rgba, 4);
 	} else if (factor >= palette->tics[palette->ntics-1]) {
-		memcpy(rgb, &(palette->rgb[(palette->ntics-1)*3]), 3);
+		memcpy(rgba, &(palette->rgba[(palette->ntics-1)*4]), 4);
 	} else {
-		uint32_t i = 1;
+		uint8_t i = 1;
 		while(factor > palette->tics[i])
 			i++;
-		float w1 = (palette->tics[i]-factor)/(palette->tics[i]-palette->tics[i-1]);
-		float w2 = (factor-palette->tics[i-1])/(palette->tics[i]-palette->tics[i-1]);
-		rgb[0] = w1 * palette->rgb[(i-1) * 3] + w2 * palette->rgb[i * 3];
-		rgb[1] = w1 * palette->rgb[(i-1)*3+1] + w2 * palette->rgb[i*3+1];
-		rgb[2] = w1 * palette->rgb[(i-1)*3+2] + w2 * palette->rgb[i*3+2];
+		float w1 = (palette->tics[i] - factor) /
+			(palette->tics[i] - palette->tics[i-1]);
+		float w2 = (factor - palette->tics[i-1]) /
+			(palette->tics[i] - palette->tics[i-1]);
+		rgba[0] = w1 * palette->rgba[(i-1) * 4] +
+			w2 * palette->rgba[i * 4];
+		rgba[1] = w1 * palette->rgba[(i-1)*4+1] +
+			w2 * palette->rgba[i*4+1];
+		rgba[2] = w1 * palette->rgba[(i-1)*4+2] +
+			w2 * palette->rgba[i*4+2];
+		rgba[3] = w1 * palette->rgba[(i-1)*4+3] +
+			w2 * palette->rgba[i*4+3];
 	}
 }
 
-static nb_graphics_palette_t* palette_get_rainbow()
+static nb_graphics_palette_t* palette_get_rainbow(void)
 {
 	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0, 128);
-	nb_graphics_palette_add_colour(palette, 0.10f,   0,   0, 255);
-	nb_graphics_palette_add_colour(palette, 0.20f,   0, 128, 255);
-	nb_graphics_palette_add_colour(palette, 0.37f,   0, 255, 255);
-	nb_graphics_palette_add_colour(palette, 0.50f,   0, 255,   0);
-	nb_graphics_palette_add_colour(palette, 0.63f, 255, 255,   0);
-	nb_graphics_palette_add_colour(palette, 0.80f, 255, 128,   0);
-	nb_graphics_palette_add_colour(palette, 0.90f, 255,   0,   0);
-	nb_graphics_palette_add_colour(palette, 1.00f, 100,   0,   0);
+	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0, 128, 255);
+	nb_graphics_palette_add_rgba(palette, 0.10f,   0,   0, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.20f,   0, 128, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.37f,   0, 255, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.50f,   0, 255,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 0.63f, 255, 255,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 0.80f, 255, 128,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 0.90f, 255,   0,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 1.00f, 100,   0,   0, 255);
 	return palette;
 }
 
-static nb_graphics_palette_t* palette_get_sunset()
+static nb_graphics_palette_t* palette_get_sunset(void)
 {
 	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0,   0);
-	nb_graphics_palette_add_colour(palette, 0.15f,  20,   0, 100);
-	nb_graphics_palette_add_colour(palette, 0.30f, 100,   0, 200);
-	nb_graphics_palette_add_colour(palette, 0.80f, 220, 100,   0);
-	nb_graphics_palette_add_colour(palette, 1.00f, 255, 255,   0);
+	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 0.15f,  20,   0, 100, 255);
+	nb_graphics_palette_add_rgba(palette, 0.30f, 100,   0, 200, 255);
+	nb_graphics_palette_add_rgba(palette, 0.80f, 220, 100,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 1.00f, 255, 255,   0, 255);
 	return palette;
 }
 
-static nb_graphics_palette_t* palette_get_french()
+static nb_graphics_palette_t* palette_get_french(void)
 {
 	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_colour(palette, 0.00f,   0,   0, 150);
-	nb_graphics_palette_add_colour(palette, 0.20f,   0,   0, 255);
-	nb_graphics_palette_add_colour(palette, 0.30f, 180, 180, 255);
-	nb_graphics_palette_add_colour(palette, 0.50f, 255, 255, 255);
-	nb_graphics_palette_add_colour(palette, 0.70f, 255, 180, 180);
-	nb_graphics_palette_add_colour(palette, 0.80f, 255,   0,   0);
-	nb_graphics_palette_add_colour(palette, 1.00f, 150,   0,   0);
+	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0, 150, 255);
+	nb_graphics_palette_add_rgba(palette, 0.20f,   0,   0, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.30f, 180, 180, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.50f, 255, 255, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.70f, 255, 180, 180, 255);
+	nb_graphics_palette_add_rgba(palette, 0.80f, 255,   0,   0, 255);
+	nb_graphics_palette_add_rgba(palette, 1.00f, 150,   0,   0, 255);
 	return palette;
 }
 
@@ -709,14 +680,15 @@ static void palette_draw_zero_mark(nb_graphics_context_t *g,
 {
 	if (0 > min_v * max_v) {
 		float factor = - min_v / (max_v - min_v);
-		uint8_t rgb[3];
-		nb_graphics_palette_get_colour(palette, factor, rgb);
+		uint8_t rgba[4];
+		nb_graphics_palette_get_rgba(palette, factor, rgba);
 	
-		rgb[0] = (rgb[0] + 128) % 256;
-		rgb[1] = (rgb[1] + 128) % 256;
-		rgb[2] = (rgb[2] + 128) % 256;
+		rgba[0] = (rgba[0] + 128) % 256;
+		rgba[1] = (rgba[1] + 128) % 256;
+		rgba[2] = (rgba[2] + 128) % 256;
 
-		nb_graphics_set_source_rgb(g, rgb[0], rgb[1], rgb[2]);
+		nb_graphics_set_source_rgba(g, rgba[0], rgba[1],
+					    rgba[2], rgba[3]);
 
 		float yzero = h * factor;
 		nb_graphics_move_to(g, x, y + h - yzero);

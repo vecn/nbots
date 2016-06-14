@@ -7,13 +7,15 @@
 #include "nb/image_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
+#include "../../palette_struct.h"
+
 #include "pix_drawing.h"
 
 #define TURTLE_STATIC_MEMSIZE 10
 #define TURTLE_DYNAMIC_MEMINCREASE 15
 
 enum {
-	RGB, RGBA, GRAD, TRG
+	SOLID, GRAD, TRG
 };
 
 enum {
@@ -34,19 +36,11 @@ typedef struct {
 } turtle_struct;
 
 typedef struct {
-	nb_graphics_grad_t type;
-	nb_graphics_palette_t *pal;
-} source_grad_t;
-
-typedef union {
-	uint8_t comp[12];
-	source_grad_t grad;
-} source_color_t;
-
-typedef struct {
-	uint8_t type;
+	uint8_t source_type:4;
+	nb_graphics_grad_t grad_type:4;
 	float vtx[6];
-	source_color_t color;
+	nb_graphics_palette_t *pal;
+	nb_graphics_palette_t color;
 } source_t;
 
 typedef struct {
@@ -79,9 +73,9 @@ static void source_set_trg(source_t *source,
 			   float x1, float y1,
 			   float x2, float y2,
 			   float x3, float y3,
-			   uint8_t r1, uint8_t g1, uint8_t b1,
-			   uint8_t r2, uint8_t g2, uint8_t b2,
-			   uint8_t r3, uint8_t g3, uint8_t b3);
+			   const uint8_t rgba1[4],
+			   const uint8_t rgba2[4],
+			   const uint8_t rgba3[4]);
 
 void* nb_graphics_pix_create_context(int width, int height)
 {
@@ -124,10 +118,10 @@ static void source_set_rgb(source_t *source, uint8_t r,
 			   uint8_t g, uint8_t b)
 {
 	memset(source, 0, sizeof(source_t));
-	source->type = RGB;
-	source->color.comp[0] = r;
-	source->color.comp[1] = g;
-	source->color.comp[2] = b;
+	source->source_type = SOLID;
+	source->pal = &(source->color);
+	nb_graphics_palette_add_rgba(source->pal, 0.0,
+				     r, g, b, 255);
 }
 
 void nb_graphics_pix_destroy_context(void *ctx)
@@ -247,25 +241,24 @@ void nb_graphics_pix_set_source_rgb(void *ctx,
 				    uint8_t r, uint8_t g, uint8_t b)
 {
 	context_t *c = ctx;
-	source_set_rgb(ctx->source, r, g, b);
+	source_set_rgb(c->source, r, g, b);
 }
 
 void nb_graphics_pix_set_source_rgba(void *ctx, uint8_t r, uint8_t g,
 				     uint8_t b, uint8_t a)
 {
 	context_t *c = ctx;
-	source_set_rgba(ctx->source, r, g, b, a);
+	source_set_rgba(c->source, r, g, b, a);
 }
 
 static void source_set_rgba(source_t *source, uint8_t r,
 			    uint8_t g, uint8_t b, uint8_t a)
 {
 	memset(source, 0, sizeof(source_t));
-	source->type = RGBA;
-	source->color.comp[0] = r;
-	source->color.comp[1] = g;
-	source->color.comp[2] = b;
-	source->color.comp[3] = a;
+	source->source_type = SOLID;
+	source->pal = &(source->color);
+	nb_graphics_palette_add_rgba(source->pal, 0.0,
+				     r, g, b, a);
 }
 void nb_graphics_pix_set_source_grad(void *ctx,
 				     nb_graphics_grad_t grad,
@@ -274,7 +267,7 @@ void nb_graphics_pix_set_source_grad(void *ctx,
 				     nb_graphics_palette_t *pal)
 {
 	context_t *c = ctx;
-	source_set_grad(ctx->source, x1, y1, x2, y2, pal);
+	source_set_grad(c->source, grad, x1, y1, x2, y2, pal);
 }
 
 static void source_set_grad(source_t *source,
@@ -284,56 +277,51 @@ static void source_set_grad(source_t *source,
 			    nb_graphics_palette_t *pal)
 {
 	memset(source, 0, sizeof(source_t));
-	source->type = GRAD;
+	source->source_type = GRAD;
+	source->grad_type = grad;
+	source->pal = pal;
 	source->vtx[0] = x1;
 	source->vtx[1] = y1;
 	source->vtx[2] = x2;
 	source->vtx[3] = y2;
-	source->color.grad.pal = pal;
-	source->color.grad.type = grad;
 }
 
 void nb_graphics_pix_set_source_trg(void *ctx,
 				    float x1, float y1,
 				    float x2, float y2,
 				    float x3, float y3,
-				    uint8_t r1, uint8_t g1, uint8_t b1,
-				    uint8_t r2, uint8_t g2, uint8_t b2,
-				    uint8_t r3, uint8_t g3, uint8_t b3)
+				    const uint8_t rgba1[4],
+				    const uint8_t rgba2[4],
+				    const uint8_t rgba3[4])
 {
 	context_t *c = ctx;
-	source_set_trg(ctx->source, x1, y1, x2, y2, x3, y3,
-		       r1, g1, b1, r2, g2, b2, r3, g3, b3);
+	source_set_trg(c->source, x1, y1, x2, y2, x3, y3,
+		       rgba1, rgba2, rgba3);
 }
 
 static void source_set_trg(source_t *source,
 			   float x1, float y1,
 			   float x2, float y2,
 			   float x3, float y3,
-			   uint8_t r1, uint8_t g1, uint8_t b1,
-			   uint8_t r2, uint8_t g2, uint8_t b2,
-			   uint8_t r3, uint8_t g3, uint8_t b3)
+			   const uint8_t rgba1[4],
+			   const uint8_t rgba2[4],
+			   const uint8_t rgba3[4])
 {
 	memset(source, 0, sizeof(source_t));
-	source->type = TRG;
+	source->source_type = TRG;
+	source->pal = &(source->color);
 	source->vtx[0] = x1;
 	source->vtx[1] = y1;
 	source->vtx[2] = x2;
 	source->vtx[3] = y2;
 	source->vtx[4] = x3;
 	source->vtx[5] = y3;
-	source->color.comp[0] = r1;
-	source->color.comp[1] = g1;
-	source->color.comp[2] = b1;
-	source->color.comp[3] = 1;
-	source->color.comp[4] = r2;
-	source->color.comp[5] = g2;
-	source->color.comp[6] = b2;
-	source->color.comp[7] = 1;
-	source->color.comp[8] = r3;
-	source->color.comp[9] = g3;
-	source->color.comp[10] = b3;
-	source->color.comp[11] = 1;
+	nb_graphics_palette_add_rgba(source->pal, 0.0, rgba1[0],
+				     rgba1[1], rgba1[2], rgba1[3]);
+	nb_graphics_palette_add_rgba(source->pal, 0.5, rgba2[0],
+				     rgba2[1], rgba2[2], rgba2[3]);
+	nb_graphics_palette_add_rgba(source->pal, 1.0, rgba3[0],
+				     rgba3[1], rgba3[2], rgba3[3]);
 }
 
 void nb_graphics_pix_fill(void *ctx)

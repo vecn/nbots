@@ -84,9 +84,9 @@ void nb_graphics_asy_set_source_trg(void *ctx,
 				    float x1, float y1,
 				    float x2, float y2,
 				    float x3, float y3,
-				    uint8_t r1, uint8_t g1, uint8_t b1,
-				    uint8_t r2, uint8_t g2, uint8_t b2,
-				    uint8_t r3, uint8_t g3, uint8_t b3)
+				    const uint8_t rgba1[4],
+				    const uint8_t rgba2[4],
+				    const uint8_t rgba3[4])
 {
 	;
 }

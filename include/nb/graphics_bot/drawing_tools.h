@@ -86,9 +86,9 @@ void nb_graphics_set_source_trg(nb_graphics_context_t *g,
 				float x1, float y1,
 				float x2, float y2,
 				float x3, float y3,
-				uint8_t r1, uint8_t g1, uint8_t b1,
-				uint8_t r2, uint8_t g2, uint8_t b2,
-				uint8_t r3, uint8_t g3, uint8_t b3);
+				const uint8_t rgba1[4],
+				const uint8_t rgba2[4],
+				const uint8_t rgba3[4]);
 
 void nb_graphics_fill(nb_graphics_context_t *g);
 
@@ -107,15 +107,15 @@ void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label
 void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const float box[4],
 			     float width, float height);
 
-nb_graphics_palette_t* nb_graphics_palette_create();
+nb_graphics_palette_t* nb_graphics_palette_create(void);
 nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_preset preset);
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette);
 void nb_graphics_palette_clear(nb_graphics_palette_t* palette);
-void nb_graphics_palette_add_colour(nb_graphics_palette_t* palette, float tic,
-				    uint8_t r, uint8_t g, uint8_t b);
-void nb_graphics_palette_get_colour(const nb_graphics_palette_t *const palette,
-				    float factor,
-				    uint8_t rgb[3]);
+void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,
+				  uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
+				  float factor,
+				  uint8_t rgba[4]);
 
 void nb_graphics_palette_draw(nb_graphics_context_t *g, 
 			      const nb_graphics_palette_t *const palette,
