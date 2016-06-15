@@ -31,7 +31,7 @@ typedef struct {
 	float height;
 	float x_left;
 	float y_top;
-} nb_text_attr_t;
+} nb_graphics_text_attr_t;
 
 typedef struct {
 	int width;
@@ -102,7 +102,7 @@ void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size);
 
 void nb_graphics_show_text(nb_graphics_context_t *g, const char *str);
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
-			      nb_text_attr_t *attr);
+			       nb_graphics_text_attr_t *attr);
 
 void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 			     float width, float height);

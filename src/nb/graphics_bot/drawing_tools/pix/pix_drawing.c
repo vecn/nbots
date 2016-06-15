@@ -9,10 +9,13 @@
 
 #include "../../palette_struct.h"
 
+#include "rasterizer.h"
+
 #include "pix_drawing.h"
 
-#define TURTLE_STATIC_MEMSIZE 10
-#define TURTLE_DYNAMIC_MEMINCREASE 15
+#define TURTLE_STATIC_MEMSIZE 10       /* turtle_step */
+#define TURTLE_DYNAMIC_MEMINCREASE 15  /* turtle_step */
+#define PIXMASK_STACK_MEMSIZE 250      /* Bytes */
 
 enum {
 	SOLID, GRAD, TRG
@@ -336,17 +339,20 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 
 void nb_graphics_pix_stroke(void *ctx)
 {
-	;
+	context_t *c = ctx;
+	/* PENDING */
 }
 
 void nb_graphics_pix_set_font_type(void *ctx, const char *type)
 {
-	;
+	context_t *c = ctx;
+	c->font->type = type;
 }
 
 void nb_graphics_pix_set_font_size(void *ctx, uint16_t size)
 {
-	;
+	context_t *c = ctx;
+	c->font->size = size;
 }
 
 void nb_graphics_pix_show_text(void *ctx, const char *str)
@@ -355,7 +361,7 @@ void nb_graphics_pix_show_text(void *ctx, const char *str)
 }
 
 void nb_graphics_pix_get_text_attr(const void *ctx, const char *label,
-				   nb_text_attr_t *attr)
+				   nb_graphics_text_attr_t *attr)
 {
 	;
 }

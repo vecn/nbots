@@ -82,7 +82,7 @@ struct nb_graphics_context_s {
 	void (*set_font_size)(void *ctx, uint16_t size);
 	void (*show_text)(void *ctx, const char *str);
 	void (*get_text_attr)(const void *ctx, const char *label,
-			      nb_text_attr_t *attr);
+			      nb_graphics_text_attr_t *attr);
 };
 
 static int get_format(const char *filename);
@@ -492,7 +492,7 @@ void nb_graphics_show_text(nb_graphics_context_t *g, const char *str)
 }
 
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
-			       nb_text_attr_t *attr)
+			       nb_graphics_text_attr_t *attr)
 {
 	g->get_text_attr(g->ctx, label, attr);
 }
@@ -703,7 +703,7 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 {
 	nb_graphics_set_font_type(g, "Sans");
 	nb_graphics_set_font_size(g, font_size);
-	nb_text_attr_t text_attr;
+	nb_graphics_text_attr_t text_attr;
 	nb_graphics_set_source(g, NB_BLACK);
 
 	char label[15];

@@ -123,7 +123,7 @@ void nb_graphics_eps_show_text(void *ctx, const char *str)
 }
 
 void nb_graphics_eps_get_text_attr(const void *ctx, const char *label,
-				   nb_text_attr_t *attr)
+				   nb_graphics_text_attr_t *attr)
 {
 	;
 }

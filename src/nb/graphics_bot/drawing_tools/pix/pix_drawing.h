@@ -60,6 +60,6 @@ void nb_graphics_pix_set_font_size(void *ctx, uint16_t size);
 
 void nb_graphics_pix_show_text(void *ctx, const char *str);
 void nb_graphics_pix_get_text_attr(const void *ctx, const char *label,
-				   nb_text_attr_t *attr);
+				   nb_graphics_text_attr_t *attr);
 
 #endif
