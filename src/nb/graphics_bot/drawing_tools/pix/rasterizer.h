@@ -22,4 +22,10 @@ void bresenham_subpix_quad_bezier(int x0, int y0, int x1, int y1,
 				  int xcontrol, int ycontrol, 
 				  void (*set_pixel)(int x, int y, void*),
 				  void *set_pixel_data));
+
+void bresenham_subpix_quad_rational_bezier(int x0, int y0, int x1, int y1,
+					   int xcontrol, int ycontrol,
+					   float w,
+					   void (*set_pixel)(void*),
+					   void *set_pixel_data);
 #endif

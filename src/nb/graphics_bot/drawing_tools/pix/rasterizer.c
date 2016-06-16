@@ -274,134 +274,172 @@ static void bresenham_quad_bezier(int x0, int y0, int x1, int y1,
 }
 
 void bresenham_subpix_quad_rational_bezier(int x0, int y0, int x1, int y1,
-					   int x2, int y2, float w,
+					   int xcontrol, int ycontrol,
+					   float w,
 					   void (*set_pixel)(void*),
 					   void *set_pixel_data)
 {
-	int x = x0-2*x1+x2;
-	int y = y0-2*y1+y2;
-	double xx = x0-x1;
-	double yy = y0-y1;
-	double ww, t, q;
+	int x = x0 - 2 * xcontrol + x1;
+	int y = y0 - 2 * ycontrol + y1;
+	double xx = x0 - xcontrol;
+	double yy = y0 - ycontrol;
 
 	assert(w >= 0.0);
 
-	if (xx*(x2-x1) > 0) {
-		if (yy * (y2 - y1) > 0) {
-			if (fabs(xx*y) > fabs(yy*x)) {
-				x0 = x2;
-				x2 = xx + x1;
-				y0 = y2;
-				y2 = yy + y1;
+	if (xx * (x1 - xcontrol) > 0) {
+		if (yy * (y1 - ycontrol) > 0) {
+			if (fabs(xx * y) > fabs(yy * x)) {
+				x0 = x1;
+				x1 = xx + xcontrol;
+				y0 = y1;
+				y1 = yy + ycontrol;
 			}
 		}
-		if (x0 == x2 || w == 1.0) {
-			t = (x0 - x1) / (double)x;
+		double t, q;
+		if (x0 == x1 || w == 1.0) {
+			t = (x0 - xcontrol) / (double)x;
 		} else {
-			q = sqrt(4.0 * POW2(w) * (x0 - x1) * (x2 - x1) +
-				 (x2 - x0) * (long)(x2-x0));
-			if (x1 < x0)
+			q = sqrt(4.0 * POW2(w) * (x0 - xcontrol) *
+				 (x1 - xcontrol) +
+				 (x1 - x0) * (long)(x1 - x0));
+			if (xcontrol < x0)
 				q = -q;
-			t = (2.0 * w * (x0 - x1) - x0 + x2 + q) /
-				(2.0 * (1.0 - w) * (x2 - x0));
+			t = (2.0 * w * (x0 - xcontrol) - x0 + x1 + q) /
+				(2.0 * (1.0 - w) * (x1 - x0));
 		}
 		q = 1.0 / (2.0 * t * (1.0 - t) * (w - 1.0) + 1.0);
-		xx = (POW2(t) * (x0 - 2.0 * w * x1 + x2) +
-		      2.0 * t * (w * x1 - x0) + x0) * q;
-		yy = (POW2(t) * (y0 - 2.0 * w * y1 + y2) +
-		      2.0 * t * (w * y1 - y0) + y0) * q;
-		ww = t * (w - 1.0) + 1.0;
+		xx = (POW2(t) * (x0 - 2.0 * w * xcontrol + x1) +
+		      2.0 * t * (w * xcontrol - x0) + x0) * q;
+		yy = (POW2(t) * (y0 - 2.0 * w * ycontrol + y1) +
+		      2.0 * t * (w * ycontrol - y0) + y0) * q;
+		double ww = t * (w - 1.0) + 1.0;
 		ww *= ww * q;
 		w = ((1.0 - t) * (w - 1.0) + 1.0) * sqrt(q);
 		x = floor(xx + 0.5);
 		y = floor(yy + 0.5);
-		yy = (xx - x0) * (y1 - y0) / (x1 - x0) + y0;
-		bresenham_quad_rational_bezier(x0, y0, x, floor(yy+0.5), x,y, ww,
+		yy = (xx - x0) * (ycontrol - y0) / (xcontrol - x0) + y0;
+		bresenham_quad_rational_bezier(x0, y0, x, floor(yy + 0.5),
+					       x, y, ww,
 					       set_pixel, set_pixel_data);
-		yy = (xx - x2) * (y1 - y2) / (x1 - x2) + y2;
-		y1 = floor(yy + 0.5);
-		x0 = x1 = x;
+		yy = (xx - x1) * (ycontrol - y1) / (xcontrol - x1) + y1;
+		ycontrol = floor(yy + 0.5);
+		x0 = xcontrol = x;
 		y0 = y;
 	}
-	if ((y0-y1) * (long)(y2-y1) > 0) {
-		if (y0 == y2 || w == 1.0) {
-			t = (y0-y1) / (y0 - 2.0 * y1 + y2);
+	if ((y0 - ycontrol) * (long)(y1 - ycontrol) > 0) {
+		double t, q;
+		if (y0 == y1 || w == 1.0) {
+			t = (y0 - ycontrol) / (y0 - 2.0 * ycontrol + y1);
 		} else {
-			q = sqrt(4.0 * POW2(w) * (y0 - y1) * (y2 - y1) +
-				 (y2 - y0) * (long)(y2 - y0));
-			if (y1 < y0)
+			q = sqrt(4.0 * POW2(w) * (y0 - ycontrol) *
+				 (y1 - ycontrol) +
+				 (y1 - y0) * (long)(y1 - y0));
+			if (ycontrol < y0)
 				q = -q;
-			t = (2.0 * w * (y0 - y1) - y0 + y2 + q) /
-				(2.0 * (1.0 - w) * (y2 - y0));
+			t = (2.0 * w * (y0 - ycontrol) - y0 + y1 + q) /
+				(2.0 * (1.0 - w) * (y1 - y0));
 		}
 		q = 1.0 / (2.0 * t * (1.0 - t) * (w - 1.0) + 1.0);
-		xx = (POW2(w) * (x0 - 2.0 * w * x1 + x2) +
-		      2.0 * t * (w * x1 - x0) + x0) * q;
-		yy = (POW2(w) * (y0 - 2.0 * w * y1 + y2) +
-		      2.0 * t * (w * y1 - y0) + y0) * q;
-		ww = t*(w-1.0)+1.0; ww *= ww*q;/* AQUI VOY */
-		w = ((1.0-t)*(w-1.0)+1.0)*sqrt(q);
-		x = floor(xx+0.5); y = floor(yy+0.5);
-		xx = (x1-x0)*(yy-y0)/(y1-y0)+x0;
-		bresenham_quad_rational_bezier(x0,y0, floor(xx+0.5),y, x,y, ww,
+		xx = (POW2(w) * (x0 - 2.0 * w * xcontrol + x1) +
+		      2.0 * t * (w * xcontrol - x0) + x0) * q;
+		yy = (POW2(w) * (y0 - 2.0 * w * ycontrol + y1) +
+		      2.0 * t * (w * ycontrol - y0) + y0) * q;
+		double ww = t * (w - 1.0) + 1.0;
+		ww *= ww * q;
+		w = ((1.0 - t) * (w - 1.0) + 1.0) * sqrt(q);
+		x = floor(xx + 0.5);
+		y = floor(yy + 0.5);
+		xx = (xcontrol - x0) * (yy - y0) / (ycontrol - y0) + x0;
+		bresenham_quad_rational_bezier(x0, y0, floor(xx + 0.5), y,
+					       x, y, ww,
 					       set_pixel, set_pixel_data);
-		xx = (x1-x2)*(yy-y2)/(y1-y2)+x2;
-		x1 = floor(xx+0.5); x0 = x; y0 = y1 = y;
+		xx = (xcontrol - x1) * (yy - y1) /
+			(ycontrol - y1) + x1;
+		xcontrol = floor(xx + 0.5);
+		x0 = x;
+		y0 = ycontrol = y;
 	}
-	bresenham_quad_rational_bezier(x0, y0, x1, y1, x2, y2, POW2(w),
+	bresenham_quad_rational_bezier(x0, y0, xcontrol, ycontrol,
+				       x1, y1, POW2(w),
 				       set_pixel, set_pixel_data);
 }
 
 
-static void bresenham_quad_rational_bezier(int x0, int y0,
-					   int x1, int y1,
-					   int x2, int y2,
-					   float w, 
-					   void (*set_pixel)(int x, int y, void*),
+static void bresenham_quad_rational_bezier
+				(int x0, int y0, int x1, int y1,
+				 int x2, int y2, float w, 
+				 void (*set_pixel)(int x, int y, void*),
 					   void *set_pixel_data))
-{                   /* plot a limited rational Bezier segment, squared weight */
-  int sx = x2-x1, sy = y2-y1;                   /* relative values for checks */
-  double dx = x0-x2, dy = y0-y2, xx = x0-x1, yy = y0-y1;
-  double xy = xx*sy+yy*sx, cur = xx*sy-yy*sx, err;               /* curvature */
+{
+	int sx = x2 - x1;
+	int sy = y2 - y1;
+	double dx = x0 - x2;
+	double dy = y0 - y2;
+	double xx = x0 - x1;
+	double yy = y0 - y1;
+	double xy = xx*sy+yy*sx;
+	double cur = xx*sy-yy*sx;
+	double err;
 
-  assert(xx*sx <= 0.0 && yy*sy <= 0.0);   /* sign of gradient must not change */
+	assert(xx*sx <= 0.0 && yy*sy <= 0.0);
 
-  if (cur != 0.0 && w > 0.0) {                            /* no straight line */
-    if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) {    /* begin with longer part */
-      x2 = x0; x0 -= dx; y2 = y0; y0 -= dy; cur = -cur;         /* swap P0 P2 */
-    }
-    xx = 2.0*(4.0*w*sx*xx+dx*dx);                   /* differences 2nd degree */
-    yy = 2.0*(4.0*w*sy*yy+dy*dy);
-    sx = x0 < x2 ? 1 : -1;                                /* x step direction */
-    sy = y0 < y2 ? 1 : -1;                                /* y step direction */
-    xy = -2.0*sx*sy*(2.0*w*xy+dx*dy);
+	if (cur != 0.0 && w > 0.0) {
+		if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) {
+			x2 = x0;
+			x0 -= dx;
+			y2 = y0;
+			y0 -= dy;
+			cur = -cur;
+		}
+		xx = 2.0*(4.0*w*sx*xx+dx*dx);
+		yy = 2.0*(4.0*w*sy*yy+dy*dy);
+		sx = x0 < x2 ? 1 : -1;
+		sy = y0 < y2 ? 1 : -1;
+		xy = -2.0*sx*sy*(2.0*w*xy+dx*dy);
 
-    if (cur*sx*sy < 0.0) {                              /* negated curvature? */
-      xx = -xx; yy = -yy; xy = -xy; cur = -cur;
-    }
-    dx = 4.0*w*(x1-x0)*sy*cur+xx/2.0+xy;            /* differences 1st degree */
-    dy = 4.0*w*(y0-y1)*sx*cur+yy/2.0+xy;
+		if (cur*sx*sy < 0.0) {
+			xx = -xx;
+			yy = -yy;
+			xy = -xy;
+			cur = -cur;
+		}
+		dx = 4.0*w*(x1-x0)*sy*cur+xx/2.0+xy;
+		dy = 4.0*w*(y0-y1)*sx*cur+yy/2.0+xy;
 
-    if (w < 0.5 && (dy > xy || dx < xy)) {   /* flat ellipse, algorithm fails */
-       cur = (w+1.0)/2.0; w = sqrt(w); xy = 1.0/(w+1.0);
-       sx = floor((x0+2.0*w*x1+x2)*xy/2.0+0.5);    /* subdivide curve in half */
-       sy = floor((y0+2.0*w*y1+y2)*xy/2.0+0.5);
-       dx = floor((w*x1+x0)*xy+0.5); dy = floor((y1*w+y0)*xy+0.5);
-       plotQuadRationalBezierSeg(x0,y0, dx,dy, sx,sy, cur);/* plot separately */
-       dx = floor((w*x1+x2)*xy+0.5); dy = floor((y1*w+y2)*xy+0.5);
-       plotQuadRationalBezierSeg(sx,sy, dx,dy, x2,y2, cur);
-       return;
-    }
-    err = dx+dy-xy;                                           /* error 1.step */
-    do {
-      setPixel(x0,y0);                                          /* plot curve */
-      if (x0 == x2 && y0 == y2) return;       /* last pixel -> curve finished */
-      x1 = 2*err > dy; y1 = 2*(err+yy) < -dy;/* save value for test of x step */
-      if (2*err < dx || y1) { y0 += sy; dy += xy; err += dx += xx; }/* y step */
-      if (2*err > dx || x1) { x0 += sx; dx += xy; err += dy += yy; }/* x step */
-    } while (dy <= xy && dx >= xy);    /* gradient negates -> algorithm fails */
-  }
-  plotLine(x0,y0, x2,y2);                     /* plot remaining needle to end */
+		if (w < 0.5 && (dy > xy || dx < xy)) {
+			cur = (w+1.0)/2.0;
+			w = sqrt(w);
+			xy = 1.0/(w+1.0);
+			sx = floor((x0+2.0*w*x1+x2)*xy/2.0+0.5);
+			sy = floor((y0+2.0*w*y1+y2)*xy/2.0+0.5);
+			dx = floor((w*x1+x0)*xy+0.5);
+			dy = floor((y1*w+y0)*xy+0.5);
+			plotQuadRationalBezierSeg(x0,y0, dx,dy, sx,sy, cur);
+			dx = floor((w*x1+x2)*xy+0.5);
+			dy = floor((y1*w+y2)*xy+0.5);
+			plotQuadRationalBezierSeg(sx,sy, dx,dy, x2,y2, cur);
+			return;
+		}
+		err = dx+dy-xy;
+		do {
+			set_pixel(x0, y0, set_pixel_data);
+			if (x0 == x2 && y0 == y2)
+				return;
+			x1 = 2*err > dy;
+			y1 = 2*(err+yy) < -dy;
+			if (2*err < dx || y1) {
+				y0 += sy;
+				dy += xy;
+				err += dx += xx;
+			}
+			if (2*err > dx || x1) {
+				x0 += sx;
+				dx += xy;
+				err += dy += yy;
+			}
+		} while (dy <= xy && dx >= xy);
+	}
+	bresenham_line(x0, y0, x2, y2, set_pixel, set_pixel_data);
 }
 
 void plotRotatedEllipse(int x, int y, int a, int b, float angle)
