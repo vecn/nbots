@@ -23,6 +23,7 @@ enum {
 
 enum {
 	MOVE_TO, LINE_TO, ARC, CLOSE_PATH
+	/* QCURVE_TO QRCURVE_TO CURVE_TO, ellipse() [TEMPORAL] */
 };
 
 typedef struct {

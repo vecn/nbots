@@ -1,19 +1,108 @@
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <math.h>
 #include <assert.h>
-
 
 #include "rasterizer.h"
 
 #define POW2(a) ((a)*(a))
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
-static void bresenham_quad_bezier(int x0, int y0, int x1, int y1,
-				  int xcontrol, int ycontrol,
-				  void (*set_pixel)(int x, int y, void*),
-				  void *set_pixel_data));
+static void line(int x0, int y0, int x1, int y1,
+		 void (*set_pixel)(int x, int y,
+				   uint8_t i, void*),
+		 void *pixel_data);
+static void ellipse(int xc, int yc, int rx, int ry,
+		    void (*set_pixel)(int x, int y,
+				      uint8_t i, void*),
+		    void *pixel_data);
+static void circle(int xc, int yc, int r,
+		   void (*set_pixel)(int x, int y,
+				     uint8_t i, void*),
+		   void *pixel_data);
+static void ellipse_rect(int x0, int y0, int x1, int y1,
+			void (*set_pixel)(int x, int y,
+					  uint8_t i, void*),
+			void *pixel_data);
+static void quad_bezier_sgm(int x0, int y0, int x1, int y1,
+			    int xcontrol, int ycontrol,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data);
+static void quad_bezier(int x0, int y0, int x1, int y1,
+			int xcontrol, int ycontrol, 
+			void (*set_pixel)(int x, int y,
+					  uint8_t i, void*),
+			void *pixel_data);
+static void quad_rational_bezier_sgm
+				(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w, 
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data);
+static void quad_rational_bezier(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w,
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data);
+static void rotated_ellipse(int x, int y, int rx, int ry, float angle,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data);
+static void rotated_ellipse_rect(int x0, int y0, int x1, int y1, long zd,
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data);
+static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
+			     float x0_control, float y0_control,
+			     float x1_control, float y1_control,
+			     void (*set_pixel)(int x, int y,
+					       uint8_t i, void*),
+			     void *pixel_data);
+static void cubic_bezier(int x0, int y0, int x1, int y1,
+			 int x0_control, int y0_control,
+			 int x1_control, int y1_control,
+			 void (*set_pixel)(int x, int y,
+					   uint8_t i, void*),
+			 void *pixel_data);
+static void line_aa(int x0, int y0, int x1, int y1,
+		    void (*set_pixel)(int x, int y,
+				      uint8_t i, void*),
+		    void *pixel_data);
+static void circle_aa(int xc, int yc, int r,
+		      void (*set_pixel)(int x, int y,
+					uint8_t i, void*),
+		      void *pixel_data);
+static void ellipse_rect_aa(int x0, int y0, int x1, int y1,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data);
+static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
+			       int xcontrol, int ycontrol,
+			       void (*set_pixel)(int x, int y,
+						 uint8_t i, void*),
+			       void *pixel_data);
+static void quad_rational_bezier_sgm_aa
+				(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w, 
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data);
 
-void bresenham_line(int x0, int y0, int x1, int y1,
-		    void (*set_pixel)(int x, int y, void*),
-		    void *set_pixel_data)
+static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
+				float x0_control, float y0_control,
+				float x1_control, float y1_control,
+				void (*set_pixel)(int x, int y,
+						  uint8_t i, void*),
+				void *pixel_data);
+
+
+static void line(int x0, int y0, int x1, int y1,
+		 void (*set_pixel)(int x, int y,
+				   uint8_t i, void*),
+		 void *pixel_data)
 {
 	int dx =  abs(x1 - x0);
 	int sx = (x0 < x1)? 1 : -1;
@@ -21,8 +110,8 @@ void bresenham_line(int x0, int y0, int x1, int y1,
 	int sy = (y0 < y1)? 1 : -1;
 	int err = dx + dy;
                                                     
-	while(1) {
-		set_pixel(x0, y0, set_pixel_data);
+	while (true) {
+		set_pixel(x0, y0, 255, pixel_data);
 		int e2 = 2 * err;
 		if (e2 >= dy) {
 			if (x0 == x1)
@@ -39,9 +128,10 @@ void bresenham_line(int x0, int y0, int x1, int y1,
 	}
 }
 
-void bresenham_ellipse(int xc, int yc, int rx, int ry,
-		       void (*set_pixel)(int x, int y, void*),
-		       void *set_pixel_data)
+static void ellipse(int xc, int yc, int rx, int ry,
+		    void (*set_pixel)(int x, int y,
+				      uint8_t i, void*),
+		    void *pixel_data)
 {
 	long x = -rx;
 	long y = 0;
@@ -51,10 +141,10 @@ void bresenham_ellipse(int xc, int yc, int rx, int ry,
 	long err = dx + dy;
                                                      
 	do {
-		set_pixel(xc - x, yc + y, set_pixel_data); /*  1st quadrant */
-		set_pixel(xc + x, yc + y, set_pixel_data); /*  2nd quadrant */
-		set_pixel(xc + x, yc - y, set_pixel_data); /*  3rd quadrant */
-		set_pixel(xc - x, yc - y, set_pixel_data); /*  4th quadrant */
+		set_pixel(xc - x, yc + y, 255, pixel_data); /*  1st quad */
+		set_pixel(xc + x, yc + y, 255, pixel_data); /*  2nd quad */
+		set_pixel(xc + x, yc - y, 255, pixel_data); /*  3rd quad */
+		set_pixel(xc - x, yc - y, 255, pixel_data); /*  4th quad */
 		e2 = 2 * err;
 		if (e2 >= dx) { 
 			x += 1;
@@ -73,24 +163,25 @@ void bresenham_ellipse(int xc, int yc, int rx, int ry,
 		 *    -> finish tip of ellipse 
 		 */
 		y += 1;
-		set_pixel(xc, yc + y, set_pixel_data);
-		set_pixel(xc, yc - y, set_pixel_data);
+		set_pixel(xc, yc + y, 255, pixel_data);
+		set_pixel(xc, yc - y, 255, pixel_data);
 	}
 }
 
-void bresenham_circle(int xc, int yc, int r,
-		      void (*set_pixel)(int x, int y, void*),
-		      void *set_pixel_data)
+static void circle(int xc, int yc, int r,
+		   void (*set_pixel)(int x, int y,
+				     uint8_t i, void*),
+		   void *pixel_data)
 {
 	int x = -r;
 	int y = 0;
 	int err = 2 - 2 * r;
 
 	do {
-		set_pixel(xc - x, yc + y, set_pixel_data); /* 1st quadrant */
-		set_pixel(xc - y, yc - x, set_pixel_data); /* 2nd quadrant */
-		set_pixel(xc + x, yc - y, set_pixel_data); /* 3rd quadrant */
-		set_pixel(xc + y, yc + x, set_pixel_data); /* 4th quadrant */
+		set_pixel(xc - x, yc + y, 255, pixel_data); /* 1st quad */
+		set_pixel(xc - y, yc - x, 255, pixel_data); /* 2nd quad */
+		set_pixel(xc + x, yc - y, 255, pixel_data); /* 3rd quad */
+		set_pixel(xc + y, yc + x, 255, pixel_data); /* 4th quad */
 		r = err;                                   
 		if (r <= y) {
 			y += 1;
@@ -103,9 +194,10 @@ void bresenham_circle(int xc, int yc, int r,
 	} while (x < 0);
 }
 
-void bresenham_ellipse_rect(int x0, int y0, int x1, int y1,
-			    void (*set_pixel)(int x, int y, void*),
-			    void *set_pixel_data)
+static void ellipse_rect(int x0, int y0, int x1, int y1,
+			 void (*set_pixel)(int x, int y,
+					   uint8_t i, void*),
+			 void *pixel_data)
 {
 	long rx = abs(x1 - x0);
 	long ry = abs(y1 - y0);
@@ -128,10 +220,10 @@ void bresenham_ellipse_rect(int x0, int y0, int x1, int y1,
 	ry = 8 * POW2(ry);
 
 	do {
-		set_pixel(x1, y0, set_pixel_data); /* 1st quadrant */
-		set_pixel(x0, y0, set_pixel_data); /* 2nd quadrant */
-		set_pixel(x0, y1, set_pixel_data); /* 3rd quadrant */
-		set_pixel(x1, y1, set_pixel_data); /* 4th quadrant */
+		set_pixel(x1, y0, 255, pixel_data); /* 1st quadrant */
+		set_pixel(x0, y0, 255, pixel_data); /* 2nd quadrant */
+		set_pixel(x0, y1, 255, pixel_data); /* 3rd quadrant */
+		set_pixel(x1, y1, 255, pixel_data); /* 4th quadrant */
 		double e2 = 2 * err;
 		if (e2 <= dy) {
 			y0 += 1;
@@ -151,71 +243,20 @@ void bresenham_ellipse_rect(int x0, int y0, int x1, int y1,
                 /* Early stop of flat ellipses rx = 1
 		 *    -> finish tip of ellipse
 		 */
-		set_pixel(x0 - 1, y0, set_pixel_data);
-		set_pixel(x1 + 1, y0, set_pixel_data);
+		set_pixel(x0 - 1, y0, 255, pixel_data);
+		set_pixel(x1 + 1, y0, 255, pixel_data);
 		y0 += 1;
-		set_pixel(x0 - 1, y1, set_pixel_data);
-		set_pixel(x1 + 1, y1, set_pixel_data);
+		set_pixel(x0 - 1, y1, 255, pixel_data);
+		set_pixel(x1 + 1, y1, 255, pixel_data);
 		y1 -= 1;
 	}
 }
 
-void bresenham_subpix_quad_bezier(int x0, int y0, int x1, int y1,
-				  int xcontrol, int ycontrol, 
-				  void (*set_pixel)(int x, int y, void*),
-				  void *set_pixel_data))
-{
-	int x = x0 - xcontrol;
-	int y = y0 - ycontrol;
-	double t = x0 - 2 * xcontrol + x1;
-
-	if ((long)x * (x1 - xcontrol) > 0) {
-		if ((long)y * (y1 - ycontrol) > 0) {
-			if (fabs((y0 - 2 * ycontrol + y1) / t * x) > abs(y)) {
-				x0 = x1;
-				x1 = x + xcontrol;
-				y0 = y1;
-				y1 = y + ycontrol;
-			}
-		}
-		t = (x0 - xcontrol) / t;
-		double r = (1-t) * ((1-t) * y0 + 2.0 * t * ycontrol) + POW2(t) * y1;
-		t = (x0 * x1 - POW2(xcontrol)) * t / (x0 - xcontrol);
-		x = floor(t + 0.5);
-		y = floor(r + 0.5);
-		r = (ycontrol - y0) * (t - x0) / (xcontrol - x0) + y0;
-		bresenham_quad_bezier(x0, y0, x, floor(r + 0.5), x, y,
-				      set_pixel, set_pixel_data);
-		r = (ycontrol - y1) * (t - x1) / (xcontrol - x1) + y1;
-		x0 = x;
-		xcontrol = x;
-		y0 = y;
-		ycontrol = floor(r + 0.5);
-	}                                                 
-	if ((long)(y0 - ycontrol) * (y1 - ycontrol) > 0) {
-		t = y0 - 2 * ycontrol + y1;
-		t = (y0 - ycontrol) / t;
-		double r = (1-t) * ((1-t) * x0 + 2.0 * t * xcontrol) + POW2(t) * x1;
-		t = (y0 * y1 - POW2(ycontrol)) * t / (y0 - ycontrol);
-		x = floor(r + 0.5);
-		y = floor(t + 0.5);
-		r = (xcontrol - x0) * (t - y0) / (ycontrol - y0) + x0;
-		bresenham_quad_bezier(x0, y0, floor(r+0.5), y, x, y,
-				      set_pixel, set_pixel_data);
-		r = (xcontrol - x1) * (t - y1) / (ycontrol - y1) + x1;
-		x0 = x;
-		xcontrol = floor(r + 0.5);
-		y0 = y;
-		ycontrol = y;
-	}
-	bresenham_quad_bezier(x0, y0, xcontrol, ycontrol, x1, y1,
-			      set_pixel, set_pixel_data);
-}
-
-static void bresenham_quad_bezier(int x0, int y0, int x1, int y1,
-				  int xcontrol, int ycontrol,
-				  void (*set_pixel)(int x, int y, void*),
-				  void *set_pixel_data))
+static void quad_bezier_sgm(int x0, int y0, int x1, int y1,
+			    int xcontrol, int ycontrol,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data)
 {
 	int sx = x1 - xcontrol;
 	int sy = y1 - ycontrol;
@@ -252,7 +293,7 @@ static void bresenham_quad_bezier(int x0, int y0, int x1, int y1,
 		yy += yy;
 		double err = dx + dy + xy;
 		do {
-			set_pixel(x0, y0, set_pixel_data);
+			set_pixel(x0, y0, 255, pixel_data);
 			if (x0 == x1 && y0 == y1)
 				return;
 			ycontrol = 2 * err < dx;
@@ -270,14 +311,148 @@ static void bresenham_quad_bezier(int x0, int y0, int x1, int y1,
 			}
 		} while (dy < 0 && dx > 0);
 	}
-	bresenham_line(x0, y0, x1, y1, set_pixel, set_pixel_data);
+	line(x0, y0, x1, y1, set_pixel, pixel_data);
 }
 
-void bresenham_subpix_quad_rational_bezier(int x0, int y0, int x1, int y1,
-					   int xcontrol, int ycontrol,
-					   float w,
-					   void (*set_pixel)(void*),
-					   void *set_pixel_data)
+
+static void quad_bezier(int x0, int y0, int x1, int y1,
+			int xcontrol, int ycontrol, 
+			void (*set_pixel)(int x, int y,
+					  uint8_t i, void*),
+			void *pixel_data)
+{
+	int x = x0 - xcontrol;
+	int y = y0 - ycontrol;
+	double t = x0 - 2 * xcontrol + x1;
+
+	if ((long)x * (x1 - xcontrol) > 0) {
+		if ((long)y * (y1 - ycontrol) > 0) {
+			if (fabs((y0 - 2 * ycontrol + y1) / t * x) > abs(y)) {
+				x0 = x1;
+				x1 = x + xcontrol;
+				y0 = y1;
+				y1 = y + ycontrol;
+			}
+		}
+		t = (x0 - xcontrol) / t;
+		double r = (1-t) * ((1-t) * y0 + 2.0 * t * ycontrol) + POW2(t) * y1;
+		t = (x0 * x1 - POW2(xcontrol)) * t / (x0 - xcontrol);
+		x = floor(t + 0.5);
+		y = floor(r + 0.5);
+		r = (ycontrol - y0) * (t - x0) / (xcontrol - x0) + y0;
+		quad_bezier_sgm(x0, y0, x, y, x, floor(r + 0.5),
+				set_pixel, pixel_data);
+		r = (ycontrol - y1) * (t - x1) / (xcontrol - x1) + y1;
+		x0 = x;
+		xcontrol = x;
+		y0 = y;
+		ycontrol = floor(r + 0.5);
+	}                                                 
+	if ((long)(y0 - ycontrol) * (y1 - ycontrol) > 0) {
+		t = y0 - 2 * ycontrol + y1;
+		t = (y0 - ycontrol) / t;
+		double r = (1-t) * ((1-t) * x0 + 2.0 * t * xcontrol) + POW2(t) * x1;
+		t = (y0 * y1 - POW2(ycontrol)) * t / (y0 - ycontrol);
+		x = floor(r + 0.5);
+		y = floor(t + 0.5);
+		r = (xcontrol - x0) * (t - y0) / (ycontrol - y0) + x0;
+		quad_bezier_sgm(x0, y0, x, y, floor(r+0.5), y,
+				set_pixel, pixel_data);
+		r = (xcontrol - x1) * (t - y1) / (ycontrol - y1) + x1;
+		x0 = x;
+		xcontrol = floor(r + 0.5);
+		y0 = y;
+		ycontrol = y;
+	}
+	quad_bezier_sgm(x0, y0, x1, y1,
+			xcontrol, ycontrol,
+			set_pixel, pixel_data);
+}
+
+static void quad_rational_bezier_sgm
+				(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w, 
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data)
+{
+	int sx = x1 - xcontrol;
+	int sy = y1 - ycontrol;
+	double dx = x0 - x1;
+	double dy = y0 - y1;
+	double xx = x0 - xcontrol;
+	double yy = y0 - ycontrol;
+	double xy = xx * sy + yy * sx;
+	double cur = xx * sy - yy * sx;
+
+	assert(xx * sx <= 0.0 && yy * sy <= 0.0);
+
+	if (cur != 0.0 && w > 0.0) {
+		if (sx * (long)sx + sy * (long)sy > xx * xx + yy * yy) {
+			x1 = x0;
+			x0 -= dx;
+			y1 = y0;
+			y0 -= dy;
+			cur = -cur;
+		}
+		xx = 2.0 * (4.0 * w * sx * xx + dx * dx);
+		yy = 2.0 * (4.0 * w * sy * yy + dy * dy);
+		sx = x0 < x1 ? 1 : -1;
+		sy = y0 < y1 ? 1 : -1;
+		xy = -2.0 * sx * sy * (2.0 * w * xy + dx * dy);
+
+		if (cur * sx * sy < 0.0) {
+			xx = -xx;
+			yy = -yy;
+			xy = -xy;
+			cur = -cur;
+		}
+		dx = 4.0 * w * (xcontrol - x0) * sy * cur + xx / 2.0 + xy;
+		dy = 4.0 * w * (y0 - ycontrol) * sx * cur + yy / 2.0 + xy;
+
+		if (w < 0.5 && (dy > xy || dx < xy)) {
+			cur = (w + 1.0) / 2.0;
+			w = sqrt(w);
+			xy = 1.0/(w + 1.0);
+			sx = floor((x0 + 2.0 * w * xcontrol + x1) * xy / 2.0 + 0.5);
+			sy = floor((y0 + 2.0 * w * ycontrol + y1) * xy / 2.0 + 0.5);
+			dx = floor((w * xcontrol + x0) * xy + 0.5);
+			dy = floor((ycontrol * w + y0) * xy + 0.5);
+			quad_rational_bezier_sgm(x0, y0, dx, dy, sx, sy, cur,
+						 set_pixel, pixel_data);
+			dx = floor((w * xcontrol + x1) * xy + 0.5);
+			dy = floor((ycontrol * w + y1) * xy + 0.5);
+			quad_rational_bezier_sgm(sx, sy, dx, dy, x1, y1, cur,
+						 set_pixel, pixel_data);
+			return;
+		}
+		double err = dx + dy - xy;
+		do {
+			set_pixel(x0, y0, 255, pixel_data);
+			if (x0 == x1 && y0 == y1)
+				return;
+			xcontrol = 2 * err > dy;
+			ycontrol = 2 * (err + yy) < -dy;
+			if (2 * err < dx || ycontrol) {
+				y0 += sy;
+				dy += xy;
+				err += dx += xx;
+			}
+			if (2 * err > dx || xcontrol) {
+				x0 += sx;
+				dx += xy;
+				err += dy += yy;
+			}
+		} while (dy <= xy && dx >= xy);
+	}
+	line(x0, y0, x1, y1, set_pixel, pixel_data);
+}
+
+static void quad_rational_bezier(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w,
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data)
 {
 	int x = x0 - 2 * xcontrol + x1;
 	int y = y0 - 2 * ycontrol + y1;
@@ -318,9 +493,9 @@ void bresenham_subpix_quad_rational_bezier(int x0, int y0, int x1, int y1,
 		x = floor(xx + 0.5);
 		y = floor(yy + 0.5);
 		yy = (xx - x0) * (ycontrol - y0) / (xcontrol - x0) + y0;
-		bresenham_quad_rational_bezier(x0, y0, x, floor(yy + 0.5),
-					       x, y, ww,
-					       set_pixel, set_pixel_data);
+		quad_rational_bezier_sgm(x0, y0, x, y, 
+					 x, floor(yy + 0.5), ww,
+					 set_pixel, pixel_data);
 		yy = (xx - x1) * (ycontrol - y1) / (xcontrol - x1) + y1;
 		ycontrol = floor(yy + 0.5);
 		x0 = xcontrol = x;
@@ -350,612 +525,811 @@ void bresenham_subpix_quad_rational_bezier(int x0, int y0, int x1, int y1,
 		x = floor(xx + 0.5);
 		y = floor(yy + 0.5);
 		xx = (xcontrol - x0) * (yy - y0) / (ycontrol - y0) + x0;
-		bresenham_quad_rational_bezier(x0, y0, floor(xx + 0.5), y,
-					       x, y, ww,
-					       set_pixel, set_pixel_data);
+		quad_rational_bezier_sgm(x0, y0, x, y,
+					 floor(xx + 0.5), y, ww,
+					 set_pixel, pixel_data);
 		xx = (xcontrol - x1) * (yy - y1) /
 			(ycontrol - y1) + x1;
 		xcontrol = floor(xx + 0.5);
 		x0 = x;
 		y0 = ycontrol = y;
 	}
-	bresenham_quad_rational_bezier(x0, y0, xcontrol, ycontrol,
-				       x1, y1, POW2(w),
-				       set_pixel, set_pixel_data);
+	quad_rational_bezier_sgm(x0, y0, x1, y1, 
+				 xcontrol, ycontrol, POW2(w),
+				 set_pixel, pixel_data);
 }
 
-
-static void bresenham_quad_rational_bezier
-				(int x0, int y0, int x1, int y1,
-				 int x2, int y2, float w, 
-				 void (*set_pixel)(int x, int y, void*),
-					   void *set_pixel_data))
+static void rotated_ellipse(int x, int y, int rx, int ry, float angle,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data)
 {
-	int sx = x2 - x1;
-	int sy = y2 - y1;
-	double dx = x0 - x2;
-	double dy = y0 - y2;
-	double xx = x0 - x1;
-	double yy = y0 - y1;
-	double xy = xx*sy+yy*sx;
-	double cur = xx*sy-yy*sx;
-	double err;
+	float xd = (long) POW2(rx);
+	float yd = (long) POW2(ry);
+	float s = sin(angle);
+	float zd = (xd - yd) * s;
+	xd = sqrt(xd - zd * s);
+	yd = sqrt(yd + zd * s);
+	rx = xd + 0.5;
+	ry = yd + 0.5;
+	zd = zd * rx * ry / (xd * yd);
+	rotated_ellipse_rect(x - rx, y - ry, x + rx, y + ry,
+			     (long)(4 * zd * cos(angle)),
+			     set_pixel, pixel_data);
+}
 
-	assert(xx*sx <= 0.0 && yy*sy <= 0.0);
+static void rotated_ellipse_rect(int x0, int y0, int x1, int y1, long zd,
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data)
+{
+	int xd = x1 - x0;
+	int yd = y1 - y0;
+	float w = xd*(long)yd;
+	if (zd == 0)
+		return ellipse_rect(x0, y0, x1, y1,
+				    set_pixel,
+				    pixel_data);
+	if (w != 0.0)
+		w = (w-zd)/(w+w);
+	assert(w <= 1.0 && w >= 0.0);
 
-	if (cur != 0.0 && w > 0.0) {
-		if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) {
-			x2 = x0;
-			x0 -= dx;
-			y2 = y0;
-			y0 -= dy;
-			cur = -cur;
+	xd = floor(xd * w + 0.5);
+	yd = floor(yd * w + 0.5);
+	quad_rational_bezier_sgm(x0, y0 + yd, x0 + xd, y0,
+				 x0, y0, 1.0-w,
+				 set_pixel, pixel_data);
+	quad_rational_bezier_sgm(x0, y0 + yd, x1 - xd, y1,
+				 x0, y1, w,
+				 set_pixel, pixel_data);
+	quad_rational_bezier_sgm(x1, y1 - yd, x1 - xd, y1,
+				 x1, y1, 1.0 - w,
+				 set_pixel, pixel_data);
+	quad_rational_bezier_sgm(x1, y1 - yd, x0 + xd, y0,
+				 x1, y0, w,
+				 set_pixel, pixel_data);
+}
+
+static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
+			     float x0_control, float y0_control,
+			     float x1_control, float y1_control,
+			     void (*set_pixel)(int x, int y,
+					       uint8_t i, void*),
+			     void *pixel_data)
+{
+	int leg = 1;
+	int sx = x0 < x1 ? 1 : -1;
+	int sy = y0 < y1 ? 1 : -1;
+	float xc = -fabs(x0+x0_control-x1_control-x1);
+	float xa = xc-4*sx*(x0_control-x1_control);
+	float xb = sx*(x0-x0_control-x1_control+x1);
+	float yc = -fabs(y0+y0_control-y1_control-y1);
+	float ya = yc-4*sy*(y0_control-y1_control);
+	float yb = sy*(y0-y0_control-y1_control+y1);
+	double EP = 0.01;
+
+	assert((x0_control-x0) * (x1_control-x1) < EP &&
+	       ((x1-x0) * (x0_control-x1_control) < EP ||
+		POW2(xb) < xa*xc + EP));
+
+	assert((y0_control-y0) * (y1_control-y1) < EP &&
+	       ((y1-y0) * (y0_control-y1_control) < EP ||
+		POW2(yb) < ya*yc + EP));
+
+	if (xa == 0 && ya == 0) {
+		sx = floor((3*x0_control-x0+1)/2);
+		sy = floor((3*y0_control-y0+1)/2);
+		return quad_bezier_sgm(x0, y0, x1, y1, sx, sy,
+				       set_pixel, pixel_data);
+	}
+	x0_control = (x0_control-x0) * (x0_control-x0) +
+		(y0_control-y0) * (y0_control-y0) + 1;
+	x1_control = (x1_control-x1) * (x1_control-x1) +
+		(y1_control-y1) * (y1_control-y1) + 1;
+	do {
+		double ab = xa*yb - xb*ya;
+		double ac = xa*yc - xc*ya;
+		double bc = xb*yc - xc*yb;
+		double ex = ab*(ab + ac - 3*bc) + ac*ac;
+		int f = (ex > 0) ? 1 : sqrt(1 + 1024/x0_control);
+		ab *= f;
+		ac *= f;
+		bc *= f;
+		ex *= POW2(f);
+		double xy = 9*(ab + ac + bc)/8;
+		double cb = 8*(xa - ya);
+		double dx = 27*(8*ab*(POW2(yb) - ya*yc) +
+				ex*(ya + 2*yb+yc)) / 64 - POW2(ya) * (xy-ya);
+		double dy = 27*(8*ab*(POW2(xb) - xa*xc) -
+				ex*(xa + 2*xb+xc)) / 64 - POW2(xa) * (xy+xa);
+		double xx = 3 * (3 * ab * (3 * POW2(yb) - POW2(ya) - 2*ya*yc) -
+				 ya*(3*ac*(ya + yb) + ya*cb))/4;
+		double yy = 3 * (3 * ab * (3 * POW2(xb) - POW2(xa) - 2*xa*xc) -
+				 xa*(3*ac*(xa + xb) + xa*cb))/4;
+		xy = xa * ya * (6*ab + 6*ac - 3*bc + cb);
+		ac = POW2(ya);
+		cb = POW2(xa);
+		xy = 3*(xy + 9*f*(cb*yb*yc - xb*xc*ac) - 18*xb*yb*ab)/8;
+
+		if (ex < 0) {
+			dx = -dx;
+			dy = -dy;
+			xx = -xx;
+			yy = -yy;
+			xy = -xy;
+			ac = -ac;
+			cb = -cb;
 		}
-		xx = 2.0*(4.0*w*sx*xx+dx*dx);
-		yy = 2.0*(4.0*w*sy*yy+dy*dy);
-		sx = x0 < x2 ? 1 : -1;
-		sy = y0 < y2 ? 1 : -1;
-		xy = -2.0*sx*sy*(2.0*w*xy+dx*dy);
+		ab = 6 * ya * ac;
+		ac = -6 * xa * ac;
+		bc = 6 * ya * cb;
+		cb = -6 * xa * cb;
+		dx += xy;
+		ex = dx + dy;
+		dy += xy;
 
-		if (cur*sx*sy < 0.0) {
+		double *pxy = &xy;
+		int fx = f;
+		int fy = f;
+		while (x0 != x1 && y0 != y1) {
+			set_pixel(x0, y0, 255, pixel_data);
+			do {
+				if (dx > *pxy || dy < *pxy)
+					goto exit;
+				y0_control = 2*ex - dy;
+				if (2*ex >= dx) {
+					fx--;
+					dx += xx;
+					ex += dx;
+					xy += ac;
+					dy += xy;
+					yy += bc;
+					xx += ab;
+				}
+				if (y0_control <= 0) {
+					fy--;
+					dy += yy;
+					ex += dy;
+					xy += bc;
+					dx += xy;
+					xx += ac;
+					yy += cb;
+				}
+			} while (fx > 0 && fy > 0);
+			if (2*fx <= f) {
+				x0 += sx;
+				fx += f;
+			}
+			if (2*fy <= f) {
+				y0 += sy;
+				fy += f;
+			}
+			if (pxy == &xy && dx < 0 && dy > 0)
+				pxy = &EP;
+		}
+	exit:
+		xx = x0;
+		x0 = x1;
+		x1 = xx;
+		sx = -sx;
+		xb = -xb;
+		
+		yy = y0;
+		y0 = y1;
+		y1 = yy;
+		sy = -sy;
+		yb = -yb;
+		x0_control = x1_control;
+	} while (leg--);
+
+	line(x0, y0, x1, y1, set_pixel, pixel_data);
+}
+
+static void cubic_bezier(int x0, int y0, int x1, int y1,
+			 int x0_control, int y0_control,
+			 int x1_control, int y1_control,
+			 void (*set_pixel)(int x, int y,
+					   uint8_t i, void*),
+			 void *pixel_data)
+{
+	long xc = x0 + x0_control - x1_control - x1;
+	long xa = xc - 4 * (x0_control - x1_control);
+	long xb = x0 - x0_control - x1_control + x1;
+	long xd = xb + 4 * (x0_control + x1_control);
+	long yc = y0 + y0_control - y1_control - y1;
+	long ya = yc - 4 * (y0_control - y1_control);
+	long yb = y0 - y0_control - y1_control + y1;
+	long yd = yb + 4 * (y0_control + y1_control);
+	double t1 = xb * xb - xa * xc;
+	double t[5];
+
+	/* Sub-divide curve at gradient sign changes */
+	int n = 0;
+	if (xa == 0) {
+		if (abs(xc) < 2*abs(xb))
+			t[n++] = xc / (2.0 * xb);
+	} else if (t1 > 0.0) {
+		double t2 = sqrt(t1);
+		t1 = (xb - t2) / xa;
+		if (fabs(t1) < 1.0)
+			t[n++] = t1;
+		t1 = (xb+t2)/xa;
+		if (fabs(t1) < 1.0)
+			t[n++] = t1;
+	}
+	t1 = yb * yb - ya * yc;
+	if (ya == 0) {
+		if (abs(yc) < 2*abs(yb))
+			t[n++] = yc / (2.0 * yb);
+	} else if (t1 > 0.0) {
+		double t2 = sqrt(t1);
+		t1 = (yb-t2) / ya;
+		if (fabs(t1) < 1.0)
+			t[n++] = t1;
+		t1 = (yb+t2) / ya;
+		if (fabs(t1) < 1.0)
+			t[n++] = t1;
+	}
+	for (int i = 1; i < n; i++) {
+		if ((t1 = t[i-1]) > t[i]) {
+			t[i-1] = t[i];
+			t[i] = t1;
+			i = 0;
+		}
+	}
+
+	t1 = -1.0;
+	t[n] = 1.0;
+	for (int i = 0; i <= n; i++) {
+		float fx0 = x0;
+		float fy0 = y0;
+		float fx1 = x1;
+		float fy1 = y1;
+		double t2 = t[i];
+		float fx0_control = (t1*(t1*xb-2*xc) -
+				     t2*(t1*(t1*xa-2*xb) + xc) + xd)/8 - fx0;
+		float fy0_control = (t1*(t1*yb-2*yc) -
+				     t2*(t1*(t1*ya-2*yb) + yc) + yd)/8 - fy0;
+		float fx1_control = (t2*(t2*xb-2*xc) -
+				     t1*(t2*(t2*xa-2*xb) + xc) + xd)/8 - fx0;
+		float fy1_control = (t2*(t2*yb-2*yc) -
+				     t1*(t2*(t2*ya-2*yb) + yc) + yd)/8 - fy0;
+
+		fx0 -= fx1 = (t2*(t2*(3*xb - t2*xa) - 3*xc) + xd) / 8;
+		fy0 -= fy1 = (t2*(t2*(3*yb - t2*ya) - 3*yc) + yd) / 8;
+		x1 = floor(fx1 + 0.5);
+		y1 = floor(fy1 + 0.5);
+		if (fx0 != 0.0) {
+			fx0 = (x0 - x1) / fx0;
+			fx0_control *= fx0;
+			fx1_control *= fx0;
+		}
+		if (fy0 != 0.0) {
+			fy0 = (y0 - y1) / fy0;
+			fy0_control *= fy0;
+			fy1_control *= fy0;
+		}
+		if (x0 != x1 || y0 != y1)
+			cubic_bezier_sgm(x0, y0, x1, y1,
+					 x0 + fx0_control,
+					 y0 + fy0_control,
+					 x0 + fx1_control,
+					 y0 + fy1_control,
+					 set_pixel,
+					 pixel_data);
+		x0 = x1;
+		y0 = y1;
+		fx0 = fx1;
+		fy0 = fy1;
+		t1 = t2;
+	}
+}
+
+static void line_aa(int x0, int y0, int x1, int y1,
+		    void (*set_pixel)(int x, int y,
+				      uint8_t i, void*),
+		    void *pixel_data)
+{
+	int sx = (x0 < x1)? 1 : -1;
+	int sy = (y0 < y1)? 1 : -1;
+	long dx = abs(x1 - x0);
+	long dy = abs(y1 - y0);
+	long err = dx*dx + dy*dy;
+	long e2 = (err == 0)? 1 : 0xffff7fl / sqrt(err);
+
+	dx *= e2;
+	dy *= e2;
+	err = dx - dy;
+	while (true) {
+		set_pixel(x0, y0, abs(err-dx+dy)>>16, pixel_data);
+		e2 = err;
+		int x2 = x0;
+		if (2*e2 >= -dx) {
+			if (x0 == x1)
+				break;
+			if (e2+dy < 0xff0000l)
+				set_pixel(x0, y0+sy, (e2+dy)>>16, pixel_data);
+			err -= dy;
+			x0 += sx; 
+		} 
+		if (2*e2 <= dy) {
+			if (y0 == y1)
+				break;
+			if (dx-e2 < 0xff0000l)
+				set_pixel(x2+sx, y0, (dx-e2)>>16, pixel_data);
+			err += dx;
+			y0 += sy; 
+		}
+	}
+}
+
+static void circle_aa(int xc, int yc, int r,
+		      void (*set_pixel)(int x, int y,
+					uint8_t i, void*),
+		      void *pixel_data)
+{
+	int x = -r;
+	int y = 0;
+	int err = 2 - 2*r;
+	r = 1-err;
+	do {
+		int i = 255 * abs(err-2*(x+y)-2) / r;
+		set_pixel(xc-x, yc+y, i, pixel_data); /* 1st quad */
+		set_pixel(xc-y, yc-x, i, pixel_data); /* 2nd quad */
+		set_pixel(xc+x, yc-y, i, pixel_data); /* 3rd quad */
+		set_pixel(xc+y, yc+x, i, pixel_data); /* 4th quad */
+		int e2 = err;
+		int x2 = x;
+		if (err + y > 0) {
+			i = 255 * (err-2*x-1) / r;
+			if (i < 256) {
+				set_pixel(xc-x, yc+y+1, i, pixel_data);
+				set_pixel(xc-y-1, yc-x, i, pixel_data);
+				set_pixel(xc+x, yc-y-1, i, pixel_data);
+				set_pixel(xc+y+1, yc+x, i, pixel_data);
+			}
+			x += 1;
+			err += x*2 + 1;
+		}
+		if (e2+x2 <= 0) {
+			i = 255 * (2*y+3-e2) / r;
+			if (i < 256) {
+				set_pixel(xc-x2-1, yc+y, i, pixel_data);
+				set_pixel(xc-y, yc-x2-1, i, pixel_data);
+				set_pixel(xc+x2+1, yc-y, i, pixel_data);
+				set_pixel(xc+y, yc+x2+1, i, pixel_data);
+			}
+			y += 1;
+			err += y*2 + 1;
+		}
+	} while (x < 0);
+}
+
+static void ellipse_rect_aa(int x0, int y0, int x1, int y1,
+			    void (*set_pixel)(int x, int y,
+					      uint8_t i, void*),
+			    void *pixel_data)
+{
+	long rx = abs(x1 - x0);
+	long ry = abs(y1 - y0);
+	long ry_extra = ry % 2;
+	float dx = 4 * (rx - 1.0) * POW2(ry);
+	float dy = 4 * (ry_extra + 1) * POW2(rx);
+	float err = ry_extra*POW2(rx) - dx + dy;
+
+	if (rx == 0 || ry == 0)
+		return line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
+
+	if (x0 > x1) {
+		x0 = x1;
+		x1 += rx;
+	}
+	if (y0 > y1)
+		y0 = y1;
+	y0 += (ry + 1)/2;
+	y1 = y0 - ry_extra;
+	rx = 8 * POW2(rx);
+	ry_extra = 8 * POW2(ry_extra);
+
+	while (true) {
+		float i = MIN(dx, dy);
+		float ed = MAX(dx, dy);
+		if (y0 == y1 + 1 && err > dy && rx > ry_extra)
+			ed = 255*4.0 / rx;
+		else
+			ed = 255 / (ed + 2*ed*POW2(i)/(POW2(2*ed)+POW2(i)));
+		i = ed * fabs(err + dx - dy);
+		set_pixel(x0, y0, i, pixel_data);
+		set_pixel(x0, y1, i, pixel_data);
+		set_pixel(x1, y0, i, pixel_data);
+		set_pixel(x1, y1, i, pixel_data);
+
+		bool f = (2*err + dy >= 0);
+		if (f) {
+			if (x0 >= x1)
+				break;
+			i = ed * (err+dx);
+			if (i < 255) {
+				set_pixel(x0, y0+1, i, pixel_data);
+				set_pixel(x0, y1-1, i, pixel_data);
+				set_pixel(x1, y0+1, i, pixel_data);
+				set_pixel(x1, y1-1, i, pixel_data);
+			}
+		} 
+		if (2*err <= dx) {
+			i = ed * (dy-err);
+			if (i < 255) {
+				set_pixel(x0+1, y0, i, pixel_data);
+				set_pixel(x1-1, y0, i, pixel_data);
+				set_pixel(x0+1, y1, i, pixel_data);
+				set_pixel(x1-1, y1, i, pixel_data);
+			}
+			y0 += 1;
+			y1 -= 1;
+			dy += rx;
+			err += dy;
+		}  
+		if (f) {
+			x0 += 1;
+			x1 -= 1;
+			dx -= ry_extra;
+			err -= dx;
+		}
+	}
+	x0 -= 1;
+	if (x0 == x1) {
+		/* Early stop of flat ellipses */
+		x1 += 1;
+		while (y0 - y1 < ry) {
+			float i = 255 * 4 * fabs(err+dx) / ry_extra;
+			y0 += 1;
+			y1 -= 1;
+			set_pixel(x0, y0, i, pixel_data);
+			set_pixel(x1, y0, i, pixel_data);
+			set_pixel(x0, y1, i, pixel_data);
+			set_pixel(x1, y1, i, pixel_data);
+			dy += rx;
+			err += dy;
+		}
+	}
+}
+
+static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
+			       int xcontrol, int ycontrol,
+			       void (*set_pixel)(int x, int y,
+						 uint8_t i, void*),
+			       void *pixel_data)
+{
+	int sx = x1 - xcontrol;
+	int sy = y1 - ycontrol;
+	long xx = x0 - xcontrol;
+	long yy = y0 - ycontrol;
+	double cur = xx*sy - yy*sx;
+
+	assert(xx*sx <= 0 && yy*sy <= 0);
+
+	if (sx*(long)sx + sy*(long)sy > POW2(xx) + POW2(yy)) {
+		x1 = x0;
+		x0 = sx + xcontrol;
+		y1 = y0;
+		y0 = sy + ycontrol;
+		cur = -cur;
+	}
+	if (cur != 0) {
+		xx += sx;
+		sx = (x0 < x1)? 1 : -1;
+		xx *= sx;
+		yy += sy;
+		sy = (y0 < y1)? 1 : -1;
+		yy *= sy;
+		long xy = 2*xx*yy;
+		xx *= xx;
+		yy *= yy;
+		if (cur*sx*sy < 0) {
 			xx = -xx;
 			yy = -yy;
 			xy = -xy;
 			cur = -cur;
 		}
-		dx = 4.0*w*(x1-x0)*sy*cur+xx/2.0+xy;
-		dy = 4.0*w*(y0-y1)*sx*cur+yy/2.0+xy;
+		double dx = 4.0*sy*(xcontrol-x0)*cur + xx - xy;
+		double dy = 4.0*sx*(y0-ycontrol)*cur + yy - xy;
+		xx += xx;
+		yy += yy;
+		double err = dx + dy + xy;
+		do {
+			cur = fmin(dx + xy, -xy - dy);
+			double ed = fmax(dx + xy, -xy - dy);
+			ed += 2*ed* POW2(cur) / (POW2(2*ed) + POW2(cur));
+			set_pixel(x0, y0, 255 * fabs(err-dx-dy-xy)/ed,
+				  pixel_data);
+			if (x0 == x1 || y0 == y1)
+				break;
+			xcontrol = x0;
+			cur = dx - err;
+			ycontrol = 2*err+dy < 0;
+			if (2*err+dx > 0) {
+				if (err-dy < ed)
+					set_pixel(x0, y0+sy,
+						  255 * fabs(err-dy)/ed,
+						  pixel_data);
+				x0 += sx;
+				dx -= xy;
+				dy += yy;
+				err += dy;
+			}
+			if (ycontrol) {
+				if (cur < ed)
+					set_pixel(xcontrol+sx, y0,
+						  255 * fabs(cur)/ed,
+						  pixel_data);
+				y0 += sy;
+				dy -= xy;
+				dx += xx;
+				err += dx;
+			}
+		} while (dy < dx);
+	}
+	line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
+}
 
-		if (w < 0.5 && (dy > xy || dx < xy)) {
+static void quad_rational_bezier_sgm_aa
+				(int x0, int y0, int x1, int y1,
+				 int xcontrol, int ycontrol, float w, 
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
+				 void *pixel_data)
+{
+	int sx = x1 - xcontrol;
+	int sy = y1 - ycontrol;
+	double dx = x0 - x1;
+	double dy = y0 - y1;
+	double xx = x0 - xcontrol;
+	double yy = y0 - ycontrol;
+	double xy = xx*sy + yy*sx;
+	double cur = xx*sy - yy*sx;
+
+	assert(xx*sx <= 0.0 && yy*sy <= 0.0);
+
+	if (cur != 0.0 && w > 0.0) {
+		if (sx*(long)sx + sy*(long)sy > POW2(xx) + POW2(yy)) {
+			x1 = x0;
+			x0 -= dx;
+			y1 = y0;
+			y0 -= dy;
+			cur = -cur;
+		}
+		xx = 2.0 * (4.0*w*sx*xx + POW2(dx));
+		yy = 2.0 * (4.0*w*sy*yy + POW2(dy));
+		sx = (x0 < x1)? 1 : -1;
+		sy = (y0 < y1)? 1 : -1;
+		xy = -2.0*sx*sy * (2.0*w*xy + dx*dy);
+
+		if (cur*sx*sy < 0) {
+			xx = -xx;
+			yy = -yy;
+			cur = -cur;
+			xy = -xy;
+		}
+		dx = 4.0*w * (xcontrol - x0) * sy*cur + xx/2.0 + xy;
+		dy = 4.0*w * (y0 - ycontrol) * sx*cur + yy/2.0 + xy;
+
+		if (w < 0.5 && dy > dx) {
 			cur = (w+1.0)/2.0;
 			w = sqrt(w);
 			xy = 1.0/(w+1.0);
-			sx = floor((x0+2.0*w*x1+x2)*xy/2.0+0.5);
-			sy = floor((y0+2.0*w*y1+y2)*xy/2.0+0.5);
-			dx = floor((w*x1+x0)*xy+0.5);
-			dy = floor((y1*w+y0)*xy+0.5);
-			plotQuadRationalBezierSeg(x0,y0, dx,dy, sx,sy, cur);
-			dx = floor((w*x1+x2)*xy+0.5);
-			dy = floor((y1*w+y2)*xy+0.5);
-			plotQuadRationalBezierSeg(sx,sy, dx,dy, x2,y2, cur);
+			sx = floor((x0 + 2.0*w*xcontrol + x1) * xy/2.0 + 0.5);
+			sy = floor((y0 + 2.0*w*ycontrol + y1) * xy/2.0 + 0.5);
+			dx = floor((w*xcontrol + x0) * xy + 0.5);
+			dy = floor((w*ycontrol + y0) * xy + 0.5);
+			quad_rational_bezier_sgm_aa(x0, y0, sx,sy, dx,dy, cur,
+						    set_pixel, pixel_data);
+			dx = floor((w*xcontrol + x1) * xy + 0.5);
+			dy = floor((w*ycontrol + y1) * xy + 0.5);
+			quad_rational_bezier_sgm_aa(sx,sy, x1,y1,
+						    dx, dy, cur,
+						    set_pixel,
+						    pixel_data);
 			return;
 		}
-		err = dx+dy-xy;
+		double err = dx + dy - xy;
 		do {
-			set_pixel(x0, y0, set_pixel_data);
-			if (x0 == x2 && y0 == y2)
-				return;
-			x1 = 2*err > dy;
-			y1 = 2*(err+yy) < -dy;
-			if (2*err < dx || y1) {
-				y0 += sy;
-				dy += xy;
-				err += dx += xx;
+			cur = fmin(dx-xy, xy-dy);
+			double ed = fmax(dx-xy, xy-dy);
+			ed += 2*ed*POW2(cur)/(POW2(2.0*ed) + POW2(cur));
+			xcontrol = 255 * fabs(err - dx - dy + xy)/ed;
+			if (xcontrol < 256)
+				set_pixel(x0, y0, xcontrol, pixel_data);
+			bool f = (2*err + dy < 0);
+			if (f) {
+				if (y0 == y1)
+					return;
+				if (dx-err < ed)
+					set_pixel(x0 + sx, y0,
+						  255 * fabs(dx-err)/ed,
+						  pixel_data);
 			}
-			if (2*err > dx || x1) {
+			if (2*err+dx > 0) {
+				if (x0 == x1)
+					return;
+				if (err-dy < ed)
+					set_pixel(x0, y0 + sy,
+						  255 * fabs(err-dy)/ed,
+						  pixel_data);
 				x0 += sx;
 				dx += xy;
-				err += dy += yy;
+				dy += yy;
+				err += dy;
 			}
-		} while (dy <= xy && dx >= xy);
+			if (f) {
+				y0 += sy;
+				dy += xy;
+				dx += xx;
+				err += dx;
+			}
+		} while (dy < dx);
 	}
-	bresenham_line(x0, y0, x2, y2, set_pixel, set_pixel_data);
+	line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
 }
 
-void plotRotatedEllipse(int x, int y, int a, int b, float angle)
-{                                   /* plot ellipse rotated by angle (radian) */
-   float xd = (long)a*a, yd = (long)b*b;
-   float s = sin(angle), zd = (xd-yd)*s;                  /* ellipse rotation */
-   xd = sqrt(xd-zd*s), yd = sqrt(yd+zd*s);           /* surrounding rectangle */
-   a = xd+0.5; b = yd+0.5; zd = zd*a*b/(xd*yd);           /* scale to integer */
-   plotRotatedEllipseRect(x-a,y-b, x+a,y+b, (long)(4*zd*cos(angle)));
-}
+static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
+				float x0_control, float y0_control,
+				float x1_control, float y1_control,
+				void (*set_pixel)(int x, int y,
+						  uint8_t i, void*),
+				void *pixel_data)
+{
+	int leg = 1;
+	int sx = (x0 < x1)? 1 : -1;
+	int sy = (y0 < y1)? 1 : -1;
+	float xc = -fabs(x0 + x0_control - x1_control - x1);
+	float xa = xc - 4*sx*(x0_control - x1_control);
+	float xb = sx * (x0 - x0_control - x1_control + x1);
+	float yc = -fabs(y0 + y0_control - y1_control - y1);
+	float ya = yc - 4*sy*(y0_control - y1_control);
+	float yb = sy*(y0 - y0_control - y1_control + y1);
+	double EP = 0.01;
 
-void plotRotatedEllipseRect(int x0, int y0, int x1, int y1, long zd)
-{                  /* rectangle enclosing the ellipse, integer rotation angle */
-   int xd = x1-x0, yd = y1-y0;
-   float w = xd*(long)yd;
-   if (zd == 0) return plotEllipseRect(x0,y0, x1,y1);          /* looks nicer */
-   if (w != 0.0) w = (w-zd)/(w+w);                    /* squared weight of P1 */
-   assert(w <= 1.0 && w >= 0.0);                /* limit angle to |zd|<=xd*yd */
-   xd = floor(xd*w+0.5); yd = floor(yd*w+0.5);           /* snap xe,ye to int */
-   plotQuadRationalBezierSeg(x0,y0+yd, x0,y0, x0+xd,y0, 1.0-w);
-   plotQuadRationalBezierSeg(x0,y0+yd, x0,y1, x1-xd,y1, w);
-   plotQuadRationalBezierSeg(x1,y1-yd, x1,y1, x1-xd,y1, 1.0-w);
-   plotQuadRationalBezierSeg(x1,y1-yd, x1,y0, x0+xd,y0, w);
-}
+	assert((x0_control-x0)*(x1_control-x1) < EP &&
+	       ((x1-x0)*(x0_control-x1_control) < EP || xb*xb < xa*xc+EP));
+	assert((y0_control-y0)*(y1_control-y1) < EP &&
+	       ((y1-y0)*(y0_control-y1_control) < EP || yb*yb < ya*yc+EP));
 
-void plotCubicBezierSeg(int x0, int y0, float x1, float y1,
-                        float x2, float y2, int x3, int y3)
-{                                        /* plot limited cubic Bezier segment */
-   int f, fx, fy, leg = 1;
-   int sx = x0 < x3 ? 1 : -1, sy = y0 < y3 ? 1 : -1;        /* step direction */
-   float xc = -fabs(x0+x1-x2-x3), xa = xc-4*sx*(x1-x2), xb = sx*(x0-x1-x2+x3);
-   float yc = -fabs(y0+y1-y2-y3), ya = yc-4*sy*(y1-y2), yb = sy*(y0-y1-y2+y3);
-   double ab, ac, bc, cb, xx, xy, yy, dx, dy, ex, *pxy, EP = 0.01;
-                                                 /* check for curve restrains */
-   /* slope P0-P1 == P2-P3    and  (P0-P3 == P1-P2      or   no slope change) */
-   assert((x1-x0)*(x2-x3) < EP && ((x3-x0)*(x1-x2) < EP || xb*xb < xa*xc+EP));
-   assert((y1-y0)*(y2-y3) < EP && ((y3-y0)*(y1-y2) < EP || yb*yb < ya*yc+EP));
+	if (xa == 0 && ya == 0) {
+		sx = floor((3*x0_control - x0 + 1) / 2);
+		sy = floor((3*y0_control - y0 + 1) / 2);
+		quad_bezier_sgm_aa(x0,y0, x1,y1, sx,sy,
+				   set_pixel, pixel_data);
+		return;
+	}
+	x0_control = (x0_control-x0)*(x0_control-x0) + 
+		(y0_control-y0)*(y0_control-y0) + 1;
+	x1_control = (x1_control-x1)*(x1_control-x1) +
+		(y1_control-y1)*(y1_control-y1) + 1;
+	do {
+		double ab = xa*yb - xb*ya;
+		double ac = xa*yc - xc*ya;
+		double bc = xb*yc - xc*yb;
+		double ip = 4*ab*bc - POW2(ac);
+		double ex = ab*(ab+ac-3*bc) + POW2(ac);
+		int f = (ex > 0)? 1 : sqrt(1+1024/x0_control);
+		ab *= f;
+		ac *= f;
+		bc *= f;
+		ex *= POW2(f);
+		double xy = 9*(ab + ac + bc)/8;
+		double ba = 8*(xa - ya);
+		double dx = 27*(8*ab*(yb*yb-ya*yc) +
+				ex*(ya+2*yb+yc))/64-ya*ya*(xy-ya);
+		double dy = 27*(8*ab*(xb*xb-xa*xc) -
+				ex*(xa+2*xb+xc))/64-xa*xa*(xy+xa);
 
-   if (xa == 0 && ya == 0) {                              /* quadratic Bezier */
-      sx = floor((3*x1-x0+1)/2); sy = floor((3*y1-y0+1)/2);   /* new midpoint */
-      return plotQuadBezierSeg(x0,y0, sx,sy, x3,y3);
-   }
-   x1 = (x1-x0)*(x1-x0)+(y1-y0)*(y1-y0)+1;                    /* line lengths */
-   x2 = (x2-x3)*(x2-x3)+(y2-y3)*(y2-y3)+1;
-   do {                                                /* loop over both ends */
-      ab = xa*yb-xb*ya; ac = xa*yc-xc*ya; bc = xb*yc-xc*yb;
-      ex = ab*(ab+ac-3*bc)+ac*ac;       /* P0 part of self-intersection loop? */
-      f = ex > 0 ? 1 : sqrt(1+1024/x1);               /* calculate resolution */
-      ab *= f; ac *= f; bc *= f; ex *= f*f;            /* increase resolution */
-      xy = 9*(ab+ac+bc)/8; cb = 8*(xa-ya);  /* init differences of 1st degree */
-      dx = 27*(8*ab*(yb*yb-ya*yc)+ex*(ya+2*yb+yc))/64-ya*ya*(xy-ya);
-      dy = 27*(8*ab*(xb*xb-xa*xc)-ex*(xa+2*xb+xc))/64-xa*xa*(xy+xa);
-                                            /* init differences of 2nd degree */
-      xx = 3*(3*ab*(3*yb*yb-ya*ya-2*ya*yc)-ya*(3*ac*(ya+yb)+ya*cb))/4;
-      yy = 3*(3*ab*(3*xb*xb-xa*xa-2*xa*xc)-xa*(3*ac*(xa+xb)+xa*cb))/4;
-      xy = xa*ya*(6*ab+6*ac-3*bc+cb); ac = ya*ya; cb = xa*xa;
-      xy = 3*(xy+9*f*(cb*yb*yc-xb*xc*ac)-18*xb*yb*ab)/8;
+		double xx = 3*(3*ab*(3*yb*yb-ya*ya-2*ya*yc) -
+			       ya*(3*ac*(ya+yb)+ya*ba))/4;
+		double yy = 3*(3*ab*(3*xb*xb-xa*xa-2*xa*xc) -
+			       xa*(3*ac*(xa+xb)+xa*ba))/4;
+		xy = xa*ya*(6*ab+6*ac-3*bc+ba);
+		ac = POW2(ya);
+		ba = POW2(xa);
+		xy = 3*(xy+9*f*(ba*yb*yc-xb*xc*ac)-18*xb*yb*ab)/8;
 
-      if (ex < 0) {         /* negate values if inside self-intersection loop */
-         dx = -dx; dy = -dy; xx = -xx; yy = -yy; xy = -xy; ac = -ac; cb = -cb;
-      }                                     /* init differences of 3rd degree */
-      ab = 6*ya*ac; ac = -6*xa*ac; bc = 6*ya*cb; cb = -6*xa*cb;
-      dx += xy; ex = dx+dy; dy += xy;                    /* error of 1st step */
+		if (ex < 0) {
+			dx = -dx;
+			dy = -dy;
+			xx = -xx;
+			yy = -yy;
+			xy = -xy;
+			ac = -ac;
+			ba = -ba;
+		}
+		ab = 6*ya*ac;
+		ac = -6*xa*ac;
+		bc = 6*ya*ba;
+		ba = -6*xa*ba;
+		dx += xy;
+		ex = dx + dy;
+		dy += xy;
 
-      for (pxy = &xy, fx = fy = f; x0 != x3 && y0 != y3; ) {
-         setPixel(x0,y0);                                       /* plot curve */
-         do {                                  /* move sub-steps of one pixel */
-            if (dx > *pxy || dy < *pxy) goto exit;       /* confusing values */
-            y1 = 2*ex-dy;                    /* save value for test of y step */
-            if (2*ex >= dx) {                                   /* x sub-step */
-               fx--; ex += dx += xx; dy += xy += ac; yy += bc; xx += ab;
-            }
-            if (y1 <= 0) {                                      /* y sub-step */
-               fy--; ex += dy += yy; dx += xy += bc; xx += ac; yy += cb;
-            }
-         } while (fx > 0 && fy > 0);                       /* pixel complete? */
-         if (2*fx <= f) { x0 += sx; fx += f; }                      /* x step */
-         if (2*fy <= f) { y0 += sy; fy += f; }                      /* y step */
-         if (pxy == &xy && dx < 0 && dy > 0) pxy = &EP;  /* pixel ahead valid */
-      }
-exit: xx = x0; x0 = x3; x3 = xx; sx = -sx; xb = -xb;             /* swap legs */
-      yy = y0; y0 = y3; y3 = yy; sy = -sy; yb = -yb; x1 = x2;
-   } while (leg--);                                          /* try other end */
-   plotLine(x0,y0, x3,y3);       /* remaining part in case of cusp or crunode */
-}
-
-void plotCubicBezier(int x0, int y0, int x1, int y1,
-                     int x2, int y2, int x3, int y3)
-{                                              /* plot any cubic Bezier curve */
-   int n = 0, i = 0;
-   long xc = x0+x1-x2-x3, xa = xc-4*(x1-x2);
-   long xb = x0-x1-x2+x3, xd = xb+4*(x1+x2);
-   long yc = y0+y1-y2-y3, ya = yc-4*(y1-y2);
-   long yb = y0-y1-y2+y3, yd = yb+4*(y1+y2);
-   float fx0 = x0, fx1, fx2, fx3, fy0 = y0, fy1, fy2, fy3;
-   double t1 = xb*xb-xa*xc, t2, t[5];
-                                 /* sub-divide curve at gradient sign changes */
-   if (xa == 0) {                                               /* horizontal */
-      if (abs(xc) < 2*abs(xb)) t[n++] = xc/(2.0*xb);            /* one change */
-   } else if (t1 > 0.0) {                                      /* two changes */
-      t2 = sqrt(t1);
-      t1 = (xb-t2)/xa; if (fabs(t1) < 1.0) t[n++] = t1;
-      t1 = (xb+t2)/xa; if (fabs(t1) < 1.0) t[n++] = t1;
-   }
-   t1 = yb*yb-ya*yc;
-   if (ya == 0) {                                                 /* vertical */
-      if (abs(yc) < 2*abs(yb)) t[n++] = yc/(2.0*yb);            /* one change */
-   } else if (t1 > 0.0) {                                      /* two changes */
-      t2 = sqrt(t1);
-      t1 = (yb-t2)/ya; if (fabs(t1) < 1.0) t[n++] = t1;
-      t1 = (yb+t2)/ya; if (fabs(t1) < 1.0) t[n++] = t1;
-   }
-   for (i = 1; i < n; i++)                         /* bubble sort of 4 points */
-      if ((t1 = t[i-1]) > t[i]) { t[i-1] = t[i]; t[i] = t1; i = 0; }
-
-   t1 = -1.0; t[n] = 1.0;                                /* begin / end point */
-   for (i = 0; i <= n; i++) {                 /* plot each segment separately */
-      t2 = t[i];                                /* sub-divide at t[i-1], t[i] */
-      fx1 = (t1*(t1*xb-2*xc)-t2*(t1*(t1*xa-2*xb)+xc)+xd)/8-fx0;
-      fy1 = (t1*(t1*yb-2*yc)-t2*(t1*(t1*ya-2*yb)+yc)+yd)/8-fy0;
-      fx2 = (t2*(t2*xb-2*xc)-t1*(t2*(t2*xa-2*xb)+xc)+xd)/8-fx0;
-      fy2 = (t2*(t2*yb-2*yc)-t1*(t2*(t2*ya-2*yb)+yc)+yd)/8-fy0;
-      fx0 -= fx3 = (t2*(t2*(3*xb-t2*xa)-3*xc)+xd)/8;
-      fy0 -= fy3 = (t2*(t2*(3*yb-t2*ya)-3*yc)+yd)/8;
-      x3 = floor(fx3+0.5); y3 = floor(fy3+0.5);        /* scale bounds to int */
-      if (fx0 != 0.0) { fx1 *= fx0 = (x0-x3)/fx0; fx2 *= fx0; }
-      if (fy0 != 0.0) { fy1 *= fy0 = (y0-y3)/fy0; fy2 *= fy0; }
-      if (x0 != x3 || y0 != y3)                            /* segment t1 - t2 */
-         plotCubicBezierSeg(x0,y0, x0+fx1,y0+fy1, x0+fx2,y0+fy2, x3,y3);
-      x0 = x3; y0 = y3; fx0 = fx3; fy0 = fy3; t1 = t2;
-   }
-}
-
-void plotLineAA(int x0, int y0, int x1, int y1)
-{             /* draw a black (0) anti-aliased line on white (255) background */
-   int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, x2;
-   long dx = abs(x1-x0), dy = abs(y1-y0), err = dx*dx+dy*dy;
-   long e2 = err == 0 ? 1 : 0xffff7fl/sqrt(err);     /* multiplication factor */
-
-   dx *= e2; dy *= e2; err = dx-dy;                       /* error value e_xy */
-   for ( ; ; ){                                                 /* pixel loop */
-      setPixelAA(x0,y0,abs(err-dx+dy)>>16);
-      e2 = err; x2 = x0;
-      if (2*e2 >= -dx) {                                            /* x step */
-         if (x0 == x1) break;
-         if (e2+dy < 0xff0000l) setPixelAA(x0,y0+sy,(e2+dy)>>16);
-         err -= dy; x0 += sx; 
-      } 
-      if (2*e2 <= dy) {                                             /* y step */
-         if (y0 == y1) break;
-         if (dx-e2 < 0xff0000l) setPixelAA(x2+sx,y0,(dx-e2)>>16);
-         err += dx; y0 += sy; 
-    }
-}
-
-void plotCircleAA(int xm, int ym, int r)
-{                     /* draw a black anti-aliased circle on white background */
-   int x = -r, y = 0;           /* II. quadrant from bottom left to top right */
-   int i, x2, e2, err = 2-2*r;                             /* error of 1.step */
-   r = 1-err;
-   do {
-      i = 255*abs(err-2*(x+y)-2)/r;               /* get blend value of pixel */
-      setPixelAA(xm-x, ym+y, i);                             /*   I. Quadrant */
-      setPixelAA(xm-y, ym-x, i);                             /*  II. Quadrant */
-      setPixelAA(xm+x, ym-y, i);                             /* III. Quadrant */
-      setPixelAA(xm+y, ym+x, i);                             /*  IV. Quadrant */
-      e2 = err; x2 = x;                                    /* remember values */
-      if (err+y > 0) {                                              /* x step */
-         i = 255*(err-2*x-1)/r;                              /* outward pixel */
-         if (i < 256) {
-            setPixelAA(xm-x, ym+y+1, i);
-            setPixelAA(xm-y-1, ym-x, i);
-            setPixelAA(xm+x, ym-y-1, i);
-            setPixelAA(xm+y+1, ym+x, i);
-         }
-         err += ++x*2+1;
-      }
-      if (e2+x2 <= 0) {                                             /* y step */
-         i = 255*(2*y+3-e2)/r;                                /* inward pixel */
-         if (i < 256) {
-            setPixelAA(xm-x2-1, ym+y, i);
-            setPixelAA(xm-y, ym-x2-1, i);
-            setPixelAA(xm+x2+1, ym-y, i);
-            setPixelAA(xm+y, ym+x2+1, i);
-         }
-         err += ++y*2+1;
-      }
-   } while (x < 0);
-}
-
-void plotEllipseRectAA(int x0, int y0, int x1, int y1)
-{        /* draw a black anti-aliased rectangular ellipse on white background */
-   long a = abs(x1-x0), b = abs(y1-y0), b1 = b&1;                 /* diameter */
-   float dx = 4*(a-1.0)*b*b, dy = 4*(b1+1)*a*a;            /* error increment */
-   float ed, i, err = b1*a*a-dx+dy;                        /* error of 1.step */
-   bool f;
-
-   if (a == 0 || b == 0) return plotLine(x0,y0, x1,y1);
-   if (x0 > x1) { x0 = x1; x1 += a; }        /* if called with swapped points */
-   if (y0 > y1) y0 = y1;                                  /* .. exchange them */
-   y0 += (b+1)/2; y1 = y0-b1;                               /* starting pixel */
-   a = 8*a*a; b1 = 8*b*b;
-
-   for (;;) {                             /* approximate ed=sqrt(dx*dx+dy*dy) */
-      i = min(dx,dy); ed = max(dx,dy);
-      if (y0 == y1+1 && err > dy && a > b1) ed = 255*4./a;           /* x-tip */
-      else ed = 255/(ed+2*ed*i*i/(4*ed*ed+i*i));             /* approximation */
-      i = ed*fabs(err+dx-dy);           /* get intensity value by pixel error */
-      setPixelAA(x0,y0, i); setPixelAA(x0,y1, i);
-      setPixelAA(x1,y0, i); setPixelAA(x1,y1, i);
-                   
-      if (f = 2*err+dy >= 0) {                  /* x step, remember condition */
-         if (x0 >= x1) break;
-         i = ed*(err+dx);
-         if (i < 255) {
-            setPixelAA(x0,y0+1, i); setPixelAA(x0,y1-1, i);
-            setPixelAA(x1,y0+1, i); setPixelAA(x1,y1-1, i);
-         }          /* do error increment later since values are still needed */
-      } 
-      if (2*err <= dx) {                                            /* y step */
-         i = ed*(dy-err);
-         if (i < 255) {
-            setPixelAA(x0+1,y0, i); setPixelAA(x1-1,y0, i);
-            setPixelAA(x0+1,y1, i); setPixelAA(x1-1,y1, i);
-         }
-         y0++; y1--; err += dy += a; 
-      }  
-      if (f) { x0++; x1--; err -= dx -= b1; }            /* x error increment */
-   } 
-   if (--x0 == x1++)                       /* too early stop of flat ellipses */
-      while (y0-y1 < b) {
-         i = 255*4*fabs(err+dx)/b1;               /* -> finish tip of ellipse */
-         setPixelAA(x0,++y0, i); setPixelAA(x1,y0, i);
-         setPixelAA(x0,--y1, i); setPixelAA(x1,y1, i);
-         err += dy += a; 
-      }
-}
-
-void plotQuadBezierSegAA(int x0, int y0, int x1, int y1, int x2, int y2)
-{                    /* draw an limited anti-aliased quadratic Bezier segment */
-   int sx = x2-x1, sy = y2-y1;
-   long xx = x0-x1, yy = y0-y1, xy;             /* relative values for checks */
-   double dx, dy, err, ed, cur = xx*sy-yy*sx;                    /* curvature */
-
-   assert(xx*sx <= 0 && yy*sy <= 0);      /* sign of gradient must not change */
-
-   if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) {     /* begin with longer part */
-      x2 = x0; x0 = sx+x1; y2 = y0; y0 = sy+y1; cur = -cur;     /* swap P0 P2 */
-   }
-   if (cur != 0)
-   {                                                      /* no straight line */
-      xx += sx; xx *= sx = x0 < x2 ? 1 : -1;              /* x step direction */
-      yy += sy; yy *= sy = y0 < y2 ? 1 : -1;              /* y step direction */
-      xy = 2*xx*yy; xx *= xx; yy *= yy;             /* differences 2nd degree */
-      if (cur*sx*sy < 0) {                              /* negated curvature? */
-         xx = -xx; yy = -yy; xy = -xy; cur = -cur;
-      }
-      dx = 4.0*sy*(x1-x0)*cur+xx-xy;                /* differences 1st degree */
-      dy = 4.0*sx*(y0-y1)*cur+yy-xy;
-      xx += xx; yy += yy; err = dx+dy+xy;                   /* error 1st step */
-      do {
-         cur = fmin(dx+xy,-xy-dy);
-         ed = fmax(dx+xy,-xy-dy);               /* approximate error distance */
-         ed += 2*ed*cur*cur/(4*ed*ed+cur*cur);
-         setPixelAA(x0,y0, 255*fabs(err-dx-dy-xy)/ed);          /* plot curve */
-         if (x0 == x2 || y0 == y2) break;     /* last pixel -> curve finished */
-         x1 = x0; cur = dx-err; y1 = 2*err+dy < 0;
-         if (2*err+dx > 0) {                                        /* x step */
-            if (err-dy < ed) setPixelAA(x0,y0+sy, 255*fabs(err-dy)/ed);
-            x0 += sx; dx -= xy; err += dy += yy;
-         }
-         if (y1) {                                                  /* y step */
-            if (cur < ed) setPixelAA(x1+sx,y0, 255*fabs(cur)/ed);
-            y0 += sy; dy -= xy; err += dx += xx;
-         }
-      } while (dy < dx);                  /* gradient negates -> close curves */
-   }
-   plotLineAA(x0,y0, x2,y2);                  /* plot remaining needle to end */
-}
-
-void plotQuadRationalBezierSegAA(int x0, int y0, int x1, int y1,
-                                 int x2, int y2, float w)
-{   /* draw an anti-aliased rational quadratic Bezier segment, squared weight */
-   int sx = x2-x1, sy = y2-y1;                  /* relative values for checks */
-   double dx = x0-x2, dy = y0-y2, xx = x0-x1, yy = y0-y1;
-   double xy = xx*sy+yy*sx, cur = xx*sy-yy*sx, err, ed;          /* curvature */
-   bool f;
-
-   assert(xx*sx <= 0.0 && yy*sy <= 0.0);  /* sign of gradient must not change */
-
-   if (cur != 0.0 && w > 0.0) {                           /* no straight line */
-      if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) {  /* begin with longer part */
-         x2 = x0; x0 -= dx; y2 = y0; y0 -= dy; cur = -cur;      /* swap P0 P2 */
-      }
-      xx = 2.0*(4.0*w*sx*xx+dx*dx);                 /* differences 2nd degree */
-      yy = 2.0*(4.0*w*sy*yy+dy*dy);
-      sx = x0 < x2 ? 1 : -1;                              /* x step direction */
-      sy = y0 < y2 ? 1 : -1;                              /* y step direction */
-      xy = -2.0*sx*sy*(2.0*w*xy+dx*dy);
-
-      if (cur*sx*sy < 0) {                              /* negated curvature? */
-         xx = -xx; yy = -yy; cur = -cur; xy = -xy;
-      }
-      dx = 4.0*w*(x1-x0)*sy*cur+xx/2.0+xy;          /* differences 1st degree */
-      dy = 4.0*w*(y0-y1)*sx*cur+yy/2.0+xy;
-
-      if (w < 0.5 && dy > dx) {              /* flat ellipse, algorithm fails */
-         cur = (w+1.0)/2.0; w = sqrt(w); xy = 1.0/(w+1.0);
-         sx = floor((x0+2.0*w*x1+x2)*xy/2.0+0.5); /* subdivide curve in half  */
-         sy = floor((y0+2.0*w*y1+y2)*xy/2.0+0.5);
-         dx = floor((w*x1+x0)*xy+0.5); dy = floor((y1*w+y0)*xy+0.5);
-         plotQuadRationalBezierSegAA(x0,y0, dx,dy, sx,sy, cur); /* plot apart */
-         dx = floor((w*x1+x2)*xy+0.5); dy = floor((y1*w+y2)*xy+0.5);
-         return plotQuadRationalBezierSegAA(sx,sy, dx,dy, x2,y2, cur);
-      }
-      err = dx+dy-xy;                                       /* error 1st step */
-      do {                                                      /* pixel loop */
-         cur = fmin(dx-xy,xy-dy); ed = fmax(dx-xy,xy-dy);
-         ed += 2*ed*cur*cur/(4.*ed*ed+cur*cur); /* approximate error distance */
-         x1 = 255*fabs(err-dx-dy+xy)/ed;    /* get blend value by pixel error */
-         if (x1 < 256) setPixelAA(x0,y0, x1);                   /* plot curve */
-         if (f = 2*err+dy < 0) {                                    /* y step */
-            if (y0 == y2) return;             /* last pixel -> curve finished */
-            if (dx-err < ed) setPixelAA(x0+sx,y0, 255*fabs(dx-err)/ed);
-         }
-         if (2*err+dx > 0) {                                        /* x step */
-            if (x0 == x2) return;             /* last pixel -> curve finished */
-            if (err-dy < ed) setPixelAA(x0,y0+sy, 255*fabs(err-dy)/ed);
-            x0 += sx; dx += xy; err += dy += yy;
-         }
-         if (f) { y0 += sy; dy += xy; err += dx += xx; }            /* y step */
-      } while (dy < dx);               /* gradient negates -> algorithm fails */
-   }
-   plotLineAA(x0,y0, x2,y2);                  /* plot remaining needle to end */
-}
-
-void plotCubicBezierSegAA(int x0, int y0, float x1, float y1,
-                          float x2, float y2, int x3, int y3)
-{                           /* plot limited anti-aliased cubic Bezier segment */
-   int f, fx, fy, leg = 1;
-   int sx = x0 < x3 ? 1 : -1, sy = y0 < y3 ? 1 : -1;        /* step direction */
-   float xc = -fabs(x0+x1-x2-x3), xa = xc-4*sx*(x1-x2), xb = sx*(x0-x1-x2+x3);
-   float yc = -fabs(y0+y1-y2-y3), ya = yc-4*sy*(y1-y2), yb = sy*(y0-y1-y2+y3);
-   double ab, ac, bc, ba, xx, xy, yy, dx, dy, ex, px, py, ed, ip, EP = 0.01;
-
-                                                 /* check for curve restrains */
-   /* slope P0-P1 == P2-P3     and  (P0-P3 == P1-P2      or  no slope change) */
-   assert((x1-x0)*(x2-x3) < EP && ((x3-x0)*(x1-x2) < EP || xb*xb < xa*xc+EP));
-   assert((y1-y0)*(y2-y3) < EP && ((y3-y0)*(y1-y2) < EP || yb*yb < ya*yc+EP));
-
-   if (xa == 0 && ya == 0) {                              /* quadratic Bezier */
-      sx = floor((3*x1-x0+1)/2); sy = floor((3*y1-y0+1)/2);   /* new midpoint */
-      return plotQuadBezierSegAA(x0,y0, sx,sy, x3,y3);
-   }
-   x1 = (x1-x0)*(x1-x0)+(y1-y0)*(y1-y0)+1;                    /* line lengths */
-   x2 = (x2-x3)*(x2-x3)+(y2-y3)*(y2-y3)+1;
-   do {                                                /* loop over both ends */
-      ab = xa*yb-xb*ya; ac = xa*yc-xc*ya; bc = xb*yc-xc*yb;
-      ip = 4*ab*bc-ac*ac;                   /* self intersection loop at all? */
-      ex = ab*(ab+ac-3*bc)+ac*ac;       /* P0 part of self-intersection loop? */
-      f = ex > 0 ? 1 : sqrt(1+1024/x1);               /* calculate resolution */
-      ab *= f; ac *= f; bc *= f; ex *= f*f;            /* increase resolution */
-      xy = 9*(ab+ac+bc)/8; ba = 8*(xa-ya);  /* init differences of 1st degree */
-      dx = 27*(8*ab*(yb*yb-ya*yc)+ex*(ya+2*yb+yc))/64-ya*ya*(xy-ya);
-      dy = 27*(8*ab*(xb*xb-xa*xc)-ex*(xa+2*xb+xc))/64-xa*xa*(xy+xa);
-                                            /* init differences of 2nd degree */
-      xx = 3*(3*ab*(3*yb*yb-ya*ya-2*ya*yc)-ya*(3*ac*(ya+yb)+ya*ba))/4;
-      yy = 3*(3*ab*(3*xb*xb-xa*xa-2*xa*xc)-xa*(3*ac*(xa+xb)+xa*ba))/4;
-      xy = xa*ya*(6*ab+6*ac-3*bc+ba); ac = ya*ya; ba = xa*xa;
-      xy = 3*(xy+9*f*(ba*yb*yc-xb*xc*ac)-18*xb*yb*ab)/8;
-
-      if (ex < 0) {         /* negate values if inside self-intersection loop */
-         dx = -dx; dy = -dy; xx = -xx; yy = -yy; xy = -xy; ac = -ac; ba = -ba;
-      }                                     /* init differences of 3rd degree */
-      ab = 6*ya*ac; ac = -6*xa*ac; bc = 6*ya*ba; ba = -6*xa*ba;
-      dx += xy; ex = dx+dy; dy += xy;                    /* error of 1st step */
-
-      for (fx = fy = f; x0 != x3 && y0 != y3; ) {
-         y1 = fmin(fabs(xy-dx),fabs(dy-xy));
-         ed = fmax(fabs(xy-dx),fabs(dy-xy));    /* approximate error distance */
-         ed = f*(ed+2*ed*y1*y1/(4*ed*ed+y1*y1));
-         y1 = 255*fabs(ex-(f-fx+1)*dx-(f-fy+1)*dy+f*xy)/ed;
-         if (y1 < 256) setPixelAA(x0, y0, y1);                  /* plot curve */
-         px = fabs(ex-(f-fx+1)*dx+(fy-1)*dy);       /* pixel intensity x move */
-         py = fabs(ex+(fx-1)*dx-(f-fy+1)*dy);       /* pixel intensity y move */
-         y2 = y0;
-         do {                                  /* move sub-steps of one pixel */
-            if (ip >= -EP)               /* intersection possible? -> check.. */
-               if (dx+xx > xy || dy+yy < xy) goto exit;   /* two x or y steps */
-            y1 = 2*ex+dx;                    /* save value for test of y step */
-            if (2*ex+dy > 0) {                                  /* x sub-step */
-               fx--; ex += dx += xx; dy += xy += ac; yy += bc; xx += ab;
-            } else if (y1 > 0) goto exit;                 /* tiny nearly cusp */
-            if (y1 <= 0) {                                      /* y sub-step */
-               fy--; ex += dy += yy; dx += xy += bc; xx += ac; yy += ba;
-            }
-         } while (fx > 0 && fy > 0);                       /* pixel complete? */
-         if (2*fy <= f) {                           /* x+ anti-aliasing pixel */
-            if (py < ed) setPixelAA(x0+sx, y0, 255*py/ed);      /* plot curve */
-            y0 += sy; fy += f;                                      /* y step */
-         }
-         if (2*fx <= f) {                           /* y+ anti-aliasing pixel */
-            if (px < ed) setPixelAA(x0, y2+sy, 255*px/ed);      /* plot curve */
-            x0 += sx; fx += f;                                      /* x step */
-         }
-      }
-      break;                                          /* finish curve by line */
-exit:
-      if (2*ex < dy && 2*fy <= f+2) {         /* round x+ approximation pixel */
-         if (py < ed) setPixelAA(x0+sx, y0, 255*py/ed);         /* plot curve */
-         y0 += sy;
-      }
-      if (2*ex > dx && 2*fx <= f+2) {         /* round y+ approximation pixel */
-         if (px < ed) setPixelAA(x0, y2+sy, 255*px/ed);         /* plot curve */
-         x0 += sx;
-      }
-      xx = x0; x0 = x3; x3 = xx; sx = -sx; xb = -xb;             /* swap legs */
-      yy = y0; y0 = y3; y3 = yy; sy = -sy; yb = -yb; x1 = x2;
-   } while (leg--);                                          /* try other end */
-   plotLineAA(x0,y0, x3,y3);     /* remaining part in case of cusp or crunode */
-}
-
-void plotLineWidth(int x0, int y0, int x1, int y1, float wd)
-{                                    /* plot an anti-aliased line of width wd */
-   int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1; 
-   int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1; 
-   int err = dx-dy, e2, x2, y2;                           /* error value e_xy */
-   float ed = dx+dy == 0 ? 1 : sqrt((float)dx*dx+(float)dy*dy);
-                                                       
-   for (wd = (wd+1)/2; ; ) {                                    /* pixel loop */
-      setPixelColor(x0, y0, max(0,255*(abs(err-dx+dy)/ed-wd+1)));
-      e2 = err; x2 = x0;
-      if (2*e2 >= -dx) {                                            /* x step */
-         for (e2 += dy, y2 = y0; e2 < ed*wd && (y1 != y2 || dx > dy); e2 += dx)
-            setPixelColor(x0, y2 += sy, max(0,255*(abs(e2)/ed-wd+1)));
-         if (x0 == x1) break;
-         e2 = err; err -= dy; x0 += sx; 
-      } 
-      if (2*e2 <= dy) {                                             /* y step */
-         for (e2 = dx-e2; e2 < ed*wd && (x1 != x2 || dx < dy); e2 += dy)
-            setPixelColor(x2 += sx, y0, max(0,255*(abs(e2)/ed-wd+1)));
-         if (y0 == y1) break;
-         err += dx; y0 += sy; 
-      }
-   }
-}
-
-void plotQuadSpline(int n, int x[], int y[])
-{                         /* plot quadratic spline, destroys input arrays x,y */
-   #define M_MAX 6
-   float mi = 1, m[M_MAX];                    /* diagonal constants of matrix */
-   int i, x0, y0, x1, y1, x2 = x[n], y2 = y[n];
-
-   assert(n > 1);                        /* need at least 3 points P[0]..P[n] */
-
-   x[1] = x0 = 8*x[1]-2*x[0];                          /* first row of matrix */
-   y[1] = y0 = 8*y[1]-2*y[0];
-
-   for (i = 2; i < n; i++) {                                 /* forward sweep */
-      if (i-2 < M_MAX) m[i-2] = mi = 1.0/(6.0-mi);
-      x[i] = x0 = floor(8*x[i]-x0*mi+0.5);                        /* store yi */
-      y[i] = y0 = floor(8*y[i]-y0*mi+0.5);
-   }
-   x1 = floor((x0-2*x2)/(5.0-mi)+0.5);                 /* correction last row */
-   y1 = floor((y0-2*y2)/(5.0-mi)+0.5);
-
-   for (i = n-2; i > 0; i--) {                           /* back substitution */
-      if (i <= M_MAX) mi = m[i-1];
-      x0 = floor((x[i]-x1)*mi+0.5);                            /* next corner */
-      y0 = floor((y[i]-y1)*mi+0.5);
-      plotQuadBezier((x0+x1)/2,(y0+y1)/2, x1,y1, x2,y2);
-      x2 = (x0+x1)/2; x1 = x0;
-      y2 = (y0+y1)/2; y1 = y0;
-   }
-   plotQuadBezier(x[0],y[0], x1,y1, x2,y2);
-}
-
-void plotCubicSpline(int n, int x[], int y[])
-{                             /* plot cubic spline, destroys input arrays x,y */
-   #define M_MAX 6
-   float mi = 0.25, m[M_MAX];                 /* diagonal constants of matrix */
-   int x3 = x[n-1], y3 = y[n-1], x4 = x[n], y4 = y[n];
-   int i, x0, y0, x1, y1, x2, y2;
-
-   assert(n > 2);                        /* need at least 4 points P[0]..P[n] */
-
-   x[1] = x0 = 12*x[1]-3*x[0];                         /* first row of matrix */
-   y[1] = y0 = 12*y[1]-3*y[0];
-
-   for (i = 2; i < n; i++) {                                /* foreward sweep */
-      if (i-2 < M_MAX) m[i-2] = mi = 0.25/(2.0-mi);
-      x[i] = x0 = floor(12*x[i]-2*x0*mi+0.5);
-      y[i] = y0 = floor(12*y[i]-2*y0*mi+0.5);
-   }
-   x2 = floor((x0-3*x4)/(7-4*mi)+0.5);                    /* correct last row */
-   y2 = floor((y0-3*y4)/(7-4*mi)+0.5);
-   plotCubicBezier(x3,y3, (x2+x4)/2,(y2+y4)/2, x4,y4, x4,y4);
-
-   if (n-3 < M_MAX) mi = m[n-3];
-   x1 = floor((x[n-2]-2*x2)*mi+0.5);
-   y1 = floor((y[n-2]-2*y2)*mi+0.5);
-   for (i = n-3; i > 0; i--) {                           /* back substitution */
-      if (i <= M_MAX) mi = m[i-1];
-      x0 = floor((x[i]-2*x1)*mi+0.5);
-      y0 = floor((y[i]-2*y1)*mi+0.5);
-      x4 = floor((x0+4*x1+x2+3)/6.0);                     /* reconstruct P[i] */
-      y4 = floor((y0+4*y1+y2+3)/6.0);
-      plotCubicBezier(x4,y4,
-                      floor((2*x1+x2)/3+0.5),floor((2*y1+y2)/3+0.5),
-                      floor((x1+2*x2)/3+0.5),floor((y1+2*y2)/3+0.5),
-                      x3,y3);
-      x3 = x4; y3 = y4; x2 = x1; y2 = y1; x1 = x0; y1 = y0;
-   }
-   x0 = x[0]; x4 = floor((3*x0+7*x1+2*x2+6)/12.0);        /* reconstruct P[1] */
-   y0 = y[0]; y4 = floor((3*y0+7*y1+2*y2+6)/12.0);
-   plotCubicBezier(x4,y4, floor((2*x1+x2)/3+0.5),floor((2*y1+y2)/3+0.5),
-                   floor((x1+2*x2)/3+0.5),floor((y1+2*y2)/3+0.5), x3,y3);
-   plotCubicBezier(x0,y0, x0,y0, (x0+x1)/2,(y0+y1)/2, x4,y4);
+		int fx = f;
+		int fy = f;
+		double ed, px, py;
+		while (x0 != x1 && y0 != y1) {
+			y0_control = fmin(fabs(xy-dx), fabs(dy-xy));
+			ed = fmax(fabs(xy-dx), fabs(dy-xy));
+			ed = f*(ed + 2*ed*y0_control*y0_control /
+				(4*ed*ed+y0_control*y0_control));
+			y0_control = 255 * fabs(ex-(f-fx+1)*dx -
+						(f-fy+1)*dy+f*xy)/ed;
+			if (y0_control < 256)
+				set_pixel(x0, y0, y0_control, pixel_data);
+			px = fabs(ex-(f-fx+1)*dx + (fy-1)*dy);
+			py = fabs(ex+(fx-1)*dx - (f-fy+1)*dy);
+			y1_control = y0;
+			do {
+				if (ip >= -EP)
+					if (dx + xx > xy || dy + yy < xy)
+						goto exit;
+				y0_control = 2*ex + dx;
+				if (2*ex+dy > 0) {
+					fx -= 1;
+					dx += xx;
+					ex += dx;
+					xy += ac;
+					dy += xy;
+					yy += bc;
+					xx += ab;
+				} else if (y0_control > 0) {
+					goto exit;
+				}
+				if (y0_control <= 0) {
+					fy--;
+					dy += yy;
+					ex += dy;
+					xy += bc;
+					dx += xy;
+					xx += ac;
+					yy += ba;
+				}
+			} while (fx > 0 && fy > 0);
+			if (2*fy <= f) {
+				if (py < ed)
+					set_pixel(x0+sx, y0, 255*py/ed, 
+						  pixel_data);
+				y0 += sy;
+				fy += f;
+			}
+			if (2*fx <= f) {
+				if (px < ed)
+					set_pixel(x0, y1_control + sy,
+						  255*px/ed, pixel_data);
+				x0 += sx;
+				fx += f;
+			}
+		}
+		break;
+	exit:
+		if (2*ex < dy && 2*fy <= f+2) {
+			if (py < ed)
+				set_pixel(x0+sx, y0, 255*py/ed,
+					pixel_data);
+			y0 += sy;
+		}
+		if (2*ex > dx && 2*fx <= f+2) {
+			if (px < ed)
+				set_pixel(x0, y1_control + sy, 255*px/ed,
+					pixel_data);
+			x0 += sx;
+		}
+		xx = x0;
+		x0 = x1;
+		x1 = xx;
+		sx = -sx;
+		xb = -xb;
+		yy = y0;
+		y0 = y1;
+		y1 = yy;
+		sy = -sy;
+		yb = -yb;
+		x0_control = x1_control;
+	} while (leg--);
+	line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
 }
