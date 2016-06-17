@@ -1331,5 +1331,6 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 		yb = -yb;
 		x0_control = x1_control;
 	} while (leg--);
+
 	line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
 }

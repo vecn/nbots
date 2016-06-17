@@ -10,6 +10,7 @@
 #include "../../palette_struct.h"
 
 #include "rasterizer.h"
+#include "font_rasterizer.h"
 
 #include "pix_drawing.h"
 

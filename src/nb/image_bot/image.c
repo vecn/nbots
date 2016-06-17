@@ -8,12 +8,15 @@
 
 #include "nb/image_bot/image.h"
 
+#define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include "tiny_libs/stb_image.h"
 
+#define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tiny_libs/stb_image_write.h"
 
+#define STB_IMAGE_RESIZE_STATIC
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "tiny_libs/stb_image_resize.h"
 
