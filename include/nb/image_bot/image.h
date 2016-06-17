@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+typedef enum {
+	NB_OVER, NB_DEST_OVER, NB_XOR, NB_ADD, NB_MULTIPLY
+} vcn_image_blending_type;
+
 typedef struct {
 	uint32_t width;
 	uint32_t height;
@@ -30,6 +34,11 @@ uint32_t vcn_image_get_height(const vcn_image_t *const img);
 uint8_t vcn_image_get_N_channels(const vcn_image_t *const img);
 void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 			 uint32_t c,  uint8_t pixel[]);
+void vcn_image_set_pixel(vcn_image_t *img, uint32_t r,
+			 uint32_t c,  uint8_t pixel[]);
+void vcn_image_blend_pixel(vcn_image_t *img, uint32_t r,
+			   uint32_t c,  uint8_t pixel[],
+			   vcn_image_blending_type type);
 uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,
 				 uint32_t r, uint32_t c);
 void vcn_image_resize(const vcn_image_t *input_img,

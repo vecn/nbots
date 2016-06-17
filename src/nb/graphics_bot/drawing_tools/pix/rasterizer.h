@@ -35,15 +35,4 @@ void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
 							   uint8_t i, void*),
 					 void *pixel_data);
 
-void nb_graphics_rasterizer_circle(int xc, int yc, int r,
-				   bool antialiasing,
-				   void (*set_pixel)(int x, int y, 
-						     uint8_t i, void*),
-				   void *pixel_data);
-
-void nb_graphics_rasterizer_ellipse(int xc, int yc, int rx, int ry, float a,
-				    bool antialiasing,
-				    void (*set_pixel)(int x, int y, 
-						      uint8_t i, void*),
-				    void *pixel_data);
 #endif

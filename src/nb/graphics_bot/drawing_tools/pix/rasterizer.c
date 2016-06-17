@@ -14,14 +14,6 @@ static void line(int x0, int y0, int x1, int y1,
 		 void (*set_pixel)(int x, int y,
 				   uint8_t i, void*),
 		 void *pixel_data);
-static void circle(int xc, int yc, int r,
-		   void (*set_pixel)(int x, int y,
-				     uint8_t i, void*),
-		   void *pixel_data);
-static void ellipse_rect(int x0, int y0, int x1, int y1,
-			void (*set_pixel)(int x, int y,
-					  uint8_t i, void*),
-			void *pixel_data);
 static void quad_bezier_sgm(int x0, int y0, int x1, int y1,
 			    int xcontrol, int ycontrol,
 			    void (*set_pixel)(int x, int y,
@@ -43,18 +35,6 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 				 void (*set_pixel)(int x, int y,
 						   uint8_t i, void*),
 				 void *pixel_data);
-static void rotated_ellipse(int x, int y, int rx, int ry, float angle,
-			    void (*set_pixel)(int x, int y,
-					      uint8_t i, void*),
-			    void *pixel_data,
-			    void (*ellipse_rect)(),
-			    void (*quad_rational_bezier_sgm)());
-static void rotated_ellipse_rect(int x0, int y0, int x1, int y1, long zd,
-				 void (*set_pixel)(int x, int y,
-						   uint8_t i, void*),
-				 void *pixel_data,
-				 void (*ellipse_rect)(),
-				 void (*quad_rational_bezier_sgm)());
 static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
 			     float x0_control, float y0_control,
 			     float x1_control, float y1_control,
@@ -71,14 +51,6 @@ static void line_aa(int x0, int y0, int x1, int y1,
 		    void (*set_pixel)(int x, int y,
 				      uint8_t i, void*),
 		    void *pixel_data);
-static void circle_aa(int xc, int yc, int r,
-		      void (*set_pixel)(int x, int y,
-					uint8_t i, void*),
-		      void *pixel_data);
-static void ellipse_rect_aa(int x0, int y0, int x1, int y1,
-			    void (*set_pixel)(int x, int y,
-					      uint8_t i, void*),
-			    void *pixel_data);
 static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			       int xcontrol, int ycontrol,
 			       void (*set_pixel)(int x, int y,
@@ -166,38 +138,6 @@ void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
 			     set_pixel, pixel_data);
 }
 
-void nb_graphics_rasterizer_circle(int xc, int yc, int r,
-				   bool antialiasing,
-				   void (*set_pixel)(int x, int y, 
-						     uint8_t i, void*),
-				   void *pixel_data)
-{
-	if (antialiasing)
-		circle_aa(xc, yc, r, set_pixel, pixel_data);
-	else
-		circle(xc, yc, r, set_pixel, pixel_data);
-}
-
-void nb_graphics_rasterizer_ellipse(int xc, int yc, int rx, int ry, float a,
-				    bool antialiasing,
-				    void (*set_pixel)(int x, int y, 
-						      uint8_t i, void*),
-				    void *pixel_data)
-{
-	void *ptr_ellipse_rect;
-	void *ptr_quad_rational_bezier_sgm;
-	if (antialiasing) {
-		ptr_ellipse_rect = ellipse_rect_aa;
-		ptr_quad_rational_bezier_sgm = quad_rational_bezier_sgm_aa;
-	} else {
-		ptr_ellipse_rect = ellipse_rect;
-		ptr_quad_rational_bezier_sgm = quad_rational_bezier_sgm;
-	}
-	rotated_ellipse(xc, yc, rx, ry, a, set_pixel, pixel_data,
-			ptr_ellipse_rect,
-			ptr_quad_rational_bezier_sgm);
-}
-
 static void line(int x0, int y0, int x1, int y1,
 		 void (*set_pixel)(int x, int y,
 				   uint8_t i, void*),
@@ -224,90 +164,6 @@ static void line(int x0, int y0, int x1, int y1,
 			err += dx;
 			y0 += sy;
 		}
-	}
-}
-
-static void circle(int xc, int yc, int r,
-		   void (*set_pixel)(int x, int y,
-				     uint8_t i, void*),
-		   void *pixel_data)
-{
-	int x = -r;
-	int y = 0;
-	int err = 2 - 2 * r;
-
-	do {
-		set_pixel(xc - x, yc + y, 255, pixel_data); /* 1st quad */
-		set_pixel(xc - y, yc - x, 255, pixel_data); /* 2nd quad */
-		set_pixel(xc + x, yc - y, 255, pixel_data); /* 3rd quad */
-		set_pixel(xc + y, yc + x, 255, pixel_data); /* 4th quad */
-		r = err;                                   
-		if (r <= y) {
-			y += 1;
-			err += y * 2 + 1;
-		}
-		if (r > x || err > y) {
-			x += 1;
-			err += x * 2 + 1;
-		}
-	} while (x < 0);
-}
-
-static void ellipse_rect(int x0, int y0, int x1, int y1,
-			 void (*set_pixel)(int x, int y,
-					   uint8_t i, void*),
-			 void *pixel_data)
-{
-	long rx = abs(x1 - x0);
-	long ry = abs(y1 - y0);
-	long ry_extra = ry % 2;
-	double dx = 4 * (1.0 - rx) * POW2(ry);
-	double dy = 4 * (ry_extra + 1) * POW2(rx);
-	double err = dx + dy + ry_extra * POW2(rx);
-
-	if (x0 > x1) {
-		x0 = x1;
-		x1 += rx;
-	}
-
-	if (y0 > y1)
-		y0 = y1;
-
-	y0 += (ry + 1) / 2;
-	y1 = y0 - ry_extra;
-	rx = 8 * POW2(rx);
-	ry = 8 * POW2(ry);
-
-	do {
-		set_pixel(x1, y0, 255, pixel_data); /* 1st quadrant */
-		set_pixel(x0, y0, 255, pixel_data); /* 2nd quadrant */
-		set_pixel(x0, y1, 255, pixel_data); /* 3rd quadrant */
-		set_pixel(x1, y1, 255, pixel_data); /* 4th quadrant */
-		double e2 = 2 * err;
-		if (e2 <= dy) {
-			y0 += 1;
-			y1 -= 1;
-			dy += rx;
-			err += dy;
-		}
-		if (e2 >= dx || 2*err > dy) {
-			x0 += 1;
-			x1 -= 1;
-			dx += ry;
-			err += dx;
-		}
-	} while (x0 <= x1);
-
-	while (y0 - y1 <= rx) {
-                /* Early stop of flat ellipses rx = 1
-		 *    -> finish tip of ellipse
-		 */
-		set_pixel(x0 - 1, y0, 255, pixel_data);
-		set_pixel(x1 + 1, y0, 255, pixel_data);
-		y0 += 1;
-		set_pixel(x0 - 1, y1, 255, pixel_data);
-		set_pixel(x1 + 1, y1, 255, pixel_data);
-		y1 -= 1;
 	}
 }
 
@@ -598,63 +454,6 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 				 set_pixel, pixel_data);
 }
 
-static void rotated_ellipse(int x, int y, int rx, int ry, float angle,
-			    void (*set_pixel)(int x, int y,
-					      uint8_t i, void*),
-			    void *pixel_data,
-			    void (*ellipse_rect)(),
-			    void (*quad_rational_bezier_sgm)())
-{
-	float xd = (long) POW2(rx);
-	float yd = (long) POW2(ry);
-	float s = sin(angle);
-	float zd = (xd - yd) * s;
-	xd = sqrt(xd - zd * s);
-	yd = sqrt(yd + zd * s);
-	rx = xd + 0.5;
-	ry = yd + 0.5;
-	zd = zd * rx * ry / (xd * yd);
-	rotated_ellipse_rect(x - rx, y - ry, x + rx, y + ry,
-			     (long)(4 * zd * cos(angle)),
-			     set_pixel, pixel_data,
-			     ellipse_rect,
-			     quad_rational_bezier_sgm);
-}
-
-static void rotated_ellipse_rect(int x0, int y0, int x1, int y1, long zd,
-				 void (*set_pixel)(int x, int y,
-						   uint8_t i, void*),
-				 void *pixel_data,
-				 void (*ellipse_rect)(),
-				 void (*quad_rational_bezier_sgm)())
-{
-	int xd = x1 - x0;
-	int yd = y1 - y0;
-	float w = xd*(long)yd;
-	if (zd == 0)
-		return ellipse_rect(x0, y0, x1, y1,
-				    set_pixel,
-				    pixel_data);
-	if (w != 0.0)
-		w = (w-zd)/(w+w);
-	assert(w <= 1.0 && w >= 0.0);
-
-	xd = floor(xd * w + 0.5);
-	yd = floor(yd * w + 0.5);
-	quad_rational_bezier_sgm(x0, y0 + yd, x0 + xd, y0,
-				 x0, y0, 1.0-w,
-				 set_pixel, pixel_data);
-	quad_rational_bezier_sgm(x0, y0 + yd, x1 - xd, y1,
-				 x0, y1, w,
-				 set_pixel, pixel_data);
-	quad_rational_bezier_sgm(x1, y1 - yd, x1 - xd, y1,
-				 x1, y1, 1.0 - w,
-				 set_pixel, pixel_data);
-	quad_rational_bezier_sgm(x1, y1 - yd, x0 + xd, y0,
-				 x1, y0, w,
-				 set_pixel, pixel_data);
-}
-
 static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
 			     float x0_control, float y0_control,
 			     float x1_control, float y1_control,
@@ -924,137 +723,6 @@ static void line_aa(int x0, int y0, int x1, int y1,
 				set_pixel(x2+sx, y0, (dx-e2)>>16, pixel_data);
 			err += dx;
 			y0 += sy; 
-		}
-	}
-}
-
-static void circle_aa(int xc, int yc, int r,
-		      void (*set_pixel)(int x, int y,
-					uint8_t i, void*),
-		      void *pixel_data)
-{
-	int x = -r;
-	int y = 0;
-	int err = 2 - 2*r;
-	r = 1-err;
-	do {
-		int i = 255 * abs(err-2*(x+y)-2) / r;
-		set_pixel(xc-x, yc+y, i, pixel_data); /* 1st quad */
-		set_pixel(xc-y, yc-x, i, pixel_data); /* 2nd quad */
-		set_pixel(xc+x, yc-y, i, pixel_data); /* 3rd quad */
-		set_pixel(xc+y, yc+x, i, pixel_data); /* 4th quad */
-		int e2 = err;
-		int x2 = x;
-		if (err + y > 0) {
-			i = 255 * (err-2*x-1) / r;
-			if (i < 256) {
-				set_pixel(xc-x, yc+y+1, i, pixel_data);
-				set_pixel(xc-y-1, yc-x, i, pixel_data);
-				set_pixel(xc+x, yc-y-1, i, pixel_data);
-				set_pixel(xc+y+1, yc+x, i, pixel_data);
-			}
-			x += 1;
-			err += x*2 + 1;
-		}
-		if (e2+x2 <= 0) {
-			i = 255 * (2*y+3-e2) / r;
-			if (i < 256) {
-				set_pixel(xc-x2-1, yc+y, i, pixel_data);
-				set_pixel(xc-y, yc-x2-1, i, pixel_data);
-				set_pixel(xc+x2+1, yc-y, i, pixel_data);
-				set_pixel(xc+y, yc+x2+1, i, pixel_data);
-			}
-			y += 1;
-			err += y*2 + 1;
-		}
-	} while (x < 0);
-}
-
-static void ellipse_rect_aa(int x0, int y0, int x1, int y1,
-			    void (*set_pixel)(int x, int y,
-					      uint8_t i, void*),
-			    void *pixel_data)
-{
-	long rx = abs(x1 - x0);
-	long ry = abs(y1 - y0);
-	long ry_extra = ry % 2;
-	float dx = 4 * (rx - 1.0) * POW2(ry);
-	float dy = 4 * (ry_extra + 1) * POW2(rx);
-	float err = ry_extra*POW2(rx) - dx + dy;
-
-	if (rx == 0 || ry == 0)
-		return line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
-
-	if (x0 > x1) {
-		x0 = x1;
-		x1 += rx;
-	}
-	if (y0 > y1)
-		y0 = y1;
-	y0 += (ry + 1)/2;
-	y1 = y0 - ry_extra;
-	rx = 8 * POW2(rx);
-	ry_extra = 8 * POW2(ry_extra);
-
-	while (true) {
-		float i = MIN(dx, dy);
-		float ed = MAX(dx, dy);
-		if (y0 == y1 + 1 && err > dy && rx > ry_extra)
-			ed = 255*4.0 / rx;
-		else
-			ed = 255 / (ed + 2*ed*POW2(i)/(POW2(2*ed)+POW2(i)));
-		i = ed * fabs(err + dx - dy);
-		set_pixel(x0, y0, i, pixel_data);
-		set_pixel(x0, y1, i, pixel_data);
-		set_pixel(x1, y0, i, pixel_data);
-		set_pixel(x1, y1, i, pixel_data);
-
-		bool f = (2*err + dy >= 0);
-		if (f) {
-			if (x0 >= x1)
-				break;
-			i = ed * (err+dx);
-			if (i < 255) {
-				set_pixel(x0, y0+1, i, pixel_data);
-				set_pixel(x0, y1-1, i, pixel_data);
-				set_pixel(x1, y0+1, i, pixel_data);
-				set_pixel(x1, y1-1, i, pixel_data);
-			}
-		} 
-		if (2*err <= dx) {
-			i = ed * (dy-err);
-			if (i < 255) {
-				set_pixel(x0+1, y0, i, pixel_data);
-				set_pixel(x1-1, y0, i, pixel_data);
-				set_pixel(x0+1, y1, i, pixel_data);
-				set_pixel(x1-1, y1, i, pixel_data);
-			}
-			y0 += 1;
-			y1 -= 1;
-			dy += rx;
-			err += dy;
-		}  
-		if (f) {
-			x0 += 1;
-			x1 -= 1;
-			dx -= ry_extra;
-			err -= dx;
-		}
-	}
-	x0 -= 1;
-	if (x0 == x1) {
-		/* Early stop of flat ellipses */
-		x1 += 1;
-		while (y0 - y1 < ry) {
-			float i = 255 * 4 * fabs(err+dx) / ry_extra;
-			y0 += 1;
-			y1 -= 1;
-			set_pixel(x0, y0, i, pixel_data);
-			set_pixel(x1, y0, i, pixel_data);
-			set_pixel(x0, y1, i, pixel_data);
-			set_pixel(x1, y1, i, pixel_data);
-			dy += rx;
-			err += dy;
 		}
 	}
 }

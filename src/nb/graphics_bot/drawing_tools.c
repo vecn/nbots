@@ -3,8 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <alloca.h>
+#include <math.h>
 
-#include "nb/math_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
 #include "palette_struct.h"
@@ -13,7 +13,13 @@
 #include "drawing_tools/eps/eps_drawing.h"
 #include "drawing_tools/asy/asy_drawing.h"
 
+#define INV_SQRT2 (0.707106781186547339894784)
+#define SQRT3 (1.73205080756887729352)
+#define PI (3.14159265358979323846264338327)
+#define HALF_PI (1.57079632679489626271744)
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
+#define POW2(a) ((a)*(a))
 
 #define GET_FILENAME_EXT(filename, ext)				\
 	do {							\
@@ -53,12 +59,14 @@ struct nb_graphics_context_s {
 
 	void (*move_to)(void *ctx, float x, float y);
 	void (*line_to)(void *ctx, float x, float y);
-	void (*arc)(void *ctx, float x, float y, float r,
-		    float a0, float a1);
+	void (*qcurve_to)(void *ctx, float x, float y,
+			  float xcontrol, float ycontrol);
+	void (*qrcurve_to)(void *ctx, float x, float y,
+			   float xcontrol, float ycontrol, float w);
+	void (*curve_to)(void *ctx, float x, float y,
+			 float x0_control, float y0_control,
+			 float x1_control, float y1_control);
 	void (*close_path)(void *ctx);
-	void (*set_circle)(void *ctx, float x, float y, float r);
-	void (*set_rectangle)(void *ctx, float x1, float y1,
-				  float x2, float y2);
 	void (*set_line_width)(void *ctx, float w);
 	void (*set_source_rgb)(void *ctx, uint8_t r, uint8_t g, uint8_t b);
 	void (*set_source_rgba)(void *ctx, uint8_t r, uint8_t g,
@@ -97,9 +105,13 @@ static void set_asy_tools(nb_graphics_context_t *g);
 static void init_gctx(nb_graphics_context_t *g, int width, int height);
 static void write_gctx(nb_graphics_context_t *g, const char *filename);
 static void clear_gctx(nb_graphics_context_t *g);
-static void get_camera_view(const nb_graphics_context_t *g,
-			    float cam_vtx[2],
-			    float x, float y);
+
+static float get_xcam_view(const nb_graphics_context_t *g,
+			   float x);
+static float get_ycam_view(const nb_graphics_context_t *g,
+			   float y);
+static void set_raw_circle(nb_graphics_context_t *g, float x,
+			   float y, float r);
 
 static nb_graphics_palette_t* palette_get_rainbow(void);
 static nb_graphics_palette_t* palette_get_sunset(void);
@@ -185,9 +197,9 @@ static void set_pix_tools(nb_graphics_context_t *g)
 	g->export_context = nb_graphics_pix_export_context;
 	g->move_to = nb_graphics_pix_move_to;
 	g->line_to = nb_graphics_pix_line_to;
-	g->arc = nb_graphics_pix_arc;
-	g->set_circle = nb_graphics_pix_set_circle;
-	g->set_rectangle = nb_graphics_pix_set_rectangle;
+	g->qcurve_to = nb_graphics_pix_qcurve_to;
+	g->qrcurve_to = nb_graphics_pix_qrcurve_to;
+	g->curve_to = nb_graphics_pix_curve_to;
 	g->close_path = nb_graphics_pix_close_path;
 	g->set_line_width = nb_graphics_pix_set_line_width;
 	g->set_source_rgb = nb_graphics_pix_set_source_rgb;
@@ -210,9 +222,9 @@ static void set_eps_tools(nb_graphics_context_t *g)
 	g->export_context = nb_graphics_eps_export_context;
 	g->move_to = nb_graphics_eps_move_to;
 	g->line_to = nb_graphics_eps_line_to;
-	g->arc = nb_graphics_eps_arc;
-	g->set_circle = nb_graphics_eps_set_circle;
-	g->set_rectangle = nb_graphics_eps_set_rectangle;
+	g->qcurve_to = nb_graphics_eps_qcurve_to;
+	g->qrcurve_to = nb_graphics_eps_qrcurve_to;
+	g->curve_to = nb_graphics_eps_curve_to;
 	g->close_path = nb_graphics_eps_close_path;
 	g->set_line_width = nb_graphics_eps_set_line_width;
 	g->set_source_rgb = nb_graphics_eps_set_source_rgb;
@@ -235,9 +247,9 @@ static void set_asy_tools(nb_graphics_context_t *g)
 	g->export_context = nb_graphics_asy_export_context;
 	g->move_to = nb_graphics_asy_move_to;
 	g->line_to = nb_graphics_asy_line_to;
-	g->arc = nb_graphics_asy_arc;
-	g->set_circle = nb_graphics_asy_set_circle;
-	g->set_rectangle = nb_graphics_asy_set_rectangle;
+	g->qcurve_to = nb_graphics_asy_qcurve_to;
+	g->qrcurve_to = nb_graphics_asy_qrcurve_to;
+	g->curve_to = nb_graphics_asy_curve_to;
 	g->close_path = nb_graphics_asy_close_path;
 	g->set_line_width = nb_graphics_asy_set_line_width;
 	g->set_source_rgb = nb_graphics_asy_set_source_rgb;
@@ -295,66 +307,140 @@ void nb_graphics_enable_camera(nb_graphics_context_t *g)
 	g->using_cam = true;
 }
 
-static void get_camera_view(const nb_graphics_context_t *g,
-			    float cam_vtx[2],
-			    float x, float y)
+static float get_xcam_view(const nb_graphics_context_t *g,
+			   float x)
 {
-	if (g->using_cam) {
-		cam_vtx[0] = g->cam.zoom * (x - g->cam.center[0]) +
+	if (g->using_cam)
+		x = g->cam.zoom * (x - g->cam.center[0]) +
 			g->cam.width / 2.0;
-		cam_vtx[1] = g->cam.zoom * (g->cam.center[1] - y) +
-			g->cam.height / 2.0;
-	} else {
-		cam_vtx[0] = x;
-		cam_vtx[1] = y;
-	}
+	return x;
 }
+
+static float get_ycam_view(const nb_graphics_context_t *g,
+			   float y)
+{
+	if (g->using_cam)
+		y = g->cam.zoom * (g->cam.center[1] - y) +
+			g->cam.height / 2.0;
+	return y;
+}
+
 
 void nb_graphics_move_to(nb_graphics_context_t *g, float x, float y)
 {
-	float c[2];
-	get_camera_view(g, c, x, y);
-	g->move_to(g->ctx, c[0], c[1]);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	g->move_to(g->ctx, x, y);
 }
 
 void nb_graphics_line_to(nb_graphics_context_t *g, float x, float y)
 {
-	float c[2];
-	get_camera_view(g, c, x, y);
-	g->line_to(g->ctx, c[0], c[1]);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	g->line_to(g->ctx, x, y);
 }
 
-void nb_graphics_arc(nb_graphics_context_t *g, float x, float y, float r,
-		    float a0, float a1)
+void nb_graphics_qcurve_to(nb_graphics_context_t *g, float x, float y,
+			   float xcontrol, float ycontrol)
 {
-	float c[2];
-	get_camera_view(g, c, x, y);
-	g->arc(g->ctx, c[0], c[1], r * g->cam.zoom, a0, a1);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	xcontrol = get_xcam_view(g, xcontrol);
+	ycontrol = get_ycam_view(g, ycontrol);
+	g->qcurve_to(g->ctx, x, y, xcontrol, ycontrol);
+}
+
+void nb_graphics_qrcurve_to(nb_graphics_context_t *g, float x, float y,
+			    float xcontrol, float ycontrol, float w)
+{
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	xcontrol = get_xcam_view(g, xcontrol);
+	ycontrol = get_ycam_view(g, ycontrol);
+	g->qrcurve_to(g->ctx, x, y, xcontrol, ycontrol, w);
+}
+
+void nb_graphics_curve_to(nb_graphics_context_t *g, float x, float y,
+			  float x0_control, float y0_control,
+			  float x1_control, float y1_control)
+{
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	x0_control = get_xcam_view(g, x0_control);
+	y0_control = get_ycam_view(g, y0_control);
+	x1_control = get_xcam_view(g, x1_control);
+	y1_control = get_ycam_view(g, y1_control);
+	g->curve_to(g->ctx, x, y, x0_control, y0_control,
+		     x1_control, y1_control);
+}
+
+void nb_graphics_set_ellipse(nb_graphics_context_t *g, float x, float y,
+			     float rx, float ry, float angle)
+{
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	rx = rx * g->cam.zoom;
+	ry = ry * g->cam.zoom;
+	float cosa = cos(angle);
+	float sina = sin(angle);
+	float x1 = ry * -cosa;
+	float y1 = ry * -sina;
+	float x2 = rx * cosa;
+	float y2 = rx * sina;
+	float theta = HALF_PI * ry/(rx + ry);
+	float rz = sqrt(POW2(rx) + POW2(ry));
+	float cx1 = rz * cos(angle - theta);
+	float cy1 = rz * sin(angle - theta);
+	float cx2 = rz * cos(angle + theta);
+	float cy2 = rz * sin(angle + theta);
+	g->move_to(g->ctx, x + x1, y + y1);
+	g->qrcurve_to(g->ctx, x + x2, y + y2, x + cx1, y + cy1, INV_SQRT2);
+	g->qrcurve_to(g->ctx, x - x1, y - y1, x + cx2, y + cy2, INV_SQRT2);
+	g->qrcurve_to(g->ctx, x - x2, y - y2, x - cy2, y + cx2, INV_SQRT2);
+	g->qrcurve_to(g->ctx, x + x1, y + y1, x - cx1, y - cy1, INV_SQRT2);
 }
 
 void nb_graphics_set_circle(nb_graphics_context_t *g, float x,
 			    float y, float r)
 {
-	float c[2];
-	get_camera_view(g, c, x, y);
-	g->set_circle(g->ctx, c[0], c[1], r * g->cam.zoom);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	r = r * g->cam.zoom;
+	set_raw_circle(g, x, y, r);
+}
+
+static void set_raw_circle(nb_graphics_context_t *g, float x,
+			   float y, float r)
+{
+	g->move_to(g->ctx, x, y - r);
+	g->qrcurve_to(g->ctx, x + r * SQRT3/2.0f, y + r/2.0f,
+		      x + r * SQRT3, y - r, 0.5);
+	g->qrcurve_to(g->ctx, x - r * SQRT3/2.0f, y + r/2.0f,
+		      x, y + 2.0f * r, 0.5);
+	g->qrcurve_to(g->ctx, x, y - r,
+		      x - r * SQRT3, y - r, 0.5);
 }
 
 void nb_graphics_set_point(nb_graphics_context_t *g,
 			   float x, float y, float size)
 {
-	float c[2];
-	get_camera_view(g, c, x, y);
-	g->set_circle(g->ctx, c[0], c[1], 0.5 * size);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	set_raw_circle(g, x, y, 0.5 * size);
 }
 
 void nb_graphics_set_rectangle(nb_graphics_context_t *g, float x1, float y1,
 			       float x2, float y2)
 {
-	float c1[2], c2[2];
-	get_camera_view(g, c1, x1, y1);
-	get_camera_view(g, c2, x2, y2);
-	g->set_rectangle(g->ctx, c1[0], c1[1], c2[0], c2[1]);
+	x1 = get_xcam_view(g, x1);
+	y1 = get_ycam_view(g, y1);
+	x2 = get_xcam_view(g, x2);
+	y2 = get_ycam_view(g, y2);
+	g->move_to(g->ctx, x1, y1);
+	g->line_to(g->ctx, x2, y1);
+	g->line_to(g->ctx, x2, y2);
+	g->line_to(g->ctx, x1, y2);
+	g->close_path(g->ctx);
 }
 
 void nb_graphics_close_path(nb_graphics_context_t *g)

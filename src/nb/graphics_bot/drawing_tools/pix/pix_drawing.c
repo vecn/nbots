@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include <alloca.h>
 
 #include "nb/math_bot.h"
@@ -18,13 +19,15 @@
 #define TURTLE_DYNAMIC_MEMINCREASE 15  /* turtle_step */
 #define PIXMASK_STACK_MEMSIZE 250      /* Bytes */
 
+#define ANTIALIASING true
+
 enum {
 	SOLID, GRAD, TRG
 };
 
 enum {
-	MOVE_TO, LINE_TO, ARC, CLOSE_PATH
-	/* QCURVE_TO QRCURVE_TO CURVE_TO, ellipse() [TEMPORAL] */
+	MOVE_TO, LINE_TO, QCURVE_TO,
+	QRCURVE_TO, CURVE_TO, CLOSE_PATH
 };
 
 typedef struct {
@@ -65,6 +68,16 @@ static void turtle_clear(turtle_struct *turtle);
 static void turtle_add(turtle_struct *turtle, uint8_t type,
 		       float x, float y, float v1, float v2,
 		       float v3, float v4);
+static turtle_step *turtle_ref_step(turtle_struct *turtle, uint16_t i);
+static void turtle_reset(turtle_struct *turtle);
+static void set_pixel(int x, int y, void* context);
+static void draw_line(context_t *c, int x0, int y0, int x1, int y1);
+static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
+			float cx, float cy);
+static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
+			 float cx, float cy, float w);
+static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
+		       float c0x, float c0y, float c1x, float c1y);
 static void source_set_rgb(source_t *source, uint8_t r,
 			   uint8_t g, uint8_t b);
 static void source_set_rgba(source_t *source, uint8_t r,
@@ -197,41 +210,34 @@ void nb_graphics_pix_line_to(void *ctx, float x, float y)
 		   0, 0, 0, 0);
 }
 
-void nb_graphics_pix_arc(void *ctx,
-			 float x, float y, float r,
-			 float a0, float a1)
+void nb_graphics_pix_qcurve_to(void *ctx, float x, float y,
+			       float xcontrol, float ycontrol)
 {
 	context_t *c = ctx;
-	turtle_add(c->turtle, ARC, x, y, r, a0, a1, 0);
+	turtle_add(c->turtle, QCURVE_TO, x, y,
+		   xcontrol, ycontrol, 0, 0);
+}
+
+void nb_graphics_pix_qrcurve_to(void *ctx, float x, float y,
+				float xcontrol, float ycontrol, float w)
+{
+	context_t *c = ctx;
+	turtle_add(c->turtle, QRCURVE_TO, x, y,
+		   xcontrol, ycontrol, w, 0);
+}
+void nb_graphics_pix_curve_to(void *ctx, float x, float y,
+			      float x0_control, float y0_control,
+			      float x1_control, float y1_control)
+{
+	context_t *c = ctx;
+	turtle_add(c->turtle, CURVE_TO, x, y,
+		   x0_control, y0_control,
+		   x1_control, y1_control);
 }
 
 void nb_graphics_pix_close_path(void *ctx)
 {
 	context_t *c = ctx;
-	turtle_add(c->turtle, CLOSE_PATH,
-		   0, 0, 0, 0, 0, 0);
-}
-
-void nb_graphics_pix_set_circle(void *ctx,
-				float x, float y, float r)
-{
-	context_t *c = ctx;
-	turtle_add(c->turtle, ARC, x, y, r,
-		   0.0, 2 * NB_PI, 0);
-}
-
-void nb_graphics_pix_set_rectangle(void *ctx, float x1, float y1,
-				   float x2, float y2)
-{
-	context_t *c = ctx;
-	turtle_add(c->turtle, MOVE_TO, x1, y1,
-		   0, 0, 0, 0);
-	turtle_add(c->turtle, LINE_TO, x2, y1,
-		   0, 0, 0, 0);
-	turtle_add(c->turtle, LINE_TO, x2, y2,
-		   0, 0, 0, 0);
-	turtle_add(c->turtle, LINE_TO, x1, y2,
-		   0, 0, 0, 0);
 	turtle_add(c->turtle, CLOSE_PATH,
 		   0, 0, 0, 0, 0, 0);
 }
@@ -332,17 +338,114 @@ static void source_set_trg(source_t *source,
 void nb_graphics_pix_fill(void *ctx)
 {
 	;
+	/* PENDING */
 }
 
 void nb_graphics_pix_fill_preserve(void *ctx)
 {
 	;
+	/* PENDING */
 }
 
 void nb_graphics_pix_stroke(void *ctx)
 {
 	context_t *c = ctx;
-	/* PENDING */
+	int x0, y0;
+	int x, y;
+	for (uint16_t i = 0; i < c->turtle->N; i++) {
+		turtle_step *step = turtle_ref_step(c->turtle, i);
+		int sx = (int)(step->x);
+		int sy = (int)(step->y);
+		switch (step->type) {
+		case MOVE_TO:
+			x0 = sx;
+			y0 = sy;
+			break;
+		case LINE_TO:
+			draw_line(c, x, y, sx, sy);
+			break;
+		case QCURVE_TO:
+			draw_qcurve(c, x, y, sx, sy,
+				    step->data[0],
+				    step->data[1]);
+			break;
+		case QRCURVE_TO:
+			draw_qrcurve(c, x, y, sx, sy,
+				     step->data[0],
+				     step->data[1],
+				     step->data[2]);
+			break;
+		case CURVE_TO:
+			draw_curve(c, x, y, sx, sy,
+				   step->data[0],
+				   step->data[1],
+				   step->data[2],
+				   step->data[3]);
+			break;
+		case CLOSE_PATH:
+			sx = x0;
+			sy = y0;
+			draw_line(c, x, y, x0, y0);
+			break;
+		default:
+			sx = x0;
+			sy = y0;
+			draw_line(c, x, y, x0, y0);
+		}
+		x = sx;
+		y = sy;
+	}
+	turtle_reset(c->turtle);
+}
+
+static turtle_step *turtle_ref_step(turtle_struct *turtle, uint16_t i)
+{
+	void *step;
+	if (i < TURTLE_STATIC_MEMSIZE)
+		step = &(turtle->static_mem[i]);
+	else
+		step = &(turtle->dynamic_mem[i - TURTLE_STATIC_MEMSIZE]);
+	return step;
+}
+
+static void turtle_reset(turtle_struct *turtle)
+{
+	turtle->N = 0;
+}
+
+static void set_pixel(int x, int y, void* context)
+{
+	context_t *c = context;
+	if (x >= 0 && x < c->img->width &&
+	    y >= 0 && y < c->img->height) {
+		/* PENDING */
+		/* vcn_image_blend_pixel */
+	}
+}
+
+static void draw_line(context_t *c, int x0, int y0, int x1, int y1)
+{
+	nb_graphics_rasterizer_line(x0, y0, x1, y1,
+				    ANTIALIASING,
+				    set_pixel, c);
+}
+
+static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
+			float cx, float cy)
+{
+	;/* PENDING */
+}
+
+static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
+			 float cx, float cy, float w)
+{
+	;/* PENDING */
+}
+
+static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
+		       float c0x, float c0y, float c1x, float c1y)
+{
+	;/* PENDING */
 }
 
 void nb_graphics_pix_set_font_type(void *ctx, const char *type)
@@ -359,11 +462,11 @@ void nb_graphics_pix_set_font_size(void *ctx, uint16_t size)
 
 void nb_graphics_pix_show_text(void *ctx, const char *str)
 {
-	;
+	/* PENDING */;
 }
 
 void nb_graphics_pix_get_text_attr(const void *ctx, const char *label,
 				   nb_graphics_text_attr_t *attr)
 {
-	;
+	/* PENDING */;
 }

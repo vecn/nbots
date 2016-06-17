@@ -145,6 +145,23 @@ void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 	}
 }
 
+void vcn_image_set_pixel(vcn_image_t *img, uint32_t r,
+			 uint32_t c,  uint8_t pixel[])
+{
+	if (NULL != img->pixels) {
+		uint32_t w = img->width * img->comp_x_pixel;
+		uint32_t col = c * img->comp_x_pixel;
+		memcpy(&(img->pixels[r * w + col]), pixel, img->comp_x_pixel);
+	}
+}
+
+void vcn_image_blend_pixel(vcn_image_t *img, uint32_t r,
+			   uint32_t c,  uint8_t pixel[],
+			   vcn_image_blending_type type)
+{
+	/* PENDING */
+}
+
 uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,
 				 uint32_t r, uint32_t c)
 {

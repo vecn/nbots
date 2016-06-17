@@ -52,8 +52,16 @@ void nb_graphics_enable_camera(nb_graphics_context_t *g);
 
 void nb_graphics_move_to(nb_graphics_context_t *g, float x, float y);
 void nb_graphics_line_to(nb_graphics_context_t *g, float x, float y);
-void nb_graphics_arc(nb_graphics_context_t *g, float x, float y, float r,
-		    float a0, float a1);
+void nb_graphics_qcurve_to(nb_graphics_context_t *g, float x, float y,
+			   float xcontrol, float ycontrol);
+void nb_graphics_qrcurve_to(nb_graphics_context_t *g, float x, float y,
+			    float xcontrol, float ycontrol, float w);
+void nb_graphics_curve_to(nb_graphics_context_t *g, float x, float y,
+			  float x0_control, float y0_control,
+			  float x1_control, float y1_control);
+
+void nb_graphics_set_ellipse(nb_graphics_context_t *g, float x, float y,
+			     float rx, float ry, float angle);
 
 void nb_graphics_set_circle(nb_graphics_context_t *g,
 			    float x, float y, float r);

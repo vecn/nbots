@@ -14,17 +14,14 @@ void nb_graphics_eps_move_to(void *ctx, float x, float y);
 
 void nb_graphics_eps_line_to(void *ctx, float x, float y);
 
-void nb_graphics_eps_arc(void *ctx,
-			 float x, float y, float r,
-			 float a0, float a1);
-
+void nb_graphics_eps_qcurve_to(void *ctx, float x, float y,
+			       float xcontrol, float ycontrol);
+void nb_graphics_eps_qrcurve_to(void *ctx, float x, float y,
+				float xcontrol, float ycontrol, float w);
+void nb_graphics_eps_curve_to(void *ctx, float x, float y,
+			      float x0_control, float y0_control,
+			      float x1_control, float y1_control);
 void nb_graphics_eps_close_path(void *ctx);
-
-void nb_graphics_eps_set_circle(void *ctx,
-				float x, float y, float r);
-
-void nb_graphics_eps_set_rectangle(void *ctx, float x1, float y1,
-				   float x2, float y2);
 
 void nb_graphics_eps_set_line_width(void *ctx, float w);
 
