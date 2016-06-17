@@ -399,6 +399,6 @@ static char get_ascii_from_luma(uint8_t luma, const char *scale,
 	float factor = luma / 256.0;
 	uint8_t ascii_id = (uint8_t)(factor * 10);
 	char c = scale[*next_char * 10 + ascii_id];
-	*next_char = (*next_char + 1) % 8;
+	*next_char = (*next_char + 1) % 9;
 	return c;
 }
