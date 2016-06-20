@@ -86,6 +86,7 @@ struct nb_graphics_context_s {
 	void (*fill)(void *ctx);
 	void (*fill_preserve)(void *ctx);
 	void (*stroke)(void *ctx);
+	void (*stroke_preserve)(void *ctx);
 	void (*set_font_type)(void *ctx, const char *type);
 	void (*set_font_size)(void *ctx, uint16_t size);
 	void (*show_text)(void *ctx, const char *str);
@@ -209,6 +210,7 @@ static void set_pix_tools(nb_graphics_context_t *g)
 	g->fill = nb_graphics_pix_fill;
 	g->fill_preserve = nb_graphics_pix_fill_preserve;
 	g->stroke = nb_graphics_pix_stroke;
+	g->stroke = nb_graphics_pix_stroke_preserve;
 	g->set_font_type = nb_graphics_pix_set_font_type;
 	g->set_font_size = nb_graphics_pix_set_font_size;
 	g->show_text = nb_graphics_pix_show_text;
@@ -234,6 +236,7 @@ static void set_eps_tools(nb_graphics_context_t *g)
 	g->fill = nb_graphics_eps_fill;
 	g->fill_preserve = nb_graphics_eps_fill_preserve;
 	g->stroke = nb_graphics_eps_stroke;
+	g->stroke = nb_graphics_eps_stroke_preserve;
 	g->set_font_type = nb_graphics_eps_set_font_type;
 	g->set_font_size = nb_graphics_eps_set_font_size;
 	g->show_text = nb_graphics_eps_show_text;
@@ -259,6 +262,7 @@ static void set_asy_tools(nb_graphics_context_t *g)
 	g->fill = nb_graphics_asy_fill;
 	g->fill_preserve = nb_graphics_asy_fill_preserve;
 	g->stroke = nb_graphics_asy_stroke;
+	g->stroke = nb_graphics_asy_stroke_preserve;
 	g->set_font_type = nb_graphics_asy_set_font_type;
 	g->set_font_size = nb_graphics_asy_set_font_size;
 	g->show_text = nb_graphics_asy_show_text;
@@ -544,6 +548,11 @@ void nb_graphics_fill_preserve(nb_graphics_context_t *g)
 void nb_graphics_stroke(nb_graphics_context_t *g)
 {
 	g->stroke(g->ctx);
+}
+
+void nb_graphics_stroke_preserve(nb_graphics_context_t *g)
+{
+	g->stroke_preserve(g->ctx);
 }
 
 void nb_graphics_set_font_type(nb_graphics_context_t *g, const char *type)

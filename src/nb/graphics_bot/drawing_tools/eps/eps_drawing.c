@@ -107,6 +107,11 @@ void nb_graphics_eps_stroke(void *ctx)
 	;
 }
 
+void nb_graphics_eps_stroke_preserve(void *ctx)
+{
+	;
+}
+
 void nb_graphics_eps_set_font_type(void *ctx, const char *type)
 {
 	;

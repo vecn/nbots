@@ -106,6 +106,11 @@ void nb_graphics_asy_stroke(void *ctx)
 	;
 }
 
+void nb_graphics_asy_stroke_preserve(void *ctx)
+{
+	;
+}
+
 void nb_graphics_asy_set_font_type(void *ctx, const char *type)
 {
 	;

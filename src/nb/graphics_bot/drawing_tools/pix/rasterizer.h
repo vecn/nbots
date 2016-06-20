@@ -1,8 +1,11 @@
 #ifndef __NB_GRAPHICS_BOT_DRAWING_TOOLS_PIX_RASTERIZER_H__
 #define __NB_GRAPHICS_BOT_DRAWING_TOOLS_PIX_RASTERIZER_H__
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+#include <alloca.h>
 
 void nb_graphics_rasterizer_line(int x0, int y0, int x1, int y1,
 				 bool antialiasing,
@@ -35,4 +38,10 @@ void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
 							   uint8_t i, void*),
 					 void *pixel_data);
 
+
+void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
+				 void (*set_pixel)(int x, int y, uint8_t i, void*),
+				 bool (*pixel_is_empty)(int x, int y, void*),
+				 uint32_t width, uint32_t height,
+				 void *pixel_data);
 #endif

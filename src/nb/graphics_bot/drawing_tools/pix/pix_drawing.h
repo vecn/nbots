@@ -51,6 +51,8 @@ void nb_graphics_pix_fill_preserve(void *ctx);
 
 void nb_graphics_pix_stroke(void *ctx);
 
+void nb_graphics_pix_stroke_preserve(void *ctx);
+
 void nb_graphics_pix_set_font_type(void *ctx, const char *type);
 
 void nb_graphics_pix_set_font_size(void *ctx, uint16_t size);

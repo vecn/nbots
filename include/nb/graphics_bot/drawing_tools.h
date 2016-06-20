@@ -101,6 +101,8 @@ void nb_graphics_fill_preserve(nb_graphics_context_t *g);
 
 void nb_graphics_stroke(nb_graphics_context_t *g);
 
+void nb_graphics_stroke_preserve(nb_graphics_context_t *g);
+
 void nb_graphics_set_font_type(nb_graphics_context_t *g, const char *type);
 
 void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size);

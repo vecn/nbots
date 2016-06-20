@@ -1,3 +1,5 @@
+/* Rasterizer based on Bresenham algorithm */
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -6,9 +8,20 @@
 
 #include "rasterizer.h"
 
+#define PIX_STACK_STATIC_SIZE 50
+#define PIX_STACK_DYNAMIC_INCREMENTS 50
+
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+typedef struct {
+	uint32_t w;
+	uint32_t N;
+	uint32_t N_alloc;
+	uint32_t static_mem[PIX_STACK_STATIC_SIZE];
+	uint32_t *dynamic_mem;
+} pix_stack_t;
 
 static void line(int x0, int y0, int x1, int y1,
 		 void (*set_pixel)(int x, int y,
@@ -83,6 +96,10 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 				void (*set_pixel)(int x, int y,
 						  uint8_t i, void*),
 				void *pixel_data);
+static void init_stack(pix_stack_t *ps, int32_t img_width);
+static bool pop(pix_stack_t *ps, int *x, int *y);
+static void push(pix_stack_t *ps, int x, int y);
+static void finish_stack(pix_stack_t *ps);
 
 void nb_graphics_rasterizer_line(int x0, int y0, int x1, int y1,
 				 bool antialiasing,
@@ -1113,4 +1130,110 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 	} while (leg--);
 
 	line_aa(x0, y0, x1, y1, set_pixel, pixel_data);
+}
+
+void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
+				 void (*set_pixel)(int x, int y, uint8_t i, void*),
+				 bool (*pixel_is_empty)(int x, int y, void*),
+				 uint32_t width, uint32_t height,
+				 void *pixel_data)
+/* 4-way scanline */
+{
+	if (!pixel_is_empty(x, y, pixel_data))
+		return;
+
+	pix_stack_t *pix_stack = alloca(sizeof(pix_stack));
+	init_stack(pix_stack, width);
+
+	push(pix_stack, x, y);
+
+	while (pop(pix_stack, &x, &y)) {
+		int x1 = x;
+		while (x1 >= 0 && pixel_is_empty(x1, y, pixel_data))
+			x1--;
+		x1++;
+
+		bool span_above = false;
+		bool span_below = false;
+		while (x1 < width && pixel_is_empty(x1, y, pixel_data)) {
+			set_pixel(x1, y, i, pixel_data);
+			if (y > 0) {
+				bool pix_is_empty =
+					pixel_is_empty(x1, y - 1, pixel_data);
+				if (!span_above && pix_is_empty) {
+					push(pix_stack, x1, y - 1);
+					span_above = true;
+				} else if (span_above && !pix_is_empty) {
+					span_above = false;
+				}
+			}
+			if (y < height - 1) {
+				bool pix_is_empty =
+					pixel_is_empty(x1, y + 1, pixel_data);
+				if (!span_below && pix_is_empty) {
+					push(pix_stack, x1, y + 1);
+					span_below = true;
+				} else if (span_below && !pix_is_empty) {
+					span_below = false;
+				}
+			}
+			x1++;
+		}
+	}
+	finish_stack(pix_stack);
+}
+
+static void init_stack(pix_stack_t *ps, int32_t img_width)
+{
+	ps->w = img_width;
+	ps->N = 0;
+	ps->N_alloc = 0;
+	memset(ps->static_mem, 0,
+	       PIX_STACK_STATIC_SIZE * sizeof(*(ps->static_mem)));
+	ps->dynamic_mem = NULL;
+}
+
+static bool pop(pix_stack_t *ps, int *x, int *y)
+{
+	bool out = false;
+	if (0 < ps->N) {
+		uint32_t p;
+		if (ps->N <= PIX_STACK_STATIC_SIZE) {
+			uint32_t last = ps->N - 1;
+			p = ps->static_mem[last];
+		} else {
+			uint32_t last = ps->N - PIX_STACK_STATIC_SIZE - 1;
+			p = ps->dynamic_mem[last];
+		}
+		ps->N -= 1;
+		*x = p % ps->w;
+		*y = p / ps->w;
+		out = true;
+	}
+	return out;
+}
+
+static void push(pix_stack_t *ps, int x, int y)
+{
+	uint32_t p = y * ps->w + x;
+	if (ps->N < PIX_STACK_STATIC_SIZE) {
+		ps->static_mem[ps->N] = p;
+	} else {
+		uint32_t N = ps->N - PIX_STACK_STATIC_SIZE;
+		if (ps->N_alloc <= N) {
+			ps->N_alloc += PIX_STACK_DYNAMIC_INCREMENTS;
+			uint32_t memsize = ps->N_alloc *
+				sizeof(*(ps->dynamic_mem));
+			ps->dynamic_mem =
+				realloc(ps->dynamic_mem, memsize);
+		}
+		ps->dynamic_mem[N] = p;
+	}
+	ps->N += 1;
+}
+
+static void finish_stack(pix_stack_t *ps)
+{
+	if (ps->N_alloc > 0)
+		free(ps->dynamic_mem);
 }
