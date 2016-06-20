@@ -38,16 +38,16 @@ static int suite_clean(void)
 static void test_render_ascii(void)
 {
 	char filename[100];
-	sprintf(filename, "%s/%s", INPUTS_DIR, "ernesto.jpg");
+	sprintf(filename, "%s/%s", INPUTS_DIR, "jessica.jpg");
 	
 	vcn_image_t *img = alloca(vcn_image_get_memsize());
 	vcn_image_init(img);
 	vcn_image_read(img, filename);
-	vcn_image_write_ascii(img, "../../../ernesto030.txt", 30);
-	vcn_image_write_ascii(img, "../../../ernesto050.txt", 50);
-	vcn_image_write_ascii(img, "../../../ernesto075.txt", 75);
-	vcn_image_write_ascii(img, "../../../ernesto100.txt", 100);
-	vcn_image_write_ascii(img, "../../../ernesto150.txt", 150);
+	vcn_image_write_ascii(img, "../../../jessica030.txt", 30);
+	vcn_image_write_ascii(img, "../../../jessica050.txt", 50);
+	vcn_image_write_ascii(img, "../../../jessica075.txt", 75);
+	vcn_image_write_ascii(img, "../../../jessica100.txt", 100);
 	vcn_image_finish(img);
+	/* TEMPORAL: this test is not checked */
 	CU_ASSERT(true);
 }

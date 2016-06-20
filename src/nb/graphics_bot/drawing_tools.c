@@ -374,32 +374,6 @@ void nb_graphics_curve_to(nb_graphics_context_t *g, float x, float y,
 		     x1_control, y1_control);
 }
 
-void nb_graphics_set_ellipse(nb_graphics_context_t *g, float x, float y,
-			     float rx, float ry, float angle)
-{
-	x = get_xcam_view(g, x);
-	y = get_ycam_view(g, y);
-	rx = rx * g->cam.zoom;
-	ry = ry * g->cam.zoom;
-	float cosa = cos(angle);
-	float sina = sin(angle);
-	float x1 = ry * -cosa;
-	float y1 = ry * -sina;
-	float x2 = rx * cosa;
-	float y2 = rx * sina;
-	float theta = HALF_PI * ry/(rx + ry);
-	float rz = sqrt(POW2(rx) + POW2(ry));
-	float cx1 = rz * cos(angle - theta);
-	float cy1 = rz * sin(angle - theta);
-	float cx2 = rz * cos(angle + theta);
-	float cy2 = rz * sin(angle + theta);
-	g->move_to(g->ctx, x + x1, y + y1);
-	g->qrcurve_to(g->ctx, x + x2, y + y2, x + cx1, y + cy1, INV_SQRT2);
-	g->qrcurve_to(g->ctx, x - x1, y - y1, x + cx2, y + cy2, INV_SQRT2);
-	g->qrcurve_to(g->ctx, x - x2, y - y2, x - cy2, y + cx2, INV_SQRT2);
-	g->qrcurve_to(g->ctx, x + x1, y + y1, x - cx1, y - cy1, INV_SQRT2);
-}
-
 void nb_graphics_set_circle(nb_graphics_context_t *g, float x,
 			    float y, float r)
 {
@@ -532,6 +506,10 @@ void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 float x2, float y2,
 				 nb_graphics_palette_t *pal)
 {
+	x1 = get_xcam_view(g, x1);
+	y1 = get_ycam_view(g, y1);
+	x2 = get_xcam_view(g, x2);
+	y2 = get_ycam_view(g, y2);
 	g->set_source_grad(g->ctx, grad, x1, y1, x2, y2, pal);
 }
 
@@ -543,6 +521,12 @@ void nb_graphics_set_source_trg(nb_graphics_context_t *g,
 				const uint8_t rgba2[4],
 				const uint8_t rgba3[4])
 {
+	x1 = get_xcam_view(g, x1);
+	y1 = get_ycam_view(g, y1);
+	x2 = get_xcam_view(g, x2);
+	y2 = get_ycam_view(g, y2);
+	x3 = get_xcam_view(g, x3);
+	y3 = get_ycam_view(g, y3);
 	g->set_source_trg(g->ctx, x1, y1, x2, y2, x3, y3,
 			  rgba1, rgba2, rgba3);
 }

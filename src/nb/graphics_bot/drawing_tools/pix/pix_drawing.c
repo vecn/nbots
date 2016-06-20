@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <alloca.h>
+#include <math.h>
 
-#include "nb/math_bot.h"
 #include "nb/image_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
@@ -20,6 +20,8 @@
 #define PIXMASK_STACK_MEMSIZE 250      /* Bytes */
 
 #define ANTIALIASING true
+
+#define POW2(a) ((a)*(a))
 
 enum {
 	SOLID, GRAD, TRG
@@ -70,16 +72,14 @@ static void turtle_add(turtle_struct *turtle, uint8_t type,
 		       float v3, float v4);
 static turtle_step *turtle_ref_step(turtle_struct *turtle, uint16_t i);
 static void turtle_reset(turtle_struct *turtle);
-static void set_pixel(int x, int y, void* context);
+static void set_pixel(int x, int y, uint8_t i, void* context);
 static void draw_line(context_t *c, int x0, int y0, int x1, int y1);
 static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
-			float cx, float cy);
+			int cx, int cy);
 static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
-			 float cx, float cy, float w);
+			 int cx, int cy, float w);
 static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
 		       float c0x, float c0y, float c1x, float c1y);
-static void source_set_rgb(source_t *source, uint8_t r,
-			   uint8_t g, uint8_t b);
 static void source_set_rgba(source_t *source, uint8_t r,
 			    uint8_t g, uint8_t b, uint8_t a);
 static void source_set_grad(source_t *source,
@@ -94,6 +94,19 @@ static void source_set_trg(source_t *source,
 			   const uint8_t rgba1[4],
 			   const uint8_t rgba2[4],
 			   const uint8_t rgba3[4]);
+static void source_get_color(source_t *source, int x, int y, uint8_t pix[4]);
+static void source_get_color_solid(source_t *source, uint8_t pix[4]);
+static void source_get_color_grad(source_t *source, int x, int y,
+				  uint8_t pix[4]);
+static void source_get_color_grad_linear(source_t *source, int x, int y,
+					 uint8_t pix[4]);
+static void source_get_color_grad_radial(source_t *source, int x, int y,
+					 uint8_t pix[4]);
+static void source_get_color_trg(source_t *source, int x, int y,
+				 uint8_t pix[4]);
+static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
+					float x3, float y3, float x, float y,
+					float lambda[3]);
 
 void* nb_graphics_pix_create_context(int width, int height)
 {
@@ -114,6 +127,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	ctx->img->height = height;
 	ctx->img->comp_x_pixel = 4;
 	ctx->img->pixels = (void*) (memblock + ctx_size + img_size);
+	memset(ctx->img->pixels, 0, pix_size);
 
 	ctx->turtle = (void*) (memblock + ctx_size + img_size + pix_size);
 	memset(ctx->turtle, 0, trt_size);
@@ -122,7 +136,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	
 	ctx->source = (void*) (memblock + ctx_size + img_size +
 			       pix_size + trt_size);
-	source_set_rgb(ctx->source, 0, 0, 0);
+	source_set_rgba(ctx->source, 0, 0, 0, 255);
 	
 	ctx->font = (void*) (memblock + ctx_size + img_size +
 			       pix_size + trt_size + src_size);
@@ -132,20 +146,9 @@ void* nb_graphics_pix_create_context(int width, int height)
 	return ctx;
 }
 
-static void source_set_rgb(source_t *source, uint8_t r,
-			   uint8_t g, uint8_t b)
-{
-	memset(source, 0, sizeof(source_t));
-	source->source_type = SOLID;
-	source->pal = &(source->color);
-	nb_graphics_palette_add_rgba(source->pal, 0.0,
-				     r, g, b, 255);
-}
-
 void nb_graphics_pix_destroy_context(void *ctx)
 {
 	context_t *c = ctx;
-	vcn_image_finish(c->img);
 	turtle_clear(c->turtle);
 	free(ctx);
 }
@@ -252,7 +255,7 @@ void nb_graphics_pix_set_source_rgb(void *ctx,
 				    uint8_t r, uint8_t g, uint8_t b)
 {
 	context_t *c = ctx;
-	source_set_rgb(c->source, r, g, b);
+	source_set_rgba(c->source, r, g, b, 255);
 }
 
 void nb_graphics_pix_set_source_rgba(void *ctx, uint8_t r, uint8_t g,
@@ -293,8 +296,12 @@ static void source_set_grad(source_t *source,
 	source->pal = pal;
 	source->vtx[0] = x1;
 	source->vtx[1] = y1;
-	source->vtx[2] = x2;
-	source->vtx[3] = y2;
+	source->vtx[2] = x2 - x1;
+	source->vtx[3] = y2 - y1;
+	source->vtx[4] = sqrt(POW2(source->vtx[2]) + 
+			      POW2(source->vtx[3]));
+	source->vtx[2] /= source->vtx[4];
+	source->vtx[3] /= source->vtx[4];
 }
 
 void nb_graphics_pix_set_source_trg(void *ctx,
@@ -354,8 +361,8 @@ void nb_graphics_pix_stroke(void *ctx)
 	int x, y;
 	for (uint16_t i = 0; i < c->turtle->N; i++) {
 		turtle_step *step = turtle_ref_step(c->turtle, i);
-		int sx = (int)(step->x);
-		int sy = (int)(step->y);
+		int sx = (int)(step->x + 0.5);
+		int sy = (int)(step->y + 0.5);
 		switch (step->type) {
 		case MOVE_TO:
 			x0 = sx;
@@ -366,13 +373,13 @@ void nb_graphics_pix_stroke(void *ctx)
 			break;
 		case QCURVE_TO:
 			draw_qcurve(c, x, y, sx, sy,
-				    step->data[0],
-				    step->data[1]);
+				    (int)(step->data[0] + 0.5),
+				    (int)(step->data[1] + 0.5));
 			break;
 		case QRCURVE_TO:
 			draw_qrcurve(c, x, y, sx, sy,
-				     step->data[0],
-				     step->data[1],
+				     (int)(step->data[0] + 0.5),
+				     (int)(step->data[1] + 0.5),
 				     step->data[2]);
 			break;
 		case CURVE_TO:
@@ -413,14 +420,106 @@ static void turtle_reset(turtle_struct *turtle)
 	turtle->N = 0;
 }
 
-static void set_pixel(int x, int y, void* context)
+static void set_pixel(int x, int y, uint8_t i, void* context)
 {
 	context_t *c = context;
 	if (x >= 0 && x < c->img->width &&
 	    y >= 0 && y < c->img->height) {
-		/* PENDING */
-		/* vcn_image_blend_pixel */
+		uint8_t pix[4];
+		source_get_color(c->source, x, y, pix);
+		pix[3] = (uint8_t)(pix[3] * (i/255.0f));
+		vcn_image_blend_pixel_rgba(c->img, y, x, pix);
 	}
+}
+
+
+static void source_get_color(source_t *source, int x, int y, 
+			     uint8_t pix[4])
+{
+	switch (source->source_type) {
+	case SOLID:
+		source_get_color_solid(source, pix);
+		break;
+	case GRAD:
+		source_get_color_grad(source, x, y, pix);
+		break;
+	case TRG:
+		source_get_color_trg(source, x, y, pix);
+		break;
+	default:
+		source_get_color_solid(source, pix);
+	}
+}
+
+static void source_get_color_solid(source_t *source, uint8_t pix[4])
+{
+	nb_graphics_palette_get_rgba(source->pal, 0.0, pix);
+}
+
+static void source_get_color_grad(source_t *source, int x, int y,
+				  uint8_t pix[4])
+{
+	switch (source->grad_type) {
+	case NB_LINEAR:
+		source_get_color_grad_linear(source, x, y, pix);
+		break;
+	case NB_RADIAL:
+		source_get_color_grad_radial(source, x, y, pix);
+		break;
+	default:
+		source_get_color_grad_linear(source, x, y, pix);
+	}
+}
+
+static void source_get_color_grad_linear(source_t *source, int x, int y,
+					 uint8_t pix[4])
+{
+	x = x - source->vtx[0];
+	y = y - source->vtx[1];
+	float factor = x * source->vtx[2] + y * source->vtx[3];
+	factor = factor / source->vtx[4];
+	nb_graphics_palette_get_rgba(source->pal, factor, pix);
+}
+
+static void source_get_color_grad_radial(source_t *source, int x, int y,
+					 uint8_t pix[4])
+{
+	x = x - source->vtx[0];
+	y = y - source->vtx[1];
+	float factor = sqrt(POW2(x) + POW2(y));
+	factor = factor / source->vtx[4];
+	nb_graphics_palette_get_rgba(source->pal, factor, pix);
+}
+
+static void source_get_color_trg(source_t *source, int x, int y,
+				 uint8_t pix[4])
+{
+	float lambda[3];
+	get_barycentric_coordinates(source->vtx[0], source->vtx[1],
+				    source->vtx[2], source->vtx[3],
+				    source->vtx[4], source->vtx[5],
+				    x, y, lambda);
+	uint8_t pix1[4], pix2[4], pix3[4];
+	nb_graphics_palette_get_rgba(source->pal, 0.0, pix1);
+	nb_graphics_palette_get_rgba(source->pal, 0.5, pix2);
+	nb_graphics_palette_get_rgba(source->pal, 1.0, pix3);
+
+	for (int j = 0; j < 4; j++)
+		pix[j] = (uint8_t) (lambda[0] * pix1[j] +
+				    lambda[1] * pix2[j] +
+				    lambda[2] * pix3[j]);
+}
+
+static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
+					float x3, float y3, float x, float y,
+					float lambda[3])
+{
+	float detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+	float x_x3 = x - x3;
+	float y_y3 = y - y3;
+	lambda[0] = ((y2 - y3) * x_x3 + (x3 - x2) * y_y3) / detT;
+	lambda[1] = ((y3 - y1) * x_x3 + (x1 - x3) * y_y3) / detT;
+	lambda[2] = 1.0f - lambda[1] - lambda[0];
 }
 
 static void draw_line(context_t *c, int x0, int y0, int x1, int y1)
@@ -431,21 +530,29 @@ static void draw_line(context_t *c, int x0, int y0, int x1, int y1)
 }
 
 static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
-			float cx, float cy)
+			int cx,	int cy)
 {
-	;/* PENDING */
+	nb_graphics_rasterizer_quad_bezier(x0, y0, x1, y1, cx, cy,
+					   ANTIALIASING,
+					   set_pixel, c);
 }
 
 static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
-			 float cx, float cy, float w)
+			 int cx, int cy, float w)
 {
-	;/* PENDING */
+	nb_graphics_rasterizer_quad_rational_bezier(x0, y0, x1, y1,
+						    cx, cy, w,
+						    ANTIALIASING,
+						    set_pixel, c);
 }
 
 static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
 		       float c0x, float c0y, float c1x, float c1y)
 {
-	;/* PENDING */
+	nb_graphics_rasterizer_cubic_bezier(x0, y0, x1, y1,
+					    c0x, c0y, c1x, c1y,
+					    ANTIALIASING,
+					    set_pixel, c);
 }
 
 void nb_graphics_pix_set_font_type(void *ctx, const char *type)

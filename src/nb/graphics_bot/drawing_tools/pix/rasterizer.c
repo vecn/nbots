@@ -23,7 +23,11 @@ static void quad_bezier(int x0, int y0, int x1, int y1,
 			int xcontrol, int ycontrol, 
 			void (*set_pixel)(int x, int y,
 					  uint8_t i, void*),
-			void *pixel_data);
+			void *pixel_data,
+			void (*qb_sgm)(int, int, int, int, int, int,
+				       void (*set_pixel)
+				       (int, int, uint8_t, void*),
+				       void*));
 static void quad_rational_bezier_sgm
 				(int x0, int y0, int x1, int y1,
 				 int xcontrol, int ycontrol, float w, 
@@ -34,7 +38,12 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 				 int xcontrol, int ycontrol, float w,
 				 void (*set_pixel)(int x, int y,
 						   uint8_t i, void*),
-				 void *pixel_data);
+				 void *pixel_data,
+				 void (*qrb_sgm)(int, int, int, int,
+						 int, int, float, 
+						 void (*set_pixel)
+						 (int, int, uint8_t, void*),
+						 void *));
 static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
 			     float x0_control, float y0_control,
 			     float x1_control, float y1_control,
@@ -46,7 +55,12 @@ static void cubic_bezier(int x0, int y0, int x1, int y1,
 			 int x1_control, int y1_control,
 			 void (*set_pixel)(int x, int y,
 					   uint8_t i, void*),
-			 void *pixel_data);
+			 void *pixel_data,
+			 void (*cb_sgm)(int, int, int, int,
+					float, float, float, float,
+					void (*set_pixel)
+					(int, int, uint8_t, void*),
+					void*));
 static void line_aa(int x0, int y0, int x1, int y1,
 		    void (*set_pixel)(int x, int y,
 				      uint8_t i, void*),
@@ -89,12 +103,15 @@ void nb_graphics_rasterizer_quad_bezier(int x0, int y0, int x1, int y1,
 							  uint8_t i, void*),
 					void *pixel_data)
 {
+	void (*qb_sgm)(int, int, int, int, int, int,
+		       void (*set_pixel)(int, int, uint8_t, void*),
+		       void*);
 	if (antialiasing)
-		quad_bezier_aa(x0, y0, x1, y1, xcontrol, ycontrol,
-			       set_pixel, pixel_data);
+		qb_sgm = quad_bezier_sgm_aa;
 	else
-		quad_bezier(x0, y0, x1, y1, xcontrol, ycontrol,
-			       set_pixel, pixel_data);
+		qb_sgm = quad_bezier_sgm;
+	quad_bezier(x0, y0, x1, y1, xcontrol, ycontrol,
+		    set_pixel, pixel_data, qb_sgm);
 
 }
 
@@ -108,14 +125,18 @@ void nb_graphics_rasterizer_quad_rational_bezier(int x0, int y0,
 							 uint8_t i, void*),
 						 void *pixel_data)
 {
+	void (*qrb_sgm)(int, int, int, int, int, int, float, 
+			void (*set_pixel)(int, int, uint8_t, void*), 	
+			void *);
 	if (antialiasing)
-		quad_rational_bezier_aa(x0, y0, x1, y1,
-					xcontrol, ycontrol, w,
-					set_pixel, pixel_data);
+		qrb_sgm = quad_rational_bezier_sgm_aa;
 	else
-		quad_rational_bezier(x0, y0, x1, y1,
-				     xcontrol, ycontrol, w,
-				     set_pixel, pixel_data);
+		qrb_sgm = quad_rational_bezier_sgm;
+
+	quad_rational_bezier(x0, y0, x1, y1,
+			     xcontrol, ycontrol, w,
+			     set_pixel, pixel_data,
+			     qrb_sgm);
 }
 
 void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
@@ -126,16 +147,19 @@ void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
 							   uint8_t i, void*),
 					 void *pixel_data)
 {
+	void (*cb_sgm)(int, int, int, int, float, float, float, float,
+		       void (*set_pixel)(int, int, uint8_t, void*),
+		       void*);
 	if (antialiasing)
-		cubic_bezier_aa(x0, y0, x1, y1,
-				x0control, y0control,
-				x1control, y1control,
-				set_pixel, pixel_data);
+		cb_sgm = cubic_bezier_sgm_aa;
 	else
-		cubic_bezier(x0, y0, x1, y1,
-			     x0control, y0control,
-			     x1control, y1control,
-			     set_pixel, pixel_data);
+		cb_sgm = cubic_bezier_sgm;
+
+	cubic_bezier(x0, y0, x1, y1,
+		     x0control, y0control,
+		     x1control, y1control,
+		     set_pixel, pixel_data,
+		     cb_sgm);
 }
 
 static void line(int x0, int y0, int x1, int y1,
@@ -143,10 +167,10 @@ static void line(int x0, int y0, int x1, int y1,
 				   uint8_t i, void*),
 		 void *pixel_data)
 {
-	int dx =  abs(x1 - x0);
 	int sx = (x0 < x1)? 1 : -1;
-	int dy = -abs(y1 - y0);
 	int sy = (y0 < y1)? 1 : -1;
+	int dx =  abs(x1 - x0);
+	int dy = -abs(y1 - y0);
 	int err = dx + dy;
                                                     
 	while (true) {
@@ -234,7 +258,11 @@ static void quad_bezier(int x0, int y0, int x1, int y1,
 			int xcontrol, int ycontrol, 
 			void (*set_pixel)(int x, int y,
 					  uint8_t i, void*),
-			void *pixel_data)
+			void *pixel_data,
+			void (*qb_sgm)(int, int, int, int, int, int,
+				       void (*set_pixel)
+				       (int, int, uint8_t, void*),
+				       void*))
 {
 	int x = x0 - xcontrol;
 	int y = y0 - ycontrol;
@@ -255,8 +283,8 @@ static void quad_bezier(int x0, int y0, int x1, int y1,
 		x = floor(t + 0.5);
 		y = floor(r + 0.5);
 		r = (ycontrol - y0) * (t - x0) / (xcontrol - x0) + y0;
-		quad_bezier_sgm(x0, y0, x, y, x, floor(r + 0.5),
-				set_pixel, pixel_data);
+		qb_sgm(x0, y0, x, y, x, floor(r + 0.5),
+		       set_pixel, pixel_data);
 		r = (ycontrol - y1) * (t - x1) / (xcontrol - x1) + y1;
 		x0 = x;
 		xcontrol = x;
@@ -271,7 +299,7 @@ static void quad_bezier(int x0, int y0, int x1, int y1,
 		x = floor(r + 0.5);
 		y = floor(t + 0.5);
 		r = (xcontrol - x0) * (t - y0) / (ycontrol - y0) + x0;
-		quad_bezier_sgm(x0, y0, x, y, floor(r+0.5), y,
+		qb_sgm(x0, y0, x, y, floor(r+0.5), y,
 				set_pixel, pixel_data);
 		r = (xcontrol - x1) * (t - y1) / (ycontrol - y1) + x1;
 		x0 = x;
@@ -279,9 +307,9 @@ static void quad_bezier(int x0, int y0, int x1, int y1,
 		y0 = y;
 		ycontrol = y;
 	}
-	quad_bezier_sgm(x0, y0, x1, y1,
-			xcontrol, ycontrol,
-			set_pixel, pixel_data);
+	qb_sgm(x0, y0, x1, y1,
+	       xcontrol, ycontrol,
+	       set_pixel, pixel_data);
 }
 
 static void quad_rational_bezier_sgm
@@ -367,14 +395,20 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 				 int xcontrol, int ycontrol, float w,
 				 void (*set_pixel)(int x, int y,
 						   uint8_t i, void*),
-				 void *pixel_data)
+				 void *pixel_data,
+				 void (*qrb_sgm)(int, int, int, int,
+						 int, int, float, 
+						 void (*set_pixel)
+						 (int, int, uint8_t, void*), 	
+						 void *))
 {
 	int x = x0 - 2 * xcontrol + x1;
 	int y = y0 - 2 * ycontrol + y1;
 	double xx = x0 - xcontrol;
 	double yy = y0 - ycontrol;
 
-	assert(w >= 0.0);
+	if (w <= 0.0)
+		w = fabs(w);
 
 	if (xx * (x1 - xcontrol) > 0) {
 		if (yy * (y1 - ycontrol) > 0) {
@@ -408,9 +442,9 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 		x = floor(xx + 0.5);
 		y = floor(yy + 0.5);
 		yy = (xx - x0) * (ycontrol - y0) / (xcontrol - x0) + y0;
-		quad_rational_bezier_sgm(x0, y0, x, y, 
-					 x, floor(yy + 0.5), ww,
-					 set_pixel, pixel_data);
+		qrb_sgm(x0, y0, x, y, 
+			x, floor(yy + 0.5), ww,
+			set_pixel, pixel_data);
 		yy = (xx - x1) * (ycontrol - y1) / (xcontrol - x1) + y1;
 		ycontrol = floor(yy + 0.5);
 		x0 = xcontrol = x;
@@ -440,18 +474,18 @@ static void quad_rational_bezier(int x0, int y0, int x1, int y1,
 		x = floor(xx + 0.5);
 		y = floor(yy + 0.5);
 		xx = (xcontrol - x0) * (yy - y0) / (ycontrol - y0) + x0;
-		quad_rational_bezier_sgm(x0, y0, x, y,
-					 floor(xx + 0.5), y, ww,
-					 set_pixel, pixel_data);
+		qrb_sgm(x0, y0, x, y,
+			floor(xx + 0.5), y, ww,
+			set_pixel, pixel_data);
 		xx = (xcontrol - x1) * (yy - y1) /
 			(ycontrol - y1) + x1;
 		xcontrol = floor(xx + 0.5);
 		x0 = x;
 		y0 = ycontrol = y;
 	}
-	quad_rational_bezier_sgm(x0, y0, x1, y1, 
-				 xcontrol, ycontrol, POW2(w),
-				 set_pixel, pixel_data);
+	qrb_sgm(x0, y0, x1, y1, 
+		xcontrol, ycontrol, POW2(w),
+		set_pixel, pixel_data);
 }
 
 static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
@@ -594,7 +628,12 @@ static void cubic_bezier(int x0, int y0, int x1, int y1,
 			 int x1_control, int y1_control,
 			 void (*set_pixel)(int x, int y,
 					   uint8_t i, void*),
-			 void *pixel_data)
+			 void *pixel_data,
+			 void (*cb_sgm)(int, int, int, int,
+					float, float, float, float,
+					void (*set_pixel)
+					(int, int, uint8_t, void*),
+					void*))
 {
 	long xc = x0 + x0_control - x1_control - x1;
 	long xa = xc - 4 * (x0_control - x1_control);
@@ -674,13 +713,13 @@ static void cubic_bezier(int x0, int y0, int x1, int y1,
 			fy1_control *= fy0;
 		}
 		if (x0 != x1 || y0 != y1)
-			cubic_bezier_sgm(x0, y0, x1, y1,
-					 x0 + fx0_control,
-					 y0 + fy0_control,
-					 x0 + fx1_control,
-					 y0 + fy1_control,
-					 set_pixel,
-					 pixel_data);
+			cb_sgm(x0, y0, x1, y1,
+			       x0 + fx0_control,
+			       y0 + fy0_control,
+			       x0 + fx1_control,
+			       y0 + fy1_control,
+			       set_pixel,
+			       pixel_data);
 		x0 = x1;
 		y0 = y1;
 		fx0 = fx1;
@@ -698,21 +737,23 @@ static void line_aa(int x0, int y0, int x1, int y1,
 	int sy = (y0 < y1)? 1 : -1;
 	long dx = abs(x1 - x0);
 	long dy = abs(y1 - y0);
-	long err = dx*dx + dy*dy;
+	long err = POW2(dx) + POW2(dy);
 	long e2 = (err == 0)? 1 : 0xffff7fl / sqrt(err);
 
 	dx *= e2;
 	dy *= e2;
 	err = dx - dy;
 	while (true) {
-		set_pixel(x0, y0, abs(err-dx+dy)>>16, pixel_data);
+		set_pixel(x0, y0, 255 - (abs(err-dx+dy)>>16), pixel_data);
 		e2 = err;
 		int x2 = x0;
 		if (2*e2 >= -dx) {
 			if (x0 == x1)
 				break;
 			if (e2+dy < 0xff0000l)
-				set_pixel(x0, y0+sy, (e2+dy)>>16, pixel_data);
+				set_pixel(x0, y0 + sy,
+					  255 - ((e2+dy)>>16),
+					  pixel_data);
 			err -= dy;
 			x0 += sx; 
 		} 
@@ -720,7 +761,9 @@ static void line_aa(int x0, int y0, int x1, int y1,
 			if (y0 == y1)
 				break;
 			if (dx-e2 < 0xff0000l)
-				set_pixel(x2+sx, y0, (dx-e2)>>16, pixel_data);
+				set_pixel(x2+sx, y0, 255 -
+					  ((dx-e2)>>16),
+					  pixel_data);
 			err += dx;
 			y0 += sy; 
 		}
@@ -773,7 +816,7 @@ static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			cur = fmin(dx + xy, -xy - dy);
 			double ed = fmax(dx + xy, -xy - dy);
 			ed += 2*ed* POW2(cur) / (POW2(2*ed) + POW2(cur));
-			set_pixel(x0, y0, 255 * fabs(err-dx-dy-xy)/ed,
+			set_pixel(x0, y0, 255 * (1.0 - fabs(err-dx-dy-xy)/ed),
 				  pixel_data);
 			if (x0 == x1 || y0 == y1)
 				break;
@@ -782,8 +825,8 @@ static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			ycontrol = 2*err+dy < 0;
 			if (2*err+dx > 0) {
 				if (err-dy < ed)
-					set_pixel(x0, y0+sy,
-						  255 * fabs(err-dy)/ed,
+					set_pixel(x0, y0 + sy,
+						  255 * (1.0 - fabs(err-dy)/ed),
 						  pixel_data);
 				x0 += sx;
 				dx -= xy;
@@ -793,7 +836,7 @@ static void quad_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			if (ycontrol) {
 				if (cur < ed)
 					set_pixel(xcontrol+sx, y0,
-						  255 * fabs(cur)/ed,
+						  255 * (1.0 - fabs(cur)/ed),
 						  pixel_data);
 				y0 += sy;
 				dy -= xy;
@@ -871,14 +914,14 @@ static void quad_rational_bezier_sgm_aa
 			ed += 2*ed*POW2(cur)/(POW2(2.0*ed) + POW2(cur));
 			xcontrol = 255 * fabs(err - dx - dy + xy)/ed;
 			if (xcontrol < 256)
-				set_pixel(x0, y0, xcontrol, pixel_data);
+				set_pixel(x0, y0, 255 - xcontrol, pixel_data);
 			bool f = (2*err + dy < 0);
 			if (f) {
 				if (y0 == y1)
 					return;
 				if (dx-err < ed)
 					set_pixel(x0 + sx, y0,
-						  255 * fabs(dx-err)/ed,
+						  255 * (1.0 - fabs(dx-err)/ed),
 						  pixel_data);
 			}
 			if (2*err+dx > 0) {
@@ -886,7 +929,7 @@ static void quad_rational_bezier_sgm_aa
 					return;
 				if (err-dy < ed)
 					set_pixel(x0, y0 + sy,
-						  255 * fabs(err-dy)/ed,
+						  255 * (1.0 - fabs(err-dy)/ed),
 						  pixel_data);
 				x0 += sx;
 				dx += xy;
@@ -993,7 +1036,7 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			y0_control = 255 * fabs(ex-(f-fx+1)*dx -
 						(f-fy+1)*dy+f*xy)/ed;
 			if (y0_control < 256)
-				set_pixel(x0, y0, y0_control, pixel_data);
+				set_pixel(x0, y0, 255 - y0_control, pixel_data);
 			px = fabs(ex-(f-fx+1)*dx + (fy-1)*dy);
 			py = fabs(ex+(fx-1)*dx - (f-fy+1)*dy);
 			y1_control = y0;
@@ -1025,7 +1068,8 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			} while (fx > 0 && fy > 0);
 			if (2*fy <= f) {
 				if (py < ed)
-					set_pixel(x0+sx, y0, 255*py/ed, 
+					set_pixel(x0 + sx, y0,
+						  255 * (1.0 - py/ed), 
 						  pixel_data);
 				y0 += sy;
 				fy += f;
@@ -1033,7 +1077,8 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 			if (2*fx <= f) {
 				if (px < ed)
 					set_pixel(x0, y1_control + sy,
-						  255*px/ed, pixel_data);
+						  255 * (1.0 - px/ed),
+						  pixel_data);
 				x0 += sx;
 				fx += f;
 			}
@@ -1042,14 +1087,16 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 	exit:
 		if (2*ex < dy && 2*fy <= f+2) {
 			if (py < ed)
-				set_pixel(x0+sx, y0, 255*py/ed,
-					pixel_data);
+				set_pixel(x0 + sx, y0,
+					  255 * (1.0 - py/ed),
+					  pixel_data);
 			y0 += sy;
 		}
 		if (2*ex > dx && 2*fx <= f+2) {
 			if (px < ed)
-				set_pixel(x0, y1_control + sy, 255*px/ed,
-					pixel_data);
+				set_pixel(x0, y1_control + sy,
+					  255 * (1.0 - px/ed),
+					  pixel_data);
 			x0 += sx;
 		}
 		xx = x0;

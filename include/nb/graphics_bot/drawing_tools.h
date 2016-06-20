@@ -60,9 +60,6 @@ void nb_graphics_curve_to(nb_graphics_context_t *g, float x, float y,
 			  float x0_control, float y0_control,
 			  float x1_control, float y1_control);
 
-void nb_graphics_set_ellipse(nb_graphics_context_t *g, float x, float y,
-			     float rx, float ry, float angle);
-
 void nb_graphics_set_circle(nb_graphics_context_t *g,
 			    float x, float y, float r);
 
