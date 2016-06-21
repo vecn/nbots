@@ -40,7 +40,8 @@ void nb_graphics_rasterizer_cubic_bezier(int x0, int y0, int x1, int y1,
 
 
 void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
-				 void (*set_pixel)(int x, int y, uint8_t i, void*),
+				 void (*set_pixel)(int x, int y,
+						   uint8_t i, void*),
 				 bool (*pixel_is_empty)(int x, int y, void*),
 				 uint32_t width, uint32_t height,
 				 void *pixel_data);

@@ -85,7 +85,7 @@ void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
 				 float x1, float y1,
 				 float x2, float y2,
-				 nb_graphics_palette_t *pat);
+				 nb_graphics_palette_t *pal);
 
 void nb_graphics_set_source_trg(nb_graphics_context_t *g,
 				float x1, float y1,
@@ -115,7 +115,8 @@ void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 			     float width, float height);
 
 nb_graphics_palette_t* nb_graphics_palette_create(void);
-nb_graphics_palette_t* nb_graphics_palette_create_preset(nb_graphics_palette_preset preset);
+nb_graphics_palette_t* nb_graphics_palette_create_preset
+					(nb_graphics_palette_preset preset);
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette);
 void nb_graphics_palette_clear(nb_graphics_palette_t* palette);
 void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,

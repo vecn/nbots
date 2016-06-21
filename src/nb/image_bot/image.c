@@ -159,14 +159,15 @@ void vcn_image_blend_pixel_ga(vcn_image_t *img, uint32_t r,
 	float dest_alpha = img->pixels[r * w + col + 1] / 255.0f;
 	float src_alpha = pixel[1] / 255.0f;
 	/* Alpha channel */
-	img->pixels[r * w + col + 1] = pixel[1] + (uint8_t)
-		((1.0 - src_alpha) * img->pixels[r * w + col + 1]);
-	float out_alpha = img->pixels[r * w + col + 1] / 255.0f;
+	float out_alpha = src_alpha + (1.0 - src_alpha) * dest_alpha;
+	img->pixels[r * w + col + 1] = (uint8_t)(255.0 * out_alpha + 0.5);
 	/* Grayscale */
-	float a = src_alpha / out_alpha;
-	float b = dest_alpha * (1 - src_alpha) / out_alpha;
-	img->pixels[r * w + col] = (uint8_t)
-		(a * pixel[0] + b * img->pixels[r * w + col]);
+	if (img->pixels[r * w + col + 1] > 0) {
+		float a = src_alpha / out_alpha;
+		float b = dest_alpha * (1.0f - src_alpha) / out_alpha;
+		img->pixels[r * w + col] = (uint8_t)
+			(a * pixel[0] + b * img->pixels[r * w + col] + 0.5);
+	}
 }
 
 void vcn_image_blend_pixel_rgba(vcn_image_t *img, uint32_t r,
@@ -177,15 +178,17 @@ void vcn_image_blend_pixel_rgba(vcn_image_t *img, uint32_t r,
 	float dest_alpha = img->pixels[r * w + col + 3] / 255.0f;
 	float src_alpha = pixel[3] / 255.0f;
 	/* Alpha channel */
-	img->pixels[r * w + col + 3] = pixel[3] + (uint8_t)
-		((1.0 - src_alpha) * img->pixels[r * w + col + 3]);
-	float out_alpha = img->pixels[r * w + col + 3] / 255.0f;
+	float out_alpha = src_alpha + (1.0 - src_alpha) * dest_alpha;
+	img->pixels[r * w + col + 3] = (uint8_t)(255.0 * out_alpha + 0.5);
 	/* RGB */
-	float a = src_alpha / out_alpha;
-	float b = dest_alpha * (1 - src_alpha) / out_alpha;
-	for (uint8_t i = 0; i < 3; i++)
-		img->pixels[r * w + col + i] = (uint8_t)
-			(a * pixel[i] + b * img->pixels[r * w + col + i]);
+	if (img->pixels[r * w + col + 3] > 0) {
+		float a = src_alpha / out_alpha;
+		float b = dest_alpha * (1.0f - src_alpha) / out_alpha;
+		for (uint8_t i = 0; i < 3; i++)
+			img->pixels[r * w + col + i] = (uint8_t)
+				(a * pixel[i] + 
+				 b * img->pixels[r * w + col + i] + 0.5);
+	}
 }
 
 uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,

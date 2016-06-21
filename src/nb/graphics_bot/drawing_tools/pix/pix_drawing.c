@@ -107,13 +107,16 @@ static void rpath_init(rasterized_path_t *rpath, const turtle_t *turtle);
 static void turtle_step_get_box(const turtle_step *step, uint32_t box[4]);
 static void rpath_fill_mask(rasterized_path_t *rpath);
 static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath);
+static void rpath_unset_pixel(int x, int y, uint8_t i, void *rpath);
 static bool rpath_pixel_is_empty(int x, int y, void *rpath);
 static void rpath_blend_image(const rasterized_path_t *rpath,
 			      const source_t *source,
 			      vcn_image_t *img);
 static void rpath_finish(rasterized_path_t *rpath);
 static void rasterize_turtle(const turtle_t *turtle,
-			     rasterized_path_t *rpath);
+			     bool antialiased,
+			     void (*set_pixel)(int x, int y, uint8_t i, void *),
+			     void *pixel_data);
 static void source_get_color(source_t *source, int x, int y, uint8_t pix[4]);
 static void source_get_color_solid(source_t *source, uint8_t pix[4]);
 static void source_get_color_grad(source_t *source, int x, int y,
@@ -375,10 +378,12 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 	context_t *c = ctx;
 	rasterized_path_t *rpath = alloca(sizeof(rasterized_path_t));
 	rpath_init(rpath, c->turtle);
-	rasterize_turtle(c->turtle, rpath);
+	rasterize_turtle(c->turtle, false, rpath_set_pixel, rpath);
 	rpath_fill_mask(rpath);
+	rasterize_turtle(c->turtle, false, rpath_unset_pixel, rpath);
 	rpath_blend_image(rpath, c->source, c->img);
 	rpath_finish(rpath);
+	rasterize_turtle(c->turtle, true, set_pixel, c);
 }
 
 static void rpath_init(rasterized_path_t *rpath, const turtle_t *turtle)
@@ -470,14 +475,16 @@ static void rpath_fill_mask(rasterized_path_t *rpath)
 					    rpath_set_pixel,
 					    rpath_pixel_is_empty,
 					    rpath->width,
-					    rpath->height);
+					    rpath->height,
+					    rpath);
 		
 		y = rpath->height - 1;
 		nb_graphics_rasterizer_fill(x, y, 255,
 					    rpath_set_pixel,
 					    rpath_pixel_is_empty,
 					    rpath->width,
-					    rpath->height);
+					    rpath->height,
+					    rpath);
 	}
 	for (uint32_t i = 1; i < rpath->height - 1; i++) {
 		uint32_t x =  0;
@@ -486,13 +493,15 @@ static void rpath_fill_mask(rasterized_path_t *rpath)
 					    rpath_set_pixel,
 					    rpath_pixel_is_empty,
 					    rpath->width,
-					    rpath->height);
+					    rpath->height,
+					    rpath);
 		x = rpath->width - 1;		
 		nb_graphics_rasterizer_fill(x, y, 255,
 					    rpath_set_pixel,
 					    rpath_pixel_is_empty,
 					    rpath->width,
-					    rpath->height);
+					    rpath->height,
+					    rpath);
 	}
 }
 
@@ -500,8 +509,8 @@ static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath)
 {
 	rasterized_path_t *rp = rpath;
 	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		x = x - rpath->xmin;
-		y = y - rpath->ymin;
+		x = x - rp->xmin;
+		y = y - rp->ymin;
 		uint32_t p = y * rp->width + x;
 		uint32_t byte = p / 8;
 		uint8_t bit = p % 8;
@@ -510,13 +519,27 @@ static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath)
 	}
 }
 
+static void rpath_unset_pixel(int x, int y, uint8_t i, void *rpath)
+{
+	rasterized_path_t *rp = rpath;
+	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
+		x = x - rp->xmin;
+		y = y - rp->ymin;
+		uint32_t p = y * rp->width + x;
+		uint32_t byte = p / 8;
+		uint8_t bit = p % 8;
+		uint8_t enabled_pix = 1<<(7-bit);
+		rp->pix[byte] = rp->pix[byte] & (~enabled_pix);
+	}
+}
+
 static bool rpath_pixel_is_empty(int x, int y, void *rpath)
 {
 	rasterized_path_t *rp = rpath;
 	bool out = false;
 	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		x = x - rpath->xmin;
-		y = y - rpath->ymin;
+		x = x - rp->xmin;
+		y = y - rp->ymin;
 		uint32_t p = y * rp->width + x;
 		uint32_t byte = p / 8;
 		uint8_t bit = p % 8;
@@ -538,7 +561,6 @@ static void rpath_blend_image(const rasterized_path_t *rpath,
 			uint32_t y = rpath->ymin + j;
 			if (rpath_pixel_is_empty(i, j, rpath)) {
 				source_get_color(source, x, y, pix);
-				pix[3] = (uint8_t)(pix[3] * (i/255.0f));
 				vcn_image_blend_pixel_rgba(img, y, x, pix);
 			}
 		}
@@ -553,7 +575,9 @@ static void rpath_finish(rasterized_path_t *rpath)
 }
 
 static void rasterize_turtle(const turtle_t *turtle,
-			     rasterized_path_t *rpath)
+			     bool antialiased,
+			     void (*set_pixel)(int x, int y, uint8_t i, void *),
+			     void *pixel_data)
 {
 	int x0, y0;
 	int x, y;
@@ -568,24 +592,27 @@ static void rasterize_turtle(const turtle_t *turtle,
 			break;
 		case LINE_TO:
 			nb_graphics_rasterizer_line(x, y, sx, sy,
-						    false, rpath_set_pixel,
-						    rpath);
+						    antialiased,
+						    set_pixel,
+						    pixel_data);
 			break;
 		case QCURVE_TO:
 			nb_graphics_rasterizer_quad_bezier(x, y, sx, sy,
 							   step->data[0] + 0.5,
 							   step->data[1] + 0.5,
-							   false,
-							   rpath_set_pixel,
-							   rpath);
+							   antialiased,
+							   set_pixel,
+							   pixel_data);
 			break;
 		case QRCURVE_TO:
 			nb_graphics_rasterizer_quad_rational_bezier
 				(x, y, sx, sy,
 				 step->data[0] + 0.5,
 				 step->data[1] + 0.5,
-				 step->data[2], false,
-				 rpath_set_pixel, rpath);
+				 step->data[2],
+				 antialiased,
+				 set_pixel,
+				 pixel_data);
 			break;
 		case CURVE_TO:
 			nb_graphics_rasterizer_cubic_bezier(x, y, sx, sy,
@@ -593,23 +620,25 @@ static void rasterize_turtle(const turtle_t *turtle,
 							    step->data[1],
 							    step->data[2],
 							    step->data[3],
-							    false,
-							    rpath_set_pixel,
-							    rpath);
+							    antialiased,
+							    set_pixel,
+							    pixel_data);
 			break;
 		case CLOSE_PATH:
 			sx = x0;
 			sy = y0;
 			nb_graphics_rasterizer_line(x, y, sx, sy,
-						    false, rpath_set_pixel,
-						    rpath);
+						    antialiased,
+						    set_pixel,
+						    pixel_data);
 			break;
 		default:
 			sx = x0;
 			sy = y0;
 			nb_graphics_rasterizer_line(x, y, sx, sy,
-						    false, rpath_set_pixel,
-						    rpath);
+						    antialiased,
+						    set_pixel,
+						    pixel_data);
 		}
 		x = sx;
 		y = sy;
@@ -626,51 +655,8 @@ void nb_graphics_pix_stroke(void *ctx)
 void nb_graphics_pix_stroke_preserve(void *ctx)
 {
 	context_t *c = ctx;
-	int x0, y0;
-	int x, y;
-	for (uint16_t i = 0; i < c->turtle->N; i++) {
-		turtle_step *step = turtle_ref_step(c->turtle, i);
-		int sx = (int)(step->x + 0.5);
-		int sy = (int)(step->y + 0.5);
-		switch (step->type) {
-		case MOVE_TO:
-			x0 = sx;
-			y0 = sy;
-			break;
-		case LINE_TO:
-			draw_line(c, x, y, sx, sy);
-			break;
-		case QCURVE_TO:
-			draw_qcurve(c, x, y, sx, sy,
-				    (int)(step->data[0] + 0.5),
-				    (int)(step->data[1] + 0.5));
-			break;
-		case QRCURVE_TO:
-			draw_qrcurve(c, x, y, sx, sy,
-				     (int)(step->data[0] + 0.5),
-				     (int)(step->data[1] + 0.5),
-				     step->data[2]);
-			break;
-		case CURVE_TO:
-			draw_curve(c, x, y, sx, sy,
-				   step->data[0],
-				   step->data[1],
-				   step->data[2],
-				   step->data[3]);
-			break;
-		case CLOSE_PATH:
-			sx = x0;
-			sy = y0;
-			draw_line(c, x, y, x0, y0);
-			break;
-		default:
-			sx = x0;
-			sy = y0;
-			draw_line(c, x, y, x0, y0);
-		}
-		x = sx;
-		y = sy;
-	}
+	rasterize_turtle(c->turtle, true, set_pixel, c);
+	/* PENDING: Support line width */
 }
 
 static turtle_step *turtle_ref_step(const turtle_t *turtle, uint16_t i)
@@ -694,11 +680,11 @@ static void set_pixel(int x, int y, uint8_t i, void* context)
 	if (x >= 0 && x < c->img->width && y >= 0 && y < c->img->height) {
 		uint8_t pix[4];
 		source_get_color(c->source, x, y, pix);
-		pix[3] = (uint8_t)(pix[3] * (i/255.0f));
-		vcn_image_blend_pixel_rgba(c->img, y, x, pix);
+		pix[3] = (uint8_t)(255.0f * (pix[3]/255.0f) * (i/255.0f) + 0.5);
+		if (pix[3] > 0)
+			vcn_image_blend_pixel_rgba(c->img, y, x, pix);
 	}
 }
-
 
 static void source_get_color(source_t *source, int x, int y, 
 			     uint8_t pix[4])
@@ -787,6 +773,25 @@ static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
 	lambda[0] = ((y2 - y3) * x_x3 + (x3 - x2) * y_y3) / detT;
 	lambda[1] = ((y3 - y1) * x_x3 + (x1 - x3) * y_y3) / detT;
 	lambda[2] = 1.0f - lambda[1] - lambda[0];
+	if (lambda[0] < 0) {
+			lambda[0] = 0;
+			float d2 = sqrt(POW2(x - x2) + POW2(y - y2));
+			float d3 = sqrt(POW2(x - x3) + POW2(y - y3));
+			lambda[1] = d3 / (d2 + d3);
+			lambda[2] = 1.0f - lambda[1];
+	} else if (lambda[1] < 0) {
+			lambda[1] = 0;
+			float d2 = sqrt(POW2(x - x1) + POW2(y - y1));
+			float d3 = sqrt(POW2(x - x3) + POW2(y - y3));
+			lambda[0] = d3 / (d2 + d3);
+			lambda[2] = 1.0f - lambda[0];
+	} else if (lambda[2] < 0) {
+			lambda[2] = 0;
+			float d2 = sqrt(POW2(x - x1) + POW2(y - y1));
+			float d3 = sqrt(POW2(x - x2) + POW2(y - y2));
+			lambda[0] = d3 / (d2 + d3);
+			lambda[1] = 1.0f - lambda[0];
+	} 
 }
 
 static void draw_line(context_t *c, int x0, int y0, int x1, int y1)

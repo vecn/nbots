@@ -67,7 +67,9 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 	nb_graphics_stroke(g);
 
 	nb_graphics_set_circle(g, 50, 40, 7);
-
+	
+	nb_graphics_set_source(g, NB_ROSE);
+	nb_graphics_fill_preserve(g);
 	nb_graphics_set_source(g, NB_AZURE);
 	nb_graphics_stroke(g);
 
@@ -77,6 +79,32 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 	nb_graphics_set_point(g, 90, 70, 7);
 	nb_graphics_set_source(g, NB_ORANGE);
 	nb_graphics_stroke(g);
+
+	nb_graphics_palette_t *pal =
+		nb_graphics_palette_create_preset(NB_RAINBOW);
+	nb_graphics_set_circle(g, 10, 40, 7);	
+	nb_graphics_set_source_grad(g, NB_LINEAR,
+				    3, 40, 17, 40,
+				    pal);
+	nb_graphics_fill(g);
+	nb_graphics_palette_destroy(pal);
+	
+	pal = nb_graphics_palette_create_preset(NB_FRENCH);
+	nb_graphics_set_circle(g, 30, 40, 7);	
+	nb_graphics_set_source_grad(g, NB_RADIAL,
+				    30, 40, 37, 40,
+				    pal);
+	nb_graphics_fill(g);
+	nb_graphics_palette_destroy(pal);
+	
+	uint8_t col1[4] = {255, 0, 0, 200};
+	uint8_t col2[4] = {0, 255, 0, 255};
+	uint8_t col3[4] = {0, 0, 255, 255};
+	nb_graphics_set_circle(g, 75, 40, 16);	
+	nb_graphics_set_source_trg(g,
+				   75, 28, 64, 45, 86, 45,
+				   col1, col2, col3);
+	nb_graphics_fill(g);
 }
 
 static void test_drawing(void)
