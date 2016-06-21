@@ -271,7 +271,7 @@ void nb_graphics_pix_close_path(void *ctx)
 void nb_graphics_pix_set_line_width(void *ctx, float w)
 {
 	context_t *c = ctx;
-	c->line_width = w;
+	c->line_width = fabs(w);
 }
 
 void nb_graphics_pix_set_source_rgb(void *ctx,
@@ -508,9 +508,9 @@ static void rpath_fill_mask(rasterized_path_t *rpath)
 static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath)
 {
 	rasterized_path_t *rp = rpath;
+	x = x - rp->xmin;
+	y = y - rp->ymin;
 	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		x = x - rp->xmin;
-		y = y - rp->ymin;
 		uint32_t p = y * rp->width + x;
 		uint32_t byte = p / 8;
 		uint8_t bit = p % 8;
@@ -522,9 +522,9 @@ static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath)
 static void rpath_unset_pixel(int x, int y, uint8_t i, void *rpath)
 {
 	rasterized_path_t *rp = rpath;
+	x = x - rp->xmin;
+	y = y - rp->ymin;
 	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		x = x - rp->xmin;
-		y = y - rp->ymin;
 		uint32_t p = y * rp->width + x;
 		uint32_t byte = p / 8;
 		uint8_t bit = p % 8;
@@ -655,8 +655,8 @@ void nb_graphics_pix_stroke(void *ctx)
 void nb_graphics_pix_stroke_preserve(void *ctx)
 {
 	context_t *c = ctx;
-	rasterize_turtle(c->turtle, true, set_pixel, c);
-	/* PENDING: Support line width */
+	//if (c->line_width < 1.0)/* AQUI VOY */
+		rasterize_turtle(c->turtle, true, set_pixel, c);
 }
 
 static turtle_step *turtle_ref_step(const turtle_t *turtle, uint16_t i)

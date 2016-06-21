@@ -37,62 +37,71 @@ static int suite_clean(void)
 static void draw_test1(nb_graphics_context_t *g, int w, int h,
 		       const void *const data)
 {
-	nb_graphics_move_to(g, 15, 15);
-	nb_graphics_line_to(g, 85, 65);
+	int scale = 10;
+	nb_graphics_move_to(g, scale * 15, scale * 15);
+	nb_graphics_line_to(g, scale * 85, scale * 65);
 
-	nb_graphics_move_to(g, 10, 10);
-	nb_graphics_line_to(g, 90, 10);
-	nb_graphics_line_to(g, 90, 70);
-	nb_graphics_line_to(g, 10, 70);
+	nb_graphics_move_to(g, scale * 10, scale * 10);
+	nb_graphics_line_to(g, scale * 90, scale * 10);
+	nb_graphics_line_to(g, scale * 90, scale * 70);
+	nb_graphics_line_to(g, scale * 10, scale * 70);
 	nb_graphics_close_path(g);
 	
-	nb_graphics_move_to(g, 80, 20);
-	nb_graphics_qcurve_to(g, 20, 60, 80, 60);
+	nb_graphics_move_to(g, scale * 80, scale * 20);
+	nb_graphics_qcurve_to(g, scale * 20, scale * 60,
+			      scale * 80, scale * 60);
 
-	nb_graphics_move_to(g, 75, 25);
-	nb_graphics_qrcurve_to(g, 25, 55, 25, 25, 1.0f);
+	nb_graphics_move_to(g, scale * 75, scale * 25);
+	nb_graphics_qrcurve_to(g, scale * 25, scale * 55,
+			       scale * 25, scale * 25, 1.0f);
 
-	nb_graphics_move_to(g, 20, 30);
-	nb_graphics_curve_to(g, 70, 70, 40, 30, 50, 70);
+	nb_graphics_move_to(g, scale * 20, scale * 30);
+	nb_graphics_curve_to(g, scale * 70, scale * 70,
+			     scale * 40, scale * 30,
+			     scale * 50, scale * 70);
 
 	nb_graphics_stroke(g);
 
-	nb_graphics_move_to(g, 80, 20);
-	nb_graphics_qcurve_to(g, 20, 60, 90, 70);
+	nb_graphics_move_to(g, scale * 80, scale * 20);
+	nb_graphics_qcurve_to(g, scale * 20, scale * 60,
+			      scale * 90, scale * 70);
 
-	nb_graphics_move_to(g, 75, 25);
-	nb_graphics_qrcurve_to(g, 25, 55, 25, 25, 3.0f);
+	nb_graphics_move_to(g, scale * 75, scale * 25);
+	nb_graphics_qrcurve_to(g, scale * 25, scale * 55,
+			       scale * 25, scale * 25, 3.0f);
 
 	nb_graphics_set_source(g, NB_AQUAMARIN);
 	nb_graphics_stroke(g);
 
-	nb_graphics_set_circle(g, 50, 40, 7);
+	nb_graphics_set_circle(g, scale * 50, scale * 40, scale * 7);
 	
 	nb_graphics_set_source(g, NB_ROSE);
 	nb_graphics_fill_preserve(g);
 	nb_graphics_set_source(g, NB_AZURE);
 	nb_graphics_stroke(g);
 
-	nb_graphics_set_point(g, 10, 10, 7);
-	nb_graphics_set_point(g, 90, 10, 7);
-	nb_graphics_set_point(g, 10, 70, 7);
-	nb_graphics_set_point(g, 90, 70, 7);
+	nb_graphics_set_point(g, scale * 10, scale * 10, scale * 7);
+	nb_graphics_set_point(g, scale * 90, scale * 10, scale * 7);
+	nb_graphics_set_point(g, scale * 10, scale * 70, scale * 7);
+	nb_graphics_set_point(g, scale * 90, scale * 70, scale * 7);
 	nb_graphics_set_source(g, NB_ORANGE);
 	nb_graphics_stroke(g);
 
 	nb_graphics_palette_t *pal =
 		nb_graphics_palette_create_preset(NB_RAINBOW);
-	nb_graphics_set_circle(g, 10, 40, 7);	
+	nb_graphics_set_circle(g, scale * 10, scale * 40, scale * 7);	
 	nb_graphics_set_source_grad(g, NB_LINEAR,
-				    3, 40, 17, 40,
+				    scale * 3, scale * 40,
+				    scale * 17, scale * 40,
 				    pal);
 	nb_graphics_fill(g);
 	nb_graphics_palette_destroy(pal);
 	
 	pal = nb_graphics_palette_create_preset(NB_FRENCH);
-	nb_graphics_set_circle(g, 30, 40, 7);	
+	nb_graphics_set_circle(g, scale * 30, scale * 40, scale * 7);	
 	nb_graphics_set_source_grad(g, NB_RADIAL,
-				    30, 40, 37, 40,
+				    scale * 30, scale * 40,
+				    scale * 37, scale * 40,
 				    pal);
 	nb_graphics_fill(g);
 	nb_graphics_palette_destroy(pal);
@@ -100,16 +109,17 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 	uint8_t col1[4] = {255, 0, 0, 200};
 	uint8_t col2[4] = {0, 255, 0, 255};
 	uint8_t col3[4] = {0, 0, 255, 255};
-	nb_graphics_set_circle(g, 75, 40, 16);	
-	nb_graphics_set_source_trg(g,
-				   75, 28, 64, 45, 86, 45,
+	nb_graphics_set_circle(g, scale * 75, scale * 40, scale * 16);	
+	nb_graphics_set_source_trg(g, scale * 75, scale * 28,
+				   scale * 64, scale * 45,
+				   scale * 86, scale * 45,
 				   col1, col2, col3);
 	nb_graphics_fill(g);
 }
 
 static void test_drawing(void)
 {
-	nb_graphics_export("../../../test_drawing.png", 100, 80, draw_test1,
+	nb_graphics_export("../../../test_drawing.png", 500, 400, draw_test1,
 			   NULL);
 	CU_ASSERT(true);
 }
