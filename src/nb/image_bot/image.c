@@ -160,12 +160,12 @@ void vcn_image_blend_pixel_ga(vcn_image_t *img, uint32_t r,
 	float src_alpha = pixel[1] / 255.0f;
 	/* Alpha channel */
 	float out_alpha = src_alpha + (1.0 - src_alpha) * dest_alpha;
-	img->pixels[r * w + col + 1] = (uint8_t)(255.0 * out_alpha + 0.5);
+	img->pixels[r * w + col + 1] = (int)(255.0 * out_alpha + 0.5);
 	/* Grayscale */
 	if (img->pixels[r * w + col + 1] > 0) {
 		float a = src_alpha / out_alpha;
 		float b = dest_alpha * (1.0f - src_alpha) / out_alpha;
-		img->pixels[r * w + col] = (uint8_t)
+		img->pixels[r * w + col] = (int)
 			(a * pixel[0] + b * img->pixels[r * w + col] + 0.5);
 	}
 }
@@ -179,15 +179,15 @@ void vcn_image_blend_pixel_rgba(vcn_image_t *img, uint32_t r,
 	float src_alpha = pixel[3] / 255.0f;
 	/* Alpha channel */
 	float out_alpha = src_alpha + (1.0 - src_alpha) * dest_alpha;
-	img->pixels[r * w + col + 3] = (uint8_t)(255.0 * out_alpha + 0.5);
+	img->pixels[r * w + col + 3] = (int)(255.0 * out_alpha + 0.5);
 	/* RGB */
 	if (img->pixels[r * w + col + 3] > 0) {
 		float a = src_alpha / out_alpha;
 		float b = dest_alpha * (1.0f - src_alpha) / out_alpha;
 		for (uint8_t i = 0; i < 3; i++)
-			img->pixels[r * w + col + i] = (uint8_t)
-				(a * pixel[i] + 
-				 b * img->pixels[r * w + col + i] + 0.5);
+			img->pixels[r * w + col + i] =
+			  (int)(a * pixel[i] + 
+				b * img->pixels[r * w + col + i] + 0.5);
 	}
 }
 

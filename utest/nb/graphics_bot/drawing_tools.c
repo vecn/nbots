@@ -37,7 +37,7 @@ static int suite_clean(void)
 static void draw_test1(nb_graphics_context_t *g, int w, int h,
 		       const void *const data)
 {
-	int scale = 10;
+	int scale = 2;
 	nb_graphics_move_to(g, scale * 15, scale * 15);
 	nb_graphics_line_to(g, scale * 85, scale * 65);
 
@@ -115,11 +115,98 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 				   scale * 86, scale * 45,
 				   col1, col2, col3);
 	nb_graphics_fill(g);
+
+	nb_graphics_set_source(g, NB_BLACK);
+
+	nb_graphics_move_to(g, scale * 50, scale * 20);
+	nb_graphics_line_to(g, scale * 85, scale * 20);
+	nb_graphics_set_line_width(g, 1.0);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 13);
+	nb_graphics_line_to(g, scale * 85, scale * 63);
+	nb_graphics_move_to(g, scale * 50, scale * 18);
+	nb_graphics_line_to(g, scale * 85, scale * 18);
+	nb_graphics_set_line_width(g, 0.8);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 11);
+	nb_graphics_line_to(g, scale * 85, scale * 61);
+	nb_graphics_move_to(g, scale * 50, scale * 16);
+	nb_graphics_line_to(g, scale * 85, scale * 16);
+	nb_graphics_set_line_width(g, 0.5);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 9);
+	nb_graphics_line_to(g, scale * 85, scale * 59);
+	nb_graphics_move_to(g, scale * 50, scale * 14);
+	nb_graphics_line_to(g, scale * 85, scale * 14);
+	nb_graphics_set_line_width(g, 0.3);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 7);
+	nb_graphics_line_to(g, scale * 85, scale * 57);
+	nb_graphics_move_to(g, scale * 50, scale * 12);
+	nb_graphics_line_to(g, scale * 85, scale * 12);
+	nb_graphics_set_line_width(g, 0.1);
+	nb_graphics_stroke(g);
+
+	nb_graphics_set_source_rgb(g, 0, 0, 100);
+
+	nb_graphics_move_to(g, scale * 15, scale * 19);
+	nb_graphics_line_to(g, scale * 85, scale * 69);
+	nb_graphics_move_to(g, scale * 50, scale * 24);
+	nb_graphics_line_to(g, scale * 85, scale * 24);
+	nb_graphics_set_line_width(g, 1.5);
+	nb_graphics_stroke(g);
+	
+	nb_graphics_move_to(g, scale * 15, scale * 23);
+	nb_graphics_line_to(g, scale * 85, scale * 73);
+	nb_graphics_move_to(g, scale * 50, scale * 28);
+	nb_graphics_line_to(g, scale * 85, scale * 28);
+	nb_graphics_set_line_width(g, 2.0);
+	nb_graphics_stroke(g);
+	
+	nb_graphics_move_to(g, scale * 15, scale * 27);
+	nb_graphics_line_to(g, scale * 85, scale * 77);
+	nb_graphics_move_to(g, scale * 50, scale * 32);
+	nb_graphics_line_to(g, scale * 85, scale * 32);
+	nb_graphics_set_line_width(g, 2.5);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 31);
+	nb_graphics_line_to(g, scale * 85, scale * 81);
+	nb_graphics_set_line_width(g, 3.0);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 35);
+	nb_graphics_line_to(g, scale * 85, scale * 85);
+	nb_graphics_set_line_width(g, 4.0);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 39);
+	nb_graphics_line_to(g, scale * 85, scale * 89);
+	nb_graphics_set_line_width(g, 5.0);
+	nb_graphics_stroke(g);
+
+	nb_graphics_move_to(g, scale * 15, scale * 45);
+	nb_graphics_line_to(g, scale * 85, scale * 95);
+	nb_graphics_set_line_width(g, 6.0);
+	nb_graphics_stroke(g);
+
+	
+	nb_graphics_move_to(g, scale * 20, scale * 45);
+	nb_graphics_curve_to(g, scale * 70, scale * 85,
+			     scale * 40, scale * 45,
+			     scale * 50, scale * 85);
+	nb_graphics_set_source(g, NB_VIOLET);
+	nb_graphics_set_line_width(g, 10.0);
+	nb_graphics_stroke(g);
 }
 
 static void test_drawing(void)
 {
-	nb_graphics_export("../../../test_drawing.png", 500, 400, draw_test1,
+	nb_graphics_export("../../../test_drawing.png", 200, 160, draw_test1,
 			   NULL);
 	CU_ASSERT(true);
 }

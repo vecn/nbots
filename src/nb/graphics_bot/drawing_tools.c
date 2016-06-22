@@ -13,10 +13,7 @@
 #include "drawing_tools/eps/eps_drawing.h"
 #include "drawing_tools/asy/asy_drawing.h"
 
-#define INV_SQRT2 (0.707106781186547339894784)
 #define SQRT3 (1.73205080756887729352)
-#define PI (3.14159265358979323846264338327)
-#define HALF_PI (1.57079632679489626271744)
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define POW2(a) ((a)*(a))
@@ -392,11 +389,11 @@ static void set_raw_circle(nb_graphics_context_t *g, float x,
 {
 	g->move_to(g->ctx, x, y - r);
 	g->qrcurve_to(g->ctx, x + r * SQRT3/2.0f, y + r/2.0f,
-		      x + r * SQRT3, y - r, 0.5);
+		      x + r * SQRT3, y - r, 0.5f);
 	g->qrcurve_to(g->ctx, x - r * SQRT3/2.0f, y + r/2.0f,
-		      x, y + 2.0f * r, 0.5);
+		      x, y + 2.0f * r, 0.5f);
 	g->qrcurve_to(g->ctx, x, y - r,
-		      x - r * SQRT3, y - r, 0.5);
+		      x - r * SQRT3, y - r, 0.5f);
 }
 
 void nb_graphics_set_point(nb_graphics_context_t *g,

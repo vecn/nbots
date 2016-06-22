@@ -1135,7 +1135,8 @@ static void cubic_bezier_sgm_aa(int x0, int y0, int x1, int y1,
 void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 				 void (*set_pixel)(int x, int y,
 						   uint8_t i, void*),
-				 bool (*pixel_is_empty)(int x, int y, void*),
+				 bool (*pixel_is_empty)(int x, int y,
+							const void*),
 				 uint32_t width, uint32_t height,
 				 void *pixel_data)
 /* 4-way scanline */
