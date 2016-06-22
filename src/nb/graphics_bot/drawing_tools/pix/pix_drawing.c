@@ -11,7 +11,7 @@
 #include "../../palette_struct.h"
 
 #include "rasterizer.h"
-#include "font_rasterizer.h"
+#include "truetype_rasterizer.h"
 
 #include "pix_drawing.h"
 
@@ -67,12 +67,12 @@ typedef struct {
 	int32_t width, height;
 	uint8_t static_pix[PIXMASK_STATIC_MEMSIZE];
 	uint8_t *pix;
-} rasterized_path_t;
+} pixmask_t;
 
 typedef struct {
 	vcn_image_t *img;
 	turtle_t *turtle;
-	rasterized_path_t *pen_stencil;
+	pixmask_t *pen_stencil;
 	float line_width;
 	source_t *source;
 	font_t *font;
@@ -82,10 +82,10 @@ static void turtle_clear(turtle_t *turtle);
 static void turtle_add(turtle_t *turtle, uint8_t type,
 		       float x, float y, float v1, float v2,
 		       float v3, float v4);
-static void set_pen_stencil(rasterized_path_t *pen_stencil, float thickness);
-static void set_pen_stencil_w2(rasterized_path_t *pen_stencil, float thickness);
-static void set_pen_stencil_w3(rasterized_path_t *pen_stencil, float thickness);
-static void set_pen_stencil_w4(rasterized_path_t *pen_stencil, float thickness);
+static void set_pen_stencil(pixmask_t *pen_stencil, float thickness);
+static void set_pen_stencil_w2(pixmask_t *pen_stencil, float thickness);
+static void set_pen_stencil_w3(pixmask_t *pen_stencil, float thickness);
+static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness);
 static void set_turtle_stencil(turtle_t *turtle_stencil, float thickness);
 static void set_line_pixel(int x, int y, uint8_t i, void* context);
 static void set_pen_pixel(int x, int y, uint8_t i, void* context);
@@ -113,20 +113,21 @@ static void source_set_trg(source_t *source,
 			   const uint8_t rgba1[4],
 			   const uint8_t rgba2[4],
 			   const uint8_t rgba3[4]);
-static void rpath_init(rasterized_path_t *rpath, const turtle_t *turtle);
-static void rpath_alloc_pix(rasterized_path_t *rpath);
+static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle);
+static void pixmask_alloc_pix(pixmask_t *pixmask);
 static void turtle_step_get_box(const turtle_step *step, uint32_t box[4]);
-static void rpath_full(rasterized_path_t *rpath);
-static void rpath_unfill_outside(rasterized_path_t *rpath);
-static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath);
-static void rpath_unset_pixel(int x, int y, uint8_t i, void *rpath);
-static uint8_t rpath_get_intensity(const void *rpath, int x, int y);
-static bool rpath_pixel_is_not_empty(int x, int y, const void *rpath);
-static void rpath_blend_image(const rasterized_path_t *rpath,
+static void pixmask_full(pixmask_t *pixmask);
+static void pixmask_unfill_outside(pixmask_t *pixmask);
+static void pixmask_set_pixel(int x, int y, uint8_t i, void *pixmask);
+static void pixmask_fill_surrounded_pixel(int x, int y, uint8_t i, void *pixmask);
+static void pixmask_unset_pixel(int x, int y, uint8_t i, void *pixmask);
+static uint8_t pixmask_get_intensity(const void *pixmask, int x, int y);
+static bool pixmask_pixel_is_not_empty(int x, int y, const void *pixmask);
+static void pixmask_blend_image(const pixmask_t *pixmask,
 			      const source_t *source,
 			      uint8_t intensity,
 			      vcn_image_t *img);
-static void rpath_finish(rasterized_path_t *rpath);
+static void pixmask_finish(pixmask_t *pixmask);
 static void rasterize_turtle(const turtle_t *turtle,
 			     bool antialiased,
 			     void (*set_pixel)(int x, int y, uint8_t i, void *),
@@ -152,7 +153,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	uint32_t img_size = sizeof(vcn_image_t);
 	uint32_t pix_size = 4 * width * height;
 	uint32_t trt_size = sizeof(turtle_t);
-	uint16_t rp_size = sizeof(rasterized_path_t);
+	uint16_t rp_size = sizeof(pixmask_t);
 	uint16_t src_size = sizeof(source_t);
 	uint16_t fnt_size = sizeof(font_t);
 	uint32_t memsize = ctx_size + img_size + pix_size +
@@ -193,7 +194,7 @@ void nb_graphics_pix_destroy_context(void *ctx)
 {
 	context_t *c = ctx;
 	turtle_clear(c->turtle);
-	rpath_finish(c->pen_stencil);
+	pixmask_finish(c->pen_stencil);
 	free(ctx);
 }
 
@@ -297,7 +298,7 @@ void nb_graphics_pix_set_line_width(void *ctx, float w)
 		set_pen_stencil(c->pen_stencil, c->line_width);
 }
 
-static void set_pen_stencil(rasterized_path_t *pen_stencil, float thickness)
+static void set_pen_stencil(pixmask_t *pen_stencil, float thickness)
 {
 	int w = (int)thickness;
 	switch (w) {
@@ -312,7 +313,7 @@ static void set_pen_stencil(rasterized_path_t *pen_stencil, float thickness)
 	}
 }
 
-static void set_pen_stencil_w2(rasterized_path_t *pen_stencil, float thickness)
+static void set_pen_stencil_w2(pixmask_t *pen_stencil, float thickness)
 {
 	thickness -= 1.0;
 	pen_stencil->width = 2;
@@ -324,7 +325,7 @@ static void set_pen_stencil_w2(rasterized_path_t *pen_stencil, float thickness)
 	pen_stencil->pix[3] = 255;
 }
 
-static void set_pen_stencil_w3(rasterized_path_t *pen_stencil, float thickness)
+static void set_pen_stencil_w3(pixmask_t *pen_stencil, float thickness)
 {
 	thickness -= 2.0;
 	pen_stencil->width = 3;
@@ -341,20 +342,22 @@ static void set_pen_stencil_w3(rasterized_path_t *pen_stencil, float thickness)
 	pen_stencil->pix[8] = 255;
 }
 
-static void set_pen_stencil_w4(rasterized_path_t *pen_stencil, float thickness)
+static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness)
 {	
 	turtle_t *turtle_stencil = alloca(sizeof(turtle_t));
 	memset(turtle_stencil, 0, sizeof(turtle_t));
 	set_turtle_stencil(turtle_stencil, thickness);
 	
+	pen_stencil->xmin = 0;
+	pen_stencil->ymin = 0;
 	pen_stencil->width = (int)thickness;
 	pen_stencil->height = (int)thickness;
-	rpath_alloc_pix(pen_stencil);
+	pixmask_alloc_pix(pen_stencil);
 
-	rpath_full(pen_stencil);
-	rasterize_turtle(turtle_stencil, false, rpath_unset_pixel, pen_stencil);
-	rpath_unfill_outside(pen_stencil);
-	rasterize_turtle(turtle_stencil, false, rpath_set_pixel, pen_stencil);
+	pixmask_full(pen_stencil);
+	rasterize_turtle(turtle_stencil, false, pixmask_unset_pixel, pen_stencil);
+	pixmask_unfill_outside(pen_stencil);
+	rasterize_turtle(turtle_stencil, false, pixmask_set_pixel, pen_stencil);
 
 	turtle_clear(turtle_stencil);
 }
@@ -473,25 +476,29 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 {
 	
 	context_t *c = ctx;
-	rasterized_path_t *rpath = alloca(sizeof(rasterized_path_t));
-	rpath_init(rpath, c->turtle);
-	if (rpath->xmin < c->img->width &&
-	    rpath->ymin < c->img->height &&
-	    rpath->xmin + rpath->width >= 0 &&
-	    rpath->ymin + rpath->height >= 0) {
-		rpath_full(rpath);
-		rasterize_turtle(c->turtle, false, rpath_unset_pixel, rpath);
-		rpath_unfill_outside(rpath);
-		rasterize_turtle(c->turtle, true, rpath_set_pixel, rpath);
-		rpath_blend_image(rpath, c->source, 255, c->img);
+	pixmask_t *pixmask = alloca(sizeof(pixmask_t));
+	pixmask_init(pixmask, c->turtle);
+	if (pixmask->xmin < c->img->width &&
+	    pixmask->ymin < c->img->height &&
+	    pixmask->xmin + pixmask->width >= 0 &&
+	    pixmask->ymin + pixmask->height >= 0) {
+		pixmask_full(pixmask);
+		rasterize_turtle(c->turtle, false, pixmask_unset_pixel,
+				 pixmask);
+		pixmask_unfill_outside(pixmask);
+		rasterize_turtle(c->turtle, true, pixmask_set_pixel, pixmask);
+		rasterize_turtle(c->turtle, false,
+				 pixmask_fill_surrounded_pixel,
+				 pixmask);
+		pixmask_blend_image(pixmask, c->source, 255, c->img);
 	}
-	rpath_finish(rpath);
+	pixmask_finish(pixmask);
 }
 
-static void rpath_init(rasterized_path_t *rpath, const turtle_t *turtle)
+static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle)
 {
-	rpath->xmin = 0;
-	rpath->ymin = 0;
+	pixmask->xmin = 0;
+	pixmask->ymin = 0;
 	uint32_t xmax = 0;
 	uint32_t ymax = 0;
 	for (uint16_t i = 0; i < turtle->N; i++) {
@@ -500,36 +507,36 @@ static void rpath_init(rasterized_path_t *rpath, const turtle_t *turtle)
 		turtle_step_get_box(step, box);
 
 		if (0 == i) {
-			rpath->xmin = box[0];
-			rpath->ymin = box[1];
+			pixmask->xmin = box[0];
+			pixmask->ymin = box[1];
 			xmax = box[2];
 			ymax = box[3];
 		} else {
-			if (box[0] < rpath->xmin)
-				rpath->xmin = box[0];
+			if (box[0] < pixmask->xmin)
+				pixmask->xmin = box[0];
 			else if (box[2] > xmax)
 				xmax = box[2];
 
-			if (box[1] < rpath->ymin)
-				rpath->ymin = box[1];
+			if (box[1] < pixmask->ymin)
+				pixmask->ymin = box[1];
 			else if (box[3] > ymax)
 				ymax = box[3];
 		}
 	}
-	rpath->width = xmax - rpath->xmin + 1;
-	rpath->height = ymax - rpath->ymin + 1;
+	pixmask->width = xmax - pixmask->xmin + 1;
+	pixmask->height = ymax - pixmask->ymin + 1;
 	
-	rpath_alloc_pix(rpath);
+	pixmask_alloc_pix(pixmask);
 }
 
-static void rpath_alloc_pix(rasterized_path_t *rpath)
+static void pixmask_alloc_pix(pixmask_t *pixmask)
 {
-	if (rpath->width * rpath->height > PIXMASK_STATIC_MEMSIZE) {
-		uint32_t memsize = (uint32_t)(rpath->width * rpath->height);
-		rpath->pix = calloc(memsize, 1);
+	if (pixmask->width * pixmask->height > PIXMASK_STATIC_MEMSIZE) {
+		uint32_t memsize = (uint32_t)(pixmask->width * pixmask->height);
+		pixmask->pix = calloc(memsize, 1);
 	} else {
-		memset(rpath->static_pix, 0, PIXMASK_STATIC_MEMSIZE);
-		rpath->pix = rpath->static_pix;
+		memset(pixmask->static_pix, 0, PIXMASK_STATIC_MEMSIZE);
+		pixmask->pix = pixmask->static_pix;
 	}
 }
 
@@ -572,115 +579,132 @@ static void turtle_step_get_box(const turtle_step *step, uint32_t box[4])
 	}
 }
 
-static void rpath_full(rasterized_path_t *rpath)
+static void pixmask_full(pixmask_t *pixmask)
 {
-	memset(rpath->pix, -1, rpath->width * rpath->height);
+	memset(pixmask->pix, -1, pixmask->width * pixmask->height);
 }
 
-static void rpath_unfill_outside(rasterized_path_t *rpath)
+static void pixmask_unfill_outside(pixmask_t *pixmask)
 {
-	for (uint32_t i = 0; i < rpath->width; i++) {
-		uint32_t x = rpath->xmin + i;
+	for (uint32_t i = 0; i < pixmask->width; i++) {
+		uint32_t x = pixmask->xmin + i;
 		uint32_t y =  0;
 		nb_graphics_rasterizer_fill(x, y, 0,
-					    rpath_unset_pixel,
-					    rpath_pixel_is_not_empty,
-					    rpath->width,
-					    rpath->height,
-					    rpath);
+					    pixmask_unset_pixel,
+					    pixmask_pixel_is_not_empty,
+					    pixmask->width,
+					    pixmask->height,
+					    pixmask);
 		
-		y = rpath->height - 1;
+		y = pixmask->height - 1;
 		nb_graphics_rasterizer_fill(x, y, 0,
-					    rpath_unset_pixel,
-					    rpath_pixel_is_not_empty,
-					    rpath->width,
-					    rpath->height,
-					    rpath);
+					    pixmask_unset_pixel,
+					    pixmask_pixel_is_not_empty,
+					    pixmask->width,
+					    pixmask->height,
+					    pixmask);
 	}
-	for (uint32_t i = 1; i < rpath->height - 1; i++) {
+	for (uint32_t i = 1; i < pixmask->height - 1; i++) {
 		uint32_t x =  0;
-		uint32_t y = rpath->ymin + i;
+		uint32_t y = pixmask->ymin + i;
 		nb_graphics_rasterizer_fill(x, y, 0,
-					    rpath_unset_pixel,
-					    rpath_pixel_is_not_empty,
-					    rpath->width,
-					    rpath->height,
-					    rpath);
-		x = rpath->width - 1;		
+					    pixmask_unset_pixel,
+					    pixmask_pixel_is_not_empty,
+					    pixmask->width,
+					    pixmask->height,
+					    pixmask);
+		x = pixmask->width - 1;		
 		nb_graphics_rasterizer_fill(x, y, 0,
-					    rpath_unset_pixel,
-					    rpath_pixel_is_not_empty,
-					    rpath->width,
-					    rpath->height,
-					    rpath);
+					    pixmask_unset_pixel,
+					    pixmask_pixel_is_not_empty,
+					    pixmask->width,
+					    pixmask->height,
+					    pixmask);
 	}
 }
 
-static void rpath_set_pixel(int x, int y, uint8_t i, void *rpath)
+static void pixmask_set_pixel(int x, int y, uint8_t i, void *pixmask)
 {
-	rasterized_path_t *rp = rpath;
-	x = x - rp->xmin;
-	y = y - rp->ymin;
-	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		uint32_t p = y * rp->width + x;
-		rp->pix[p] = MAX(rp->pix[p], i);
+	pixmask_t *pm = pixmask;
+	x = x - pm->xmin;
+	y = y - pm->ymin;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		pm->pix[p] = MAX(pm->pix[p], i);
 	}
 }
 
-static void rpath_unset_pixel(int x, int y, uint8_t i, void *rpath)
+static void pixmask_fill_surrounded_pixel(int x, int y, uint8_t i, void *pixmask)
 {
-	rasterized_path_t *rp = rpath;
-	x = x - rp->xmin;
-	y = y - rp->ymin;
-	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		uint32_t p = y * rp->width + x;
-		rp->pix[p] = 0;
+	pixmask_t *pm = pixmask;
+	x = x - pm->xmin;
+	y = y - pm->ymin;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		if (pixmask_pixel_is_not_empty(x-1, y, pixmask)) {
+			if (pixmask_pixel_is_not_empty(x+1, y, pm))
+				if (pixmask_pixel_is_not_empty(x, y-1, pixmask))
+					if (pixmask_pixel_is_not_empty(x, y+1,
+								     pixmask))
+						pm->pix[p] = 255;
+		}
 	}
 }
 
-static uint8_t rpath_get_intensity(const void *rpath, int x, int y)
+static void pixmask_unset_pixel(int x, int y, uint8_t i, void *pixmask)
 {
-	const rasterized_path_t *rp = rpath;
+	pixmask_t *pm = pixmask;
+	x = x - pm->xmin;
+	y = y - pm->ymin;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		pm->pix[p] = 0;
+	}
+}
+
+static uint8_t pixmask_get_intensity(const void *pixmask, int x, int y)
+{
+	const pixmask_t *pm = pixmask;
 	uint8_t out = 0;
-	x = x - rp->xmin;
-	y = y - rp->ymin;
-	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		uint32_t p = y * rp->width + x;
-		out = rp->pix[p];
+	x = x - pm->xmin;
+	y = y - pm->ymin;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		out = pm->pix[p];
 	}
 	return out;
 }
 
-static bool rpath_pixel_is_not_empty(int x, int y, const void *rpath)
+static bool pixmask_pixel_is_not_empty(int x, int y, const void *pixmask)
 {
-	const rasterized_path_t *rp = rpath;
+	const pixmask_t *pm = pixmask;
 	bool out = false;
-	x = x - rp->xmin;
-	y = y - rp->ymin;
-	if (x >= 0 && x < rp->width && y >= 0 && y < rp->height) {
-		uint32_t p = y * rp->width + x;
-		out = (0 < rp->pix[p]);
+	x = x - pm->xmin;
+	y = y - pm->ymin;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		out = (0 < pm->pix[p]);
 	}
 	return out;
 }
 
-static void rpath_blend_image(const rasterized_path_t *rpath,
+static void pixmask_blend_image(const pixmask_t *pixmask,
 			      const source_t *source,
 			      uint8_t intensity,
 			      vcn_image_t *img)
 {
 	uint8_t pix[4];
-	int i0 = MAX(0, -rpath->xmin);
-	int j0 = MAX(0, -rpath->ymin);
-	int w = MIN(rpath->width, img->width - rpath->xmin);
-	int h = MIN(rpath->height, img->height - rpath->ymin);
+	int i0 = MAX(0, -pixmask->xmin);
+	int j0 = MAX(0, -pixmask->ymin);
+	int w = MIN(pixmask->width, img->width - pixmask->xmin);
+	int h = MIN(pixmask->height, img->height - pixmask->ymin);
 	for (uint32_t i = i0; i < w; i++) {
 		for (uint32_t j = j0; j < h; j++) {
-			int32_t x = rpath->xmin + i;
-			int32_t y = rpath->ymin + j;
-			if (rpath_pixel_is_not_empty(x, y, rpath)) {
+			int32_t x = pixmask->xmin + i;
+			int32_t y = pixmask->ymin + j;
+			if (pixmask_pixel_is_not_empty(x, y, pixmask)) {
 				float I = (intensity/255.0f) *
-					(rpath_get_intensity(rpath, x, y)/
+					(pixmask_get_intensity(pixmask, x, y)/
 					 255.0f);
 				source_get_color(source, x, y, pix);
 				if (I < 1.0)
@@ -691,11 +715,11 @@ static void rpath_blend_image(const rasterized_path_t *rpath,
 	}
 }
 
-static void rpath_finish(rasterized_path_t *rpath)
+static void pixmask_finish(pixmask_t *pixmask)
 {
-	if (rpath->pix != rpath->static_pix &&
-	    rpath->pix != NULL)
-		free(rpath->pix);
+	if (pixmask->pix != pixmask->static_pix &&
+	    pixmask->pix != NULL)
+		free(pixmask->pix);
 }
 
 static void rasterize_turtle(const turtle_t *turtle,
@@ -706,7 +730,7 @@ static void rasterize_turtle(const turtle_t *turtle,
 	int x0, y0;
 	int x, y;
 	for (uint16_t i = 0; i < turtle->N; i++) {
-		turtle_step *step = turtle_ref_step(turtle, i);
+		turtle_step *step = turtle_ref_step((turtle_t*)turtle, i);
 		int sx = (int)(step->x + 0.5);
 		int sy = (int)(step->y + 0.5);
 		switch (step->type) {
@@ -808,7 +832,7 @@ static void set_pen_pixel(int x, int y, uint8_t i, void* context)
 	    y + h_div_2 >= 0 && y - h_div_2 < c->img->height) {
 		c->pen_stencil->xmin = x - w_div_2;
 		c->pen_stencil->ymin = y - h_div_2;
-		rpath_blend_image(c->pen_stencil, c->source, i, c->img);
+		pixmask_blend_image(c->pen_stencil, c->source, i, c->img);
 		c->pen_stencil->xmin = 0;
 		c->pen_stencil->ymin = 0;
 	}
@@ -994,13 +1018,35 @@ void nb_graphics_pix_set_font_size(void *ctx, uint16_t size)
 	c->font->size = size;
 }
 
-void nb_graphics_pix_show_text(void *ctx, const char *str)
+void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 {
-	/* PENDING */;
+	context_t *c = ctx;
+
+	nb_graphics_text_attr_t attr;
+	nb_graphics_pix_get_text_attr(c, str, &attr);
+
+	pixmask_t *mask = alloca(sizeof(pixmask_t));
+	mask->xmin = x;
+	mask->ymin = y - attr.height;
+	mask->width = attr->width;
+	mask->height = attr->height;
+	pixmask_alloc_pix(mask);
+	
+	nb_graphics_truetype_rasterizer_bake(str, c->type, c->size,
+					     pixmask->pix);
+
+	pixmask_blend_image(pixmask, c->source, 255, c->img);
+	pixmask_finish(pixmask);
 }
 
-void nb_graphics_pix_get_text_attr(const void *ctx, const char *label,
+void nb_graphics_pix_get_text_attr(const void *ctx, const char *str,
 				   nb_graphics_text_attr_t *attr)
 {
-	/* PENDING */;
+	context_t *c = ctx;
+	int w, h;
+	nb_graphics_truetype_rasterizer_get_size(str, c->type,
+						 c->size,
+						 &w, &h);
+	attr->width = w;
+	attr->height = h;
 }

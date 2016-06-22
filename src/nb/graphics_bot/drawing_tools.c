@@ -86,7 +86,7 @@ struct nb_graphics_context_s {
 	void (*stroke_preserve)(void *ctx);
 	void (*set_font_type)(void *ctx, const char *type);
 	void (*set_font_size)(void *ctx, uint16_t size);
-	void (*show_text)(void *ctx, const char *str);
+	void (*show_text)(void *ctx, int x, int y, const char *str);
 	void (*get_text_attr)(const void *ctx, const char *label,
 			      nb_graphics_text_attr_t *attr);
 };
@@ -562,9 +562,10 @@ void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size)
 	g->set_font_size(g->ctx, size);
 }
 
-void nb_graphics_show_text(nb_graphics_context_t *g, const char *str)
+void nb_graphics_show_text(nb_graphics_context_t *g, int x, int y,
+			   const char *str)
 {
-	g->show_text(g->ctx, str);
+  g->show_text(g->ctx, x, y, str);
 }
 
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,

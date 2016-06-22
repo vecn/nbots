@@ -61,11 +61,6 @@
 //
 // ADDITIONAL DOCUMENTATION
 //
-//   Immediately after this block comment are a series of sample programs.
-//
-//   After the sample programs is the "header file" section. This section
-//   includes documentation for each API function.
-//
 //   Some important concepts to understand to use this library:
 //
 //      Codepoint
@@ -2988,53 +2983,3 @@ STBTT_DEF int stbtt_FindMatchingFont(const unsigned char *font_collection, const
 }
 
 #endif // STB_TRUETYPE_IMPLEMENTATION
-
-
-// FULL VERSION HISTORY
-//
-//   1.11 (2016-04-02) fix unused-variable warning
-//   1.10 (2016-04-02) allow user-defined fabs() replacement
-//                     fix memory leak if fontsize=0.0
-//                     fix warning from duplicate typedef
-//   1.09 (2016-01-16) warning fix; avoid crash on outofmem; use alloc userdata for PackFontRanges
-//   1.08 (2015-09-13) document stbtt_Rasterize(); fixes for vertical & horizontal edges
-//   1.07 (2015-08-01) allow PackFontRanges to accept arrays of sparse codepoints;
-//                     allow PackFontRanges to pack and render in separate phases;
-//                     fix stbtt_GetFontOFfsetForIndex (never worked for non-0 input?);
-//                     fixed an assert() bug in the new rasterizer
-//                     replace assert() with STBTT_assert() in new rasterizer
-//   1.06 (2015-07-14) performance improvements (~35% faster on x86 and x64 on test machine)
-//                     also more precise AA rasterizer, except if shapes overlap
-//                     remove need for STBTT_sort
-//   1.05 (2015-04-15) fix misplaced definitions for STBTT_STATIC
-//   1.04 (2015-04-15) typo in example
-//   1.03 (2015-04-12) STBTT_STATIC, fix memory leak in new packing, various fixes
-//   1.02 (2014-12-10) fix various warnings & compile issues w/ stb_rect_pack, C++
-//   1.01 (2014-12-08) fix subpixel position when oversampling to exactly match
-//                        non-oversampled; STBTT_POINT_SIZE for packed case only
-//   1.00 (2014-12-06) add new PackBegin etc. API, w/ support for oversampling
-//   0.99 (2014-09-18) fix multiple bugs with subpixel rendering (ryg)
-//   0.9  (2014-08-07) support certain mac/iOS fonts without an MS platformID
-//   0.8b (2014-07-07) fix a warning
-//   0.8  (2014-05-25) fix a few more warnings
-//   0.7  (2013-09-25) bugfix: subpixel glyph bug fixed in 0.5 had come back
-//   0.6c (2012-07-24) improve documentation
-//   0.6b (2012-07-20) fix a few more warnings
-//   0.6  (2012-07-17) fix warnings; added stbtt_ScaleForMappingEmToPixels,
-//                        stbtt_GetFontBoundingBox, stbtt_IsGlyphEmpty
-//   0.5  (2011-12-09) bugfixes:
-//                        subpixel glyph renderer computed wrong bounding box
-//                        first vertex of shape can be off-curve (FreeSans)
-//   0.4b (2011-12-03) fixed an error in the font baking example
-//   0.4  (2011-12-01) kerning, subpixel rendering (tor)
-//                    bugfixes for:
-//                        codepoint-to-glyph conversion using table fmt=12
-//                        codepoint-to-glyph conversion using table fmt=4
-//                        stbtt_GetBakedQuad with non-square texture (Zer)
-//                    updated Hello World! sample to use kerning and subpixel
-//                    fixed some warnings
-//   0.3  (2009-06-24) cmap fmt=12, compound shapes (MM)
-//                    userdata, malloc-from-userdata, non-zero fill (stb)
-//   0.2  (2009-03-11) Fix unsigned/signed char warnings
-//   0.1  (2009-03-09) First public release
-//

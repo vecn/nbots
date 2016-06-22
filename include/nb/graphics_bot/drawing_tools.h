@@ -29,8 +29,6 @@ typedef enum {
 typedef struct {
 	float width;
 	float height;
-	float x_left;
-	float y_top;
 } nb_graphics_text_attr_t;
 
 typedef struct {
@@ -107,7 +105,8 @@ void nb_graphics_set_font_type(nb_graphics_context_t *g, const char *type);
 
 void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size);
 
-void nb_graphics_show_text(nb_graphics_context_t *g, const char *str);
+void nb_graphics_show_text(nb_graphics_context_t *g, int x, int y,
+			   const char *str);
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,
 			       nb_graphics_text_attr_t *attr);
 
