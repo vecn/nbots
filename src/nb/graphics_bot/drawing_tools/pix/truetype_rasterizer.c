@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#define NB_GRAPHICS_PIX_LETTER_SPACING 0
+#define NB_GRAPHICS_PIX_LEADING 125
+
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "tiny_libs/stb_truetype.h"
@@ -51,11 +54,15 @@ static void get_size_truetype_font(const char *ttf_memblock,
 	int c = 0;
 	int N_rows = 1;
 	int max_w = 0;
+	int max_col = 0;
+	int col = 0;
 	while ('\0' != string[c]) {
 		if ('\n' == string[c]) {
 			N_rows += 1;
 			max_w = MAX(max_w, *w);
 			*w = 0;
+			max_col = MAX(max_col, col);
+			col = 0;
 		} else {
 			int codepoint = string[c];
 			int x0, y0;
@@ -64,11 +71,15 @@ static void get_size_truetype_font(const char *ttf_memblock,
 						    scale, scale,
 						    &x0, &y0, &x1, &y1);
 			*w += x1 - x0;
-			*h = MAX(*h, y1 - y0);
+			col += 1;
 		}
+		c += 1;
 	}
-	*h = N_rows * (*h);
-	*w = max_w;
+	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
+	*w = max_w + spaces;
+	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
+	int line_spaces = (N_rows - 1) * (int)(leading * size);
+	*h = size * N_rows + line_spaces;
 }
 
 static void get_size_bitmap_font(const char *ttf_memblock,
@@ -76,8 +87,9 @@ static void get_size_bitmap_font(const char *ttf_memblock,
 				 int *w, int *h)
 {
 	int max_col = 0;
-	int N_rows = 0;
+	int N_rows = 1;
 	int col = 0;
+	int c = 0;
 	while ('\0' != string[c]) {
 		if ('\n' == string[c]) {
 			N_rows += 1;
@@ -85,9 +97,13 @@ static void get_size_bitmap_font(const char *ttf_memblock,
 			col = 0;
 		}
 		col += 1;
+		c += 1;
 	}
-	*w = 8 * max_col;
-	*h = 8 * N_rows;
+	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
+	*w = size * max_col + spaces;
+	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
+	int line_spaces = (N_rows - 1) * (int)(leading * size);
+	*h = size * N_rows + line_spaces;
 }
 
 void nb_graphics_truetype_rasterizer_bake(const char *string,
@@ -133,21 +149,21 @@ static void bake_truetype_font(const char *ttf_memblock,
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
 
-	int x0, y0;
-	int x1, y1;
-	stbtt_GetFontBoundingBox(font, &x0, &y0, &x1, &y1);
-
-	int bitmap_width = (x1 - x0) * strlen(string);
+	int bm_w, bm_h;
+	get_size_truetype_font(ttf_memblock, string, size, &bm_w, &bm_h);
 
 	int c = 0;
-	while (string[c] != '\0') {
+	while ('\0' != string[c]) {
 		int codepoint = string[c];
+		int x0, y0;
+		int x1, y1;
 		stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale,
 					    &x0, &y0, &x1, &y1);
 		int w = x1 - x0;
 		int h = y1 - y0;
 		stbtt_MakeCodepointBitmap(font, bitmap, w, h, bitmap_width,
 					  scale, scale, codepoint);
+		c += 1;
 	}
 	/* AQUI VOY */
 }
@@ -155,5 +171,30 @@ static void bake_truetype_font(const char *ttf_memblock,
 static void bake_bitmap_font(const char *string, uint16_t size,
 			     uint8_t *bitmap)
 {
-	/* AQUI VOY */
+	int bm_w, bm_h;
+	get_size_bitmap_font(string, size, &bm_w, &bm_h);
+
+	char **font8x8 = font8x8_basic; 
+
+	int col = 0;
+	int row = 0;
+	int c = 0;
+	while ('\0' != string[c]) {
+		if ('\n' == string[c]) {
+			col = 0;
+			row += 1;
+		} else {
+			col += 1;
+			int codepoint = string[c] % 128;
+			char char8x8[8] = font8x8[codepoint];
+/* AQUI VOY */
+			if (8 > size) {
+			} else if (8 == size) {
+				
+			} else {
+
+			}
+		}
+		c += 1;
+	}
 }
