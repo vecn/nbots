@@ -26,6 +26,17 @@ static void bake_truetype_font(const char *ttf_memblock,
 			       uint8_t *bitmap);
 static void bake_bitmap_font(const char *string, uint16_t size,
 			     uint8_t *bitmap);
+static void stamp_bmchar_to_bitmap(uint8_t *bitmap, uint16_t size,
+				   const char char8x8[8], int col,
+				   int row, int bm_width);
+static uint8_t bmchar_get_intensity(const char char8x8[8], uint16_t size,
+				    int i, int j);
+static float bmchar_get_intensity_eq8(const char char8x8[8],
+				      int i, int j);
+static float bmchar_get_intensity_lt8(const char char8x8[8], uint16_t size,
+				      int i, int j);
+static float bmchar_get_intensity_gt8(const char char8x8[8], uint16_t size,
+				      int i, int j);
 
 void nb_graphics_truetype_rasterizer_get_size(const char *string,
 					      const char *type, uint16_t size,
@@ -78,7 +89,7 @@ static void get_size_truetype_font(const char *ttf_memblock,
 	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
 	*w = max_w + spaces;
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
-	int line_spaces = (N_rows - 1) * (int)(leading * size);
+	int line_spaces = (N_rows - 1) * ((int)(leading * size) - size);
 	*h = size * N_rows + line_spaces;
 }
 
@@ -102,7 +113,7 @@ static void get_size_bitmap_font(const char *ttf_memblock,
 	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
 	*w = size * max_col + spaces;
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
-	int line_spaces = (N_rows - 1) * (int)(leading * size);
+	int line_spaces = (N_rows - 1) * ((int)(leading * size) - size);
 	*h = size * N_rows + line_spaces;
 }
 
@@ -187,14 +198,112 @@ static void bake_bitmap_font(const char *string, uint16_t size,
 			col += 1;
 			int codepoint = string[c] % 128;
 			char char8x8[8] = font8x8[codepoint];
-/* AQUI VOY */
-			if (8 > size) {
-			} else if (8 == size) {
-				
-			} else {
-
-			}
+			stamp_bmchar_to_bitmap(bitmap, size, char8x8,
+					       col, row, bm_w);
 		}
 		c += 1;
 	}
+}
+
+static void stamp_bmchar_to_bitmap(uint8_t *bitmap, uint16_t size,
+				   const char char8x8[8], int col,
+				   int row, int bm_width)
+{
+	int line_spacing = (int)(size * (NB_GRAPHICS_PIX_LEADING/100.f));
+	int letter_spacing = NB_GRAPHICS_PIX_LETTER_SPACING;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			int pix_row = row * line_spacing + i;
+			int pix_col = col * (size + letter_spacing) + j;
+			bitmap[pix_row * bm_width + pix_col] = 
+				bmchar_get_intensity(char8x8, size, i, j);
+		}
+	}
+}
+
+static uint8_t bmchar_get_intensity(const char char8x8[8], uint16_t size,
+				    int i, int j)
+{
+	float intensity;
+	if (8 == size)
+		intensity = bmchar_get_intensity_eq8(char8x8, i, j);
+	else if (8 > size)
+		intensity = bmchar_get_intensity_lt8(char8x8, size, i, j);
+	else
+		intensity = bmchar_get_intensity_gt8(char8x8, size, i, j);
+	return (int)(intensity * 255 + 0.5);
+}
+
+static float bmchar_get_intensity_eq8(const char char8x8[8],
+				      int i, int j)
+{
+		char bit_row = char8x8[i];
+		char bit_mask = (1<<(7-j));
+		bool bit_enabled = (0 != (bit_row & bit_mask));
+		return (bit_enabled)?(1.0f):(0.0f);
+}
+
+static float bmchar_get_intensity_lt8(const char char8x8[8], uint16_t size,
+				      int i, int j)
+{
+	float pixels = 8.0f / size;
+	int ifirst = (int)(i * pixels);
+	int ilast = (int)((i+1) * pixels);
+	if ((i+1) * pixels - ilast > 0.0)
+		ilast += 1;
+	int jfirst = (int)(j * pixels);
+	int jlast = (int)((j+1) * pixels);
+	if ((j+1) * pixels - jlast > 0.0t)
+		jlast += 1;
+	float weight = 0.0f;
+	for (int k = ifirst; k < ilast; k++) {
+		for (int l = jfirst; l < jlast; j++) {
+			char bit_row = char8x8[k];
+			char bit_mask = (1<<(7-l));
+			bool bit_enabled = (0 != (bit_row & bit_mask));
+			if (bit_enabled) {
+				float xw = 1.0f;
+				if (k == ifirst) {
+					float rb = ifirst + 1;
+					xw = (rb - i * pixels);
+				} else if (k == ilast - 1) {
+					float rb = ilast;
+					xw = (rb - (i+1) * pixels);
+				}
+				float yw = 1.0f;
+				if (l == jfirst) {
+					float rb = jfirst + 1;
+					yw = (rb - j * pixels);
+				} else if (l == jlast - 1) {
+					float rb = jlast;
+					yw = (rb - (j+1) * pixels);
+				}
+				weight += xw * yw;
+			}
+		}
+	}
+	weight /= (ilast - ifirst) * (jlast - jfirst);
+	return (int)(weight * 255 + 0.5);
+}
+
+static float bmchar_get_intensity_gt8(const char char8x8[8], uint16_t size,
+				      int i, int j)
+{
+	float pixels = size / 8.0f;
+	float limit = 1.0f / pixels;
+
+	int k = (int)(i/pixels);
+	float kf = i / pixels - k;
+	float wx = 1.0;
+	if (kx < limit || 1 - kf < limit) {
+		/* AQUI VOY */
+	} else {
+	}
+	
+	char bit_row = char8x8[k];
+	char bit_mask = (1<<(7-l));
+	bool bit_enabled = (0 != (bit_row & bit_mask));
+
+	float weight = (w1 + w2 + w3 + w4) / 4.0;
+	return (int)(weight * 255 + 0.5);
 }
