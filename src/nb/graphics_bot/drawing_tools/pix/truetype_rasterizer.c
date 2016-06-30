@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <alloca.h>
 #include <stdbool.h>
@@ -17,8 +18,27 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+
+#define GET_FONT_URL(file, type)					\
+	do {								\
+		int type_len = strlen(type);				\
+		char *path = getenv("NB_FONTS_DIR");			\
+		if (NULL == path) {					\
+			file = alloca(type_len + 10);			\
+			sprintf(file, "/home/.fonts/%s.ttf", type);	\
+		} else {						\
+			int path_len = strlen(path);			\
+			if ('/' == path[path_len - 1]) {		\
+				file = alloca(path_len + type_len + 4);	\
+				sprintf(file, "%s%s.ttf", path, type);	\
+			} else {					\
+				file = alloca(path_len + type_len + 5);	\
+				sprintf(file, "%s/%s.ttf", path, type);	\
+			}						\
+		}							\
+	} while(0)
+
 static char* read_ttf_memblock(const char *type);
-static const char* get_font_url(const char *type);
 static void get_size_truetype_font(const char *ttf_memblock,
 				   const char *string, uint16_t size,
 				   int *w, int *h);
@@ -61,7 +81,8 @@ static void get_size_truetype_font(const char *ttf_memblock,
 	stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
 	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
 	stbtt_InitFont(font, ttf_memblock, font_idx);
-	float scale = stbtt_ScaleForPixelHeight(font, size);
+	float scale = stbtt_ScaleForPixelHeight(font, 18);
+	printf("SCALE: %f", scale);/**/
 
 	*w = 0;
 	*h = 0;
@@ -89,6 +110,7 @@ static void get_size_truetype_font(const char *ttf_memblock,
 		}
 		c += 1;
 	}
+	max_w = MAX(max_w, *w);
 	max_col = MAX(max_col, col);
 
 	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
@@ -110,8 +132,9 @@ static void get_size_bitmap_font(const char *string, uint16_t size,
 			N_rows += 1;
 			max_col = MAX(max_col, col);
 			col = 0;
+		} else {
+			col += 1;
 		}
-		col += 1;
 		c += 1;
 	}
 	max_col = MAX(max_col, col);
@@ -138,7 +161,9 @@ void nb_graphics_truetype_rasterizer_bake(const char *string,
 
 static char* read_ttf_memblock(const char *type)
 {
-	FILE *fp = fopen(get_font_url(type), "rb");
+	char *filename;
+	GET_FONT_URL(filename, type);
+	FILE *fp = fopen(filename, "rb");
 	char *ttf_memblock = NULL;
 	if (NULL != fp) {
 		fseek(fp, 0L, SEEK_END);
@@ -152,11 +177,6 @@ static char* read_ttf_memblock(const char *type)
 	return ttf_memblock;
 }
 
-static const char* get_font_url(const char *type)
-{
-	return "/home/victor/repos/nbots/src/nb/graphics_bot/drawing_tools/pix/fonts/FreeSans.ttf";
-}
-
 static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap)
@@ -168,6 +188,13 @@ static void bake_truetype_font(const char *ttf_memblock,
 
 	int bm_w, bm_h;
 	get_size_truetype_font(ttf_memblock, string, size, &bm_w, &bm_h);
+
+	char* char_bitmap;
+	if (100 < size)
+		char_bitmap = malloc(size * size);
+	else
+		char_bitmap = alloca(size * size);
+	memset(char_bitmap, 0, size * size); /* CREATE MACRO */
 
 	int col = 0;
 	int row = 0;
@@ -185,13 +212,17 @@ static void bake_truetype_font(const char *ttf_memblock,
 						    &x0, &y0, &x1, &y1);
 			int w = x1 - x0;
 			int h = y1 - y0;
-			stbtt_MakeCodepointBitmap(font, bitmap, w, h,
-						  bm_w, scale, scale,
+			stbtt_MakeCodepointBitmap(font, char_bitmap, w, h,
+						  0, scale, scale,
 						  codepoint);
+			/* STAMP ON BITMAP */
 			col += 1;
 		}
 		c += 1;
 	}
+
+	if (100 < size)
+		free(char_bitmap);/* CREATE MACRO */
 }
 
 static void bake_bitmap_font(const char *string, uint16_t size,

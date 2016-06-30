@@ -184,7 +184,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	
 	ctx->font = (void*) (memblock + ctx_size + img_size +
 			     pix_size + trt_size + rp_size + src_size);
-	ctx->font->type = "Mono";
+	ctx->font->type = "FreeSans";
 	ctx->font->size = 18;
 
 	return ctx;
