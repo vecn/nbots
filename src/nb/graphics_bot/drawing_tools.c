@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <alloca.h>
@@ -745,7 +746,8 @@ static void palette_draw_rectangle(nb_graphics_context_t *g,
 		nb_graphics_fill(g);
 	}
 
-	nb_graphics_set_source_grad(g, NB_LINEAR, x, y+h, x, y, palette);
+	nb_graphics_set_source_grad(g, NB_LINEAR, x, y+h, x, y,
+				    (void*) palette);
 	nb_graphics_set_rectangle(g, x, y, w, h);
 	nb_graphics_fill(g);
 }
@@ -790,9 +792,9 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 		sprintf(label, "%.3e", max_v - i * step_v);
 		nb_graphics_get_text_attr(g, label, &text_attr);
 
-		nb_graphics_move_to(g, x + w + 5.0f, 
-				    y + text_attr.height/2.0 + 
-				    i * h / (n_labels-1.0));
-		nb_graphics_show_text(g, label);
+		nb_graphics_show_text(g, x + w + 5.0f, 
+				      y + text_attr.height/2.0 + 
+				      i * h / (n_labels-1.0),
+				      label);
 	}
 }

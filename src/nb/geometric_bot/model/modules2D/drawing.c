@@ -58,10 +58,10 @@ static void draw_vertices(nb_graphics_context_t *g,
 		sprintf(str_id, "%i", i);
 		nb_graphics_set_font_type(g, "Sans");
 		nb_graphics_set_font_size(g, 9);
-		nb_graphics_move_to(g,
-				    model->vertex[i * 2],
-				    model->vertex[i*2+1]);
-		nb_graphics_show_text(g, str_id);
+		nb_graphics_show_text(g, 
+				      model->vertex[i * 2],
+				      model->vertex[i*2+1],
+				      str_id);
 	}
 }
 

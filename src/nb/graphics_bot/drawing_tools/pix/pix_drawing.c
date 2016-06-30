@@ -1028,24 +1028,25 @@ void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 	pixmask_t *mask = alloca(sizeof(pixmask_t));
 	mask->xmin = x;
 	mask->ymin = y - attr.height;
-	mask->width = attr->width;
-	mask->height = attr->height;
+	mask->width = attr.width;
+	mask->height = attr.height;
 	pixmask_alloc_pix(mask);
 	
-	nb_graphics_truetype_rasterizer_bake(str, c->type, c->size,
-					     pixmask->pix);
+	nb_graphics_truetype_rasterizer_bake(str, c->font->type,
+					     c->font->size,
+					     mask->pix);
 
-	pixmask_blend_image(pixmask, c->source, 255, c->img);
-	pixmask_finish(pixmask);
+	pixmask_blend_image(mask, c->source, 255, c->img);
+	pixmask_finish(mask);
 }
 
 void nb_graphics_pix_get_text_attr(const void *ctx, const char *str,
 				   nb_graphics_text_attr_t *attr)
 {
-	context_t *c = ctx;
+	const context_t *c = ctx;
 	int w, h;
-	nb_graphics_truetype_rasterizer_get_size(str, c->type,
-						 c->size,
+	nb_graphics_truetype_rasterizer_get_size(str, c->font->type,
+						 c->font->size,
 						 &w, &h);
 	attr->width = w;
 	attr->height = h;

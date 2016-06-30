@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <alloca.h>
+#include <stdbool.h>
 
 #define NB_GRAPHICS_PIX_LETTER_SPACING 0
 #define NB_GRAPHICS_PIX_LEADING 125
@@ -8,6 +10,8 @@
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "tiny_libs/stb_truetype.h"
+
+#include "font_bitmap.h"
 
 #include "truetype_rasterizer.h"
 
@@ -18,8 +22,7 @@ static const char* get_font_url(const char *type);
 static void get_size_truetype_font(const char *ttf_memblock,
 				   const char *string, uint16_t size,
 				   int *w, int *h);
-static void get_size_bitmap_font(const char *ttf_memblock,
-				 const char *string, uint16_t size,
+static void get_size_bitmap_font(const char *string, uint16_t size,
 				 int *w, int *h);
 static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
@@ -55,7 +58,7 @@ static void get_size_truetype_font(const char *ttf_memblock,
 				   const char *string, uint16_t size,
 				   int *w, int *h)
 {
-	stbtt_fontinfo *font = alloca(sizeof(sbtt_fontinfo));
+	stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
 	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
@@ -86,6 +89,8 @@ static void get_size_truetype_font(const char *ttf_memblock,
 		}
 		c += 1;
 	}
+	max_col = MAX(max_col, col);
+
 	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
 	*w = max_w + spaces;
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
@@ -93,8 +98,7 @@ static void get_size_truetype_font(const char *ttf_memblock,
 	*h = size * N_rows + line_spaces;
 }
 
-static void get_size_bitmap_font(const char *ttf_memblock,
-				 const char *string, uint16_t size,
+static void get_size_bitmap_font(const char *string, uint16_t size,
 				 int *w, int *h)
 {
 	int max_col = 0;
@@ -110,6 +114,8 @@ static void get_size_bitmap_font(const char *ttf_memblock,
 		col += 1;
 		c += 1;
 	}
+	max_col = MAX(max_col, col);
+
 	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
 	*w = size * max_col + spaces;
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
@@ -140,7 +146,7 @@ static char* read_ttf_memblock(const char *type)
 		fseek(fp, 0L, SEEK_SET);
 
 		ttf_memblock = malloc(file_size);
-		fread(ttf_memblock, 1, ttf_memblock, fp);
+		fread(ttf_memblock, 1, file_size, fp);
 		fclose(fp);
 	}
 	return ttf_memblock;
@@ -155,37 +161,13 @@ static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap)
 {
-	stbtt_fontinfo *font = alloca(sizeof(sbtt_fontinfo));
+	stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
 	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
 
 	int bm_w, bm_h;
 	get_size_truetype_font(ttf_memblock, string, size, &bm_w, &bm_h);
-
-	int c = 0;
-	while ('\0' != string[c]) {
-		int codepoint = string[c];
-		int x0, y0;
-		int x1, y1;
-		stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale,
-					    &x0, &y0, &x1, &y1);
-		int w = x1 - x0;
-		int h = y1 - y0;
-		stbtt_MakeCodepointBitmap(font, bitmap, w, h, bitmap_width,
-					  scale, scale, codepoint);
-		c += 1;
-	}
-	/* AQUI VOY */
-}
-
-static void bake_bitmap_font(const char *string, uint16_t size,
-			     uint8_t *bitmap)
-{
-	int bm_w, bm_h;
-	get_size_bitmap_font(string, size, &bm_w, &bm_h);
-
-	char **font8x8 = font8x8_basic; 
 
 	int col = 0;
 	int row = 0;
@@ -195,11 +177,45 @@ static void bake_bitmap_font(const char *string, uint16_t size,
 			col = 0;
 			row += 1;
 		} else {
+			int codepoint = string[c];
+			int x0, y0;
+			int x1, y1;
+			stbtt_GetCodepointBitmapBox(font, codepoint,
+						    scale, scale,
+						    &x0, &y0, &x1, &y1);
+			int w = x1 - x0;
+			int h = y1 - y0;
+			stbtt_MakeCodepointBitmap(font, bitmap, w, h,
+						  bm_w, scale, scale,
+						  codepoint);
 			col += 1;
+		}
+		c += 1;
+	}
+}
+
+static void bake_bitmap_font(const char *string, uint16_t size,
+			     uint8_t *bitmap)
+{
+	int bm_w, bm_h;
+	get_size_bitmap_font(string, size, &bm_w, &bm_h);
+
+	char *font8x8 = font8x8_basic; 
+
+	int col = 0;
+	int row = 0;
+	int c = 0;
+	while ('\0' != string[c]) {
+		if ('\n' == string[c]) {
+			col = 0;
+			row += 1;
+		} else {
 			int codepoint = string[c] % 128;
-			char char8x8[8] = font8x8[codepoint];
+			char char8x8[8];
+			memcpy(char8x8, font8x8 + 8 * codepoint, 8);
 			stamp_bmchar_to_bitmap(bitmap, size, char8x8,
 					       col, row, bm_w);
+			col += 1;
 		}
 		c += 1;
 	}
@@ -237,10 +253,10 @@ static uint8_t bmchar_get_intensity(const char char8x8[8], uint16_t size,
 static float bmchar_get_intensity_eq8(const char char8x8[8],
 				      int i, int j)
 {
-		char bit_row = char8x8[i];
-		char bit_mask = (1<<(7-j));
-		bool bit_enabled = (0 != (bit_row & bit_mask));
-		return (bit_enabled)?(1.0f):(0.0f);
+	char bit_row = char8x8[i];
+	char bit_mask = 1 << j;
+	bool bit_enabled = (0 != (bit_row & bit_mask));
+	return (bit_enabled)?(1.0f):(0.0f);
 }
 
 static float bmchar_get_intensity_lt8(const char char8x8[8], uint16_t size,
@@ -253,57 +269,62 @@ static float bmchar_get_intensity_lt8(const char char8x8[8], uint16_t size,
 		ilast += 1;
 	int jfirst = (int)(j * pixels);
 	int jlast = (int)((j+1) * pixels);
-	if ((j+1) * pixels - jlast > 0.0t)
+	if ((j+1) * pixels - jlast > 0.0)
 		jlast += 1;
+
 	float weight = 0.0f;
+	float total = 0;
 	for (int k = ifirst; k < ilast; k++) {
-		for (int l = jfirst; l < jlast; j++) {
-			char bit_row = char8x8[k];
-			char bit_mask = (1<<(7-l));
+		char bit_row = char8x8[k];
+		float yw = 1.0f;
+		if (k == ifirst) {
+			float rb = ifirst + 1;
+			yw = (rb - i * pixels);
+		} else if (k == ilast - 1) {
+			float rb = ilast;
+			yw = (1.0f - rb + (i+1) * pixels);
+		}
+		for (int l = jfirst; l < jlast; l++) {
+			char bit_mask = 1 << l;
 			bool bit_enabled = (0 != (bit_row & bit_mask));
-			if (bit_enabled) {
-				float xw = 1.0f;
-				if (k == ifirst) {
-					float rb = ifirst + 1;
-					xw = (rb - i * pixels);
-				} else if (k == ilast - 1) {
-					float rb = ilast;
-					xw = (rb - (i+1) * pixels);
-				}
-				float yw = 1.0f;
-				if (l == jfirst) {
-					float rb = jfirst + 1;
-					yw = (rb - j * pixels);
-				} else if (l == jlast - 1) {
-					float rb = jlast;
-					yw = (rb - (j+1) * pixels);
-				}
-				weight += xw * yw;
+				
+			float xw = 1.0f;
+			if (l == jfirst) {
+				float rb = jfirst + 1;
+				xw = (rb - j * pixels);
+			} else if (l == jlast - 1) {
+				float rb = jlast;
+				xw = (1.0f - rb + (j+1) * pixels);
 			}
+
+			if (bit_enabled)
+				weight += xw * yw;
+				
+			total += xw * yw;
 		}
 	}
-	weight /= (ilast - ifirst) * (jlast - jfirst);
-	return (int)(weight * 255 + 0.5);
+	weight /= total;
+	return weight;
 }
 
 static float bmchar_get_intensity_gt8(const char char8x8[8], uint16_t size,
 				      int i, int j)
 {
 	float pixels = size / 8.0f;
-	float limit = 1.0f / pixels;
+
+	float weight = 1.0f;
 
 	int k = (int)(i/pixels);
-	float kf = i / pixels - k;
-	float wx = 1.0;
-	if (kx < limit || 1 - kf < limit) {
-		/* AQUI VOY */
-	} else {
-	}
+	if (i/pixels - k + 1.0f/pixels >= 1.0)
+		weight *= i/pixels - k;
+
+	int l = (int)(j/pixels);
+	if (j/pixels - l + 1.0/pixels >= 1.0)
+		weight *= j/pixels - l;
 	
 	char bit_row = char8x8[k];
-	char bit_mask = (1<<(7-l));
+	char bit_mask = 1 << l;
 	bool bit_enabled = (0 != (bit_row & bit_mask));
-
-	float weight = (w1 + w2 + w3 + w4) / 4.0;
-	return (int)(weight * 255 + 0.5);
+	
+	return (bit_enabled)?(1.0f):(0.0f);
 }

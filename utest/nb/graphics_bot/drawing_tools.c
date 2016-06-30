@@ -13,15 +13,20 @@
 static int suite_init(void);
 static int suite_clean(void);
 
+static void test_drawing(void);
 static void draw_test1(nb_graphics_context_t *g, int w, int h,
 		       const void *const data);
-static void test_drawing(void);
+static void test_show_text(void);
+static void show_text(nb_graphics_context_t *g, int w, int h,
+		       const void *const data);
 
 void cunit_nb_graphics_bot_drawing_tools(void)
 {
 	CU_pSuite suite =
-		CU_add_suite("nb/graphics_bot/drawing_tools.c", suite_init, suite_clean);
+		CU_add_suite("nb/graphics_bot/drawing_tools.c",
+			     suite_init, suite_clean);
 	CU_add_test(suite, "drawing()", test_drawing);
+	CU_add_test(suite, "show_text()", test_show_text);
 }
 
 static int suite_init(void)
@@ -32,6 +37,14 @@ static int suite_init(void)
 static int suite_clean(void)
 {
 	return 0;
+}
+
+
+static void test_drawing(void)
+{
+	nb_graphics_export("../../../test_drawing.png",
+			   200, 180, draw_test1, NULL);
+	CU_ASSERT(true);
 }
 
 static void draw_test1(nb_graphics_context_t *g, int w, int h,
@@ -204,9 +217,66 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 	nb_graphics_stroke(g);
 }
 
-static void test_drawing(void)
+static void test_show_text(void)
 {
-	nb_graphics_export("../../../test_drawing.png", 200, 160, draw_test1,
-			   NULL);
+	nb_graphics_export("../../../test_show_text.png",
+			   1000, 250, show_text, NULL);
 	CU_ASSERT(true);
+}
+static void show_text(nb_graphics_context_t *g, int w, int h,
+		       const void *const datxa)
+{
+	const char *label = "Hello world, "
+		"I'am Victor Eduardo Cardoso Nungaray "
+		"1234567890";
+	
+	nb_graphics_set_font_type(g, "");
+
+	nb_graphics_set_font_size(g, 1);
+	nb_graphics_show_text(g, 10, 10, label);
+
+	nb_graphics_set_font_size(g, 2);
+	nb_graphics_show_text(g, 10, 20, label);
+
+	nb_graphics_set_font_size(g, 3);
+	nb_graphics_show_text(g, 10, 30, label);
+
+	nb_graphics_set_font_size(g, 4);
+	nb_graphics_show_text(g, 10, 40, label);
+
+	nb_graphics_set_font_size(g, 5);
+	nb_graphics_show_text(g, 10, 50, label);
+
+	nb_graphics_set_font_size(g, 6);
+	nb_graphics_show_text(g, 10, 60, label);
+
+	nb_graphics_set_font_size(g, 7);
+	nb_graphics_show_text(g, 10, 70, label);
+
+	nb_graphics_set_font_size(g, 8);
+	nb_graphics_show_text(g, 10, 80, label);
+
+	nb_graphics_set_font_size(g, 9);
+	nb_graphics_show_text(g, 10, 100, label);
+
+	nb_graphics_set_font_size(g, 10);
+	nb_graphics_show_text(g, 10, 120, label);
+
+	nb_graphics_set_font_size(g, 11);
+	nb_graphics_show_text(g, 10, 140, label);
+
+	nb_graphics_set_font_size(g, 12);
+	nb_graphics_show_text(g, 10, 160, label);
+
+	nb_graphics_set_font_size(g, 13);
+	nb_graphics_show_text(g, 10, 180, label);
+
+	nb_graphics_set_font_size(g, 14);
+	nb_graphics_show_text(g, 10, 200, label);
+
+	nb_graphics_set_font_size(g, 15);
+	nb_graphics_show_text(g, 10, 220, label);
+
+	nb_graphics_set_font_size(g, 16);
+	nb_graphics_show_text(g, 10, 240, label);
 }
