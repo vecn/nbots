@@ -54,7 +54,7 @@
 	} while(0)
 
 static char* read_ttf_memblock(const char *type);
-static void get_size_truetype_font(const char *ttf_memblock,
+static void get_size_truetype_font(stbtt_fontinfo *font,
 				   const char *string, uint16_t size,
 				   int *w, int *h);
 static void get_size_bitmap_font(const char *string, uint16_t size,
@@ -85,20 +85,20 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 {
 	char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
-		get_size_truetype_font(ttf_memblock, string, size, w, h);
+		stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
+		int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock, 0);
+		stbtt_InitFont(font, ttf_memblock, font_idx);
+		get_size_truetype_font(font, string, size, w, h);
 		free(ttf_memblock);
 	} else {
 		get_size_bitmap_font(string, size, w, h);
 	}
 }
 
-static void get_size_truetype_font(const char *ttf_memblock,
+static void get_size_truetype_font(stbtt_fontinfo *font,
 				   const char *string, uint16_t size,
 				   int *w, int *h)
 {
-	stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
-	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
-	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
 
 	*w = 0;
@@ -124,7 +124,6 @@ static void get_size_truetype_font(const char *ttf_memblock,
 						    &x0, &y0, &x1, &y1);
 			*w += x1 - x0;
 			col += 1;
-			printf("HEIGHT: %i\n", y1-y0);/**/
 		}
 		c += 1;
 	}
@@ -204,10 +203,9 @@ static void bake_truetype_font(const char *ttf_memblock,
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
 
+      	int bm_w, bm_h;
+	get_size_truetype_font(font, string, size, &bm_w, &bm_h);
 
-      /*
-	int bm_w, bm_h;
-	get_size_truetype_font(ttf_memblock, string, size, &bm_w, &bm_h);
 	char* char_bitmap;
 	INIT_CHAR_BITMAP(char_bitmap);
 
@@ -227,33 +225,17 @@ static void bake_truetype_font(const char *ttf_memblock,
 						    &x0, &y0, &x1, &y1);
 			int w = x1 - x0;
 			int h = y1 - y0;
-			stbtt_MakeCodepointBitmap(font, bitmap, w, h,
+			stbtt_MakeCodepointBitmap(font, char_bitmap, w, h,
 						  w, scale, scale,
 						  codepoint);
 			stamp_tt_bmchar_to_bitmap(bitmap, w, h, char_bitmap,
 						  col, row, bm_w);
+			/* FIX and then try to stamp directly on bitmap AQUI VOY */
 			col += 1;
 		}
 		c += 1;
 	}
       	FINISH_CHAR_BITMAP(char_bitmap);
-      */
-	
-	float xpos = 2;
-	int ascent;
-	stbtt_GetFontVMetrics(font, &ascent,0,0);
-	int baseline = (int) (ascent * scale);
-	while ('\0' != string[c]) {
-		int advance,lsb,x0,y0,x1,y1;
-		float x_shift = xpos - (int) xpos;
-		stbtt_GetCodepointHMetrics(font, string[c], &advance, &lsb);/* AQUI VOY */
-		stbtt_GetCodepointBitmapBoxSubpixel(&font, text[ch], scale,scale,x_shift,0, &x0,&y0,&x1,&y1);
-		stbtt_MakeCodepointBitmapSubpixel(&font, &screen[baseline + y0][(int) xpos + x0], x1-x0,y1-y0, 79, scale,scale,x_shift,0, text[ch]);
-		xpos += (advance * scale);
-		if (text[ch+1])
-			xpos += scale*stbtt_GetCodepointKernAdvance(&font, text[ch],text[ch+1]);
-		c += 1;
-	}
 }
 
 static void stamp_tt_bmchar_to_bitmap(uint8_t *bitmap, int w, int h,

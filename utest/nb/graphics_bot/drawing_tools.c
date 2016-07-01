@@ -232,7 +232,7 @@ static void test_show_text(void)
 static void show_text(nb_graphics_context_t *g, int w, int h,
 		       const void *const datxa)
 {
-	const char *label = "Hello world, "
+	const char *label = "Heljo world, "
 		"I'am Victor Eduardo Cardoso Nungaray "
 		"1234567890";
 	
