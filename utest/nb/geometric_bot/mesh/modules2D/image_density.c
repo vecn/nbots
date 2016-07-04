@@ -148,7 +148,7 @@ static void test_set_img_density_jpg_hand(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(13200 < N_trg && 13600 > N_trg);
-	CU_ASSERT(20000 < N_edge && 20500 > N_edge);
+	CU_ASSERT(20000 < N_edge && 21000 > N_edge);
 }
 
 static void test_set_img_density_jpg_size_const(void)
