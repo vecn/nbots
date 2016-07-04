@@ -38,21 +38,6 @@
 		}							\
 	} while(0)
 
-#define INIT_CHAR_BITMAP(char_bitmap)					\
-	do {								\
-		if (100 < size)						\
-			char_bitmap = malloc(size * size);		\
-		else							\
-			char_bitmap = alloca(size * size);		\
-		memset(char_bitmap, 0, size * size);			\
-	} while(0)
-
-#define FINISH_CHAR_BITMAP(char_bitmap)					\
-	do {								\
-		if (100 < size)						\
-			free(char_bitmap);				\
-	} while(0)
-
 static char* read_ttf_memblock(const char *type);
 static void get_size_truetype_font(stbtt_fontinfo *font,
 				   const char *string, uint16_t size,
@@ -62,11 +47,6 @@ static void get_size_bitmap_font(const char *string, uint16_t size,
 static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap);
-static void stamp_tt_bmchar_to_bitmap(uint8_t *bitmap, int w, int h,
-				      int size, int mean_offset,
-				      char *char_bitmap,
-				      int cumulative_width,
-				      int row, int bm_width);
 static void bake_bitmap_font(const char *string, uint16_t size,
 			     uint8_t *bitmap);
 static void stamp_bmchar_to_bitmap(uint8_t *bitmap, uint16_t size,
@@ -205,12 +185,11 @@ static void bake_truetype_font(const char *ttf_memblock,
       	int bm_w, bm_h;
 	get_size_truetype_font(font, string, size, &bm_w, &bm_h);
 
-	char* char_bitmap;
-	INIT_CHAR_BITMAP(char_bitmap);
-
-	int ascent, descent;
-	stbtt_GetFontVMetrics(font, &ascent, &descent, 0);
+	int ascent;
+	stbtt_GetFontVMetrics(font, &ascent, 0, 0);
 	int baseline = (int) (scale * ascent);
+
+	int line_spacing = (int)(size * (NB_GRAPHICS_PIX_LEADING/100.f));
 
 	int cumulative_width = 0;
 	int row = 0;
@@ -232,38 +211,21 @@ static void bake_truetype_font(const char *ttf_memblock,
 						    &x0, &y0, &x1, &y1);
 			int w = x1 - x0;
 			int h = y1 - y0;
-			stbtt_MakeCodepointBitmap(font, char_bitmap, w, h,
-						  w, scale, scale,
-						  codepoint);
-
 			int left_pixels = cumulative_width + scale * lsb;
 			int mean_offset = MAX(0, baseline + y0);
-			stamp_tt_bmchar_to_bitmap(bitmap, w, h,
-						  size, mean_offset,
-						  char_bitmap, left_pixels,
-						  row, bm_w);
+			int pix_row = row * line_spacing + mean_offset;
+			int pix_col = cumulative_width;
+			stbtt_MakeCodepointBitmap(font, 
+						  &(bitmap[pix_row * bm_w +
+							   pix_col]),
+						  w, h, bm_w,
+						  scale, scale,
+						  codepoint);
 			
 			cumulative_width += scale * advance + letter_spacing;
 		}
 		c += 1;
 	}
-      	FINISH_CHAR_BITMAP(char_bitmap);
-}
-
-static void stamp_tt_bmchar_to_bitmap(uint8_t *bitmap, int w, int h,
-				      int size, int mean_offset,
-				      char *char_bitmap, int cumulative_width,
-				      int row, int bm_width)
-{
-	int line_spacing = (int)(size * (NB_GRAPHICS_PIX_LEADING/100.f));
-	for (int i = 0; i < h; i++) {
-		for (int j = 0; j < w; j++) {
-			int pix_row = row * line_spacing + i + mean_offset;
-			int pix_col = cumulative_width + j;
-			bitmap[pix_row * bm_width + pix_col] = 
-				char_bitmap[i * w + j];
-		}
-	}	
 }
 
 static void bake_bitmap_font(const char *string, uint16_t size,
