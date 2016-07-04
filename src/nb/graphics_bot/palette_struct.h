@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct vcn_palette_s {
+struct nb_graphics_palette_s {
 	/* The palette defines a serie of RGB colors to
 	 * colorize values in [0,1]
 	 *
@@ -11,9 +11,9 @@ struct vcn_palette_s {
 	 *   |_____|________|__________|
 	 *   0    0.25     0.57        1  <- Tics
 	 */
-	uint8_t ntics;   /* Number of tics */
-	float* tics;   /* Sorted tics in [0,1] */
-	uint8_t* rgb;    /* RGB Colors definition */
+	uint8_t ntics;       /* Number of tics */
+	float tics[10];      /* Sorted tics in [0,1] */
+	uint8_t rgba[40];    /* RGBA Colors definition */
 };
 
 #endif

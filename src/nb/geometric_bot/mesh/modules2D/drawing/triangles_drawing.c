@@ -17,40 +17,38 @@ typedef struct {
 	double scale;
 } part_data_t;
 
-static void draw_msh3trg(void *draw_ptr, int width, int height,
+static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr);
 static void calculate_partition_centers(const vcn_msh3trg_t *const msh3trg,
 					const uint32_t *const part,
 					uint32_t kpart, double **pcenter);
-static void draw_triangle_partition_edge(void *draw_ptr,
+static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 					 const vcn_msh3trg_t *const msh3trg,
 					 const uint32_t *const part,
 					 uint32_t kpart, double **pcenter,
 					 double scale_partitions,
-					 int trg_id, int edge_id,
-					 const camera_t *const cam,
-					 double width, double height);
-static void draw_triangle_partition_border(void *draw_ptr,
+					 int trg_id, int edge_id);
+static void draw_triangle_partition_border(nb_graphics_context_t *g,
 					   const vcn_msh3trg_t *const msh3trg,
 					   const uint32_t *const part,
 					   uint32_t kpart, double **pcenter,
 					   double scale_partitions,
-					   uint32_t trg_id,
-					   const camera_t *const cam,
-					   double width, double height);
+					   uint32_t trg_id);
 
-static void draw_msh3trg_partition(void *draw_ptr, int width, int height,
+static void draw_msh3trg_partition(nb_graphics_context_t *g,
+				   int width, int height,
 				   const void *const part_data);
+
 static void scale_vtx(double vtx[2], double center[2], double zoom);
 
-void vcn_msh3trg_save_png(const vcn_msh3trg_t *const msh3trg,
-			  const char* filename, int width, int height)
+void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
+		      const char* filename, int width, int height)
 {
-	nb_drawing_export_png(filename, width, height,
-			      draw_msh3trg, msh3trg);
+	nb_graphics_export(filename, width, height,
+			   draw_msh3trg, msh3trg);
 }
 
-static void draw_msh3trg(void *draw_ptr, int width, int height,
+static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr)
 {
 	const vcn_msh3trg_t *const msh3trg = msh3trg_ptr;
@@ -65,54 +63,55 @@ static void draw_msh3trg(void *draw_ptr, int width, int height,
 						   vcn_utils2D_get_y_from_darray,
 						   box);
 
-	camera_t cam;
-	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
+	nb_graphics_enable_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_cam_fit_box(cam, box, width, height);
 
 	/* Draw triangles */
-	nb_drawing_set_line_width(draw_ptr, 0.5);
+	nb_graphics_set_line_width(g, 0.5);
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
 		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
 		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
 		uint32_t n3 = msh3trg->vertices_forming_triangles[i*3+2];
-		nb_drawing_move_to(draw_ptr, &cam,
-				   msh3trg->vertices[n1 * 2],
-				   msh3trg->vertices[n1*2+1]);
-		nb_drawing_line_to(draw_ptr, &cam,
-				   msh3trg->vertices[n2 * 2],
-				   msh3trg->vertices[n2*2+1]);
-		nb_drawing_line_to(draw_ptr, &cam,
-				   msh3trg->vertices[n3 * 2],
-				   msh3trg->vertices[n3*2+1]);
-		nb_drawing_close_path(draw_ptr);
+		nb_graphics_move_to(g,
+				    msh3trg->vertices[n1 * 2],
+				    msh3trg->vertices[n1*2+1]);
+		nb_graphics_line_to(g,
+				    msh3trg->vertices[n2 * 2],
+				    msh3trg->vertices[n2*2+1]);
+		nb_graphics_line_to(g,
+				    msh3trg->vertices[n3 * 2],
+				    msh3trg->vertices[n3*2+1]);
+		nb_graphics_close_path(g);
 
-		nb_drawing_set_source_rgba(draw_ptr, 0.1, 0.3, 1.0, 0.5);
+		nb_graphics_set_source_rgba(g, 25, 75, 255, 128);
 
-		nb_drawing_fill_preserve(draw_ptr);
+		nb_graphics_fill_preserve(g);
 
-		nb_drawing_set_source_rgb(draw_ptr, 0, 0, 1);
+		nb_graphics_set_source(g, NB_BLUE);
 
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_stroke(g);
 	}
 
 	/* Draw input segments */
-	nb_drawing_set_source_rgb(draw_ptr, 0.9, 0.2, 0.4);
+	nb_graphics_set_source(g, NB_AQUAMARIN);
 
-	nb_drawing_set_line_width(draw_ptr, 1.0);
+	nb_graphics_set_line_width(g, 1.0);
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
 		if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
 			continue;
 
 		uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
-		nb_drawing_move_to(draw_ptr, &cam,
-				   msh3trg->vertices[n1 * 2],
-				   msh3trg->vertices[n1*2+1]);
+		nb_graphics_move_to(g,
+				    msh3trg->vertices[n1 * 2],
+				    msh3trg->vertices[n1*2+1]);
 		for (uint32_t j = 0; j < msh3trg->N_subsgm_x_inputsgm[i]; j++) {
 			uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j+1];
-			nb_drawing_line_to(draw_ptr, &cam,
-					   msh3trg->vertices[n2 * 2],
-					   msh3trg->vertices[n2*2+1]);
+			nb_graphics_line_to(g,
+					    msh3trg->vertices[n2 * 2],
+					    msh3trg->vertices[n2*2+1]);
 		}
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_stroke(g);
 	}
 }
 
@@ -144,60 +143,54 @@ static void calculate_partition_centers
 	}
 }
 
-static void draw_triangle_partition_edge(void *draw_ptr,
+static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 					 const vcn_msh3trg_t *const msh3trg,
 					 const uint32_t *const part,
 					 uint32_t kpart, double **pcenter,
 					 double scale_partitions,
-					 int trg_id, int edge_id,
-					 const camera_t *const cam,
-					 double width, double height)
+					 int trg_id, int edge_id)
 {
 	double vtx[2];
 	uint32_t n1 = msh3trg->vertices_forming_triangles[trg_id*3+edge_id];
-	uint32_t n2 = msh3trg->vertices_forming_triangles[trg_id*3+(edge_id+1)%3];
+	uint32_t n2 = msh3trg->vertices_forming_triangles[trg_id*3 +
+							  (edge_id+1)%3];
 
 	memcpy(vtx, &(msh3trg->vertices[n1*2]), 2 * sizeof(double));
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
 
-	nb_drawing_move_to(draw_ptr, cam, vtx[0], vtx[1]);
+	nb_graphics_move_to(g, vtx[0], vtx[1]);
 
 	memcpy(vtx, &(msh3trg->vertices[n2*2]), 2 * sizeof(double));
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
 
-	nb_drawing_line_to(draw_ptr, cam, vtx[0], vtx[1]);
-	nb_drawing_stroke(draw_ptr);
+	nb_graphics_line_to(g, vtx[0], vtx[1]);
+	nb_graphics_stroke(g);
 }
 
-static void draw_triangle_partition_border(void *draw_ptr,
+static void draw_triangle_partition_border(nb_graphics_context_t *g,
 					   const vcn_msh3trg_t *const msh3trg,
 					   const uint32_t *const part,
 					   uint32_t kpart, double **pcenter,
 					   double scale_partitions,
-					   uint32_t trg_id,
-					   const camera_t *const cam,
-					   double width, double height)
+					   uint32_t trg_id)
 {
 	uint32_t n1 = msh3trg->triangles_sharing_sides[trg_id * 3];
 	uint32_t n2 = msh3trg->triangles_sharing_sides[trg_id*3+1];
 	uint32_t n3 = msh3trg->triangles_sharing_sides[trg_id*3+2];
 
 	if (part[trg_id] != part[n1])
-		draw_triangle_partition_edge(draw_ptr, msh3trg, part, kpart, pcenter,
-					     scale_partitions, trg_id, 0,
-					     cam, width, height);
+		draw_triangle_partition_edge(g, msh3trg, part, kpart, pcenter,
+					     scale_partitions, trg_id, 0);
 
 	if (part[trg_id] != part[n2])
-		draw_triangle_partition_edge(draw_ptr, msh3trg, part, kpart, pcenter,
-					     scale_partitions, trg_id, 1,
-					     cam, width, height);
+		draw_triangle_partition_edge(g, msh3trg, part, kpart, pcenter,
+					     scale_partitions, trg_id, 1);
 
 	if (part[trg_id] != part[n3])
-		draw_triangle_partition_edge(draw_ptr, msh3trg, part, kpart, pcenter,
-					     scale_partitions, trg_id, 2,
-					     cam, width, height);
+		draw_triangle_partition_edge(g, msh3trg, part, kpart, pcenter,
+					     scale_partitions, trg_id, 2);
 }
 
 static inline void scale_vtx(double vtx[2], double center[2], double zoom)
@@ -206,13 +199,14 @@ static inline void scale_vtx(double vtx[2], double center[2], double zoom)
 	vtx[1] = (vtx[1] - center[1]) * zoom + center[1];
 }
 
-void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
-				    const char* filename, int width, int height,
-				    uint32_t k_part, const uint32_t *const part,
-				    uint32_t k_to_draw, double scale_partitions)
+void vcn_msh3trg_partition_draw(const vcn_msh3trg_t *const msh3trg,
+				const char* filename, int width, int height,
+				uint32_t k_part, const uint32_t *const part,
+				uint32_t k_to_draw, double scale_partitions)
 {
 	if (k_part < 2) {
-		draw_msh3trg(draw_msh3trg, width, height, msh3trg);
+		nb_graphics_export(filename, width, height,
+				   draw_msh3trg, msh3trg);
 	} else {
 		part_data_t part_data;
 		part_data.msh3trg = msh3trg;
@@ -220,13 +214,14 @@ void vcn_msh3trg_partition_save_png(const vcn_msh3trg_t *const msh3trg,
 		part_data.part = part;
 		part_data.k_to_draw = k_to_draw;
 		part_data.scale = scale_partitions;
-		nb_drawing_export_png(filename, width, height,
-				      draw_msh3trg_partition,
-				      &part_data);
+		nb_graphics_export(filename, width, height,
+				   draw_msh3trg_partition,
+				   &part_data);
 	}
 }
 
-static void draw_msh3trg_partition(void *draw_ptr, int width, int height,
+static void draw_msh3trg_partition(nb_graphics_context_t *g,
+				   int width, int height,
 				   const void *const part_data)
 {
 	const part_data_t *const data = part_data;
@@ -242,10 +237,11 @@ static void draw_msh3trg_partition(void *draw_ptr, int width, int height,
 						   vcn_utils2D_get_y_from_darray,
 						   box);
 
-	camera_t cam;
-	nb_drawing_utils_set_center_and_zoom(&cam, box, width, height);
+	nb_graphics_enable_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_cam_fit_box(cam, box, width, height);
 
-	/* Calculate cam.center of partitions */
+	/* Calculate center of partitions */
 	double** pcenter = NULL;
 	if (data->scale > 0.0 && data->scale < 1.0) {
 		pcenter = malloc(data->k_part * sizeof(*pcenter));
@@ -270,36 +266,35 @@ static void draw_msh3trg_partition(void *draw_ptr, int width, int height,
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
-		nb_drawing_move_to(draw_ptr, &cam, vtx[0], vtx[1]);
+		nb_graphics_move_to(g, vtx[0], vtx[1]);
 
 		memcpy(vtx, &(msh3trg->vertices[n2*2]), 2 * sizeof(*vtx));
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
-		nb_drawing_line_to(draw_ptr, &cam, vtx[0], vtx[1]);
+		nb_graphics_line_to(g, vtx[0], vtx[1]);
 
 		memcpy(vtx, &(msh3trg->vertices[n3*2]), 2 * sizeof(*vtx));
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
-		nb_drawing_line_to(draw_ptr, &cam, vtx[0], vtx[1]);
-		nb_drawing_close_path(draw_ptr);
+		nb_graphics_line_to(g, vtx[0], vtx[1]);
+		nb_graphics_close_path(g);
 
-		nb_drawing_set_source_rgb(draw_ptr, 1.0, 1.0, 1.0);
-		nb_drawing_fill_preserve(draw_ptr);
+		nb_graphics_set_source(g, NB_LIGHT_GRAY);
+		nb_graphics_fill_preserve(g);
 
-		nb_drawing_set_source_rgb(draw_ptr, 0.3, 0.5, 1.0);
-		nb_drawing_set_line_width(draw_ptr, 0.5);
+		nb_graphics_set_source_rgb(g, 75, 128, 255);
+		nb_graphics_set_line_width(g, 0.5);
 
-		nb_drawing_stroke(draw_ptr);
+		nb_graphics_stroke(g);
 
 		/* Draw border */
-		nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.0, 0.8);
-		nb_drawing_set_line_width(draw_ptr, 1.0);
+		nb_graphics_set_source_rgb(g, 255, 0, 200);
+		nb_graphics_set_line_width(g, 1.0);
 
-		draw_triangle_partition_border(draw_ptr, msh3trg, data->part,
+		draw_triangle_partition_border(g, msh3trg, data->part,
 					       data->k_part,
-					       pcenter, data->scale, i,
-					       &cam, width, height);
+					       pcenter, data->scale, i);
 	}
 
 	if (data->scale > 0.0 && data->scale < 1.0) {
@@ -310,24 +305,24 @@ static void draw_msh3trg_partition(void *draw_ptr, int width, int height,
 
 	/* Draw input segments */
 	if (data->k_to_draw >= data->k_part) {
-		nb_drawing_set_source_rgb(draw_ptr, 1.0, 0.0, 0.8);
+		nb_graphics_set_source_rgb(g, 255, 0, 200);
 
-		nb_drawing_set_line_width(draw_ptr, 1.0);
+		nb_graphics_set_line_width(g, 1.0);
 		for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
 			if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
 				continue;
 
 			uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
-			nb_drawing_move_to(draw_ptr, &cam,
-					   msh3trg->vertices[n1 * 2],
-					   msh3trg->vertices[n1*2+1]);
+			nb_graphics_move_to(g,
+					    msh3trg->vertices[n1 * 2],
+					    msh3trg->vertices[n1*2+1]);
 			for (uint32_t j = 0; j < msh3trg->N_subsgm_x_inputsgm[i]; j++) {
 				uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j+1];
-				nb_drawing_line_to(draw_ptr, &cam,
-						   msh3trg->vertices[n2 * 2],
-						   msh3trg->vertices[n2*2+1]);
+				nb_graphics_line_to(g,
+						    msh3trg->vertices[n2 * 2],
+						    msh3trg->vertices[n2*2+1]);
 			}
-			nb_drawing_stroke(draw_ptr);
+			nb_graphics_stroke(g);
 		}
 	}
 }

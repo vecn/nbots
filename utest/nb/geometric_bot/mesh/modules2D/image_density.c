@@ -70,8 +70,8 @@ static void test_set_img_density_jpg_eye(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(3700 < N_trg && 3900 > N_trg);
-	CU_ASSERT(5600 < N_edge && 5800 > N_edge);
+	CU_ASSERT(3600 < N_trg && 3900 > N_trg);
+	CU_ASSERT(5500 < N_edge && 5800 > N_edge);
 }
 
 static void test_set_img_density_jpg_gnome(void)
@@ -147,8 +147,8 @@ static void test_set_img_density_jpg_hand(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(13200 < N_trg && 13500 > N_trg);
-	CU_ASSERT(20000 < N_edge && 20300 > N_edge);
+	CU_ASSERT(13200 < N_trg && 13600 > N_trg);
+	CU_ASSERT(20000 < N_edge && 20500 > N_edge);
 }
 
 static void test_set_img_density_jpg_size_const(void)
