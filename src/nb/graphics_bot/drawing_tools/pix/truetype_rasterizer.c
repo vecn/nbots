@@ -63,7 +63,9 @@ static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap);
 static void stamp_tt_bmchar_to_bitmap(uint8_t *bitmap, int w, int h,
-				      char *char_bitmap, int col,
+				      int size, int mean_offset,
+				      char *char_bitmap,
+				      int cumulative_width,
 				      int row, int bm_width);
 static void bake_bitmap_font(const char *string, uint16_t size,
 			     uint8_t *bitmap);
@@ -106,34 +108,31 @@ static void get_size_truetype_font(stbtt_fontinfo *font,
 	int c = 0;
 	int N_rows = 1;
 	int max_w = 0;
-	int max_col = 0;
-	int col = 0;
 	while ('\0' != string[c]) {
+		int letter_spacing = NB_GRAPHICS_PIX_LETTER_SPACING;
+		int codepoint = string[c];
+		int advance, lsb;
+		stbtt_GetCodepointHMetrics(font, codepoint,
+					   &advance, &lsb);
 		if ('\n' == string[c]) {
 			N_rows += 1;
 			max_w = MAX(max_w, *w);
 			*w = 0;
-			max_col = MAX(max_col, col);
-			col = 0;
 		} else {
-			int codepoint = string[c];
 			int x0, y0;
 			int x1, y1;
 			stbtt_GetCodepointBitmapBox(font, codepoint,
 						    scale, scale,
 						    &x0, &y0, &x1, &y1);
-			*w += x1 - x0;
-			col += 1;
+			*w += scale * advance + letter_spacing;
 		}
 		c += 1;
 	}
 	max_w = MAX(max_w, *w);
-	max_col = MAX(max_col, col);
 
-	int spaces = (max_col - 1) * NB_GRAPHICS_PIX_LETTER_SPACING;
-	*w = max_w + spaces;
+	*w = max_w;
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
-	int line_spaces = (N_rows - 1) * ((int)(leading * size) - size);
+	int line_spaces = N_rows * ((int)(leading * size) - size);
 	*h = size * N_rows + line_spaces;
 }
 
@@ -209,15 +208,23 @@ static void bake_truetype_font(const char *ttf_memblock,
 	char* char_bitmap;
 	INIT_CHAR_BITMAP(char_bitmap);
 
-	int col = 0;
+	int ascent, descent;
+	stbtt_GetFontVMetrics(font, &ascent, &descent, 0);
+	int baseline = (int) (scale * ascent);
+
+	int cumulative_width = 0;
 	int row = 0;
 	int c = 0;
 	while ('\0' != string[c]) {
+		int letter_spacing = NB_GRAPHICS_PIX_LETTER_SPACING;
+		int codepoint = string[c];
+		int advance, lsb;
+		stbtt_GetCodepointHMetrics(font, codepoint,
+					   &advance, &lsb);
 		if ('\n' == string[c]) {
-			col = 0;
+			cumulative_width = 0;
 			row += 1;
 		} else {
-			int codepoint = string[c];
 			int x0, y0;
 			int x1, y1;
 			stbtt_GetCodepointBitmapBox(font, codepoint,
@@ -228,10 +235,15 @@ static void bake_truetype_font(const char *ttf_memblock,
 			stbtt_MakeCodepointBitmap(font, char_bitmap, w, h,
 						  w, scale, scale,
 						  codepoint);
-			stamp_tt_bmchar_to_bitmap(bitmap, w, h, char_bitmap,
-						  col, row, bm_w);
-			/* FIX and then try to stamp directly on bitmap AQUI VOY */
-			col += 1;
+
+			int left_pixels = cumulative_width + scale * lsb;
+			int mean_offset = MAX(0, baseline + y0);
+			stamp_tt_bmchar_to_bitmap(bitmap, w, h,
+						  size, mean_offset,
+						  char_bitmap, left_pixels,
+						  row, bm_w);
+			
+			cumulative_width += scale * advance + letter_spacing;
 		}
 		c += 1;
 	}
@@ -239,15 +251,15 @@ static void bake_truetype_font(const char *ttf_memblock,
 }
 
 static void stamp_tt_bmchar_to_bitmap(uint8_t *bitmap, int w, int h,
-				      char *char_bitmap, int col,
+				      int size, int mean_offset,
+				      char *char_bitmap, int cumulative_width,
 				      int row, int bm_width)
 {
-	int line_spacing = (int)(h * (NB_GRAPHICS_PIX_LEADING/100.f));
-	int letter_spacing = NB_GRAPHICS_PIX_LETTER_SPACING;
+	int line_spacing = (int)(size * (NB_GRAPHICS_PIX_LEADING/100.f));
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			int pix_row = row * line_spacing + i;
-			int pix_col = col * (w + letter_spacing) + j;
+			int pix_row = row * line_spacing + i + mean_offset;
+			int pix_col = cumulative_width + j;
 			bitmap[pix_row * bm_width + pix_col] = 
 				char_bitmap[i * w + j];
 		}

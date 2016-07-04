@@ -312,7 +312,7 @@ static void test_show_text_tt(void)
 static void show_text_tt(nb_graphics_context_t *g, int w, int h,
 		       const void *const datxa)
 {
-	const char *label = "Hello world, "
+	const char *label = "Heljo world, "
 		"I'am Victor Eduardo Cardoso Nungaray "
 		"1234567890";
 	
@@ -366,16 +366,30 @@ static void show_text_tt(nb_graphics_context_t *g, int w, int h,
 	nb_graphics_set_font_size(g, 16);
 	nb_graphics_show_text(g, 10, 240, label);
 
+	nb_graphics_set_source(g, NB_AZURE);
+	const char *label_font = "This is a sample "
+		"to show a True Type Font 0123456789";
+
+	nb_graphics_set_font_type(g, "FreeMono");
+	nb_graphics_set_font_size(g, 20);
+	nb_graphics_show_text(g, 10, 270, label_font);
+
+	nb_graphics_set_font_type(g, "FreeSans");
+	nb_graphics_set_font_size(g, 20);
+	nb_graphics_show_text(g, 10, 300, label_font);
+
+	nb_graphics_set_font_type(g, "FreeSerif");
+	nb_graphics_set_font_size(g, 20);
+	nb_graphics_show_text(g, 10, 330, label_font);
+
+
 	nb_graphics_set_source(g, NB_BLUE);
 	const char *multiline = "Hello world, this is a multiline string\n"
 		"to test our library, we love how people\n"
 		"tastes... so we will test you:\n(;'\"#$%&/=?[]{})";
 
-	nb_graphics_set_font_size(g, 8);
-	nb_graphics_show_text(g, 10, 290, multiline);
-
-
-	nb_graphics_set_font_size(g, 16);
+	nb_graphics_set_font_type(g, "FreeSerif");
+	nb_graphics_set_font_size(g, 25);
 	nb_graphics_text_attr_t attr;
 	nb_graphics_get_text_attr(g, multiline, &attr);
 	nb_graphics_show_text(g, 500 - attr.width/2,
