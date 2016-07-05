@@ -109,8 +109,8 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 		nb_graphics_palette_create_preset(NB_RAINBOW);
 	nb_graphics_set_circle(g, scale * 10, scale * 40, scale * 7);	
 	nb_graphics_set_source_grad(g, NB_LINEAR,
-				    scale * 3, scale * 40,
-				    scale * 17, scale * 40,
+				    scale * 3, scale * 35,
+				    scale * 17, scale * 45,
 				    pal);
 	nb_graphics_fill(g);
 	nb_graphics_palette_destroy(pal);

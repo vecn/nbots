@@ -115,9 +115,11 @@ static void source_set_trg(source_t *source,
 			   const uint8_t rgba3[4]);
 static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle);
 static void pixmask_alloc_pix(pixmask_t *pixmask);
-static void turtle_step_get_box(const turtle_step *step, uint32_t box[4]);
+static void turtle_step_get_box(const turtle_step *step, int32_t box[4]);
 static void pixmask_full(pixmask_t *pixmask);
 static void pixmask_unfill_outside(pixmask_t *pixmask);
+static void pmask_abs_unset_pixel(int x, int y, uint8_t i, void *pixmask);
+static bool pmask_abs_pixel_is_not_empty(int x, int y, const void *pixmask);
 static void pixmask_set_pixel(int x, int y, uint8_t i, void *pixmask);
 static void pixmask_fill_surrounded_pixel(int x, int y, uint8_t i, void *pixmask);
 static void pixmask_unset_pixel(int x, int y, uint8_t i, void *pixmask);
@@ -478,8 +480,8 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 	context_t *c = ctx;
 	pixmask_t *pixmask = alloca(sizeof(pixmask_t));
 	pixmask_init(pixmask, c->turtle);
-	if (pixmask->xmin < c->img->width &&
-	    pixmask->ymin < c->img->height &&
+	if (pixmask->xmin < (int32_t)c->img->width &&
+	    pixmask->ymin < (int32_t)c->img->height &&
 	    pixmask->xmin + pixmask->width >= 0 &&
 	    pixmask->ymin + pixmask->height >= 0) {
 		pixmask_full(pixmask);
@@ -499,32 +501,36 @@ static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle)
 {
 	pixmask->xmin = 0;
 	pixmask->ymin = 0;
-	uint32_t xmax = 0;
-	uint32_t ymax = 0;
+	int32_t xmax = 0;
+	int32_t ymax = 0;
+	bool init_vals = true;
 	for (uint16_t i = 0; i < turtle->N; i++) {
 		turtle_step *step = turtle_ref_step((turtle_t*)turtle, i);
-		uint32_t box[4];
-		turtle_step_get_box(step, box);
-
-		if (0 == i) {
-			pixmask->xmin = box[0];
-			pixmask->ymin = box[1];
-			xmax = box[2];
-			ymax = box[3];
-		} else {
-			if (box[0] < pixmask->xmin)
+		if (CLOSE_PATH != step->type) {
+			int32_t box[4];
+			turtle_step_get_box(step, box);
+			if (init_vals) {
 				pixmask->xmin = box[0];
-			else if (box[2] > xmax)
-				xmax = box[2];
-
-			if (box[1] < pixmask->ymin)
 				pixmask->ymin = box[1];
-			else if (box[3] > ymax)
+				xmax = box[2];
 				ymax = box[3];
+				init_vals = false;
+			} else {
+				if (box[0] < pixmask->xmin)
+					pixmask->xmin = box[0];
+				if (box[1] < pixmask->ymin)
+					pixmask->ymin = box[1];
+				if (box[2] > xmax)
+					xmax = box[2];
+				if (box[3] > ymax)
+					ymax = box[3];
+			}
 		}
 	}
-	pixmask->width = xmax - pixmask->xmin + 1;
-	pixmask->height = ymax - pixmask->ymin + 1;
+	pixmask->width = xmax - pixmask->xmin + 3;
+	pixmask->height = ymax - pixmask->ymin + 3;
+	pixmask->xmin -= 1;
+	pixmask->ymin -= 1;
 	
 	pixmask_alloc_pix(pixmask);
 }
@@ -540,7 +546,7 @@ static void pixmask_alloc_pix(pixmask_t *pixmask)
 	}
 }
 
-static void turtle_step_get_box(const turtle_step *step, uint32_t box[4])
+static void turtle_step_get_box(const turtle_step *step, int32_t box[4])
 {
 	int sx = (int)(step->x + 0.5);
 	int sy = (int)(step->y + 0.5);
@@ -548,15 +554,15 @@ static void turtle_step_get_box(const turtle_step *step, uint32_t box[4])
 	    QRCURVE_TO == step->type) {
 		int cx = (int)(step->data[0] + 0.5);
 		int cy = (int)(step->data[1] + 0.5);
-			box[0] = MIN(sx, cx);
-			box[2] = MAX(sx, cx);
-			box[1] = MIN(sy, cy);
-			box[3] = MAX(sy, cy);
-	} else if (CURVE_TO) {
+		box[0] = MIN(sx, cx);
+		box[1] = MIN(sy, cy);
+		box[2] = MAX(sx, cx);
+		box[3] = MAX(sy, cy);
+	} else if (CURVE_TO == step->type) {
 		int c0x = (int)(step->data[0] + 0.5);
 		int c0y = (int)(step->data[1] + 0.5);
-		int c1x = (int)(step->data[0] + 0.5);
-		int c1y = (int)(step->data[1] + 0.5);
+		int c1x = (int)(step->data[2] + 0.5);
+		int c1y = (int)(step->data[3] + 0.5);
 		if (c0x < c1x) {
 			box[0] = MIN(sx, c0x);
 			box[2] = MAX(sx, c1x);
@@ -586,41 +592,32 @@ static void pixmask_full(pixmask_t *pixmask)
 
 static void pixmask_unfill_outside(pixmask_t *pixmask)
 {
-	for (uint32_t i = 0; i < pixmask->width; i++) {
-		uint32_t x = pixmask->xmin + i;
-		uint32_t y =  0;
-		nb_graphics_rasterizer_fill(x, y, 0,
-					    pixmask_unset_pixel,
-					    pixmask_pixel_is_not_empty,
-					    pixmask->width,
-					    pixmask->height,
-					    pixmask);
-		
-		y = pixmask->height - 1;
-		nb_graphics_rasterizer_fill(x, y, 0,
-					    pixmask_unset_pixel,
-					    pixmask_pixel_is_not_empty,
-					    pixmask->width,
-					    pixmask->height,
-					    pixmask);
+	nb_graphics_rasterizer_fill(0, 0, 0,
+				    pmask_abs_unset_pixel,
+				    pmask_abs_pixel_is_not_empty,
+				    pixmask->width,
+				    pixmask->height,
+				    pixmask);
+}
+
+static void pmask_abs_unset_pixel(int x, int y, uint8_t i, void *pixmask)
+{
+	pixmask_t *pm = pixmask;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		pm->pix[p] = 0;
 	}
-	for (uint32_t i = 1; i < pixmask->height - 1; i++) {
-		uint32_t x =  0;
-		uint32_t y = pixmask->ymin + i;
-		nb_graphics_rasterizer_fill(x, y, 0,
-					    pixmask_unset_pixel,
-					    pixmask_pixel_is_not_empty,
-					    pixmask->width,
-					    pixmask->height,
-					    pixmask);
-		x = pixmask->width - 1;		
-		nb_graphics_rasterizer_fill(x, y, 0,
-					    pixmask_unset_pixel,
-					    pixmask_pixel_is_not_empty,
-					    pixmask->width,
-					    pixmask->height,
-					    pixmask);
+}
+
+static bool pmask_abs_pixel_is_not_empty(int x, int y, const void *pixmask)
+{
+	const pixmask_t *pm = pixmask;
+	bool out = false;
+	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
+		uint32_t p = y * pm->width + x;
+		out = (0 < pm->pix[p]);
 	}
+	return out;
 }
 
 static void pixmask_set_pixel(int x, int y, uint8_t i, void *pixmask)
@@ -640,13 +637,17 @@ static void pixmask_fill_surrounded_pixel(int x, int y, uint8_t i, void *pixmask
 	x = x - pm->xmin;
 	y = y - pm->ymin;
 	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
-		uint32_t p = y * pm->width + x;
-		if (pixmask_pixel_is_not_empty(x-1, y, pixmask)) {
-			if (pixmask_pixel_is_not_empty(x+1, y, pm))
-				if (pixmask_pixel_is_not_empty(x, y-1, pixmask))
-					if (pixmask_pixel_is_not_empty(x, y+1,
-								     pixmask))
+		if (pmask_abs_pixel_is_not_empty(x-1, y, pixmask)) {
+			if (pmask_abs_pixel_is_not_empty(x+1, y, pm)) {
+				if (pmask_abs_pixel_is_not_empty(x, y-1,
+								 pixmask)) {
+					if (pmask_abs_pixel_is_not_empty(x, y+1,
+									 pixmask)) {
+						uint32_t p = y * pm->width + x;
 						pm->pix[p] = 255;
+					}
+				}
+			}
 		}
 	}
 }
@@ -654,12 +655,7 @@ static void pixmask_fill_surrounded_pixel(int x, int y, uint8_t i, void *pixmask
 static void pixmask_unset_pixel(int x, int y, uint8_t i, void *pixmask)
 {
 	pixmask_t *pm = pixmask;
-	x = x - pm->xmin;
-	y = y - pm->ymin;
-	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
-		uint32_t p = y * pm->width + x;
-		pm->pix[p] = 0;
-	}
+	pmask_abs_unset_pixel(x - pm->xmin, y - pm->ymin, i, pm);
 }
 
 static uint8_t pixmask_get_intensity(const void *pixmask, int x, int y)
@@ -678,30 +674,21 @@ static uint8_t pixmask_get_intensity(const void *pixmask, int x, int y)
 static bool pixmask_pixel_is_not_empty(int x, int y, const void *pixmask)
 {
 	const pixmask_t *pm = pixmask;
-	bool out = false;
-	x = x - pm->xmin;
-	y = y - pm->ymin;
-	if (x >= 0 && x < pm->width && y >= 0 && y < pm->height) {
-		uint32_t p = y * pm->width + x;
-		out = (0 < pm->pix[p]);
-	}
-	return out;
+	return pmask_abs_pixel_is_not_empty(x - pm->xmin, y - pm->ymin, pm);
 }
 
 static void pixmask_blend_image(const pixmask_t *pixmask,
-			      const source_t *source,
-			      uint8_t intensity,
-			      vcn_image_t *img)
+				const source_t *source,
+				uint8_t intensity,
+				vcn_image_t *img)
 {
 	uint8_t pix[4];
-	int i0 = MAX(0, -pixmask->xmin);
-	int j0 = MAX(0, -pixmask->ymin);
-	int w = MIN(pixmask->width, img->width - pixmask->xmin);
-	int h = MIN(pixmask->height, img->height - pixmask->ymin);
-	for (uint32_t i = i0; i < w; i++) {
-		for (uint32_t j = j0; j < h; j++) {
-			int32_t x = pixmask->xmin + i;
-			int32_t y = pixmask->ymin + j;
+	int x0 = MAX(0, pixmask->xmin);
+	int y0 = MAX(0, pixmask->ymin);
+	int w = MIN(img->width, pixmask->xmin + pixmask->width);
+	int h = MIN(img->height, pixmask->ymin + pixmask->height);
+	for (int32_t x = x0; x < w; x++) {
+		for (int32_t y = y0; y < h; y++) {
 			if (pixmask_pixel_is_not_empty(x, y, pixmask)) {
 				float I = (intensity/255.0f) *
 					(pixmask_get_intensity(pixmask, x, y)/

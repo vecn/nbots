@@ -8,8 +8,8 @@
 
 #include "rasterizer.h"
 
-#define PIX_STACK_STATIC_SIZE 50
-#define PIX_STACK_DYNAMIC_INCREMENTS 50
+#define PIX_STACK_STATIC_SIZE 500
+#define PIX_STACK_DYNAMIC_INCREMENTS 500
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -1142,7 +1142,7 @@ void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 /* 4-way scanline */
 {
 	if (!pixel_is_empty(x, y, pixel_data))
-		return;
+		goto EXIT;
 
 	pix_stack_t *pix_stack = alloca(sizeof(*pix_stack));
 	init_stack(pix_stack, width);
@@ -1183,6 +1183,8 @@ void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 		}
 	}
 	finish_stack(pix_stack);
+ EXIT:
+	return;
 }
 
 static void init_stack(pix_stack_t *ps, int32_t img_width)
