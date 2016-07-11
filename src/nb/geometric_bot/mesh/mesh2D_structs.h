@@ -1,6 +1,7 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
 #define __NB_GEOMETRIC_BOT_MESH_MESH2D_STRUCTURES_H__
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -89,6 +90,9 @@ struct vcn_mesh_s {
 	nb_container_t* ht_trg;   /* Hash table of triangles */
 	nb_container_t* ht_edge;   /* Hash table of segments */
 
+	/* Memory built-in handlers*/
+	nb_membank_t *trg_membank;
+
 	/* Scale and shift values to handle floating point error */
 	double scale;
 	double xdisp;
@@ -172,7 +176,9 @@ msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 
-msh_trg_t* mtrg_create(void);
+msh_trg_t *mtrg_calloc(nb_membank_t *membank);
+void mtrg_free(nb_membank_t *membank, msh_trg_t *trg);
+
 bool mtrg_has_an_input_vertex(const msh_trg_t *const trg);
 msh_vtx_t* mtrg_get_opposite_vertex_guided(const msh_trg_t *const trg, 
 					   const msh_edge_t *const sgm,

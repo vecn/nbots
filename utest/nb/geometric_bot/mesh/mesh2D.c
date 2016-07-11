@@ -112,7 +112,7 @@ static void test_generate_from_model_length_constraint(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
-	CU_ASSERT(9800 < N_edge && 10200 > N_trg);
+	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
 }
 
 static void test_generate_from_model_huge_scale(void)
@@ -129,7 +129,7 @@ static void test_generate_from_model_huge_scale(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
-	CU_ASSERT(9800 < N_edge && 10200 > N_trg);
+	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
 }
 
 static void test_generate_from_model_tiny_scale(void)
@@ -146,7 +146,7 @@ static void test_generate_from_model_tiny_scale(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
-	CU_ASSERT(9800 < N_edge && 10200 > N_trg);
+	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
 }
 
 static void test_generate_from_model_simple_square(void)

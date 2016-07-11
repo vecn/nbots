@@ -594,7 +594,7 @@ static inline nb_container_t* remove_encroached_triangles
 		if (NULL != big_trg)
 			nb_container_delete(big_trg, trg);
 
-		free(trg);
+		mtrg_free(mesh->trg_membank, trg);
 	}
 	nb_container_destroy(encroached_trg);
 
@@ -664,7 +664,7 @@ static inline void retriangulate_fan
 					       v_pivot, vtx);
 
 		/* Create triangle */
-		msh_trg_t *restrict trg = mtrg_create();
+		msh_trg_t *trg = mtrg_calloc(mesh->trg_membank);
 		trg->v1 = (msh_vtx_t*) v_pivot;
 		trg->v2 = vtx;
 		trg->v3 = v3;

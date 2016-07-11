@@ -80,9 +80,8 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const vcn_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
 					 const msh_vtx_t *const  v2);
-static msh_trg_t* create_1st_trg(const nb_container_t *const edges,
-				 search_vtx_t* search_vtx);
-static msh_trg_t* create_trg(const nb_container_t *const edges,
+static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx);
+static msh_trg_t* create_trg(vcn_mesh_t *mesh,
 			     search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
 static void update_AFL(nb_container_t *AFL,
@@ -385,24 +384,23 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 	return v3;
 }
 
-static msh_trg_t* create_1st_trg(const nb_container_t *const edges,
-				 search_vtx_t* search_vtx)
+static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx)
 {
 	msh_vtx_t *v1 = get_1st_vtx(search_vtx);
 	msh_vtx_t *v2 = get_2nd_vtx(search_vtx, v1);
-	msh_vtx_t *v3 = get_3rd_vtx(edges, search_vtx, v1, v2);
+	msh_vtx_t *v3 = get_3rd_vtx(mesh->ht_edge, search_vtx, v1, v2);
   
 	if (NULL == v3) {
 		/* Check in the other halfspace */
 		msh_vtx_t *aux_vtx = v1;
 		v1 = v2;
 		v2 = aux_vtx;
-		v3 = get_3rd_vtx(edges, search_vtx, v1, v2);
+		v3 = get_3rd_vtx(mesh->ht_edge, search_vtx, v1, v2);
 	}
 
 	msh_trg_t *trg;
 	if (NULL != v3) {
-		trg = mtrg_create();
+		trg = mtrg_calloc(mesh->trg_membank);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -419,7 +417,7 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 	return search_vtx->vtx_array[search_vtx->N_half];
 }
 
-static msh_trg_t* create_trg(const nb_container_t *const edges,
+static msh_trg_t* create_trg(vcn_mesh_t *mesh,
 			     search_vtx_t *search_vtx,
 			     msh_edge_t *edge)
 {
@@ -434,11 +432,12 @@ static msh_trg_t* create_trg(const nb_container_t *const edges,
 		v2 = edge->v1;
 	}
 
-	msh_vtx_t *restrict v3 = get_3rd_vtx(edges, search_vtx, v1, v2);
+	msh_vtx_t *restrict v3 = get_3rd_vtx(mesh->ht_edge,
+					     search_vtx, v1, v2);
 
 	msh_trg_t *trg = NULL;
 	if(NULL != v3) {
-		trg = mtrg_create();
+		trg = mtrg_calloc(mesh->trg_membank);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -684,8 +683,7 @@ static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
 {
 	bool trg_created = false;
 	if (0 < search_vtx->N_half) {
-		msh_trg_t* first_trg =	create_1st_trg(mesh->ht_edge,
-						       search_vtx);
+		msh_trg_t* first_trg =	create_1st_trg(mesh, search_vtx);
 		if (NULL != first_trg) {
 			mesh_add_triangle(mesh, first_trg);
 			nb_container_insert(AFL, first_trg->s1);
@@ -713,8 +711,7 @@ static uint32_t triangulate_wall(vcn_mesh_t *mesh,
 	uint32_t n_trg_alpha = 0;
 	while (nb_container_is_not_empty(AFL_alpha)) {
 		msh_edge_t* edge = nb_container_delete_first(AFL_alpha);
-		msh_trg_t* trg = create_trg(mesh->ht_edge,
-					    search_vtx, edge);
+		msh_trg_t* trg = create_trg(mesh, search_vtx, edge);
 		if (NULL != trg) {
 			mesh_add_triangle(mesh, trg);
 			update_AFLs(trg, edge, AFL_alpha, AFL_1, AFL_2,

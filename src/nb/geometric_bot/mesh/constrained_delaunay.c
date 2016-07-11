@@ -137,7 +137,7 @@ static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 		nb_container_insert(vertices, trg->v2);
 		nb_container_insert(vertices, trg->v3);
 		mesh_substract_triangle(mesh, trg);
-		free(trg);
+		mtrg_free(mesh->trg_membank, trg);
 	}
 	nb_container_destroy(intersected_trg);
 	return vertices;
@@ -261,7 +261,7 @@ static msh_trg_t* create_trg_constrained
 	const msh_vtx_t *const restrict v3 = vtx_near;
 
 	/* Create and insert triangle */
-	msh_trg_t *const restrict new_trg = calloc(1, sizeof(*new_trg));
+	msh_trg_t *new_trg = mtrg_calloc(mesh->trg_membank);
 
 	new_trg->v1 = (msh_vtx_t*)v1; /* Casting from const to non-const pointer */
 	new_trg->v2 = (msh_vtx_t*)v2; /* in order to assign it to the new        */

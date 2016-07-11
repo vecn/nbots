@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <alloca.h>
 
 #include "nb/math_bot.h"
@@ -390,9 +391,14 @@ inline msh_trg_t* medge_get_opposite_triangle
 	return NULL;
 }
 
-inline msh_trg_t* mtrg_create(void)
+msh_trg_t *mtrg_calloc(nb_membank_t *membank)
 {
-	return (msh_trg_t*) calloc(1, sizeof(msh_trg_t));
+	return nb_membank_calloc(membank);
+}
+
+void mtrg_free(nb_membank_t *membank, msh_trg_t *trg)
+{
+	nb_membank_free(membank, trg);
 }
 
 inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
