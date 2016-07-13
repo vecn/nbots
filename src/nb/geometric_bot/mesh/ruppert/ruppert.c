@@ -577,8 +577,7 @@ static inline nb_container_t* remove_encroached_triangles
 	/* Destroy encroached triangles */
 	nb_container_t *orfan_vtx = nb_container_create(NB_SORTED);
 	while (nb_container_is_not_empty(encroached_trg)) {
-		msh_trg_t *const restrict trg =
-			nb_container_delete_first(encroached_trg);
+		msh_trg_t *trg = nb_container_delete_first(encroached_trg);
 		/* Set vertices as orfans :( */
 		nb_container_insert(orfan_vtx, trg->v1);
 		nb_container_insert(orfan_vtx, trg->v2);
@@ -722,10 +721,8 @@ void insert_vertex(vcn_mesh_t *mesh,
 		   /* l_new_trg: NULL if not required */
 		   nb_container_t *const restrict l_new_trg)
 {
-	/* Insert vertex in the built-in structure */
 	vcn_bins2D_insert(mesh->ug_vtx, cc);
 
-	/* Remove encroached triangles */
 	nb_container_t* orfan_vertices =
 		remove_encroached_triangles(mesh, trg_containing_cc, 
 					    cc, NULL, big_trg,
@@ -747,7 +744,6 @@ static inline void insert_midpoint
 			      msh_edge_t* subsgm[2],
 			      nb_container_t *const restrict l_new_trg)
 {
-	/* Insert vertex in the built-in structure */
 	vcn_bins2D_insert(mesh->ug_vtx, v);
 
 	/* Split the subsegment */  
