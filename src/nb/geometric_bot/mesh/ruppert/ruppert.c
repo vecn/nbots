@@ -606,33 +606,33 @@ static inline msh_vtx_t* retrg_fan_get_next_trg
 			   msh_vtx_t ** orfan_vtx,
 			   const msh_vtx_t *const v1,
 			   const msh_vtx_t *const v2){
-  double reference_angle = atan2(v2->x[1] - v1->x[1],
-				 v2->x[0] - v1->x[0]);
-  double min_angle = NB_MATH_PI;
-  uint32_t i3 = *N_orfan_vtx;
-  for (uint32_t i = 0; i < *N_orfan_vtx; i++) {
-    if (v2 == orfan_vtx[i])
-      continue;
-    double angle = atan2(orfan_vtx[i]->x[1] - v1->x[1],
-			 orfan_vtx[i]->x[0] - v1->x[0]);
-    double angle_diff = angle - reference_angle;
-    if (angle_diff < 0.0)
-      angle_diff += 2.0 * NB_MATH_PI;
-    if (angle_diff < min_angle) {
-      i3 = i;
-      min_angle = angle_diff;
-    }
-  }
+	double reference_angle = atan2(v2->x[1] - v1->x[1],
+				       v2->x[0] - v1->x[0]);
+	double min_angle = NB_MATH_PI;
+	uint32_t i3 = *N_orfan_vtx;
+	for (uint32_t i = 0; i < *N_orfan_vtx; i++) {
+		if (v2 == orfan_vtx[i])
+			continue;
+		double angle = atan2(orfan_vtx[i]->x[1] - v1->x[1],
+				     orfan_vtx[i]->x[0] - v1->x[0]);
+		double angle_diff = angle - reference_angle;
+		if (angle_diff < 0.0)
+			angle_diff += 2.0 * NB_MATH_PI;
+		if (angle_diff < min_angle) {
+			i3 = i;
+			min_angle = angle_diff;
+		}
+	}
   
-  if (i3 < *N_orfan_vtx) {
-    *N_orfan_vtx -= 1;
-    msh_vtx_t* aux = orfan_vtx[i3];
-    orfan_vtx[i3] = orfan_vtx[*N_orfan_vtx];
-    orfan_vtx[*N_orfan_vtx] = aux;
-    return aux;
-  } else {
-    return NULL;
-  }
+	if (i3 < *N_orfan_vtx) {
+		*N_orfan_vtx -= 1;
+		msh_vtx_t* aux = orfan_vtx[i3];
+		orfan_vtx[i3] = orfan_vtx[*N_orfan_vtx];
+		orfan_vtx[*N_orfan_vtx] = aux;
+		return aux;
+	} else {
+		return NULL;
+	}
 }
 
 static inline void retriangulate_fan

@@ -12,18 +12,18 @@
 
 #define MAX_CHUNK_SIZE 16 /* Bytes */
 
-static int8_t swap_chunks(void* base, uint32_t i, uint32_t j,
-			  uint32_t type_size, uint8_t swapped_bytes, 
+static int32_t swap_chunks(void* base, uint32_t i, uint32_t j,
+			  uint32_t type_size, uint32_t swapped_bytes, 
 			  uint8_t chunk_size);
 static void swap_mem(void* base, uint32_t i, uint32_t j,
-		     uint32_t type_size, uint8_t swapped_bytes,
+		     uint32_t type_size, uint32_t swapped_bytes,
 		     uint8_t chunk_size);
 static char* get_pos(const void *const base, uint32_t type_size,
 		     uint32_t i);
 static void swap_bytes(void* base, uint32_t i, uint32_t j,
-		       uint32_t type_size, uint8_t swapped_bytes);
+		       uint32_t type_size, uint32_t swapped_bytes);
 static void swap_byte(void* base, uint32_t i, uint32_t j,
-		      uint32_t type_size, uint8_t swapped_bytes);
+		      uint32_t type_size, uint32_t swapped_bytes);
 static void qsort_data(void *base, int32_t p, int32_t r, uint16_t type_size,
 		       int8_t (*compare)(), const void *const data);
 static int lomuto_partition(void *base, int32_t p, int32_t r, uint16_t type_size,
@@ -48,14 +48,14 @@ inline void* vcn_array_get(const void *const base, uint16_t type_size,
 
 void vcn_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size)
 {
-	int8_t swapped_bytes = swap_chunks(base, i, j, type_size, 0, 8);
+	int32_t swapped_bytes = swap_chunks(base, i, j, type_size, 0, 8);
 	swapped_bytes = swap_chunks(base, i, j, type_size, swapped_bytes, 4);
 	swapped_bytes = swap_chunks(base, i, j, type_size, swapped_bytes, 2);
 	swap_bytes(base, i, j, type_size, swapped_bytes);
 }
 
-static inline int8_t swap_chunks(void* base, uint32_t i, uint32_t j,
-				 uint32_t type_size, uint8_t swapped_bytes, 
+static inline int32_t swap_chunks(void* base, uint32_t i, uint32_t j,
+				 uint32_t type_size, uint32_t swapped_bytes, 
 				 uint8_t chunk_size)
 {
 	while (type_size - swapped_bytes > chunk_size) {
@@ -66,7 +66,7 @@ static inline int8_t swap_chunks(void* base, uint32_t i, uint32_t j,
 }
 
 static inline void swap_mem(void* base, uint32_t i, uint32_t j,
-			    uint32_t type_size, uint8_t swapped_bytes, 
+			    uint32_t type_size, uint32_t swapped_bytes, 
 			    uint8_t chunk_size)
 {
 	char aux[MAX_CHUNK_SIZE];
@@ -83,7 +83,7 @@ static inline char* get_pos(const void *const base, uint32_t size, uint32_t i)
 }
 
 static inline void swap_bytes(void* base, uint32_t i, uint32_t j,
-			      uint32_t type_size, uint8_t swapped_bytes)
+			      uint32_t type_size, uint32_t swapped_bytes)
 {
 	while (swapped_bytes < type_size){
 		swap_byte(base, i, j, type_size, swapped_bytes);
@@ -92,7 +92,7 @@ static inline void swap_bytes(void* base, uint32_t i, uint32_t j,
 }
 
 static inline void swap_byte(void* base, uint32_t i, uint32_t j,
-			     uint32_t type_size, uint8_t swapped_bytes)
+			     uint32_t type_size, uint32_t swapped_bytes)
 {
 	register char *i_pos = get_pos(base, type_size, i) + swapped_bytes;
 	register char *j_pos = get_pos(base, type_size, j) + swapped_bytes;

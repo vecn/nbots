@@ -9,8 +9,8 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-#define STATIC_SIZE 5000
-#define MASK_SIZE 625 /* 5000 / 8 */
+#define STATIC_SIZE 8000
+#define MASK_SIZE 1000
 #define DIV_FREED_TO_ALLOC 3
 #define MIN_MAX_DYNAMIC 100
 
@@ -19,7 +19,7 @@ typedef struct block_s block_t;
 struct block_s {
 	uint16_t N_max;
 	uint16_t N_align;
-	uint16_t N_freed;
+	uint16_t N_free;
 	char *buffer;
 	char *mask;
 	block_t *next;
@@ -56,15 +56,16 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC,
 				     STATIC_SIZE / type_size);
 	membank->block.N_max = STATIC_SIZE / type_size;
+	membank->block.N_free = STATIC_SIZE / type_size;
 	membank->block.buffer = membank->static_buffer;
 	membank->block.mask = membank->static_mask;
 }
 
-void* nb_membank_calloc(nb_membank_t *membank)
+void *nb_membank_calloc(nb_membank_t *membank)
 {
 	block_t *block = &(membank->block);
 	void *mem = NULL;
-	while (NULL == mem) {
+	while (NULL == mem && NULL != block) {
 		mem = block_calloc(block, membank->type_size);
 		if (NULL == mem && NULL == block->next)
 			block->next = block_create(membank->type_size,
@@ -74,29 +75,23 @@ void* nb_membank_calloc(nb_membank_t *membank)
 	return mem;
 }
 
-static void* block_calloc(block_t *block, uint16_t type_size)
+static void *block_calloc(block_t *block, uint16_t type_size)
 {
-	void *mem = NULL;
+	int i = block->N_max;
 	if (block->N_align < block->N_max) {
-		printf("calloc(%i) in %p\n", block->N_align, block);/* TEMPL */
-		mem = block->buffer + block->N_align * type_size;
-		set_mask(block->mask, block->N_align);
+		i = block->N_align;
 		block->N_align += 1;
-	} else if (block->N_freed > block->N_max / DIV_FREED_TO_ALLOC) {
-		int i = 0;
+	} else if (block->N_free > block->N_max / DIV_FREED_TO_ALLOC) {
+		i = 0;
 		while (mask_is_set(block->mask, i))
 			i += 1;
-		printf("realloc(%i) in %p\n", i, block);/* TEMPORAL */
-		/* AQUI VOY :
-		 *
-		 * calloc(38) in A
-		 * free(38) in A
-		 * realloc(38) in A
-		 * free(38) in A
-		 */
+	}
+	void *mem = NULL;
+	if (i < block->N_max) {
 		mem = block->buffer + i * type_size;
+		memset(mem, 0, type_size);
 		set_mask(block->mask, i);
-		block->N_freed -= 1;
+		block->N_free -= 1;
 	}
 	return mem;
 }
@@ -107,11 +102,14 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 	uint32_t buffer_size = type_size * N_max;
 	uint32_t mask_size = N_max / 8 + (N_max % 8 > 0)?1:0;
 	uint32_t size = block_size + buffer_size + mask_size;
-	char* memory = nb_calloc(size);
-	block_t *block = (void*)memory;
+
+	char *memory = nb_calloc(size);
+
+	block_t *block = (void*) memory;
 	block->N_max = N_max;
-	block->buffer = (void*)(memory + block_size);
-	block->mask = (void*)(memory + block_size + buffer_size);
+	block->N_free = N_max;
+	block->buffer = memory + block_size;
+	block->mask = memory + block_size + buffer_size;
 	return block;
 }
 
@@ -150,7 +148,7 @@ static bool block_is_in_buffer(const block_t *block,
 				  uint16_t type_size, char *mem)
 {
 	return mem >= block->buffer && 
-		mem < block->buffer + block->N_align * type_size;
+		mem < block->buffer + block->N_max * type_size;
 
 }
 
@@ -158,10 +156,9 @@ static void block_free(block_t *block, uint16_t type_size,
 		       char *mem)
 {
 	int i = (mem - block->buffer) / type_size;
-	printf("free(%i) in %p\n", i, block);/* TEMPORAL */
 	if (mask_is_set(block->mask, i)) {
 		unset_mask(block->mask, i);
-		block->N_freed += 1;
+		block->N_free += 1;
 		if (i == block->N_align - 1) {
 			do {
 				block->N_align -= 1;
