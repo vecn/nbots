@@ -50,7 +50,7 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v);
 static nb_container_t* get_encroached_triangles
                              (const msh_trg_t *const first_trg_to_check,
 			      const msh_vtx_t *const v);
-static void check_encroached_neghbours(const msh_trg_t *trg,
+static void check_encroached_neighbours(const msh_trg_t *trg,
 				       nb_container_t *encroached_trg,
 				       nb_container_t *unencroached_trg,
 				       nb_container_t *processing_trg);
@@ -538,7 +538,7 @@ static nb_container_t* get_encroached_triangles
 								  trg->v3->x,
 								  v->x)) {
 			nb_container_insert(encroached_trg, trg);
-			check_encroached_neghbours(trg, encroached_trg,
+			check_encroached_neighbours(trg, encroached_trg,
 						   unencroached_trg,
 						   processing_trg);
 		} else {
@@ -552,7 +552,7 @@ static nb_container_t* get_encroached_triangles
 	return encroached_trg;
 }
 
-static void check_encroached_neghbours(const msh_trg_t *trg,
+static void check_encroached_neighbours(const msh_trg_t *trg,
 				       nb_container_t *encroached_trg,
 				       nb_container_t *unencroached_trg,
 				       nb_container_t *processing_trg)
