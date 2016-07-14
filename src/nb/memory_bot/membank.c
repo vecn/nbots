@@ -9,7 +9,6 @@
 
 #define STATIC_SIZE 8000
 #define MASK_SIZE 1000
-#define DIV_FREED_TO_ALLOC 5
 #define MIN_MAX_DYNAMIC 100
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -22,10 +21,14 @@
 	((mask)[(i)/8] &=  ~(1 << ((i)%8)))
 #define IS_MASK_DISABLED(mask, i)		\
 	(!IS_MASK_ENABLED(mask, i))
-#define IS_MASK_BYTE_FULL(mask, char_id)	\
-	(~((mask)[(char_id)]) == 0)
-#define IS_MASK_BYTE_ENABLED(mask, char_id, bit_id)	\
-	((mask)[(char_id)] & (1 << (bit_id)))
+#define IS_MASK_64_FULL(mask, i)		\
+	(~((uint64_t*)(mask))[(i)] == 0)
+#define IS_MASK_32_FULL(mask, i)		\
+	(~((uint32_t*)(mask))[(i)] == 0)
+#define IS_MASK_16_FULL(mask, i)		\
+	(~((uint16_t*)(mask))[(i)] == 0)
+#define IS_MASK_BYTE_FULL(mask, i)		\
+	(~((uint8_t*)(mask))[(i)] == 0)
 
 typedef struct block_s block_t;
 
@@ -98,16 +101,27 @@ static void *block_calloc(block_t *block, uint16_t type_size)
 	if (block->N_align < block->N_max) {
 		i = block->N_align;
 		block->N_align += 1;
-	} else if (block->N_free > block->N_max / DIV_FREED_TO_ALLOC) {
-		int char_id = 0;
-		while (IS_MASK_BYTE_FULL(block->mask, char_id))
-			char_id += 1;
+	} else if (block->N_free > 0) {
+		i = 0;
+		while (IS_MASK_64_FULL(block->mask, i))
+			i++;
 
-		int bit_id = 0;
-		while (IS_MASK_BYTE_ENABLED(block->mask, char_id, bit_id))
-			bit_id += 1;
+		i <<= 1;
+		while (IS_MASK_32_FULL(block->mask, i))
+			i++;
 
-		i = char_id * 8 + bit_id;
+		i <<= 1;
+		while (IS_MASK_16_FULL(block->mask, i))
+			i++;
+
+		i <<= 1;
+		while (IS_MASK_BYTE_FULL(block->mask, i))
+			i++;
+
+		i <<= 3;
+		while (IS_MASK_ENABLED(block->mask, i))
+			i++;
+
 	} else {
 		goto EXIT;
 	}
@@ -123,7 +137,8 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 {
 	uint32_t block_size = sizeof(block_t);
 	uint32_t buffer_size = type_size * N_max;
-	uint32_t mask_size = N_max / 8 + ((N_max % 8 > 0)?1:0);
+	                     /* mask_size is 64 bits aligned */
+	uint32_t mask_size = 8 * (N_max / 64 + ((N_max % 64 > 0)?1:0));
 	uint32_t size = block_size + buffer_size + mask_size;
 
 	char *memory = nb_calloc(size);
