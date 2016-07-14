@@ -91,6 +91,7 @@ struct vcn_mesh_s {
 	nb_container_t* ht_edge;   /* Hash table of segments */
 
 	/* Memory built-in handlers*/
+	nb_membank_t *vtx_membank;
 	nb_membank_t *trg_membank;
 
 	/* Scale and shift values to handle floating point error */
@@ -120,9 +121,10 @@ struct vcn_mesh_s {
 	void (*do_after_insert_vtx)(const vcn_mesh_t *const);
 };
 
-msh_vtx_t *mvtx_create(void);
-msh_vtx_t *mvtx_clone(msh_vtx_t *vtx);
-void mvtx_destroy(void *vtx);
+uint8_t mvtx_get_memsize(void);
+msh_vtx_t *mvtx_create(nb_membank_t *membank);
+msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx);
+void mvtx_destroy(nb_membank_t *membank, void *vtx);
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id);
 uint32_t mvtx_get_id(const msh_vtx_t *const vtx);

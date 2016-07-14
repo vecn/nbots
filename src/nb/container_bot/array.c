@@ -55,8 +55,8 @@ void vcn_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size)
 }
 
 static inline int32_t swap_chunks(void* base, uint32_t i, uint32_t j,
-				 uint32_t type_size, uint32_t swapped_bytes, 
-				 uint8_t chunk_size)
+				  uint32_t type_size, uint32_t swapped_bytes, 
+				  uint8_t chunk_size)
 {
 	while (type_size - swapped_bytes > chunk_size) {
 		swap_mem(base, i, j, type_size, swapped_bytes, chunk_size);

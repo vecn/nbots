@@ -19,29 +19,34 @@ static bool mesh_remove_edge
 			const msh_vtx_t *const v1,
 			const msh_vtx_t *const v2);
 
-msh_vtx_t *mvtx_create(void)
+uint8_t mvtx_get_memsize(void)
 {
-	uint16_t size_point = sizeof(vcn_point2D_t);
-	char *memblock = calloc(size_point + sizeof(vtx_attr_t), 1);
+	return sizeof(msh_vtx_t) + sizeof(vtx_attr_t);
+}
+
+msh_vtx_t *mvtx_create(nb_membank_t *membank)
+{
+	char *memblock = nb_membank_calloc(membank);
 	msh_vtx_t* vtx = (void*) memblock;
-	vtx->attr = (void*)(memblock + size_point);
+	vtx->attr = (void*)(memblock + sizeof(msh_vtx_t));
 	return vtx;
 }
 
-msh_vtx_t *mvtx_clone(msh_vtx_t *vtx)
+msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx)
 {
-	msh_vtx_t *clone = mvtx_create();
-	vtx_attr_t *attr = vtx->attr;
+	msh_vtx_t *clone = mvtx_create(membank);
+	memcpy(clone->x, vtx->x, 2 * sizeof(*(vtx->x)));
+	vtx_attr_t *vtx_attr = vtx->attr;
 	vtx_attr_t *clone_attr = clone->attr;
-	clone_attr->ori = attr->ori;
-	clone_attr->loc = attr->loc;
-	clone_attr->id = attr->id;
+	clone_attr->ori = vtx_attr->ori;
+	clone_attr->loc = vtx_attr->loc;
+	clone_attr->id  = vtx_attr->id;
 	return clone;
 }
 
-void mvtx_destroy(void *vtx)
+void mvtx_destroy(nb_membank_t *membank, void *vtx)
 {
-	free(vtx);
+	nb_membank_free(membank, vtx);
 }
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id)

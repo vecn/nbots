@@ -8,8 +8,8 @@
 #include "nb/memory_bot/membank.h"
 
 #define STATIC_SIZE 8000
-#define MASK_SIZE 1000
-#define MIN_MAX_DYNAMIC 128
+#define MASK_SIZE 1000      /* STATIC SIZE / 8 */
+#define MIN_MAX_DYNAMIC 128 /* 64 aligned */
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -30,7 +30,7 @@
 #define IS_MASK_16_FULL(mask, i)		\
 	(~((uint16_t*)(mask))[(i)] == 0)
 #define IS_MASK_BYTE_FULL(mask, i)		\
-	(~((uint8_t*)(mask))[(i)] == 0)
+	(~((mask)[(i)]) == 0)
 #define IS_MASK_64_EMPTY(mask, i)		\
 	(((uint64_t*)(mask))[(i)] == 0)
 #define IS_MASK_32_EMPTY(mask, i)		\
@@ -38,7 +38,7 @@
 #define IS_MASK_16_EMPTY(mask, i)		\
 	(((uint16_t*)(mask))[(i)] == 0)
 #define IS_MASK_BYTE_EMPTY(mask, i)		\
-	(((uint8_t*)(mask))[(i)] == 0)
+	((mask)[(i)] == 0)
 
 typedef struct block_s block_t;
 
@@ -80,7 +80,7 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 	membank->type_size = type_size;
 	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC,
 				     STATIC_SIZE / type_size);
-	membank->block.N_max = STATIC_SIZE / type_size;
+	membank->block.N_max = 64 * GET_64_ALIGNMENT(STATIC_SIZE / type_size);
 	membank->block.N_free = STATIC_SIZE / type_size;
 	membank->block.buffer = membank->static_buffer;
 	membank->block.mask = membank->static_mask;

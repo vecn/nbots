@@ -140,7 +140,7 @@ void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
 					 sizeof(*(mesh->input_vtx)));
 
 		for (uint32_t i = 0; i < N_vertices; i++) {
-		  msh_vtx_t* vtx = mvtx_create();
+			msh_vtx_t* vtx = mvtx_create(mesh->vtx_membank);
 			mesh->input_vtx[i] = vtx;
 			mvtx_set_type_origin(vtx, INPUT);
 			vtx->x[0] = mesh->scale *
@@ -467,7 +467,8 @@ static uint32_t dewall_recursion
 	/* Ascending sorting of vertices depending on the axe divisor */
 	int8_t axe = deep_level % 2; /* 0:X, 1:Y */
 
-	vcn_qsort_wd(vertices, N, sizeof(*vertices), compare_using_axe, &axe);
+	vcn_qsort_wd(vertices, N, sizeof(*vertices),
+		     compare_using_axe, &axe);
 	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
 	double alpha;
 	if (N > 3) {

@@ -19,6 +19,8 @@
 #define _NB_CC_SHELL_UNIT (1e-3)
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#define NOT_EXIST(container, obj) (!nb_container_exist((container),(obj)))
+
 
 typedef struct {
 	nb_container_t* avl[64];
@@ -42,11 +44,16 @@ static void reallocate_bins(vcn_mesh_t *const restrict mesh);
 static bool check_max_vtx(const vcn_mesh_t *const mesh);
 static bool check_max_trg(const vcn_mesh_t *const mesh);
 static bool is_encroached(const msh_edge_t *const sgm);
-static msh_vtx_t* get_midpoint(const msh_edge_t *const sgm);
+static msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
+			       const msh_edge_t *const sgm);
 static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v);
 static nb_container_t* get_encroached_triangles
                              (const msh_trg_t *const first_trg_to_check,
 			      const msh_vtx_t *const v);
+static void check_encroached_neghbours(const msh_trg_t *trg,
+				       nb_container_t *encroached_trg,
+				       nb_container_t *unencroached_trg,
+				       nb_container_t *processing_trg);
 static nb_container_t* remove_encroached_triangles
              (vcn_mesh_t *const mesh,
 	      msh_trg_t *const first_trg_to_check,
@@ -252,9 +259,9 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 	return out;
 }
 
-bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
+bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
 {
-	msh_vtx_t* new_vtx = mvtx_create();
+	msh_vtx_t* new_vtx = mvtx_create(mesh->vtx_membank);
 
 	/* Move and scale new vertex */
 	new_vtx->x[0] = mesh->scale * (vertex[0] - mesh->xdisp);
@@ -263,7 +270,7 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 	msh_trg_t* trg = mesh_locate_vtx(mesh, new_vtx);
 
 	if (NULL == trg) {
-		mvtx_destroy(new_vtx);
+		mvtx_destroy(mesh->vtx_membank, new_vtx);
 		return false;
 	}
 
@@ -294,14 +301,16 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			trg = hash_trg_remove_first(poor_quality_trg);
 
 		/* Get circumcenter */
-		msh_vtx_t *restrict cc = mvtx_create();
-		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
+		msh_vtx_t *cc = mvtx_create(mesh->vtx_membank);
+		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
+					     trg->v3->x, cc->x);
     
-		msh_trg_t *restrict trg_containing_cc =
+		msh_trg_t *trg_containing_cc =
 			get_trg_containing_circumcenter(mesh, trg, cc);
 
-		nb_container_t *restrict  sgm_encroached_by_cc = 
-			get_sgm_encroached_by_vertex(mesh, trg_containing_cc, cc);
+		nb_container_t *sgm_encroached_by_cc = 
+			get_sgm_encroached_by_vertex(mesh, 
+						     trg_containing_cc, cc);
 		if (nb_container_is_empty(sgm_encroached_by_cc)) {
 			/* Circumcenter accepted */
 			nb_container_t *restrict new_trg = 
@@ -315,7 +324,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			nb_container_destroy(new_trg);
 		} else {
 			/* Circumcenter rejected */
-			free(cc);
+			mvtx_destroy(mesh->vtx_membank, cc);
 
 			/* Process segments encroached by the circumcenter */
 			double d = vcn_utils2D_get_min_trg_edge(trg->v1->x,
@@ -470,11 +479,11 @@ static inline bool is_encroached
 	return is_encroached;
 }
 
-static inline msh_vtx_t* get_midpoint
-                         (const msh_edge_t *const restrict sgm)
+static inline msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
+				      const msh_edge_t *const restrict sgm)
 {
 	/* Calculate the new vertex (using concentric shells) */
-	msh_vtx_t *v = mvtx_create();
+	msh_vtx_t *v = mvtx_create(mesh->vtx_membank);
 	mvtx_set_type_location(v, ONSEGMENT);
   
 	/* Use midpoint */
@@ -507,48 +516,31 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
 	v->x[1] = v1->x[1] * (1.0 - factor) + v2->x[1] * factor;
 }
 
-static inline nb_container_t* get_encroached_triangles
+static nb_container_t* get_encroached_triangles
                         (const msh_trg_t *const restrict first_trg_to_check,
 			 const msh_vtx_t *const restrict v)
 {
 	/* Search encroached triangles */
 	nb_container_t *encroached_trg =
 		nb_container_create(NB_SORTED);
-	nb_container_t *const restrict unencroached_trg =
+	nb_container_t *const unencroached_trg =
 		nb_container_create(NB_SORTED);
-	nb_container_t *const restrict processing_trg =
+	nb_container_t *const processing_trg =
 		nb_container_create(NB_SORTED);
   
 	nb_container_insert(processing_trg, first_trg_to_check);
 
 	while (nb_container_is_not_empty(processing_trg)) {
-		msh_trg_t *const restrict trg = 
-			nb_container_delete_first(processing_trg);
+		msh_trg_t *trg = nb_container_delete_first(processing_trg);
 		/* Check if it is encroached */
 		if (vcn_utils2D_pnt_lies_strictly_in_circumcircle(trg->v1->x,
 								  trg->v2->x,
 								  trg->v3->x,
 								  v->x)) {
 			nb_container_insert(encroached_trg, trg);
-			/* Set the neighbouring triangles to be processed */
-			if (trg->t1 != NULL) {
-				if (!medge_is_subsgm(trg->s1))
-					if (!nb_container_exist(encroached_trg, trg->t1))
-						if (!nb_container_exist(unencroached_trg, trg->t1))
-							nb_container_insert(processing_trg, trg->t1);
-			}
-			if (trg->t2 != NULL) {
-				if (!medge_is_subsgm(trg->s2))
-					if (!nb_container_exist(encroached_trg, trg->t2))
-						if (!nb_container_exist(unencroached_trg, trg->t2))
-							nb_container_insert(processing_trg, trg->t2);
-			}
-			if (trg->t3 != NULL){
-				if (!medge_is_subsgm(trg->s3))
-					if (!nb_container_exist(encroached_trg, trg->t3))
-						if (!nb_container_exist(unencroached_trg, trg->t3))
-							nb_container_insert(processing_trg, trg->t3);
-			}
+			check_encroached_neghbours(trg, encroached_trg,
+						   unencroached_trg,
+						   processing_trg);
 		} else {
 			nb_container_insert(unencroached_trg, trg);
 		}
@@ -560,7 +552,35 @@ static inline nb_container_t* get_encroached_triangles
 	return encroached_trg;
 }
 
-static inline nb_container_t* remove_encroached_triangles
+static void check_encroached_neghbours(const msh_trg_t *trg,
+				       nb_container_t *encroached_trg,
+				       nb_container_t *unencroached_trg,
+				       nb_container_t *processing_trg)
+{
+	if (trg->t1 != NULL) {
+		if (!medge_is_subsgm(trg->s1))
+			if (NOT_EXIST(encroached_trg, trg->t1))
+				if (NOT_EXIST(unencroached_trg,	trg->t1))
+					nb_container_insert(processing_trg,
+							    trg->t1);
+	}
+	if (trg->t2 != NULL) {
+		if (!medge_is_subsgm(trg->s2))
+			if (NOT_EXIST(encroached_trg, trg->t2))
+				if (NOT_EXIST(unencroached_trg,	trg->t2))
+					nb_container_insert(processing_trg,
+							    trg->t2);
+	}
+	if (trg->t3 != NULL){
+		if (!medge_is_subsgm(trg->s3))
+			if (NOT_EXIST(encroached_trg, trg->t3))
+				if (NOT_EXIST(unencroached_trg,	trg->t3))
+					nb_container_insert(processing_trg,
+							    trg->t3);
+	}
+}
+
+static nb_container_t* remove_encroached_triangles
              (vcn_mesh_t *const restrict mesh,
 	      msh_trg_t *const restrict first_trg_to_check,
 	      const msh_vtx_t *const restrict v,
@@ -635,27 +655,26 @@ static inline msh_vtx_t* retrg_fan_get_next_trg
 	}
 }
 
-static inline void retriangulate_fan
-                             (vcn_mesh_t *const restrict mesh,
-			      const msh_vtx_t *const restrict v_pivot,
-			      const msh_vtx_t *const restrict v_start,
-			      nb_container_t *restrict orfan_vtx,
-			      /* l_new_trg: NULL if not required */
-			      nb_container_t *const restrict l_new_trg)
+static inline void retriangulate_fan(vcn_mesh_t *const mesh,
+				     const msh_vtx_t *const v_pivot,
+				     const msh_vtx_t *const v_start,
+				     nb_container_t *orfan_vtx,
+				     /* l_new_trg: NULL if not required */
+				     nb_container_t *const l_new_trg)
 {
 	/* Allocate orfan vertices into an array */
 	msh_vtx_t** orfan_array = malloc(nb_container_get_length(orfan_vtx)
 				       * sizeof(*orfan_array));
 	uint32_t N_orfan_vtx = 0;
 	while (nb_container_is_not_empty(orfan_vtx)) {
-		msh_vtx_t *restrict vtx = nb_container_delete_first(orfan_vtx);
+		msh_vtx_t *vtx = nb_container_delete_first(orfan_vtx);
 		orfan_array[N_orfan_vtx] = vtx;
 		N_orfan_vtx += 1;
 	}
 
 	/* Retriangulate fan */
-	msh_vtx_t *restrict vtx = (msh_vtx_t*) v_start;
-	msh_edge_t *restrict sgm;
+	msh_vtx_t *vtx = (msh_vtx_t*) v_start;
+	msh_edge_t *sgm;
 	do {
 		msh_vtx_t *restrict v3 = 
 			retrg_fan_get_next_trg(&N_orfan_vtx, 
@@ -679,10 +698,11 @@ static inline void retriangulate_fan
 
 		sgm = mesh_exist_edge(mesh->ht_edge, v_pivot, vtx);
 	} while (vtx != v_start && !medge_is_subsgm(sgm));
+
 	free(orfan_array);
 }
 
-static inline void verify_new_encroachments
+static void verify_new_encroachments
                              (vcn_mesh_t *const restrict mesh,
 			      const msh_vtx_t *const restrict v,
 			      nb_container_t *const restrict l_new_trg,
@@ -797,14 +817,14 @@ static inline void insert_midpoint
 }
 
 static inline void split_encroached_segments
-                             (vcn_mesh_t *const restrict mesh,
+                             (vcn_mesh_t *const mesh,
 			      nb_container_t *const restrict encroached_sgm,
 			      nb_container_t *const restrict big_trg,
 			      hash_trg_t *const restrict poor_quality_trg)
 {
 	while (nb_container_is_not_empty(encroached_sgm)) {
 		msh_edge_t* sgm = nb_container_delete_first(encroached_sgm);
-		msh_vtx_t *v = get_midpoint(sgm);
+		msh_vtx_t *v = get_midpoint(mesh, sgm);
 		/* Split the segment */
 		nb_container_t* l_new_trg = nb_container_create(NB_QUEUE);
 		msh_edge_t* subsgm[2];
@@ -937,11 +957,11 @@ static inline nb_container_t* get_sgm_encroached_by_vertex
 			   const msh_vtx_t *const restrict vtx)
 {
 	/* Get encroached triangles */
-	nb_container_t *const restrict encroached_trg =
+	nb_container_t *const encroached_trg =
 		get_encroached_triangles(trg_containing_vtx, vtx);
 
 	/* Get segments */
-	nb_container_t *const restrict segments =
+	nb_container_t *const segments =
 		nb_container_create(NB_SORTED);
 	while (nb_container_is_not_empty(encroached_trg)) {
 		msh_trg_t *const restrict trg = 
@@ -1294,10 +1314,11 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 	while (nb_container_is_not_empty(exterior_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
 
-		msh_vtx_t *restrict cc = mvtx_create();
-		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x, trg->v3->x, cc->x);
+		msh_vtx_t *cc = mvtx_create(mesh->vtx_membank);
+		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
+					     trg->v3->x, cc->x);
     
-		msh_trg_t *restrict trg_containing_cc =
+		msh_trg_t *trg_containing_cc =
 			get_trg_containing_circumcenter(mesh, trg, cc);
 
 		insert_vertex(mesh, trg_containing_cc, cc, NULL, NULL, NULL);
