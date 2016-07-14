@@ -121,8 +121,8 @@ static void test_set_img_density_png_jolie(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(11300 < N_trg && 11700 > N_trg);
-	CU_ASSERT(17100 < N_edge && 17700 > N_edge);
+	CU_ASSERT(11300 < N_trg && 11900 > N_trg);
+	CU_ASSERT(17100 < N_edge && 17900 > N_edge);
 }
 
 static void test_set_img_density_jpg_hand(void)
@@ -147,7 +147,7 @@ static void test_set_img_density_jpg_hand(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(13200 < N_trg && 13600 > N_trg);
+	CU_ASSERT(13200 < N_trg && 13700 > N_trg);
 	CU_ASSERT(20000 < N_edge && 21000 > N_edge);
 }
 

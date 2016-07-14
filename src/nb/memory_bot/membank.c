@@ -7,12 +7,25 @@
 #include "nb/memory_bot/nb_malloc.h"
 #include "nb/memory_bot/membank.h"
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 #define STATIC_SIZE 8000
 #define MASK_SIZE 1000
-#define DIV_FREED_TO_ALLOC 3
+#define DIV_FREED_TO_ALLOC 5
 #define MIN_MAX_DYNAMIC 100
+
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+#define SET_MASK(mask, i)			\
+	((mask)[(i)/8] |= 1 << ((i)%8))
+#define IS_MASK_ENABLED(mask, i)		\
+	((mask)[(i)/8] & (1 << ((i)%8)))
+#define UNSET_MASK(mask, i)			\
+	((mask)[(i)/8] &=  ~(1 << ((i)%8)))
+#define IS_MASK_DISABLED(mask, i)		\
+	(!IS_MASK_ENABLED(mask, i))
+#define IS_MASK_BYTE_FULL(mask, char_id)	\
+	(~((mask)[(char_id)]) == 0)
+#define IS_MASK_BYTE_ENABLED(mask, char_id, bit_id)	\
+	((mask)[(char_id)] & (1 << (bit_id)))
 
 typedef struct block_s block_t;
 
@@ -35,10 +48,7 @@ struct nb_membank_s {
 
 static void* block_calloc(block_t *block, uint16_t type_size);
 static block_t *block_create(uint16_t type_size, uint16_t N_max);
-static void set_mask(char *mask, int i);
-static bool mask_is_set(char *mask, int i);
-static void unset_mask(char *mask, int i);
-static bool mask_is_unset(char *mask, int i);
+static void set_backward_aligner(block_t *block, int i);
 static bool block_is_in_buffer(const block_t *block,
 				  uint16_t type_size, char *mem);
 static void block_free(block_t *block, uint16_t type_size,
@@ -65,34 +75,47 @@ void *nb_membank_calloc(nb_membank_t *membank)
 {
 	block_t *block = &(membank->block);
 	void *mem = NULL;
-	while (NULL == mem && NULL != block) {
+	while (NULL != block) {
 		mem = block_calloc(block, membank->type_size);
-		if (NULL == mem && NULL == block->next)
-			block->next = block_create(membank->type_size,
-						   membank->N_max_dynamic);
-		block = block->next;
+		if (NULL != mem) {
+			goto EXIT;
+		} else {
+			if (NULL == block->next)
+				block->next = 
+					block_create(membank->type_size,
+						     membank->N_max_dynamic);
+			block = block->next;
+		}
 	}
+EXIT:
 	return mem;
 }
 
 static void *block_calloc(block_t *block, uint16_t type_size)
 {
-	int i = block->N_max;
+	void *mem = NULL;
+	int i;
 	if (block->N_align < block->N_max) {
 		i = block->N_align;
 		block->N_align += 1;
 	} else if (block->N_free > block->N_max / DIV_FREED_TO_ALLOC) {
-		i = 0;
-		while (mask_is_set(block->mask, i))
-			i += 1;
+		int char_id = 0;
+		while (IS_MASK_BYTE_FULL(block->mask, char_id))
+			char_id += 1;
+
+		int bit_id = 0;
+		while (IS_MASK_BYTE_ENABLED(block->mask, char_id, bit_id))
+			bit_id += 1;
+
+		i = char_id * 8 + bit_id;
+	} else {
+		goto EXIT;
 	}
-	void *mem = NULL;
-	if (i < block->N_max) {
-		mem = block->buffer + i * type_size;
-		memset(mem, 0, type_size);
-		set_mask(block->mask, i);
-		block->N_free -= 1;
-	}
+	mem = block->buffer + i * type_size;
+	memset(mem, 0, type_size);
+	SET_MASK(block->mask, i);
+	block->N_free -= 1;
+EXIT:
 	return mem;
 }
 
@@ -100,7 +123,7 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 {
 	uint32_t block_size = sizeof(block_t);
 	uint32_t buffer_size = type_size * N_max;
-	uint32_t mask_size = N_max / 8 + (N_max % 8 > 0)?1:0;
+	uint32_t mask_size = N_max / 8 + ((N_max % 8 > 0)?1:0);
 	uint32_t size = block_size + buffer_size + mask_size;
 
 	char *memory = nb_calloc(size);
@@ -113,19 +136,6 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 	return block;
 }
 
-static void set_mask(char *mask, int i)
-{
-	int char_id = i / 8;
-	int bit_id = i % 8;
-	mask[char_id] = mask[char_id] | (1 << bit_id);
-}
-
-static bool mask_is_set(char *mask, int i)
-{
-	int char_id = i / 8;
-	int bit_id = i % 8;
-	return (mask[char_id] & (1 << bit_id)) != 0;
-}
 
 void nb_membank_free(nb_membank_t *membank, void *obj)
 {
@@ -133,15 +143,15 @@ void nb_membank_free(nb_membank_t *membank, void *obj)
 	while (NULL != block) {
 		if (block_is_in_buffer(block, membank->type_size, obj)) {
 			block_free(block, membank->type_size, obj);
-			break;
+			goto EXIT;
 		}
 		block = block->next;
 	}
 
-	if (NULL == block) {
-		fputs("nb_block: unallocated free.\n", stderr);
-		exit(EXIT_FAILURE);
-	}
+	fputs("nb_block: unallocated free.\n", stderr);
+	exit(EXIT_FAILURE);
+EXIT:
+	return;
 }
 
 static bool block_is_in_buffer(const block_t *block,
@@ -156,33 +166,28 @@ static void block_free(block_t *block, uint16_t type_size,
 		       char *mem)
 {
 	int i = (mem - block->buffer) / type_size;
-	if (mask_is_set(block->mask, i)) {
-		unset_mask(block->mask, i);
+	if (IS_MASK_ENABLED(block->mask, i)) {
+		UNSET_MASK(block->mask, i);
 		block->N_free += 1;
-		if (i == block->N_align - 1) {
-			do {
-				block->N_align -= 1;
-				if (0 == block->N_align)
-					break;
-			} while (mask_is_unset(block->mask,
-					       block->N_align - 1));
-		}
+		set_backward_aligner(block, i);
 	} else {
 		fputs("nb_block: double free.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 }
 
-static void unset_mask(char *mask, int i)
+static void set_backward_aligner(block_t *block, int i)
 {
-	int char_id = i / 8;
-	int bit_id = i % 8;
-	mask[char_id] = mask[char_id] & ~(1 << bit_id);
-}
-
-static bool mask_is_unset(char *mask, int i)
-{
-	return !mask_is_set(mask, i);
+	if (i == block->N_align - 1) {
+		do {
+			block->N_align -= 1;
+			if (0 == block->N_align)
+				goto EXIT;
+		} while (IS_MASK_DISABLED(block->mask,
+					  block->N_align - 1));
+	}
+EXIT:
+	return;
 }
 
 void nb_membank_finish(nb_membank_t *membank)

@@ -206,7 +206,7 @@ static void test_generate_from_model_small_local_feature(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(8750 < N_trg && 8950 > N_trg);
-	CU_ASSERT(13300 < N_edge && 13500 > N_edge);
+	CU_ASSERT(13300 < N_edge && 13600 > N_edge);
 }
 
 static void test_generate_from_model_small_localf_v2(void)
@@ -243,8 +243,8 @@ static void test_generate_from_model_subsgm_const_v2(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(9300 < N_trg && 9700 > N_trg);
-	CU_ASSERT(15250 < N_edge && 15750 > N_edge);
+	CU_ASSERT(9200 < N_trg && 9700 > N_trg);
+	CU_ASSERT(15100 < N_edge && 15750 > N_edge);
 }
 
 static void test_generate_from_model_holes(void)
@@ -282,7 +282,7 @@ static void test_generate_from_model_small_angles(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(7000 < N_trg && 7200 > N_trg);
-	CU_ASSERT(10650 < N_edge && 10850 > N_edge);
+	CU_ASSERT(10650 < N_edge && 10950 > N_edge);
 }
 
 static void test_generate_from_model_quasi_linear(void)
@@ -371,8 +371,8 @@ static void test_set_density(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(9000 < N_trg && 9100 > N_trg);
-	CU_ASSERT(13620 < N_edge && 13820 > N_edge);
+	CU_ASSERT(9000 < N_trg && 9200 > N_trg);
+	CU_ASSERT(13620 < N_edge && 13900 > N_edge);
 }
 
 static inline double density_func(const double *const x, 
