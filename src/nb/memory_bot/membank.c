@@ -9,7 +9,7 @@
 
 #define STATIC_SIZE 8000
 #define MASK_SIZE 1000
-#define MIN_MAX_DYNAMIC 100
+#define MIN_MAX_DYNAMIC 128
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
