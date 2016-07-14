@@ -26,7 +26,7 @@ uint8_t mvtx_get_memsize(void)
 
 msh_vtx_t *mvtx_create(nb_membank_t *membank)
 {
-	char *memblock = nb_membank_calloc(membank);
+	char *memblock = calloc(1, mvtx_get_memsize());// TEMPORAL nb_membank_calloc(membank);
 	msh_vtx_t* vtx = (void*) memblock;
 	vtx->attr = (void*)(memblock + sizeof(msh_vtx_t));
 	return vtx;
@@ -46,6 +46,7 @@ msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx)
 
 void mvtx_destroy(nb_membank_t *membank, void *vtx)
 {
+	free(vtx);return;/* TEMPORAL */
 	nb_membank_free(membank, vtx);
 }
 

@@ -180,8 +180,10 @@ static inline int8_t compare_using_axe(const void *const v1_ptr,
 	int8_t out;
 	if (v1->x[axe] < v2->x[axe])
 		out = -1;
-	else 
+	else if (v1->x[axe] > v2->x[axe])
 		out = 1;
+	else
+		out = 0;
 	return out;
 }
 
