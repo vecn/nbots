@@ -24,17 +24,17 @@ uint8_t mvtx_get_memsize(void)
 	return sizeof(msh_vtx_t) + sizeof(vtx_attr_t);
 }
 
-msh_vtx_t *mvtx_create(nb_membank_t *membank)
+msh_vtx_t *mvtx_create(vcn_mesh_t *mesh)
 {
-	char *memblock = calloc(1, mvtx_get_memsize());// TEMPORAL nb_membank_calloc(membank);
+	char *memblock = nb_membank_calloc(mesh->vtx_membank);
 	msh_vtx_t* vtx = (void*) memblock;
 	vtx->attr = (void*)(memblock + sizeof(msh_vtx_t));
 	return vtx;
 }
 
-msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx)
+msh_vtx_t *mvtx_clone(vcn_mesh_t *mesh, msh_vtx_t *vtx)
 {
-	msh_vtx_t *clone = mvtx_create(membank);
+	msh_vtx_t *clone = mvtx_create(mesh);
 	memcpy(clone->x, vtx->x, 2 * sizeof(*(vtx->x)));
 	vtx_attr_t *vtx_attr = vtx->attr;
 	vtx_attr_t *clone_attr = clone->attr;
@@ -44,10 +44,9 @@ msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx)
 	return clone;
 }
 
-void mvtx_destroy(nb_membank_t *membank, void *vtx)
+void mvtx_destroy(vcn_mesh_t *mesh, void *vtx)
 {
-	free(vtx);return;/* TEMPORAL */
-	nb_membank_free(membank, vtx);
+	nb_membank_free(mesh->vtx_membank, vtx);
 }
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id)
@@ -397,14 +396,14 @@ inline msh_trg_t* medge_get_opposite_triangle
 	return NULL;
 }
 
-msh_trg_t *mtrg_calloc(nb_membank_t *membank)
+msh_trg_t *mtrg_calloc(vcn_mesh_t *mesh)
 {
-	return nb_membank_calloc(membank);
+	return nb_membank_calloc(mesh->trg_membank);
 }
 
-void mtrg_free(nb_membank_t *membank, msh_trg_t *trg)
+void mtrg_free(vcn_mesh_t *mesh, msh_trg_t *trg)
 {
-	nb_membank_free(membank, trg);
+	nb_membank_free(mesh->trg_membank, trg);
 }
 
 inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)

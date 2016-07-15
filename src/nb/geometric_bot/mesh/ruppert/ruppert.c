@@ -51,9 +51,9 @@ static nb_container_t* get_encroached_triangles
                              (const msh_trg_t *const first_trg_to_check,
 			      const msh_vtx_t *const v);
 static void check_encroached_neighbours(const msh_trg_t *trg,
-				       nb_container_t *encroached_trg,
-				       nb_container_t *unencroached_trg,
-				       nb_container_t *processing_trg);
+					nb_container_t *encroached_trg,
+					nb_container_t *unencroached_trg,
+					nb_container_t *processing_trg);
 static nb_container_t* remove_encroached_triangles
              (vcn_mesh_t *const mesh,
 	      msh_trg_t *const first_trg_to_check,
@@ -261,7 +261,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 
 bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
 {
-	msh_vtx_t* new_vtx = mvtx_create(mesh->vtx_membank);
+	msh_vtx_t* new_vtx = mvtx_create(mesh);
 
 	/* Move and scale new vertex */
 	new_vtx->x[0] = mesh->scale * (vertex[0] - mesh->xdisp);
@@ -270,7 +270,7 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
 	msh_trg_t* trg = mesh_locate_vtx(mesh, new_vtx);
 
 	if (NULL == trg) {
-		mvtx_destroy(mesh->vtx_membank, new_vtx);
+		mvtx_destroy(mesh, new_vtx);
 		return false;
 	}
 
@@ -301,7 +301,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			trg = hash_trg_remove_first(poor_quality_trg);
 
 		/* Get circumcenter */
-		msh_vtx_t *cc = mvtx_create(mesh->vtx_membank);
+		msh_vtx_t *cc = mvtx_create(mesh);
 		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
 					     trg->v3->x, cc->x);
     
@@ -324,7 +324,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 			nb_container_destroy(new_trg);
 		} else {
 			/* Circumcenter rejected */
-			mvtx_destroy(mesh->vtx_membank, cc);
+			mvtx_destroy(mesh, cc);
 
 			/* Process segments encroached by the circumcenter */
 			double d = vcn_utils2D_get_min_trg_edge(trg->v1->x,
@@ -483,7 +483,7 @@ static inline msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
 				      const msh_edge_t *const restrict sgm)
 {
 	/* Calculate the new vertex (using concentric shells) */
-	msh_vtx_t *v = mvtx_create(mesh->vtx_membank);
+	msh_vtx_t *v = mvtx_create(mesh);
 	mvtx_set_type_location(v, ONSEGMENT);
   
 	/* Use midpoint */
@@ -539,8 +539,8 @@ static nb_container_t* get_encroached_triangles
 								  v->x)) {
 			nb_container_insert(encroached_trg, trg);
 			check_encroached_neighbours(trg, encroached_trg,
-						   unencroached_trg,
-						   processing_trg);
+						    unencroached_trg,
+						    processing_trg);
 		} else {
 			nb_container_insert(unencroached_trg, trg);
 		}
@@ -553,9 +553,9 @@ static nb_container_t* get_encroached_triangles
 }
 
 static void check_encroached_neighbours(const msh_trg_t *trg,
-				       nb_container_t *encroached_trg,
-				       nb_container_t *unencroached_trg,
-				       nb_container_t *processing_trg)
+					nb_container_t *encroached_trg,
+					nb_container_t *unencroached_trg,
+					nb_container_t *processing_trg)
 {
 	if (trg->t1 != NULL) {
 		if (!medge_is_subsgm(trg->s1))
@@ -613,7 +613,7 @@ static nb_container_t* remove_encroached_triangles
 		if (NULL != big_trg)
 			nb_container_delete(big_trg, trg);
 
-		mtrg_free(mesh->trg_membank, trg);
+		mtrg_free(mesh, trg);
 	}
 	nb_container_destroy(encroached_trg);
 
@@ -682,7 +682,7 @@ static inline void retriangulate_fan(vcn_mesh_t *const mesh,
 					       v_pivot, vtx);
 
 		/* Create triangle */
-		msh_trg_t *trg = mtrg_calloc(mesh->trg_membank);
+		msh_trg_t *trg = mtrg_calloc(mesh);
 		trg->v1 = (msh_vtx_t*) v_pivot;
 		trg->v2 = vtx;
 		trg->v3 = v3;
@@ -912,9 +912,9 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 	msh_trg_t *restrict prev1_trg = NULL;
 	msh_trg_t *restrict trg_containing_cc = (msh_trg_t*) trg;
 	while (!vcn_utils2D_pnt_lies_in_trg(trg_containing_cc->v1->x,
-						    trg_containing_cc->v2->x,
-						    trg_containing_cc->v3->x,
-						    cc->x)) {
+					    trg_containing_cc->v2->x,
+					    trg_containing_cc->v3->x,
+					    cc->x)) {
 		/* Update history */
 		prev2_trg = prev1_trg;
 		prev1_trg = trg_containing_cc;
@@ -1314,7 +1314,7 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 	while (nb_container_is_not_empty(exterior_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
 
-		msh_vtx_t *cc = mvtx_create(mesh->vtx_membank);
+		msh_vtx_t *cc = mvtx_create(mesh);
 		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
 					     trg->v3->x, cc->x);
     

@@ -80,8 +80,8 @@ struct msh_trg_s {
 struct vcn_mesh_s {
 	/* Arrays to relate the mesh with the PSLG input */
 	uint32_t N_input_vtx;
-	msh_vtx_t** input_vtx;
-	uint32_t N_input_sgm;      
+	uint32_t N_input_sgm;
+	msh_vtx_t** input_vtx;      
 	msh_edge_t** input_sgm; /* Each input_sgm is the root of a double 
 				 * linked list containing the subsegments
 				 * forming this input segment. */
@@ -122,9 +122,9 @@ struct vcn_mesh_s {
 };
 
 uint8_t mvtx_get_memsize(void);
-msh_vtx_t *mvtx_create(nb_membank_t *membank);
-msh_vtx_t *mvtx_clone(nb_membank_t *membank, msh_vtx_t *vtx);
-void mvtx_destroy(nb_membank_t *membank, void *vtx);
+msh_vtx_t *mvtx_create(vcn_mesh_t *mesh);
+msh_vtx_t *mvtx_clone(vcn_mesh_t *mesh, msh_vtx_t *vtx);
+void mvtx_destroy(vcn_mesh_t *mesh, void *vtx);
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id);
 uint32_t mvtx_get_id(const msh_vtx_t *const vtx);
@@ -178,8 +178,8 @@ msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 
-msh_trg_t *mtrg_calloc(nb_membank_t *membank);
-void mtrg_free(nb_membank_t *membank, msh_trg_t *trg);
+msh_trg_t *mtrg_calloc(vcn_mesh_t *mesh);
+void mtrg_free(vcn_mesh_t *mesh, msh_trg_t *trg);
 
 bool mtrg_has_an_input_vertex(const msh_trg_t *const trg);
 msh_vtx_t* mtrg_get_opposite_vertex_guided(const msh_trg_t *const trg, 

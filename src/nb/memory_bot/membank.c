@@ -52,11 +52,11 @@ struct block_s {
 };
 
 struct nb_membank_s {
+	char static_buffer[STATIC_SIZE];
+	char static_mask[MASK_SIZE];
+	block_t block;
 	uint16_t type_size;
 	uint16_t N_max_dynamic;
-	block_t block;
-	char static_buffer[STATIC_SIZE];
-	char static_mask[MASK_SIZE];	
 };
 
 static void* block_calloc(block_t *block, uint16_t type_size);
@@ -80,8 +80,9 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 	membank->type_size = type_size;
 	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC,
 				     STATIC_SIZE / type_size);
-	membank->block.N_max = 64 * GET_64_ALIGNMENT(STATIC_SIZE / type_size);
-	membank->block.N_free = STATIC_SIZE / type_size;
+	uint16_t N_max = 64 * ((STATIC_SIZE / type_size) / 64);
+	membank->block.N_max = N_max;
+	membank->block.N_free = N_max;
 	membank->block.buffer = membank->static_buffer;
 	membank->block.mask = membank->static_mask;
 }

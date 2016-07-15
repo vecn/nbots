@@ -140,7 +140,7 @@ void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
 					 sizeof(*(mesh->input_vtx)));
 
 		for (uint32_t i = 0; i < N_vertices; i++) {
-			msh_vtx_t* vtx = mvtx_create(mesh->vtx_membank);
+			msh_vtx_t* vtx = mvtx_create(mesh);
 			mesh->input_vtx[i] = vtx;
 			mvtx_set_type_origin(vtx, INPUT);
 			vtx->x[0] = mesh->scale *
@@ -402,7 +402,7 @@ static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx)
 
 	msh_trg_t *trg;
 	if (NULL != v3) {
-		trg = mtrg_calloc(mesh->trg_membank);
+		trg = mtrg_calloc(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -439,7 +439,7 @@ static msh_trg_t* create_trg(vcn_mesh_t *mesh,
 
 	msh_trg_t *trg = NULL;
 	if(NULL != v3) {
-		trg = mtrg_calloc(mesh->trg_membank);
+		trg = mtrg_calloc(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;

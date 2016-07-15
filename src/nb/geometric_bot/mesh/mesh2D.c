@@ -185,7 +185,7 @@ static void clear_vtx(vcn_mesh_t *mesh)
 {
 	while (vcn_bins2D_is_not_empty(mesh->ug_vtx)) {
 		msh_vtx_t *vtx = vcn_bins2D_delete_first(mesh->ug_vtx);
-		nb_membank_free(mesh->vtx_membank, vtx);
+		mvtx_destroy(mesh, vtx);
 	}
 }
 
@@ -193,7 +193,7 @@ static void clear_trg(vcn_mesh_t *mesh)
 {
 	while (nb_container_is_not_empty(mesh->ht_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(mesh->ht_trg);
-		nb_membank_free(mesh->trg_membank, trg);
+		mtrg_free(mesh, trg);
 	}
 }
 
@@ -424,7 +424,7 @@ static void delete_triangles_by_wave
 		advance_deletion_wave(mesh, trg->t2, trg_deleted);
 	if (s3_is_not_boundary)
 		advance_deletion_wave(mesh, trg->t3, trg_deleted);
-	mtrg_free(mesh->trg_membank, trg);
+	mtrg_free(mesh, trg);
 }
 
 static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
@@ -685,7 +685,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	while (vcn_bins2D_iter_has_more(giter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(giter);
 		/* Create the vertex clone */
-		msh_vtx_t* vtx_clone = mvtx_clone(clone->vtx_membank, vtx);
+		msh_vtx_t* vtx_clone = mvtx_clone(clone, vtx);
 		mvtx_set_id(vtx_clone, id);
 		vertices[id] = vtx_clone;
 		vcn_bins2D_insert(clone->ug_vtx, vtx_clone);
@@ -701,7 +701,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		/* Clone the triangle */
-		msh_trg_t* trg_clone = mtrg_calloc(clone->trg_membank);
+		msh_trg_t* trg_clone = mtrg_calloc(clone);
 		trg_clone->id = trg->id;
 		trg_clone->feature = trg->feature;
 		trg_clone->status = trg->status;
