@@ -47,6 +47,7 @@ static double spread_infection(msh_trg_t* trg_infected,
 
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
+static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx);
 static uint16_t get_N_areas(const nb_mesh_t *mesh,
 			    bool block_with_input_sgm);
 static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
@@ -361,7 +362,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			free(trg);
+			mtrg_free(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
 		free(obj);
@@ -509,15 +510,26 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 	}
 	nb_iterator_finish(iter);
 
+	
+	uint32_t deleted = vcn_bins2D_get_length(mesh->ug_vtx);
+	delete_unused_vtx(mesh, useful_vtx);
+	nb_container_finish(useful_vtx);
+
+
+	deleted = deleted - vcn_bins2D_get_length(mesh->ug_vtx);
+	return deleted;
+}
+
+static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx)
+{
 	nb_container_t *vtx_to_destroy = 
 		alloca(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(vtx_to_destroy, NB_QUEUE);
-	
-	uint32_t deleted = vcn_bins2D_get_length(mesh->ug_vtx);
-	vcn_bins2D_iter_t* bins2D_iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_set_bins(bins2D_iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(bins2D_iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(bins2D_iter);
+
+	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		if(!nb_container_exist(useful_vtx, vtx)){
 			vcn_bins2D_delete(mesh->ug_vtx, vtx);
 			if (mvtx_is_type_origin(vtx, INPUT) ||
@@ -532,17 +544,13 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 			nb_container_insert(vtx_to_destroy, vtx);
 		}
 	}
-	vcn_bins2D_iter_destroy(bins2D_iter);
-	nb_container_finish(useful_vtx);
+	vcn_bins2D_iter_destroy(iter);
 
 	while (nb_container_is_not_empty(vtx_to_destroy)) {
 		msh_vtx_t *vtx = nb_container_delete_first(vtx_to_destroy);
-		free(vtx);
+		mvtx_destroy(mesh, vtx);
 	}
 	nb_container_finish(vtx_to_destroy);
-
-	deleted = deleted - vcn_bins2D_get_length(mesh->ug_vtx);
-	return deleted;
 }
 
 bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh)
