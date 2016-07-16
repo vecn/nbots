@@ -15,6 +15,8 @@
 
 #define GET_64_ALIGNMENT(N_max)			\
 	((N_max)/64 + (((N_max)%64 > 0)?1:0))
+#define GET_MASK_SIZE(N_max)			\
+	(8 * GET_64_ALIGNMENT((N_max)))
 #define SET_MASK(mask, i)			\
 	((mask)[(i)/8] |= 1 << ((i)%8))
 #define IS_MASK_ENABLED(mask, i)		\
@@ -66,8 +68,9 @@ static void set_backward_aligner(block_t *block, int i);
 static bool block_is_in_buffer(const block_t *block,
 				  uint16_t type_size, char *mem);
 static void block_free(block_t *block, uint16_t type_size,
-			  char *mem);
+		       char *mem);
 static int get_last_allocated_id(const char *mask, uint16_t N_max);
+static void block_clear(block_t *block);
 
 uint32_t nb_membank_get_memsize(void)
 {
@@ -155,8 +158,7 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 {
 	uint32_t block_size = sizeof(block_t);
 	uint32_t buffer_size = type_size * N_max;
-	                     /* mask_size is 64 bits aligned */
-	uint32_t mask_size = 8 * GET_64_ALIGNMENT(N_max);
+	uint32_t mask_size = GET_MASK_SIZE(N_max);
 	uint32_t size = block_size + buffer_size + mask_size;
 
 	char *memory = nb_calloc(size);
@@ -248,4 +250,21 @@ void nb_membank_finish(nb_membank_t *membank)
 		nb_free(block);
 		block = next;
 	}
+}
+
+void nb_membank_clear(nb_membank_t *membank)
+{
+	block_t *block = membank->block.next;
+	while (NULL != block) {
+		block_clear(block);
+		block = block->next;
+	}
+}
+
+static void block_clear(block_t *block)
+{
+	block->N_align = 0;
+	block->N_free = block->N_max;
+	uint32_t mask_size = GET_MASK_SIZE(block->N_max);
+	memset(block->mask, 0, mask_size);
 }
