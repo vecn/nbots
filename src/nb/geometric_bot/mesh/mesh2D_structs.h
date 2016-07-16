@@ -93,6 +93,7 @@ struct vcn_mesh_s {
 	/* Memory built-in handlers*/
 	nb_membank_t *vtx_membank;
 	nb_membank_t *trg_membank;
+	nb_membank_t *edg_membank;
 
 	/* Scale and shift values to handle floating point error */
 	double scale;
@@ -134,6 +135,8 @@ bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
 bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin);
 bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location);
 
+msh_edge_t *medge_calloc(vcn_mesh_t *mesh);
+void medge_free(vcn_mesh_t *mesh, msh_edge_t *edge);
 bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
 void medge_set_as_subsgm(msh_edge_t *const sgm,
@@ -209,7 +212,7 @@ msh_edge_t* mtrg_get_CCW_edge(const msh_trg_t *const trg,
 			      const msh_edge_t *const edge);
 msh_edge_t* mtrg_get_CW_edge(const msh_trg_t *const trg,
 			     const msh_edge_t *const edge);
-msh_edge_t* mesh_insert_edge(nb_container_t *const ht_edge,
+msh_edge_t* mesh_insert_edge(vcn_mesh_t *mesh,
 			     const msh_vtx_t *const v1, 
 			     const msh_vtx_t *const v2);
 msh_edge_t* mesh_exist_edge_guided(nb_container_t *const ht_edge,

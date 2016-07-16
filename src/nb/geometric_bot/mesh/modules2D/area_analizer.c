@@ -423,7 +423,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			free(trg);
+			mtrg_free(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
 		free(obj);
@@ -461,9 +461,10 @@ uint32_t vcn_mesh_delete_isolated_segments(vcn_mesh_t *const restrict mesh)
 				while (NULL != sgm) {
 					msh_edge_t* to_free = sgm;
 					sgm = medge_subsgm_next(sgm);
-					nb_container_delete(mesh->ht_edge, to_free);
+					nb_container_delete(mesh->ht_edge,
+							    to_free);
 					medge_destroy_subsgm_attribute(to_free);
-					free(to_free);
+					medge_free(mesh, to_free);
 					removed += 1;
 				}
 			}

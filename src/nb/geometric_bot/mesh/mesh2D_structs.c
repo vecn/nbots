@@ -14,10 +14,9 @@
 
 #include "mesh2D_structs.h"
 
-static bool mesh_remove_edge
-                       (nb_container_t *const ht_edge,
-			const msh_vtx_t *const v1,
-			const msh_vtx_t *const v2);
+static bool mesh_remove_edge(vcn_mesh_t *mesh,
+			     const msh_vtx_t *const v1,
+			     const msh_vtx_t *const v2);
 
 uint8_t mvtx_get_memsize(void)
 {
@@ -85,6 +84,16 @@ bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
 	return (location == attr->loc);
 }
 
+msh_edge_t *medge_calloc(vcn_mesh_t *mesh)
+{
+	return nb_membank_calloc(mesh->edg_membank);
+}
+
+void medge_free(vcn_mesh_t *mesh, msh_edge_t *edge)
+{
+	nb_membank_free(mesh->edg_membank, edge);
+}
+
 bool medge_is_boundary(const msh_edge_t *const edge)
 {
 	return (NULL == edge->t1 || NULL == edge->t2);
@@ -102,10 +111,10 @@ void medge_set_as_subsgm(msh_edge_t *const restrict sgm,
 			 const msh_edge_t *const restrict prev,
 			 const msh_edge_t *const restrict next)
 {
-	attr_t *const restrict sgm_attr = (attr_t*)calloc(1, sizeof(attr_t));
+	attr_t *const restrict sgm_attr = calloc(1, sizeof(attr_t));
 	sgm_attr->id = 1;
-	input_sgm_attr_t *const restrict attr = 
-		(input_sgm_attr_t*)calloc(1, sizeof(input_sgm_attr_t));
+	input_sgm_attr_t *const restrict  attr = 
+		calloc(1, sizeof(input_sgm_attr_t));
 	attr->idx = idx;
 	attr->prev = (msh_edge_t*)prev;
 	attr->next = (msh_edge_t*)next;
@@ -215,7 +224,7 @@ void medge_destroy_subsgm_attribute(msh_edge_t *const restrict sgm)
 
 void medge_set_length(msh_edge_t *const sgm)
 {
-	attr_t* attr = (attr_t*)calloc(1, sizeof(attr_t));
+	attr_t* attr = calloc(1, sizeof(attr_t));
 	attr->id = 2;
 	double* length = malloc(sizeof(*length));
 	*length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
@@ -755,16 +764,16 @@ void medge_flip_without_dealloc(msh_edge_t* shared_sgm)
 	}
 }
 
-inline msh_edge_t* mesh_insert_edge(nb_container_t *const ht_edge,
+inline msh_edge_t* mesh_insert_edge(vcn_mesh_t *mesh,
 				    const msh_vtx_t *const v1, 
 				    const msh_vtx_t *const v2)
 {
-	msh_edge_t *const restrict new_sgm = calloc(1, sizeof(*new_sgm));
+	msh_edge_t *edge = medge_calloc(mesh);
   
-	new_sgm->v1 = (msh_vtx_t*)v1;
-	new_sgm->v2 = (msh_vtx_t*)v2;
-	nb_container_insert(ht_edge, new_sgm);
-	return new_sgm;
+	edge->v1 = (msh_vtx_t*)v1;
+	edge->v2 = (msh_vtx_t*)v2;
+	nb_container_insert(mesh->ht_edge, edge);
+	return edge;
 }
 inline msh_edge_t* mesh_exist_edge_guided
                          (nb_container_t *const restrict ht_edge,
@@ -795,7 +804,7 @@ void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 	/* Connect triangle with the first segment */
 	msh_edge_t* sgm = mesh_exist_edge(mesh->ht_edge, trg->v1, trg->v2);
 	if (NULL == sgm)
-		sgm = mesh_insert_edge(mesh->ht_edge, trg->v1, trg->v2);
+		sgm = mesh_insert_edge(mesh, trg->v1, trg->v2);
 	trg->s1 = sgm;
 	if (sgm->v1 == trg->v1)
 		sgm->t1 = trg;
@@ -806,7 +815,7 @@ void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 	/* Connect triangle with the second segment */
 	sgm = mesh_exist_edge(mesh->ht_edge, trg->v2, trg->v3);
 	if (NULL == sgm)
-		sgm = mesh_insert_edge(mesh->ht_edge, trg->v2, trg->v3);
+		sgm = mesh_insert_edge(mesh, trg->v2, trg->v3);
 	trg->s2 = sgm;
 	if (sgm->v1 == trg->v2)
 		sgm->t1 = trg;
@@ -817,7 +826,7 @@ void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 	/* Connect triangle with the third segment */
 	sgm = mesh_exist_edge(mesh->ht_edge, trg->v3, trg->v1);
 	if (NULL == sgm)
-		sgm = mesh_insert_edge(mesh->ht_edge, trg->v3, trg->v1);
+		sgm = mesh_insert_edge(mesh, trg->v3, trg->v1);
 	trg->s3 = sgm;
 	if (sgm->v1 == trg->v3)
 		sgm->t1 = trg;
@@ -841,7 +850,7 @@ void mesh_substract_triangle(vcn_mesh_t *restrict mesh,
 	
 	if (!medge_is_subsgm(sgm)) {
 		if (sgm->t1 == NULL && sgm->t2 == NULL)
-			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+			mesh_remove_edge(mesh, sgm->v1, sgm->v2);
 	}
 
 	sgm = trg->s2;
@@ -852,7 +861,7 @@ void mesh_substract_triangle(vcn_mesh_t *restrict mesh,
 
 	if (!medge_is_subsgm(sgm)) {
 		if (sgm->t1 == NULL && sgm->t2 == NULL)
-			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+			mesh_remove_edge(mesh, sgm->v1, sgm->v2);
 	}
 
 	sgm = trg->s3;
@@ -863,27 +872,27 @@ void mesh_substract_triangle(vcn_mesh_t *restrict mesh,
 
 	if (!medge_is_subsgm(sgm)) {
 		if (sgm->t1 == NULL && sgm->t2 == NULL)
-			mesh_remove_edge(mesh->ht_edge, sgm->v1, sgm->v2);
+			mesh_remove_edge(mesh, sgm->v1, sgm->v2);
 	}
 
 	/* Disconnect from neigbouring triangles */
 	mtrg_disconnect(trg);
 }
 
-static bool mesh_remove_edge(nb_container_t *const restrict ht_edge,
+static bool mesh_remove_edge(vcn_mesh_t *mesh,
 			     const msh_vtx_t *const restrict v1, 
 			     const msh_vtx_t *const restrict v2)
 {
 	/* Generate Index and Hash Key */
-	msh_edge_t key_sgm;
-	key_sgm.v1 = (msh_vtx_t*)v1;
-	key_sgm.v2 = (msh_vtx_t*)v2;
+	msh_edge_t key_edge;
+	key_edge.v1 = (msh_vtx_t*)v1;
+	key_edge.v2 = (msh_vtx_t*)v2;
 
-	key_sgm.attr = NULL;
-	msh_edge_t* sgm = nb_container_exist(ht_edge, &key_sgm);
-	if (NULL != sgm) {
-		nb_container_delete(ht_edge, sgm);
-		free(sgm);
+	key_edge.attr = NULL;
+	msh_edge_t* edge = nb_container_exist(mesh->ht_edge, &key_edge);
+	if (NULL != edge) {
+		nb_container_delete(mesh->ht_edge, edge);
+		medge_free(mesh, edge);
 		return true;
 	}
 	return false;

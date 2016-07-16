@@ -101,7 +101,7 @@ static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 	nb_container_t *vertices = remove_trg_intersecting_sgm(mesh, v1, v2);
 
 	if (nb_container_is_not_empty(vertices)) {
-		msh_edge_t *sgm = mesh_insert_edge(mesh->ht_edge, v1, v2);
+		msh_edge_t *sgm = mesh_insert_edge(mesh, v1, v2);
 		mesh->input_sgm[sgm_id] = sgm;
 		medge_set_as_subsgm(sgm, sgm_id, NULL, NULL);
 		/* Triangulate left side */
@@ -273,11 +273,11 @@ static msh_trg_t* create_trg_constrained
 	medge_connect_triangle(base_sgm, new_trg, v1, v2);
 	/* Connect triangle with the second segment */
 	if (NULL == sgm1)
-		sgm1 = mesh_insert_edge(mesh->ht_edge, v2, v3);
+		sgm1 = mesh_insert_edge(mesh, v2, v3);
 	medge_connect_triangle(sgm1, new_trg, v2, v3);
 	/* Connect triangle with the third segment */
 	if (NULL == sgm2)
-		sgm2 = mesh_insert_edge(mesh->ht_edge, v3, v1);
+		sgm2 = mesh_insert_edge(mesh, v3, v1);
 	medge_connect_triangle(sgm2, new_trg, v3, v1);
 	return new_trg;
 }

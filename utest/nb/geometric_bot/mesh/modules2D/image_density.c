@@ -178,5 +178,5 @@ static void test_set_img_density_jpg_size_const(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(5800 < N_trg && 6000 > N_trg);
-	CU_ASSERT(8800 < N_edge && 10000 > N_edge);
+	CU_ASSERT(8800 < N_edge && 10001 > N_edge);
 }

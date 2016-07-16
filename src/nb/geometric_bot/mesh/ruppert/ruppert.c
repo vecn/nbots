@@ -767,12 +767,12 @@ static inline void insert_midpoint
 	vcn_bins2D_insert(mesh->ug_vtx, v);
 
 	/* Split the subsegment */  
-	subsgm[0] = (msh_edge_t*) calloc(1, sizeof(msh_edge_t));
+	subsgm[0] = medge_calloc(mesh);
 	subsgm[0]->v1 = sgm->v1;
 	subsgm[0]->v2 = (msh_vtx_t*) v;
 	nb_container_insert(mesh->ht_edge, subsgm[0]);
 	
-	subsgm[1] = (msh_edge_t*) calloc(1, sizeof(msh_edge_t));
+	subsgm[1] = medge_calloc(mesh);
 	subsgm[1]->v1 = (msh_vtx_t*) v;
 	subsgm[1]->v2 = sgm->v2;
 	nb_container_insert(mesh->ht_edge, subsgm[1]);
@@ -813,7 +813,7 @@ static inline void insert_midpoint
 	/* Free splitted segment */
 	nb_container_delete(mesh->ht_edge, sgm);
 	medge_destroy_subsgm_attribute(sgm);
-	free(sgm);
+	medge_free(mesh, sgm);
 }
 
 static inline void split_encroached_segments

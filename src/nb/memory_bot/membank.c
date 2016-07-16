@@ -78,9 +78,9 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 {
 	memset(membank, 0, sizeof(*membank));
 	membank->type_size = type_size;
-	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC,
-				     STATIC_SIZE / type_size);
+	          /* The 64 bit alignment speed-up the mask search */
 	uint16_t N_max = 64 * ((STATIC_SIZE / type_size) / 64);
+	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC, N_max);
 	membank->block.N_max = N_max;
 	membank->block.N_free = N_max;
 	membank->block.buffer = membank->static_buffer;

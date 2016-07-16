@@ -513,7 +513,7 @@ static uint32_t dewall_recursion
 	while (nb_container_is_not_empty(AFL)) {
 		msh_edge_t* edge = nb_container_delete_first(AFL);
 		nb_container_t *side_AFL = get_side_AFL(edge, &search_vtx, 
-							 AFL_1, AFL_alpha,
+							AFL_1, AFL_alpha,
 							AFL_2);
 		nb_container_insert(side_AFL, edge);
 	}

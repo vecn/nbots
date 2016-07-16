@@ -35,6 +35,7 @@ static void init_tasks(vcn_mesh_t *mesh);
 static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh);
 static void clear_vtx(vcn_mesh_t *mesh);
 static void clear_trg(vcn_mesh_t *mesh);
+static void clear_edg(vcn_mesh_t *mesh);
 static void null_task(const vcn_mesh_t *const mesh);
 static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle);
 static void delete_triangles_by_wave(vcn_mesh_t *const mesh, msh_trg_t* trg,
@@ -77,7 +78,7 @@ uint32_t vcn_mesh_get_memsize(void)
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
 	return mesh_size + edg_container_size +
-		trg_container_size + 2 * membank_size;
+		trg_container_size + 3 * membank_size;
 }
 
 void vcn_mesh_init(vcn_mesh_t *mesh)
@@ -86,7 +87,6 @@ void vcn_mesh_init(vcn_mesh_t *mesh)
 
 	nb_container_set_key_generator(mesh->ht_edge, hash_key_edge);
 	nb_container_set_comparer(mesh->ht_edge, compare_edge);
-	nb_container_set_destroyer(mesh->ht_edge, free);
 
 	nb_container_set_key_generator(mesh->ht_trg, hash_key_trg);
 	mesh->scale = 1.0;
@@ -116,17 +116,17 @@ static void set_memory(vcn_mesh_t *mesh)
 	mesh->ht_trg = (void*)(memblock + mesh_size + edg_container_size);
 	nb_container_init(mesh->ht_trg, TRG_CONTAINER);
 
-	mesh->vtx_membank = (void*)(memblock + mesh_size +
-				    edg_container_size +
+	mesh->vtx_membank = (void*)(memblock + mesh_size + edg_container_size +
 				    trg_container_size);
 	nb_membank_init(mesh->vtx_membank, mvtx_get_memsize());
 
-	mesh->trg_membank = (void*)(memblock + mesh_size +
-				    edg_container_size +
-				    trg_container_size +
-				    membank_size);
+	mesh->trg_membank = (void*)(memblock + mesh_size + edg_container_size +
+				    trg_container_size + membank_size);
 	nb_membank_init(mesh->trg_membank, sizeof(msh_trg_t));
 
+	mesh->edg_membank = (void*)(memblock + mesh_size + edg_container_size +
+				    trg_container_size + 2 * membank_size);
+	nb_membank_init(mesh->edg_membank, sizeof(msh_edge_t));
 }
 
 void vcn_mesh_finish(vcn_mesh_t *mesh)
@@ -137,6 +137,7 @@ void vcn_mesh_finish(vcn_mesh_t *mesh)
 	nb_container_finish(mesh->ht_edge);
 	nb_membank_finish(mesh->vtx_membank);
 	nb_membank_finish(mesh->trg_membank);
+	nb_membank_finish(mesh->edg_membank);
 }
 
 vcn_mesh_t* vcn_mesh_create(void)
@@ -178,7 +179,7 @@ void vcn_mesh_clear(vcn_mesh_t *mesh)
 	}
 	clear_vtx(mesh);
 	clear_trg(mesh);
-	nb_container_clear(mesh->ht_edge);
+	clear_edg(mesh);
 }
 
 static void clear_vtx(vcn_mesh_t *mesh)
@@ -194,6 +195,14 @@ static void clear_trg(vcn_mesh_t *mesh)
 	while (nb_container_is_not_empty(mesh->ht_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(mesh->ht_trg);
 		mtrg_free(mesh, trg);
+	}
+}
+
+static void clear_edg(vcn_mesh_t *mesh)
+{
+	while (nb_container_is_not_empty(mesh->ht_edge)) {
+		msh_edge_t *edge = nb_container_delete_first(mesh->ht_edge);
+		medge_free(mesh, edge);
 	}
 }
 
@@ -718,7 +727,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	while (nb_iterator_has_more(sgm_iter)) {
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		/* Clone the segment */
-		msh_edge_t* sgm_clone = calloc(1, sizeof(*sgm_clone));
+		msh_edge_t* sgm_clone = medge_calloc(clone);
 
 		/* Set an index to the original */
 		void** attr = malloc(2 * sizeof(*attr));
@@ -756,7 +765,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	nb_iterator_destroy(trg_iter);
 
 	nb_container_set_key_generator(clone->ht_edge, hash_key_edge);
-	nb_container_set_destroyer(clone->ht_edge, free);
 	nb_container_set_comparer(clone->ht_edge, compare_edge);
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
