@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "queue/binding.h"
+#include "queue/nb_queue_binding.h"
 #include "stack/binding.h"
 #include "sorted/binding.h"
 #include "heap/binding.h"

@@ -1,5 +1,5 @@
-#ifndef __NB_CONTAINER_BOT_QUEUE_QUEUE_NODE_H__
-#define __NB_CONTAINER_BOT_QUEUE_QUEUE_NODE_H__
+#ifndef __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_NODE_H__
+#define __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_NODE_H__
 
 typedef struct node_s node_t;
 

@@ -5,9 +5,9 @@
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 
-#include "queue_dst.h"
-#include "queue_iterator.h"
-#include "binding.h"
+#include "nb_queue_dst.h"
+#include "nb_queue_iterator.h"
+#include "nb_queue_binding.h"
 
 void queue_set_handlers(nb_container_t *container)
 {

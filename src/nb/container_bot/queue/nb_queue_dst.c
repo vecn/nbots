@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "queue_node.h"
-#include "queue_struct.h"
-#include "queue_dst.h"
+#include "nb_queue_node.h"
+#include "nb_queue_struct.h"
+#include "nb_queue_dst.h"
 
 static bool is_not_empty(const queue_t *const list);
 static node_t* get_first(const queue_t *const list);

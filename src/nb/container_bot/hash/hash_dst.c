@@ -12,8 +12,8 @@
 
 #include "nb/container_bot/container.h"
 
-#include "../queue/queue_dst.h"
-#include "../queue/queue_iterator.h"
+#include "../queue/nb_queue_dst.h"
+#include "../queue/nb_queue_iterator.h"
 #include "hash_dst.h"
 #include "hash_struct.h"
 

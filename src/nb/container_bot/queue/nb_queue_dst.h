@@ -1,5 +1,5 @@
-#ifndef __NB_CONTAINER_BOT_QUEUE_DST_H__
-#define __NB_CONTAINER_BOT_QUEUE_DST_H__
+#ifndef __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_DST_H__
+#define __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_DST_H__
 
 #include <stdbool.h>
 #include <stdint.h>

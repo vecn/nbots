@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "queue_node.h"
-#include "queue_struct.h"
-#include "queue_iterator.h"
+#include "nb_queue_node.h"
+#include "nb_queue_struct.h"
+#include "nb_queue_iterator.h"
 
 typedef struct {
 	bool is_init;
