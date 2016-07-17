@@ -12,22 +12,6 @@
 #include "nb/geometric_bot/model/modules2D/clipper.h"
 
 #define INPUTS_DIR "../../../../utest/nb/geometric_bot/model/modules2D/clipper_inputs"
-#define OUTPUT_DIR "../../../"
-
-static int TEMPORAL_ = 0; /* TEMPORAL */		      /* TEMPORAL */
-static void TEMPORAL(const vcn_model_t *const model)	      /* TEMPORAL */
-{							      /* TEMPORAL */
-	char label[100];				      /* TEMPORAL */
-	sprintf(label, "%s/TEMP_MODEL_%02i.png",
-		OUTPUT_DIR, TEMPORAL_);                    /* TEMPORAL */
-	vcn_model_draw(model, label, 1000, 800, false);
-	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_generate_from_model(mesh, model);
-	sprintf(label, "%s/TEMP_MODEL_%02i_MSH.png", OUTPUT_DIR,
-		TEMPORAL_++);	                             /* TEMPORAL */
-	vcn_mesh_draw(mesh, label, 1000, 800);  /* TEMPORAL */
-	vcn_mesh_destroy(mesh);
-}                                                             /* TEMPORAL */
 
 static int suite_init(void);
 static int suite_clean(void);
