@@ -7,6 +7,8 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+static int32_t geom_compare(const edge_t *edge1, const edge_t *edge2);
+
 inline edge_t* edge_create(void)
 {
 	return calloc(1, sizeof(edge_t));
@@ -54,8 +56,19 @@ int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 	if ((eq_e1v1_e2v1 && eq_e1v2_e2v2) ||
 	    (eq_e1v1_e2v2 && eq_e1v2_e2v1)) {
 		out = 0;
-		goto EXIT;
+	} else {
+		int32_t cmp = geom_compare(edge1, edge2);
+		if (0 == cmp)
+			out = 0;
+		else
+			out = (int8_t)(cmp/ABS(cmp));
 	}
+	return out;
+}
+
+static int32_t geom_compare(const edge_t *edge1, const edge_t *edge2)
+{
+	int32_t out = 0;
 
 	int32_t xv1e1 = (int32_t)(1000 * edge1->v1->x[0]);
 	int32_t xv2e1 = (int32_t)(1000 * edge1->v2->x[0]);
@@ -63,11 +76,8 @@ int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 	int32_t xv1e2 = (int32_t)(1000 * edge2->v1->x[0]);
 	int32_t xv2e2 = (int32_t)(1000 * edge2->v2->x[0]);
 	int32_t abs2 = ABS(xv1e2 - xv2e2);
-	if (abs1 < abs2) {
-		out = 1;
-		goto EXIT;
-	} else if (abs1 > abs2) {
-		out = -1;
+	if (abs1 != abs2) {
+		out = abs1 - abs2;
 		goto EXIT;
 	}
 	
@@ -77,54 +87,38 @@ int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 	int32_t yv1e2 = (int32_t)(1000 * edge2->v1->x[1]);
 	int32_t yv2e2 = (int32_t)(1000 * edge2->v2->x[1]);
 	abs2 = ABS(yv1e2 - yv2e2);
-	if (abs1 < abs2) {
-		out = 1;
-		goto EXIT;
-	} else if (abs1 > abs2) {
-		out = -1;
+	if (abs1 != abs2) {
+		out = abs1 - abs2;
 		goto EXIT;
 	}
 
 	int32_t c1 = MIN(xv1e1, xv2e1);
 	int32_t c2 = MIN(xv1e2, xv2e2);
-	if (c1 < c2) {
-		out = 1;
-		goto EXIT;
-	} else if (c1 > c2) {
-		out = -1;
+	if (c1 != c2) {
+		out = c1 - c2;
 		goto EXIT;
 	}
 	
 	c1 = MAX(xv1e1, xv2e1);
 	c2 = MAX(xv1e2, xv2e2);
-	if (c1 < c2) {
-		out = 1;
-		goto EXIT;
-	} else if (c1 > c2) {
-		out = -1;
+	if (c1 != c2) {
+		out = c1 - c2;
 		goto EXIT;
 	}
 
 	c1 = MIN(yv1e1, yv2e1);
 	c2 = MIN(yv1e2, yv2e2);
-	if (c1 < c2) {
-		out = 1;
-		goto EXIT;
-	} else if (c1 > c2) {
-		out = -1;
+	if (c1 != c2) {
+		out = c1 - c2;
 		goto EXIT;
 	}
 	
 	c1 = MAX(yv1e1, yv2e1);
 	c2 = MAX(yv1e2, yv2e2);
-	if (c1 < c2) {
-		out = 1;
-		goto EXIT;
-	} else if (c1 > c2) {
-		out = -1;
+	if (c1 != c2) {
+		out = c1 - c2;
 		goto EXIT;
 	}
-	out = 0;
 EXIT:
 	return out;
 }

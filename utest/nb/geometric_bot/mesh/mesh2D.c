@@ -262,7 +262,7 @@ static void test_generate_from_model_holes(void)
 	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(11000 < N_trg && 11500 > N_trg);
+	CU_ASSERT(11000 < N_trg && 11600 > N_trg);
 	CU_ASSERT(17700 < N_edge && 18500 > N_edge);
 }
 
