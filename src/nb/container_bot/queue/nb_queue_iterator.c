@@ -14,23 +14,23 @@
 
 typedef struct {
 	bool is_init;
-	node_t *node;
-	const node_t *start;
+	nb_queue_node_t *node;
+	const nb_queue_node_t *start;
 } iter_t;
 
 static void* malloc_iter(void);
 
-inline uint16_t queue_iter_get_memsize(void)
+uint16_t nb_queue_iter_get_memsize(void)
 {
 	return sizeof(iter_t);
 }
 
-inline void queue_iter_init(void *iter_ptr)
+void nb_queue_iter_init(void *iter_ptr)
 {
-	memset(iter_ptr, 0, queue_iter_get_memsize());
+	memset(iter_ptr, 0, nb_queue_iter_get_memsize());
 }
 
-void queue_iter_copy(void *iter_ptr, const void *src_iter_ptr)
+void nb_queue_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	const iter_t *src_iter = src_iter_ptr;
@@ -39,63 +39,63 @@ void queue_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->is_init = src_iter->is_init;
 }
 
-inline void queue_iter_finish(void *iter_ptr)
+void nb_queue_iter_finish(void *iter_ptr)
 {
-	queue_iter_clear(iter_ptr);
+	nb_queue_iter_clear(iter_ptr);
 }
 
-inline void* queue_iter_create(void)
+void* nb_queue_iter_create(void)
 {
 	void *iter = malloc_iter();
-	queue_iter_init(iter);
+	nb_queue_iter_init(iter);
 	return iter;
 }
 
 static inline void* malloc_iter(void)
 {
-	uint16_t size = queue_iter_get_memsize();
+	uint16_t size = nb_queue_iter_get_memsize();
 	return malloc(size);
 }
 
-inline void* queue_iter_clone(const void *const iter_ptr)
+void* nb_queue_iter_clone(const void *const iter_ptr)
 {
 	void *iter = malloc_iter();
-	queue_iter_copy(iter, iter_ptr);
+	nb_queue_iter_copy(iter, iter_ptr);
 	return iter;
 }
 
-inline void queue_iter_destroy(void *iter_ptr)
+void nb_queue_iter_destroy(void *iter_ptr)
 {
-	queue_iter_finish(iter_ptr);
+	nb_queue_iter_finish(iter_ptr);
 	free(iter_ptr);
 }
 
-inline void queue_iter_clear(void *iter_ptr)
+void nb_queue_iter_clear(void *iter_ptr)
 {
-	memset(iter_ptr, 0, queue_iter_get_memsize());
+	memset(iter_ptr, 0, nb_queue_iter_get_memsize());
 }
 
-void queue_iter_set_dst(void *iter_ptr, const void *const queue_ptr)
+void nb_queue_iter_set_dst(void *iter_ptr, const void *const queue_ptr)
 {
 	iter_t *iter = iter_ptr;
 	iter->start = NULL;
 	if (NULL != queue_ptr) {
-		const queue_t* queue = queue_ptr;
+		const nb_queue_t* queue = queue_ptr;
 		if (NULL != queue->end)
 			iter->start = queue->end->next;
 	}
-	queue_iter_restart(iter);
+	nb_queue_iter_restart(iter);
 }
 
 
-inline void queue_iter_restart(void* iter_ptr)
+void nb_queue_iter_restart(void* iter_ptr)
 {
 	iter_t *iter = iter_ptr;
-	iter->node = (node_t*) iter->start;
+	iter->node = (nb_queue_node_t*) iter->start;
 	iter->is_init = (NULL != iter->start);
 }
 
-const void* queue_iter_get_next(void *iter_ptr)
+const void* nb_queue_iter_get_next(void *iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	void *val = NULL;
@@ -107,7 +107,7 @@ const void* queue_iter_get_next(void *iter_ptr)
 	return val;
 }
 
-inline bool queue_iter_has_more(const void *const iter_ptr)
+bool nb_queue_iter_has_more(const void *const iter_ptr)
 {
 	const iter_t *const restrict iter = iter_ptr;
 	return (iter->start != iter->node) || iter->is_init;

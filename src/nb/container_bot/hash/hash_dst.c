@@ -79,7 +79,7 @@ static void clone_lists(hash_t *hash, const hash_t *const src_hash,
 {
 	for (uint32_t i = 0; i < src_hash->size; i++) {
 		if (NULL != src_hash->rows[i])
-			hash->rows[i] = queue_clone(src_hash->rows[i], clone);
+			hash->rows[i] = nb_queue_clone(src_hash->rows[i], clone);
 	}
 }
 
@@ -99,7 +99,7 @@ static void clear_rows(hash_t *hash,
 {
 	for (uint32_t i = 0; i < hash->size; i++) {
 		if (NULL != hash->rows[i]) {
-			queue_destroy(hash->rows[i], destroy);
+			nb_queue_destroy(hash->rows[i], destroy);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -191,11 +191,11 @@ static void reinsert_list(hash_t *hash, void *queue_ptr,
 			  uint32_t (*key)(const void *const),
 			  int8_t (*compare)(const void*, const void*))
 {
-	while (queue_is_not_empty(queue_ptr)) {
-		void *val = queue_delete_first(queue_ptr, key);
+	while (nb_queue_is_not_empty(queue_ptr)) {
+		void *val = nb_queue_delete_first(queue_ptr, key);
 		insert(hash, val, key, compare);
 	}
-	queue_destroy(queue_ptr, null_destroy);
+	nb_queue_destroy(queue_ptr, null_destroy);
 }
 
 static void insert(hash_t *hash, const void *const val,
@@ -204,8 +204,8 @@ static void insert(hash_t *hash, const void *const val,
 {
 	uint32_t vkey = hash_key(val, hash->size, key);
 	if (NULL == hash->rows[vkey])
-		hash->rows[vkey] = queue_create();
-	queue_insert(hash->rows[vkey], val, key, compare);
+		hash->rows[vkey] = nb_queue_create();
+	nb_queue_insert(hash->rows[vkey], val, key, compare);
 }
 
 static uint32_t hash_key(const void *const val, uint32_t N,
@@ -245,7 +245,7 @@ void* hash_get_first(const void *const hash_ptr)
 		uint32_t i = 0;
 		while (NULL == hash->rows[i])
 			i++;
-		val = queue_get_first(hash->rows[i]);
+		val = nb_queue_get_first(hash->rows[i]);
 	}
 	return val;
 }
@@ -260,10 +260,10 @@ void* hash_delete_first(void *hash_ptr,
 		while (NULL == hash->rows[i])
 			i++;
 
-		val = queue_delete_first(hash->rows[i], key);
+		val = nb_queue_delete_first(hash->rows[i], key);
 		hash->length -= 1;
-		if (queue_is_empty(hash->rows[i])) {
-			queue_destroy(hash->rows[i], null_destroy);
+		if (nb_queue_is_empty(hash->rows[i])) {
+			nb_queue_destroy(hash->rows[i], null_destroy);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -284,8 +284,8 @@ void* hash_exist(const void *const hash_ptr, const void *val,
 	if (0 < hash->length) {
 		uint32_t hkey = hash_key(val, hash->size, key);
 		if (NULL != hash->rows[hkey])
-			item = queue_exist(hash->rows[hkey], val, 
-					   key, compare);
+			item = nb_queue_exist(hash->rows[hkey], val, 
+					      key, compare);
 	}
 	return item;
 }
@@ -299,12 +299,12 @@ void* hash_delete(void *hash_ptr, const void *const val,
 	if (0 < hash->length) {
 		uint32_t i = hash_key(val, hash->size, key);
 		if (NULL != hash->rows[i]) {
-			item = queue_delete(hash->rows[i], val,
-					    key, compare);
+			item = nb_queue_delete(hash->rows[i], val,
+					       key, compare);
 			if (NULL != item)
 				hash->length -= 1;
-			if(queue_is_empty(hash->rows[i])){
-				queue_destroy(hash->rows[i], null_destroy);
+			if(nb_queue_is_empty(hash->rows[i])){
+				nb_queue_destroy(hash->rows[i], null_destroy);
 				hash->rows[i] = NULL;
 			}
 		}
@@ -342,7 +342,7 @@ uint32_t hash_get_N_collisions(const void *const hash_ptr)
 	uint32_t N = 0;
  	for (uint32_t i = 0; i < hash->size; i++) {
 		if (NULL != hash->rows[i]) {
-			if (queue_get_length(hash->rows[i]) > 1)
+			if (nb_queue_get_length(hash->rows[i]) > 1)
 				N += 1;
 		}
 	}
@@ -356,7 +356,7 @@ nb_container_t* hash_get_collisions(const void *const hash_ptr)
  	for (uint32_t i = 0; i < hash->size; i++) {
 		void *rows = hash->rows[i];
 		if (NULL != rows) {
-			if (queue_get_length(rows) > 1) {
+			if (nb_queue_get_length(rows) > 1) {
 				void* collisions = 
 					get_container_from_list(rows);
 				nb_container_insert(cnt, collisions);
@@ -369,12 +369,12 @@ nb_container_t* hash_get_collisions(const void *const hash_ptr)
 static nb_container_t* get_container_from_list(const void *const list)
 {
 	nb_container_t *items = nb_container_create(NB_QUEUE);
-	void *iter = queue_iter_create();
-	queue_iter_set_dst(iter, list);
-	while (queue_iter_has_more(iter)) {
-		const void *item = queue_iter_get_next(iter);
+	void *iter = nb_queue_iter_create();
+	nb_queue_iter_set_dst(iter, list);
+	while (nb_queue_iter_has_more(iter)) {
+		const void *item = nb_queue_iter_get_next(iter);
 		nb_container_insert(items, item);
 	}
-	queue_iter_destroy(iter);
+	nb_queue_iter_destroy(iter);
 	return items;
 }

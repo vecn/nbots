@@ -46,7 +46,7 @@ uint16_t nb_iterator_get_memsize(void)
 
 static uint16_t dst_iter_get_max_memsize(void)
 {
-	uint16_t size = MAX(queue_iter_get_memsize(),
+	uint16_t size = MAX(nb_queue_iter_get_memsize(),
 			    stack_iter_get_memsize());
 	size = MAX(size, avl_iter_get_memsize());
 	size = MAX(size, heap_iter_get_memsize());
@@ -200,7 +200,7 @@ void nb_iterator_set_container(nb_iterator_t *iter,
 {
 	switch (container->type) {
 	case NB_QUEUE:
-		queue_iterator_set_handlers(iter);
+		nb_queue_iterator_set_handlers(iter);
 		break;
 	case NB_STACK:
 		stack_iterator_set_handlers(iter);

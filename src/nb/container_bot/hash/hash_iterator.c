@@ -42,7 +42,7 @@ void hash_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->ht_rows = src_iter->ht_rows;
 	iter->ht_size = src_iter->ht_size;
 	iter->i = src_iter->i;
-	iter->row_iter = queue_iter_clone(src_iter->row_iter);
+	iter->row_iter = nb_queue_iter_clone(src_iter->row_iter);
 }
 
 void hash_iter_finish(void *iter_ptr)
@@ -80,7 +80,7 @@ void hash_iter_clear(void *iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	if (NULL != iter->row_iter)
-		queue_iter_destroy(iter->row_iter);
+		nb_queue_iter_destroy(iter->row_iter);
 	memset(iter, 0, sizeof(iter_t));
 }
 
@@ -92,7 +92,7 @@ void hash_iter_set_dst(void *iter_ptr, const void *hash_ptr)
 		iter->ht_rows = hash->rows; 
 		iter->ht_size = hash->size;
 		if (NULL == iter->row_iter)
-			iter->row_iter = queue_iter_create();
+			iter->row_iter = nb_queue_iter_create();
 		hash_iter_restart(iter);
 	}
 }
@@ -109,14 +109,14 @@ static void set_next_row_iterator(iter_t *iter)
 {
 	while (iter->i < iter->ht_size) {
 		if (NULL != iter->ht_rows[iter->i]) {
-			queue_iter_set_dst(iter->row_iter,
-					  iter->ht_rows[iter->i]);
+			nb_queue_iter_set_dst(iter->row_iter,
+					      iter->ht_rows[iter->i]);
 			break;
 		}
 		iter->i += 1;
 	}
 	if (iter->i >= iter->ht_size)
-		queue_iter_set_dst(iter->row_iter, NULL);
+		nb_queue_iter_set_dst(iter->row_iter, NULL);
 
 }
 
@@ -125,7 +125,7 @@ const void* hash_iter_get_next(void *iter_ptr)
 	iter_t *iter = iter_ptr;
 	const void *val = NULL;
 	if (NULL != iter->row_iter)
-		val = queue_iter_get_next(iter->row_iter);
+		val = nb_queue_iter_get_next(iter->row_iter);
 	return val;
 }
 
@@ -134,11 +134,11 @@ bool hash_iter_has_more(const void *const iter_ptr)
 	iter_t *iter = (iter_t*) iter_ptr;
 	bool has_more = false;
 	if (NULL != iter->row_iter) {
-		has_more = queue_iter_has_more(iter->row_iter);
+		has_more = nb_queue_iter_has_more(iter->row_iter);
 		if (!has_more) {
 			iter->i += 1;
 			set_next_row_iterator(iter);
-			has_more = queue_iter_has_more(iter->row_iter);
+			has_more = nb_queue_iter_has_more(iter->row_iter);
 		}
 	}
 	return has_more;

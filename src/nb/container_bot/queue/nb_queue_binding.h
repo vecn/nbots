@@ -9,11 +9,11 @@
 #include "nb_queue_dst.h"
 #include "nb_queue_iterator.h"
 
-void queue_set_handlers(nb_container_t *container);
+void nb_queue_set_handlers(nb_container_t *container);
 
-void queue_iterator_set_handlers(nb_iterator_t *iter);
+void nb_queue_iterator_set_handlers(nb_iterator_t *iter);
 
-void* queue_do(nb_container_t *container, const char* func,
-	       void *data, int8_t *status);
+void* nb_queue_do(nb_container_t *container, const char* func,
+		  void *data, int8_t *status);
 
 #endif

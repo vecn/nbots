@@ -6,7 +6,7 @@
 typedef struct {
 	/* Circular linked list */
 	uint32_t length;
-	node_t *end;
-} queue_t;
+	nb_queue_node_t *end;
+} nb_queue_t;
 
 #endif

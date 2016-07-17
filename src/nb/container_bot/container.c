@@ -49,7 +49,7 @@ static uint16_t dst_get_memsize(nb_container_type type)
 	uint16_t dst_size;
 	switch(type) {
 	case NB_QUEUE:
-		dst_size = queue_get_memsize();
+		dst_size = nb_queue_get_memsize();
 		break;
 	case NB_STACK:
 		dst_size = stack_get_memsize();
@@ -64,7 +64,7 @@ static uint16_t dst_get_memsize(nb_container_type type)
 		dst_size = hash_get_memsize();
 		break;
 	default:
-		dst_size = queue_get_memsize();	
+		dst_size = nb_queue_get_memsize();	
 	}
 	return dst_size;
 }
@@ -127,7 +127,7 @@ static void set_functions(nb_container_t *container,
 {
 	switch (type) {
 	case NB_QUEUE:
-		queue_set_handlers(container);
+		nb_queue_set_handlers(container);
 		break;
 	case NB_STACK:
 		stack_set_handlers(container);
@@ -142,7 +142,7 @@ static void set_functions(nb_container_t *container,
 		hash_set_handlers(container);
 		break;
 	default:
-		queue_set_handlers(container);
+		nb_queue_set_handlers(container);
 	}
 }
 
@@ -360,7 +360,7 @@ void* nb_container_do(nb_container_t *container, const char* func,
 	void *out = NULL;
 	switch (container->type) {
 	case NB_QUEUE:
-		out = queue_do(container, func, data, status);
+		out = nb_queue_do(container, func, data, status);
 		break;
 	case NB_STACK:
 		out = stack_do(container, func, data, status);

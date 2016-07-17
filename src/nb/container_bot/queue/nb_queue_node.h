@@ -1,17 +1,17 @@
 #ifndef __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_NODE_H__
 #define __NB_CONTAINER_BOT_QUEUE_NB_QUEUE_NODE_H__
 
-typedef struct node_s node_t;
+typedef struct nb_queue_node_s nb_queue_node_t;
 
-struct node_s {
-	node_t *next;
+struct nb_queue_node_s {
+	nb_queue_node_t *next;
 	void *val;
 };
 
-node_t* node_create(void);
-void node_destroy(node_t *node, void (*destroy)(void*));
-node_t* node_clone(const node_t *const node,
-		    void* (*clone)(const void *const));
-node_t* node_get_prev(const node_t *const node);
+nb_queue_node_t* nb_queue_node_create(void);
+void nb_queue_node_destroy(nb_queue_node_t *node, void (*destroy)(void*));
+nb_queue_node_t* nb_queue_node_clone(const nb_queue_node_t *const node,
+				     void* (*clone)(const void *const));
+nb_queue_node_t* node_get_prev(const nb_queue_node_t *const node);
 
 #endif
