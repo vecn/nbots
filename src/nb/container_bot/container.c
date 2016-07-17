@@ -89,7 +89,7 @@ void nb_container_init(void *container_ptr, nb_container_type type){
 static void init_val_operators(nb_container_t *container)
 {
 	container->op.key = key_ptr;
-	container->op.destroy = destroy_null;
+	container->op.destroy = destroy_null;/* TEMPORAL */
 	container->op.compare = compare_ptr;
 	container->op.clone = clone_same_ptr;
 }

@@ -1,21 +1,29 @@
 #include <stdlib.h>
 #include "nb_queue_node.h"
 
-nb_queue_node_t* nb_queue_node_create(void)
+uint32_t nb_queue_node_get_memsize(void)
 {
-  	return calloc(1, sizeof(nb_queue_node_t));
+	return sizeof(nb_queue_node_t);
 }
 
-void nb_queue_node_destroy(nb_queue_node_t *node, void (*destroy)(void*))
+nb_queue_node_t* nb_queue_node_create(nb_membank_t *membank)
+{
+  	return nb_membank_calloc(membank);
+}
+
+void nb_queue_node_destroy(nb_membank_t *membank,
+			   nb_queue_node_t *node,
+			   void (*destroy)(void*))
 {
   	destroy(node->val);
-  	free(node);
+	nb_membank_free(membank, node);
 }
 
-nb_queue_node_t *nb_queue_node_clone(const nb_queue_node_t *const node,
+nb_queue_node_t *nb_queue_node_clone(nb_membank_t *membank,
+				     const nb_queue_node_t *const node,
 				     void* (*clone)(const void *const))
 {
-	nb_queue_node_t *nc = nb_queue_node_create();
+	nb_queue_node_t *nc = nb_queue_node_create(membank);
   	nc->val = clone(node->val);
   	nc->next = node->next;
   	return nc;

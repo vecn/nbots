@@ -14,7 +14,8 @@
 
 static bool is_not_empty(const nb_queue_t *const list);
 static nb_queue_node_t* get_first(const nb_queue_t *const list);
-static void* malloc_queue(void);
+static void* calloc_queue(void);
+static void destroy_values(nb_queue_t *queue, void (*destroy)(void*));
 static void insert_node_as_starting(nb_queue_t *list, const void *const val);
 static void add_node(nb_queue_t *list, nb_queue_node_t *node);
 static void add_first_node(nb_queue_t *list, nb_queue_node_t *node);
@@ -27,14 +28,17 @@ static void unlink_node(nb_queue_t *queue, const nb_queue_node_t *const node);
 
 uint16_t nb_queue_get_memsize(void)
 {
-	return sizeof(nb_queue_t);
+	return sizeof(nb_queue_t) + nb_membank_get_memsize();
 }
 
 void nb_queue_init(void *queue_ptr)
 {
-	nb_queue_t *queue = queue_ptr;
+	char *memblock = queue_ptr;
+	nb_queue_t *queue = (void*) memblock;
 	queue->length = 0;
 	queue->end = NULL;
+	queue->membank = (void*) (memblock + sizeof(nb_queue_t));
+	nb_membank_init(queue->membank, nb_queue_node_get_memsize());
 }
 
 void nb_queue_copy(void *queue_ptr, const void *src_queue_ptr,
@@ -47,12 +51,15 @@ void nb_queue_copy(void *queue_ptr, const void *src_queue_ptr,
 
 	if (is_not_empty(src_queue)) {
 		nb_queue_node_t *end = 
-			nb_queue_node_clone(src_queue->end, clone);
+			nb_queue_node_clone(queue->membank,
+					    src_queue->end, clone);
 		queue->end = end; 
 
 		nb_queue_node_t *iter = get_first(src_queue);
 		do {
-			nb_queue_node_t *node = nb_queue_node_clone(iter, clone);
+			nb_queue_node_t *node = 
+				nb_queue_node_clone(queue->membank,
+						    iter, clone);
 			end->next = node;
 			end = node;
 			iter = iter->next;
@@ -76,26 +83,28 @@ static inline nb_queue_node_t* get_first(const nb_queue_t *const restrict queue)
 
 void nb_queue_finish(void *queue_ptr, void (*destroy)(void*))
 {
-	nb_queue_clear(queue_ptr, destroy);
+	nb_queue_t *queue = queue_ptr;
+	destroy_values(queue, destroy);
+	nb_membank_finish(queue->membank);
 }
 
 void* nb_queue_create(void)
 {
-	void *queue = malloc_queue();
+	void *queue = calloc_queue();
 	nb_queue_init(queue);
 	return queue;
 }
 
-static inline void* malloc_queue(void)
+static inline void* calloc_queue(void)
 {
 	uint16_t size = nb_queue_get_memsize();
-  	return malloc(size);
+  	return nb_calloc(size);
 }
 
 void* nb_queue_clone(const void *const queue_ptr,
 		     void* (*clone)(const void*))
 {
-	void *queue = malloc_queue();
+	void *queue = calloc_queue();
 	nb_queue_copy(queue, queue_ptr, clone);
 	return queue;
 }
@@ -111,16 +120,23 @@ void nb_queue_clear(void *queue_ptr,
 		    void (*destroy)(void*))
 {
 	nb_queue_t *queue = queue_ptr;
-	if (is_not_empty(queue)) {
-		nb_queue_node_t* iter = get_first(queue);
-		queue->end->next = NULL;
-		while (NULL != iter) {
-			nb_queue_node_t* to_destroy = iter;
-			iter = iter->next;
-			nb_queue_node_destroy(to_destroy, destroy);
+	destroy_values(queue, destroy);
+	nb_membank_clear(queue->membank);
+	queue->length = 0;
+	queue->end = NULL;
+}
+
+static void destroy_values(nb_queue_t *queue, void (*destroy)(void*))
+{
+	if (NULL != destroy) {
+		if (is_not_empty(queue)) {
+			nb_queue_node_t* iter = get_first(queue);
+			queue->end->next = NULL;
+			while (NULL != iter) {
+				destroy(iter->val);
+				iter = iter->next;
+			}
 		}
-		queue->length = 0;
-		queue->end = NULL;
 	}
 }
 
@@ -155,7 +171,7 @@ bool nb_queue_insert_first(void *queue_ptr, const void *val,
 static inline void insert_node_as_starting(nb_queue_t *restrict queue,
 					   const void *const restrict val)
 {
-	nb_queue_node_t *const restrict node = nb_queue_node_create();
+	nb_queue_node_t *const node = nb_queue_node_create(queue->membank);
 	node->val = (void*) val;
 	add_node(queue, node);
 	queue->length += 1;
@@ -217,13 +233,14 @@ void* nb_queue_delete_first(void *queue_ptr,
 		  queue->end->next = first->next;
 		else
 		  queue->end = NULL;
-		nb_queue_node_destroy(first, null_destroy);
+		nb_queue_node_destroy(queue->membank,
+				      first, null_destroy);
 		queue->length -= 1;
 	}
 	return val;
 }
 
-static inline void null_destroy(void *val)
+static inline void null_destroy(void *val)/* TEMPORAL */
 {
 	; /* Null statement */
 }
@@ -274,7 +291,8 @@ void* nb_queue_delete(void *queue_ptr, const void *val,
 		if (NULL != node) {
 			unlink_node(queue, node);
 			deleted_val = node->val;
-			nb_queue_node_destroy(node, null_destroy);
+			nb_queue_node_destroy(queue->membank,
+					      node, null_destroy);
 			queue->length -= 1;
 		}
 	}
