@@ -47,7 +47,12 @@ static double spread_infection(msh_trg_t* trg_infected,
 
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
+static void get_useful_vtx(const vcn_mesh_t *mesh, nb_container_t *useful_vtx);
 static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx);
+static void get_unused_vtx(const vcn_mesh_t *mesh,
+			   const nb_container_t *useful_vtx,
+			   nb_container_t *unused_vtx);
+static void update_input_array(vcn_mesh_t *mesh, const msh_vtx_t *vtx);
 static uint16_t get_N_areas(const nb_mesh_t *mesh,
 			    bool block_with_input_sgm);
 static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
@@ -499,59 +504,72 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 		alloca(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(useful_vtx, NB_SORTED);
 
+	get_useful_vtx(mesh, useful_vtx);	
+	uint32_t length = vcn_bins2D_get_length(mesh->ug_vtx);
+	delete_unused_vtx(mesh, useful_vtx);
+
+	nb_container_finish(useful_vtx);
+
+	return length - vcn_bins2D_get_length(mesh->ug_vtx);
+}
+
+static void get_useful_vtx(const vcn_mesh_t *mesh, nb_container_t *useful_vtx)
+{
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		/* Track useful vertices */
 		nb_container_insert(useful_vtx, trg->v1);
 		nb_container_insert(useful_vtx, trg->v2);
 		nb_container_insert(useful_vtx, trg->v3);
 	}
 	nb_iterator_finish(iter);
-
-	
-	uint32_t deleted = vcn_bins2D_get_length(mesh->ug_vtx);
-	delete_unused_vtx(mesh, useful_vtx);
-	nb_container_finish(useful_vtx);
-
-
-	deleted = deleted - vcn_bins2D_get_length(mesh->ug_vtx);
-	return deleted;
 }
 
 static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx)
 {
-	nb_container_t *vtx_to_destroy = 
-		alloca(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(vtx_to_destroy, NB_QUEUE);
+	nb_container_t *unused_vtx = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(unused_vtx, NB_QUEUE);
 
+	get_unused_vtx(mesh, useful_vtx, unused_vtx);
+
+	while (nb_container_is_not_empty(unused_vtx)) {
+		msh_vtx_t *vtx = nb_container_delete_first(unused_vtx);
+		vcn_bins2D_delete(mesh->ug_vtx, vtx);
+		update_input_array(mesh, vtx);
+		mvtx_destroy(mesh, vtx);
+	}
+	nb_container_finish(unused_vtx);
+}
+
+static void get_unused_vtx(const vcn_mesh_t *mesh,
+			   const nb_container_t *useful_vtx,
+			   nb_container_t *unused_vtx)
+{
 	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		if(!nb_container_exist(useful_vtx, vtx)){
-			vcn_bins2D_delete(mesh->ug_vtx, vtx);
-			if (mvtx_is_type_origin(vtx, INPUT) ||
-			    mvtx_is_type_location(vtx, ONSEGMENT)) {
-				for (uint32_t i=0; i < mesh->N_input_vtx; i++) {
-					if (vtx == mesh->input_vtx[i]) {
-						mesh->input_vtx[i] = NULL;
-						break;
-					}
-				}
-			}
-			nb_container_insert(vtx_to_destroy, vtx);
+		if (!nb_container_exist(useful_vtx, vtx)) {
+			nb_container_insert(unused_vtx, vtx);
 		}
 	}
 	vcn_bins2D_iter_destroy(iter);
+}
 
-	while (nb_container_is_not_empty(vtx_to_destroy)) {
-		msh_vtx_t *vtx = nb_container_delete_first(vtx_to_destroy);
-		mvtx_destroy(mesh, vtx);
+static void update_input_array(vcn_mesh_t *mesh, const msh_vtx_t *vtx)
+{
+	if (mvtx_is_type_origin(vtx, INPUT)) {
+		for (uint32_t i = 0; i < mesh->N_input_vtx; i++) {
+			if (vtx == mesh->input_vtx[i]) {
+				mesh->input_vtx[i] = NULL;
+				goto EXIT;
+			}
+		}
 	}
-	nb_container_finish(vtx_to_destroy);
+EXIT:
+	return;
 }
 
 bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh)

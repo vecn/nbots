@@ -4,6 +4,7 @@
 #include "edge.h"
 
 #define ABS(a) (((a) > 0)?(a):(-(a)))
+#define  SIGN(a) ((a)?((a)/ABS(a)):0)
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -58,10 +59,7 @@ int8_t edge_compare(const void *const edge1_ptr, const void *const edge2_ptr)
 		out = 0;
 	} else {
 		int32_t cmp = geom_compare(edge1, edge2);
-		if (0 == cmp)
-			out = 0;
-		else
-			out = (int8_t)(cmp/ABS(cmp));
+		out = (int8_t) SIGN(cmp);
 	}
 	return out;
 }

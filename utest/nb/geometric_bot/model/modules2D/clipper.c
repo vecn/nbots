@@ -134,16 +134,12 @@ void cunit_nb_geometric_bot_model2D_clipper(void)
 		    test_get_difference_g);
 	CU_add_test(suite, "get_combination() of h",
 		    test_get_combination_h);
-	/* BUG: Infinite loop
 	CU_add_test(suite, "get_intersection() of h",
 		    test_get_intersection_h);
-	*/
 	CU_add_test(suite, "get_union() of h",
 		    test_get_union_h);
-	/* BUG: Segmentation Fault
 	CU_add_test(suite, "get_substraction() of h A",
 		    test_get_substractionA_h);
-	*/
 	CU_add_test(suite, "get_substraction() of h B",
 		    test_get_substractionB_h);
 	CU_add_test(suite, "get_difference() of h",
@@ -798,14 +794,11 @@ static void test_get_intersection_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	uint16_t N_areas = vcn_model_get_N_subareas(model);
-	TEMPORAL(model); /* TEMPORAL */
-	printf("DATA: %i %i %i %i\n", /* TEMPORAL */
-	       model->N, model->M, model->H, N_areas); /* TEMPORAL */
 
-	CU_ASSERT(11 == model->N);
-	CU_ASSERT(15 == model->M);
-	CU_ASSERT(1 == model->H);
-	CU_ASSERT(4 == N_areas);
+	CU_ASSERT(84 == model->N);
+	CU_ASSERT(85 == model->M);
+	CU_ASSERT(2 == model->H);
+	CU_ASSERT(1 == N_areas);
 	vcn_model_destroy(model);
 }
 
@@ -841,14 +834,11 @@ static void test_get_substractionA_h(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	uint16_t N_areas = vcn_model_get_N_subareas(model);
-	TEMPORAL(model); /* TEMPORAL */
-	printf("DATA: %i %i %i %i\n", /* TEMPORAL */
-	       model->N, model->M, model->H, N_areas); /* TEMPORAL */
 
-	CU_ASSERT(85 == model->N);
-	CU_ASSERT(92 == model->M);
+	CU_ASSERT(12 == model->N);
+	CU_ASSERT(12 == model->M);
 	CU_ASSERT(0 == model->H);
-	CU_ASSERT(19 == N_areas);
+	CU_ASSERT(4 == N_areas);
 	vcn_model_destroy(model);
 }
 
