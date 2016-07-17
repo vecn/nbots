@@ -120,9 +120,9 @@ void cunit_nb_geometric_bot_model2D_clipper(void)
 		    test_get_substractionB_b);
 	CU_add_test(suite, "get_difference() of b",
 		    test_get_difference_b);
-	/* TEMPORAL FAILING TEST
 	CU_add_test(suite, "get_combination() of g",
 		    test_get_combination_g);
+	/* TEMPORAL FAILING TEST
 	CU_add_test(suite, "get_intersection() of g",
 		    test_get_intersection_g);
 	CU_add_test(suite, "get_union() of g",
@@ -662,6 +662,13 @@ static void test_get_combination_g(void)
 	vcn_model_destroy(model1);
 	vcn_model_destroy(model2);
 	uint16_t N_areas = vcn_model_get_N_subareas(model);
+
+	printf("DATA: %i %i %i %i\n", model->N, model->M, model->H, N_areas);/**/
+	vcn_model_draw(model, "../../../combina.png", 1000, 800);/* TEMPORAL */
+	vcn_mesh_t *mesh = vcn_mesh_create(); /* TEMPORAL */
+	vcn_mesh_generate_from_model(mesh, model);  /* TEMPORAL */
+	vcn_mesh_draw(mesh, "../../../combinam.png", 1000, 800);/* TEMPORAL */
+	vcn_mesh_destroy(mesh);               /* TEMPORAL */
 
 	CU_ASSERT(10 == model->N);
 	CU_ASSERT(7 == model->M);

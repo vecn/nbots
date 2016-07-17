@@ -88,10 +88,11 @@ static void search_intersections(nb_container_t *intersections,
 				 const vcn_model_t *model2,
 				 nb_container_t *vertices,
 				 nb_container_t *edges);
-static edge_t** insert_edges_and_vtx(const vcn_model_t *model,
-				     nb_container_t *vertices,
-				     nb_container_t *edges,
-				     bool check_if_edges_exist);
+static void insert_edges_and_vtx(const vcn_model_t *model,
+				 nb_container_t *vertices,
+				 nb_container_t *edges,
+				 edge_t **edges_array,
+				 bool check_if_edges_exist);
 static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
 				      nb_container_t *vertices,
 				      uint32_t vtx_id);
@@ -117,18 +118,24 @@ static void process_intersected_sgm(ipack_t *ipack,
 static void process_collinear_sgm(ipack_t *ipack,
 				  nb_container_t* avl_sgm,
 				  nb_container_t* sgm_intersect);
-static void calculate_collinear_dists(const ipack_t *ipack,
+static void calculate_collinear_dists(const edge_t *sgm1,
+				      const edge_t *sgm2,
 				      collinear_dists *cdists);
-static bool collinear_are_not_contained(collinear_dists *cdists);
+static bool collinear_are_contained(collinear_dists *cdists);
+static bool collinear_are_intersected(collinear_dists *cdists);
 static void process_collinear_intersected(ipack_t *ipack,
 					  collinear_dists *cdists,
 					  nb_container_t* avl_sgm,
 					  nb_container_t* sgm_intersect);
-static void insert_ipacks_sgm1(ipack_t *ipack,
+static void collinear_merge_into_sgm1(edge_t *sgm1, const edge_t *sgm2, 
+				      const collinear_dists *cdists);
+static void update_ipacks_sgm1(ipack_t *ipack,
 			       nb_container_t *sgm_intersect,
 			       nb_container_t *sgm_intersect_aux,
 			       const edge_t *existing_sgm1);
-static void insert_ipacks_sgm2(ipack_t *ipack,
+static edge_t *ipack_get_opp_sgm(const ipack_t *ipack,
+				 const edge_t *sgm);
+static void update_ipacks_sgm2(ipack_t *ipack,
 			       nb_container_t *sgm_intersect,
 			       nb_container_t *sgm_intersect_aux,
 			       const edge_t *existing_sgm1);
@@ -138,6 +145,7 @@ static void process_collinear_contained(ipack_t *ipack,
 					collinear_dists *cdists,
 					nb_container_t* avl_sgm,
 					nb_container_t* sgm_intersect);
+static edge_t *get_smallest_sgm(ipack_t *ipack, collinear_dists *cdists);
 static void remove_short_segments(nb_container_t* avl_sgm,
 				  nb_container_t* ht_vtx,
 				  double min_length_x_sgm);
@@ -266,6 +274,7 @@ static void get_combined_elements(const vcn_model_t *model1,
 	nb_container_t *sgm_intersect = 
 		alloca(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(sgm_intersect, NB_SORTED);
+	nb_container_set_comparer(sgm_intersect, ipack_comparer);
 
 	search_intersections(sgm_intersect, model1, model2,
 			     ht_vtx, avl_sgm);
@@ -535,9 +544,12 @@ static void search_intersections(nb_container_t *intersections,
 				 nb_container_t *vertices,
 				 nb_container_t *edges)
 {
-	edge_t** edges1 = insert_edges_and_vtx(model1, vertices, edges, false);
-	edge_t** edges2 = insert_edges_and_vtx(model2, vertices, edges, true);
-	nb_container_set_comparer(intersections, ipack_comparer);
+	char *memblock = calloc(model1->M + model2->M, sizeof(edge_t*));
+	edge_t **edges1 = (void*) memblock;
+	edge_t **edges2 = (void*) (memblock + model1->M * sizeof(edge_t*));
+	insert_edges_and_vtx(model1, vertices, edges, edges1, false);
+	insert_edges_and_vtx(model2, vertices, edges, edges2, true);
+
 	for (uint32_t i = 0; i < model1->M; i++) {
 		for (uint32_t j = 0; j < model2->M; j++) {
 			if (NULL != edges2[j]) {
@@ -550,16 +562,15 @@ static void search_intersections(nb_container_t *intersections,
 			}
 		}
 	}
-	free(edges1);
-	free(edges2);
+	free(memblock);
 }
 
-static edge_t** insert_edges_and_vtx(const vcn_model_t *model,
-				     nb_container_t *vertices,
-				     nb_container_t *edges,
-				     bool check_if_edges_exist)
+static void insert_edges_and_vtx(const vcn_model_t *model,
+				 nb_container_t *vertices,
+				 nb_container_t *edges,
+				 edge_t **edges_array,
+				 bool check_if_edges_exist)
 {
-	edge_t **edges_array = calloc(model->M, sizeof(*edges_array));
 	for (uint32_t i = 0; i < model->M; i++) {
 		edge_t aux_edge;
 		aux_edge.v1 = insert_vtx_if_not_exist(model, vertices,
@@ -582,7 +593,6 @@ static edge_t** insert_edges_and_vtx(const vcn_model_t *model,
 			edges_array[i] = NULL;
 		}
 	}
-	return edges_array;
 }
 
 static vtx_t* insert_vtx_if_not_exist(const vcn_model_t *const model,
@@ -607,7 +617,7 @@ static inline edge_t* exist_edge_and_insert_if_not(nb_container_t* edges,
 {
 	edge_t* existing_edge = nb_container_exist(edges, edge);
 	if (NULL == existing_edge)
-			nb_container_insert(edges, edge);
+		nb_container_insert(edges, edge);
 	return existing_edge;
 }
 
@@ -635,7 +645,7 @@ static ipack_t* get_intersection_pack(const edge_t *sgm1,
 static bool is_true_intersection(const edge_t *sgm1, const edge_t *sgm2,
 				 nb_intersect_t status)
 {
-	bool out;
+	bool out = true;
 	switch (status) {
 	case NB_PARALLEL:
 		if (if_collinear_sgm_are_not_intersected(sgm1, sgm2))
@@ -657,8 +667,6 @@ static bool is_true_intersection(const edge_t *sgm1, const edge_t *sgm2,
 		if (sgm2->v2 == sgm1->v1 || sgm2->v2 == sgm1->v2)
 			out = false;
 		break;
-	default:
-		out = true;
 	}
 	return out;
 }
@@ -672,22 +680,10 @@ static bool if_collinear_sgm_are_not_intersected(const edge_t *sgm1,
 					   sgm1->v2->x,
 					   sgm2->v1->x);
 	if (fabs(orient) < NB_GEOMETRIC_TOL) {
-		double length1 = edge_get_length(sgm1);
-		double length2 = edge_get_length(sgm2);
-		double dist_1A_2A = 
-			vcn_utils2D_get_dist(sgm1->v1->x, sgm2->v1->x);
-		double dist_1A_2B =
-			vcn_utils2D_get_dist(sgm1->v1->x, sgm2->v2->x);
-		double dist_1B_2A =
-			vcn_utils2D_get_dist(sgm1->v2->x, sgm2->v1->x);
-		double dist_1B_2B =
-			vcn_utils2D_get_dist(sgm1->v2->x, sgm2->v2->x);
-		double max_dist = MAX(dist_1B_2A, dist_1B_2B);
-		max_dist = MAX(dist_1A_2B, max_dist);
-		max_dist = MAX(dist_1A_2A, max_dist);
+		collinear_dists cdists;
+		calculate_collinear_dists(sgm1, sgm2, &cdists);
 
-		/* Check if they are intersected */
-		if (max_dist - (length1 + length2) > -NB_GEOMETRIC_TOL)
+		if (collinear_are_intersected(&cdists))
 			out = false;
 	}
 	return out;
@@ -713,9 +709,6 @@ static void process_ipack(ipack_t* ipack,
 	case NB_INTERSECTED:
 		process_intersected_sgm(ipack, avl_sgm,
 					sgm_intersect, ht_vtx);
-		break;
-	case NB_NOT_INTERSECTED:
-		/* Do nothing */
 		break;
 	case NB_PARALLEL:
 		process_collinear_sgm(ipack, avl_sgm, sgm_intersect);
@@ -771,37 +764,45 @@ static void process_collinear_sgm(ipack_t *ipack,
 				 nb_container_t* sgm_intersect)
 {
 	collinear_dists cdists;
-	calculate_collinear_dists(ipack, &cdists);
-	if (collinear_are_not_contained(&cdists))
-		process_collinear_intersected(ipack, &cdists,
-					      avl_sgm, sgm_intersect);
-	else
+	calculate_collinear_dists(ipack->sgm1, ipack->sgm2, &cdists);
+	if (collinear_are_contained(&cdists))
 		process_collinear_contained(ipack, &cdists, avl_sgm,
 					    sgm_intersect);
+	else
+		process_collinear_intersected(ipack, &cdists,
+					      avl_sgm, sgm_intersect);
 }
 
-static void calculate_collinear_dists(const ipack_t *ipack,
+static void calculate_collinear_dists(const edge_t *sgm1,
+				      const edge_t *sgm2,
 				      collinear_dists *cdists)
 {
-	cdists->length1 = edge_get_length(ipack->sgm1);
-	cdists->length2 = edge_get_length(ipack->sgm2);
-	cdists->dist_1A_2A = vcn_utils2D_get_dist(ipack->sgm1->v1->x,
-						  ipack->sgm2->v1->x);
-	cdists->dist_1A_2B = vcn_utils2D_get_dist(ipack->sgm1->v1->x,
-						  ipack->sgm2->v2->x);
-	cdists->dist_1B_2A = vcn_utils2D_get_dist(ipack->sgm1->v2->x,
-						  ipack->sgm2->v1->x);
-	cdists->dist_1B_2B = vcn_utils2D_get_dist(ipack->sgm1->v2->x,
-						  ipack->sgm2->v2->x);
+	cdists->length1 = edge_get_length(sgm1);
+	cdists->length2 = edge_get_length(sgm2);
+	cdists->dist_1A_2A = vcn_utils2D_get_dist(sgm1->v1->x,
+						  sgm2->v1->x);
+	cdists->dist_1A_2B = vcn_utils2D_get_dist(sgm1->v1->x,
+						  sgm2->v2->x);
+	cdists->dist_1B_2A = vcn_utils2D_get_dist(sgm1->v2->x,
+						  sgm2->v1->x);
+	cdists->dist_1B_2B = vcn_utils2D_get_dist(sgm1->v2->x,
+						  sgm2->v2->x);
 	cdists->max_dist = MAX(cdists->dist_1B_2A, cdists->dist_1B_2B);
 	cdists->max_dist = MAX(cdists->dist_1A_2B, cdists->max_dist);
 	cdists->max_dist = MAX(cdists->dist_1A_2A, cdists->max_dist);
 }
 
-static inline bool collinear_are_not_contained(collinear_dists *cdists)
+static inline bool collinear_are_contained(collinear_dists *cdists)
 {
 	double max_length = MAX(cdists->length1, cdists->length2);
-	return (max_length - cdists->max_dist < -NB_GEOMETRIC_TOL);
+	return (cdists->max_dist - max_length < -NB_GEOMETRIC_TOL);
+
+}
+
+static inline bool collinear_are_intersected(collinear_dists *cdists)
+{
+	double lengths_sum = cdists->length1 + cdists->length2;
+	return (cdists->max_dist - lengths_sum < -NB_GEOMETRIC_TOL);
 
 }
 
@@ -814,104 +815,99 @@ static void process_collinear_intersected(ipack_t *ipack,
 	nb_container_t* sgm_intersect_aux = 
 		alloca(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(sgm_intersect_aux, NB_QUEUE);
+
 	nb_container_delete(avl_sgm, ipack->sgm1);
 	nb_container_delete(avl_sgm, ipack->sgm2);
 
-	if (cdists->dist_1A_2A == cdists->max_dist)
-		ipack->sgm1->v2 = ipack->sgm2->v1;
-	else if (cdists->dist_1A_2B == cdists->max_dist)
-		ipack->sgm1->v2 = ipack->sgm2->v2;
-	else if (cdists->dist_1B_2A == cdists->max_dist)
-		ipack->sgm1->v1 = ipack->sgm2->v1;
-	else
-		ipack->sgm1->v1 = ipack->sgm2->v2;
-
-	    
-	/* Update lengths */
+	collinear_merge_into_sgm1(ipack->sgm1, ipack->sgm2, cdists);
 	edge_set_length(ipack->sgm1);
 
-	/* Insert into the AVL */
-	edge_t* existing_sgm1 =
+	edge_t* existing_sgm1 = 
 		exist_edge_and_insert_if_not(avl_sgm, ipack->sgm1);
 
-	insert_ipacks_sgm1(ipack, sgm_intersect, sgm_intersect_aux,
+	update_ipacks_sgm1(ipack, sgm_intersect, sgm_intersect_aux,
 			   existing_sgm1);	 
-	insert_ipacks_sgm2(ipack, sgm_intersect, sgm_intersect_aux,
+	update_ipacks_sgm2(ipack, sgm_intersect, sgm_intersect_aux,
 			   existing_sgm1);
 	    
-	if (NULL != existing_sgm1)
-		edge_destroy(ipack->sgm1);
-
 	move_out_ipacks_from_aux(sgm_intersect, sgm_intersect_aux);
 
-	nb_container_finish(sgm_intersect_aux);
+	if (NULL != existing_sgm1)
+		edge_destroy(ipack->sgm1);
 	edge_destroy(ipack->sgm2);
+	nb_container_finish(sgm_intersect_aux);
 }
 
-static void insert_ipacks_sgm1(ipack_t *ipack,
+static void collinear_merge_into_sgm1(edge_t *sgm1, const edge_t *sgm2, 
+				      const collinear_dists *cdists)
+{
+	if (fabs(cdists->dist_1A_2A - cdists->max_dist) < 1e-8)
+		sgm1->v2 = sgm2->v1;
+	else if (fabs(cdists->dist_1A_2B - cdists->max_dist) < 1e-8)
+		sgm1->v2 = sgm2->v2;
+	else if (fabs(cdists->dist_1B_2A - cdists->max_dist) < 1e-8)
+		sgm1->v1 = sgm2->v1;
+	else
+		sgm1->v1 = sgm2->v2;
+}
+
+static void update_ipacks_sgm1(ipack_t *ipack,
 			       nb_container_t *sgm_intersect,
 			       nb_container_t *sgm_intersect_aux,
 			       const edge_t *existing_sgm1)
 {
-	ipack_t* jpack = search_ipack_with_sgm(sgm_intersect,
-						  ipack->sgm1);
+	ipack_t* jpack = search_ipack_with_sgm(sgm_intersect, ipack->sgm1);
 	while (NULL != jpack) {
-		edge_t* sgm_aux = jpack->sgm1;
-		if (ipack->sgm1 == sgm_aux)
-			sgm_aux = jpack->sgm2;
+		nb_container_delete(sgm_intersect, jpack);
+		edge_t* sgm_aux = ipack_get_opp_sgm(jpack, ipack->sgm1);
+		ipack_destroy(jpack);
 
 		if (NULL == existing_sgm1) {
-			ipack_t* new_pack =
-				get_intersection_pack(ipack->sgm1,
-						      sgm_aux);
-			if (NULL != new_pack)
-				nb_container_insert(sgm_intersect_aux,
-						    new_pack);
+			jpack = get_intersection_pack(ipack->sgm1, sgm_aux);
+			if (NULL != jpack)
+				nb_container_insert(sgm_intersect_aux, jpack);
 		}
 
-		nb_container_delete(sgm_intersect, jpack);
-	      
-		ipack_destroy(jpack);
-	      
-		jpack = search_ipack_with_sgm(sgm_intersect,
-							  ipack->sgm1);
+	      	jpack = search_ipack_with_sgm(sgm_intersect, ipack->sgm1);
 	}
 }
 
-static void insert_ipacks_sgm2(ipack_t *ipack,
+static edge_t *ipack_get_opp_sgm(const ipack_t *ipack,
+					 const edge_t *sgm)
+{
+	edge_t* sgm_aux = ipack->sgm1;
+	if (sgm == sgm_aux)
+		sgm_aux = ipack->sgm2;
+	return sgm_aux;
+
+}
+
+static void update_ipacks_sgm2(ipack_t *ipack,
 			       nb_container_t *sgm_intersect,
 			       nb_container_t *sgm_intersect_aux,
 			       const edge_t *existing_sgm1)
 {
-	ipack_t *jpack = search_ipack_with_sgm(sgm_intersect,
-							   ipack->sgm2);
+	ipack_t *jpack = search_ipack_with_sgm(sgm_intersect, ipack->sgm2);
 	while (NULL != jpack) {
-		edge_t* sgm_aux = jpack->sgm1;
-		if (ipack->sgm2 == sgm_aux)
-			sgm_aux = jpack->sgm2;
-		/* Check intersection with segment 1 */
+		nb_container_delete(sgm_intersect, jpack);
+		edge_t* sgm_aux = ipack_get_opp_sgm(jpack, ipack->sgm2);
+		ipack_destroy(jpack);
 	      
-		if(NULL == existing_sgm1) {
-			ipack_t *kpack = 
-				search_ipack_with_both_sgm(sgm_intersect_aux,
+		if (NULL == existing_sgm1) {
+			jpack = search_ipack_with_both_sgm(sgm_intersect_aux,
 							   ipack->sgm1,
 							   sgm_aux);
-			if (NULL == kpack) {
-				ipack_t *new_pack =
-					get_intersection_pack(ipack->sgm1,
+			if (NULL == jpack) {
+				jpack = get_intersection_pack(ipack->sgm1,
 							      sgm_aux);
-				if (NULL != new_pack)
+
+				if (NULL != jpack)
 					nb_container_insert(sgm_intersect_aux,
-							    new_pack);
+							    jpack);
 			}
 		}
 	      
-		nb_container_delete(sgm_intersect, jpack);
-	      
-		ipack_destroy(jpack);
-	      
-		jpack = search_ipack_with_sgm(sgm_intersect,
-							  ipack->sgm2);
+		jpack = search_ipack_with_sgm(sgm_intersect, ipack->sgm2);
 	}
 
 }
@@ -930,24 +926,27 @@ static void process_collinear_contained(ipack_t *ipack,
 					nb_container_t* avl_sgm,
 					nb_container_t* sgm_intersect)
 {
+	edge_t* small_sgm = get_smallest_sgm(ipack, cdists);
+
+	nb_container_delete(avl_sgm, small_sgm);
+
+	ipack_t* jpack = search_ipack_with_sgm(sgm_intersect, small_sgm);
+	while (NULL != jpack) {
+		nb_container_delete(sgm_intersect, jpack);
+		ipack_destroy(jpack);
+		jpack = search_ipack_with_sgm(sgm_intersect, small_sgm);
+	}
+	edge_destroy(small_sgm);
+}
+
+static edge_t *get_smallest_sgm(ipack_t *ipack, collinear_dists *cdists)
+{
 	edge_t* small_sgm;
 	if (cdists->length1 > cdists->length2)
 		small_sgm = ipack->sgm2;  
 	else
 		small_sgm = ipack->sgm1;
-
-	nb_container_delete(avl_sgm, small_sgm);
-
-	ipack_t* jpack =
-		search_ipack_with_sgm(sgm_intersect, 
-						  small_sgm);
-	while (NULL != jpack) {
-		nb_container_delete(sgm_intersect, jpack);
-		ipack_destroy(jpack);
-		jpack = search_ipack_with_sgm(sgm_intersect,
-							  small_sgm);
-	}
-	edge_destroy(small_sgm);
+	return small_sgm;
 }
 
 static void remove_short_segments(nb_container_t* avl_sgm,
@@ -1193,9 +1192,7 @@ static void set_new_segments_ipacks(const edge_t *sgm,
 {
 	ipack_t* ipack = search_ipack_with_sgm(sgm_intersect, sgm);
 	while (NULL != ipack) {
-		edge_t* sgm_aux = ipack->sgm1;
-		if (sgm == sgm_aux)
-			sgm_aux = ipack->sgm2;
+		edge_t* sgm_aux = ipack_get_opp_sgm(ipack, sgm);
 
 		if (NULL == existing_sgm) {
 			ipack_t *new_pack = get_intersection_pack(sgm, sgm_aux);
