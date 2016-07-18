@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 
 #include "../queue/nb_queue_dst.h"
@@ -45,7 +46,7 @@ static nb_container_t* get_container_from_list(const void *const list);
 
 inline uint16_t hash_get_memsize(void)
 {
-	return sizeof(hash_t);
+	return sizeof(hash_t) + nb_membank_get_memsize();
 }
 
 inline void hash_init(void *hash_ptr)
@@ -59,6 +60,10 @@ static void init(hash_t *hash, float max_load_factor, uint32_t size)
 	hash->size = size;
 	hash->length = 0;
 	hash->rows = calloc(size, sizeof(*(hash->rows)));
+
+	hash->membank = (void*)(((char*)hash) + sizeof(hash_t));
+	nb_membank_init(hash->membank, nb_queue_get_memsize());
+	nb_membank_set_N_x_block(hash->membank, size);
 }
 
 void hash_copy(void *hash_ptr, const void *src_hash_ptr,
@@ -70,6 +75,11 @@ void hash_copy(void *hash_ptr, const void *src_hash_ptr,
 	hash->size = src_hash->size;
 	hash->length = src_hash->length;
 	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
+
+	hash->membank = (void*)(((char*)hash) + sizeof(hash_t));
+	nb_membank_init(hash->membank, nb_queue_get_memsize());
+	nb_membank_set_N_x_block(hash->membank, hash->size);
+
 	clone_lists(hash, src_hash, clone);
 }
 
@@ -82,23 +92,19 @@ static void clone_lists(hash_t *hash, const hash_t *const src_hash,
 	}
 }
 
-void hash_finish(void *hash_ptr,
-		 void (*destroy)(void*))
+void hash_finish(void *hash_ptr, void (*destroy)(void*))
 {
-	hash_clear(hash_ptr, destroy);
 	hash_t* hash = hash_ptr;
-	if (NULL != hash->rows) {
-		free(hash->rows);
-		hash->rows = NULL;
-	}	
+	clear_rows(hash, destroy);
+	free(hash->rows);
+	nb_membank_finish(hash->membank);
 }
 
-static void clear_rows(hash_t *hash,
-		       void (*destroy)(void*))
+static void clear_rows(hash_t *hash, void (*destroy)(void*))
 {
 	for (uint32_t i = 0; i < hash->size; i++) {
 		if (NULL != hash->rows[i]) {
-			nb_queue_destroy(hash->rows[i], destroy);
+			nb_queue_finish(hash->rows[i], destroy);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -125,21 +131,19 @@ inline void* hash_clone(const void *const hash_ptr,
 	return hash;
 }
 
-void hash_destroy(void* hash_ptr,
-		    void (*destroy)(void*))
+void hash_destroy(void* hash_ptr, void (*destroy)(void*))
 {
 	hash_t *hash = hash_ptr;
 	hash_finish(hash, destroy);
 	free(hash);
 }
 
-void hash_clear(void* hash_ptr,
-		void (*destroy)(void*))
+void hash_clear(void* hash_ptr, void (*destroy)(void*))
 {
 	hash_t* hash = hash_ptr;
 	hash->length = 0;
-	if (NULL != hash->rows)
-		clear_rows(hash, destroy);
+	clear_rows(hash, destroy);
+	nb_membank_clear(hash->membank);
 }
 
 void hash_merge(void *hash1_ptr, void *hash2_ptr,
@@ -180,8 +184,11 @@ static void realloc_rows(hash_t *hash,
 	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
 
 	for (uint32_t i = 0; i < N; i++) {
-		if (NULL != rows[i])
-		  reinsert_list(hash, rows[i], key, compare);
+		if (NULL != rows[i]) {
+			reinsert_list(hash, rows[i], key, compare);
+			nb_queue_finish(rows[i], NULL);
+			nb_membank_data_free(hash->membank, rows[i]);
+		}
 	}
 	free(rows);
 }
@@ -194,7 +201,6 @@ static void reinsert_list(hash_t *hash, void *queue_ptr,
 		void *val = nb_queue_delete_first(queue_ptr, key);
 		insert(hash, val, key, compare);
 	}
-	nb_queue_destroy(queue_ptr, NULL);
 }
 
 static void insert(hash_t *hash, const void *const val,
@@ -202,8 +208,11 @@ static void insert(hash_t *hash, const void *const val,
 		   int8_t (*compare)(const void*, const void*))
 {
 	uint32_t vkey = hash_key(val, hash->size, key);
-	if (NULL == hash->rows[vkey])
-		hash->rows[vkey] = nb_queue_create();
+	if (NULL == hash->rows[vkey]) {
+		void *queue = nb_membank_data_calloc(hash->membank);
+		nb_queue_init(queue);
+		hash->rows[vkey] = queue;
+	}
 	nb_queue_insert(hash->rows[vkey], val, key, compare);
 }
 
@@ -219,7 +228,9 @@ static inline void merge_rows(hash_t *merge, hash_t *hash,
 {
 	for (uint32_t i = 0; i < hash->size; i++) {
 		if (NULL != hash->rows[i]) {
-		  reinsert_list(merge, hash->rows[i], key, compare);
+			reinsert_list(merge, hash->rows[i], key, compare);
+			nb_queue_finish(hash->rows[i], NULL);
+			nb_membank_data_free(hash->membank, hash->rows[i]);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -262,7 +273,8 @@ void* hash_delete_first(void *hash_ptr,
 		val = nb_queue_delete_first(hash->rows[i], key);
 		hash->length -= 1;
 		if (nb_queue_is_empty(hash->rows[i])) {
-			nb_queue_destroy(hash->rows[i], NULL);
+			nb_queue_finish(hash->rows[i], NULL);
+			nb_membank_data_free(hash->membank, hash->rows[i]);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -298,7 +310,9 @@ void* hash_delete(void *hash_ptr, const void *const val,
 			if (NULL != item)
 				hash->length -= 1;
 			if(nb_queue_is_empty(hash->rows[i])){
-				nb_queue_destroy(hash->rows[i], NULL);
+				nb_queue_finish(hash->rows[i], NULL);
+				nb_membank_data_free(hash->membank,
+						     hash->rows[i]);
 				hash->rows[i] = NULL;
 			}
 		}
