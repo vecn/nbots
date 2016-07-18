@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "nb/memory_bot.h"
+
 #include "heap_tree.h"
 
 static void set_left_tree(htree_t *tree, htree_t *branch);
@@ -20,28 +23,34 @@ static htree_t* link_right_to_left(htree_t *tree,
 				   uint32_t (*key)(const void *const));
 static htree_t* get_parent(const htree_t *const restrict tree);
 
-inline htree_t* htree_create(void)
+uint32_t htree_get_memsize(void)
 {
-	return calloc(1, sizeof(htree_t));
+	return sizeof(htree_t);
+}
+
+htree_t* htree_create(nb_membank_t *membank)
+{
+	return nb_membank_data_calloc(membank);
 }
 
 
-htree_t* htree_clone(const htree_t *const tree,
+htree_t* htree_clone(nb_membank_t *membank,
+		     const htree_t *const tree,
 		     void* (*clone)(const void *const))
 {
-	htree_t *tree_cloned = htree_create();
+	htree_t *tree_cloned = htree_create(membank);
 	tree_cloned->val = clone(tree->val);
 	tree_cloned->branch_is_left = tree->branch_is_left;
 
 	htree_t *left_tree = get_left_tree(tree);
 	if (NULL != left_tree) {
-		htree_t *cloned_left = htree_clone(left_tree, clone);
+		htree_t *cloned_left = htree_clone(membank, left_tree, clone);
 		set_left_tree(tree_cloned, cloned_left);
 	}
 	
 	htree_t *right_tree = get_right_tree(tree);
 	if (NULL != right_tree) {
-		htree_t *cloned_right = htree_clone(right_tree, clone);
+		htree_t *cloned_right = htree_clone(membank, right_tree, clone);
 		set_right_tree(tree_cloned, cloned_right);
 	}
 	return tree_cloned;
@@ -79,23 +88,20 @@ static void set_right_tree(htree_t *tree, htree_t *branch)
 	}
 }
 
-void htree_destroy(htree_t* tree)
+void htree_destroy(nb_membank_t *membank, htree_t* tree)
 {
-	free(tree);
+	nb_membank_data_free(membank, tree);
 }
 
-void htree_destroy_recursively(htree_t *tree,
-			       void (*destroy)(void*))
+void htree_destroy_values_recursively(htree_t *tree, void (*destroy)(void*))
 {
 	if (NULL != tree->left) {
 		htree_t *right = tree->left->right;
-		htree_destroy_recursively(tree->left, destroy);
+		htree_destroy_values_recursively(tree->left, destroy);
 		if (right != tree && right != NULL)
-			htree_destroy_recursively(right, destroy);
+			htree_destroy_values_recursively(right, destroy);
 	}
-	if (NULL != destroy)
-		destroy(tree->val);
-	htree_destroy(tree);
+	destroy(tree->val);
 }
 
 static htree_t* get_left_tree(const htree_t *const restrict tree)
@@ -152,11 +158,11 @@ static inline void add_link(htree_t *main_tree, htree_t *linked_tree)
 	set_left_tree(main_tree, linked_tree);
 }
 
-htree_t* htree_delete_and_get_new_root(htree_t *root,
+htree_t* htree_delete_and_get_new_root(nb_membank_t *membank, htree_t *root,
 				       uint32_t (*key)(const void *const))
 {
 	htree_t *first_son = get_left_tree(root);
-	htree_destroy(root);
+	htree_destroy(membank, root);
 
 	htree_t *new_root = NULL;
 	if (NULL != first_son) {
@@ -289,13 +295,13 @@ htree_t* htree_containing_val(htree_t *tree, const void *const val,
 	return tree_with_val;
 }
 
-void htree_delete(htree_t *tree,
+void htree_delete(nb_membank_t *membank, htree_t *tree,
 		  uint32_t (*key)(const void *const))
 {
 	htree_t *parent = get_parent(tree);
 	bool is_unique = is_unique_branch(tree);
 	bool is_left = is_left_branch(tree);
-	tree = htree_delete_and_get_new_root(tree, key);
+	tree = htree_delete_and_get_new_root(membank, tree, key);
 	if (is_unique || is_left)
 		set_left_tree(parent, tree);
 	else
