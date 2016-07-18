@@ -7,11 +7,7 @@
 #include "nb/memory_bot/nb_malloc.h"
 #include "nb/memory_bot/membank.h"
 
-#define STATIC_SIZE 8000
-#define MASK_SIZE 1000      /* STATIC SIZE / 8 */
-#define MIN_MAX_DYNAMIC 128 /* 64 aligned */
-
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define DEFAULT_N_MAX 1024
 
 #define GET_64_ALIGNMENT(N_max)			\
 	((N_max)/64 + (((N_max)%64 > 0)?1:0))
@@ -54,21 +50,19 @@ struct block_s {
 };
 
 struct nb_membank_s {
-	char static_buffer[STATIC_SIZE];
-	char static_mask[MASK_SIZE];
-	block_t block;
+	block_t *block;
 	uint16_t type_size;
-	uint16_t N_max_dynamic;
+	uint16_t N_max;
 };
 
-static void* block_calloc(block_t *block, uint16_t type_size);
+static void* block_data_calloc(block_t *block, uint16_t type_size);
 static int get_first_free_id(const char *mask);
 static block_t *block_create(uint16_t type_size, uint16_t N_max);
 static void set_backward_aligner(block_t *block, int i);
 static bool block_is_in_buffer(const block_t *block,
-				  uint16_t type_size, char *mem);
-static void block_free(block_t *block, uint16_t type_size,
-		       char *mem);
+			       uint16_t type_size, char *mem);
+static void block_data_free(block_t *block, uint16_t type_size,
+			    char *mem);
 static int get_last_allocated_id(const char *mask, uint16_t N_max);
 static void block_clear(block_t *block);
 
@@ -81,36 +75,28 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 {
 	memset(membank, 0, sizeof(*membank));
 	membank->type_size = type_size;
-	          /* The 64 bit alignment speed-up the mask search */
-	uint16_t N_max = 64 * ((STATIC_SIZE / type_size) / 64);
-	membank->N_max_dynamic = MAX(MIN_MAX_DYNAMIC, N_max);
-	membank->block.N_max = N_max;
-	membank->block.N_free = N_max;
-	membank->block.buffer = membank->static_buffer;
-	membank->block.mask = membank->static_mask;
+	membank->N_max = DEFAULT_N_MAX;
 }
 
-void *nb_membank_calloc(nb_membank_t *membank)
+void *nb_membank_data_calloc(nb_membank_t *membank)
 {
-	block_t *block = &(membank->block);
-	void *mem = NULL;
-	while (NULL != block) {
-		mem = block_calloc(block, membank->type_size);
-		if (NULL != mem) {
-			goto EXIT;
-		} else {
+	block_t *block;
+	if (NULL == membank->block) {
+		block = block_create(membank->type_size, membank->N_max);
+		membank->block = block;
+	} else {
+		block = membank->block;
+		while (0 == block->N_free) {
 			if (NULL == block->next)
-				block->next = 
-					block_create(membank->type_size,
-						     membank->N_max_dynamic);
+				block->next = block_create(membank->type_size,
+							   membank->N_max);
 			block = block->next;
 		}
 	}
-EXIT:
-	return mem;
+	return block_data_calloc(block, membank->type_size);
 }
 
-static void *block_calloc(block_t *block, uint16_t type_size)
+static void *block_data_calloc(block_t *block, uint16_t type_size)
 {
 	void *mem = NULL;
 	int i;
@@ -172,33 +158,33 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 }
 
 
-void nb_membank_free(nb_membank_t *membank, void *obj)
+void nb_membank_data_free(nb_membank_t *membank, void *obj)
 {
-	block_t *block = &(membank->block);
+	block_t *block = membank->block;
 	while (NULL != block) {
 		if (block_is_in_buffer(block, membank->type_size, obj)) {
-			block_free(block, membank->type_size, obj);
+			block_data_free(block, membank->type_size, obj);
 			goto EXIT;
 		}
 		block = block->next;
 	}
 
-	fputs("nb_block: unallocated free.\n", stderr);
+	fputs("\nnb_block: unallocated free.\n\n", stderr);
 	exit(EXIT_FAILURE);
 EXIT:
 	return;
 }
 
 static bool block_is_in_buffer(const block_t *block,
-				  uint16_t type_size, char *mem)
+			       uint16_t type_size, char *mem)
 {
 	return mem >= block->buffer && 
 		mem < block->buffer + block->N_max * type_size;
 
 }
 
-static void block_free(block_t *block, uint16_t type_size,
-		       char *mem)
+static void block_data_free(block_t *block, uint16_t type_size,
+			    char *mem)
 {
 	int i = (mem - block->buffer) / type_size;
 	if (IS_MASK_ENABLED(block->mask, i)) {
@@ -209,7 +195,7 @@ static void block_free(block_t *block, uint16_t type_size,
 				1 + get_last_allocated_id(block->mask,
 							  block->N_max);
 	} else {
-		fputs("nb_block: double free.\n", stderr);
+		fputs("\nnb_block: double free.\n\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -244,7 +230,7 @@ EXIT:
 
 void nb_membank_finish(nb_membank_t *membank)
 {
-	block_t *block = membank->block.next;
+	block_t *block = membank->block;
 	while (NULL != block) {
 		block_t *next = block->next;
 		nb_free(block);
@@ -254,7 +240,7 @@ void nb_membank_finish(nb_membank_t *membank)
 
 void nb_membank_clear(nb_membank_t *membank)
 {
-	block_t *block = membank->block.next;
+	block_t *block = membank->block;
 	while (NULL != block) {
 		block_clear(block);
 		block = block->next;
@@ -267,4 +253,22 @@ static void block_clear(block_t *block)
 	block->N_free = block->N_max;
 	uint32_t mask_size = GET_MASK_SIZE(block->N_max);
 	memset(block->mask, 0, mask_size);
+}
+
+void nb_membank_merge(nb_membank_t *membank, nb_membank_t *extension)
+{
+	if (NULL != membank->block) {
+		block_t *block = membank->block;
+		while (NULL != block->next)
+			block = block->next;
+		block->next = extension->block;
+	} else {
+		membank->block = extension->block;
+	}
+	extension->block = NULL;
+}
+
+void nb_membank_set_N_x_block(nb_membank_t *membank, int N_x_block)
+{
+	membank->N_max = 64 * GET_64_ALIGNMENT(N_x_block);
 }

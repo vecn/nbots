@@ -19,7 +19,6 @@ static void destroy_values(nb_queue_t *queue, void (*destroy)(void*));
 static void insert_node_as_starting(nb_queue_t *list, const void *const val);
 static void add_node(nb_queue_t *list, nb_queue_node_t *node);
 static void add_first_node(nb_queue_t *list, nb_queue_node_t *node);
-static void null_destroy(void *val);
 static void link_node(nb_queue_t *queue, nb_queue_node_t *node);
 static nb_queue_node_t* exist_node(const nb_queue_t *const queue,
 				   const void *val,
@@ -241,11 +240,6 @@ void* nb_queue_delete_first(void *queue_ptr,
 		queue->length -= 1;
 	}
 	return val;
-}
-
-static inline void null_destroy(void *val)/* TEMPORAL */
-{
-	; /* Null statement */
 }
 
 void* nb_queue_exist(const void *const queue_ptr, const void *val,

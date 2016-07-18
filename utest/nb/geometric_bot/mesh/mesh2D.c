@@ -165,7 +165,7 @@ static void test_generate_from_model_simple_square(void)
 	vcn_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(2000 < N_trg && 2100 > N_trg);
-	CU_ASSERT(3050 < N_edge && 3150 > N_edge);
+	CU_ASSERT(3050 < N_edge && 3200 > N_edge);
 }
 
 static void test_generate_from_model_subsgm_constraint(void)
@@ -175,11 +175,11 @@ static void test_generate_from_model_subsgm_constraint(void)
 	vcn_model_t *model = vcn_model_load(input_name);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					 0.5);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  0.5);
 	vcn_mesh_set_geometric_constraint(mesh,
-					 NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
-					 0.05);
+					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
+					  0.05);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
