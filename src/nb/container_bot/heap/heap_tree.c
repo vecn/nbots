@@ -8,7 +8,6 @@ static void set_right_tree(htree_t *tree, htree_t *branch);
 static htree_t* get_left_tree(const htree_t *const tree);
 static htree_t* get_right_tree(const htree_t *const tree);
 static void add_link(htree_t *main_tree, htree_t *linked_tree);
-static void null_destroy(void *val);
 static htree_t* pairing_left_to_right(htree_t *tree,
 				      uint32_t (*key)(const void *const));
 static void make_root(htree_t *tree);
@@ -36,14 +35,14 @@ htree_t* htree_clone(const htree_t *const tree,
 
 	htree_t *left_tree = get_left_tree(tree);
 	if (NULL != left_tree) {
-	  htree_t *cloned_left = htree_clone(left_tree, clone);
-	  set_left_tree(tree_cloned, cloned_left);
+		htree_t *cloned_left = htree_clone(left_tree, clone);
+		set_left_tree(tree_cloned, cloned_left);
 	}
 	
 	htree_t *right_tree = get_right_tree(tree);
 	if (NULL != right_tree) {
-	  htree_t *cloned_right = htree_clone(right_tree, clone);
-	  set_right_tree(tree_cloned, cloned_right);
+		htree_t *cloned_right = htree_clone(right_tree, clone);
+		set_right_tree(tree_cloned, cloned_right);
 	}
 	return tree_cloned;
 }
@@ -80,9 +79,8 @@ static void set_right_tree(htree_t *tree, htree_t *branch)
 	}
 }
 
-inline void htree_destroy(htree_t* tree, void (*destroy)(void*))
+void htree_destroy(htree_t* tree)
 {
-	destroy(tree->val);
 	free(tree);
 }
 
@@ -95,7 +93,9 @@ void htree_destroy_recursively(htree_t *tree,
 		if (right != tree && right != NULL)
 			htree_destroy_recursively(right, destroy);
 	}
-	htree_destroy(tree, destroy);
+	if (NULL != destroy)
+		destroy(tree->val);
+	htree_destroy(tree);
 }
 
 static htree_t* get_left_tree(const htree_t *const restrict tree)
@@ -156,7 +156,7 @@ htree_t* htree_delete_and_get_new_root(htree_t *root,
 				       uint32_t (*key)(const void *const))
 {
 	htree_t *first_son = get_left_tree(root);
-	htree_destroy(root, null_destroy);
+	htree_destroy(root);
 
 	htree_t *new_root = NULL;
 	if (NULL != first_son) {
@@ -166,11 +166,6 @@ htree_t* htree_delete_and_get_new_root(htree_t *root,
 		new_root = link_right_to_left(last_son, key);
 	}
 	return new_root;
-}
-
-static inline void null_destroy(void *val)
-{
-	; /* Null statement */
 }
 
 static htree_t* pairing_left_to_right(htree_t *tree,

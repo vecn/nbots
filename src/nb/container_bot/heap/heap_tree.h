@@ -17,7 +17,7 @@ struct htree_s{
 htree_t* htree_create(void);
 htree_t* htree_clone(const htree_t *const tree,
 		     void* (*clone)(const void *const));
-void htree_destroy(htree_t* tree, void (*destroy)(void*));
+void htree_destroy(htree_t* tree);
 void htree_destroy_recursively(htree_t *tree,
 			       void (*destroy)(void*));
 htree_t* htree_link(htree_t *tree1, htree_t *tree2,

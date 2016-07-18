@@ -22,7 +22,6 @@ static void update_height_after_rotation(tree_t *tree);
 static void double_left_rotation(tree_t *tree);
 static void simple_left_rotation(tree_t *tree);
 static void replace_with_most_right_of_left(tree_t* tree);
-static void null_destroy(void *val);
 static void replace_with_left(tree_t *tree);
 static tree_t* unlink_most_right(tree_t* tree);
 static void replace_with_most_left_of_right(tree_t* tree);
@@ -39,9 +38,8 @@ inline tree_t* tree_create(void)
 	return calloc(1, sizeof(tree_t));
 }
 
-inline void tree_destroy(tree_t* tree, void (*destroy)(void*))
+inline void tree_destroy(tree_t* tree)
 {
-	destroy(tree->val);
 	free(tree);
 }
 
@@ -52,7 +50,11 @@ void tree_destroy_recursively(tree_t* tree, void (*destroy)(void*))
 		tree_destroy_recursively(tree->left, destroy);
 	if (NULL != tree->right)
 		tree_destroy_recursively(tree->right, destroy);
-	tree_destroy(tree, destroy);
+
+	if (NULL != destroy)
+		destroy(tree->val);
+
+	tree_destroy(tree);
 }
 
 tree_t* tree_clone(const tree_t *const restrict tree,
@@ -315,12 +317,7 @@ static void replace_with_most_right_of_left(tree_t* tree)
 	tree->val = replace->val;
 	if (tree->left == replace)
 		replace_with_left(tree);
-	tree_destroy(replace, null_destroy);
-}
-
-static inline void null_destroy(void *val)
-{
-	; /* Null statement */
+	tree_destroy(replace);
 }
 
 static void replace_with_left(tree_t *tree)
@@ -353,7 +350,7 @@ static void replace_with_most_left_of_right(tree_t* tree)
 	tree->val = replace->val;
 	if (tree->right == replace)
 		replace_with_right(tree);
-	tree_destroy(replace, null_destroy);
+	tree_destroy(replace);
 }
 
 static void replace_with_right(tree_t *tree)

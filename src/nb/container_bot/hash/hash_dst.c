@@ -41,7 +41,6 @@ static uint32_t hash_key(const void *const val, uint32_t N,
 static void merge_rows(hash_t *merge, hash_t *hash,
 		       uint32_t (*key)(const void *const),
 		       int8_t (*compare)(const void*, const void*));
-static void null_destroy(void *val);
 static nb_container_t* get_container_from_list(const void *const list);
 
 inline uint16_t hash_get_memsize(void)
@@ -195,7 +194,7 @@ static void reinsert_list(hash_t *hash, void *queue_ptr,
 		void *val = nb_queue_delete_first(queue_ptr, key);
 		insert(hash, val, key, compare);
 	}
-	nb_queue_destroy(queue_ptr, null_destroy);
+	nb_queue_destroy(queue_ptr, NULL);
 }
 
 static void insert(hash_t *hash, const void *const val,
@@ -263,16 +262,11 @@ void* hash_delete_first(void *hash_ptr,
 		val = nb_queue_delete_first(hash->rows[i], key);
 		hash->length -= 1;
 		if (nb_queue_is_empty(hash->rows[i])) {
-			nb_queue_destroy(hash->rows[i], null_destroy);
+			nb_queue_destroy(hash->rows[i], NULL);
 			hash->rows[i] = NULL;
 		}
 	}
 	return val;
-}
-
-static inline void null_destroy(void *val)
-{
-	; /* Null statement */
 }
 
 void* hash_exist(const void *const hash_ptr, const void *val,
@@ -304,7 +298,7 @@ void* hash_delete(void *hash_ptr, const void *const val,
 			if (NULL != item)
 				hash->length -= 1;
 			if(nb_queue_is_empty(hash->rows[i])){
-				nb_queue_destroy(hash->rows[i], null_destroy);
+				nb_queue_destroy(hash->rows[i], NULL);
 				hash->rows[i] = NULL;
 			}
 		}

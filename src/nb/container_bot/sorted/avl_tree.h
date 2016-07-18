@@ -15,7 +15,7 @@ struct tree_s {
 };
 
 tree_t* tree_create(void);
-void tree_destroy(tree_t* tree, void (*destroy)(void*));
+void tree_destroy(tree_t* tree);
 void tree_destroy_recursively(tree_t* tree, void (*destroy)(void*));
 tree_t* tree_clone(const tree_t *const tree,
 		   void* (*clone)(const void *const));

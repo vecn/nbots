@@ -41,6 +41,7 @@ void nb_container_set_key_generator(nb_container_t *container,
 				     uint32_t (*key)(const void*));
 void nb_container_set_destroyer(nb_container_t *container,
 				 void (*destroy)(void*));
+void nb_container_unset_destroyer(nb_container_t *container);
 void nb_container_set_comparer(nb_container_t *container,
 			       int8_t (*compare)(const void*, 
 						 const void*));

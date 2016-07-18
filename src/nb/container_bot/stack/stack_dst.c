@@ -18,7 +18,6 @@ static void* malloc_stack(void);
 static void insert_stack_node_as_starting(nb_stack_t *list, const void *const val);
 static void add_node(nb_stack_t *list, stack_node_t *node);
 static void add_first_node(nb_stack_t *list, stack_node_t *node);
-static void null_destroy(void *val);
 static void link_node(nb_stack_t *stack, stack_node_t *node);
 static stack_node_t* exist_node(const nb_stack_t *const stack, const void *val,
 			  int8_t (*compare)(const void*, const void*));
@@ -116,7 +115,9 @@ void stack_clear(void *stack_ptr,
 		while (NULL != iter) {
 			stack_node_t* to_destroy = iter;
 			iter = iter->next;
-			stack_node_destroy(to_destroy, destroy);
+			if (NULL != destroy)
+				destroy(to_destroy->val);
+			stack_node_destroy(to_destroy);
 		}
 		stack->length = 0;
 		stack->end = NULL;
@@ -206,15 +207,10 @@ void* stack_delete_first(void *stack_ptr,
 		  stack->end->next = first->next;
 		else
 		  stack->end = NULL;
-		stack_node_destroy(first, null_destroy);
+		stack_node_destroy(first);
 		stack->length -= 1;
 	}
 	return val;
-}
-
-static inline void null_destroy(void *val)
-{
-  ; /* Null statement */
 }
 
 void* stack_exist(const void *const stack_ptr, const void *val,
@@ -262,7 +258,7 @@ void* stack_delete(void *stack_ptr, const void *val,
 		if (NULL != node) {
 			unlink_node(stack, node);
 			deleted_val = node->val;
-			stack_node_destroy(node, null_destroy);
+			stack_node_destroy(node);
 			stack->length -= 1;
 		}
 	}

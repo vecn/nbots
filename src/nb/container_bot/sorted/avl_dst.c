@@ -16,7 +16,6 @@
 
 static bool is_not_empty(const avl_t *const avl);
 static void* malloc_avl(void);
-static void null_destroy(void *val);
 static void* delete_root(avl_t *avl);
 
 uint16_t avl_get_memsize(void)
@@ -147,7 +146,7 @@ void* avl_delete_first(void *avl_ptr,
 		if (most_left == avl->root)
 			avl->root = most_left->right;
 		val = most_left->val;
-		tree_destroy(most_left, null_destroy);
+		tree_destroy(most_left);
 		avl->length -= 1;
 	}
 	return val;
@@ -163,15 +162,10 @@ void* avl_delete_last(void *avl_ptr,
 		if (most_right == avl->root)
 			avl->root = most_right->left;
 		val = most_right->val;
-		tree_destroy(most_right, null_destroy);
+		tree_destroy(most_right);
 		avl->length -= 1;
 	}
 	return val;
-}
-
-static inline void null_destroy(void *val)
-{
-  ; /* Null statement */
 }
 
 void* avl_exist(const void *const avl_ptr, const void *val,
@@ -207,7 +201,7 @@ static void* delete_root(avl_t *avl)
 {
 	void *val = avl->root->val;
 	if (tree_is_leaf(avl->root)) {
-		tree_destroy(avl->root, null_destroy);
+		tree_destroy(avl->root);
 		avl->root = NULL;
 	} else {
 		tree_replace_root(avl->root);

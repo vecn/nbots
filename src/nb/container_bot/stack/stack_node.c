@@ -6,9 +6,8 @@ inline stack_node_t* stack_node_create(void)
   	return calloc(1, sizeof(stack_node_t));
 }
 
-inline void stack_node_destroy(stack_node_t *node, void (*destroy)(void*))
+inline void stack_node_destroy(stack_node_t *node)
 {
-  	destroy(node->val);
   	free(node);
 }
 

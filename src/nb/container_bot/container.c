@@ -24,7 +24,6 @@
 static uint16_t dst_get_memsize(nb_container_type type);
 static void init_val_operators(nb_container_t *container);
 static uint32_t key_ptr(const void *ptr);
-static void destroy_null(void* ptr);
 static int8_t compare_ptr(const void *p1, const void *p2);
 static void* clone_same_ptr(const void *ptr);
 static void set_functions(nb_container_t *container,
@@ -69,9 +68,12 @@ static uint16_t dst_get_memsize(nb_container_type type)
 	return dst_size;
 }
 
-void nb_container_init(void *container_ptr, nb_container_type type){
+void nb_container_init(void *container_ptr, nb_container_type type)
+{
 
 	nb_container_t *container = container_ptr;
+	memset(container, 0, nb_container_get_memsize(type));
+
 	container->type = type;
 	if (type >= NB_NULL) {
 		container->type = NB_QUEUE;
@@ -89,7 +91,6 @@ void nb_container_init(void *container_ptr, nb_container_type type){
 static void init_val_operators(nb_container_t *container)
 {
 	container->op.key = key_ptr;
-	container->op.destroy = destroy_null;/* TEMPORAL */
 	container->op.compare = compare_ptr;
 	container->op.clone = clone_same_ptr;
 }
@@ -98,11 +99,6 @@ static void init_val_operators(nb_container_t *container)
 static inline uint32_t key_ptr(const void *ptr)
 {
 	return (uint32_t)((uintptr_t)ptr);
-}
-
-static inline void destroy_null(void* ptr)
-{
-	; /* Null statement */
 }
 
 static int8_t compare_ptr(const void *p1, const void *p2)
@@ -268,32 +264,37 @@ void nb_container_copy_to_array(const nb_container_t *const cont_src,
 	nb_iterator_destroy(iter);
 }
 
-inline void nb_container_set_key_generator(nb_container_t *container,
-					    uint32_t (*key)(const void*))
+void nb_container_set_key_generator(nb_container_t *container,
+				    uint32_t (*key)(const void*))
 {
   	container->op.key = key;
 }
 
-inline void nb_container_set_destroyer(nb_container_t *container,
-					void (*destroy)(void*))
+void nb_container_set_destroyer(nb_container_t *container,
+				void (*destroy)(void*))
 {
   	container->op.destroy = destroy;
 }
 
-inline void nb_container_set_comparer(nb_container_t *container,
-				      int8_t (*compare)(const void*, 
-							const void*))
+void nb_container_unset_destroyer(nb_container_t *container)
+{
+	container->op.destroy = NULL;
+}
+
+void nb_container_set_comparer(nb_container_t *container,
+			       int8_t (*compare)(const void*, 
+						 const void*))
 {
   	container->op.compare = compare;
 }
 
-inline void nb_container_set_cloner(nb_container_t *container,
-				     void* (*clone)(const void*))
+void nb_container_set_cloner(nb_container_t *container,
+			     void* (*clone)(const void*))
 {
   	container->op.clone = clone;
 }
 
-inline bool nb_container_insert(nb_container_t *container, const void *val)
+bool nb_container_insert(nb_container_t *container, const void *val)
 {
 	return container->b.insert(container->cnt, val, container->op.key,
 				   container->op.compare);
