@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nb/memory_bot.h"
+
 #include "nb_queue_node.h"
 #include "nb_queue_struct.h"
 #include "nb_queue_dst.h"

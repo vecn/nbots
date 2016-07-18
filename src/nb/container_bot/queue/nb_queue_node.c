@@ -1,4 +1,7 @@
 #include <stdlib.h>
+
+#include "nb/memory_bot.h"
+
 #include "nb_queue_node.h"
 
 uint32_t nb_queue_node_get_memsize(void)
