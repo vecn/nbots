@@ -44,12 +44,12 @@ static void merge_rows(hash_t *merge, hash_t *hash,
 		       int8_t (*compare)(const void*, const void*));
 static nb_container_t* get_container_from_list(const void *const list);
 
-inline uint16_t hash_get_memsize(void)
+uint16_t hash_get_memsize(void)
 {
 	return sizeof(hash_t) + nb_membank_get_memsize();
 }
 
-inline void hash_init(void *hash_ptr)
+void hash_init(void *hash_ptr)
 {
 	init(hash_ptr, 0.85, 1000);
 }
@@ -110,7 +110,7 @@ static void clear_rows(hash_t *hash, void (*destroy)(void*))
 	}
 }
 
-inline void* hash_create(void)
+void* hash_create(void)
 {
 	hash_t *hash = malloc_hash();
 	hash_init(hash);
@@ -123,7 +123,7 @@ static inline void* malloc_hash(void)
 	return malloc(size);
 }
 
-inline void* hash_clone(const void *const hash_ptr,
+void* hash_clone(const void *const hash_ptr,
 			void* (*clone)(const void*))
 {
 	hash_t *hash = malloc_hash();
