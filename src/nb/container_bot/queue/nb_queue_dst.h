@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-uint16_t nb_queue_get_memsize(void);
+uint32_t nb_queue_get_memsize(void);
 void nb_queue_init(void *queue_ptr);
 void nb_queue_copy(void *queue_ptr, const void *src_queue_ptr,
 		   void* (*clone)(const void*));

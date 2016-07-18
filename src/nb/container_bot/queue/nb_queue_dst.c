@@ -26,7 +26,7 @@ static nb_queue_node_t* exist_node(const nb_queue_t *const queue,
 				   int8_t (*compare)(const void*, const void*));
 static void unlink_node(nb_queue_t *queue, const nb_queue_node_t *const node);
 
-uint16_t nb_queue_get_memsize(void)
+uint32_t nb_queue_get_memsize(void)
 {
 	return sizeof(nb_queue_t) + nb_membank_get_memsize();
 }
@@ -46,6 +46,8 @@ void nb_queue_copy(void *queue_ptr, const void *src_queue_ptr,
 {
 	nb_queue_t *queue = queue_ptr;
 	const nb_queue_t *src_queue = src_queue_ptr;
+
+	nb_queue_init(queue);
 
 	queue->length = src_queue->length;
 
@@ -97,7 +99,7 @@ void* nb_queue_create(void)
 
 static inline void* calloc_queue(void)
 {
-	uint16_t size = nb_queue_get_memsize();
+	uint32_t size = nb_queue_get_memsize();
   	return nb_calloc(size);
 }
 
@@ -156,6 +158,8 @@ void nb_queue_merge(void *queue1_ptr, void *queue2_ptr,
 		queue1->end = queue2->end;
 		queue2->length = 0;
 		queue2->end = NULL;
+
+		nb_membank_merge(queue1->membank, queue2->membank);
 	}
 }
 
@@ -230,11 +234,10 @@ void* nb_queue_delete_first(void *queue_ptr,
 		nb_queue_node_t *first = get_first(queue);
 		val = first->val;
 		if (queue->end != first)
-		  queue->end->next = first->next;
+			queue->end->next = first->next;
 		else
-		  queue->end = NULL;
-		nb_queue_node_destroy(queue->membank,
-				      first, null_destroy);
+			queue->end = NULL;
+		nb_queue_node_destroy(queue->membank, first);
 		queue->length -= 1;
 	}
 	return val;
@@ -291,8 +294,7 @@ void* nb_queue_delete(void *queue_ptr, const void *val,
 		if (NULL != node) {
 			unlink_node(queue, node);
 			deleted_val = node->val;
-			nb_queue_node_destroy(queue->membank,
-					      node, null_destroy);
+			nb_queue_node_destroy(queue->membank, node);
 			queue->length -= 1;
 		}
 	}
