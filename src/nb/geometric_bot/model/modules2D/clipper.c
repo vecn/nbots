@@ -6,6 +6,7 @@
 #include <math.h>
 #include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -364,16 +365,18 @@ static void set_holes(const vcn_model_t *model1,
 		      const vcn_model_t *model2,
 		      vcn_model_t *model)
 {
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
+
 	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	uint32_t N_centroids;
 	double *centroids = 
 		vcn_mesh_get_centroids_of_subareas(mesh, &N_centroids);
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 
 	if (N_centroids > 1) {
-		char* mask_centroids = malloc(N_centroids);
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 		model->H = mask_true_centroids(model1, model2,
 					       mask_centroids,
 					       centroids,
@@ -391,7 +394,7 @@ static void set_holes(const vcn_model_t *model1,
 				}
 			}
 		}
-		free(mask_centroids);
+		NB_SOFT_FREE(N_centroids, mask_centroids);
 	}
 	free(centroids);
 }
@@ -403,10 +406,12 @@ static uint32_t mask_true_centroids(const vcn_model_t *model1,
 {
 	memset(mask, 0, N_centroids);
 
-	vcn_mesh_t* mesh1 = vcn_mesh_create();
+	vcn_mesh_t* mesh1 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh1);
 	vcn_mesh_get_simplest_from_model(mesh1, model1);
 
-	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_t* mesh2 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh2);
 	vcn_mesh_get_simplest_from_model(mesh2, model2);
 
 	uint32_t N = 0;
@@ -418,8 +423,8 @@ static uint32_t mask_true_centroids(const vcn_model_t *model1,
 			}
 		}
 	}
-	vcn_mesh_destroy(mesh1);
-	vcn_mesh_destroy(mesh2);
+	vcn_mesh_finish(mesh1);
+	vcn_mesh_finish(mesh2);
 	return N;
 }
 
@@ -544,7 +549,8 @@ static void search_intersections(nb_container_t *intersections,
 				 nb_container_t *vertices,
 				 nb_container_t *edges)
 {
-	char *memblock = calloc(model1->M + model2->M, sizeof(edge_t*));
+	uint32_t memsize = (model1->M + model2->M) * sizeof(edge_t*);
+	char *memblock = NB_SOFT_CALLOC(memsize);
 	edge_t **edges1 = (void*) memblock;
 	edge_t **edges2 = (void*) (memblock + model1->M * sizeof(edge_t*));
 	insert_edges_and_vtx(model1, vertices, edges, edges1, false);
@@ -562,7 +568,7 @@ static void search_intersections(nb_container_t *intersections,
 			}
 		}
 	}
-	free(memblock);
+	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void insert_edges_and_vtx(const vcn_model_t *model,
@@ -1240,7 +1246,7 @@ static void set_intersection_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = malloc(N_centroids);
+	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 
 	uint32_t N_new_holes =
 		mask_intersection_holes(model1, model2, N_centroids,
@@ -1248,18 +1254,20 @@ static void set_intersection_holes(vcn_model_t *model,
 	
 	set_new_holes_to_model(N_new_holes, N_centroids,
 			       centroids, mask_centroids, model);
-	free(mask_centroids);
+	NB_SOFT_FREE(N_centroids, mask_centroids);
 	free(centroids);
 }
 
 static double* get_centroids_of_model_subareas(const vcn_model_t *model,
 						uint32_t *N_centroids)
 {
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
+
 	vcn_mesh_get_simplest_from_model(mesh, model);
 	double* centroids = 
 		vcn_mesh_get_centroids_of_subareas(mesh, N_centroids);
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 	return centroids;
 }
 
@@ -1270,10 +1278,12 @@ static uint32_t mask_intersection_holes(const vcn_model_t *model1,
 					char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	vcn_mesh_t* mesh1 = vcn_mesh_create();
+	vcn_mesh_t* mesh1 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh1);
 	vcn_mesh_get_simplest_from_model(mesh1, model1);
 
-	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_t* mesh2 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh2);
 	vcn_mesh_get_simplest_from_model(mesh2, model2);
  
 	for (uint32_t i = 0; i < N_centroids; i++) {
@@ -1285,8 +1295,8 @@ static uint32_t mask_intersection_holes(const vcn_model_t *model1,
 			mask_centroids[i] = 0;
 		}
 	}
-	vcn_mesh_destroy(mesh1);
-	vcn_mesh_destroy(mesh2);
+	vcn_mesh_finish(mesh1);
+	vcn_mesh_finish(mesh2);
 	return N_new_holes;
 }
 
@@ -1348,14 +1358,15 @@ static void delete_isolated_elements(vcn_model_t *model)
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)
 {
-	char* mask = calloc(model->N, 1);
+	char* mask = NB_SOFT_CALLOC(model->N);
 	for(uint32_t i = 0; i < model->M; i++){
 		mask[model->edge[i * 2]] = 1;
 		mask[model->edge[i*2+1]] = 1;
 	}
 
 	uint32_t N_vtx = 0;
-	uint32_t* perm = malloc(model->N * sizeof(*perm));
+	uint32_t perm_memsize = model->N * sizeof(uint32_t);
+	uint32_t* perm = NB_SOFT_MALLOC(perm_memsize);
 	for (uint32_t i = 0; i < model->N; i++){
 		if (1 == mask[i]) {
 			perm[i] = N_vtx;
@@ -1380,8 +1391,8 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 		free(model->vertex);
 		model->vertex = vertices;
 	}
-	free(mask);
-	free(perm);
+	NB_SOFT_FREE(model->N, mask);
+	NB_SOFT_FREE(perm_memsize, perm);
 }
 
 void vcn_model_get_union(vcn_model_t *model,
@@ -1425,7 +1436,7 @@ static void set_difference_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = malloc(N_centroids);
+	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 
 	uint32_t N_new_holes =
 		mask_difference_holes(model1, model2, N_centroids,
@@ -1433,7 +1444,7 @@ static void set_difference_holes(vcn_model_t *model,
 	
 	set_new_holes_to_model(N_new_holes, N_centroids,
 			       centroids, mask_centroids, model);
-	free(mask_centroids);
+	NB_SOFT_FREE(N_centroids, mask_centroids);
 	free(centroids);
 }
 
@@ -1444,10 +1455,12 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 				      char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	vcn_mesh_t* mesh1 = vcn_mesh_create();
+	vcn_mesh_t* mesh1 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh1);
 	vcn_mesh_get_simplest_from_model(mesh1, model1);
 
-	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_t* mesh2 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh2);
 	vcn_mesh_get_simplest_from_model(mesh2, model2);
 
 	for (uint32_t i = 0; i < N_centroids; i++) {
@@ -1459,8 +1472,8 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 			mask_centroids[i] = 0;
 		}
 	}
-	vcn_mesh_destroy(mesh1);
-	vcn_mesh_destroy(mesh2);
+	vcn_mesh_finish(mesh1);
+	vcn_mesh_finish(mesh2);
 	return N_new_holes;
 }
 
@@ -1488,7 +1501,7 @@ static void set_substraction_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = malloc(N_centroids);
+	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 	
 	uint32_t N_new_holes =
 		mask_substraction_holes(model2, N_centroids,
@@ -1498,7 +1511,7 @@ static void set_substraction_holes(vcn_model_t *model,
 			       centroids, mask_centroids, model);
 
 	free(centroids);
-	free(mask_centroids);
+	NB_SOFT_FREE(N_centroids, mask_centroids);
 }
 
 static uint32_t mask_substraction_holes(const vcn_model_t *model2,
@@ -1508,7 +1521,8 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 {
 	uint32_t N_new_holes = 0;
 
-	vcn_mesh_t* mesh2 = vcn_mesh_create();
+	vcn_mesh_t* mesh2 = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh2);
 	vcn_mesh_get_simplest_from_model(mesh2, model2);
 	for (uint32_t i = 0; i < N_centroids; i++) {
 		if (vcn_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
@@ -1518,6 +1532,6 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 			mask_centroids[i] = 0;
 		}
 	}
-	vcn_mesh_destroy(mesh2);
+	vcn_mesh_finish(mesh2);
 	return N_new_holes;
 }

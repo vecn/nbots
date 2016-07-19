@@ -3,6 +3,18 @@
 
 #include <stdint.h>
 
+#define MAX_STACK_MEM_ON_SOFT_MALLOCS 255
+
+#define NB_SOFT_MALLOC(size)				\
+	((MAX_STACK_MEM_ON_SOFT_MALLOCS < (size)) ?	\
+	 nb_malloc((size)):alloca((size)))
+#define NB_SOFT_CALLOC(size)				\
+	((MAX_STACK_MEM_ON_SOFT_MALLOCS < (size)) ?	\
+	 nb_calloc((size)):alloca((size)))
+#define NB_SOFT_FREE(size,ptr)				\
+	((MAX_STACK_MEM_ON_SOFT_MALLOCS < (size)) ?	\
+	 nb_free((ptr)):0)
+
 void *nb_malloc(uint64_t size);
 void *nb_calloc(uint64_t size);
 void *nb_realloc(void *mem, uint64_t new_size);

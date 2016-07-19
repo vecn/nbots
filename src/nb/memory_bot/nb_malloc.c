@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <alloca.h>
 
 #include "nb/memory_bot/nb_malloc.h"
 
