@@ -336,14 +336,18 @@ static bool area_is_enclosed(const nb_container_t *area_trg)
 double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 				     double* area_removed)
 {
-	nb_container_t* areas = nb_container_create(NB_SORTED);
+	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(areas, NB_SORTED);
+
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
 		if (CLEAN == trg->status) {
-			nb_container_t* area_trg = nb_container_create(NB_SORTED);
+			nb_container_t* area_trg =
+				nb_container_create(NB_SORTED);
 			double* area = malloc(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, true);
 			void** obj = malloc(2 * sizeof(*obj));
@@ -352,7 +356,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 			nb_container_insert(areas, obj);
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 
 	/* Destroy enveloped areas */
 	if (NULL != area_removed)
@@ -384,7 +388,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 	nb_container_destroy(main_area);
 	free(main_obj);
 	/* Free memory */
-	nb_container_destroy(areas);
+	nb_container_finish(areas);
   
 	/* Rescale value */
 	ret_val /= POW2(mesh->scale);
@@ -398,14 +402,18 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 					    double* area_removed)
 {
-	nb_container_t* areas = nb_container_create(NB_SORTED);
+	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(areas, NB_SORTED);
+
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
 		if (CLEAN == trg->status) {
-			nb_container_t* area_trg = nb_container_create(NB_SORTED);
+			nb_container_t* area_trg =
+				nb_container_create(NB_SORTED);
 			double* area = malloc(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, false);
 			void** obj = malloc(2*sizeof(*obj));
@@ -414,7 +422,8 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 			nb_container_insert(areas, obj);
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
+
 	/* Remove separated areas */
 	if (NULL != area_removed)
 		area_removed[0] = 0;
@@ -444,7 +453,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 	}
 	nb_container_destroy(main_area);
 	free(main_obj);
-	nb_container_destroy(areas);
+	nb_container_finish(areas);
 
 	/* Rescale value */
 	ret_val /= POW2(mesh->scale);
