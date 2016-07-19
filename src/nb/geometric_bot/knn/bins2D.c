@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
@@ -28,7 +29,6 @@ static uint32_t bin_hash_key(const void *const bin_ptr);
 static int8_t bin_compare(const void* restrict bin1_ptr,
 			  const void* restrict bin2_ptr);
 static void bin_destroy(void *bin_ptr);
-static void null_destroy(void *data);
 static bool null_filter(const vcn_point2D_t *const p_ref,
 			const vcn_point2D_t *const p,
 			const void *const data);
@@ -149,14 +149,9 @@ vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
 	nb_container_set_comparer(bins2D->bins, bin_compare);
 	nb_container_set_destroyer(bins2D->bins, bin_destroy);
 	bins2D->destroy = vcn_point2D_destroy;
-	bins2D->destroy_attr = null_destroy;
+	bins2D->destroy_attr = NULL;
 	bins2D->filter = null_filter;
 	return bins2D;
-}
-
-static inline void null_destroy(void *data)
-{
-	; /* NULL statement */
 }
 
 static inline bool null_filter(const vcn_point2D_t *const p_ref,
@@ -177,7 +172,8 @@ void vcn_bins2D_clear(vcn_bins2D_t* bins2D)
 {
 	while (vcn_bins2D_is_not_empty(bins2D)) {
 		vcn_point2D_t* point = vcn_bins2D_delete_first(bins2D);
-		bins2D->destroy(point);
+		if (NULL != bins2D->destroy)
+			bins2D->destroy(point);
 	}
 	nb_container_clear(bins2D->bins);
 	bins2D->length = 0;
@@ -197,7 +193,7 @@ inline void vcn_bins2D_enable_point_destroyer(vcn_bins2D_t* bins2D)
 
 inline void vcn_bins2D_disable_point_destroyer(vcn_bins2D_t* bins2D)
 {
-	bins2D->destroy = null_destroy;
+	bins2D->destroy = NULL;
 }
 
 inline void vcn_bins2D_set_attribute_destroyer(vcn_bins2D_t* bins2D,
@@ -757,7 +753,9 @@ static void delaunay_set_inside_points_of_prev_layer
 				 const circle_t *const circle)
 {
 	nb_container_type type = nb_container_get_type(outside_vtx);
-	nb_container_t *aux = nb_container_create(type);
+
+	nb_container_t *aux = alloca(nb_container_get_memsize(type));
+	nb_container_init(aux, type);
 	while (nb_container_is_not_empty(outside_vtx)) {
 		vcn_point2D_t *p = nb_container_delete_first(outside_vtx);
 		if (is_inside_circle(circle, p))
@@ -766,7 +764,7 @@ static void delaunay_set_inside_points_of_prev_layer
 			nb_container_insert(aux, p);
 	}
 	nb_container_merge(outside_vtx, aux);
-	nb_container_destroy(aux);
+	nb_container_finish(aux);
 }
 
 nb_container_t* vcn_bins2D_get_points_inside_circle

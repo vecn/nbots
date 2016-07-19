@@ -19,6 +19,6 @@ void nb_queue_node_destroy(nb_membank_t *membank,
 nb_queue_node_t* nb_queue_node_clone(nb_membank_t *membank,
 				     const nb_queue_node_t *const node,
 				     void* (*clone)(const void *const));
-nb_queue_node_t* node_get_prev(const nb_queue_node_t *const node);
+nb_queue_node_t* nb_queue_node_get_prev(const nb_queue_node_t *const node);
 
 #endif

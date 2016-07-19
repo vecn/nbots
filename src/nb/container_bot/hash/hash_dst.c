@@ -63,7 +63,7 @@ static void init(hash_t *hash, float max_load_factor, uint32_t size)
 
 	hash->membank = (void*)(((char*)hash) + sizeof(hash_t));
 	nb_membank_init(hash->membank, nb_queue_get_memsize());
-	nb_membank_set_N_x_block(hash->membank, size);
+	nb_membank_set_N_x_block(hash->membank, hash->size);
 }
 
 void hash_copy(void *hash_ptr, const void *src_hash_ptr,

@@ -268,7 +268,7 @@ void nb_membank_merge(nb_membank_t *membank, nb_membank_t *extension)
 	extension->block = NULL;
 }
 
-void nb_membank_set_N_x_block(nb_membank_t *membank, int N_x_block)
+void nb_membank_set_N_x_block(nb_membank_t *membank, uint16_t N_x_block)
 {
 	membank->N_max = 64 * GET_64_ALIGNMENT(N_x_block);
 }

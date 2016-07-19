@@ -299,12 +299,14 @@ void* nb_queue_delete(void *queue_ptr, const void *val,
 
 static void unlink_node(nb_queue_t *queue, const nb_queue_node_t *const node)
 {
-	nb_queue_node_t *prev = nb_queue_node_get_prev(node);
-	if (node == prev /* implies node is equal to queue->end */)
+	if (node == node->next) {
 		queue->end = NULL;
-	else if (node == queue->end /* implies node is different to prev */)
-		queue->end = prev;
-	prev->next = node->next;
+	} else {
+		nb_queue_node_t *prev = nb_queue_node_get_prev(node);
+		if (node == queue->end)
+			queue->end = prev;
+		prev->next = node->next;
+	}
 }
 
 uint32_t nb_queue_get_length(const void *const queue_ptr)
