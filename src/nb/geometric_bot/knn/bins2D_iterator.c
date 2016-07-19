@@ -16,17 +16,34 @@ struct vcn_bins2D_iter_s {
 
 static void point_to_next(vcn_bins2D_iter_t *iter);
 
-inline vcn_bins2D_iter_t* vcn_bins2D_iter_create(void)
+uint32_t vcn_bins2D_iter_get_memsize(void)
 {
-	return calloc(1, sizeof(vcn_bins2D_iter_t));
+	return sizeof(vcn_bins2D_iter_t);
 }
 
-void vcn_bins2D_iter_destroy(vcn_bins2D_iter_t *iter)
+void vcn_bins2D_iter_init(vcn_bins2D_iter_t *iter)
+{
+	memset(iter, 0, vcn_bins2D_iter_get_memsize());
+}
+
+void vcn_bins2D_iter_finish(vcn_bins2D_iter_t *iter)
 {
 	if (NULL != iter->bin_iter)
 		nb_iterator_destroy(iter->bin_iter);
 	if (NULL != iter->point_iter)
 		nb_iterator_destroy(iter->point_iter);
+}
+
+vcn_bins2D_iter_t* vcn_bins2D_iter_create(void)
+{
+	vcn_bins2D_iter_t *iter = malloc(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
+	return iter;
+}
+
+void vcn_bins2D_iter_destroy(vcn_bins2D_iter_t *iter)
+{
+	vcn_bins2D_iter_finish(iter);
 	free(iter);
 }
 

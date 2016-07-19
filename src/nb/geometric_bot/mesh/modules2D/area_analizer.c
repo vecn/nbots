@@ -4,6 +4,7 @@
 #include <string.h>
 #include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -292,7 +293,10 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 					 uint32_t *N_centroids)
 {
 	*N_centroids = nb_container_get_length(areas);
-	double *centroids = malloc(*N_centroids * 2 * sizeof(*centroids));
+	
+	uint32_t memsize = *N_centroids * 2 * sizeof(double);
+	double *centroids = NB_SOFT_MALLOC(memsize);
+
 	uint32_t i = 0;
 	while (nb_container_is_not_empty(areas)) {
 		subarea_t *subarea = nb_container_delete_first(areas);
@@ -311,7 +315,7 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 		out = malloc(*N_centroids * 2 * sizeof(*out));
 		memcpy(out, centroids, *N_centroids * 2 * sizeof(*out));
 	}
-	free(centroids);
+	NB_SOFT_FREE(memsize, centroids);
 	return out;
 
 }
