@@ -72,10 +72,11 @@ static uint32_t hash_key_trg(const void *const  triangle);
 uint32_t vcn_mesh_get_memsize(void)
 {
 	uint32_t mesh_size = sizeof(vcn_mesh_t);
+	uint32_t bins_size = vcn_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
-	return mesh_size + edg_container_size +
+	return mesh_size + edg_container_size + bins_size +
 		trg_container_size + 3 * membank_size;
 }
 
@@ -96,41 +97,45 @@ static void set_memory(vcn_mesh_t *mesh)
 {
 	char *memblock = (void*)mesh;
 	uint32_t mesh_size = sizeof(vcn_mesh_t);
+	uint32_t bins_size = vcn_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
 
 	memset(mesh, 0, vcn_mesh_get_memsize());
 
-	mesh->ug_vtx = vcn_bins2D_create(1.0);
-	vcn_bins2D_disable_point_destroyer(mesh->ug_vtx);
+	mesh->ug_vtx = (void*) (memblock + mesh_size);
+	vcn_bins2D_init(mesh->ug_vtx, 1.0);
 
-	mesh->ht_edge = (void*)(memblock + mesh_size);
+	mesh->ht_edge = (void*)(memblock + mesh_size + bins_size);
 	nb_container_init(mesh->ht_edge, EDG_CONTAINER);
 	nb_container_set_key_generator(mesh->ht_edge, hash_key_edge);
 	nb_container_set_comparer(mesh->ht_edge, compare_edge);
 
-	mesh->ht_trg = (void*)(memblock + mesh_size + edg_container_size);
+	mesh->ht_trg = (void*)(memblock + mesh_size + bins_size +
+			       edg_container_size);
 	nb_container_init(mesh->ht_trg, TRG_CONTAINER);
 	nb_container_set_key_generator(mesh->ht_trg, hash_key_trg);
 
-	mesh->vtx_membank = (void*)(memblock + mesh_size + edg_container_size +
-				    trg_container_size);
+	mesh->vtx_membank = (void*)(memblock + mesh_size + bins_size +
+				    edg_container_size + trg_container_size);
 	nb_membank_init(mesh->vtx_membank, mvtx_get_memsize());
 
-	mesh->trg_membank = (void*)(memblock + mesh_size + edg_container_size +
-				    trg_container_size + membank_size);
+	mesh->trg_membank = (void*)(memblock + mesh_size + bins_size +
+				    edg_container_size + trg_container_size +
+				    membank_size);
 	nb_membank_init(mesh->trg_membank, sizeof(msh_trg_t));
 
-	mesh->edg_membank = (void*)(memblock + mesh_size + edg_container_size +
-				    trg_container_size + 2 * membank_size);
+	mesh->edg_membank = (void*)(memblock + mesh_size + bins_size +
+				    edg_container_size + trg_container_size +
+				    2 * membank_size);
 	nb_membank_init(mesh->edg_membank, sizeof(msh_edge_t));
 }
 
 void vcn_mesh_finish(vcn_mesh_t *mesh)
 {
 	clear_input_data(mesh);
-	vcn_bins2D_destroy(mesh->ug_vtx);
+	vcn_bins2D_finish(mesh->ug_vtx);
 	nb_container_finish(mesh->ht_trg);
 	nb_container_finish(mesh->ht_edge);
 	nb_membank_finish(mesh->vtx_membank);

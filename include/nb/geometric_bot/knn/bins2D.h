@@ -8,15 +8,15 @@
 
 typedef struct vcn_bins2D_s vcn_bins2D_t;
 
+uint32_t vcn_bins2D_get_memsize(void);
+void vcn_bins2D_init(vcn_bins2D_t *bins2D, double size_of_bins);
+void vcn_bins2D_finish(vcn_bins2D_t *bins2D);
+
 vcn_bins2D_t* vcn_bins2D_create(double size_of_bins);
 void vcn_bins2D_destroy(vcn_bins2D_t* bins2D);
 void vcn_bins2D_clear(vcn_bins2D_t* bins2D);
-void vcn_bins2D_enable_point_destroyer(vcn_bins2D_t* bins2D);
-void vcn_bins2D_disable_point_destroyer(vcn_bins2D_t* bins2D);
 void vcn_bins2D_set_destroyer(vcn_bins2D_t* bins2D,
 			      void (*destroy)(void*));
-void vcn_bins2D_set_attribute_destroyer(vcn_bins2D_t* bins2D,
-					void (*destroy)(void*));
 void vcn_bins2D_insert(vcn_bins2D_t *const bins2D,
 		       const vcn_point2D_t *const point);
 vcn_point2D_t* vcn_bins2D_delete(vcn_bins2D_t* bins2D,
@@ -39,15 +39,16 @@ void vcn_bins2D_set_filter(vcn_bins2D_t *bins2D,
 
 void vcn_bins2D_set_filter_data(vcn_bins2D_t *bins2D, const void *data);
 
-nb_container_t* vcn_bins2D_get_candidate_points_to_min_delaunay
-(const vcn_bins2D_t *const bins2D,
- const vcn_point2D_t *const p1, 
- const vcn_point2D_t *const p2);
+void vcn_bins2D_get_candidate_points_to_min_delaunay
+				(const vcn_bins2D_t *const bins2D,
+				 const vcn_point2D_t *const p1, 
+				 const vcn_point2D_t *const p2,
+				 nb_container_t* vertices);
 
-nb_container_t* vcn_bins2D_get_points_inside_circle
-(const vcn_bins2D_t *const bins2D,
- double center[2],
- double radius);
+void vcn_bins2D_get_points_inside_circle(const vcn_bins2D_t *const bins2D,
+					 double center[2],
+					 double radius,
+					 nb_container_t *points_inside);
 bool vcn_bins2D_are_points_inside_circle(const vcn_bins2D_t *const bins2D,
 					 double center[2],
 					 double radius);

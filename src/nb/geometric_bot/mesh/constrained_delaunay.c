@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
@@ -379,21 +380,25 @@ static bool trg_is_constrained(const vcn_mesh_t *const restrict mesh,
 	double circumcenter[2];
 	vcn_utils2D_get_circumcenter(trg_v1->x, trg_v2->x, trg_v3->x,
 				     circumcenter);
-	nb_container_t *const restrict l_inside_vtx = 
-		vcn_bins2D_get_points_inside_circle(mesh->ug_vtx,
-						    circumcenter,
-						    circumradius);
-	bool is_Constrained_Delaunay = true;
+	nb_container_t *l_inside_vtx = 
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(l_inside_vtx, NB_QUEUE);
+
+	  vcn_bins2D_get_points_inside_circle(mesh->ug_vtx,
+					      circumcenter,
+					      circumradius,
+					      l_inside_vtx);
+	bool is_constrained_Delaunay = true;
 	if (nb_container_is_not_empty(l_inside_vtx)) {
-		is_Constrained_Delaunay = 
+		is_constrained_Delaunay = 
 			trg_is_constrained_exahustive_search(mesh->input_sgm, 
 							     mesh->N_input_sgm, 
 							     trg_v1, trg_v2,
 							     trg_v3,
 							     l_inside_vtx);
 	}
-	nb_container_destroy(l_inside_vtx);
-	return is_Constrained_Delaunay;
+	nb_container_finish(l_inside_vtx);
+	return is_constrained_Delaunay;
 }
 
 static void link_constraining_sgm(msh_edge_t *sgm)

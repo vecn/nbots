@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
@@ -76,12 +77,6 @@ void cunit_nb_geometric_bot_bins2D(void)
 	CU_add_test(suite, "create()", test_create);
 	CU_add_test(suite, "destroy()", test_destroy);
 	CU_add_test(suite, "clear()", test_clear);
-	CU_add_test(suite, "enable_point_destroyer()",
-		    test_enable_point_destroyer);
-	CU_add_test(suite, "disable_point_destroyer()",
-		    test_disable_point_destroyer);
-	CU_add_test(suite, "set_attribute_destroyer()",
-		    test_set_attribute_destroyer);
 	CU_add_test(suite, "insert()", test_insert);
 	CU_add_test(suite, "delete()", test_delete);
 	CU_add_test(suite, "delete_first()", test_delete_first);
@@ -142,37 +137,6 @@ static void test_clear(void)
 	bool is_ok = (0 == vcn_bins2D_get_length(bins));
 	vcn_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
-}
-
-static void test_enable_point_destroyer(void)
-{
-	int N = 100;
-	vcn_bins2D_t *bins = get_bins(N);
-	vcn_bins2D_disable_point_destroyer(bins);
-	vcn_bins2D_enable_point_destroyer(bins);
-	vcn_bins2D_destroy(bins);
-	CU_ASSERT(true);
-}
-
-static void test_disable_point_destroyer(void)
-{
-	int N = 100;
-	vcn_point2D_t *vertices[100];
-	vcn_bins2D_t *bins = get_bins_and_array(N, vertices);
-	vcn_bins2D_disable_point_destroyer(bins);
-	vcn_bins2D_destroy(bins);
-	for (int i = 0; i < N; i++)
-		vcn_point2D_destroy(vertices[i]);
-	CU_ASSERT(true);
-}
-
-static void test_set_attribute_destroyer(void)
-{
-	int N = 100;
-	vcn_bins2D_t *bins = get_bins_with_attribute(N);
-	vcn_bins2D_set_attribute_destroyer(bins, free);
-	vcn_bins2D_destroy(bins);
-	CU_ASSERT(true);
 }
 
 static void test_insert(void)
@@ -276,10 +240,11 @@ static void test_get_candidate_points_to_min_delaunay(void)
 	p1.x[1] = 1;
 	p2.x[0] = 1;
 	p2.x[1] = -1;
-	nb_container_t *cnt = 
-		vcn_bins2D_get_candidate_points_to_min_delaunay(bins,
-								&p1,
-								&p2);
+
+	nb_container_t *cnt = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(cnt, NB_QUEUE);
+
+	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2, cnt);
 	bool is_ok = nb_container_is_not_empty(cnt);
 	if (is_ok)
 		is_ok = is_ok && dont_include_edge_points(cnt,
@@ -288,7 +253,7 @@ static void test_get_candidate_points_to_min_delaunay(void)
 		is_ok = is_ok && all_in_half_space(cnt, &p1, &p2);
 	if (is_ok)
 		is_ok = is_ok && contains_min_dd(bins, cnt, &p1, &p2);
-	nb_container_destroy(cnt);
+	nb_container_finish(cnt);
 	vcn_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
 }
@@ -299,12 +264,14 @@ static void test_get_points_inside_circle(void)
 	vcn_bins2D_t *bins = get_bins(N);
 	double center[2] = {0, 0};
 	double radius = 10.0;
-	nb_container_t *cnt = 
-		vcn_bins2D_get_points_inside_circle(bins, center,
-						    radius);
+	nb_container_t *cnt = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(cnt, NB_QUEUE);
+
+	vcn_bins2D_get_points_inside_circle(bins, center, radius, cnt);
+
 	bool is_ok = nb_container_is_not_empty(cnt) &&
 		all_inside_circle(cnt, center, radius);
-	nb_container_destroy(cnt);
+	nb_container_finish(cnt);
 	vcn_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
 }

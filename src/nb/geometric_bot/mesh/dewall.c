@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
@@ -373,8 +374,11 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const msh_vtx_t *const restrict v1,
 					 const msh_vtx_t *const restrict v2)
 {
-	nb_container_t* vertices = 
-		vcn_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2);
+	nb_container_t* vertices = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(vertices, NB_QUEUE);
+	
+	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
+							vertices);
   
 	msh_vtx_t *v3 = NULL;
 	double min_dist = 0.0;
@@ -382,7 +386,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 		msh_vtx_t* vtx = nb_container_delete_first(vertices);
 		min_dist = set_v3(edges, v1, v2, vtx, &v3, min_dist);
 	}
-	nb_container_destroy(vertices);
+	nb_container_finish(vertices);
 	return v3;
 }
 
@@ -673,11 +677,11 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 		double bins_size =
 		  (vertices[N-1]->x[axe] - vertices[0]->x[axe])/ sqrt(N);
 		search_vtx->bins = vcn_bins2D_create(bins_size);
-		vcn_bins2D_disable_point_destroyer(search_vtx->bins);
 		for (uint32_t i = 0; i < N; i++)
 			vcn_bins2D_insert(search_vtx->bins, vertices[i]);    
-	} else
+	} else {
 		search_vtx->bins = NULL;
+	}
 }
 
 static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,

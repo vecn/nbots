@@ -44,7 +44,6 @@ struct vcn_bins2D_s {
 		       const void *const data);
 	const void *filter_data;
 	void (*destroy)(void*);
-	void (*destroy_attr)(void*);
 };
 
 #endif
