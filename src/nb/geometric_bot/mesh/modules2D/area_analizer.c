@@ -312,8 +312,8 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 	*N_centroids = i;
 	double *out = NULL;
 	if (0 < *N_centroids) {
-		out = malloc(*N_centroids * 2 * sizeof(*out));
-		memcpy(out, centroids, *N_centroids * 2 * sizeof(*out));
+		out = malloc(memsize);
+		memcpy(out, centroids, memsize);
 	}
 	NB_SOFT_FREE(memsize, centroids);
 	return out;
