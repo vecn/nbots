@@ -458,7 +458,8 @@ static void set_mshquad(nb_mshquad_t *quad,
 
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -466,15 +467,14 @@ static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 		quad->nod[id * 2] = vtx->x[0] / mesh->scale + mesh->xdisp;
 		quad->nod[id*2+1] = vtx->x[1] / mesh->scale + mesh->ydisp;
 	}
-	vcn_bins2D_iter_destroy(iter);	
+	vcn_bins2D_iter_finish(iter);	
 }
 
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
 	uint32_t i = 0;
-	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {

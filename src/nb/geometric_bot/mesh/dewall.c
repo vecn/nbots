@@ -283,7 +283,8 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 					 const nb_container_t *const edges)
 {
 	bool intersects = false;
-	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
 	while (nb_iterator_has_more(iter)) {
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
@@ -309,7 +310,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 			}
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 	return intersects;
 }
 
@@ -506,11 +507,16 @@ static uint32_t dewall_recursion
 	}
 
 	/* Initialize Action face lists */
-	nb_container_t* AFL_alpha = nb_container_create(NB_HASH);
+	nb_container_t* AFL_alpha = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_init(AFL_alpha, NB_HASH);
 	nb_container_set_key_generator(AFL_alpha, hash_key_edge);
-	nb_container_t* AFL_1 = nb_container_create(NB_HASH);
+
+	nb_container_t* AFL_1 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_init(AFL_1, NB_HASH);
 	nb_container_set_key_generator(AFL_1, hash_key_edge);
-	nb_container_t* AFL_2 = nb_container_create(NB_HASH);
+
+	nb_container_t* AFL_2 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_init(AFL_2, NB_HASH);
 	nb_container_set_key_generator(AFL_2, hash_key_edge);
 
 	/* Redistribute segments from the main AFL to the three AFLs */
@@ -524,7 +530,7 @@ static uint32_t dewall_recursion
 	
 	n_trg_alpha += triangulate_wall(mesh, &search_vtx, AFL_alpha,
 					AFL_1, AFL_2);
-	nb_container_destroy(AFL_alpha);
+	nb_container_finish(AFL_alpha);
 
 	clear_search_vtx(&search_vtx);
 
@@ -533,13 +539,13 @@ static uint32_t dewall_recursion
 	if (nb_container_is_not_empty(AFL_1))
 		n_trg_1 += dewall_recursion(mesh, N_mid, vertices,
 					    deep_level + 1, AFL_1);
-	nb_container_destroy(AFL_1);
+	nb_container_finish(AFL_1);
 
 	uint32_t n_trg_2 = 0;
 	if (nb_container_is_not_empty(AFL_2))
 		n_trg_2 += dewall_recursion(mesh, N - N_mid, &(vertices[N_mid]),
 					    deep_level + 1, AFL_2);
-	nb_container_destroy(AFL_2);
+	nb_container_finish(AFL_2);
 
 	/* Return number of triangles */
 	return n_trg_alpha + n_trg_1 + n_trg_2;
@@ -608,7 +614,8 @@ static void set_interval(interval_t *interval,
 			 int8_t axe)
 {
 	if (nb_container_is_not_empty(AFL)) {
-		nb_iterator_t *iter = nb_iterator_create();
+		nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, AFL);
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		if (edge->v1->x[axe] < edge->v2->x[axe]) {
@@ -632,7 +639,7 @@ static void set_interval(interval_t *interval,
 						    edge->v1->x[axe]);
 			}
 		}
-		nb_iterator_destroy(iter);
+		nb_iterator_finish(iter);
 	} else {
 		interval->min = vertices[0]->x[axe];
 		interval->max = vertices[N-1]->x[axe];
@@ -750,14 +757,17 @@ static void update_AFLs(const msh_trg_t *const trg,
 
 static uint32_t dewall(vcn_mesh_t* mesh)
 {
-	msh_vtx_t **vertices =  calloc(mesh->N_input_vtx, sizeof(*vertices));
-	memcpy(vertices, mesh->input_vtx, 
-	       mesh->N_input_vtx * sizeof(*vertices));
-	nb_container_t* AFL = nb_container_create(NB_HASH);
+	uint32_t memsize = mesh->N_input_vtx * sizeof(msh_vtx_t*);
+	msh_vtx_t **vertices =  NB_SOFT_MALLOC(memsize);
+	memcpy(vertices, mesh->input_vtx, memsize);
+
+	nb_container_t* AFL = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_init(AFL, NB_HASH);
+
 	nb_container_set_key_generator(AFL, hash_key_edge);
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
 					  vertices, 0, AFL);
-  	nb_container_destroy(AFL);
-	free(vertices);
+  	nb_container_finish(AFL);
+	NB_SOFT_FREE(memsize, vertices);
 	return N_trg;
 }

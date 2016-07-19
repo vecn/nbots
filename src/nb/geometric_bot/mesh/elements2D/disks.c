@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/container_bot.h"
 #include "nb/eigen_bot.h"
@@ -250,7 +251,8 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
   
 	/***************** Optimize position + radius ***********************/
 	/* Initialize solution */
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -266,7 +268,7 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		Xk[id * 3] = vtx->x[0];
 		Xk[id*3+1] = vtx->x[1];
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 
 	for (uint32_t i = 0; i < spack->N_spheres; i++) {
 		/* Initial radii */
@@ -498,7 +500,8 @@ static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
 					uint32_t N_removed_by_porosity)
 {
 	uint32_t id_divisor_porosity = spack->N_spheres / N_removed_by_porosity;
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -517,7 +520,7 @@ static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
 			}
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 static void spack_update_disks(const vcn_mesh_t *const mesh,
@@ -525,7 +528,8 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 			       double *Xk)
 {
 
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -536,7 +540,7 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 			spack->radii[id] = Xk[id*3+2] / mesh->scale;
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 vcn_mshpack_t* vcn_mesh_get_mshpack
@@ -610,7 +614,8 @@ static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh)
 {
 	uint32_t N_steiner = 0;
 	uint32_t N_input = 0;
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
@@ -621,6 +626,6 @@ static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh)
 			id = N_input ++; /* Numeration for fixed nodes in the boundary */
 		mvtx_set_id(vtx, id);
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 	return N_steiner;
 }

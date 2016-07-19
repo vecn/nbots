@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <alloca.h>
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
@@ -440,7 +441,8 @@ static void mesh_2_msh3trg_cast_vertices(const vcn_mesh_t *const restrict mesh,
 	msh3trg->N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
 	msh3trg->vertices =
 		malloc(2 * msh3trg->N_vertices * sizeof(*(msh3trg->vertices)));
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -448,7 +450,7 @@ static void mesh_2_msh3trg_cast_vertices(const vcn_mesh_t *const restrict mesh,
 		msh3trg->vertices[id * 2] = vtx->x[0]/mesh->scale + mesh->xdisp;
 		msh3trg->vertices[id*2+1] = vtx->x[1]/mesh->scale + mesh->ydisp;
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const restrict mesh,
@@ -458,7 +460,8 @@ static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const restrict mesh,
 	msh3trg->edges = malloc(2 * msh3trg->N_edges * sizeof(*(msh3trg->edges)));
 
 	uint32_t i = 0;
-	nb_iterator_t *iter = nb_iterator_create();
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
 		msh_edge_t *edge = (msh_edge_t*) nb_iterator_get_next(iter);
@@ -466,7 +469,7 @@ static void mesh_2_msh3trg_cast_edges(const vcn_mesh_t *const restrict mesh,
 		msh3trg->edges[i*2+1] = mvtx_get_id(edge->v2);
 		i += 1;
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 }
 
 static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict mesh,
@@ -476,7 +479,8 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 		malloc(3 * msh3trg->N_triangles *
 		       sizeof(*(msh3trg->triangles_sharing_sides)));
 
-	nb_iterator_t* trg_iter =  nb_iterator_create();
+	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
@@ -495,7 +499,7 @@ static void mesh_2_msh3trg_cast_trg_neighbours(const vcn_mesh_t *const restrict 
 		msh3trg->triangles_sharing_sides[id*3+1] = id2;
 		msh3trg->triangles_sharing_sides[id*3+2] = id3;
 	}
-	nb_iterator_destroy(trg_iter);
+	nb_iterator_finish(trg_iter);
 }
 
 static void mesh_2_msh3trg_cast_and_enumerate_trg
@@ -507,7 +511,8 @@ static void mesh_2_msh3trg_cast_and_enumerate_trg
 		malloc(3 * msh3trg->N_triangles * 
 		       sizeof(*(msh3trg->vertices_forming_triangles)));
 
-	nb_iterator_t* trg_iter = nb_iterator_create();
+	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;
 	while (nb_iterator_has_more(trg_iter)) {
@@ -522,7 +527,7 @@ static void mesh_2_msh3trg_cast_and_enumerate_trg
 		trg->id = i;
 		i++;
 	}
-	nb_iterator_destroy(trg_iter);
+	nb_iterator_finish(trg_iter);
 }
 
 static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const restrict mesh,

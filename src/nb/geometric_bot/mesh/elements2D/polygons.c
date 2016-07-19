@@ -447,7 +447,8 @@ static void create_mapping(vinfo_t *vinfo,
 	uint32_t ielem = 0;
 	uint32_t inode = 0;
 
-	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
@@ -462,7 +463,7 @@ static void create_mapping(vinfo_t *vinfo,
 			inode += 1;
 		}
 	}
-	vcn_bins2D_iter_destroy(biter);
+	vcn_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
@@ -716,7 +717,8 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vinfo_t *const vinfo,
 				    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
@@ -732,7 +734,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 			       2 * sizeof(*(vtx->x)));
 		}
 	}
-	vcn_bins2D_iter_destroy(biter);
+	vcn_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
@@ -833,7 +835,8 @@ static void set_N_adj(nb_mshpoly_t *poly,
 		      const vinfo_t *const vinfo,
 		      const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
@@ -843,7 +846,7 @@ static void set_N_adj(nb_mshpoly_t *poly,
 			poly->N_adj[elem_id] = vgraph->N_adj[id];
 		}
 	}
-	vcn_bins2D_iter_destroy(biter);
+	vcn_bins2D_iter_finish(biter);
 }
 
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
@@ -851,7 +854,8 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vinfo_t *const vinfo,
 			    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
@@ -867,7 +871,7 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			poly->N_adj[elem_id] = id_adj;
 		}
 	}
-	vcn_bins2D_iter_destroy(biter);
+	vcn_bins2D_iter_finish(biter);
 }
 
 static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,

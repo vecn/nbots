@@ -22,9 +22,10 @@ static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 				     const msh_vtx_t *const v1,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id);
-static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
-						    const msh_vtx_t *const v1,
-						    const msh_vtx_t *const v2);
+static void remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
+					const msh_vtx_t *const v1,
+					const msh_vtx_t *const v2,
+					nb_container_t *vertices);
 static void spread_trg_adjacent_to_constrains
                   (vcn_mesh_t *const mesh,
 		   const nb_container_t *const available_vtx,
@@ -99,7 +100,10 @@ static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id)
 {
-	nb_container_t *vertices = remove_trg_intersecting_sgm(mesh, v1, v2);
+	nb_container_t *vertices =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(vertices, NB_SORTED);
+	remove_trg_intersecting_sgm(mesh, v1, v2, vertices);
 
 	if (nb_container_is_not_empty(vertices)) {
 		msh_edge_t *sgm = mesh_insert_edge(mesh, v1, v2);
@@ -110,15 +114,19 @@ static void set_new_constraining_sgm(vcn_mesh_t *mesh,
 		/* Triangulate right side */
 		spread_trg_adjacent_to_constrains(mesh, vertices, sgm, false);
 	}
-	nb_container_destroy(vertices);
+	nb_container_finish(vertices);
 }
 
-static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
-						    const msh_vtx_t *const v1,
-						    const msh_vtx_t *const v2)
+static void remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
+					const msh_vtx_t *const v1,
+					const msh_vtx_t *const v2,
+					nb_container_t *vertices)
 {
-	nb_container_t *intersected_trg = nb_container_create(NB_QUEUE);
-	nb_iterator_t *iter = nb_iterator_create();
+	nb_container_t *intersected_trg =
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(intersected_trg, NB_QUEUE);
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(iter);
@@ -129,9 +137,8 @@ static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 			nb_container_insert(intersected_trg, trg);
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 
-	nb_container_t *vertices = nb_container_create(NB_SORTED);
 	while (nb_container_is_not_empty(intersected_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(intersected_trg);
 		nb_container_insert(vertices, trg->v1);
@@ -140,8 +147,7 @@ static nb_container_t* remove_trg_intersecting_sgm(vcn_mesh_t *mesh,
 		mesh_substract_triangle(mesh, trg);
 		mtrg_free(mesh, trg);
 	}
-	nb_container_destroy(intersected_trg);
-	return vertices;
+	nb_container_finish(intersected_trg);
 }
 
 static void spread_trg_adjacent_to_constrains
@@ -197,7 +203,8 @@ static msh_trg_t* create_trg_constrained
 	msh_vtx_t* restrict vtx_near = NULL;
 	bool vtx_found = false;
 	double min_circumradius = 0; /* Must be initialized with zero */
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
 		const msh_vtx_t *const v3 =
@@ -254,7 +261,7 @@ static msh_trg_t* create_trg_constrained
 			vtx_found = true;
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 
 	if (!vtx_found)
 		return NULL;
@@ -292,7 +299,8 @@ static bool trg_is_constrained_exahustive_search
 /* List Naive Search */
 {
 	/* Check the Delaunay condition */
-	nb_iterator_t *const restrict iter = nb_iterator_create();
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
 		const msh_vtx_t *const restrict vtx = 
@@ -306,12 +314,12 @@ static bool trg_is_constrained_exahustive_search
 			/* Check for constraints */
 			if (!vtx_is_constrained(input_sgm, N_input_sgm,
 						trg_v1, trg_v2, trg_v3, vtx)) {
-				nb_iterator_destroy(iter);
+				nb_iterator_finish(iter);
 				return false;
 			}
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 	return true;
 }
 
@@ -429,7 +437,8 @@ static bool are_intersecting_edges(const vcn_mesh_t *const restrict mesh,
 				   const msh_vtx_t *const restrict v2)
 /* Exahustive search */
 {
-	nb_iterator_t *const restrict iter = nb_iterator_create();
+	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 
 	while (nb_iterator_has_more(iter)) {
@@ -444,10 +453,10 @@ static bool are_intersecting_edges(const vcn_mesh_t *const restrict mesh,
 						 edge->v2->x,
 						 v1->x,v2->x,
 						 NULL)) {
-			nb_iterator_destroy(iter);
+			nb_iterator_finish(iter);
 			return true;
 		}
 	}
-	nb_iterator_destroy(iter);
+	nb_iterator_finish(iter);
 	return false;
 }

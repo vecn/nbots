@@ -560,7 +560,8 @@ static void get_unused_vtx(const vcn_mesh_t *mesh,
 			   const nb_container_t *useful_vtx,
 			   nb_container_t *unused_vtx)
 {
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -568,7 +569,7 @@ static void get_unused_vtx(const vcn_mesh_t *mesh,
 			nb_container_insert(unused_vtx, vtx);
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 static void update_input_array(vcn_mesh_t *mesh, const msh_vtx_t *vtx)

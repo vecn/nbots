@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <alloca.h>
 
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -13,7 +14,9 @@
 void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 {
 	/* Allocate lists to store triangles per vertex */
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
+
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
@@ -25,7 +28,9 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 		vtx->attr = attr;
 	}
 	/* Iterate over triangles to found relations */
-	nb_iterator_t* ht_iter = nb_iterator_create();
+	nb_iterator_t* ht_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(ht_iter);
+
 	nb_iterator_set_container(ht_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(ht_iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(ht_iter);
@@ -33,11 +38,13 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 		nb_container_insert(((void**)trg->v2->attr)[0], trg);
 		nb_container_insert(((void**)trg->v3->attr)[0], trg);
 	}
-	nb_iterator_destroy(ht_iter);
+	nb_iterator_finish(ht_iter);
 
 	/* Detect one point connections and duplicate vertices */
 	nb_container_t* new_vertices =
-		nb_container_create(NB_QUEUE);
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(new_vertices, NB_QUEUE);
+
 	vcn_bins2D_iter_restart(iter);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
@@ -59,15 +66,16 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 			continue;
 
 		nb_container_t* trg_fan =
-			nb_container_create(NB_QUEUE);
+			alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_container_init(trg_fan, NB_QUEUE);
 		do {
 			nb_container_insert(trg_fan, trg_twist);
 			trg_twist = mtrg_get_left_triangle(trg_twist, vtx);
-		} while(NULL != trg_twist);
+		} while (NULL != trg_twist);
 
 		if (nb_container_get_length(trg_fan) == 
 		    nb_container_get_length(trg_x_vtx)) {
-			nb_container_destroy(trg_fan);
+			nb_container_finish(trg_fan);
 			continue;
 		}
     
@@ -99,7 +107,7 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 			else if (s2->v2 == vtx)
 				s2->v2 = new_vtx;
 		}
-    		nb_container_destroy(trg_fan);
+    		nb_container_finish(trg_fan);
 	}
 
 	/* Free memory */
@@ -111,12 +119,12 @@ void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh)
 		vtx->attr = attr[1];
 		free(attr);
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 
 	while (nb_container_is_not_empty(new_vertices)) {
 		msh_vtx_t* new_vtx = nb_container_delete_first(new_vertices);
 		vcn_bins2D_insert(mesh->ug_vtx, new_vtx);
 	}
 
-	nb_container_destroy(new_vertices);
+	nb_container_finish(new_vertices);
 }

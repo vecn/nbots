@@ -948,7 +948,8 @@ inline void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 
 void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
 {
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int id = 0;
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -956,7 +957,7 @@ void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
 		mvtx_set_id(vtx, id);
 		id += 1;
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 void mesh_enumerate_trg(vcn_mesh_t *mesh)

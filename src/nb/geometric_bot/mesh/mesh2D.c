@@ -363,7 +363,8 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
 
 void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices)
 {
-	vcn_bins2D_iter_t* iter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int i = 0;
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -372,7 +373,7 @@ void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices)
 					       &(vertices[i * 2]));
 		i++;
 	}
-	vcn_bins2D_iter_destroy(iter);
+	vcn_bins2D_iter_finish(iter);
 }
 
 inline uint32_t vcn_mesh_get_N_vtx(const vcn_mesh_t *const mesh)
@@ -677,7 +678,8 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	msh_vtx_t** vertices = malloc(N_vertices * sizeof(*vertices));
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
-	vcn_bins2D_iter_t* giter = vcn_bins2D_iter_create();
+	vcn_bins2D_iter_t* giter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(giter);
 	vcn_bins2D_iter_set_bins(giter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(giter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(giter);
@@ -688,12 +690,14 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		vcn_bins2D_insert(clone->ug_vtx, vtx_clone);
 		id += 1;
 	}
+	vcn_bins2D_iter_finish(giter);
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
 	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
 	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
 	id = 0;
-	nb_iterator_t* trg_iter = nb_iterator_create();
+	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
@@ -710,7 +714,8 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
 	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
 	id = 0;
-	nb_iterator_t* sgm_iter = nb_iterator_create();
+	nb_iterator_t* sgm_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_init(sgm_iter);
 	nb_iterator_set_container(sgm_iter, mesh->ht_edge);
 	while (nb_iterator_has_more(sgm_iter)) {
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
@@ -749,7 +754,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 			trg_clone->t3 = triangles[trg->t3->id];
 		nb_container_insert(clone->ht_trg, trg_clone);
 	}
-	nb_iterator_destroy(trg_iter);
+	nb_iterator_finish(trg_iter);
 
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
@@ -801,7 +806,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		free(attr[0]);
 		free(attr);
 	}
-	nb_iterator_destroy(sgm_iter);
+	nb_iterator_finish(sgm_iter);
 
 	/* Return clone */
 	return clone;

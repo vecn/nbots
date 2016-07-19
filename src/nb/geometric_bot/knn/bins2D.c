@@ -11,7 +11,6 @@
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/knn/bins2D_iterator.h"
 
 #include "bins2D_structs.h"
 
