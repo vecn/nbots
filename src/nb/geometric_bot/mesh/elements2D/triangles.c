@@ -273,11 +273,15 @@ vcn_graph_t* vcn_msh3trg_create_elem_graph
 void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
 				const vcn_mesh_t *const mesh)
 {
+	if (vcn_bins2D_is_empty(mesh->ug_vtx))
+		goto EXIT;
+
 	mesh_enumerate_vtx((vcn_mesh_t*)mesh);
 
 	mesh_2_msh3trg_cast_vertices(mesh, msh3trg);
 
-	mesh_2_msh3trg_cast_edges(mesh, msh3trg);
+	if (nb_container_is_not_empty(mesh->ht_edge))
+		mesh_2_msh3trg_cast_edges(mesh, msh3trg);
 
 	if (nb_container_is_not_empty(mesh->ht_trg)) {
 		mesh_2_msh3trg_cast_and_enumerate_trg((vcn_mesh_t*)mesh,
@@ -289,6 +293,9 @@ void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
 
 	if (mesh->N_input_sgm > 0)
 		mesh_2_msh3trg_cast_input_sgm(mesh, msh3trg);
+
+EXIT:
+	return;
 }
 
 void vcn_msh3trg_relabel(vcn_msh3trg_t* msh3trg,
@@ -538,11 +545,11 @@ static void mesh_2_msh3trg_cast_input_vtx(const vcn_mesh_t *const restrict mesh,
 		malloc(msh3trg->N_input_vertices *
 		       sizeof(*(msh3trg->input_vertices)));
 	for (uint32_t i = 0; i < msh3trg->N_input_vertices; i++) {
-		if (NULL == mesh->input_vtx[i]) {
+		if (NULL == mesh->input_vtx[i])
 			msh3trg->input_vertices[i] = msh3trg->N_vertices;
-			continue;
-		}
-		msh3trg->input_vertices[i] = mvtx_get_id(mesh->input_vtx[i]);
+		else
+			msh3trg->input_vertices[i] =
+				mvtx_get_id(mesh->input_vtx[i]);
 	}
 }
 
@@ -573,7 +580,7 @@ static void mesh_2_msh3trg_cast_input_sgm(const vcn_mesh_t *const restrict mesh,
 		}
 	}
 
-	for (uint32_t i=0; i < msh3trg->N_input_segments; i++) {
+	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
 		if (NULL == mesh->input_sgm[i])
 			continue;
 		msh_edge_t* sgm = mesh->input_sgm[i];
