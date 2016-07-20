@@ -315,7 +315,6 @@ void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
 	exp.input_sgm_set_vtx = msh3trg_input_sgm_set_vtx;
 
 	vcn_mesh_export(mesh, &exp);
-	return;
 }
 
 static void msh3trg_set_N_vtx(void *msh3trg_ptr, uint32_t N)
