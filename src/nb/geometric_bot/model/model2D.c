@@ -4,8 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -258,13 +260,14 @@ vcn_model_t* vcn_model_create_from_msh3trg
 void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 				     const vcn_msh3trg_t *const msh3trg)
 {
-	uint32_t* segments =
-		malloc(2 * msh3trg->N_input_segments * sizeof(*segments));
-	double* vertices =
-		malloc(2 * msh3trg->N_input_vertices * sizeof(*vertices));
+	uint32_t sgm_memsize = 2 * msh3trg->N_input_segments * sizeof(uint32_t);
+	uint32_t* segments = NB_SOFT_MALLOC(sgm_memsize);
 
-	uint32_t* vtx_index_relation =
-		malloc(msh3trg->N_input_vertices * sizeof(*vtx_index_relation));
+	uint32_t vtx_memsize = 2 * msh3trg->N_input_vertices * sizeof(double);
+	double* vertices = NB_SOFT_MALLOC(vtx_memsize);
+
+	uint32_t idx_memsize = msh3trg->N_input_vertices * sizeof(uint32_t);
+	uint32_t* vtx_index_relation = NB_SOFT_MALLOC(idx_memsize);
 
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < msh3trg->N_input_vertices; i++) {
@@ -310,25 +313,27 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 	model->edge = malloc(2 * N_segments * sizeof(*(model->edge)));
 	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
 
-	free(segments);
-	free(vertices);
-	free(vtx_index_relation);
+	NB_SOFT_FREE(sgm_memsize, segments);
+	NB_SOFT_FREE(vtx_memsize, vertices);
+	NB_SOFT_FREE(idx_memsize, vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
 	vcn_mesh_get_simplest_from_model(mesh, model);
 	
 	/* Get holes and destroy mesh */
 	uint32_t N_centroids;
 	double* centroids =
 		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 
 	uint32_t N_holes = 0;
 	double *holes = NULL;
 
 	if (0 < N_centroids) {
-		char* mask_centroids = malloc(N_centroids);
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+		memset(mask_centroids, 0, N_centroids);
 		/* get mask */
 		for (uint32_t i = 0; i < N_centroids; i++) {
 			bool not_inside =
@@ -337,8 +342,6 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 			if (not_inside) {
 				mask_centroids[i] = 1;
 				N_holes += 1;
-			} else {
-				mask_centroids[i] = 0;
 			}
 		}
 
@@ -355,7 +358,7 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 			}
 		}
 
-		free(mask_centroids);
+		NB_SOFT_FREE(N_centroids, mask_centroids);
 		free(centroids);
 	}
 	
@@ -627,12 +630,14 @@ vcn_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 
 void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 {
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
 	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	uint32_t N_holes;
-	double* holes = vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
-	vcn_mesh_destroy(mesh);
+	double* holes =
+		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
+	vcn_mesh_finish(mesh);
 	
 	if (0 < model->H)
 		free(model->holes);
@@ -643,11 +648,12 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 			     const double *const vtx)
 {
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
 	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	bool is_inside = vcn_mesh_is_vtx_inside(mesh, vtx);
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 	return is_inside;
 }
 
@@ -783,10 +789,11 @@ double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
 
 double vcn_model_get_area(const vcn_model_t *const model)
 {
-	vcn_mesh_t* mesh = vcn_mesh_create();
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
 	vcn_mesh_get_simplest_from_model(mesh, model);
 	double area = vcn_mesh_get_area(mesh);
-	vcn_mesh_destroy(mesh);
+	vcn_mesh_finish(mesh);
 	return area;
 }
 

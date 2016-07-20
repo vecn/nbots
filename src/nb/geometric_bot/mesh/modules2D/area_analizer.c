@@ -147,13 +147,17 @@ static double* get_centroids(const vcn_mesh_t *mesh,
 			     nb_container_t *areas, uint32_t *N_centroids)
 {
 	*N_centroids = nb_container_get_length(areas);
-	double *centroids = calloc(*N_centroids * 2, sizeof(*centroids));
-	uint32_t i = 0;
-	while (nb_container_is_not_empty(areas)) {
-		subarea_t *subarea = nb_container_delete_first(areas);
-		calculate_area_centroid(mesh, subarea->trgs, &(centroids[i*2]));
-		subarea_destroy(subarea);
-		i += 1;
+	double *centroids = NULL;
+	if (0 < *N_centroids) {
+		centroids = calloc(*N_centroids * 2, sizeof(*centroids));
+		uint32_t i = 0;
+		while (nb_container_is_not_empty(areas)) {
+			subarea_t *subarea = nb_container_delete_first(areas);
+			calculate_area_centroid(mesh, subarea->trgs,
+						&(centroids[i*2]));
+			subarea_destroy(subarea);
+			i += 1;
+		}
 	}
 	return centroids;
 }
@@ -294,28 +298,31 @@ static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
 {
 	*N_centroids = nb_container_get_length(areas);
 	
-	uint32_t memsize = *N_centroids * 2 * sizeof(double);
-	double *centroids = NB_SOFT_MALLOC(memsize);
-
-	uint32_t i = 0;
-	while (nb_container_is_not_empty(areas)) {
-		subarea_t *subarea = nb_container_delete_first(areas);
-		if (area_is_enclosed(subarea->trgs)) {
-			calculate_area_centroid(mesh, subarea->trgs,
-						&(centroids[i*2]));
-			i += 1;
-		} else {
-			subarea_clear(subarea);
-		}
-		subarea_destroy(subarea);
-	}
-	*N_centroids = i;
 	double *out = NULL;
 	if (0 < *N_centroids) {
-		out = malloc(memsize);
-		memcpy(out, centroids, memsize);
+		const uint32_t memsize = *N_centroids * 2 * sizeof(double);
+		double *centroids = NB_SOFT_MALLOC(memsize);
+
+		uint32_t i = 0;
+		while (nb_container_is_not_empty(areas)) {
+			subarea_t *subarea = nb_container_delete_first(areas);
+			if (area_is_enclosed(subarea->trgs)) {
+				calculate_area_centroid(mesh, subarea->trgs,
+							&(centroids[i*2]));
+				i += 1;
+			} else {
+				subarea_clear(subarea);
+			}
+			subarea_destroy(subarea);
+		}
+		*N_centroids = i;
+		if (0 < *N_centroids) {
+			uint32_t imemsize = i * 2 * sizeof(double);
+			out = malloc(imemsize);
+			memcpy(out, centroids, imemsize);
+		}
+		NB_SOFT_FREE(memsize, centroids);
 	}
-	NB_SOFT_FREE(memsize, centroids);
 	return out;
 
 }

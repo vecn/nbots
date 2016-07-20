@@ -5,6 +5,7 @@
 #include <math.h>
 #include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"

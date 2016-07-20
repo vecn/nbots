@@ -183,9 +183,7 @@ static void set_new_segments_ipacks(const edge_t *sgm,
 				    nb_container_t *sgm_intersect_aux,
 				    const edge_t *existing_sgm,
 				    const edge_t *existing_new_sgm);
-static void set_intersection_from_combination(vcn_model_t *model,
-					      const vcn_model_t *const model1,
-					      const vcn_model_t *const model2);
+static void purge_model(vcn_model_t *model);
 static void set_intersection_holes(vcn_model_t *model,
 				   const vcn_model_t *const model1,
 				   const vcn_model_t *const model2);
@@ -203,10 +201,6 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 				   vcn_model_t *model);
 static void delete_isolated_elements(vcn_model_t *model);
 static void delete_isolated_internal_vtx(vcn_model_t *model);
-static void set_union_from_combination(vcn_model_t *model);
-static void set_difference_from_combination(vcn_model_t *model,
-					    const vcn_model_t *const model1,
-					    const vcn_model_t *const model2);
 static void set_difference_holes(vcn_model_t *model,
 				 const vcn_model_t *const model1,
 				 const vcn_model_t *const model2);
@@ -215,8 +209,6 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 				      uint32_t N_centroids,
 				      const double *centroids,
 				      char *mask_centroids);
-static void set_substraction_from_combination(vcn_model_t *model,
-					      const vcn_model_t *const model2);
 static void set_substraction_holes(vcn_model_t *model,
 				   const vcn_model_t *const model2);
 static uint32_t mask_substraction_holes(const vcn_model_t *model2,
@@ -375,7 +367,7 @@ static void set_holes(const vcn_model_t *model1,
 		vcn_mesh_get_centroids_of_subareas(mesh, &N_centroids);
 	vcn_mesh_finish(mesh);
 
-	if (N_centroids > 1) {
+	if (1 < N_centroids) {
 		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 		model->H = mask_true_centroids(model1, model2,
 					       mask_centroids,
@@ -396,7 +388,8 @@ static void set_holes(const vcn_model_t *model1,
 		}
 		NB_SOFT_FREE(N_centroids, mask_centroids);
 	}
-	free(centroids);
+	if (0 < N_centroids)
+		free(centroids);
 }
 
 static uint32_t mask_true_centroids(const vcn_model_t *model1,
@@ -550,7 +543,9 @@ static void search_intersections(nb_container_t *intersections,
 				 nb_container_t *edges)
 {
 	uint32_t memsize = (model1->M + model2->M) * sizeof(edge_t*);
-	char *memblock = NB_SOFT_CALLOC(memsize);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	memset(memblock, 0, memsize);
+
 	edge_t **edges1 = (void*) memblock;
 	edge_t **edges2 = (void*) (memblock + model1->M * sizeof(edge_t*));
 	insert_edges_and_vtx(model1, vertices, edges, edges1, false);
@@ -1225,17 +1220,16 @@ void vcn_model_get_intersection(vcn_model_t *model,
 				const vcn_model_t *const model2)
 {
 	vcn_model_get_combination(model, model1, model2);
-	set_intersection_from_combination(model, model1, model2);
+	set_intersection_holes(model, model1, model2);
+	purge_model(model);
 
 }
 
-static void set_intersection_from_combination(vcn_model_t *model,
-					      const vcn_model_t *const model1,
-					      const vcn_model_t *const model2)
+static void purge_model(vcn_model_t *model)
 {
-	set_intersection_holes(model, model1, model2);
 	delete_isolated_elements(model);
-	delete_isolated_internal_vtx(model);
+	if (0 < model->N)
+		delete_isolated_internal_vtx(model);
 }
 
 static void set_intersection_holes(vcn_model_t *model,
@@ -1246,16 +1240,18 @@ static void set_intersection_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+	if (0 < N_centroids) {
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 
-	uint32_t N_new_holes =
-		mask_intersection_holes(model1, model2, N_centroids,
-					centroids, mask_centroids);
+		uint32_t N_new_holes =
+			mask_intersection_holes(model1, model2, N_centroids,
+						centroids, mask_centroids);
 	
-	set_new_holes_to_model(N_new_holes, N_centroids,
-			       centroids, mask_centroids, model);
-	NB_SOFT_FREE(N_centroids, mask_centroids);
-	free(centroids);
+		set_new_holes_to_model(N_new_holes, N_centroids,
+				       centroids, mask_centroids, model);
+		NB_SOFT_FREE(N_centroids, mask_centroids);
+		free(centroids);
+	}
 }
 
 static double* get_centroids_of_model_subareas(const vcn_model_t *model,
@@ -1358,11 +1354,11 @@ static void delete_isolated_elements(vcn_model_t *model)
 
 static void delete_isolated_internal_vtx(vcn_model_t *model)
 {
-	char* mask = NB_SOFT_CALLOC(model->N);
-	for(uint32_t i = 0; i < model->M; i++){
-		mask[model->edge[i * 2]] = 1;
-		mask[model->edge[i*2+1]] = 1;
-	}
+	uint32_t mask_size = model->N;
+	char* mask = NB_SOFT_MALLOC(mask_size);
+	memset(mask, 0, mask_size);
+	for(uint32_t i = 0; i < 2 * model->M; i++)
+		mask[model->edge[i]] = 1;
 
 	uint32_t N_vtx = 0;
 	uint32_t perm_memsize = model->N * sizeof(uint32_t);
@@ -1373,7 +1369,11 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 			N_vtx ++;
 		}
 	}
-	if (N_vtx < model->N) {
+	if (0 == N_vtx) {
+		model->N = 0;
+		free(model->vertex);
+		model->vertex = NULL;
+	} else if (N_vtx < model->N) {
 		double* vertices = calloc(N_vtx * 2, sizeof(*vertices));
 		for (uint32_t i = 0; i < model->N; i++) {
 			if (1 == mask[i]) {
@@ -1383,15 +1383,14 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 			}
 		}  
     
-		for(uint32_t i = 0; i < model->M; i++){
-			model->edge[i * 2] = perm[model->edge[i * 2]];
-			model->edge[i*2+1] = perm[model->edge[i*2+1]];
+		for (uint32_t i = 0; i < 2 * model->M; i++) {
+			model->edge[i] = perm[model->edge[i]];
 		}
 		model->N = N_vtx;
 		free(model->vertex);
 		model->vertex = vertices;
 	}
-	NB_SOFT_FREE(model->N, mask);
+	NB_SOFT_FREE(mask_size, mask);
 	NB_SOFT_FREE(perm_memsize, perm);
 }
 
@@ -1400,13 +1399,7 @@ void vcn_model_get_union(vcn_model_t *model,
 			 const vcn_model_t *model2)
 {
 	vcn_model_get_combination(model, model1, model2);
-	set_union_from_combination(model);
-}
-
-static void set_union_from_combination(vcn_model_t *model)
-{
-	delete_isolated_elements(model);
-	delete_isolated_internal_vtx(model);
+	purge_model(model);
 }
 
 
@@ -1415,17 +1408,9 @@ void vcn_model_get_difference(vcn_model_t *model,
 			      const vcn_model_t *const model2)
 {
 	vcn_model_get_combination(model, model1, model2);
-	set_difference_from_combination(model, model1, model2);
-
-}
-
-static void set_difference_from_combination(vcn_model_t *model,
-					    const vcn_model_t *const model1,
-					    const vcn_model_t *const model2)
-{
 	set_difference_holes(model, model1, model2);
-	delete_isolated_elements(model);
-	delete_isolated_internal_vtx(model);
+	purge_model(model);
+
 }
 
 static void set_difference_holes(vcn_model_t *model,
@@ -1436,16 +1421,18 @@ static void set_difference_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+	if (0 < N_centroids) {
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 
-	uint32_t N_new_holes =
-		mask_difference_holes(model1, model2, N_centroids,
-				      centroids, mask_centroids);
+		uint32_t N_new_holes =
+			mask_difference_holes(model1, model2, N_centroids,
+					      centroids, mask_centroids);
 	
-	set_new_holes_to_model(N_new_holes, N_centroids,
-			       centroids, mask_centroids, model);
-	NB_SOFT_FREE(N_centroids, mask_centroids);
-	free(centroids);
+		set_new_holes_to_model(N_new_holes, N_centroids,
+				       centroids, mask_centroids, model);
+		NB_SOFT_FREE(N_centroids, mask_centroids);
+		free(centroids);
+	}
 }
 
 static uint32_t mask_difference_holes(const vcn_model_t *model1,
@@ -1482,17 +1469,9 @@ void vcn_model_get_substraction(vcn_model_t *model,
 				const vcn_model_t *const model2)
 {
 	vcn_model_get_combination(model, model1, model2);
-	set_substraction_from_combination(model, model2);
-}
-
-static void set_substraction_from_combination(vcn_model_t *model,
-					      const vcn_model_t *const model2)
-{
 	set_substraction_holes(model, model2);
-	delete_isolated_elements(model);
-	delete_isolated_internal_vtx(model);
+	purge_model(model);
 }
-
 
 static void set_substraction_holes(vcn_model_t *model,
 				   const vcn_model_t *const model2)
@@ -1501,17 +1480,19 @@ static void set_substraction_holes(vcn_model_t *model,
 	double *centroids = 
 		get_centroids_of_model_subareas(model, &N_centroids);
 
-	char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+	if (0 < N_centroids) {
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
 	
-	uint32_t N_new_holes =
-		mask_substraction_holes(model2, N_centroids,
-					centroids, mask_centroids);
+		uint32_t N_new_holes =
+			mask_substraction_holes(model2, N_centroids,
+						centroids, mask_centroids);
 
-	set_new_holes_to_model(N_new_holes, N_centroids,
-			       centroids, mask_centroids, model);
+		set_new_holes_to_model(N_new_holes, N_centroids,
+				       centroids, mask_centroids, model);
 
-	free(centroids);
-	NB_SOFT_FREE(N_centroids, mask_centroids);
+		free(centroids);
+		NB_SOFT_FREE(N_centroids, mask_centroids);
+	}
 }
 
 static uint32_t mask_substraction_holes(const vcn_model_t *model2,
