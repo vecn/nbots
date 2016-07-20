@@ -14,6 +14,7 @@
 #include <alloca.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -675,7 +676,10 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 
 	/* Clone grid of vertices */
 	uint32_t N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
-	msh_vtx_t** vertices = malloc(N_vertices * sizeof(*vertices));
+
+	uint32_t vtx_memsize = N_vertices * sizeof(msh_vtx_t*);
+	msh_vtx_t** vertices = NB_SOFT_MALLOC(vtx_memsize);
+
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
 	vcn_bins2D_iter_t* giter = alloca(vcn_bins2D_iter_get_memsize());
@@ -694,7 +698,10 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
 	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
-	msh_trg_t** triangles = malloc(N_triangles * sizeof(*triangles));
+
+	uint32_t trg_memsize = N_triangles * sizeof(msh_trg_t*);
+	msh_trg_t** triangles = NB_SOFT_MALLOC(trg_memsize);
+
 	id = 0;
 	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
@@ -712,7 +719,10 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	}
 
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
-	msh_edge_t** segments = malloc(N_segments * sizeof(*segments));
+
+	uint32_t sgm_memsize = N_segments * sizeof(msh_edge_t*);
+	msh_edge_t** segments = NB_SOFT_MALLOC(sgm_memsize);
+
 	id = 0;
 	nb_iterator_t* sgm_iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(sgm_iter);
@@ -794,9 +804,9 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 			segments[((uint32_t*)((void**)mesh->input_sgm[i]->attr)[0])[0]];  
 
 	/* Free memory */
-	free(vertices);
-	free(segments);
-	free(triangles);
+	NB_SOFT_FREE(vtx_memsize, vertices);
+	NB_SOFT_FREE(sgm_memsize, segments);
+	NB_SOFT_FREE(trg_memsize, triangles);
 
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
@@ -834,7 +844,8 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				const vcn_model_t *const restrict model)
 {
 	if (0 < model->H) {
-		double *holes = malloc(2 * model->H * sizeof(*holes));
+		uint32_t memsize = 2 * model->H * sizeof(double);
+		double *holes = NB_SOFT_MALLOC(memsize);
 		for (uint32_t i = 0; i < model->H; i++) {
 			holes[i * 2] = mesh->scale *
 				(model->holes[i * 2] - mesh->xdisp);
@@ -842,7 +853,7 @@ static void delete_trg_in_holes(vcn_mesh_t *mesh,
 				(model->holes[i*2+1] - mesh->ydisp);
 		}
 		remove_holes_triangles(mesh, holes, model->H);
-		free(holes);
+		NB_SOFT_FREE(memsize, holes);
 	}
 }
 

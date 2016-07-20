@@ -377,8 +377,14 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 	vcn_model_t* model = vcn_model_create();
 	/* Count segments and mark vertices used */
 	model->M = 0;
-	char* vertices_used = (char*) calloc(msh3trg->N_vertices, 1);
-	char* vertices_bndr = (char*) calloc(msh3trg->N_vertices, 1);
+	
+	uint32_t vtx_memsize = msh3trg->N_vertices;
+	char* vertices_used = NB_SOFT_MALLOC(vtx_memsize);
+	memset(vertices_used, 0, vtx_memsize);
+
+	char* vertices_bndr = NB_SOFT_MALLOC(vtx_memsize);
+	memset(vertices_bndr, 0, vtx_memsize);
+
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++){
 		if (!trg_enabled[i])
 			continue;
@@ -431,7 +437,7 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 		if(vertices_used[i]) 
 			model->N += 1;
 	}
-	free(vertices_used);
+	NB_SOFT_FREE(vtx_memsize, vertices_used);
 
 	N_real_vtx_boundaries[0] = 0;
 	for (uint32_t i = 0; i < msh3trg->N_vertices; i++) {
@@ -446,8 +452,11 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 	real_vtx_boundaries[0] = malloc(N_real_vtx_boundaries[0] * 
 					sizeof(uint32_t));
 
-	/* Set vertices and segments */
-	uint32_t* vertices_idx = calloc(msh3trg->N_vertices, sizeof(uint32_t));
+	/* Set vertices and segments */ 
+	uint32_t idx_memsize = msh3trg->N_vertices * sizeof(uint32_t);
+	uint32_t* vertices_idx = NB_SOFT_MALLOC(idx_memsize);
+	memset(vertices_idx, 0, idx_memsize);
+
 	for(uint32_t i = 0; i < msh3trg->N_vertices; i++)
 		vertices_idx[i] = msh3trg->N_vertices;
   
@@ -556,8 +565,8 @@ vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
 			sgm_counter += 1;
 		}
 	}
-	free(vertices_idx);
-	free(vertices_bndr);
+	NB_SOFT_FREE(idx_memsize, vertices_idx);
+	NB_SOFT_FREE(vtx_memsize, vertices_bndr);
 
 	/* Return model */
 	return model;
@@ -615,7 +624,10 @@ vcn_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 				       sizeof(*(graph->adj[i])));
 
 	/* Fill connectivity matrix */
-	uint32_t* row_counter = calloc(model->N, sizeof(*row_counter));
+	uint32_t rowc_memsize = model->N * sizeof(uint32_t);
+	uint32_t* row_counter = NB_SOFT_MALLOC(rowc_memsize);
+	memset(row_counter, 0, rowc_memsize);
+
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id_vi = GET_1_EDGE_VTX(model, i);
 		uint32_t id_vj = GET_2_EDGE_VTX(model, i);
@@ -623,7 +635,7 @@ vcn_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 		graph->adj[id_vi][row_counter[id_vi]++] = id_vj;
 		graph->adj[id_vj][row_counter[id_vj]++] = id_vi;
 	}
-	free(row_counter);
+	NB_SOFT_FREE(rowc_memsize, row_counter);
 
 	return graph;
 }

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <alloca.h>
 
-#define MAX_STACK_MEM_ON_SOFT_MALLOCS 255
+#define MAX_STACK_MEM_ON_SOFT_MALLOCS 1024 /* 1 kB */
 
 #define NB_SOFT_MALLOC(size)				\
 	((MAX_STACK_MEM_ON_SOFT_MALLOCS < (size)) ?	\
