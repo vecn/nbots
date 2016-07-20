@@ -7,6 +7,7 @@
 #include <alloca.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
@@ -47,14 +48,15 @@ static bool is_encroached(const msh_edge_t *const sgm);
 static msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
 			       const msh_edge_t *const sgm);
 static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v);
-static nb_container_t* get_encroached_triangles
+static void get_encroached_triangles
                              (const msh_trg_t *const first_trg_to_check,
-			      const msh_vtx_t *const v);
+			      const msh_vtx_t *const v,
+			      nb_container_t *encroached_trg);
 static void check_encroached_neighbours(const msh_trg_t *trg,
 					nb_container_t *encroached_trg,
 					nb_container_t *unencroached_trg,
 					nb_container_t *processing_trg);
-static nb_container_t* remove_encroached_triangles
+static void remove_encroached_triangles
              (vcn_mesh_t *const mesh,
 	      msh_trg_t *const first_trg_to_check,
 	      const msh_vtx_t *const v,
@@ -63,7 +65,8 @@ static nb_container_t* remove_encroached_triangles
 	      /* big_trg: NULL if not required */
 	      nb_container_t *const big_trg,
 	      /* poor_quality_trg: NULL if not required */
-	      hash_trg_t *const poor_quality_trg);
+	      hash_trg_t *const poor_quality_trg,
+	      nb_container_t* orfan_vtx);
 
 static msh_vtx_t* retrg_fan_get_next_trg
                           (uint32_t* N_orfan_vtx,
@@ -127,19 +130,20 @@ static msh_trg_t* get_trg_containing_circumcenter
 			   const msh_trg_t *const trg,
 			   const msh_vtx_t *const cc);
 
-static nb_container_t* get_sgm_encroached_by_vertex
+static void get_sgm_encroached_by_vertex
                           (const vcn_mesh_t *const mesh,
 			   const msh_trg_t *const trg_containing_vtx,
-			   const msh_vtx_t *const vtx);
+			   const msh_vtx_t *const vtx,
+			   nb_container_t *encroached_sgm);
 
 static bool split_is_permitted
                           (const msh_edge_t *const sgm,
 			   double d);
 
-static nb_container_t* get_subsgm_cluster 
-                          (const msh_edge_t *const sgm,
-			   const msh_vtx_t *const vtx,
-			   double* smallest_angle);
+static void get_subsgm_cluster(const msh_edge_t *const sgm,
+			       const msh_vtx_t *const vtx,
+			       double* smallest_angle,
+			       nb_container_t* cluster);
 
 static void delete_bad_trg(vcn_mesh_t *mesh,
 			   nb_container_t *encroached_sgm,
@@ -174,10 +178,14 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
-	nb_container_t *encroached_sgm = nb_container_create(NB_SORTED);
+	nb_container_t *encroached_sgm =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(encroached_sgm, NB_SORTED);
 	nb_container_set_comparer(encroached_sgm, compare_edge_size);
 
-	nb_container_t *big_trg = nb_container_create(NB_SORTED);
+	nb_container_t *big_trg =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(big_trg, NB_SORTED);
 	nb_container_set_comparer(big_trg, compare_trg_attr);
 
 	hash_trg_t *poor_quality_trg = hash_trg_create();
@@ -206,8 +214,8 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	delete_bad_trg(mesh, encroached_sgm, big_trg, poor_quality_trg);
 
 	/* Free data structures */
-	nb_container_destroy(encroached_sgm);
-	nb_container_destroy(big_trg);
+	nb_container_finish(encroached_sgm);
+	nb_container_finish(big_trg);
 	hash_trg_destroy(poor_quality_trg);
 }
 
@@ -308,20 +316,24 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 		msh_trg_t *trg_containing_cc =
 			get_trg_containing_circumcenter(mesh, trg, cc);
 
-		nb_container_t *sgm_encroached_by_cc = 
-			get_sgm_encroached_by_vertex(mesh, 
-						     trg_containing_cc, cc);
+		nb_container_t *sgm_encroached_by_cc =
+			alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_container_init(sgm_encroached_by_cc, NB_QUEUE); 
+
+		get_sgm_encroached_by_vertex(mesh, trg_containing_cc, cc,
+					     sgm_encroached_by_cc);
 		if (nb_container_is_empty(sgm_encroached_by_cc)) {
 			/* Circumcenter accepted */
-			nb_container_t *restrict new_trg = 
-				nb_container_create(NB_QUEUE);
+			nb_container_t *new_trg =
+				alloca(nb_container_get_memsize(NB_QUEUE));
+			nb_container_init(new_trg, NB_QUEUE);
 
 			insert_vertex(mesh, trg_containing_cc, cc, big_trg,
 				      poor_quality_trg, new_trg);
 
 			verify_new_encroachments(mesh, cc, new_trg, NULL,
 						 big_trg, poor_quality_trg);
-			nb_container_destroy(new_trg);
+			nb_container_finish(new_trg);
 		} else {
 			/* Circumcenter rejected */
 			mvtx_destroy(mesh, cc);
@@ -358,7 +370,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 							  poor_quality_trg);
 			}
 		}
-		nb_container_destroy(sgm_encroached_by_cc);
+		nb_container_finish(sgm_encroached_by_cc);
 	}
 }
 
@@ -371,12 +383,14 @@ static void reallocate_bins(vcn_mesh_t *const restrict mesh)
 		vcn_bins2D_get_size_of_bins(mesh->ug_vtx) /
 		sqrt(avg_points_x_bin);
   
-	vcn_bins2D_t *vertices = vcn_bins2D_create(new_bin_size);
+	vcn_bins2D_t *vertices = alloca(vcn_bins2D_get_memsize());
+	vcn_bins2D_init(vertices, new_bin_size);
+
 	while (vcn_bins2D_is_not_empty(mesh->ug_vtx)) {
 		msh_vtx_t* vtx = vcn_bins2D_delete_first(mesh->ug_vtx);
 		vcn_bins2D_insert(vertices, vtx);
 	}
-	vcn_bins2D_destroy(mesh->ug_vtx);
+	vcn_bins2D_finish(mesh->ug_vtx);
 	mesh->ug_vtx = vertices;
 }
 static inline hash_trg_t* hash_trg_create(void)
@@ -516,17 +530,18 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
 	v->x[1] = v1->x[1] * (1.0 - factor) + v2->x[1] * factor;
 }
 
-static nb_container_t* get_encroached_triangles
+static void get_encroached_triangles
                         (const msh_trg_t *const restrict first_trg_to_check,
-			 const msh_vtx_t *const restrict v)
+			 const msh_vtx_t *const restrict v,
+			 nb_container_t *encroached_trg)
 {
 	/* Search encroached triangles */
-	nb_container_t *encroached_trg =
-		nb_container_create(NB_SORTED);
 	nb_container_t *const unencroached_trg =
-		nb_container_create(NB_SORTED);
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(unencroached_trg, NB_SORTED);
 	nb_container_t *const processing_trg =
-		nb_container_create(NB_SORTED);
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(processing_trg, NB_SORTED);
   
 	nb_container_insert(processing_trg, first_trg_to_check);
 
@@ -545,9 +560,9 @@ static nb_container_t* get_encroached_triangles
 			nb_container_insert(unencroached_trg, trg);
 		}
 	}
-	/* Free memory */
-	nb_container_destroy(unencroached_trg);
-	nb_container_destroy(processing_trg);
+
+	nb_container_finish(unencroached_trg);
+	nb_container_finish(processing_trg);
 
 	return encroached_trg;
 }
@@ -580,7 +595,7 @@ static void check_encroached_neighbours(const msh_trg_t *trg,
 	}
 }
 
-static nb_container_t* remove_encroached_triangles
+static void remove_encroached_triangles
              (vcn_mesh_t *const restrict mesh,
 	      msh_trg_t *const restrict first_trg_to_check,
 	      const msh_vtx_t *const restrict v,
@@ -589,13 +604,16 @@ static nb_container_t* remove_encroached_triangles
 	      /* big_trg: NULL if not required */
 	      nb_container_t *const restrict big_trg,
 	      /* poor_quality_trg: NULL if not required */
-	      hash_trg_t *const restrict poor_quality_trg)
+	      hash_trg_t *const restrict poor_quality_trg,
+	      nb_container_t* orfan_vtx)
 {
-	nb_container_t *const restrict encroached_trg =
-		get_encroached_triangles(first_trg_to_check, v);
+	nb_container_t *encroached_trg =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(encroached_trg, NB_SORTED);
+
+	get_encroached_triangles(first_trg_to_check, v, encroached_trg);
 
 	/* Destroy encroached triangles */
-	nb_container_t *orfan_vtx = nb_container_create(NB_SORTED);
 	while (nb_container_is_not_empty(encroached_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(encroached_trg);
 		/* Set vertices as orfans :( */
@@ -615,10 +633,7 @@ static nb_container_t* remove_encroached_triangles
 
 		mtrg_free(mesh, trg);
 	}
-	nb_container_destroy(encroached_trg);
-
-	/* Return orfan vertices */
-	return orfan_vtx;
+	nb_container_finish(encroached_trg);
 }
 
 static inline msh_vtx_t* retrg_fan_get_next_trg
@@ -663,8 +678,10 @@ static inline void retriangulate_fan(vcn_mesh_t *const mesh,
 				     nb_container_t *const l_new_trg)
 {
 	/* Allocate orfan vertices into an array */
-	msh_vtx_t** orfan_array = malloc(nb_container_get_length(orfan_vtx)
-				       * sizeof(*orfan_array));
+	uint32_t orfan_memsize = nb_container_get_length(orfan_vtx)
+		* sizeof(msh_vtx_t*);
+	msh_vtx_t** orfan_array = NB_SOFT_MALLOC(orfan_memsize);
+
 	uint32_t N_orfan_vtx = 0;
 	while (nb_container_is_not_empty(orfan_vtx)) {
 		msh_vtx_t *vtx = nb_container_delete_first(orfan_vtx);
@@ -699,7 +716,7 @@ static inline void retriangulate_fan(vcn_mesh_t *const mesh,
 		sgm = mesh_exist_edge(mesh->ht_edge, v_pivot, vtx);
 	} while (vtx != v_start && !medge_is_subsgm(sgm));
 
-	free(orfan_array);
+	NB_SOFT_FREE(orfan_memsize, orfan_array);
 }
 
 static void verify_new_encroachments
@@ -743,15 +760,19 @@ void insert_vertex(vcn_mesh_t *mesh,
 {
 	vcn_bins2D_insert(mesh->ug_vtx, cc);
 
-	nb_container_t* orfan_vertices =
-		remove_encroached_triangles(mesh, trg_containing_cc, 
-					    cc, NULL, big_trg,
-					    poor_quality_trg);
+	nb_container_t* orfan_vtx =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(orfan_vtx, NB_SORTED);
+
+	remove_encroached_triangles(mesh, trg_containing_cc, 
+				    cc, NULL, big_trg,
+				    poor_quality_trg,
+				    orfan_vtx);
 	retriangulate_fan(mesh, cc, 
-			  nb_container_get_first(orfan_vertices),
-			  orfan_vertices,
+			  nb_container_get_first(orfan_vtx),
+			  orfan_vtx,
 			  l_new_trg);
-	nb_container_destroy(orfan_vertices);
+	nb_container_finish(orfan_vtx);
 	mesh->do_after_insert_vtx(mesh);
 }
 
@@ -794,21 +815,31 @@ static inline void insert_midpoint
   
 	/* Retriangulate left */
 	if (NULL != sgm->t1) {
-		nb_container_t* orfan_vertices =
-			remove_encroached_triangles(mesh, sgm->t1, v, sgm->v2,
-						    big_trg, poor_quality_trg);
-		retriangulate_fan(mesh, v, sgm->v2, orfan_vertices, l_new_trg);
-		nb_container_destroy(orfan_vertices);
+		nb_container_t* orfan_vtx =
+			alloca(nb_container_get_memsize(NB_SORTED));
+		nb_container_init(orfan_vtx, NB_SORTED);
+
+		remove_encroached_triangles(mesh, sgm->t1, v, sgm->v2,
+					    big_trg, poor_quality_trg,
+					    orfan_vtx);
+
+		retriangulate_fan(mesh, v, sgm->v2, orfan_vtx, l_new_trg);
+		nb_container_finish(orfan_vtx);
 	}
 	/* Retriangulate right */
 	if (NULL != sgm->t2) {
-		nb_container_t* orfan_vertices =
-			remove_encroached_triangles(mesh, sgm->t2,
-						    v, sgm->v1,
-						    big_trg,
-						    poor_quality_trg);
-		retriangulate_fan(mesh, v, sgm->v1, orfan_vertices, l_new_trg);
-		nb_container_destroy(orfan_vertices);
+		nb_container_t* orfan_vtx =
+			alloca(nb_container_get_memsize(NB_SORTED));
+		nb_container_init(orfan_vtx, NB_SORTED);
+
+		remove_encroached_triangles(mesh, sgm->t2,
+					    v, sgm->v1,
+					    big_trg,
+					    poor_quality_trg,
+					    orfan_vtx);
+
+		retriangulate_fan(mesh, v, sgm->v1, orfan_vtx, l_new_trg);
+		nb_container_finish(orfan_vtx);
 	}
 	/* Free splitted segment */
 	nb_container_delete(mesh->ht_edge, sgm);
@@ -826,7 +857,10 @@ static inline void split_encroached_segments
 		msh_edge_t* sgm = nb_container_delete_first(encroached_sgm);
 		msh_vtx_t *v = get_midpoint(mesh, sgm);
 		/* Split the segment */
-		nb_container_t* l_new_trg = nb_container_create(NB_QUEUE);
+		nb_container_t* l_new_trg = 
+			alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_container_init(l_new_trg, NB_QUEUE);
+
 		msh_edge_t* subsgm[2];
 		insert_midpoint(mesh, sgm, v, big_trg, poor_quality_trg,
 				subsgm, l_new_trg);
@@ -834,7 +868,7 @@ static inline void split_encroached_segments
 		/* Verify new encroachments */
 		verify_new_encroachments(mesh, v, l_new_trg, encroached_sgm,
 					 big_trg, poor_quality_trg);
-		nb_container_destroy(l_new_trg);
+		nb_container_finish(l_new_trg);
 
 		/* Check if the first subsegment is encroached */
 		if (is_encroached(subsgm[0]))
@@ -951,18 +985,24 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 	return trg_containing_cc;
 }
 
-static inline nb_container_t* get_sgm_encroached_by_vertex
+static void get_sgm_encroached_by_vertex
                           (const vcn_mesh_t *const restrict mesh,
 			   const msh_trg_t *const restrict trg_containing_vtx,
-			   const msh_vtx_t *const restrict vtx)
+			   const msh_vtx_t *const restrict vtx,
+			   nb_container_t *encroached_sgm)
 {
 	/* Get encroached triangles */
-	nb_container_t *const encroached_trg =
-		get_encroached_triangles(trg_containing_vtx, vtx);
+	nb_container_t *encroached_trg =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(encroached_trg, NB_SORTED);
+
+	get_encroached_triangles(trg_containing_vtx, vtx, encroached_trg);
 
 	/* Get segments */
-	nb_container_t *const segments =
-		nb_container_create(NB_SORTED);
+	nb_container_t *segments =
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(segments, NB_SORTED);
+
 	while (nb_container_is_not_empty(encroached_trg)) {
 		msh_trg_t *const restrict trg = 
 			nb_container_delete_first(encroached_trg);
@@ -974,11 +1014,9 @@ static inline nb_container_t* get_sgm_encroached_by_vertex
 			nb_container_insert(segments, trg->s3);
 	}
 	/* Free memory */
-	nb_container_destroy(encroached_trg);
+	nb_container_finish(encroached_trg);
 
 	/* Get encroached segments */
-	nb_container_t *restrict encroached_sgm =
-		nb_container_create(NB_QUEUE);
 	while (nb_container_is_not_empty(segments)) {
 		msh_edge_t *const restrict sgm = 
 			nb_container_delete_first(segments);
@@ -989,9 +1027,7 @@ static inline nb_container_t* get_sgm_encroached_by_vertex
 	}
 
 	/* Free memory */
-	nb_container_destroy(segments);
-
-	return encroached_sgm;
+	nb_container_finish(segments);
 }
 
 static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
@@ -1008,29 +1044,35 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 	/* Get subsegment clusters */
 	double smallest_angle;
 	nb_container_t* cluster1 =
-		get_subsgm_cluster(sgm, sgm->v1, &smallest_angle);
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(cluster1, NB_SORTED);
+
+	get_subsgm_cluster(sgm, sgm->v1, &smallest_angle, cluster1);
 
 	double smallest_angle_aux;
 	nb_container_t* cluster2 =
-		get_subsgm_cluster(sgm, sgm->v2, &smallest_angle_aux);
+		alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_init(cluster2, NB_SORTED);
+
+	get_subsgm_cluster(sgm, sgm->v2, &smallest_angle_aux, cluster2);
 
 	/* Check if s belongs to no cluster or if sgm belongs to 
 	 * both clusters */
 	if (nb_container_is_empty(cluster1) == 
 	    nb_container_is_empty(cluster2)) {
-		nb_container_destroy(cluster1);
-		nb_container_destroy(cluster2);
+		nb_container_finish(cluster1);
+		nb_container_finish(cluster2);
 		return true;
 	}
 
 	/* Get the cluster containing the sgm */
-	nb_container_t *restrict cluster;
+	nb_container_t *cluster;
 	if (nb_container_is_not_empty(cluster1)) {
 		cluster = cluster1;
-		nb_container_destroy(cluster2);
+		nb_container_finish(cluster2);
 	} else {
 		cluster = cluster2;
-		nb_container_destroy(cluster1);
+		nb_container_finish(cluster1);
 		smallest_angle = smallest_angle_aux;
 	}
 
@@ -1044,24 +1086,22 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 		double length_aux = vcn_utils2D_get_dist(cluster_sgm->v1->x,
 					     cluster_sgm->v2->x);
 		if (length - length_aux > NB_GEOMETRIC_TOL) {
-			nb_container_destroy(cluster);
+			nb_container_finish(cluster);
 			return true;
 		}
 	}
-	nb_container_destroy(cluster);
+	nb_container_finish(cluster);
   
 	/* No new edge will be shorter than shortest existing edge */
 	double r_min = length * sin(smallest_angle / 2.0);
 	return r_min >= d + NB_GEOMETRIC_TOL;
 }
 
-static inline nb_container_t* get_subsgm_cluster 
-                          (const msh_edge_t *const sgm,
-			   const msh_vtx_t *const vtx,
-			   double* smallest_angle)
+static void get_subsgm_cluster(const msh_edge_t *const sgm,
+			       const msh_vtx_t *const vtx,
+			       double* smallest_angle,
+			       nb_container_t* cluster)
 {
-	/* Create cluster */
-	nb_container_t* cluster = nb_container_create(NB_SORTED);
 	*smallest_angle = NB_MATH_PI;
 
 	/* Get subsegments from the left */
@@ -1128,7 +1168,6 @@ static inline nb_container_t* get_subsgm_cluster
 		nb_container_insert(cluster, sgm);
 	else
 		*smallest_angle = 0.0;
-	return cluster;
 }
 
 static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
@@ -1273,12 +1312,14 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 
 void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)
 {
-	nb_container_t *exterior_trg = nb_container_create(NB_QUEUE);
+	nb_container_t *exterior_trg =
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(exterior_trg, NB_QUEUE);
 	
 	initialize_exterior_trg(mesh, exterior_trg);
 	delete_exterior_trg(mesh, exterior_trg);
 
-	nb_container_destroy(exterior_trg);
+	nb_container_finish(exterior_trg);
 }
 
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
