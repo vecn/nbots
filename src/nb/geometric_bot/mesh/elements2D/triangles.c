@@ -6,13 +6,41 @@
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
+#include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
 
 #include "../mesh2D_structs.h"
 
+static void msh3trg_set_N_vtx(void *msh3trg_ptr, uint32_t N);
+static void msh3trg_malloc_vtx(void *msh3trg_ptr);
+static void msh3trg_set_vtx(void *msh3trg_ptr, uint32_t i,
+			    double x, double y);
+static void msh3trg_set_N_edg(void *msh3trg_ptr, uint32_t N);
+static void msh3trg_malloc_edg(void *msh3trg_ptr);
+static void msh3trg_set_edg(void *msh3trg_ptr, uint32_t i,
+			    uint32_t v1, uint32_t v2);
+static void msh3trg_set_N_trg(void *msh3trg_ptr, uint32_t N);
+static void msh3trg_malloc_trg(void *msh3trg_ptr, bool include_neighbours);
+static void msh3trg_set_trg(void *msh3trg_ptr, uint32_t i,
+			    uint32_t v1, uint32_t v2, uint32_t v3);
+static void msh3trg_set_trg_neighbours(void *msh3trg_ptr,
+				       uint32_t i, uint32_t t1,
+				       uint32_t t2, uint32_t t3);
+static void msh3trg_set_N_input_vtx(void *msh3trg_ptr, uint32_t N);
+static void msh3trg_malloc_input_vtx(void *msh3trg_ptr);
+static void msh3trg_set_input_vtx(void *msh3trg_ptr, uint32_t i,
+				  uint32_t vtx_id);
+static void msh3trg_set_N_input_sgm(void *msh3trg_ptr, uint32_t N);
+static void msh3trg_malloc_input_sgm_table(void *msh3trg_ptr);
+static void msh3trg_input_sgm_set_N_vtx(void *msh3trg_ptr, uint32_t i,
+					uint32_t N);
+static void msh3trg_input_sgm_malloc_vtx(void *msh3trg_ptr, uint32_t i);
+static void msh3trg_input_sgm_set_vtx(void *msh3trg_ptr, uint32_t isgm,
+				      uint32_t ivtx, uint32_t vtx_id);
 static uint32_t itrg_get_right_triangle
                          (const vcn_msh3trg_t *const delaunay, 
 			  const bool *const enabled_elements,
@@ -261,11 +289,176 @@ vcn_graph_t* vcn_msh3trg_create_elem_graph
 void vcn_msh3trg_load_from_mesh(vcn_msh3trg_t *msh3trg,
 				const vcn_mesh_t *const mesh)
 {
-	nb_trg_exporter_interface exp;
+	nb_trg_exporter_interface_t exp;
 	exp.structure = msh3trg;
-	/* AQUI VOY */
+	exp.set_N_vtx = msh3trg_set_N_vtx;
+	exp.malloc_vtx = msh3trg_malloc_vtx;
+	exp.set_vtx = msh3trg_set_vtx;
+
+	exp.set_N_edg = msh3trg_set_N_edg;
+	exp.malloc_edg = msh3trg_malloc_edg;
+	exp.set_edg = msh3trg_set_edg;
+
+	exp.set_N_trg = msh3trg_set_N_trg;
+	exp.malloc_trg = msh3trg_malloc_trg;
+	exp.set_trg = msh3trg_set_trg;
+	exp.set_trg_neighbours = msh3trg_set_trg_neighbours;
+
+	exp.set_N_input_vtx = msh3trg_set_N_input_vtx;
+	exp.malloc_input_vtx = msh3trg_malloc_input_vtx;
+	exp.set_input_vtx = msh3trg_set_input_vtx;
+
+	exp.set_N_input_sgm = msh3trg_set_N_input_sgm;
+	exp.malloc_input_sgm_table = msh3trg_malloc_input_sgm_table;
+	exp.input_sgm_set_N_vtx = msh3trg_input_sgm_set_N_vtx;
+	exp.input_sgm_malloc_vtx = msh3trg_input_sgm_malloc_vtx;
+	exp.input_sgm_set_vtx = msh3trg_input_sgm_set_vtx;
+
 	vcn_mesh_export(mesh, &exp);
 	return;
+}
+
+static void msh3trg_set_N_vtx(void *msh3trg_ptr, uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_vertices = N;
+}
+
+static void msh3trg_malloc_vtx(void *msh3trg_ptr)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t memsize = 2 * msh3trg->N_vertices * 
+		sizeof(*(msh3trg->vertices));
+	msh3trg->vertices = malloc(memsize);
+}
+
+static void msh3trg_set_vtx(void *msh3trg_ptr, uint32_t i,
+			    double x, double y)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->vertices[i * 2] = x;
+	msh3trg->vertices[i*2+1] = y;
+}
+
+static void msh3trg_set_N_edg(void *msh3trg_ptr, uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_edges = N;
+}
+
+static void msh3trg_malloc_edg(void *msh3trg_ptr)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t memsize = 2 * msh3trg->N_edges * sizeof(*(msh3trg->edges));
+	msh3trg->edges = malloc(memsize);
+}
+
+static void msh3trg_set_edg(void *msh3trg_ptr, uint32_t i,
+			    uint32_t v1, uint32_t v2)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->edges[i * 2] = v1;
+	msh3trg->edges[i*2+1] = v2;
+}
+
+static void msh3trg_set_N_trg(void *msh3trg_ptr, uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_triangles = N;
+}
+
+static void msh3trg_malloc_trg(void *msh3trg_ptr, bool include_neighbours)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t vtx_memsize = 3 * msh3trg->N_triangles *
+		sizeof(*(msh3trg->vertices_forming_triangles));
+	msh3trg->vertices_forming_triangles = malloc(vtx_memsize);
+
+	if (include_neighbours) {
+		uint32_t nbg_memsize = 3 * msh3trg->N_triangles *
+			sizeof(*(msh3trg->triangles_sharing_sides));
+		msh3trg->triangles_sharing_sides = malloc(nbg_memsize);
+	}
+}
+
+static void msh3trg_set_trg(void *msh3trg_ptr, uint32_t i,
+			    uint32_t v1, uint32_t v2, uint32_t v3)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->vertices_forming_triangles[i * 3] = v1;
+	msh3trg->vertices_forming_triangles[i*3+1] = v2;
+	msh3trg->vertices_forming_triangles[i*3+2] = v3;
+}
+
+static void msh3trg_set_trg_neighbours(void *msh3trg_ptr,
+				       uint32_t i, uint32_t t1,
+				       uint32_t t2, uint32_t t3)
+
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->triangles_sharing_sides[i * 3] = t1;
+	msh3trg->triangles_sharing_sides[i*3+1] = t2;
+	msh3trg->triangles_sharing_sides[i*3+2] = t3;
+}
+
+static void msh3trg_set_N_input_vtx(void *msh3trg_ptr, uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_input_vertices = N;
+}
+
+static void msh3trg_malloc_input_vtx(void *msh3trg_ptr)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t memsize = msh3trg->N_input_vertices *
+		sizeof(*(msh3trg->input_vertices));
+	msh3trg->input_vertices = malloc(memsize);
+}
+
+static void msh3trg_set_input_vtx(void *msh3trg_ptr, uint32_t i,
+				  uint32_t vtx_id)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->input_vertices[i] = vtx_id;
+}
+
+static void msh3trg_set_N_input_sgm(void *msh3trg_ptr, uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_input_segments = N;
+}
+
+static void msh3trg_malloc_input_sgm_table(void *msh3trg_ptr)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t sgm_memsize = msh3trg->N_input_segments *
+		sizeof(*(msh3trg->N_subsgm_x_inputsgm));
+	msh3trg->N_subsgm_x_inputsgm = malloc(sgm_memsize);
+	uint32_t vtx_memsize = msh3trg->N_input_segments *
+		sizeof(*(msh3trg->meshvtx_x_inputsgm));
+	msh3trg->meshvtx_x_inputsgm = malloc(vtx_memsize);
+}
+
+static void msh3trg_input_sgm_set_N_vtx(void *msh3trg_ptr, uint32_t i,
+					uint32_t N)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->N_subsgm_x_inputsgm[i] = N;
+}
+
+static void msh3trg_input_sgm_malloc_vtx(void *msh3trg_ptr, uint32_t i)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t memsize = (1 + msh3trg->N_subsgm_x_inputsgm[i]) *
+		sizeof(**(msh3trg->meshvtx_x_inputsgm));
+	msh3trg->meshvtx_x_inputsgm[i] = malloc(memsize);
+}
+
+static void msh3trg_input_sgm_set_vtx(void *msh3trg_ptr, uint32_t isgm,
+				      uint32_t ivtx, uint32_t vtx_id)
+{
+	vcn_msh3trg_t *msh3trg = msh3trg_ptr;
+	msh3trg->meshvtx_x_inputsgm[isgm][ivtx] = vtx_id;
 }
 
 void vcn_msh3trg_relabel(vcn_msh3trg_t* msh3trg,

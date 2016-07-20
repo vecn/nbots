@@ -42,7 +42,8 @@ void vcn_mesh_export(const vcn_mesh_t *const mesh,
 	if (NULL != exp->set_N_trg) {
 		if (nb_container_is_not_empty(mesh->ht_trg)) {
 			export_and_enumerate_trg((vcn_mesh_t*)mesh, exp);
-			export_trg_neighbours(mesh, exp);
+			if (NULL != exp->set_trg_neighbours)
+				export_trg_neighbours(mesh, exp);
 		}
 	}
 
@@ -128,7 +129,8 @@ static void export_and_enumerate_trg(vcn_mesh_t *mesh,
 {
 	uint32_t N_trg = nb_container_get_length(mesh->ht_trg);
 	exp->set_N_trg(exp->structure, N_trg);
-	exp->malloc_trg(exp->structure);
+	bool include_neighbours = (NULL != exp->set_trg_neighbours);
+	exp->malloc_trg(exp->structure, include_neighbours);
 
 	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);

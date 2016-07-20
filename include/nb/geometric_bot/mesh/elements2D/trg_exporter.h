@@ -21,9 +21,10 @@ typedef struct {
 
 	/* Optional (can be NULL) */
 	void (*set_N_trg)(void*, uint32_t N); /* Used as flag */
-	void (*malloc_trg)(void*);
+	void (*malloc_trg)(void*, bool include_neighbours);
 	void (*set_trg)(void*, uint32_t i, uint32_t v1,
 			uint32_t v2, uint32_t v3);
+	/*          (can be NULL) */
 	void (*set_trg_neighbours)(void*, uint32_t i, uint32_t t1,
 				   uint32_t t2, uint32_t t3);
 
