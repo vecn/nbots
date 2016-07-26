@@ -96,18 +96,18 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 
 	nb_graphics_set_line_width(g, 1.0);
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-		if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
-			continue;
-
-		uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
-		double *v1 = &(msh3trg->vertices[n1*2]);
-		nb_graphics_move_to(g, v1[0], v1[1]);
-		for (uint32_t j = 0; j < msh3trg->N_subsgm_x_inputsgm[i]; j++) {
-			uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j+1];
-			double *v2 = &(msh3trg->vertices[n2*2]);
-			nb_graphics_line_to(g, v2[0], v2[1]);
+		uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+		if (0 < N_vtx) {
+			uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
+			double *v1 = &(msh3trg->vertices[n1*2]);
+			nb_graphics_move_to(g, v1[0], v1[1]);
+			for (uint32_t j = 0; j < N_vtx; j++) {
+				uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j];
+				double *v2 = &(msh3trg->vertices[n2*2]);
+				nb_graphics_line_to(g, v2[0], v2[1]);
+			}
+			nb_graphics_stroke(g);
 		}
-		nb_graphics_stroke(g);
 	}
 }
 

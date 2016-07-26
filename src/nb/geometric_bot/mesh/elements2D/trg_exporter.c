@@ -200,11 +200,11 @@ static void export_input_sgm(const vcn_mesh_t *const restrict mesh,
 	set_input_sgm_table(mesh, exp);
 	
 	for (uint32_t i = 0; i < N_sgm; i++) {
-		if (NULL == mesh->input_sgm[i])
-			continue;
-		exp->input_sgm_start_access(exp->structure, i);
-		set_input_sgm(mesh, exp, i);
-		exp->input_sgm_stop_access(exp->structure);
+		if (NULL != mesh->input_sgm[i]) {
+			exp->input_sgm_start_access(exp->structure, i);
+			set_input_sgm(mesh, exp, i);
+			exp->input_sgm_stop_access(exp->structure);
+		}
 	}
 	exp->stop_input_sgm_table_access(exp->structure);
 }
@@ -220,9 +220,12 @@ static void set_input_sgm_table(const vcn_mesh_t *const restrict mesh,
 			counter++;
 			sgm = medge_subsgm_next(sgm);
 		}
-		exp->input_sgm_set_N_vtx(exp->structure, i, counter);
-		if (0 < counter)
+		if (0 < counter) {
+			exp->input_sgm_set_N_vtx(exp->structure, i, counter + 1);
 			exp->input_sgm_malloc_vtx(exp->structure, i);
+		} else {
+			exp->input_sgm_set_N_vtx(exp->structure, i, 0);
+		}
 	}
 }
 

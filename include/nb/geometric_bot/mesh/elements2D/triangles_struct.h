@@ -27,20 +27,11 @@ typedef struct vcn_msh3trg_s {
 	uint32_t *triangles_sharing_sides;    /* Neighbours */
 
 	uint32_t N_input_vertices;
-	uint32_t *input_vertices; /* Ids of vtx corresponding to input vtx */
+	uint32_t *input_vertices;
 
 	uint32_t N_input_segments;
-	/* Number of subsegments forming the input segment */
-	uint32_t *N_subsgm_x_inputsgm;
-	/* Sequence of vertices ids forming the input segments ************/
-	uint32_t** meshvtx_x_inputsgm;                                  /**/
-	/* Important:                                                     */
-	/*    The length of meshvtx_x_inputsgm[i] is equal to             */
-	/*              N_subsgm_x_inputsgm[i] + 1,                       */
-	/*    since each subsegment is characterized by the first         */
-	/*    vertex, except the last in the chain, which needs           */
-	/*    its both vertices to be defined.                            */
-	/******************************************************************/
+	uint32_t *N_vtx_x_inputsgm;
+	uint32_t** meshvtx_x_inputsgm;
 } vcn_msh3trg_t;
 
 

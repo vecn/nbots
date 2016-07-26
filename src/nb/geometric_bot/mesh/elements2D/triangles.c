@@ -119,26 +119,27 @@ vcn_msh3trg_t* vcn_msh3trg_clone(vcn_msh3trg_t* msh3trg)
 
 	clone->N_input_segments = msh3trg->N_input_segments;
 	if (clone->N_input_segments > 0) {
-		clone->N_subsgm_x_inputsgm = 
+		clone->N_vtx_x_inputsgm = 
 			malloc(clone->N_input_segments *
-			       sizeof(*(clone->N_subsgm_x_inputsgm)));
-		memcpy(clone->N_subsgm_x_inputsgm,
-		       msh3trg->N_subsgm_x_inputsgm,
+			       sizeof(*(clone->N_vtx_x_inputsgm)));
+		memcpy(clone->N_vtx_x_inputsgm,
+		       msh3trg->N_vtx_x_inputsgm,
 		       clone->N_input_segments *
-		       sizeof(*(clone->N_subsgm_x_inputsgm)));
+		       sizeof(*(clone->N_vtx_x_inputsgm)));
 		clone->meshvtx_x_inputsgm =
 			calloc(clone->N_input_segments,
 			       sizeof(*(clone->meshvtx_x_inputsgm)));
 		for (uint32_t i = 0; i < clone->N_input_segments; i++) {
-			if (clone->N_subsgm_x_inputsgm[i] == 0)
-				continue;
-			clone->meshvtx_x_inputsgm[i] =
-				malloc((clone->N_subsgm_x_inputsgm[i]+1) *
+			uint32_t N_vtx = clone->N_vtx_x_inputsgm[i];
+			if (0 < N_vtx) {
+				clone->meshvtx_x_inputsgm[i] =
+					malloc(N_vtx *
+					       sizeof(*(clone->meshvtx_x_inputsgm[i])));
+				memcpy(clone->meshvtx_x_inputsgm[i],
+				       msh3trg->meshvtx_x_inputsgm[i],
+				       N_vtx *
 				       sizeof(*(clone->meshvtx_x_inputsgm[i])));
-			memcpy(clone->meshvtx_x_inputsgm[i],
-			       msh3trg->meshvtx_x_inputsgm[i],
-			       (clone->N_subsgm_x_inputsgm[i]+1) *
-			       sizeof(*(clone->meshvtx_x_inputsgm[i])));
+			}
 		}
 	}    
 	return clone;
@@ -159,11 +160,10 @@ void vcn_msh3trg_clear(vcn_msh3trg_t* msh3trg)
 		free(msh3trg->input_vertices);
 	if (msh3trg->N_input_segments > 0) {
 		for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-			if (msh3trg->N_subsgm_x_inputsgm[i] == 0)
-				continue;
-			free(msh3trg->meshvtx_x_inputsgm[i]);
+			if (0 < msh3trg->N_vtx_x_inputsgm[i])
+				free(msh3trg->meshvtx_x_inputsgm[i]);
 		}
-		free(msh3trg->N_subsgm_x_inputsgm);
+		free(msh3trg->N_vtx_x_inputsgm);
 		free(msh3trg->meshvtx_x_inputsgm);
 	}
 	memset(msh3trg, 0, sizeof(*msh3trg));
@@ -463,8 +463,8 @@ static void msh3trg_malloc_input_sgm_table(void *exp_structure)
 {
 	vcn_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t sgm_memsize = msh3trg->N_input_segments *
-		sizeof(*(msh3trg->N_subsgm_x_inputsgm));
-	msh3trg->N_subsgm_x_inputsgm = malloc(sgm_memsize);
+		sizeof(*(msh3trg->N_vtx_x_inputsgm));
+	msh3trg->N_vtx_x_inputsgm = malloc(sgm_memsize);
 	uint32_t vtx_memsize = msh3trg->N_input_segments *
 		sizeof(*(msh3trg->meshvtx_x_inputsgm));
 	msh3trg->meshvtx_x_inputsgm = malloc(vtx_memsize);
@@ -474,13 +474,13 @@ static void msh3trg_input_sgm_set_N_vtx(void *exp_structure, uint32_t i,
 					uint32_t N)
 {
 	vcn_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	msh3trg->N_subsgm_x_inputsgm[i] = N;
+	msh3trg->N_vtx_x_inputsgm[i] = N;
 }
 
 static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i)
 {
 	vcn_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	uint32_t memsize = (1 + msh3trg->N_subsgm_x_inputsgm[i]) *
+	uint32_t memsize = msh3trg->N_vtx_x_inputsgm[i] *
 		sizeof(**(msh3trg->meshvtx_x_inputsgm));
 	msh3trg->meshvtx_x_inputsgm[i] = malloc(memsize);
 }

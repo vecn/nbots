@@ -302,7 +302,7 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = msh3trg->N_subsgm_x_inputsgm[model_id] + 1;
+		uint32_t N = msh3trg->N_vtx_x_inputsgm[model_id];
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];
@@ -362,7 +362,7 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = msh3trg->N_subsgm_x_inputsgm[model_id] + 1;
+		uint32_t N = msh3trg->N_vtx_x_inputsgm[model_id];
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];

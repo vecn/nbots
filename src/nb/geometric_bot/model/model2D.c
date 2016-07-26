@@ -282,9 +282,9 @@ void vcn_model_generate_from_msh3trg(vcn_model_t *model,
 
 	uint32_t N_segments = 0;
 	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-		if (0 < msh3trg->N_subsgm_x_inputsgm[i]) {
+		if (0 < msh3trg->N_vtx_x_inputsgm[i]) {
 			uint32_t v1 = msh3trg->meshvtx_x_inputsgm[i][0];
-			uint32_t last_idx = msh3trg->N_subsgm_x_inputsgm[i];
+			uint32_t last_idx = msh3trg->N_vtx_x_inputsgm[i] - 1;
 			uint32_t v2 = msh3trg->meshvtx_x_inputsgm[i][last_idx];
 			for (uint32_t j = 0; j < msh3trg->N_input_vertices; j++) {
 				if (msh3trg->input_vertices[j] == v1) {
