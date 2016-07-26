@@ -234,7 +234,7 @@ static void bake_bitmap_font(const char *string, uint16_t size,
 	int bm_w, bm_h;
 	get_size_bitmap_font(string, size, &bm_w, &bm_h);
 
-	char *font8x8 = font8x8_basic; 
+	char *font8x8 = (char*) font8x8_basic; 
 
 	int col = 0;
 	int row = 0;

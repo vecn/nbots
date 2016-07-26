@@ -105,7 +105,6 @@ struct vcn_mesh_s {
 	uint32_t max_trg;
 
 	/* Geometric constrains */
-	double min_angle;
 	double cr2se_ratio;
 	double max_edge_length;
 	double max_subsgm_length;
@@ -227,6 +226,7 @@ uint32_t hash_key_edge(const void *const  edge_ptr);
 int8_t compare_edge(const void *const edge1_ptr, const void *const edge2_ptr);
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const mesh,
 			  const msh_vtx_t *const v);
+double mesh_get_min_angle(const vcn_mesh_t *const mesh);
 void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 				    const double *const internal,
 				    double external[2]);

@@ -38,17 +38,14 @@ static void clear_input_data(vcn_mesh_t *mesh);
 static void null_task(const vcn_mesh_t *const mesh);
 static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle);
 static void delete_triangles_by_wave(vcn_mesh_t *const mesh, msh_trg_t* trg,
-				       nb_container_t *trg_deleted);
+				     nb_container_t *trg_deleted);
 static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted);
 static void remove_concavities_triangles(vcn_mesh_t* mesh);
-static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
-				   uint32_t N_holes);
-
-static void delete_trg_in_holes(vcn_mesh_t *mesh,
-				const vcn_model_t *const restrict model);
+static void remove_holes_triangles(vcn_mesh_t* mesh, vcn_model_t *model);
 static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh);
-
+static void get_simplest_mesh(vcn_mesh_t *mesh,
+			      const vcn_model_t *const  model);
 /* Compare functions */
 static int compare_sgmA_isSmallerThan_sgmB(const void *const sgmA, 
 					   const void *const sgmB);
@@ -261,7 +258,7 @@ uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
 }
 
 void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type, 
-				      double value)
+				       double value)
 {
 	switch (type) {
 	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
@@ -291,9 +288,8 @@ void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
 	}
 }
 
-static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle)
+static void set_angle_constraint(vcn_mesh_t *mesh, double angle)
 {
-	mesh->min_angle = angle;
 	if (NB_GEOMETRIC_TOL < angle)
 		mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
 	else
@@ -305,7 +301,7 @@ double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
 	double val;
 	switch (type) {
 	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
-		val = mesh->min_angle;
+		val = mesh_get_min_angle(mesh);
 		break;
 	case NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
 		val = mesh->max_edge_length;
@@ -579,11 +575,14 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 	}
 }
 
-static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
-				   uint32_t N_holes)
+static void remove_holes_triangles(vcn_mesh_t* mesh, vcn_model_t *model)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
-	for (uint32_t i = 0; i < N_holes; i++) {
+	for (uint32_t i = 0; i < model->H; i++) {
+		double hole[2];
+		hole[0] = mesh->scale * (model->holes[i * 2] - mesh->xdisp);
+		hole[1] = mesh->scale * (model->holes[i*2+1] - mesh->ydisp);
+
 		msh_trg_t *trg = NULL;
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, mesh->ht_trg);
@@ -592,7 +591,7 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 			if (vcn_utils2D_pnt_lies_in_trg(t->v1->x,
 							t->v2->x,
 							t->v3->x,
-							&(holes[i*2]))) {
+							hole)) {
 				trg = t;
 				break;
 			}
@@ -604,7 +603,9 @@ static void remove_holes_triangles(vcn_mesh_t* mesh, double* holes,
 				nb_container_get_memsize(NB_SORTED);
 			nb_container_t *trg_deleted = alloca(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
+
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
+
 			nb_container_finish(trg_deleted);
 		}
 	}
@@ -654,7 +655,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	clone->max_vtx = mesh->max_vtx;
 	clone->max_trg = mesh->max_trg;
 	
-	clone->min_angle = mesh->min_angle;
 	clone->cr2se_ratio = mesh->cr2se_ratio;
 	clone->max_edge_length = mesh->max_edge_length;
 	clone->max_subsgm_length = mesh->max_subsgm_length;
@@ -825,39 +825,28 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
 				  const vcn_model_t *const model)
 {
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	get_simplest_mesh(mesh, model);
 
 	if (size_constraints_allow_refine(mesh))
 		vcn_mesh_refine(mesh);
 }
 
-void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
-				      const vcn_model_t *const  model)
+static void get_simplest_mesh(vcn_mesh_t *mesh,
+			      const vcn_model_t *const  model)
 {
 	vcn_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
 					  model->M, model->edge);
-	delete_trg_in_holes(mesh, model);
+	remove_holes_triangles(mesh, model);
 	remove_concavities_triangles(mesh);
 }
 
-static void delete_trg_in_holes(vcn_mesh_t *mesh,
-				const vcn_model_t *const restrict model)
+void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
+				      const vcn_model_t *const  model)
 {
-	if (0 < model->H) {
-		uint32_t memsize = 2 * model->H * sizeof(double);
-		double *holes = NB_SOFT_MALLOC(memsize);
-		for (uint32_t i = 0; i < model->H; i++) {
-			holes[i * 2] = mesh->scale *
-				(model->holes[i * 2] - mesh->xdisp);
-			holes[i*2+1] = mesh->scale * 
-				(model->holes[i*2+1] - mesh->ydisp);
-		}
-		remove_holes_triangles(mesh, holes, model->H);
-		NB_SOFT_FREE(memsize, holes);
-	}
+	get_simplest_mesh(mesh, model);
 }
 
-static inline bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
+static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
 {
 	bool refine = false;
 	if (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||

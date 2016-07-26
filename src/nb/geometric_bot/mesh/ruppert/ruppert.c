@@ -194,7 +194,7 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	initialize_encroached_sgm(mesh, encroached_sgm);
 
 	/* Calculate max circumradius to shortest edge ratio allowed */
-	if (mesh->min_angle > NB_MESH_MAX_ANGLE) {
+	if (mesh_get_min_angle(mesh) > NB_MESH_MAX_ANGLE) {
 		if (0 == mesh->max_vtx) {
 			printf("WARNING in vcn_mesh_refine(): ");
 			printf("Setting max_vtx = 1000000 to");
@@ -563,8 +563,6 @@ static void get_encroached_triangles
 
 	nb_container_finish(unencroached_trg);
 	nb_container_finish(processing_trg);
-
-	return encroached_trg;
 }
 
 static void check_encroached_neighbours(const msh_trg_t *trg,

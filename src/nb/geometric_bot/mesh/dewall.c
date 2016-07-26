@@ -84,7 +84,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const msh_vtx_t *const  v2);
 static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx);
 static msh_trg_t* create_trg(vcn_mesh_t *mesh,
-			     search_vtx_t *search_vtx,
+			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
 static void update_AFL(nb_container_t *AFL,
 		       const msh_edge_t *const edge);
@@ -426,7 +426,7 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 }
 
 static msh_trg_t* create_trg(vcn_mesh_t *mesh,
-			     search_vtx_t *search_vtx,
+			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge)
 {
 	/* Select the correct segment orientation */

@@ -46,7 +46,7 @@ static bool adj_is_input_sgm(const msh_trg_t *trg1,
 static void get_quad_matching_vtx(const msh_trg_t *const trg,
 				  const msh_trg_t *const match_trg,
 				  msh_vtx_t *quad_vtx[4]);
-static double get_max_angle_distortion(const msh_vtx_t* vtx[4]);
+static double get_max_angle_distortion(msh_vtx_t* vtx[4]);
 static void get_angle_vertices(const msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id);
@@ -374,7 +374,7 @@ static void get_quad_matching_vtx(const msh_trg_t *const trg,
 	}
 }
 
-static double get_max_angle_distortion(const msh_vtx_t* vtx[4])
+static double get_max_angle_distortion(msh_vtx_t* vtx[4])
 {
 	double max_distortion = 0.0;
 	for (int i = 0; i < 4; i++) {

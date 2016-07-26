@@ -917,6 +917,11 @@ inline int8_t compare_edge(const void *const edge1_ptr,
 	  0:1;
 }
 
+double mesh_get_min_angle(const vcn_mesh_t *const mesh)
+{
+	return asin(1.0/(2.0 * mesh->cr2se_ratio));
+}
+
 msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
