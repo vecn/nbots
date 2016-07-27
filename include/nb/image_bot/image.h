@@ -44,7 +44,6 @@ void vcn_image_resize(const vcn_image_t *input_img,
 void vcn_image_write(const vcn_image_t *img, const char *filename);
 void vcn_image_write_png(const vcn_image_t *img, const char *filename);
 void vcn_image_write_bmp(const vcn_image_t *img, const char *filename);
-void vcn_image_write_hdr(const vcn_image_t *img, const char *filename);
 void vcn_image_write_tga(const vcn_image_t *img, const char *filename);
 void vcn_image_write_ascii(const vcn_image_t *img, const char *filename,
 			   uint16_t N_chars_width);

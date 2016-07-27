@@ -42,7 +42,8 @@ static void delete_triangles_by_wave(vcn_mesh_t *const mesh, msh_trg_t* trg,
 static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted);
 static void remove_concavities_triangles(vcn_mesh_t* mesh);
-static void remove_holes_triangles(vcn_mesh_t* mesh, vcn_model_t *model);
+static void remove_holes_triangles(vcn_mesh_t* mesh,
+				   const vcn_model_t *const model);
 static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh);
 static void get_simplest_mesh(vcn_mesh_t *mesh,
 			      const vcn_model_t *const  model);
@@ -575,7 +576,8 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 	}
 }
 
-static void remove_holes_triangles(vcn_mesh_t* mesh, vcn_model_t *model)
+static void remove_holes_triangles(vcn_mesh_t* mesh,
+				   const vcn_model_t *const model)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < model->H; i++) {

@@ -44,7 +44,7 @@
 	} while(0)
 
 enum {
-	PNG, BMP, TGA, HDR, TXT, UNSUPPORTED
+	PNG, BMP, TGA, TXT, UNSUPPORTED
 };
 
 static int get_format(const char *filename);
@@ -289,9 +289,6 @@ void vcn_image_write(const vcn_image_t *img, const char *filename)
 	case TGA:
 		vcn_image_write_tga(img, filename);
 		break;
-	case HDR:
-		vcn_image_write_hdr(img, filename);
-		break;
 	case TXT:
 		vcn_image_write_ascii(img, filename,
 				      img->width / 10);
@@ -315,8 +312,6 @@ static int get_format(const char *filename)
 		format = BMP;
 	else if (0 == strcmp(ext, "tga"))
 		format = TGA;
-	else if (0 == strcmp(ext, "hdr"))
-		format = HDR;
 	else if (0 == strcmp(ext, "txt"))
 		format = TXT;
 	else
@@ -346,16 +341,6 @@ void vcn_image_write_png(const vcn_image_t *img, const char *filename)
 void vcn_image_write_bmp(const vcn_image_t *img, const char *filename)
 {  
 	int status = stbi_write_bmp(filename,
-				    img->width,
-				    img->height,
-				    img->comp_x_pixel,
-				    img->pixels);
-	assert(0 != status);
-}
-
-void vcn_image_write_hdr(const vcn_image_t *img, const char *filename)
-{  
-	int status = stbi_write_hdr(filename,
 				    img->width,
 				    img->height,
 				    img->comp_x_pixel,
