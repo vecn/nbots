@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
@@ -27,6 +28,7 @@ static void test_generate_from_model_holes(void);
 static void test_generate_from_model_small_angles(void);
 static void test_generate_from_model_quasi_linear(void);
 static void test_generate_from_model_trg_constraint(void);
+static void test_generate_from_difference(void);
 static void test_is_vtx_inside(void);
 static void test_set_density(void);
 
@@ -68,6 +70,9 @@ void cunit_nb_geometric_bot_mesh2D(void)
 	CU_add_test(suite,
 	 	    "generate_from_model() with triangles constraint",
 	 	    test_generate_from_model_trg_constraint);
+	CU_add_test(suite, "generate_from_model(),"\
+		    "resulting from the difference of two models",
+	 	    test_generate_from_difference);
 	CU_add_test(suite, "is_vtx_inside()", test_is_vtx_inside);
 	 CU_add_test(suite, "set_density()", test_set_density);
 }
@@ -324,6 +329,29 @@ static void test_generate_from_model_trg_constraint(void)
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(2950 < N_trg && 3050 > N_trg);
 	CU_ASSERT(4600 < N_edge && 4700 > N_edge);
+}
+
+static void test_generate_from_difference(void)
+{
+	vcn_model_t *model1 = vcn_model_create_polygon(7, -5, 0, 8);
+	vcn_model_t *model2 = vcn_model_create_polygon(7, 5, 0, 8);
+
+	vcn_model_t *model = alloca(vcn_model_get_memsize());
+	vcn_model_init(model);
+
+	vcn_model_get_difference(model, model1, model2);
+	
+	vcn_mesh_t *mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
+	vcn_mesh_get_simplest_from_model(mesh, model);
+
+	vcn_model_finish(model);
+
+	CU_ASSERT(18 == vcn_mesh_get_N_vtx(mesh));
+	CU_ASSERT(34 == vcn_mesh_get_N_edg(mesh));
+	CU_ASSERT(16 == vcn_mesh_get_N_trg(mesh));
+
+	vcn_mesh_finish(mesh);
 }
 
 static void test_is_vtx_inside(void)
