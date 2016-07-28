@@ -45,8 +45,7 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh);
 static void remove_holes_triangles(vcn_mesh_t* mesh,
 				   const vcn_model_t *const model);
 static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh);
-static void get_simplest_mesh(vcn_mesh_t *mesh,
-			      const vcn_model_t *const  model);
+
 /* Compare functions */
 static int compare_sgmA_isSmallerThan_sgmB(const void *const sgmA, 
 					   const void *const sgmB);
@@ -676,11 +675,19 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	clone->input_sgm =
 		calloc(clone->N_input_sgm, sizeof(*(clone->input_sgm)));
 
-	/* Clone grid of vertices */
 	uint32_t N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
-
 	uint32_t vtx_memsize = N_vertices * sizeof(msh_vtx_t*);
-	msh_vtx_t** vertices = NB_SOFT_MALLOC(vtx_memsize);
+	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
+	uint32_t trg_memsize = N_triangles * sizeof(msh_trg_t*);
+	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
+	uint32_t sgm_memsize = N_segments * sizeof(msh_edge_t*);
+	uint32_t total_memsize = vtx_memsize + trg_memsize + sgm_memsize;
+	char *memblock = NB_SOFT_MALLOC(total_memsize);
+	msh_vtx_t** vertices = (void*) memblock;
+	msh_trg_t** triangles = (void*)(memblock + vtx_memsize);
+	msh_edge_t** segments = (void*)(memblock + vtx_memsize + trg_memsize);
+
+	/* Clone grid of vertices */
 
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
@@ -699,10 +706,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	vcn_bins2D_iter_finish(giter);
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
-	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
-
-	uint32_t trg_memsize = N_triangles * sizeof(msh_trg_t*);
-	msh_trg_t** triangles = NB_SOFT_MALLOC(trg_memsize);
 
 	id = 0;
 	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
@@ -719,11 +722,6 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 		triangles[id] = trg_clone;
 		id++;
 	}
-
-	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
-
-	uint32_t sgm_memsize = N_segments * sizeof(msh_edge_t*);
-	msh_edge_t** segments = NB_SOFT_MALLOC(sgm_memsize);
 
 	id = 0;
 	nb_iterator_t* sgm_iter = alloca(nb_iterator_get_memsize());
@@ -806,9 +804,7 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 			segments[((uint32_t*)((void**)mesh->input_sgm[i]->attr)[0])[0]];  
 
 	/* Free memory */
-	NB_SOFT_FREE(vtx_memsize, vertices);
-	NB_SOFT_FREE(sgm_memsize, segments);
-	NB_SOFT_FREE(trg_memsize, triangles);
+	NB_SOFT_FREE(total_memsize, memblock);
 
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
@@ -827,25 +823,19 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
 				  const vcn_model_t *const model)
 {
-	get_simplest_mesh(mesh, model);
+	vcn_mesh_get_simplest_from_model(mesh, model);
 
 	if (size_constraints_allow_refine(mesh))
 		vcn_mesh_refine(mesh);
 }
 
-static void get_simplest_mesh(vcn_mesh_t *mesh,
-			      const vcn_model_t *const  model)
+void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
+				      const vcn_model_t *const  model)
 {
 	vcn_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
 					  model->M, model->edge);
 	remove_holes_triangles(mesh, model);
 	remove_concavities_triangles(mesh);
-}
-
-void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
-				      const vcn_model_t *const  model)
-{
-	get_simplest_mesh(mesh, model);
 }
 
 static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
