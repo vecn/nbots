@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/eigen_bot.h"
@@ -44,7 +45,9 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	vcn_graph_destroy(graph);
 
-	double* F = calloc(2 * mesh->N_vertices, sizeof(*F));
+	uint32_t F_memsize = 2 * mesh->N_vertices * sizeof(double);
+	double* F = NB_SOFT_MALLOC(F_memsize);
+	memset(F, 0, F_memsize);
 
 	int status_assemble =
 		pipeline_assemble_system(K, NULL, F, mesh, elemtype, material,
@@ -70,11 +73,11 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
-	free(F);
+	NB_SOFT_FREE(F_memsize, F);
 	return status;
 }
 
-static inline int solver(const vcn_sparse_t *const A,
+static int solver(const vcn_sparse_t *const A,
 			 const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
