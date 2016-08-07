@@ -45,6 +45,23 @@ static int integrate_elemental_system
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe);
+static double get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
+			   const vcn_msh3trg_t *mesh, int gp_id,
+			   double Jinv[4]);
+static bool elem_is_distorted(double detJ);
+static void get_derivatives(const vcn_fem_elem_t *elem,
+			    int gp_id, double Jinv[4],
+			    double *dNi_dx, double *dNi_dy);
+static void sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+			    double D[4], double density,
+			    double thickness, double detJ,
+			    double *dNi_dx, double *dNi_dy,
+			    double fx, double fy,
+			    double *Ke, double *Me, double *Fe);
+static void add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+				 const vcn_msh3trg_t *mesh,
+				 double *Ke, double *Me, double *Fe,
+				 vcn_sparse_t *K, double *M, double *F);
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
@@ -111,9 +128,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    bool enable_self_weight,
 			    double gravity[2],
 			    vcn_sparse_t *K, double *M, double *F)
-{
-	int status = 1;
-    
+{    
 	double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 	double density = 1e-6;
 	if (is_enabled) {
@@ -121,42 +136,21 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 		density = vcn_fem_material_get_density(material);
 	}
 
-	/* Allocate elemental Stiffness Matrix and Force Vector */
 	double* Ke = calloc(4 * POW2(elem->N_nodes), sizeof(*Ke));
 	double* Me = NULL;
 	if(M != NULL)
 		Me = calloc(2 * elem->N_nodes, sizeof(*Me));
 	double* Fe = calloc(2 * elem->N_nodes, sizeof(*Fe));
 	
-	int status_elem = integrate_elemental_system(elem, id, D, density,
+	int status = integrate_elemental_system(elem, id, D, density,
 						     gravity, mesh, params2D,
 						     enable_self_weight,
 						     Ke, Me, Fe);
-	if (0 != status_elem)
+	if (0 != status)
 		goto CLEANUP;
 	
-	/* Add to global stiffness matrix */
-	for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
-		for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
-			for (uint8_t j1=0; j1 < 2; j1++) {
-				for (uint8_t j2=0; j2 < 2; j2++) {
-					vcn_sparse_add
-						(K, mesh->vertices_forming_triangles[id*3+i1]*2 + j1,
-						 mesh->vertices_forming_triangles[id*3+i2]*2 + j2,
-						 Ke[(i1*2+j1)*(2*elem->N_nodes) + (i2*2+j2)]);
-				}
-			}
-		}
-		/* Add to global mass matrix */
-		if (NULL != M) {
-			M[mesh->vertices_forming_triangles[id*3+i1] * 2] += Me[i1 * 2];
-			M[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Me[i1*2+1];
-		}
-		/* Add to global forces vector */
-		F[mesh->vertices_forming_triangles[id*3+i1] * 2] += Fe[i1 * 2];
-		F[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Fe[i1*2+1];
-	}
-	status = 0;
+	add_to_global_system(elem, id, mesh, Ke, Me, Fe, K, M, F);
+
 CLEANUP:
 	free(Ke);
 	if (NULL != M) 
@@ -217,97 +211,165 @@ static int integrate_elemental_system
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	double *dNi_dx = malloc(elem->N_nodes * sizeof(*dNi_dx));
 	double *dNi_dy = malloc(elem->N_nodes * sizeof(*dNi_dy));
-	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {      
-		/* Compute Jacobian derivatives */
-		double dx_dpsi = 0.0;
-		double dy_dpsi = 0.0;
-		double dx_deta = 0.0;
-		double dy_deta = 0.0;
-		for (uint32_t i = 0; i < elem->N_nodes; i++) {
-			uint32_t inode = mesh->vertices_forming_triangles[id * elem->N_nodes + i];
-			double xi = mesh->vertices[inode * 2];
-			double yi = mesh->vertices[inode*2+1];
-			dx_dpsi += 
-				elem->dNi_dpsi[i](elem->psi[j], elem->eta[j]) * xi;
-			dx_deta +=
-				elem->dNi_deta[i](elem->psi[j], elem->eta[j]) * xi;
-			dy_dpsi += 
-				elem->dNi_dpsi[i](elem->psi[j], elem->eta[j]) * yi;
-			dy_deta +=
-				elem->dNi_deta[i](elem->psi[j], elem->eta[j]) * yi;
-		}
-
-		/* Compute Jacobian inverse and determinant */
-		double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
-		/* Check if the element is distorted */
-		if(detJ < 0)
-			goto EXIT;
-      
+	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
 		double Jinv[4];
-		Jinv[0] =  dy_deta/detJ;
-		Jinv[1] = -dy_dpsi/detJ;
-		Jinv[2] = -dx_deta/detJ;
-		Jinv[3] =  dx_dpsi/detJ;
-      
-		/* Compute Shape functions derivatives in cartesian space */ 
-		for (uint32_t i = 0; i < elem->N_nodes; i++) {
-			dNi_dx[i] = 
-				Jinv[0]*elem->dNi_dpsi[i](elem->psi[j], elem->eta[j]) + 
-				Jinv[1]*elem->dNi_deta[i](elem->psi[j], elem->eta[j]);
-			dNi_dy[i] = 
-				Jinv[2]*elem->dNi_dpsi[i](elem->psi[j], elem->eta[j]) + 
-				Jinv[3]*elem->dNi_deta[i](elem->psi[j], elem->eta[j]);
-		}
-		/* Compute elemental stiffness matrix
-		 *       _            _         _           _        _  _
-		 *      |dNi/dx        |       | d11 d12     |      |  |
-		 * Bi = |       dNi/dy |   D = | d21 d22     |  K = |  | B'DB dx dy
-		 *      |dNi/dy dNi/dx_|       |_        d33_|     _| _|
+		double detJ = get_jacobian(elem, id, mesh, j, Jinv);
 
-		 * B  = [B1 B2...Bi... Belem->N_nodes]
-		 *
-		 */
-      
-		for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
-			for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
-				/*  Integrating elemental siffness matrix */
-				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2 * 2)] += 
-					(dNi_dx[i1]*dNi_dx[i2]*D[0] + dNi_dy[i1]*dNi_dy[i2]*D[3]) *
-					detJ * params2D->thickness * elem->gp_weight[j];
-				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2*2+1)] +=
-					(dNi_dx[i1]*dNi_dy[i2]*D[1] + dNi_dy[i1]*dNi_dx[i2]*D[3]) *
-					detJ * params2D->thickness * elem->gp_weight[j];
-				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2 * 2)] +=
-					(dNi_dy[i1]*dNi_dx[i2]*D[1] + dNi_dx[i1]*dNi_dy[i2]*D[3]) *
-					detJ * params2D->thickness * elem->gp_weight[j];
-				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2*2+1)] +=
-					(dNi_dy[i1]*dNi_dy[i2]*D[2] + dNi_dx[i1]*dNi_dx[i2]*D[3]) *
-					detJ * params2D->thickness * elem->gp_weight[j];
-			}
-			/* Calculate shape function of the i-th node at the j-th gauss point */
-			double Ni_eval = 
-				elem->Ni[i1](elem->psi[j], elem->eta[j]);
-			/*  Integrating elemental mass matrix */
-			if (NULL != Me) {
-				/* OPPORTUNITY: Allocate just one for each component */
-				Me[i1 * 2] += Ni_eval * Ni_eval * density *
-					detJ * params2D->thickness * elem->gp_weight[j];
-				Me[i1*2+1] += Ni_eval * Ni_eval * density * 
-					detJ * params2D->thickness * elem->gp_weight[j];
-			}
-			/* Compute elemental forces vector */
-			/* OPPORTUNITY: Allocate just one for each component */
-			Fe[i1 * 2] += Ni_eval * fx * detJ * 
-				params2D->thickness * elem->gp_weight[j];
-			Fe[i1*2+1] += Ni_eval * fy * detJ * 
-				params2D->thickness * elem->gp_weight[j];
-		}
+		if (elem_is_distorted(detJ))
+			goto EXIT;
+
+		get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
+
+		double thickness = params2D->thickness;
+		sum_gauss_point(elem, j, D, density, thickness,
+				detJ, dNi_dx, dNi_dy, fx, fy,
+				Ke, Me, Fe);
 	}
 	status = 0;
 EXIT:
 	free(dNi_dx);
 	free(dNi_dy);
 	return status;
+}
+
+static double get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
+			   const vcn_msh3trg_t *mesh, int gp_id,
+			   double Jinv[4])
+{
+	/* Compute Jacobian derivatives */
+	double dx_dpsi = 0.0;
+	double dy_dpsi = 0.0;
+	double dx_deta = 0.0;
+	double dy_deta = 0.0;
+	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+		uint32_t inode = mesh->vertices_forming_triangles[id * elem->N_nodes + i];
+		double xi = mesh->vertices[inode * 2];
+		double yi = mesh->vertices[inode*2+1];
+		dx_dpsi += elem->dNi_dpsi[i](elem->psi[gp_id],
+					     elem->eta[gp_id]) * xi;
+		dx_deta += elem->dNi_deta[i](elem->psi[gp_id],
+					     elem->eta[gp_id]) * xi;
+		dy_dpsi += elem->dNi_dpsi[i](elem->psi[gp_id],
+					     elem->eta[gp_id]) * yi;
+		dy_deta += elem->dNi_deta[i](elem->psi[gp_id],
+					     elem->eta[gp_id]) * yi;
+	}
+
+	/* Compute Jacobian inverse and determinant */
+	double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
+      
+	Jinv[0] =  dy_deta / detJ;
+	Jinv[1] = -dy_dpsi / detJ;
+	Jinv[2] = -dx_deta / detJ;
+	Jinv[3] =  dx_dpsi / detJ;
+
+	return detJ;
+}
+
+
+static inline bool elem_is_distorted(double detJ)
+{
+	return detJ < 0;
+}
+
+static void get_derivatives(const vcn_fem_elem_t *elem,
+			    int gp_id, double Jinv[4],
+			    double *dNi_dx, double *dNi_dy)
+{
+	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+		dNi_dx[i] = Jinv[0]*elem->dNi_dpsi[i](elem->psi[gp_id],
+						      elem->eta[gp_id]) + 
+			Jinv[1]*elem->dNi_deta[i](elem->psi[gp_id],
+						  elem->eta[gp_id]);
+		dNi_dy[i] = Jinv[2]*elem->dNi_dpsi[i](elem->psi[gp_id],
+						      elem->eta[gp_id]) + 
+			Jinv[3]*elem->dNi_deta[i](elem->psi[gp_id],
+						  elem->eta[gp_id]);
+	}
+}
+
+static void sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+			    double D[4], double density,
+			    double thickness, double detJ,
+			    double *dNi_dx, double *dNi_dy,
+			    double fx, double fy,
+			    double *Ke, double *Me, double *Fe)
+{
+	/* Compute elemental stiffness matrix
+	 *       _            _         _           _        _  _
+	 *      |dNi/dx        |       | d11 d12     |      |  |
+	 * Bi = |       dNi/dy |   D = | d21 d22     |  K = |  | B'DB dx dy
+	 *      |dNi/dy dNi/dx_|       |_        d33_|     _| _|
+
+	 * B  = [B1 B2...Bi... Belem->N_nodes]
+	 *
+	 */
+      
+	for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
+		for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
+			/*  Integrating elemental siffness matrix */
+			Ke[(i1 * 2)*(2*elem->N_nodes) + (i2 * 2)] += 
+				(dNi_dx[i1]*dNi_dx[i2]*D[0] +
+				 dNi_dy[i1]*dNi_dy[i2]*D[3]) *
+				detJ * thickness * elem->gp_weight[gp_id];
+			Ke[(i1 * 2)*(2*elem->N_nodes) + (i2*2+1)] +=
+				(dNi_dx[i1]*dNi_dy[i2]*D[1] +
+				 dNi_dy[i1]*dNi_dx[i2]*D[3]) *
+				detJ * thickness * elem->gp_weight[gp_id];
+			Ke[(i1*2+1)*(2*elem->N_nodes) + (i2 * 2)] +=
+				(dNi_dy[i1]*dNi_dx[i2]*D[1] +
+				 dNi_dx[i1]*dNi_dy[i2]*D[3]) *
+				detJ * thickness * elem->gp_weight[gp_id];
+			Ke[(i1*2+1)*(2*elem->N_nodes) + (i2*2+1)] +=
+				(dNi_dy[i1]*dNi_dy[i2]*D[2] +
+				 dNi_dx[i1]*dNi_dx[i2]*D[3]) *
+				detJ * thickness * elem->gp_weight[gp_id];
+		}
+
+		double Ni_eval = elem->Ni[i1](elem->psi[gp_id],
+					      elem->eta[gp_id]);
+		/*  Integrating elemental mass matrix */
+		if (NULL != Me) {
+			/* OPPORTUNITY: Allocate just one for each component */
+			Me[i1 * 2] += Ni_eval * Ni_eval * density *
+				detJ * thickness * elem->gp_weight[gp_id];
+			Me[i1*2+1] += Ni_eval * Ni_eval * density * 
+				detJ * thickness * elem->gp_weight[gp_id];
+		}
+		/* Compute elemental forces vector */
+		/* OPPORTUNITY: Allocate just one for each component */
+		Fe[i1 * 2] += Ni_eval * fx * detJ * 
+			thickness * elem->gp_weight[gp_id];
+		Fe[i1*2+1] += Ni_eval * fy * detJ * 
+			thickness * elem->gp_weight[gp_id];
+	}
+}
+
+static void add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+				 const vcn_msh3trg_t *mesh,
+				 double *Ke, double *Me, double *Fe,
+				 vcn_sparse_t *K, double *M, double *F)
+{
+	for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
+		for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
+			for (uint8_t j1=0; j1 < 2; j1++) {
+				for (uint8_t j2=0; j2 < 2; j2++) {
+					vcn_sparse_add
+						(K, mesh->vertices_forming_triangles[id*3+i1]*2 + j1,
+						 mesh->vertices_forming_triangles[id*3+i2]*2 + j2,
+						 Ke[(i1*2+j1)*(2*elem->N_nodes) + (i2*2+j2)]);
+				}
+			}
+		}
+		/* Add to global mass matrix */
+		if (NULL != M) {
+			M[mesh->vertices_forming_triangles[id*3+i1] * 2] += Me[i1 * 2];
+			M[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Me[i1*2+1];
+		}
+		/* Add to global forces vector */
+		F[mesh->vertices_forming_triangles[id*3+i1] * 2] += Fe[i1 * 2];
+		F[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Fe[i1*2+1];
+	}
 }
 
 void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
