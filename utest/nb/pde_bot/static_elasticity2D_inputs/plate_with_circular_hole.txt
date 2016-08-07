@@ -1,0 +1,78 @@
+#################################################
+# Victor Eduardo Cardoso Nungaray		#
+# 2010-2016					#
+# Flat plate with a cirular hole subjected to a #
+# uniform tension.                              #
+#    Parameters:                                #
+#        Hole radius -> 0.5                     #
+#################################################
+
+
+#-------------- Geometry definition ------------#
+# Number of vertices				#
+ 14						#
+# Vertices coordinates                          #
+  0.0 0.5					#
+  0.0782172  0.4938442				#
+  0.1545085  0.4755283				#
+  0.2269952  0.4455033				#
+  0.2938926  0.4045085				#
+  0.3535534  0.3535534				#
+  0.4045085  0.2938926				#
+  0.4455033  0.2269952				#
+  0.4755283  0.1545085				#
+  0.4938442  0.0782172				#
+  0.5 0.0					#
+  2.0 0.0					#
+  2.0 2.0					#
+  0.0 2.0                                       #
+# Number of segments				#
+ 14						#
+# Segments (Vertices pairs IDs)			#
+ 0 1      					#
+ 1 2						#
+ 2 3						#
+ 3 4						#
+ 4 5                                            #
+ 5 6						#
+ 6 7						#
+ 7 8						#
+ 8 9						#
+ 9 10						#
+ 10 11						#
+ 11 12						#
+ 12 13						#
+ 13 0                                           #
+# Number of holes				#
+ 0						#
+#-----------------------------------------------#
+
+#-------------- Boundary conditions ------------#
+# Num displacement conditions over vertices:    #
+ 3						#
+# Displacement conditions definition            #
+  0 1 0 0                                       #
+  2 0 1 -0.1	      				#
+  3 1 1 0 0                                     #
+# Num of load conditions over vertices:		#
+ 0						#
+# Num of displacement conditions over lines:    #
+ 0                                              #
+# Num of load conditions over lines:            #
+ 0                                              #
+#-----------------------------------------------#
+
+#-------------- Material properties ------------#
+# Poisson module				#
+ 0.3						#
+# Elasticity module				#
+ 10e7	                                        #
+#-----------------------------------------------#
+
+#---------------- Analysis ---------------------#
+#--- Does the analysis uses plane stress?-------#
+# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+ 0						#
+# Analysis params (Thickness axis of rev)       #
+ 1.0	                                        #
+#-----------------------------------------------#

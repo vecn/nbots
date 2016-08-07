@@ -4,6 +4,7 @@
 typedef struct vcn_fem_material_s vcn_fem_material_t;
 
 vcn_fem_material_t* vcn_fem_material_create(void);
+vcn_fem_material_t* vcn_fem_material_clone(vcn_fem_material_t* mat);
 void vcn_fem_material_destroy(vcn_fem_material_t* mat);
 
 void vcn_fem_material_set_poisson_module(vcn_fem_material_t* mat, double pmodule);

@@ -33,6 +33,18 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    bool enable_self_weight,
 			    double gravity[2],
 			    vcn_sparse_t *K, double *M, double *F);
+static void get_constitutive_matrix(double D[4], 
+				    const vcn_fem_material_t *material,
+				    nb_analysis2D_t analysis2D);
+static void set_plane_stress(double D[4], double E, double v);
+static void set_plane_strain(double D[4], double E, double v);
+static int integrate_elemental_system
+		       	(const vcn_fem_elem_t *elem, uint32_t id,
+			 double D[4], double density, double gravity[2],
+			 const vcn_msh3trg_t *mesh,
+			 nb_analysis2D_params *params2D,
+			 bool enable_self_weight,
+			 double *Ke, double *Me, double *Fe);
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
@@ -82,7 +94,7 @@ EXIT:
 	return status;
 }
 
-static inline bool elem_is_enabled(const bool *elements_enabled, uint32_t id)
+static bool elem_is_enabled(const bool *elements_enabled, uint32_t id)
 {
 	bool is_enabled = true;
 	if (NULL != elements_enabled)
@@ -101,50 +113,14 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    vcn_sparse_t *K, double *M, double *F)
 {
 	int status = 1;
-	/* Get material properties */
-	double density = vcn_fem_material_get_density(material);
-	double E = vcn_fem_material_get_elasticity_module(material);
-
-	if (!is_enabled) {
-		E *= 1e-6;
-		density *= 1e-6;
-	}
-
-	double v = vcn_fem_material_get_poisson_module(material);
     
-	/* Get constitutive matrix */
-	double d11, d12, d22, d33;
-	if (NB_PLANE_STRESS == analysis2D) {
-		d11 = E / (1.0 - POW2(v));
-		d12 = v * d11;
-		d22 = d11;
-		d33 = E / (2.0 * (1.0 + v));
-	} else if (NB_PLANE_STRAIN == analysis2D) {
-		d11 = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
-		d12 = (v * d11) / (1.0 - v);
-		d22 = d11;
-		d33 = E / (2.0 * (1.0 + v));
-	} else {
-		/* Default: Plane stress */
-		d11 = E / (1.0 - POW2(v));
-		d12 = v * d11;
-		d22 = d11;
-		d33 = E / (2.0 * (1.0 + v));
+	double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
+	double density = 1e-6;
+	if (is_enabled) {
+		get_constitutive_matrix(D, material, analysis2D);
+		density = vcn_fem_material_get_density(material);
 	}
 
-	/* Allocate Cartesian derivatives for each Gauss Point */
-	double *dNi_dx = malloc(elem->N_nodes * sizeof(*dNi_dx));
-	double *dNi_dy = malloc(elem->N_nodes * sizeof(*dNi_dy));
-
-	/* Compute constitutive matrix */
-	double fx = 0.0;
-	double fy = 0.0;
-	if (enable_self_weight) {
-		fx = gravity[0] * vcn_fem_material_get_density(material);
-		fy = gravity[1] * vcn_fem_material_get_density(material);
-	}
-    
-	/* Integrate Ke and Fe using Gauss quadrature */
 	/* Allocate elemental Stiffness Matrix and Force Vector */
 	double* Ke = calloc(4 * POW2(elem->N_nodes), sizeof(*Ke));
 	double* Me = NULL;
@@ -152,13 +128,96 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 		Me = calloc(2 * elem->N_nodes, sizeof(*Me));
 	double* Fe = calloc(2 * elem->N_nodes, sizeof(*Fe));
 	
-	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
-		/* Get constitutive model */
-		double dd11  = d11;
-		double dd12  = d12;
-		double dd22  = d22;
-		double dd33  = d33;
-      
+	int status_elem = integrate_elemental_system(elem, id, D, density,
+						     gravity, mesh, params2D,
+						     enable_self_weight,
+						     Ke, Me, Fe);
+	if (0 != status_elem)
+		goto CLEANUP;
+	
+	/* Add to global stiffness matrix */
+	for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
+		for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
+			for (uint8_t j1=0; j1 < 2; j1++) {
+				for (uint8_t j2=0; j2 < 2; j2++) {
+					vcn_sparse_add
+						(K, mesh->vertices_forming_triangles[id*3+i1]*2 + j1,
+						 mesh->vertices_forming_triangles[id*3+i2]*2 + j2,
+						 Ke[(i1*2+j1)*(2*elem->N_nodes) + (i2*2+j2)]);
+				}
+			}
+		}
+		/* Add to global mass matrix */
+		if (NULL != M) {
+			M[mesh->vertices_forming_triangles[id*3+i1] * 2] += Me[i1 * 2];
+			M[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Me[i1*2+1];
+		}
+		/* Add to global forces vector */
+		F[mesh->vertices_forming_triangles[id*3+i1] * 2] += Fe[i1 * 2];
+		F[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Fe[i1*2+1];
+	}
+	status = 0;
+CLEANUP:
+	free(Ke);
+	if (NULL != M) 
+		free(Me);
+	free(Fe);
+	return status;
+}
+
+static void get_constitutive_matrix(double D[4], 
+				    const vcn_fem_material_t *material,
+				    nb_analysis2D_t analysis2D)
+{
+	double E = vcn_fem_material_get_elasticity_module(material);
+	double v = vcn_fem_material_get_poisson_module(material);
+	switch (analysis2D) {
+	case NB_PLANE_STRESS:
+		set_plane_stress(D, E, v);
+	case NB_PLANE_STRAIN:
+		set_plane_strain(D, E, v);
+	default:
+		set_plane_stress(D, E, v);
+	}
+}
+
+static void set_plane_stress(double D[4], double E, double v)
+{
+	D[0] = E / (1.0 - POW2(v));
+	D[1] = v * D[0];
+	D[2] = D[0];
+	D[3] = E / (2.0 * (1.0 + v));
+}
+
+static void set_plane_strain(double D[4], double E, double v)
+{
+	D[0] = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
+	D[1] = (v * D[0]) / (1.0 - v);
+	D[2] = D[0];
+	D[3] = E / (2.0 * (1.0 + v));
+}
+
+static int integrate_elemental_system
+		       	(const vcn_fem_elem_t *elem, uint32_t id,
+			 double D[4], double density, double gravity[2],
+			 const vcn_msh3trg_t *mesh,
+			 nb_analysis2D_params *params2D,
+			 bool enable_self_weight,
+			 double *Ke, double *Me, double *Fe)
+{
+	int status = 1;
+
+	double fx = 0.0;
+	double fy = 0.0;
+	if (enable_self_weight) {
+		fx = gravity[0] * density;
+		fy = gravity[1] * density;
+	}
+    
+	/* Allocate Cartesian derivatives for each Gauss Point */
+	double *dNi_dx = malloc(elem->N_nodes * sizeof(*dNi_dx));
+	double *dNi_dy = malloc(elem->N_nodes * sizeof(*dNi_dy));
+	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {      
 		/* Compute Jacobian derivatives */
 		double dx_dpsi = 0.0;
 		double dy_dpsi = 0.0;
@@ -182,7 +241,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 		double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
 		/* Check if the element is distorted */
 		if(detJ < 0)
-			goto CLEANUP;
+			goto EXIT;
       
 		double Jinv[4];
 		Jinv[0] =  dy_deta/detJ;
@@ -213,23 +272,23 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
 				/*  Integrating elemental siffness matrix */
 				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2 * 2)] += 
-					(dNi_dx[i1]*dNi_dx[i2]*dd11 + dNi_dy[i1]*dNi_dy[i2]*dd33) *
+					(dNi_dx[i1]*dNi_dx[i2]*D[0] + dNi_dy[i1]*dNi_dy[i2]*D[3]) *
 					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1 * 2)*(2*elem->N_nodes) + (i2*2+1)] +=
-					(dNi_dx[i1]*dNi_dy[i2]*dd12 + dNi_dy[i1]*dNi_dx[i2]*dd33) *
+					(dNi_dx[i1]*dNi_dy[i2]*D[1] + dNi_dy[i1]*dNi_dx[i2]*D[3]) *
 					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2 * 2)] +=
-					(dNi_dy[i1]*dNi_dx[i2]*dd12 + dNi_dx[i1]*dNi_dy[i2]*dd33) *
+					(dNi_dy[i1]*dNi_dx[i2]*D[1] + dNi_dx[i1]*dNi_dy[i2]*D[3]) *
 					detJ * params2D->thickness * elem->gp_weight[j];
 				Ke[(i1*2+1)*(2*elem->N_nodes) + (i2*2+1)] +=
-					(dNi_dy[i1]*dNi_dy[i2]*dd22 + dNi_dx[i1]*dNi_dx[i2]*dd33) *
+					(dNi_dy[i1]*dNi_dy[i2]*D[2] + dNi_dx[i1]*dNi_dx[i2]*D[3]) *
 					detJ * params2D->thickness * elem->gp_weight[j];
 			}
 			/* Calculate shape function of the i-th node at the j-th gauss point */
 			double Ni_eval = 
 				elem->Ni[i1](elem->psi[j], elem->eta[j]);
 			/*  Integrating elemental mass matrix */
-			if (NULL != M) {
+			if (NULL != Me) {
 				/* OPPORTUNITY: Allocate just one for each component */
 				Me[i1 * 2] += Ni_eval * Ni_eval * density *
 					detJ * params2D->thickness * elem->gp_weight[j];
@@ -244,35 +303,10 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 				params2D->thickness * elem->gp_weight[j];
 		}
 	}
-	/* Add to global stiffness matrix */
-	for (uint32_t i1 = 0; i1 < elem->N_nodes; i1++) {
-		for (uint32_t i2 = 0; i2 < elem->N_nodes; i2++) {
-			for (uint8_t j1=0; j1 < 2; j1++) {
-				for (uint8_t j2=0; j2 < 2; j2++) {
-					vcn_sparse_add
-						(K, mesh->vertices_forming_triangles[id*3+i1]*2 + j1,
-						 mesh->vertices_forming_triangles[id*3+i2]*2 + j2,
-						 Ke[(i1*2+j1)*(2*elem->N_nodes) + (i2*2+j2)]);
-				}
-			}
-		}
-		/* Add to global mass matrix */
-		if (NULL != M) {
-			M[mesh->vertices_forming_triangles[id*3+i1] * 2] += Me[i1 * 2];
-			M[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Me[i1*2+1];
-		}
-		/* Add to global forces vector */
-		F[mesh->vertices_forming_triangles[id*3+i1] * 2] += Fe[i1 * 2];
-		F[mesh->vertices_forming_triangles[id*3+i1]*2+1] += Fe[i1*2+1];
-	}
 	status = 0;
-CLEANUP:
+EXIT:
 	free(dNi_dx);
 	free(dNi_dy);
-	free(Ke);
-	if (NULL != M) 
-		free(Me);
-	free(Fe);
 	return status;
 }
 

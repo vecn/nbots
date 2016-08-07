@@ -16,7 +16,7 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
-#define INPUTS_DIR "../../../../utest/nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D_inputs"
+#define INPUTS_DIR "../../../../utest/nb/pde_bot/static_elasticity2D_inputs"
 
 #define POW2(a) ((a)*(a))
 

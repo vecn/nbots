@@ -27,6 +27,20 @@ vcn_fem_material_t *vcn_fem_material_create(void)
 	return mat;
 }
 
+vcn_fem_material_t *vcn_fem_material_clone(vcn_fem_material_t* mat)
+{
+	vcn_fem_material_t *clone = vcn_fem_material_create();
+	clone->elasticity_module = mat->elasticity_module;
+	clone->poisson_module = mat->poisson_module;
+	clone->density = mat->density;
+	clone->fracture_energy = mat->fracture_energy;
+	clone->traction_limit_stress = mat->traction_limit_stress;
+	clone->compression_limit_stress = mat->compression_limit_stress;
+	clone->damage = mat->damage;
+	clone->r0_damage = mat->r0_damage;
+	return clone;
+}
+
 void vcn_fem_material_destroy(vcn_fem_material_t* mat){
 	free(mat);
 }
