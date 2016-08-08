@@ -1,105 +1,258 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <alloca.h>
 
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/memory_bot.h"
+#include "nb/geometric_bot.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 
+#include "utils.h"
 #include "element_struct.h"
 
-void vcn_fem_interpolate_from_Gauss_points_to_nodes
+#define POW2(a) ((a)*(a))
+
+static int assemble_system(const vcn_msh3trg_t *const mesh, 
+			   const vcn_fem_elem_t *const elem,
+			   uint32_t N_comp,
+			   const double* gp_values,
+			   double *M, double *b);
+
+static int integrate_elemental_system
+		       	(const vcn_fem_elem_t *elem,
+			 uint32_t N_comp, const double *gp_values,
+			 uint32_t id,
+			 const vcn_msh3trg_t *mesh,
+			 double *Me, double *be);
+
+static void sum_gauss_point(const vcn_fem_elem_t *elem,
+			    uint32_t N_comp, const double *gp_values,
+			    uint32_t elem_id, int gp_id,
+			    double detJ,
+			    double *dNi_dx, double *dNi_dy,
+			    double *Me, double *be);
+
+static void add_to_global_system(const vcn_fem_elem_t *elem, 
+				 uint32_t N_comp, uint32_t id,
+				 const vcn_msh3trg_t *mesh,
+				 double *Me, double *be,
+				 double *M, double *b);
+
+static void solve_system(const double *M, const double *b,
+			 double *nodal_values,
+			 uint32_t N_vtx, uint32_t N_comp);
+
+static double get_gp_error(uint32_t id_elem, int id_gp,
+			   uint32_t *conn_mtx,
+			   const vcn_fem_elem_t *const elem,
+			   uint32_t N_comp,
+			   double* gp_values,
+			   double* nodal_values);
+
+int vcn_fem_interpolate_from_gpoints_to_nodes
 		(const vcn_msh3trg_t *const mesh, 
-		 const vcn_fem_elem_t *const elemtype,
-		 uint32_t N_components,
-		 double* values_on_GP_from_elements,
-		 double* values_interpolated_on_nodes /* Output */)
-/* Let j be the elements adjacent to some vertex i.
- * Assuming dj is the distance from the vertex i to
- * the closest Gauss point of the element j.
- * pj is the value in such Gauss point and pi is the
- * interpolated value.
- *
- * Interpolation functions:
- *        ___
- *        \
- *  pi =  /__ wj pj  ,  wj = hj/bi, hj = 1/dj 
- *         j
- *
- *  where wj is the weight of the element j and
- *        ___
- *        \   1 /
- *  bi =  /__  / dk   <---- Normalization term
- *         k
- */
+		 const vcn_fem_elem_t *const elem,
+		 uint32_t N_comp,
+		 const double* gp_values,
+		 double* nodal_values /* Output */)
 {
-	uint32_t N_vertices = mesh->N_vertices;
-	double *vertices = mesh->vertices;
-	uint32_t N_elements = mesh->N_triangles;
-	uint32_t* adj = mesh->vertices_forming_triangles;
+	int status = 1;
+	double* M = calloc(mesh->N_vertices, sizeof(*M));
+	double* b = calloc(N_comp * mesh->N_vertices, sizeof(*b));
+	status = assemble_system(mesh, elem, N_comp,
+				 gp_values, M, b);
 
-	/* Define max number of elements for a single node */
-	uint32_t N_room = 10;
-	/* Allocate structures to store connectivities of nodes */
-	uint32_t vec_size = N_vertices * sizeof(uint32_t);
-	uint32_t total_size = (1 + N_room) * vec_size;
-	char *memblock = calloc(1, total_size);
-	uint32_t* N_elems_adjacents_to_node = (void*) memblock;
-	uint32_t* elems_adjacents_to_node =  (void*) (memblock + vec_size);
+	if (0 != status)
+		goto CLEANUP;
 
-	/* Iterate over elements searching for connectivities */
-	for (uint32_t i = 0; i < N_elements; i++) {
-		/* Iterate over the nodes of the element */
-		for (uint32_t j = 0; j < elemtype->N_nodes; j++){
-			uint32_t vj = adj[i*elemtype->N_nodes + j];
-			elems_adjacents_to_node[vj*N_room + N_elems_adjacents_to_node[vj]] = i;
-			if (N_elems_adjacents_to_node[vj] < N_room - 1)
-				N_elems_adjacents_to_node[vj] += 1;
+	solve_system(M, b, nodal_values, mesh->N_vertices, N_comp);
+
+	status = 0;
+CLEANUP:
+	free(M);
+	free(b);
+	return status;
+}
+
+static int assemble_system(const vcn_msh3trg_t *const mesh, 
+			   const vcn_fem_elem_t *const elem,
+			   uint32_t N_comp,
+			   const double* gp_values,
+			   double *M, double *b)
+{
+	int status = 1;
+	uint32_t N_elem = mesh->N_triangles;
+
+	double* Me = malloc(elem->N_nodes * sizeof(*Me));
+	double* be = malloc(N_comp * elem->N_nodes * sizeof(*be));
+
+	for (uint32_t i = 0; i < N_elem; i++) {
+		status = integrate_elemental_system(elem, N_comp,
+						    gp_values,
+						    i, mesh,
+						    Me, be);
+
+		if (0 != status)
+			goto CLEANUP;
+
+		add_to_global_system(elem, N_comp, i, mesh,
+				     Me, be, M, b);
+	}
+CLEANUP:
+	free(Me);
+	free(be);
+	return status;
+}
+
+static int integrate_elemental_system
+		       	(const vcn_fem_elem_t *elem,
+			 uint32_t N_comp, const double *gp_values,
+			 uint32_t id,
+			 const vcn_msh3trg_t *mesh,
+			 double *Me, double *be)
+{
+	int status = 1;
+
+	memset(Me, 0, elem->N_nodes * sizeof(*Me));
+	memset(be, 0, N_comp * elem->N_nodes * sizeof(*be));
+
+	/* Allocate Cartesian derivatives for each Gauss Point */
+	uint32_t deriv_memsize = elem->N_nodes * sizeof(double);
+	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
+	double *dNi_dx = (void*) (deriv_memblock);
+	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
+
+	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
+		double Jinv[4];
+		double detJ = nb_fem_get_jacobian(elem, id,
+						  mesh, j, Jinv);
+
+		if (nb_fem_elem_is_distorted(detJ))
+			goto EXIT;
+
+		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
+
+		sum_gauss_point(elem, N_comp, gp_values, id, j, detJ,
+				dNi_dx, dNi_dy, Me, be);
+	}
+	status = 0;
+EXIT:
+	NB_SOFT_FREE(2 * deriv_memsize, deriv_memblock);
+	return status;
+}
+
+static void sum_gauss_point(const vcn_fem_elem_t *elem,
+			    uint32_t N_comp, const double *gp_values,
+			    uint32_t elem_id, int gp_id,
+			    double detJ,
+			    double *dNi_dx, double *dNi_dy,
+			    double *Me, double *be)
+{      
+	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+
+		double Ni_eval = elem->Ni[i](elem->psi[gp_id],
+					     elem->eta[gp_id]);
+		for (uint32_t j = 0; j < elem->N_nodes; j++) {
+			double Nj_eval = elem->Ni[j](elem->psi[gp_id],
+						     elem->eta[gp_id]);
+			double integral = Ni_eval * Nj_eval * detJ *
+				elem->gp_weight[gp_id];
+			Me[i] += integral;
+		}
+
+		uint32_t global_gp = elem_id * elem->N_Gauss_points + gp_id;
+		double integral = Ni_eval * detJ * elem->gp_weight[gp_id];
+		for (int c = 0; c < N_comp; c++) {
+			double val = gp_values[global_gp * N_comp + c];
+			be[i * N_comp + c] += val * integral;
 		}
 	}
-	/* Iterate over vertices to interpolate from the Elemental GP */
-	memset(values_interpolated_on_nodes, 0,
-	       N_components * N_vertices * sizeof(double));
-	for (uint32_t i = 0; i < N_vertices; i++){
-		/* Iterate over the elements connected to the vertex */
-		double sum_w = 0;
-		for (uint32_t k = 0; k < N_elems_adjacents_to_node[i]; k++){
-			uint32_t elem_id = elems_adjacents_to_node[i*N_room + k];
-			/* Get ID of the vertex relative to the element */
-			uint32_t inside_idx = 0;
-			while (adj[elem_id * elemtype->N_nodes + inside_idx] != i)
-				inside_idx++;
+}
 
-			/* Get id of the closest GP */
-			uint32_t id_gp =
-				vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node(elemtype,
-										     inside_idx);
+static void add_to_global_system(const vcn_fem_elem_t *elem, 
+				 uint32_t N_comp, uint32_t id,
+				 const vcn_msh3trg_t *mesh,
+				 double *Me, double *be,
+				 double *M, double *b)
+{
+	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+		uint32_t v1 = mesh->vertices_forming_triangles[id*3+i];
+		M[v1] += Me[i];
 
-			/* Get coordinates to the GP */
-			double gp[2] = {0, 0};
-			for (uint32_t j = 0; j < elemtype->N_nodes; j++){
-				uint32_t vj = adj[k * elemtype->N_nodes + j];
-				gp[0] += vertices[vj * 2] *
-					elemtype->Ni[j](elemtype->psi[id_gp], elemtype->eta[id_gp]);
-				gp[1] += vertices[vj*2+1] *
-					elemtype->Ni[j](elemtype->psi[id_gp], elemtype->eta[id_gp]);
-			}
-			/* Compute weight */
-			double wk = 1.0 / vcn_utils2D_get_dist(gp, &(vertices[i*2]));
-			sum_w += wk;
-			/* Interpolate component by component */
-			for (uint32_t c = 0; c < N_components; c++){
-				uint32_t cid = elem_id * elemtype->N_Gauss_points + id_gp;
-				values_interpolated_on_nodes[i * N_components + c] += 
-					wk * values_on_GP_from_elements[cid * N_components + c];
-			}
-      
+		for (int c = 0; c < N_comp; c++)
+			b[v1 * N_comp + c] += be[i * N_comp + c];
+	}
+}
+
+static void solve_system(const double *M, const double *b,
+			 double *nodal_values,
+			 uint32_t N_vtx, uint32_t N_comp)
+{
+	for (uint32_t i = 0; i < N_vtx; i++) {
+		for (uint32_t c = 0; c < N_comp; c++) {
+			uint32_t id = i * N_comp + c;
+			nodal_values[id] = b[id] / M[i];
 		}
-		/* Normalize component by component */
-		for (uint32_t c = 0; c < N_components; c++)
-			values_interpolated_on_nodes[i * N_components + c] /= sum_w;
+	}
+}
+
+void vcn_fem_get_error_on_gpoints(const vcn_msh3trg_t *const mesh,
+				  const vcn_fem_elem_t *const elem,
+				  uint32_t N_comp,
+				  double* gp_values,
+				  double* gp_error)
+{
+	uint32_t N_vtx = mesh->N_vertices;
+	uint32_t N_elem = mesh->N_triangles;
+
+	uint32_t N_gp = elem->N_Gauss_points;
+	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
+
+	/* Interpolate strain to nodes */
+	double* nodal_values = calloc(N_comp * N_vtx, sizeof(double));
+	vcn_fem_interpolate_from_gpoints_to_nodes(mesh, elem,
+						  N_comp, gp_values,
+						  nodal_values);
+
+	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
+
+	for (uint32_t i = 0; i < N_elem; i++) {
+		for (uint32_t j = 0; j < N_gp; j++) {
+			gp_error[i * N_gp + j] = get_gp_error(i, j, conn_mtx,
+							      elem, N_comp,
+							      gp_values,
+							      nodal_values);
+		}
 	}
 
-	free(memblock);
+	/* Free memory */
+	free(nodal_values);
+}
+
+static double get_gp_error(uint32_t id_elem, int id_gp,
+			   uint32_t *conn_mtx,
+			   const vcn_fem_elem_t *const elem,
+			   uint32_t N_comp,
+			   double* gp_values,
+			   double* nodal_values)
+{
+	double *value_gp = alloca(N_comp * sizeof(*value_gp));
+	memset(value_gp, 0, N_comp * sizeof(*value_gp));
+	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+		uint32_t vid = conn_mtx[id_elem * elem->N_nodes + i];
+		double Ni = elem->Ni[i](elem->psi[id_gp],
+					elem->eta[id_gp]);
+		for (int c = 0; c < N_comp; c++)
+			value_gp[c] += Ni * nodal_values[vid * N_comp + c];
+	}
+	uint32_t idx = id_elem * elem->N_Gauss_points + id_gp;
+	double sum = 0.0;
+	double denominator = 0.0;
+	for (int c = 0; c < N_comp; c++) {
+		sum += POW2(gp_values[idx * N_comp + c] - value_gp[c]);
+		denominator += POW2(gp_values[idx * N_comp + c]);
+	}
+	return sqrt(sum / denominator);
 }

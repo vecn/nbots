@@ -11,30 +11,41 @@
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
-#include "nb/pde_bot/boundary_conditions/bcond.h"
-#include "nb/pde_bot/boundary_conditions/bcond_read.h"
-#include "nb/pde_bot/material.h"
-#include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
+#include "nb/pde_bot.h"
 
 #define INPUTS_DIR "../../../../utest/nb/pde_bot/static_elasticity2D_inputs"
 
 #define POW2(a) ((a)*(a))
 
 typedef struct {
+	uint32_t N_vtx;
+	uint32_t N_trg;
 	double *disp;
 	double *strain;
+	double *stress;
 } results_t;
 
 static int suite_init(void);
 static int suite_clean(void);
 
-static void test_static_elasticity2D(void);
+static void test_beam_cantilever(void);
+static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
+				  const results_t *results);
+static void test_plate_with_hole(void);
+static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
+				  const results_t *results);
+static void run_test(const char *problem_data, uint32_t N_vtx,
+		     void (*check_results)(const vcn_msh3trg_t*,
+					   const results_t*));
+static int simulate_fem(const char *problem_data,
+			vcn_msh3trg_t *msh3trg, results_t *results,
+			uint32_t N_vtx);
+static void get_mesh(const vcn_model_t *model, vcn_msh3trg_t *msh3trg,
+		     uint32_t N_vtx);
 
-static void results_init(results_t *results,
-			 const vcn_msh3trg_t *msh3trg);
+static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg);
 static void results_finish(results_t *results);
-static double* get_total_disp(uint32_t N, const double *displacement);
-static int read_initial_conditions
+static int read_problem_data
 		(const char* filename,
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
@@ -51,10 +62,11 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 void cunit_nb_pde_bot_fem_sm_static_elasticity(void)
 {
 	CU_pSuite suite =
-		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/static_elasticity.c",
+		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
+			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "static_elasticity2D()",
-		    test_static_elasticity2D);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -67,8 +79,80 @@ static int suite_clean(void)
 	return 0;
 }
 
-static void test_static_elasticity2D(void)
+
+static void test_beam_cantilever(void)
 {
+	run_test("%s/beam_cantilever.txt", 1000, check_beam_cantilever);
+}
+
+static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
+				  const results_t *results)
+{
+	double max_disp = 0;
+	for (uint32_t i = 0; i < msh3trg->N_vertices; i++) {
+		double disp2 = POW2(results->disp[i * 2]) +
+			POW2(results->disp[i*2+1]);
+		if (max_disp < disp2)
+			max_disp = disp2;
+	}
+	max_disp = sqrt(max_disp);
+	CU_ASSERT(fabs(max_disp - 1.00701e-1) < 1e-6);
+}
+
+
+static void test_plate_with_hole(void)
+{
+	run_test("%s/plate_with_hole.txt", 1500, check_plate_with_hole);
+}
+
+static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
+				  const results_t *results)
+{
+
+	double *vm_stress = malloc(results->N_trg * sizeof(double));
+	double *nodal_vm_stress = malloc(results->N_vtx * sizeof(double));
+
+	vcn_fem_compute_von_mises(results->N_trg, results->stress, vm_stress);
+
+	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);		
+
+	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elemtype,
+						  1, vm_stress,
+						  nodal_vm_stress);	
+	vcn_fem_elem_destroy(elemtype);
+
+	nb_fem_save(msh3trg, nodal_vm_stress,
+		    "../../../fem_plate.png", 1000, 800);/* TEMP */
+
+	CU_ASSERT(true);
+	
+	free(vm_stress);
+	free(nodal_vm_stress);
+}
+
+static void run_test(const char *problem_data, uint32_t N_vtx,
+		     void (*check_results)(const vcn_msh3trg_t*,
+					   const results_t*))
+{
+	results_t results;
+	vcn_msh3trg_t *msh3trg = alloca(vcn_msh3trg_get_memsize());
+	vcn_msh3trg_init(msh3trg);
+
+	int status = simulate_fem(problem_data, msh3trg, &results, N_vtx);
+	
+	CU_ASSERT(0 == status);
+
+	check_results(msh3trg, &results);
+
+	vcn_msh3trg_finish(msh3trg);
+	results_finish(&results);
+}
+
+static int simulate_fem(const char *problem_data,
+			vcn_msh3trg_t *msh3trg, results_t *results,
+			uint32_t N_vtx)
+{
+	int status = 1;
 	vcn_model_t* model = alloca(vcn_model_get_memsize());
 	vcn_model_init(model);
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
@@ -79,38 +163,18 @@ static void test_static_elasticity2D(void)
 	nb_analysis2D_params params2D;
 
 	char input[255];
-	sprintf(input, "%s/beam_cantilever.txt", INPUTS_DIR);
+	sprintf(input, problem_data, INPUTS_DIR);
 	int read_status =
-		read_initial_conditions(input, model, bcond, material,
+		read_problem_data(input, model, bcond, material,
 					&analysis2D, &params2D);
-
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
 
-	/* Mesh domain */
-	uint32_t mesh_memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t* mesh = alloca(mesh_memsize);
-	vcn_mesh_init(mesh);
-	vcn_mesh_set_size_constraint(mesh,
-				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
-				     100);
-	vcn_mesh_set_geometric_constraint(mesh,
-					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
-					  NB_GEOMETRIC_TOL);
-	vcn_mesh_generate_from_model(mesh, model);
+	get_mesh(model, msh3trg, N_vtx);
 
-	uint32_t msh_memsize = vcn_msh3trg_get_memsize();
-	vcn_msh3trg_t *msh3trg = alloca(msh_memsize);
-	vcn_msh3trg_init(msh3trg);
-	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
-
-	vcn_mesh_finish(mesh);
-
-	/* FEM Analysis */
 	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	results_t results;
-	results_init(&results, msh3trg);
+	results_init(results, msh3trg->N_vertices, msh3trg->N_triangles);
 
 	int status_fem =
 		vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype,
@@ -118,44 +182,57 @@ static void test_static_elasticity2D(void)
 						   false, NULL,
 						   analysis2D,
 						   &params2D, NULL,
-						   results.disp, results.strain);
+						   results->disp,
+						   results->strain);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
-	
-	double *total_disp = get_total_disp(msh3trg->N_vertices,
-					    results.disp);
 
-	double max_disp = 0;
-	for (uint32_t i = 0; i < msh3trg->N_vertices; i++) {
-		if (max_disp < total_disp[i])
-			max_disp = total_disp[i];
-	}
-	CU_ASSERT(fabs(max_disp - 1.00708e-1) < 1e-6);
-	
-	free(total_disp);
+	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
+					   elemtype, material,
+					   analysis2D, results->strain, NULL,
+					   results->stress);
+
+	status = 0;
 CLEANUP_FEM:
-	vcn_msh3trg_finish(msh3trg);
 	vcn_fem_elem_destroy(elemtype);
-	results_finish(&results);
 CLEANUP_INPUT:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
 	vcn_fem_material_destroy(material);
+
+	return status;
 }
 
-
-static void results_init(results_t *results,
-			 const vcn_msh3trg_t *msh3trg)
+static void get_mesh(const vcn_model_t *model, vcn_msh3trg_t *msh3trg,
+		     uint32_t N_vtx)
 {
-	uint32_t size_disp = msh3trg->N_vertices * 2 *
-		sizeof(*(results->disp));
-	uint32_t size_strain = msh3trg->N_triangles * 3 *
-		sizeof(*(results->strain));
-	uint32_t total_size = size_disp + size_strain;
+	uint32_t mesh_memsize = vcn_mesh_get_memsize();
+	vcn_mesh_t* mesh = alloca(mesh_memsize);
+	vcn_mesh_init(mesh);
+	vcn_mesh_set_size_constraint(mesh,
+				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+				     N_vtx);
+	vcn_mesh_set_geometric_constraint(mesh,
+					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
+					  NB_GEOMETRIC_TOL);
+	vcn_mesh_generate_from_model(mesh, model);
+
+	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
+	vcn_mesh_finish(mesh);
+}
+
+static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)
+{
+	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
+	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
+	uint32_t total_size = size_disp + 2 * size_strain;
 	char *memblock = malloc(total_size);
 
+	results->N_vtx = N_vtx;
+	results->N_trg = N_trg;
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
+	results->stress = (void*)(memblock + size_disp + size_strain);
 }
 
 static inline void results_finish(results_t *results)
@@ -163,18 +240,7 @@ static inline void results_finish(results_t *results)
 	free(results->disp);
 }
 
-static double* get_total_disp(uint32_t N, const double *displacement)
-{
-	double *total_disp = malloc(N * sizeof(*total_disp));
-	for (uint32_t i = 0; i < N; i++) {
-		total_disp[i] = sqrt(POW2(displacement[i * 2]) +
-				     POW2(displacement[i*2+1]));
-	}
-	
-	return total_disp;	
-}
-
-static int read_initial_conditions
+static int read_problem_data
 		(const char* filename,
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
