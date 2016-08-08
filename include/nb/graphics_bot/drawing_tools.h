@@ -65,7 +65,7 @@ void nb_graphics_set_point(nb_graphics_context_t *g,
 			   float x, float y, float size);
 
 void nb_graphics_set_rectangle(nb_graphics_context_t *g, float x1, float y1,
-				  float x2, float y2);
+			       float w, float h);
 
 void nb_graphics_close_path(nb_graphics_context_t *g);
 

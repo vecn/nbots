@@ -10,6 +10,7 @@
 #define __NB_PDE_BOT_H__
 
 #include "nb/pde_bot/material.h"
+#include "nb/pde_bot/solid_mechanics_formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_read.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"

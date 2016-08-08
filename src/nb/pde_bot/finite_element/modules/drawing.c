@@ -109,6 +109,11 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 			nb_graphics_stroke(g);
 		}
 	}
+
+	nb_graphics_palette_draw(g, palette, width - 100, height - 400,
+				 20, 300, 1.0f,
+				 results[min_id], results[max_id]);
+	nb_graphics_palette_destroy(palette);
 }
 
 static void set_source_trg(nb_graphics_context_t *g,

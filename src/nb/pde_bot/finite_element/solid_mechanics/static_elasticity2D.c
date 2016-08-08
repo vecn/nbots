@@ -12,6 +12,7 @@
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/pde_bot/material.h"
+#include "nb/pde_bot/solid_mechanics_formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
@@ -121,15 +122,14 @@ void vcn_fem_compute_stress_from_strain
 		}
 	}
 }
+
 void vcn_fem_compute_von_mises(uint32_t N,
 			       double *stress,
 			       double *von_mises /* Output */)
 {
 	for (uint32_t i = 0; i < N; i++) {
-		double sx = stress[i * 3];
-		double sy = stress[i*3+1];
-		double sxy = stress[i*3+2];
-		von_mises[i] = sqrt(POW2(sx) + POW2(sy) - sx * sy +
-				    3 * POW2(sxy));
+		von_mises[i] = nb_pde_get_vm_stress(stress[i * 3],
+						    stress[i*3+1],
+						    stress[i*3+2]);
 	}
 }

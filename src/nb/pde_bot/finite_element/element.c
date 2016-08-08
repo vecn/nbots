@@ -32,20 +32,28 @@ void vcn_fem_elem_destroy(vcn_fem_elem_t* elemtype)
 	free(elemtype);
 }
 
-inline uint32_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elemtype)
+uint8_t vcn_fem_elem_get_N_gpoints(const vcn_fem_elem_t *const elemtype)
+{
+	return elemtype->N_Gauss_points;
+}
+
+uint8_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elemtype)
 {
 	return elemtype->N_nodes;
 }
 
-inline double vcn_fem_elem_eval_shape_function
-		(const vcn_fem_elem_t *const elemtype, uint32_t node_id,
+double vcn_fem_elem_eval_shape_function
+		(const vcn_fem_elem_t *const elemtype, uint8_t node_id,
 		 double psi, double eta)
 {
 	return elemtype->Ni[node_id](psi, eta);
 }
 
-inline uint32_t vcn_fem_elem_get_closest_Gauss_Point_to_the_ith_node
-		(const vcn_fem_elem_t *const elemtype, uint32_t i)
+double vcn_fem_elem_eval_shape_function_on_gp
+		(const vcn_fem_elem_t *const elemtype,
+		 uint8_t node_id, uint8_t gp_id)
 {
-	return elemtype->get_closest_GP_to_ith_node(i);
+	double psi = elemtype->psi[gp_id];
+	double eta = elemtype->eta[gp_id];
+	return elemtype->Ni[node_id](psi, eta);
 }

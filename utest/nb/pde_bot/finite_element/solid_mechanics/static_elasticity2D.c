@@ -34,6 +34,15 @@ static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
 static void test_plate_with_hole(void);
 static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 				  const results_t *results);
+static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
+				const vcn_fem_elem_t* elemtype,
+				const double *vm_stress);
+static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
+				 const vcn_msh3trg_t *msh3trg,
+				 const vcn_fem_elem_t* elemtype,
+				 double gp[2]);
+static double get_analytic_vm_stress_pwh(double x, double y);
+
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const vcn_msh3trg_t*,
 					   const results_t*));
@@ -102,7 +111,7 @@ static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1500, check_plate_with_hole);
+	run_test("%s/plate_with_hole.txt", 4000, check_plate_with_hole);
 }
 
 static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
@@ -110,24 +119,81 @@ static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 {
 
 	double *vm_stress = malloc(results->N_trg * sizeof(double));
-	double *nodal_vm_stress = malloc(results->N_vtx * sizeof(double));
+	double *nodal_values = malloc(results->N_vtx * sizeof(double));
 
 	vcn_fem_compute_von_mises(results->N_trg, results->stress, vm_stress);
 
-	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);		
+	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
+
+	double avg_error = get_error_avg_pwh(msh3trg, elemtype, vm_stress);
+	printf("AVG ERROR: %e\n", avg_error);
 
 	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elemtype,
 						  1, vm_stress,
-						  nodal_vm_stress);	
-	vcn_fem_elem_destroy(elemtype);
+						  nodal_values);
 
-	nb_fem_save(msh3trg, nodal_vm_stress,
+	nb_fem_save(msh3trg, nodal_values,
 		    "../../../fem_plate.png", 1000, 800);/* TEMP */
 
 	CU_ASSERT(true);
 	
+	vcn_fem_elem_destroy(elemtype);
 	free(vm_stress);
-	free(nodal_vm_stress);
+	free(nodal_values);
+}
+
+static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
+				const vcn_fem_elem_t* elemtype,
+				const double *vm_stress)
+{
+	double avg = 0;
+	uint32_t N = 0;
+	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elemtype);
+		N += N_gp;
+		for (int8_t p = 0; p < N_gp; p++) {
+			double gp[2];
+			get_cartesian_gpoint(i, p, msh3trg, elemtype, gp);
+			double gp_stress = get_analytic_vm_stress_pwh(gp[0], gp[1]);
+			avg += fabs(1.0 - vm_stress[i * N_gp + p]/gp_stress);
+		}
+	}
+	return avg /= N;
+}
+
+static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
+				 const vcn_msh3trg_t *msh3trg,
+				 const vcn_fem_elem_t* elemtype,
+				 double gp[2])
+{
+	int8_t N = vcn_fem_elem_get_N_nodes(elemtype);
+	gp[0] = 0.0;
+	gp[1] = 0.0;
+	for (int i = 0; i < N; i++) {
+		double Ni = vcn_fem_elem_eval_shape_function_on_gp(elemtype, i, id_gp);
+		uint32_t vi = msh3trg->vertices_forming_triangles[id_elem * N + i];
+		gp[0] += Ni * msh3trg->vertices[vi * 2];
+		gp[1] += Ni * msh3trg->vertices[vi*2+1];
+	}
+}
+
+static double get_analytic_vm_stress_pwh(double x, double y)
+{
+	double a = 0.5;
+	double tx = 1e4;
+	double r = sqrt(POW2(x) + POW2(y));
+	double theta = atan2(y, x);
+	double ar2 = POW2(a/r);
+	double ar4x1p5 = 1.5 * POW2(ar2);
+	double s2t = sin(2.0 * theta);
+	double s4t = sin(4.0 * theta);
+	double c2t = cos(2.0 * theta);
+	double c4t = cos(4.0 * theta);
+	double sx = tx * (1.0 - ar2 * (1.5 * c2t + c4t) + ar4x1p5 * c4t);
+	double sy = tx * (-ar2 * (0.5 * c2t - c4t) - ar4x1p5 * c4t);
+	double sxy = tx * (-ar2 * (0.5 * s2t + s4t) + ar4x1p5 * s4t);
+
+	return nb_pde_get_vm_stress(sx, sy, sxy);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,

@@ -406,12 +406,12 @@ void nb_graphics_set_point(nb_graphics_context_t *g,
 }
 
 void nb_graphics_set_rectangle(nb_graphics_context_t *g, float x1, float y1,
-			       float x2, float y2)
+			       float w, float h)
 {
 	x1 = get_xcam_view(g, x1);
 	y1 = get_ycam_view(g, y1);
-	x2 = get_xcam_view(g, x2);
-	y2 = get_ycam_view(g, y2);
+	float x2 = get_xcam_view(g, x1 + w);
+	float y2 = get_ycam_view(g, y1 + h);
 	g->move_to(g->ctx, x1, y1);
 	g->line_to(g->ctx, x2, y1);
 	g->line_to(g->ctx, x2, y2);
@@ -717,7 +717,7 @@ static nb_graphics_palette_t* palette_get_french(void)
 	return palette;
 }
 
-void nb_graphics_draw_palette(nb_graphics_context_t *g,
+void nb_graphics_palette_draw(nb_graphics_context_t *g,
 			      const nb_graphics_palette_t *const palette,
 			      float x, float y, float w, float h,
 			      float border, float min_v, float max_v)
@@ -728,7 +728,7 @@ void nb_graphics_draw_palette(nb_graphics_context_t *g,
 
 	palette_draw_rectangle(g, palette, x, y, w, h, border);
 	palette_draw_zero_mark(g, palette, x, y, w, h, min_v, max_v);
-	palette_draw_labels(g, 10.0f, x, y, w, h, min_v, max_v);
+	palette_draw_labels(g, 12.0f, x, y, w, h, min_v, max_v);
 
 	if (cam_status)
 		nb_graphics_enable_camera(g);
@@ -780,7 +780,7 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 				float font_size, float x, float y,
 				float w, float h, float min_v, float max_v)
 {
-	nb_graphics_set_font_type(g, "Sans");
+	nb_graphics_set_font_type(g, "FreeSans");
 	nb_graphics_set_font_size(g, font_size);
 	nb_graphics_text_attr_t text_attr;
 	nb_graphics_set_source(g, NB_BLACK);
