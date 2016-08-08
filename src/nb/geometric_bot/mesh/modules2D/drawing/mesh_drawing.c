@@ -94,23 +94,24 @@ static void draw_input_segments(void *const g,
 static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 		      const void *const mesh_ptr)
 {
-	const nb_mesh_t *const mesh = mesh_ptr;
+	if (0 < vcn_mesh_get_N_vtx(mesh_ptr)) {
+		const nb_mesh_t *const mesh = mesh_ptr;
+		double box[4];
+		vcn_utils2D_get_enveloping_box(mesh->N_input_vtx,
+					       mesh->input_vtx,
+					       sizeof(*(mesh->input_vtx)),
+					       msh_vtx_get_x,
+					       msh_vtx_get_y,
+					       box);
 
-	double box[4];
-	vcn_utils2D_get_enveloping_box(mesh->N_input_vtx,
-				       mesh->input_vtx,
-				       sizeof(*(mesh->input_vtx)),
-				       msh_vtx_get_x,
-				       msh_vtx_get_y,
-				       box);
+		nb_graphics_enable_camera(g);
+		nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+		nb_graphics_cam_fit_box(cam, box, width, height);
 
-	nb_graphics_enable_camera(g);
-	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
-	nb_graphics_cam_fit_box(cam, box, width, height);
+		draw_triangles(g, mesh->ht_trg);
 
-	draw_triangles(g, mesh->ht_trg);
-
-	draw_input_segments(g, mesh->N_input_sgm, mesh->input_sgm);
+		draw_input_segments(g, mesh->N_input_sgm, mesh->input_sgm);
+	}
 }
 
 static inline double msh_vtx_get_x(const void *const vtx_ptr)

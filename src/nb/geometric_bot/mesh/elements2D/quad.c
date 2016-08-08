@@ -47,7 +47,7 @@ static void get_quad_matching_vtx(const msh_trg_t *const trg,
 				  const msh_trg_t *const match_trg,
 				  msh_vtx_t *quad_vtx[4]);
 static double get_max_angle_distortion(msh_vtx_t* vtx[4]);
-static void get_angle_vertices(const msh_vtx_t* vtx[4],
+static void get_angle_vertices(msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id);
 static msh_trg_t * get_trg_adj(const msh_trg_t *const trg,
@@ -377,7 +377,7 @@ static void get_quad_matching_vtx(const msh_trg_t *const trg,
 static double get_max_angle_distortion(msh_vtx_t* vtx[4])
 {
 	double max_distortion = 0.0;
-	for (int i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 4; i++) {
 		double a[2], b[2], c[2];
 		get_angle_vertices(vtx, a, b, c, i);
 		double angle = nb_utils2D_get_2vec_angle(a, b, c);
@@ -387,7 +387,7 @@ static double get_max_angle_distortion(msh_vtx_t* vtx[4])
 	return max_distortion;
 }
 
-static void get_angle_vertices(const msh_vtx_t* vtx[4],
+static void get_angle_vertices(msh_vtx_t* vtx[4],
 			       double a[2], double b[2],
 			       double c[2], uint32_t id)
 {
