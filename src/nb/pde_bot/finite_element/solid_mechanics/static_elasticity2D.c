@@ -78,11 +78,7 @@ CLEANUP_LINEAR_SYSTEM:
 }
 
 static int solver(const vcn_sparse_t *const A,
-<<<<<<< HEAD
-			 const double *const b, double* x)
-=======
 		  const double *const b, double* x)
->>>>>>> upgradeFEM
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
