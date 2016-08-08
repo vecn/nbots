@@ -74,8 +74,8 @@ CLEANUP_LINEAR_SYSTEM:
 	return status;
 }
 
-static inline int solver(const vcn_sparse_t *const A,
-			 const double *const b, double* x)
+static int solver(const vcn_sparse_t *const A,
+		  const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
@@ -92,8 +92,7 @@ static inline int solver(const vcn_sparse_t *const A,
 
 void vcn_fem_compute_stress_from_strain
 			(uint32_t N_elements,
-			 uint32_t* elements_connectivity_matrix, 
-			 const vcn_fem_elem_t *const elemtype,
+			 const vcn_fem_elem_t *const elem,
 			 const vcn_fem_material_t *const material,
 			 nb_analysis2D_t analysis2D,
 			 double* strain,
@@ -103,47 +102,27 @@ void vcn_fem_compute_stress_from_strain
 	/* Compute stress from element strain */
 	uint32_t omp_parallel_threads = 1;
 #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
-	for(uint32_t i = 0; i < N_elements; i++){
-		/* Get material properties */
-		double E = vcn_fem_material_get_elasticity_module(material);
+	for (uint32_t i = 0; i < N_elements; i++) {
+		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
+		if (pipeline_elem_is_enabled(elements_enabled, i))
+			pipeline_get_constitutive_matrix(D, material,
+							 analysis2D);
 
-		if(elements_enabled != NULL)
-			if(!elements_enabled[i])
-				E = 0;
-
-		double v = vcn_fem_material_get_poisson_module(material);
-    
-		/* Get constitutive matrix */
-		double d11, d12, d22, d33;
-		if (NB_PLANE_STRESS == analysis2D) {
-			d11 = E / (1.0 - POW2(v));
-			d12 = v * d11;
-			d22 = d11;
-			d33 = E / (2.0 * (1.0 + v));
-		} else if (NB_PLANE_STRAIN == analysis2D) {
-			d11 = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
-			d12 = (v * d11) / (1.0 - v);
-			d22 = d11;
-			d33 = E / (2.0 * (1.0 + v));
-		} else {
-			/* Default: Plane stress */
-			d11 = E / (1.0 - POW2(v));
-			d12 = v * d11;
-			d22 = d11;
-			d33 = E / (2.0 * (1.0 + v));
+		for (int j = 0; j < elem->N_Gauss_points; j++) {
+			uint32_t id = i * elem->N_Gauss_points + j;
+			stress[id * 3] = strain[id * 3] * D[0] +
+				strain[id*3+1] * D[1];
+			stress[id*3+1] = strain[id * 3] * D[1] +
+				strain[id*3+1] * D[2];
+			stress[id*3+2] = strain[id*3+2] * D[3];
 		}
-		/* Calculate stress */
-		stress[i * 3] = strain[i * 3] * d11 + strain[i*3+1] * d12;
-		stress[i*3+1] = strain[i * 3] * d12 + strain[i*3+1] * d22;
-		stress[i*3+2] = strain[i*3+2] * d33;
 	}
 }
-
-void vcn_fem_compute_von_mises(uint32_t N_elements,
+void vcn_fem_compute_von_mises(uint32_t N,
 			       double *stress,
 			       double *von_mises /* Output */)
 {
-	for (uint32_t i = 0; i < N_elements; i++) {
+	for (uint32_t i = 0; i < N; i++) {
 		double sx = stress[i * 3];
 		double sy = stress[i*3+1];
 		double sxy = stress[i*3+2];

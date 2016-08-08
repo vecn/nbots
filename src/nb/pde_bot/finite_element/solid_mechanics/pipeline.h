@@ -7,6 +7,11 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
 
+bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id);
+void pipeline_get_constitutive_matrix(double D[4], 
+				      const vcn_fem_material_t *material,
+				      nb_analysis2D_t analysis2D);
+
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
@@ -23,24 +28,16 @@ void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
 				      double* F, 
 				      const nb_bcond_t *const bcond, 
 				      double factor);
-void pipeline_compute_strain
-			(double *strain,
-			 const vcn_msh3trg_t *const mesh,
-			 double *displacement,
-			 const vcn_fem_elem_t *const elemtype,
-			 nb_analysis2D_t analysis2D,
-			 const vcn_fem_material_t *const material);
+void pipeline_compute_strain(double *strain,
+			     const vcn_msh3trg_t *const mesh,
+			     double *displacement,
+			     const vcn_fem_elem_t *const elemtype,
+			     nb_analysis2D_t analysis2D,
+			     const vcn_fem_material_t *const material);
 
 void pipeline_compute_main_stress(double *stress, 
 				  double *main_stress,
 				  uint32_t N_elements,
 				  const vcn_fem_elem_t *const elemtype);
-
-void pipeline_compute_error_on_elements
-			(double* error,
-			 const vcn_msh3trg_t *const mesh,
-			 double *displacement,
-			 double* strain,
-			 const vcn_fem_elem_t *const elemtype);
 
 #endif

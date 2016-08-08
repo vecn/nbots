@@ -49,17 +49,15 @@
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 3						#
-# Displacement conditions definition            #
-  0 1 0 0                                       #
-  2 0 1 -0.1	      				#
-  3 1 1 0 0                                     #
+ 0						#
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
- 0                                              #
+ 1						#
+ 13 1 0 0					#
 # Num of load conditions over lines:            #
- 0                                              #
+ 1                                              #
+ 12 1 0 1e4                                     #
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
@@ -67,6 +65,12 @@
  0.3						#
 # Elasticity module				#
  10e7	                                        #
+# Fracture energy                               #
+ 0						#
+# Compression limit stress                      #
+ 0						#
+# Traction limit stress                         #
+ 0						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
