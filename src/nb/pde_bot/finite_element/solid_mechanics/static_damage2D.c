@@ -32,7 +32,7 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 			     double *r_damage_prev,
 			     double *r_damage,
 			     double characteristic_length_of_fractured_domain,
-			     bool enable_plane_stress);
+			     nb_analysis2D_t analysis2D);
 /*
 SECOND OPTION
 static double tension_truncated_damage_r0(const vcn_fem_material_t *const mat);
@@ -42,7 +42,7 @@ static double tension_truncated_damage
 			 double *r_damage_prev,
 			 double* r_damage,
 			 double characteristic_length_of_fractured_domain,
-			 bool enable_plane_stress);
+			 nb_analysis2D_t analysis2D);
 */
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
@@ -51,8 +51,8 @@ static void DMG_pipeline_assemble_system
 		 const vcn_fem_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
-		 bool enable_plane_stress,
-		 double thickness,
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
 		 bool enable_computing_damage,
 		 double* damage_elem,
 		 bool* elements_enabled /* NULL to enable all */);
@@ -63,7 +63,7 @@ static void DMG_pipeline_compute_strain
 			 double *displacement,
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
-			 bool enable_plane_stress,
+			 nb_analysis2D_t analysis2D,
 			 const vcn_fem_material_t *const material,
 			 double *damage,
 			 double *r_dmg_prev,
@@ -130,30 +130,19 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 			     double *r_damage_prev,
 			     double *r_damage,
 			     double characteristic_length_of_fractured_domain,
-			     bool enable_plane_stress)
+			     nb_analysis2D_t analysis2D)
 {
-	/* Material properties */
+	double D[4];
+	pipeline_get_constitutive_matrix(D, mat, analysis2D);
 	double E = vcn_fem_material_get_elasticity_module(mat);
-	double v = vcn_fem_material_get_poisson_module(mat);
 	double Gf = vcn_fem_material_get_fracture_energy(mat);
 	double ft = vcn_fem_material_get_traction_limit_stress(mat);
 
-	/* Get constitutive matrix */
-	double d11 = E/(1.0 - POW2(v));
-	double d12 = v*d11;
-    
-	if(!enable_plane_stress){
-		d11 = (E*(1.0-v))/((1.0 + v)*(1.0-2*v));
-		d12 = (v*d11)/(1.0-v);
-	}    
-	double d22 = d11;
-	double d33 = E/(2.0*(1.0+v));
-
 	/* Compute effective stress */
 	double effective_stress[3];
-	effective_stress[0] = d11 * strain[0] + d12 * strain[1];
-	effective_stress[1] = d12 * strain[0] + d22 * strain[1];
-	effective_stress[2] = d33 * strain[2];
+	effective_stress[0] = D[0] * strain[0] + D[1] * strain[1];
+	effective_stress[1] = D[1] * strain[0] + D[2] * strain[1];
+	effective_stress[2] = D[3] * strain[2];
 
 	/* Compute principal stress using Mohr's circle */
 	double sigma_avg = 0.5 * (effective_stress[0] + effective_stress[1]);
@@ -164,10 +153,10 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 	double positive_stress2 = MAX(0, sigma_avg - R);
 
 	/* Compute inverse of D */
-	double detD2x2 = d11*d22 - d12*d12;
-	double id11 =  d22/detD2x2;
-	double id12 = -d12/detD2x2;
-	double id22 =  d11/detD2x2;
+	double detD2x2 = D[0]*D[2] - D[1]*D[1];
+	double id11 =  D[2]/detD2x2;
+	double id12 = -D[1]/detD2x2;
+	double id22 =  D[0]/detD2x2;
 	/* Compute stress ^T strain */
 	double sTs =
 		id11 * POW2(positive_stress1) + 
@@ -201,30 +190,19 @@ static double tension_truncated_damage
 			 double *r_damage_prev,
 			 double* r_damage,
 			 double characteristic_length_of_fractured_domain,
-			 bool enable_plane_stress)
+			 nb_analysis2D_t analysis2D)
 {
-// Material properties
+	double D[4];
+	pipeline_get_constitutive_matrix(D, mat, analysis2D);
 	double E = vcn_fem_material_get_elasticity_module(mat);
-	double v = vcn_fem_material_get_poisson_module(mat);
 	double Gf = vcn_fem_material_get_fracture_energy(mat);
 	double ft = vcn_fem_material_get_traction_limit_stress(mat);
 
-// Get constitutive matrix
-	double d11 = E/(1.0 - POW2(v));
-	double d12 = v*d11;
-    
-	if(!enable_plane_stress){
-		d11 = (E*(1.0-v))/((1.0 + v)*(1.0-2*v));
-		d12 = (v*d11)/(1.0-v);
-	}    
-	double d22 = d11;
-	double d33 = E/(2.0*(1.0+v));
-
 // Compute effective stress
 	double effective_stress[3];
-	effective_stress[0] = d11 * strain[0] + d12 * strain[1];
-	effective_stress[1] = d12 * strain[0] + d22 * strain[1];
-	effective_stress[2] = d33 * strain[2] * 0.5;
+	effective_stress[0] = D[0] * strain[0] + D[1] * strain[1];
+	effective_stress[1] = D[1] * strain[0] + D[2] * strain[1];
+	effective_stress[2] = D[3] * strain[2] * 0.5;
 
 // Compute principal stress using Mohr's circle
 	double sigma_avg = 0.5 * (effective_stress[0] + effective_stress[1]);
@@ -267,8 +245,6 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 const char* logfile)
 /* Quasistatic formulation */
 {
-	bool enable_plane_stress = (NB_PLANE_STRESS == analysis2D);
-
 	uint32_t N_vertices = mesh->N_vertices;
 	uint32_t N_elements = mesh->N_triangles;
 	double* vertices = mesh->vertices;
@@ -347,8 +323,8 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 						     material,
 						     enable_self_weight,
 						     gravity,
-						     enable_plane_stress,
-						     params2D->thickness,
+						     analysis2D,
+						     params2D,
 						     true, /* Enable computing damage */
 						     damage,
 						     NULL);
@@ -460,7 +436,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/***** > Compute Strain and Damage      *******/
 			/**********************************************/
 			DMG_pipeline_compute_strain(strain, mesh, displacement, elem, true,
-						    enable_plane_stress,
+						    analysis2D,
 						    material, damage,
 						    r_dmg_prev, r_dmg);
 
@@ -502,8 +478,8 @@ static void DMG_pipeline_assemble_system
 		 const vcn_fem_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
-		 bool enable_plane_stress,
-		 double thickness,
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
 		 bool enable_computing_damage,
 		 double* damage_elem,
 		 bool* elements_enabled /* NULL to enable all */)
@@ -524,35 +500,16 @@ static void DMG_pipeline_assemble_system
 	double* Fe = (double*)
 		malloc(2 * N_nodes * sizeof(double));
 
-	if (!enable_plane_stress)
-		thickness = 1.0;
-
 	/* Assembly global system */
 	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elements; k++) {
-		/* Get material properties */
+		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = vcn_fem_material_get_density(material);
-		double E = vcn_fem_material_get_elasticity_module(material);
-
-		if (elements_enabled != NULL) {
-			if (!elements_enabled[k]) {
-				E *= 1e-6;
-				density *= 1e-6;
-			}
+		if (pipeline_elem_is_enabled(elements_enabled, k)) {
+			pipeline_get_constitutive_matrix(D, material,
+							 analysis2D);
+			density = 1e-6;
 		}
-
-		double v = vcn_fem_material_get_poisson_module(material);
-    
-		/* Get constitutive matrix */
-		double d11 = E/(1.0 - POW2(v));
-		double d12 = v*d11;
-    
-		if(!enable_plane_stress){
-			d11 = (E*(1.0-v))/((1.0 + v)*(1.0-2*v));
-			d12 = (v*d11)/(1.0-v);
-		}    
-		double d22 = d11;
-		double d33 = E/(2.0*(1.0+v));
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
 		double* dNi_dx = malloc(N_nodes * sizeof(double));
@@ -562,8 +519,8 @@ static void DMG_pipeline_assemble_system
 		double fx = 0.0;
 		double fy = 0.0;
 		if(enable_self_weight){
-			fx = gravity[0] * vcn_fem_material_get_density(material);
-			fy = gravity[1] * vcn_fem_material_get_density(material);
+			fx = gravity[0] * density;
+			fy = gravity[1] * density;
 		}
     
 		/* Integrate Ke and Fe using Gauss quadrature */
@@ -575,7 +532,8 @@ static void DMG_pipeline_assemble_system
 		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 		for (uint32_t j = 0; j < N_gp; j++) {
 			/* Get constitutive model */
-			double Dr[4] = {d11, d12, d22, d33};      
+			double Dr[4];
+			memcpy(Dr, D, 4 * sizeof(double));
 			if (enable_computing_damage) {
 				Dr[0] *= (1.0 - damage_elem[k * N_gp + j]);
 				Dr[1] *= (1.0 - damage_elem[k * N_gp + j]);
@@ -592,6 +550,7 @@ static void DMG_pipeline_assemble_system
 
 			nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
 
+			double thickness = params2D->thickness;
 			pipeline_sum_gauss_point(elem, j, Dr, density, thickness,
 						 detJ, dNi_dx, dNi_dy, fx, fy,
 						 Ke, Me, Fe);
@@ -617,7 +576,7 @@ static void DMG_pipeline_compute_strain
 			 double *displacement,
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
-			 bool enable_plane_stress,
+			 nb_analysis2D_t analysis2D,
 			 const vcn_fem_material_t *const material,
 			 double *damage,
 			 double *r_dmg_prev,
@@ -678,7 +637,7 @@ static void DMG_pipeline_compute_strain
 						       &(r_dmg_prev[idx]),
 						       &(r_dmg[idx]),
 						       clfd,
-						       enable_plane_stress);
+						       analysis2D);
 			}
 		}
 		free(dNi_dx);
