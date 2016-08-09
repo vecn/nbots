@@ -11,7 +11,16 @@ bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id);
 void pipeline_get_constitutive_matrix(double D[4], 
 				      const vcn_fem_material_t *material,
 				      nb_analysis2D_t analysis2D);
-
+void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+			      double D[4], double density,
+			      double thickness, double detJ,
+			      double *dNi_dx, double *dNi_dy,
+			      double fx, double fy,
+			      double *Ke, double *Me, double *Fe);
+void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+				   const vcn_msh3trg_t *mesh,
+				   double *Ke, double *Me, double *Fe,
+				   vcn_sparse_t *K, double *M, double *F);
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,

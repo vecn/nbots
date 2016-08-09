@@ -4,9 +4,7 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/finite_element/element.h"
 
-
 #include "utils.h"
-#include "element_struct.h"
 
 double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
 			     const vcn_msh3trg_t *mesh, int gp_id,
@@ -19,18 +17,18 @@ double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
 	double dy_dpsi = 0.0;
 	double dx_deta = 0.0;
 	double dy_deta = 0.0;
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
-		uint32_t inode = conn_mtx[id * elem->N_nodes + i];
+
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		uint32_t inode = conn_mtx[id * N_nodes + i];
 		double xi = mesh->vertices[inode * 2];
 		double yi = mesh->vertices[inode*2+1];
-		dx_dpsi += elem->dNi_dpsi[i](elem->psi[gp_id],
-					     elem->eta[gp_id]) * xi;
-		dx_deta += elem->dNi_deta[i](elem->psi[gp_id],
-					     elem->eta[gp_id]) * xi;
-		dy_dpsi += elem->dNi_dpsi[i](elem->psi[gp_id],
-					     elem->eta[gp_id]) * yi;
-		dy_deta += elem->dNi_deta[i](elem->psi[gp_id],
-					     elem->eta[gp_id]) * yi;
+		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
+		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
+		dx_dpsi += dNi_dpsi * xi;
+		dx_deta += dNi_deta * xi;
+		dy_dpsi += dNi_dpsi * yi;
+		dy_deta += dNi_deta * yi;
 	}
 
 	/* Compute Jacobian inverse and determinant */
@@ -54,14 +52,11 @@ void nb_fem_get_derivatives(const vcn_fem_elem_t *elem,
 			      int gp_id, double Jinv[4],
 			      double *dNi_dx, double *dNi_dy)
 {
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
-		dNi_dx[i] = Jinv[0]*elem->dNi_dpsi[i](elem->psi[gp_id],
-						      elem->eta[gp_id]) + 
-			Jinv[1]*elem->dNi_deta[i](elem->psi[gp_id],
-						  elem->eta[gp_id]);
-		dNi_dy[i] = Jinv[2]*elem->dNi_dpsi[i](elem->psi[gp_id],
-						      elem->eta[gp_id]) + 
-			Jinv[3]*elem->dNi_deta[i](elem->psi[gp_id],
-						  elem->eta[gp_id]);
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint8_t i = 0; i < N_nodes; i++) {
+		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
+		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
+		dNi_dx[i] = Jinv[0] * dNi_dpsi + Jinv[1] * dNi_deta;
+		dNi_dy[i] = Jinv[2] * dNi_dpsi + Jinv[3] * dNi_deta;
 	}
 }

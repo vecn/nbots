@@ -10,7 +10,6 @@
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 
 #include "utils.h"
-#include "element_struct.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -83,10 +82,16 @@ static int assemble_system(const vcn_msh3trg_t *const mesh,
 			   double *M, double *b)
 {
 	int status = 1;
+
 	uint32_t N_elem = mesh->N_triangles;
 
-	double* Me = malloc(elem->N_nodes * sizeof(*Me));
-	double* be = malloc(N_comp * elem->N_nodes * sizeof(*be));
+	uint8_t N_nodes_x_elem = vcn_fem_elem_get_N_nodes(elem);
+	
+	uint16_t nodes_size = N_nodes_x_elem * sizeof(double);
+	uint32_t memsize = (1 + N_comp) * nodes_size;
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double* Me = (void*) memblock;
+	double* be = (void*) (memblock + nodes_size);
 
 	for (uint32_t i = 0; i < N_elem; i++) {
 		status = integrate_elemental_system(elem, N_comp,
@@ -95,14 +100,13 @@ static int assemble_system(const vcn_msh3trg_t *const mesh,
 						    Me, be);
 
 		if (0 != status)
-			goto CLEANUP;
+			goto EXIT;
 
 		add_to_global_system(elem, N_comp, i, mesh,
 				     Me, be, M, b);
 	}
-CLEANUP:
-	free(Me);
-	free(be);
+EXIT:
+	NB_SOFT_FREE(memsize, memblock);
 	return status;
 }
 
@@ -115,16 +119,18 @@ static int integrate_elemental_system
 {
 	int status = 1;
 
-	memset(Me, 0, elem->N_nodes * sizeof(*Me));
-	memset(be, 0, N_comp * elem->N_nodes * sizeof(*be));
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	memset(Me, 0, N_nodes * sizeof(*Me));
+	memset(be, 0, N_comp * N_nodes * sizeof(*be));
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
-	uint32_t deriv_memsize = elem->N_nodes * sizeof(double);
+	uint32_t deriv_memsize = N_nodes * sizeof(double);
 	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
-	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id,
 						  mesh, j, Jinv);
@@ -149,21 +155,20 @@ static void sum_gauss_point(const vcn_fem_elem_t *elem,
 			    double detJ,
 			    double *dNi_dx, double *dNi_dy,
 			    double *Me, double *be)
-{      
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
-
-		double Ni_eval = elem->Ni[i](elem->psi[gp_id],
-					     elem->eta[gp_id]);
-		for (uint32_t j = 0; j < elem->N_nodes; j++) {
-			double Nj_eval = elem->Ni[j](elem->psi[gp_id],
-						     elem->eta[gp_id]);
-			double integral = Ni_eval * Nj_eval * detJ *
-				elem->gp_weight[gp_id];
+{
+	double wp = vcn_fem_elem_weight_gp(elem, gp_id);
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint8_t i = 0; i < N_nodes; i++) {
+		double Ni = vcn_fem_elem_Ni(elem, i, gp_id);
+		for (uint32_t j = 0; j < N_nodes; j++) {
+			double Nj = vcn_fem_elem_Ni(elem, j, gp_id);
+			double integral = Ni * Nj * detJ * wp;
 			Me[i] += integral;
 		}
 
-		uint32_t global_gp = elem_id * elem->N_Gauss_points + gp_id;
-		double integral = Ni_eval * detJ * elem->gp_weight[gp_id];
+		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+		uint32_t global_gp = elem_id * N_gp + gp_id;
+		double integral = Ni * detJ * wp;
 		for (int c = 0; c < N_comp; c++) {
 			double val = gp_values[global_gp * N_comp + c];
 			be[i * N_comp + c] += val * integral;
@@ -177,7 +182,8 @@ static void add_to_global_system(const vcn_fem_elem_t *elem,
 				 double *Me, double *be,
 				 double *M, double *b)
 {
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t v1 = mesh->vertices_forming_triangles[id*3+i];
 		M[v1] += Me[i];
 
@@ -207,7 +213,7 @@ void vcn_fem_get_error_on_gpoints(const vcn_msh3trg_t *const mesh,
 	uint32_t N_vtx = mesh->N_vertices;
 	uint32_t N_elem = mesh->N_triangles;
 
-	uint32_t N_gp = elem->N_Gauss_points;
+	uint32_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
 
 	/* Interpolate strain to nodes */
@@ -240,19 +246,25 @@ static double get_gp_error(uint32_t id_elem, int id_gp,
 {
 	double *value_gp = alloca(N_comp * sizeof(*value_gp));
 	memset(value_gp, 0, N_comp * sizeof(*value_gp));
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
-		uint32_t vid = conn_mtx[id_elem * elem->N_nodes + i];
-		double Ni = elem->Ni[i](elem->psi[id_gp],
-					elem->eta[id_gp]);
+
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		uint32_t vid = conn_mtx[id_elem * N_nodes + i];
+		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
 		for (int c = 0; c < N_comp; c++)
 			value_gp[c] += Ni * nodal_values[vid * N_comp + c];
 	}
-	uint32_t idx = id_elem * elem->N_Gauss_points + id_gp;
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint32_t idx = id_elem * N_gp + id_gp;
 	double sum = 0.0;
-	double denominator = 0.0;
 	for (int c = 0; c < N_comp; c++) {
-		sum += POW2(gp_values[idx * N_comp + c] - value_gp[c]);
-		denominator += POW2(gp_values[idx * N_comp + c]);
+		double real_value = gp_values[idx * N_comp + c];
+		double error;
+		if (fabs(real_value) > 1e-10) 
+			error = fabs(1.0 - value_gp[c]/real_value);
+		else
+			error = fabs(value_gp[c]);
+		sum += POW2(error);
 	}
-	return sqrt(sum / denominator);
+	return sqrt(sum);
 }

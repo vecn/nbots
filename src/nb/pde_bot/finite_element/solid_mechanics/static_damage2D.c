@@ -13,7 +13,7 @@
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
   
-#include "../element_struct.h"
+#include "../utils.h"
 #include "pipeline.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -47,7 +47,7 @@ static double tension_truncated_damage
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
-		 const vcn_fem_elem_t *const elemtype,
+		 const vcn_fem_elem_t *const elem,
 		 const vcn_fem_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
@@ -61,7 +61,7 @@ static void DMG_pipeline_compute_strain
 			(double *strain,
 			 const vcn_msh3trg_t *const mesh,
 			 double *displacement,
-			 const vcn_fem_elem_t *const elemtype,
+			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
 			 bool enable_plane_stress,
 			 const vcn_fem_material_t *const material,
@@ -254,7 +254,7 @@ static double tension_truncated_damage
 
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
-			 const vcn_fem_elem_t *const elemtype,
+			 const vcn_fem_elem_t *const elem,
 			 const vcn_fem_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
@@ -267,7 +267,6 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 const char* logfile)
 /* Quasistatic formulation */
 {
-	/* REFACTOR: */
 	bool enable_plane_stress = (NB_PLANE_STRESS == analysis2D);
 
 	uint32_t N_vertices = mesh->N_vertices;
@@ -283,7 +282,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
   
 	uint32_t N_system_size = N_vertices * 2;
 
-	uint32_t N_gp = elemtype->N_Gauss_points;
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
@@ -344,7 +343,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/**************************************************/
 			DMG_pipeline_assemble_system(K, NULL, F,
 						     mesh,
-						     elemtype,
+						     elem,
 						     material,
 						     enable_self_weight,
 						     gravity,
@@ -460,7 +459,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/**********************************************/
 			/***** > Compute Strain and Damage      *******/
 			/**********************************************/
-			DMG_pipeline_compute_strain(strain, mesh, displacement, elemtype, true,
+			DMG_pipeline_compute_strain(strain, mesh, displacement, elem, true,
 						    enable_plane_stress,
 						    material, damage,
 						    r_dmg_prev, r_dmg);
@@ -499,7 +498,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
-		 const vcn_fem_elem_t *const elemtype,
+		 const vcn_fem_elem_t *const elem,
 		 const vcn_fem_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
@@ -515,27 +514,28 @@ static void DMG_pipeline_assemble_system
 	if (NULL != M)
 		memset(M, 0, vcn_sparse_get_size(K) * sizeof(double));
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(double));
+
 	/* Allocate elemental Stiffness Matrix and Force Vector */
-	double* Ke = (double*)malloc(4 * elemtype->N_nodes * elemtype->N_nodes *
-				     sizeof(double));
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	double* Ke = (double*)malloc(4 * POW2(N_nodes) * sizeof(double));
 	double* Me = NULL;
 	if(M != NULL)
-		Me = (double*)malloc(2 * elemtype->N_nodes*sizeof(double));
+		Me = (double*)malloc(2 * N_nodes * sizeof(double));
 	double* Fe = (double*)
-		malloc(2 * elemtype->N_nodes*sizeof(double));
+		malloc(2 * N_nodes * sizeof(double));
 
 	if (!enable_plane_stress)
 		thickness = 1.0;
 
 	/* Assembly global system */
 	uint32_t N_negative_jacobians = 0;
-	for(uint32_t k=0; k < N_elements; k++){
+	for (uint32_t k = 0; k < N_elements; k++) {
 		/* Get material properties */
 		double density = vcn_fem_material_get_density(material);
 		double E = vcn_fem_material_get_elasticity_module(material);
 
-		if(elements_enabled != NULL){
-			if(!elements_enabled[k]){
+		if (elements_enabled != NULL) {
+			if (!elements_enabled[k]) {
 				E *= 1e-6;
 				density *= 1e-6;
 			}
@@ -555,8 +555,9 @@ static void DMG_pipeline_assemble_system
 		double d33 = E/(2.0*(1.0+v));
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
-		double* dNi_dx = (double*)malloc(elemtype->N_nodes*sizeof(double));
-		double* dNi_dy = (double*)malloc(elemtype->N_nodes*sizeof(double));
+		double* dNi_dx = malloc(N_nodes * sizeof(double));
+		double* dNi_dy = malloc(N_nodes * sizeof(double));
+
 		/* Compute constitutive matrix */
 		double fx = 0.0;
 		double fy = 0.0;
@@ -566,138 +567,43 @@ static void DMG_pipeline_assemble_system
 		}
     
 		/* Integrate Ke and Fe using Gauss quadrature */
-		memset(Ke, 0, 4 * elemtype->N_nodes * elemtype->N_nodes *
-		       sizeof(double));
+		memset(Ke, 0, 4 * POW2(N_nodes) * sizeof(double));
 		if(M != NULL) 
-			memset(Me, 0, 2 * elemtype->N_nodes * sizeof(double));
-		memset(Fe, 0, 2 * elemtype->N_nodes * sizeof(double));
-		for(uint32_t j=0; j < elemtype->N_Gauss_points; j++){      
+			memset(Me, 0, 2 * N_nodes * sizeof(double));
+		memset(Fe, 0, 2 * N_nodes * sizeof(double));
+
+		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+		for (uint32_t j = 0; j < N_gp; j++) {
 			/* Get constitutive model */
-			double dd11  = d11;
-			double dd12  = d12;
-			double dd22  = d22;
-			double dd33  = d33;
-      
-			if(enable_computing_damage){
-				dd11 *= (1.0 - damage_elem[k*elemtype->N_Gauss_points + j]);
-				dd12 *= (1.0 - damage_elem[k*elemtype->N_Gauss_points + j]);
-				dd22 *= (1.0 - damage_elem[k*elemtype->N_Gauss_points + j]);
-				dd33 *= (1.0 - damage_elem[k*elemtype->N_Gauss_points + j]);
+			double Dr[4] = {d11, d12, d22, d33};      
+			if (enable_computing_damage) {
+				Dr[0] *= (1.0 - damage_elem[k * N_gp + j]);
+				Dr[1] *= (1.0 - damage_elem[k * N_gp + j]);
+				Dr[2] *= (1.0 - damage_elem[k * N_gp + j]);
+				Dr[3] *= (1.0 - damage_elem[k * N_gp + j]);
 			}
 
 			/* Compute Jacobian derivatives */
-			double dx_dpsi = 0.0;
-			double dy_dpsi = 0.0;
-			double dx_deta = 0.0;
-			double dy_deta = 0.0;
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
-				uint32_t inode = mesh->vertices_forming_triangles[k * elemtype->N_nodes + i];
-				double xi = mesh->vertices[inode * 2];
-				double yi = mesh->vertices[inode*2+1];
-				dx_dpsi += 
-					elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) * xi;
-				dx_deta +=
-					elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]) * xi;
-				dy_dpsi += 
-					elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) * yi;
-				dy_deta +=
-					elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]) * yi;
-			}
-
-			/* Compute Jacobian inverse and determinant */
-			double detJ = dx_dpsi*dy_deta - dy_dpsi*dx_deta;
-			/* Check if the element is distorted */
-			if(detJ < 0) N_negative_jacobians += 1;
-      
 			double Jinv[4];
-			Jinv[0] =  dy_deta/detJ;
-			Jinv[1] = -dy_dpsi/detJ;
-			Jinv[2] = -dx_deta/detJ;
-			Jinv[3] =  dx_dpsi/detJ;
-      
-			/* Compute Shape functions derivatives in cartesian space */ 
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
-				dNi_dx[i] = 
-					Jinv[0]*elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) + 
-					Jinv[1]*elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]);
-				dNi_dy[i] = 
-					Jinv[2]*elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) + 
-					Jinv[3]*elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]);
-			}
-			/* Compute elemental stiffness matrix
-			 *       _            _         _           _        _  _
-			 *      |dNi/dx        |       | d11 d12     |      |  |
-			 * Bi = |       dNi/dy |   D = | d21 d22     |  K = |  | B'DB dx dy
-			 *      |dNi/dy dNi/dx_|       |_        d33_|     _| _|
+			double detJ = nb_fem_get_jacobian(elem, k, mesh, j, Jinv);
 
-			 * B  = [B1 B2...Bi... Belemtype->N_nodes]
-			 *
-			 */
-      
-			for(uint32_t i1 = 0; i1 < elemtype->N_nodes; i1++){	
-				for(uint32_t i2 = 0; i2 < elemtype->N_nodes; i2++){
-					/*  Integrating elemental siffness matrix */
-					Ke[(i1 * 2)*(2*elemtype->N_nodes) + (i2 * 2)] += 
-						(dNi_dx[i1]*dNi_dx[i2]*dd11 + dNi_dy[i1]*dNi_dy[i2]*dd33) *
-						detJ * thickness * elemtype->gp_weight[j];
-					Ke[(i1 * 2)*(2*elemtype->N_nodes) + (i2*2+1)] +=
-						(dNi_dx[i1]*dNi_dy[i2]*dd12 + dNi_dy[i1]*dNi_dx[i2]*dd33) *
-						detJ * thickness * elemtype->gp_weight[j];
-					Ke[(i1*2+1)*(2*elemtype->N_nodes) + (i2 * 2)] +=
-						(dNi_dy[i1]*dNi_dx[i2]*dd12 + dNi_dx[i1]*dNi_dy[i2]*dd33) *
-						detJ * thickness * elemtype->gp_weight[j];
-					Ke[(i1*2+1)*(2*elemtype->N_nodes) + (i2*2+1)] +=
-						(dNi_dy[i1]*dNi_dy[i2]*dd22 + dNi_dx[i1]*dNi_dx[i2]*dd33) *
-						detJ * thickness * elemtype->gp_weight[j];
-				}
-				/* Calculate shape function of the i-th node at the j-th gauss point */
-				double Ni_eval = 
-					elemtype->Ni[i1](elemtype->psi[j], elemtype->eta[j]);
-				/*  Integrating elemental mass matrix */
-				if(M != NULL){
-					/* OPPORTUNITY: Allocate just one for each component */
-					Me[i1 * 2] += Ni_eval * Ni_eval * density *
-						detJ * thickness * elemtype->gp_weight[j];
-					Me[i1*2+1] += Ni_eval * Ni_eval * density * 
-						detJ * thickness * elemtype->gp_weight[j];
-				}
-				/* Compute elemental forces vector */
-				/* OPPORTUNITY: Allocate just one for each component */
-				Fe[i1 * 2] += Ni_eval * fx * detJ * 
-					thickness * elemtype->gp_weight[j];
-				Fe[i1*2+1] += Ni_eval * fy * detJ * 
-					thickness * elemtype->gp_weight[j];
-			}
-		}
-		/* Add to global stiffness matrix */
-		for(uint32_t i1 = 0; i1 < elemtype->N_nodes; i1++){
-			for(uint32_t i2 = 0; i2 < elemtype->N_nodes; i2++){
+			if (0 > detJ)
+				goto EXIT;
 
-				for(uint8_t j1=0; j1 < 2; j1++){
-					for(uint8_t j2=0; j2 < 2; j2++){
-						vcn_sparse_add
-							(K, mesh->vertices_forming_triangles[k*3+i1]*2 + j1,
-							 mesh->vertices_forming_triangles[k*3+i2]*2 + j2,
-							 Ke[(i1*2+j1)*(2*elemtype->N_nodes) + (i2*2+j2)]);
-					}
-				}
-			}
-			/* Add to global mass matrix */
-			if (M != NULL) {
-				M[mesh->vertices_forming_triangles[k*3+i1] * 2] += Me[i1 * 2];
-				M[mesh->vertices_forming_triangles[k*3+i1]*2+1] += Me[i1*2+1];
-			}
-			/* Add to global forces vector */
-			F[mesh->vertices_forming_triangles[k*3+i1] * 2] += Fe[i1 * 2];
-			F[mesh->vertices_forming_triangles[k*3+i1]*2+1] += Fe[i1*2+1];
+			nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
+
+			pipeline_sum_gauss_point(elem, j, Dr, density, thickness,
+						 detJ, dNi_dx, dNi_dy, fx, fy,
+						 Ke, Me, Fe);
 		}
+
+		pipeline_add_to_global_system(elem, k, mesh, Ke, Me, Fe,
+					      K, M, F);
+
 		free(dNi_dx);
 		free(dNi_dy);
 	}
-	if (N_negative_jacobians > 0)
-		/* OPPORTUNITY: Send to logfile */
-		printf("ERROR: There are %i negative Jacobians.\n", N_negative_jacobians);
-
+ EXIT:
 	/* Free elemental stiffness matrix and force vector */
 	free(Ke);
 	if (M != NULL) 
@@ -709,7 +615,7 @@ static void DMG_pipeline_compute_strain
 			(double *strain,
 			 const vcn_msh3trg_t *const mesh,
 			 double *displacement,
-			 const vcn_fem_elem_t *const elemtype,
+			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
 			 bool enable_plane_stress,
 			 const vcn_fem_material_t *const material,
@@ -717,90 +623,67 @@ static void DMG_pipeline_compute_strain
 			 double *r_dmg_prev,
 			 double *r_dmg)
 {
-	double *vertices = (double*) mesh->vertices;
+	double *vertices = mesh->vertices;
 	uint32_t N_elements = mesh->N_triangles;
-	uint32_t *connectivity_mtx = (uint32_t*) mesh->vertices_forming_triangles;
+	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
 
 	/* Initialize strains */
-	memset(strain, 0, 3 * elemtype->N_Gauss_points * N_elements * sizeof(double));
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	memset(strain, 0, 3 * N_gp * N_elements * sizeof(double));
 
 	/* Iterate over elements to compute strain, stress and damage at nodes */
-	for(uint32_t k=0; k < N_elements; k++){
-		double* dNi_dx = (double*)malloc(elemtype->N_nodes*sizeof(double));
-		double* dNi_dy = (double*)malloc(elemtype->N_nodes*sizeof(double));
+	for (uint32_t k = 0 ; k < N_elements; k++) {
+		uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+		double* dNi_dx = malloc(N_nodes * sizeof(double));
+		double* dNi_dy = malloc(N_nodes * sizeof(double));
 
 		/* Integrate domain */
-		for(uint32_t j=0; j < elemtype->N_Gauss_points; j++){
-			uint32_t idx = k * elemtype->N_Gauss_points + j;
-
-			/* Compute Jacobian derivatives */
-			double dx_dpsi = 0.0;
-			double dy_dpsi = 0.0;
-			double dx_deta = 0.0;
-			double dy_deta = 0.0;
-
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
-				uint32_t inode = connectivity_mtx[k * elemtype->N_nodes + i];
-				double xi = vertices[inode * 2];
-				double yi = vertices[inode*2+1];
-				dx_dpsi += 
-					elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) * xi;
-				dx_deta += 
-					elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]) * xi;
-				dy_dpsi +=
-					elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) * yi;
-				dy_deta +=
-					elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]) * yi;
-			}
-      
-			/* Compute Jacobian inverse and determinant */
-			double detJ = dx_dpsi*dy_deta - dy_dpsi*dx_deta;
+		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+		for (uint32_t j = 0; j < N_gp; j++) {
 			double Jinv[4];
-			Jinv[0] =  dy_deta/detJ;
-			Jinv[1] = -dy_dpsi/detJ;
-			Jinv[2] = -dx_deta/detJ;
-			Jinv[3] =  dx_dpsi/detJ;
-      
-			/* Compute Shape functions derivatives in cartesian space */ 
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
-				dNi_dx[i] = 
-					Jinv[0]*elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) + 
-					Jinv[1]*elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]);
-				dNi_dy[i] = 
-					Jinv[2]*elemtype->dNi_dpsi[i](elemtype->psi[j], elemtype->eta[j]) + 
-					Jinv[3]*elemtype->dNi_deta[i](elemtype->psi[j], elemtype->eta[j]);
-			}
+			double detJ = nb_fem_get_jacobian(elem, k, mesh, j, Jinv);      
+			if (nb_fem_elem_is_distorted(detJ))
+				goto EXIT;
 
+			nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
+
+			uint32_t idx = k * N_gp + j;
 			/* Compute Strain at Gauss Point */
-			for(uint32_t i=0; i < elemtype->N_nodes; i++){
-				uint32_t inode = connectivity_mtx[k * elemtype->N_nodes + i];
+			for (uint32_t i = 0; i < N_nodes; i++) {
+				uint32_t inode = conn_mtx[k * N_nodes + i];
 				strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 				strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 				strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +
 						    dNi_dx[i] * displacement[inode*2+1]);
 			}
-      
 			/* Compute damage */
 			if(enable_computing_damage){
-				uint32_t n1 = connectivity_mtx[k * 3];
-				uint32_t n2 = connectivity_mtx[k*3+1];
-				uint32_t n3 = connectivity_mtx[k*3+2];
-				double characteristic_length_of_fractured_domain =
-					sqrt(((vertices[n2 * 2]-vertices[n1 * 2]) *
-					      (vertices[n3*2+1]-vertices[n1*2+1]) -
-					      (vertices[n2*2+1]-vertices[n1*2+1]) *
-					      (vertices[n3 * 2]-vertices[n1 * 2])));
+				uint32_t n1 = conn_mtx[k * 3];
+				uint32_t n2 = conn_mtx[k*3+1];
+				uint32_t n3 = conn_mtx[k*3+2];
+				/* characteristic_length_of_fractured_domain */
+				double clfd =
+					sqrt(((vertices[n2 * 2] -
+					       vertices[n1 * 2]) *
+					      (vertices[n3*2+1] -
+					       vertices[n1*2+1]) -
+					      (vertices[n2*2+1] -
+					       vertices[n1*2+1]) *
+					      (vertices[n3 * 2] -
+					       vertices[n1 * 2])));
       
 				damage[idx] = 
 					tension_damage(material, 
 						       &(strain[idx*3]),
 						       &(r_dmg_prev[idx]),
 						       &(r_dmg[idx]),
-						       characteristic_length_of_fractured_domain,
+						       clfd,
 						       enable_plane_stress);
 			}
 		}
 		free(dNi_dx);
 		free(dNi_dy);
 	}
+EXIT:
+	return;
 }

@@ -20,7 +20,6 @@
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
 #include "../utils.h"
-#include "../element_struct.h"
 #include "pipeline.h"
 
 #define POW2(a) ((a)*(a))
@@ -43,16 +42,6 @@ static int integrate_elemental_system
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe);
-static void sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
-			    double D[4], double density,
-			    double thickness, double detJ,
-			    double *dNi_dx, double *dNi_dy,
-			    double fx, double fy,
-			    double *Ke, double *Me, double *Fe);
-static void add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
-				 const vcn_msh3trg_t *mesh,
-				 double *Ke, double *Me, double *Fe,
-				 vcn_sparse_t *K, double *M, double *F);
 static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
@@ -134,11 +123,12 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 		density = vcn_fem_material_get_density(material);
 	}
 
-	double* Ke = malloc(4 * POW2(elem->N_nodes) * sizeof(*Ke));
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	double* Ke = malloc(4 * POW2(N_nodes) * sizeof(*Ke));
 	double* Me = NULL;
 	if(M != NULL)
-		Me = malloc(2 * elem->N_nodes * sizeof(*Me));
-	double* Fe = malloc(2 * elem->N_nodes * sizeof(*Fe));
+		Me = malloc(2 * N_nodes * sizeof(*Me));
+	double* Fe = malloc(2 * N_nodes * sizeof(*Fe));
 	
 	int status = integrate_elemental_system(elem, id, D, density,
 						gravity, mesh, params2D,
@@ -147,7 +137,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	if (0 != status)
 		goto CLEANUP;
 	
-	add_to_global_system(elem, id, mesh, Ke, Me, Fe, K, M, F);
+	pipeline_add_to_global_system(elem, id, mesh, Ke, Me, Fe, K, M, F);
 
 CLEANUP:
 	free(Ke);
@@ -206,17 +196,20 @@ static int integrate_elemental_system
 		fy = gravity[1] * density;
 	}
     
-	memset(Ke, 0, 4 * POW2(elem->N_nodes) * sizeof(*Ke));
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	memset(Ke, 0, 4 * POW2(N_nodes) * sizeof(*Ke));
 	if(Me != NULL)
-		memset(Me, 0, 2 * elem->N_nodes * sizeof(*Me));
-	memset(Fe, 0, 2 * elem->N_nodes * sizeof(*Fe));
+		memset(Me, 0, 2 * N_nodes * sizeof(*Me));
+	memset(Fe, 0, 2 * N_nodes * sizeof(*Fe));
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
-	uint32_t deriv_memsize = elem->N_nodes * sizeof(double);
+	uint32_t deriv_memsize = N_nodes * sizeof(double);
 	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
-	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
+
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id, mesh, j, Jinv);
 
@@ -226,9 +219,9 @@ static int integrate_elemental_system
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
 
 		double thickness = params2D->thickness;
-		sum_gauss_point(elem, j, D, density, thickness,
-				detJ, dNi_dx, dNi_dy, fx, fy,
-				Ke, Me, Fe);
+		pipeline_sum_gauss_point(elem, j, D, density, thickness,
+					 detJ, dNi_dx, dNi_dy, fx, fy,
+					 Ke, Me, Fe);
 	}
 	status = 0;
 EXIT:
@@ -236,12 +229,12 @@ EXIT:
 	return status;
 }
 
-static void sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
-			    double D[4], double density,
-			    double thickness, double detJ,
-			    double *dNi_dx, double *dNi_dy,
-			    double fx, double fy,
-			    double *Ke, double *Me, double *Fe)
+void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+			      double D[4], double density,
+			      double thickness, double detJ,
+			      double *dNi_dx, double *dNi_dy,
+			      double fx, double fy,
+			      double *Ke, double *Me, double *Fe)
 {
 	/* Compute elemental stiffness matrix
 	 *       _            _         _        _        _  _
@@ -249,74 +242,72 @@ static void sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 	 * Bi = |       dNi/dy |   D = | D1 D2    |  K = |  | B'DB dx dy
 	 *      |dNi/dy dNi/dx_|       |_      D3_|     _| _|
 
-	 * B  = [B1 B2...Bi... Belem->N_nodes]
+	 * B  = [B1 B2...Bi... Bn]
 	 *
 	 */
+	double wp = vcn_fem_elem_weight_gp(elem, gp_id);
       
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
-		double Ni_eval = elem->Ni[i](elem->psi[gp_id],
-					     elem->eta[gp_id]);
-		for (uint32_t j = 0; j < elem->N_nodes; j++) {
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		double Ni = vcn_fem_elem_Ni(elem, i, gp_id);
+		for (uint32_t j = 0; j < N_nodes; j++) {
 			/*  Integrating elemental siffness matrix */
-			Ke[(i * 2)*(2*elem->N_nodes) + (j * 2)] += 
+			Ke[(i * 2)*(2 * N_nodes) + (j * 2)] += 
 				(dNi_dx[i]*dNi_dx[j]*D[0] +
 				 dNi_dy[i]*dNi_dy[j]*D[3]) *
-				detJ * thickness * elem->gp_weight[gp_id];
-			Ke[(i * 2)*(2*elem->N_nodes) + (j*2+1)] +=
+				detJ * thickness * wp;
+			Ke[(i * 2)*(2 * N_nodes) + (j*2+1)] +=
 				(dNi_dx[i]*dNi_dy[j]*D[1] +
 				 dNi_dy[i]*dNi_dx[j]*D[3]) *
-				detJ * thickness * elem->gp_weight[gp_id];
-			Ke[(i*2+1)*(2*elem->N_nodes) + (j * 2)] +=
+				detJ * thickness * wp;
+			Ke[(i*2+1)*(2 * N_nodes) + (j * 2)] +=
 				(dNi_dy[i]*dNi_dx[j]*D[1] +
 				 dNi_dx[i]*dNi_dy[j]*D[3]) *
-				detJ * thickness * elem->gp_weight[gp_id];
-			Ke[(i*2+1)*(2*elem->N_nodes) + (j*2+1)] +=
+				detJ * thickness * wp;
+			Ke[(i*2+1)*(2 * N_nodes) + (j*2+1)] +=
 				(dNi_dy[i]*dNi_dy[j]*D[2] +
 				 dNi_dx[i]*dNi_dx[j]*D[3]) *
-				detJ * thickness * elem->gp_weight[gp_id];
-
-			double Nj_eval = elem->Ni[j](elem->psi[gp_id],
-						     elem->eta[gp_id]);
+				detJ * thickness * wp;
 
 			/*  Integrating elemental mass matrix */
+			double Nj = vcn_fem_elem_Ni(elem, j, gp_id);
 			if (NULL != Me) {
 				/* OPPORTUNITY: Allocate one for each comp */
-				double integral =
-					Ni_eval * Nj_eval * density * detJ *
-					thickness * elem->gp_weight[gp_id];
+				double integral = Ni * Nj * density * detJ *
+					thickness * wp;
 				Me[i * 2] += integral;
 				Me[i*2+1] += integral;
 			}
 		}
 		/* Compute elemental forces vector */
 		/* OPPORTUNITY: Allocate just one for each component */
-		double integral = Ni_eval * detJ * thickness *
-			elem->gp_weight[gp_id];
+		double integral = Ni * detJ * thickness * wp;
 		Fe[i * 2] += integral * fx;
 		Fe[i*2+1] += integral * fy;
 	}
 }
 
-static void add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
-				 const vcn_msh3trg_t *mesh,
-				 double *Ke, double *Me, double *Fe,
-				 vcn_sparse_t *K, double *M, double *F)
+void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+				   const vcn_msh3trg_t *mesh,
+				   double *Ke, double *Me, double *Fe,
+				   vcn_sparse_t *K, double *M, double *F)
 {
-	for (uint32_t i = 0; i < elem->N_nodes; i++) {
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t v1 = mesh->vertices_forming_triangles[id*3+i];
-		for (uint32_t j = 0; j < elem->N_nodes; j++) {
+		for (uint32_t j = 0; j < N_nodes; j++) {
 			uint32_t v2 = mesh->vertices_forming_triangles[id*3+j];
 			vcn_sparse_add(K, v1 * 2, v2 * 2,
-				       Ke[(i * 2)*(2*elem->N_nodes) +
+				       Ke[(i * 2)*(2 * N_nodes) +
 					  (j * 2)]);
 			vcn_sparse_add(K, v1*2 + 1, v2 * 2,
-				       Ke[(i*2 + 1)*(2*elem->N_nodes) +
+				       Ke[(i*2 + 1)*(2 * N_nodes) +
 					  (j * 2)]);
 			vcn_sparse_add(K, v1 * 2, v2*2 + 1,
-				       Ke[(i * 2)*(2*elem->N_nodes) +
+				       Ke[(i * 2)*(2 * N_nodes) +
 					  (j*2+1)]);
 			vcn_sparse_add(K, v1*2 + 1, v2*2 + 1,
-				       Ke[(i*2 + 1)*(2*elem->N_nodes) +
+				       Ke[(i*2 + 1)*(2 * N_nodes) +
 					  (j*2+1)]);
 		}
 		/* Add to global mass matrix */
@@ -472,7 +463,8 @@ void pipeline_compute_strain(double *strain,
 {
 	uint32_t N_elem = mesh->N_triangles;
 
-	memset(strain, 0, 3 * elem->N_Gauss_points * N_elem * sizeof(*strain));
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
 
 	for (uint32_t i = 0; i < N_elem; i++)
 		get_element_strain(i, strain, mesh, displacement,
@@ -490,13 +482,15 @@ static int get_element_strain(uint32_t id, double *strain,
 	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
-	uint32_t deriv_memsize = elem->N_nodes * sizeof(double);
+	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint32_t deriv_memsize = N_nodes * sizeof(double);
 	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
 	/* Integrate domain */
-	for (uint32_t j = 0; j < elem->N_Gauss_points; j++) {
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id, mesh, j, Jinv);
       
@@ -505,10 +499,10 @@ static int get_element_strain(uint32_t id, double *strain,
 
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
 
-		uint32_t idx = id * elem->N_Gauss_points + j;
+		uint32_t idx = id * N_gp + j;
 		/* Compute Strain at Gauss Point */
-		for (uint32_t i = 0; i < elem->N_nodes; i++) {
-			uint32_t inode = conn_mtx[id * elem->N_nodes + i];
+		for (uint32_t i = 0; i < N_nodes; i++) {
+			uint32_t inode = conn_mtx[id * N_nodes + i];
 			strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 			strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 			strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +
@@ -526,12 +520,15 @@ void pipeline_compute_main_stress(double *stress,
 				  uint32_t N_elements,
 				  const vcn_fem_elem_t *const elem)
 {
+	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	for(uint32_t i=0; i < N_elements; i++){
-		for(uint32_t j=0; j < elem->N_Gauss_points; j++){
-			uint32_t idx = i*elem->N_Gauss_points + j;
-			double sigma_avg = 0.5 * (stress[idx * 3] + stress[idx*3+1]);
+		for(uint32_t j=0; j < N_gp; j++){
+			uint32_t idx = i * N_gp + j;
+			double sigma_avg = 0.5 * (stress[idx * 3] +
+						  stress[idx*3+1]);
 			double R = sqrt(0.25 * 
-					POW2(stress[idx * 3] - stress[idx*3+1]) +
+					POW2(stress[idx * 3] -
+					     stress[idx*3+1]) +
 					POW2(stress[idx*3+2]));
 			main_stress[idx * 2] = sigma_avg + R;
 			main_stress[idx*2+1] = sigma_avg - R;

@@ -112,8 +112,9 @@ void vcn_fem_compute_stress_from_strain
 			pipeline_get_constitutive_matrix(D, material,
 							 analysis2D);
 
-		for (int j = 0; j < elem->N_Gauss_points; j++) {
-			uint32_t id = i * elem->N_Gauss_points + j;
+		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+		for (int j = 0; j < N_gp; j++) {
+			uint32_t id = i * N_gp + j;
 			stress[id * 3] = strain[id * 3] * D[0] +
 				strain[id*3+1] * D[1];
 			stress[id*3+1] = strain[id * 3] * D[1] +

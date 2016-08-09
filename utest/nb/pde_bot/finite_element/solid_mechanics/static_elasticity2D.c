@@ -35,11 +35,11 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 				  const results_t *results);
 static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
-				const vcn_fem_elem_t* elemtype,
+				const vcn_fem_elem_t* elem,
 				const double *vm_stress);
 static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 				 const vcn_msh3trg_t *msh3trg,
-				 const vcn_fem_elem_t* elemtype,
+				 const vcn_fem_elem_t* elem,
 				 double gp[2]);
 static double get_analytic_vm_stress_pwh(double x, double y);
 
@@ -117,45 +117,49 @@ static void test_plate_with_hole(void)
 static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 				  const results_t *results)
 {
-
 	double *vm_stress = malloc(results->N_trg * sizeof(double));
 	double *nodal_values = malloc(results->N_vtx * sizeof(double));
 
 	vcn_fem_compute_von_mises(results->N_trg, results->stress, vm_stress);
 
-	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
+	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	double avg_error = get_error_avg_pwh(msh3trg, elemtype, vm_stress);
+	double avg_error = get_error_avg_pwh(msh3trg, elem, vm_stress);
 	printf("AVG ERROR: %e\n", avg_error);
 
-	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elemtype,
+	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elem,
 						  1, vm_stress,
 						  nodal_values);
 
 	nb_fem_save(msh3trg, nodal_values,
-		    "../../../fem_plate.png", 1000, 800);/* TEMP */
+		    "../../../fem_plate.png", 1000, 800);/* TEMPORAL */
 
 	CU_ASSERT(true);
 	
-	vcn_fem_elem_destroy(elemtype);
+	vcn_fem_elem_destroy(elem);
 	free(vm_stress);
 	free(nodal_values);
 }
 
 static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
-				const vcn_fem_elem_t* elemtype,
+				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
 	double avg = 0;
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
-		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elemtype);
+		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 		N += N_gp;
 		for (int8_t p = 0; p < N_gp; p++) {
 			double gp[2];
-			get_cartesian_gpoint(i, p, msh3trg, elemtype, gp);
-			double gp_stress = get_analytic_vm_stress_pwh(gp[0], gp[1]);
-			avg += fabs(1.0 - vm_stress[i * N_gp + p]/gp_stress);
+			get_cartesian_gpoint(i, p, msh3trg, elem, gp);
+			double gp_stress =
+				get_analytic_vm_stress_pwh(gp[0], gp[1]);
+			if (fabs(gp_stress) > 1e-10)
+				avg += fabs(1.0 - vm_stress[i * N_gp + p]/
+					    gp_stress);
+			else
+				avg += fabs(vm_stress[i * N_gp + p]);
 		}
 	}
 	return avg /= N;
@@ -163,14 +167,14 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 
 static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 				 const vcn_msh3trg_t *msh3trg,
-				 const vcn_fem_elem_t* elemtype,
+				 const vcn_fem_elem_t* elem,
 				 double gp[2])
 {
-	int8_t N = vcn_fem_elem_get_N_nodes(elemtype);
+	int8_t N = vcn_fem_elem_get_N_nodes(elem);
 	gp[0] = 0.0;
 	gp[1] = 0.0;
 	for (int i = 0; i < N; i++) {
-		double Ni = vcn_fem_elem_eval_shape_function_on_gp(elemtype, i, id_gp);
+		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
 		uint32_t vi = msh3trg->vertices_forming_triangles[id_elem * N + i];
 		gp[0] += Ni * msh3trg->vertices[vi * 2];
 		gp[1] += Ni * msh3trg->vertices[vi*2+1];
@@ -238,12 +242,12 @@ static int simulate_fem(const char *problem_data,
 
 	get_mesh(model, msh3trg, N_vtx);
 
-	vcn_fem_elem_t* elemtype = vcn_fem_elem_create(NB_TRG_LINEAR);
+	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	results_init(results, msh3trg->N_vertices, msh3trg->N_triangles);
 
 	int status_fem =
-		vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elemtype,
+		vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elem,
 						   material, bcond,
 						   false, NULL,
 						   analysis2D,
@@ -254,13 +258,13 @@ static int simulate_fem(const char *problem_data,
 		goto CLEANUP_FEM;
 
 	vcn_fem_compute_stress_from_strain(msh3trg->N_triangles,
-					   elemtype, material,
+					   elem, material,
 					   analysis2D, results->strain, NULL,
 					   results->stress);
 
 	status = 0;
 CLEANUP_FEM:
-	vcn_fem_elem_destroy(elemtype);
+	vcn_fem_elem_destroy(elem);
 CLEANUP_INPUT:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
