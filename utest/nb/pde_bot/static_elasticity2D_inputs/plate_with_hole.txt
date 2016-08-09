@@ -29,7 +29,7 @@
 # Number of segments				#
  14						#
 # Segments (Vertices pairs IDs)			#
- 0 1      					#
+ 0 1    					#
  1 2						#
  2 3						#
  3 4						#
@@ -53,11 +53,12 @@
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
- 1						#
+ 2						#
+ 10 0 1 0					#
  13 1 0 0					#
 # Num of load conditions over lines:            #
  1                                              #
- 12 1 0 1e4                                     #
+ 11 1 0 1e4                                     #
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#

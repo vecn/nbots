@@ -46,6 +46,10 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
 				  double factor);
+static void set_bcond_neumann(uint8_t N_dof,
+			      double* F, double factor,
+			      nb_bcond_iter_t *iter,
+			      uint32_t vtx_id, uint32_t N);
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond, 
@@ -54,6 +58,10 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
 				    double factor);
+static void set_bcond_dirichlet(vcn_sparse_t* K, uint8_t N_dof,
+				double* F, double factor,
+				nb_bcond_iter_t *iter,
+				uint32_t vtx_id);
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
@@ -351,19 +359,27 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];
-			for (uint32_t j = 0; j < N_dof; j++) {
-				bool mask = nb_bcond_iter_get_mask(iter, j);
-				double val = nb_bcond_iter_get_val(iter, j);
-				if (mask) {
-					uint32_t mtx_id = mesh_id * N_dof + j;
-					F[mtx_id] += factor * (val / N);
-				}
-			}
+			set_bcond_neumann(N_dof, F, factor, iter, mesh_id, N);
 		}
 	}
 	nb_bcond_iter_finish(iter);
 }
 
+static void set_bcond_neumann(uint8_t N_dof,
+			      double* F, double factor,
+			      nb_bcond_iter_t *iter,
+			      uint32_t vtx_id, uint32_t N)
+{
+	for (uint8_t j = 0; j < N_dof; j++) {
+		bool mask = nb_bcond_iter_get_mask(iter, j);
+		double val = nb_bcond_iter_get_val(iter, j);
+		if (mask) {
+			uint32_t mtx_id = vtx_id * N_dof + j;
+			F[mtx_id] += factor * (val / N);
+		}
+	}
+
+}
 static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 				  vcn_sparse_t* K,
 				  double* F, 
@@ -380,14 +396,7 @@ static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		for (uint32_t j = 0; j < N_dof; j++) {
-			bool mask = nb_bcond_iter_get_mask(iter, j);
-			double val = nb_bcond_iter_get_val(iter, j);
-			if (mask) {
-				uint32_t mtx_id = mesh_id * N_dof + j;
-				F[mtx_id] += factor * val;
-			}
-		}
+		set_bcond_neumann(N_dof, F, factor, iter, mesh_id, 1);
 	}
 	nb_bcond_iter_finish(iter);
 }
@@ -411,18 +420,27 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];
-			for (uint32_t j = 0; j < N_dof; j++) {
-				bool mask = nb_bcond_iter_get_mask(iter, j);
-				double val = nb_bcond_iter_get_val(iter, j);
-				if (mask) {
-					uint32_t mtx_id = mesh_id * N_dof + j;
-					vcn_sparse_set_Dirichlet_condition
-						(K, F, mtx_id, factor * val);
-				}
-			}
+			set_bcond_dirichlet(K, N_dof, F, factor,
+					    iter, mesh_id);
 		}
 	}
 	nb_bcond_iter_finish(iter);
+}
+
+static void set_bcond_dirichlet(vcn_sparse_t* K, uint8_t N_dof,
+				double* F, double factor,
+				nb_bcond_iter_t *iter,
+				uint32_t vtx_id)
+{
+	for (uint8_t j = 0; j < N_dof; j++) {
+		bool mask = nb_bcond_iter_get_mask(iter, j);
+		double val = nb_bcond_iter_get_val(iter, j);
+		if (mask) {
+			uint32_t mtx_id = vtx_id * N_dof + j;
+			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
+							   factor * val);
+		}
+	}
 }
 
 static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
@@ -441,15 +459,7 @@ static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		for (uint32_t j = 0; j < N_dof; j++) {
-			bool mask = nb_bcond_iter_get_mask(iter, j);
-			double val = nb_bcond_iter_get_val(iter, j);
-			if (mask) {
-				uint32_t mtx_id = mesh_id * N_dof + j;
-				vcn_sparse_set_Dirichlet_condition
-					(K, F, mtx_id, factor * val);
-			}
-		}
+		set_bcond_dirichlet(K, N_dof, F, factor, iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);
 }

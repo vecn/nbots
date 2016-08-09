@@ -131,9 +131,10 @@ static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 						  1, vm_stress,
 						  nodal_values);
 
-	nb_fem_save(msh3trg, nodal_values,
+	nb_fem_save(msh3trg,  results->disp, 0.5, nodal_values,
 		    "../../../fem_plate.png", 1000, 800);/* TEMPORAL */
 
+	CU_ASSERT(true);
 	CU_ASSERT(true);
 	
 	vcn_fem_elem_destroy(elem);
@@ -145,7 +146,7 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
-	double avg = 0;
+	double avg = 0.0;
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
 		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);

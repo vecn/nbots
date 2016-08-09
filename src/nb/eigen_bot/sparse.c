@@ -38,7 +38,7 @@ struct vcn_sparse_s {
 	uint32_t **rows_index;
 	uint32_t *rows_size;
 	uint32_t N;
-} ;
+};
 
 static inline double get_norm(double* x, uint32_t N)
 {
