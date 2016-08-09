@@ -42,13 +42,21 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 				 const vcn_fem_elem_t* elem,
 				 double gp[2]);
 static double get_analytic_vm_stress_pwh(double x, double y);
-
+static void get_analytic_stress_pwh(double x, double y, double stress[3]);
+static void modify_bcond_pwh(const vcn_msh3trg_t *msh3trg,
+			     nb_bcond_t *bcond);
+static void pwh_DC_SGM_cond(double *x, double t, double *out);
+static void pwh_BC_SGM_cond(double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const vcn_msh3trg_t*,
-					   const results_t*));
+					   const results_t*),
+		     void (*modify_bcond)(const vcn_msh3trg_t*,
+					  nb_bcond_t*)/* Can be NULL */);
 static int simulate_fem(const char *problem_data,
 			vcn_msh3trg_t *msh3trg, results_t *results,
-			uint32_t N_vtx);
+			uint32_t N_vtx,
+			void (*modify_bcond)(const vcn_msh3trg_t*,
+					     nb_bcond_t*)/* Can be NULL */);
 static void get_mesh(const vcn_model_t *model, vcn_msh3trg_t *msh3trg,
 		     uint32_t N_vtx);
 
@@ -91,7 +99,8 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, check_beam_cantilever);
+	run_test("%s/beam_cantilever.txt", 1000,
+		 check_beam_cantilever, NULL);
 }
 
 static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
@@ -111,7 +120,9 @@ static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 4000, check_plate_with_hole);
+	run_test("%s/plate_with_hole.txt", 1500,
+		 check_plate_with_hole,
+		 modify_bcond_pwh);
 }
 
 static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
@@ -125,7 +136,7 @@ static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	double avg_error = get_error_avg_pwh(msh3trg, elem, vm_stress);
-	printf("AVG ERROR: %e\n", avg_error);
+	printf("--AVG ERROR: %e\n", avg_error);
 
 	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elem,
 						  1, vm_stress,
@@ -146,6 +157,7 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
+	FILE *fp = fopen("../../../fem_plate.log", "w");/**/
 	double avg = 0.0;
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
@@ -156,13 +168,17 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 			get_cartesian_gpoint(i, p, msh3trg, elem, gp);
 			double gp_stress =
 				get_analytic_vm_stress_pwh(gp[0], gp[1]);
+			double error;
 			if (fabs(gp_stress) > 1e-10)
-				avg += fabs(1.0 - vm_stress[i * N_gp + p]/
-					    gp_stress);
+				error = fabs(1.0 - vm_stress[i * N_gp + p]/
+					     gp_stress);
 			else
-				avg += fabs(vm_stress[i * N_gp + p]);
+				error = fabs(vm_stress[i * N_gp + p]);
+			avg += error;
+			fprintf(fp, "%lf\n", error);/**/
 		}
 	}
+	fclose(fp);/**/
 	return avg /= N;
 }
 
@@ -184,6 +200,13 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 
 static double get_analytic_vm_stress_pwh(double x, double y)
 {
+	double stress[3];
+	get_analytic_stress_pwh(x, y, stress);
+	return nb_pde_get_vm_stress(stress[0], stress[1], stress[2]);
+}
+
+static void get_analytic_stress_pwh(double x, double y, double stress[3])
+{
 	double a = 0.5;
 	double tx = 1e4;
 	double r = sqrt(POW2(x) + POW2(y));
@@ -194,22 +217,52 @@ static double get_analytic_vm_stress_pwh(double x, double y)
 	double s4t = sin(4.0 * theta);
 	double c2t = cos(2.0 * theta);
 	double c4t = cos(4.0 * theta);
-	double sx = tx * (1.0 - ar2 * (1.5 * c2t + c4t) + ar4x1p5 * c4t);
-	double sy = tx * (-ar2 * (0.5 * c2t - c4t) - ar4x1p5 * c4t);
-	double sxy = tx * (-ar2 * (0.5 * s2t + s4t) + ar4x1p5 * s4t);
+	stress[0] = tx * (1.0 - ar2 * (1.5 * c2t + c4t) + ar4x1p5 * c4t);
+	stress[1] = tx * (-ar2 * (0.5 * c2t - c4t) - ar4x1p5 * c4t);
+	stress[2] = tx * (-ar2 * (0.5 * s2t + s4t) + ar4x1p5 * s4t);
+}
 
-	return nb_pde_get_vm_stress(sx, sy, sxy);
+static void modify_bcond_pwh(const vcn_msh3trg_t *msh3trg,
+			     nb_bcond_t *bcond)
+{
+	bool dof_mask[2] = {1, 1};
+
+	uint32_t DC_sgm = 11;
+	nb_bcond_push_function(bcond, NB_NEUMANN, NB_BC_ON_SEGMENT,
+			       DC_sgm, dof_mask, pwh_DC_SGM_cond);
+	uint32_t BC_sgm = 12;
+	nb_bcond_push_function(bcond, NB_NEUMANN, NB_BC_ON_SEGMENT,
+			       BC_sgm, dof_mask, pwh_BC_SGM_cond);
+}
+
+static void pwh_DC_SGM_cond(double *x, double t, double *out)
+{
+	double stress[3];
+	get_analytic_stress_pwh(x[0], x[1], stress);
+	out[0] = stress[0];
+	out[1] = stress[2];	
+}
+
+static void pwh_BC_SGM_cond(double *x, double t, double *out)
+{
+	double stress[3];
+	get_analytic_stress_pwh(x[0], x[1], stress);
+	out[0] = stress[2];
+	out[1] = stress[1];
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const vcn_msh3trg_t*,
-					   const results_t*))
+					   const results_t*),
+		     void (*modify_bcond)(const vcn_msh3trg_t*,
+					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
 	vcn_msh3trg_t *msh3trg = alloca(vcn_msh3trg_get_memsize());
 	vcn_msh3trg_init(msh3trg);
 
-	int status = simulate_fem(problem_data, msh3trg, &results, N_vtx);
+	int status = simulate_fem(problem_data, msh3trg, &results,
+				  N_vtx, modify_bcond);
 	
 	CU_ASSERT(0 == status);
 
@@ -221,7 +274,9 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 
 static int simulate_fem(const char *problem_data,
 			vcn_msh3trg_t *msh3trg, results_t *results,
-			uint32_t N_vtx)
+			uint32_t N_vtx,
+			void (*modify_bcond)(const vcn_msh3trg_t*,
+					     nb_bcond_t*)/* Can be NULL */)
 {
 	int status = 1;
 	vcn_model_t* model = alloca(vcn_model_get_memsize());
@@ -237,7 +292,11 @@ static int simulate_fem(const char *problem_data,
 	sprintf(input, problem_data, INPUTS_DIR);
 	int read_status =
 		read_problem_data(input, model, bcond, material,
-					&analysis2D, &params2D);
+				  &analysis2D, &params2D);
+
+	if (NULL != modify_bcond)
+		modify_bcond(msh3trg, bcond);
+
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
 

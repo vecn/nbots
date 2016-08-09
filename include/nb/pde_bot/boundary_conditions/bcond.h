@@ -27,6 +27,11 @@ void nb_bcond_clear(void *bcond_ptr);
 uint8_t nb_bcond_get_N_dof(const nb_bcond_t *const bcond);
 void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 		   nb_bcond_where type_elem, uint32_t elem_id,
-		   const bool dof_mask[], const double value[]);
+		   const bool dof_mask[],
+		   const double value[]);
+void nb_bcond_push_function(nb_bcond_t *bcond, nb_bcond_id type_id,
+			    nb_bcond_where type_elem, uint32_t elem_id,
+			    const bool dof_mask[],
+			    void (*fval)(const double *x, double t, double *out));
 
 #endif

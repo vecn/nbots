@@ -8,6 +8,7 @@ typedef struct {
 	uint32_t id;
 	bool *mask;
 	double *val;
+	void (*fval)(const double *x, double t, double *out);
 } bc_atom_t;
 
 uint16_t bc_atom_get_memsize(uint8_t N_dof);
@@ -19,8 +20,8 @@ void* bc_atom_clone(const void *bc_ptr, uint8_t N_dof);
 void bc_atom_destroy(void *bc_ptr);
 void bc_atom_clear(void *bc_ptr, uint8_t N_dof);
 
-void bc_atom_set_data(bc_atom_t *bc, uint32_t elem_id,
-		      const bool dof_mask[], const double value[],
-		      uint8_t N_dof);
+void bc_atom_set_data(bc_atom_t *bc, uint32_t elem_id, uint8_t N_dof,
+		      const bool dof_mask[], const double val[],
+		      void (*fval)(const double *x, double t, double *out));
 
 #endif

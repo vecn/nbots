@@ -26,6 +26,7 @@ void nb_bcond_iter_go_next(nb_bcond_iter_t *iter);
 
 uint32_t nb_bcond_iter_get_id(const nb_bcond_iter_t *iter);
 bool nb_bcond_iter_get_mask(const nb_bcond_iter_t *iter, uint8_t dof_id);
-double nb_bcond_iter_get_val(const nb_bcond_iter_t *iter, uint8_t dof_id);
+double nb_bcond_iter_get_val(const nb_bcond_iter_t *iter, uint8_t dof_id,
+			     double *x, double t);
 
 #endif

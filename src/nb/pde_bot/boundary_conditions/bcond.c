@@ -151,7 +151,23 @@ void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 		nb_bcond_get_container(bcond, type_id, type_elem);
 	if (NULL != container) {
 		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
-		bc_atom_set_data(bc, elem_id, dof_mask, value, bcond->N_dof);
+		bc_atom_set_data(bc, elem_id, bcond->N_dof,
+				 dof_mask, value, NULL);
+		nb_container_insert(container, bc);
+	}
+}
+
+void nb_bcond_push_function(nb_bcond_t *bcond, nb_bcond_id type_id,
+			    nb_bcond_where type_elem, uint32_t elem_id,
+			    const bool dof_mask[],
+			    void (*fval)(const double *x, double t, double *out))
+{
+	nb_container_t *container = 
+		nb_bcond_get_container(bcond, type_id, type_elem);
+	if (NULL != container) {
+		bc_atom_t *bc = bc_atom_create(bcond->N_dof);
+		bc_atom_set_data(bc, elem_id, bcond->N_dof,
+				 dof_mask, NULL, fval);
 		nb_container_insert(container, bc);
 	}
 }

@@ -52,7 +52,8 @@ static double get_input_sgm_length(const vcn_msh3trg_t *msh3trg,
 				   uint32_t sgm_id);
 static double get_input_subsgm_length(const vcn_msh3trg_t *msh3trg,
 				      uint32_t sgm_id, uint32_t subsgm_id);
-static void set_bcond_neumann(uint8_t N_dof,
+static void set_bcond_neumann(const double *vertices,
+			      uint8_t N_dof,
 			      double* F, double factor,
 			      nb_bcond_iter_t *iter,
 			      uint32_t vtx_id);
@@ -64,7 +65,8 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
 				    double factor);
-static void set_bcond_dirichlet(vcn_sparse_t* K, uint8_t N_dof,
+static void set_bcond_dirichlet(const double *vertices,
+				vcn_sparse_t* K, uint8_t N_dof,
 				double* F, double factor,
 				nb_bcond_iter_t *iter,
 				uint32_t vtx_id);
@@ -187,8 +189,9 @@ static void set_plane_stress(double D[4], double E, double v)
 
 static void set_plane_strain(double D[4], double E, double v)
 {
-	D[0] = (E * (1.0 - v)) / ((1.0 + v) * (1.0 - 2 * v));
-	D[1] = (v * D[0]) / (1.0 - v);
+	double denom = (1.0 + v) * (1.0 - 2 * v);
+	D[0] = (E * (1.0 - v)) / denom;
+	D[1] = (v * E) / denom;
 	D[2] = D[0];
 	D[3] = E / (2.0 * (1.0 + v));
 }
@@ -371,11 +374,13 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 
 			uint32_t v1_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];
-			set_bcond_neumann(N_dof, F, factor * w/2.0, iter, v1_id);
+			set_bcond_neumann(msh3trg->vertices, N_dof, F,
+					  factor * w * 0.5, iter, v1_id);/* AQUI VOY */
 
 			uint32_t v2_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i + 1];
-			set_bcond_neumann(N_dof, F, factor * w/2.0, iter, v2_id);
+			set_bcond_neumann(msh3trg->vertices, N_dof, F,
+					  factor * w * 0.5, iter, v2_id);
 		}
 	}
 	nb_bcond_iter_finish(iter);
@@ -406,14 +411,16 @@ static double get_input_subsgm_length(const vcn_msh3trg_t *msh3trg,
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
-static void set_bcond_neumann(uint8_t N_dof,
+static void set_bcond_neumann(const double *vertices,
+			      uint8_t N_dof,
 			      double* F, double factor,
 			      nb_bcond_iter_t *iter,
 			      uint32_t vtx_id)
 {
 	for (uint8_t j = 0; j < N_dof; j++) {
 		bool mask = nb_bcond_iter_get_mask(iter, j);
-		double val = nb_bcond_iter_get_val(iter, j);
+		double *x = &(vertices[vtx_id * 2]);
+		double val = nb_bcond_iter_get_val(iter, j, x, 0);
 		if (mask) {
 			uint32_t mtx_id = vtx_id * N_dof + j;
 			F[mtx_id] += factor * val;
@@ -438,7 +445,8 @@ static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		set_bcond_neumann(N_dof, F, factor, iter, mesh_id);
+		set_bcond_neumann(msh3trg->vertices, N_dof, F,
+				  factor, iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);
 }
@@ -462,21 +470,24 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
 				msh3trg->meshvtx_x_inputsgm[model_id][i];
-			set_bcond_dirichlet(K, N_dof, F, factor,
+			set_bcond_dirichlet(msh3trg->vertices, 
+					    K, N_dof, F, factor,
 					    iter, mesh_id);
 		}
 	}
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_bcond_dirichlet(vcn_sparse_t* K, uint8_t N_dof,
+static void set_bcond_dirichlet(const double *vertices,
+				vcn_sparse_t* K, uint8_t N_dof,
 				double* F, double factor,
 				nb_bcond_iter_t *iter,
 				uint32_t vtx_id)
 {
 	for (uint8_t j = 0; j < N_dof; j++) {
 		bool mask = nb_bcond_iter_get_mask(iter, j);
-		double val = nb_bcond_iter_get_val(iter, j);
+		double *x = &(vertices[vtx_id * 2]);
+		double val = nb_bcond_iter_get_val(iter, j, x, 0);
 		if (mask) {
 			uint32_t mtx_id = vtx_id * N_dof + j;
 			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
@@ -501,7 +512,8 @@ static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
 		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		set_bcond_dirichlet(K, N_dof, F, factor, iter, mesh_id);
+		set_bcond_dirichlet(msh3trg->vertices, K, N_dof, F,
+				    factor, iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);
 }

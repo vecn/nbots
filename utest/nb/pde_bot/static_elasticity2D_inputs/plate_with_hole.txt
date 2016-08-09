@@ -57,8 +57,7 @@
  10 0 1 0					#
  13 1 0 0					#
 # Num of load conditions over lines:            #
- 1                                              #
- 11 1 0 1e4                                     #
+ 0 # Loaded dynamically from formulas           #
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
