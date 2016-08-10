@@ -120,7 +120,7 @@ static void check_beam_cantilever(const vcn_msh3trg_t *msh3trg,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1500,
+	run_test("%s/plate_with_hole.txt", 1000,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -136,17 +136,8 @@ static void check_plate_with_hole(const vcn_msh3trg_t *msh3trg,
 	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	double avg_error = get_error_avg_pwh(msh3trg, elem, vm_stress);
-	printf("--AVG ERROR: %e\n", avg_error);
 
-	vcn_fem_interpolate_from_gpoints_to_nodes(msh3trg, elem,
-						  1, vm_stress,
-						  nodal_values);
-
-	nb_fem_save(msh3trg,  results->disp, 0.5, nodal_values,
-		    "../../../fem_plate.png", 1000, 800);/* TEMPORAL */
-
-	CU_ASSERT(true);
-	CU_ASSERT(true);
+	CU_ASSERT(avg_error < 9.7e-3);
 	
 	vcn_fem_elem_destroy(elem);
 	free(vm_stress);
@@ -157,7 +148,6 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
-	FILE *fp = fopen("../../../fem_plate.log", "w");/**/
 	double avg = 0.0;
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
@@ -175,10 +165,8 @@ static double get_error_avg_pwh(const vcn_msh3trg_t *msh3trg,
 			else
 				error = fabs(vm_stress[i * N_gp + p]);
 			avg += error;
-			fprintf(fp, "%lf\n", error);/**/
 		}
 	}
-	fclose(fp);/**/
 	return avg /= N;
 }
 

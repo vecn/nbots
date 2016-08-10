@@ -108,16 +108,16 @@ bool nb_bcond_iter_get_mask(const nb_bcond_iter_t *iter,
 	return iter->bc->mask[dof_id];
 }
 
-double nb_bcond_iter_get_val(const nb_bcond_iter_t *iter, uint8_t dof_id,
-			     double *x, double t)
+bool nb_bcond_iter_val_is_function(const nb_bcond_iter_t *iter)
 {
-	double out;
-	if (NULL != iter->bc->fval) {
-		double val[3];
+	return NULL != iter->bc->fval;
+}
+
+void nb_bcond_iter_get_val(const nb_bcond_iter_t *iter, uint8_t N_dof,
+			   double *x, double t, double val[])
+{
+	if (nb_bcond_iter_val_is_function(iter))
 		iter->bc->fval(x, t, val);
-		out = val[dof_id];
-	} else {
-		out = iter->bc->val[dof_id];
-	}
-	return out;
+	else
+		memcpy(val, iter->bc->val, N_dof * sizeof(double));
 }
