@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "nb/memory_bot.h"
 #include "nb/eigen_bot.h"
@@ -22,6 +23,18 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D);
+
+static void assemble_face(uint32_t elem_id, uint16_t face_id,
+			  const nb_mshpoly_t *const mesh,
+			  const nb_material_t *material,
+			  bool enable_self_weight,
+			  double gravity[2],
+			  nb_analysis2D_t analysis2D,
+			  nb_analysis2D_params *params2D,
+			  vcn_sparse_t *K, double *F);
+
+static double get_face_length(uint32_t elem_id, uint16_t face_id,
+			      const nb_mshpoly_t *const mesh);
 static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
 				   vcn_sparse_t *K, double *F,
 				   const nb_bcond_t *const bcond,
@@ -92,7 +105,51 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D)
 {
-	return 1;
+	uint32_t N_elem = mesh->N_elems;
+	vcn_sparse_reset(K);
+	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
+
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint16_t N_faces = mesh->N_adj[i];
+		for (uint16_t j = 0; j < N_faces; j++) {
+			assemble_face(i, j, mesh, material,
+				      enable_self_weight, gravity,
+				      analysis2D, params2D, K, F);
+		}
+	}
+	return 0;
+}
+
+static void assemble_face(uint32_t elem_id, uint16_t face_id,
+			  const nb_mshpoly_t *const mesh,
+			  const nb_material_t *material,
+			  bool enable_self_weight,
+			  double gravity[2],
+			  nb_analysis2D_t analysis2D,
+			  nb_analysis2D_params *params2D,
+			  vcn_sparse_t *K, double *F)
+{
+	double length = get_face_length(elem_id, face_id, mesh);
+
+	double *xi = &(mesh->cen[elem_id * 2]);
+	uint32_t elem_j = mesh->ngb[elem_id][face_id];
+	double *xj = &(mesh->cen[elem_j * 2]);
+
+	double dist2 = POW2(c2[0] - c1[0]) + POW2(c2[1] - c1[1]);
+	double aij = (x) / dist2;/* AQUI VOY */
+}
+
+static double get_face_length(uint32_t elem_id, uint16_t face_id,
+			      const nb_mshpoly_t *const mesh)
+{
+	uint32_t id1 = mesh->adj[elem_id][face_id];
+	uint16_t next_node = (face_id + 1) % mesh->N_adj[elem_id];
+	uint32_t id2 = mesh->adj[elem_id][next_node];
+
+	double *v1 = &(mesh->nod[id1*2]);
+	double *v2 = &(mesh->nod[id2*2]);
+
+	return sqrt(POW2(v2[0] - v1[0]) + POW2(v2[1] - v1[1]));
 }
 
 static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
