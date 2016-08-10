@@ -34,6 +34,11 @@ typedef struct {
 
 typedef nb_graph_t vcn_graph_t; /* Deprecated */
 
+uint32_t nb_graph_get_memsize(void);
+void nb_graph_init(nb_graph_t *graph);
+void nb_graph_finish(nb_graph_t *graph);
+void nb_graph_clear(nb_graph_t *graph);
+
 vcn_graph_t* vcn_graph_create(void);
 
 /**

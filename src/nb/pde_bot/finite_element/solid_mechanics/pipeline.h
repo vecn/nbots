@@ -9,7 +9,7 @@
 
 bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id);
 void pipeline_get_constitutive_matrix(double D[4], 
-				      const vcn_fem_material_t *material,
+				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D);
 void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 			      double D[4], double density,
@@ -25,7 +25,7 @@ int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
 		 const vcn_fem_elem_t *const elemtype,
-		 const vcn_fem_material_t *const material,
+		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
 		 nb_analysis2D_t analysis2D,
@@ -42,7 +42,7 @@ void pipeline_compute_strain(double *strain,
 			     double *displacement,
 			     const vcn_fem_elem_t *const elemtype,
 			     nb_analysis2D_t analysis2D,
-			     const vcn_fem_material_t *const material);
+			     const nb_material_t *const material);
 
 void pipeline_compute_main_stress(double *stress, 
 				  double *main_stress,

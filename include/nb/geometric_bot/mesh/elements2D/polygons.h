@@ -27,7 +27,7 @@ void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
 				const void *density_data);
 
 void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
-				nb_graph_t *graph);
+			      nb_graph_t *graph);
 void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
 				nb_graph_t *graph);
 void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,

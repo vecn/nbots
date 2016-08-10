@@ -1044,4 +1044,29 @@ void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
 void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
 				nb_graph_t *graph);
 void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,
-				    nb_graph_t *graph);
+				    nb_graph_t *graph)
+{
+	graph->N = mshpoly->N_elems;
+	
+	uint32_t memsize1 = graph->N * sizeof(*(graph->N_adj));
+	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
+
+	uint32_t memsize3 = 0;
+	for (uint32_t i = 0; i < graph->N; i++)
+		memsize3 += mshpoly->N_adj[i];
+
+	char *memblock = calloc(memsize1 + memsize2 + memsize3, 1);
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize1);
+	graph->wi = NULL;
+	graph->wij = NULL;
+	
+	memblock += memsize1 + memsize2;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->N_adj[i] = mshpoly->N_adj[i];
+		graph->adj[i] = (void*) memblock;
+		memblock += graph->N_adj[i] * sizeof(**(graph->adj));
+		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
+		  graph->adj[i][j] = mshpoly->ngb[i][j];
+	}
+}

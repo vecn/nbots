@@ -27,8 +27,8 @@ struct vcn_fem_implicit_s{
 	double residual_tolerance;
 };
 
-static double tension_damage_r0(const vcn_fem_material_t *const mat);
-static double tension_damage(const vcn_fem_material_t *const mat, 
+static double tension_damage_r0(const nb_material_t *const mat);
+static double tension_damage(const nb_material_t *const mat, 
 			     double *strain,
 			     double *r_damage_prev,
 			     double *r_damage,
@@ -36,9 +36,9 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 			     nb_analysis2D_t analysis2D);
 /*
 SECOND OPTION
-static double tension_truncated_damage_r0(const vcn_fem_material_t *const mat);
+static double tension_truncated_damage_r0(const nb_material_t *const mat);
 static double tension_truncated_damage
-			(const vcn_fem_material_t *const mat, 
+			(const nb_material_t *const mat, 
 			 double *strain,
 			 double *r_damage_prev,
 			 double* r_damage,
@@ -49,7 +49,7 @@ static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
 		 const vcn_fem_elem_t *const elem,
-		 const vcn_fem_material_t *const material,
+		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
 		 nb_analysis2D_t analysis2D,
@@ -65,7 +65,7 @@ static void DMG_pipeline_compute_strain
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
 			 nb_analysis2D_t analysis2D,
-			 const vcn_fem_material_t *const material,
+			 const nb_material_t *const material,
 			 double *damage,
 			 double *r_dmg_prev,
 			 double *r_dmg);
@@ -120,13 +120,13 @@ double vcn_fem_implicit_get_residual_tolerance
 	return isparams->residual_tolerance;
 }
 
-static inline double tension_damage_r0(const vcn_fem_material_t *const mat)
+static inline double tension_damage_r0(const nb_material_t *const mat)
 {
-	return vcn_fem_material_get_traction_limit_stress(mat) /
-		sqrt(vcn_fem_material_get_elasticity_module(mat));
+	return nb_material_get_traction_limit_stress(mat) /
+		sqrt(nb_material_get_elasticity_module(mat));
 }
 
-static double tension_damage(const vcn_fem_material_t *const mat, 
+static double tension_damage(const nb_material_t *const mat, 
 			     double *strain,
 			     double *r_damage_prev,
 			     double *r_damage,
@@ -135,9 +135,9 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 {
 	double D[4];
 	pipeline_get_constitutive_matrix(D, mat, analysis2D);
-	double E = vcn_fem_material_get_elasticity_module(mat);
-	double Gf = vcn_fem_material_get_fracture_energy(mat);
-	double ft = vcn_fem_material_get_traction_limit_stress(mat);
+	double E = nb_material_get_elasticity_module(mat);
+	double Gf = nb_material_get_fracture_energy(mat);
+	double ft = nb_material_get_traction_limit_stress(mat);
 
 	/* Compute effective stress */
 	double effective_stress[3];
@@ -180,13 +180,13 @@ static double tension_damage(const vcn_fem_material_t *const mat,
 /*
 SECOND OPTION
 static inline double tension_truncated_damage_r0
-			(const vcn_fem_material_t *const mat)
+			(const nb_material_t *const mat)
 {
-	return vcn_fem_material_get_traction_limit_stress(mat);
+	return nb_material_get_traction_limit_stress(mat);
 }
 
 static double tension_truncated_damage
-			(const vcn_fem_material_t *const mat, 
+			(const nb_material_t *const mat, 
 			 double *strain,
 			 double *r_damage_prev,
 			 double* r_damage,
@@ -195,9 +195,9 @@ static double tension_truncated_damage
 {
 	double D[4];
 	pipeline_get_constitutive_matrix(D, mat, analysis2D);
-	double E = vcn_fem_material_get_elasticity_module(mat);
-	double Gf = vcn_fem_material_get_fracture_energy(mat);
-	double ft = vcn_fem_material_get_traction_limit_stress(mat);
+	double E = nb_material_get_elasticity_module(mat);
+	double Gf = nb_material_get_fracture_energy(mat);
+	double ft = nb_material_get_traction_limit_stress(mat);
 
 // Compute effective stress
 	double effective_stress[3];
@@ -234,7 +234,7 @@ static double tension_truncated_damage
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elem,
-			 const vcn_fem_material_t *const material,
+			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
 			 double gravity[2],
@@ -476,7 +476,7 @@ static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
 		 const vcn_fem_elem_t *const elem,
-		 const vcn_fem_material_t *const material,
+		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
 		 nb_analysis2D_t analysis2D,
@@ -505,7 +505,7 @@ static void DMG_pipeline_assemble_system
 	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elements; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
-		double density = vcn_fem_material_get_density(material);
+		double density = nb_material_get_density(material);
 		if (pipeline_elem_is_enabled(elements_enabled, k)) {
 			pipeline_get_constitutive_matrix(D, material,
 							 analysis2D);
@@ -578,7 +578,7 @@ static void DMG_pipeline_compute_strain
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
 			 nb_analysis2D_t analysis2D,
-			 const vcn_fem_material_t *const material,
+			 const nb_material_t *const material,
 			 double *damage,
 			 double *r_dmg_prev,
 			 double *r_dmg)

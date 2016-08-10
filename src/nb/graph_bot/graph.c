@@ -21,6 +21,7 @@
 
 static uint32_t get_wij_memsize(nb_graph_t *graph);
 static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val);
+static void graph_clear(nb_graph_t *graph);
 static nb_container_t* get_collisions(nb_container_t *hash);
 static int8_t compare_degree(const void *const A,
 			     const void *const B);
@@ -45,6 +46,38 @@ static uint32_t exist(uint32_t N, uint32_t *array, uint32_t val)
 			return i;
 	}
 	return N;
+}
+
+uint32_t nb_graph_get_memsize(void)
+{
+	return sizeof(nb_graph_t);
+}
+
+void nb_graph_init(nb_graph_t *graph)
+{
+	memset(graph, 0, nb_graph_get_memsize());
+}
+
+void nb_graph_finish(nb_graph_t *graph)
+{
+	graph_clear(graph);
+}
+
+static void graph_clear(nb_graph_t *graph)
+{
+	free(graph->N_adj); /* Includes graph->adj in the same memblock */
+
+	if (NULL != graph->wi)
+		free(graph->wi);
+
+	if (NULL != graph->wij)
+		free(graph->wij);
+}
+
+void nb_graph_clear(nb_graph_t *graph)
+{
+	graph_clear(graph);
+	memset(graph, 0, nb_graph_get_memsize());	
 }
 
 vcn_graph_t* vcn_graph_create(void)
@@ -100,14 +133,7 @@ vcn_graph_t* vcn_graph_get_subgraph(const vcn_graph_t *const graph,
 
 void vcn_graph_destroy(vcn_graph_t *graph)
 {
-	free(graph->N_adj); /* Includes graph->adj in the same memblock */
-
-	if (NULL != graph->wi)
-		free(graph->wi);
-
-	if (NULL != graph->wij)
-		free(graph->wij);
-
+	nb_graph_finish(graph);
 	free(graph);
 }
 

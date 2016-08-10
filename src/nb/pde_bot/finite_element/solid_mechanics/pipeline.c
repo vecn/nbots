@@ -27,7 +27,7 @@
 
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    const vcn_msh3trg_t *mesh,
-			    const vcn_fem_material_t *material,
+			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
 			    nb_analysis2D_params *params2D,
@@ -87,13 +87,13 @@ static int get_element_strain(uint32_t id, double *strain,
 			      double *displacement,
 			      const vcn_fem_elem_t *const elem,
 			      nb_analysis2D_t analysis2D,
-			      const vcn_fem_material_t *const material);
+			      const nb_material_t *const material);
 
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
 		 const vcn_msh3trg_t *const mesh,
 		 const vcn_fem_elem_t *const elem,
-		 const vcn_fem_material_t *const material,
+		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
 		 nb_analysis2D_t analysis2D,
@@ -132,7 +132,7 @@ bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id)
 
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    const vcn_msh3trg_t *mesh,
-			    const vcn_fem_material_t *material,
+			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
 			    nb_analysis2D_params *params2D,
@@ -144,7 +144,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	double density = 1e-6;
 	if (is_enabled) {
 		pipeline_get_constitutive_matrix(D, material, analysis2D);
-		density = vcn_fem_material_get_density(material);
+		density = nb_material_get_density(material);
 	}
 
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
@@ -172,11 +172,11 @@ CLEANUP:
 }
 
 void pipeline_get_constitutive_matrix(double D[4], 
-				      const vcn_fem_material_t *material,
+				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D)
 {
-	double E = vcn_fem_material_get_elasticity_module(material);
-	double v = vcn_fem_material_get_poisson_module(material);
+	double E = nb_material_get_elasticity_module(material);
+	double v = nb_material_get_poisson_module(material);
 	switch (analysis2D) {
 	case NB_PLANE_STRESS:
 		set_plane_stress(D, E, v);
@@ -589,7 +589,7 @@ void pipeline_compute_strain(double *strain,
 			     double *displacement,
 			     const vcn_fem_elem_t *const elem,
 			     nb_analysis2D_t analysis2D,
-			     const vcn_fem_material_t *const material)
+			     const nb_material_t *const material)
 {
 	uint32_t N_elem = mesh->N_triangles;
 
@@ -606,7 +606,7 @@ static int get_element_strain(uint32_t id, double *strain,
 			      double *displacement,
 			      const vcn_fem_elem_t *const elem,
 			      nb_analysis2D_t analysis2D,
-			      const vcn_fem_material_t *const material)
+			      const nb_material_t *const material)
 {
 	int status = 1;
 	uint32_t *conn_mtx = mesh->vertices_forming_triangles;

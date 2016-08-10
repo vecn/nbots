@@ -34,7 +34,7 @@ double vcn_fem_implicit_get_residual_tolerance
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 (const vcn_msh3trg_t *const mesh,
  const vcn_fem_elem_t *const elemtype,
- const vcn_fem_material_t *const material,
+ const nb_material_t *const material,
  const nb_bcond_t *const bcond,
  bool enable_self_weight,
  double gravity[2],

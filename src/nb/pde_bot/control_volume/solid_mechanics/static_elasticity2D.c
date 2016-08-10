@@ -15,35 +15,92 @@
 
 #define POW2(a) ((a)*(a))
 
+static int assemble_system(vcn_sparse_t *K, double *F,
+			   const nb_mshpoly_t *const mesh,
+			   const nb_material_t *material,
+			   bool enable_self_weight,
+			   double gravity[2],
+			   nb_analysis2D_t analysis2D,
+			   nb_analysis2D_params *params2D);
+static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
+				   vcn_sparse_t *K, double *F,
+				   const nb_bcond_t *const bcond,
+				   double factor);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 
+static void compute_strain(double *strain,
+			   const nb_mshpoly_t *const mesh,
+			   double *disp,
+			   nb_analysis2D_t analysis2D,
+			   const nb_material_t *const material);
+
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_mshpoly_t *const mesh,
-			 const vcn_fem_material_t *const material,
+			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
 			 double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
-			 const bool *elements_enabled, /* NULL to enable all */
 			 double *displacement, /* Output */
 			 double *strain       /* Output */)
 {
-	int status = 1;
-	vcn_graph_t *graph;// = vcn_msh3trg_create_vtx_graph(mesh);
+	int status = 0;
+	vcn_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_init(graph);
+	nb_mshpoly_set_elemental_graph(mesh, graph);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
-	vcn_graph_destroy(graph);
+	nb_graph_finish(graph);
 
-	uint32_t F_memsize;// = 2 * mesh->N_vertices * sizeof(double);
+	uint32_t F_memsize = 2 * mesh->N_nod * sizeof(double);
 	double* F = NB_SOFT_MALLOC(F_memsize);
 	memset(F, 0, F_memsize);
+
+	int status_assemble = assemble_system(K, F, mesh, material,
+					      enable_self_weight, gravity,
+					      analysis2D, params2D);
+	if (0 != status_assemble) {
+		status = 1;
+		goto CLEANUP_LINEAR_SYSTEM;
+	}
+
+	set_boundary_conditions(mesh, K, F, bcond, 1.0);
+
+  
+	int solver_status = solver(K, F, displacement);
+	if (0 != solver_status) {
+		status = 2;
+		goto CLEANUP_LINEAR_SYSTEM;
+	}
+
+	compute_strain(strain, mesh, displacement,
+		       analysis2D, material);
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	NB_SOFT_FREE(F_memsize, F);
 	return status;
+}
+
+static int assemble_system(vcn_sparse_t *K, double *F,
+			   const nb_mshpoly_t *const mesh,
+			   const nb_material_t *material,
+			   bool enable_self_weight,
+			   double gravity[2],
+			   nb_analysis2D_t analysis2D,
+			   nb_analysis2D_params *params2D)
+{
+	return 1;
+}
+
+static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
+				   vcn_sparse_t *K, double *F,
+				   const nb_bcond_t *const bcond,
+				   double factor)
+{
+	return 1;
 }
 
 static int solver(const vcn_sparse_t *const A,
@@ -60,4 +117,13 @@ static int solver(const vcn_sparse_t *const A,
 	else
 		out = 1; /* Tolerance not reached in CG Jacobi */
 	return out;
+}
+
+static void compute_strain(double *strain,
+			   const nb_mshpoly_t *const mesh,
+			   double *disp,
+			   nb_analysis2D_t analysis2D,
+			   const nb_material_t *const material)
+{
+	;
 }

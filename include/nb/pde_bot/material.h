@@ -1,25 +1,25 @@
 #ifndef __NB_PDE_BOT_MATERIAL_H__
 #define __NB_PDE_BOT_MATERIAL_H__
 
-typedef struct vcn_fem_material_s vcn_fem_material_t;
+typedef struct nb_material_s nb_material_t;
 
-vcn_fem_material_t* vcn_fem_material_create(void);
-vcn_fem_material_t* vcn_fem_material_clone(vcn_fem_material_t* mat);
-void vcn_fem_material_destroy(vcn_fem_material_t* mat);
+nb_material_t* nb_material_create(void);
+nb_material_t* nb_material_clone(nb_material_t* mat);
+void nb_material_destroy(nb_material_t* mat);
 
-void vcn_fem_material_set_poisson_module(vcn_fem_material_t* mat, double pmodule);
-void vcn_fem_material_set_elasticity_module(vcn_fem_material_t* mat, double emodule);
-void vcn_fem_material_set_density(vcn_fem_material_t* mat, double density);
-void vcn_fem_material_set_fracture_energy(vcn_fem_material_t* mat, double frac_energy);
-void vcn_fem_material_set_traction_limit_stress(vcn_fem_material_t* mat, double max_stress);
-void vcn_fem_material_set_compression_limit_stress(vcn_fem_material_t* mat, double max_stress);
+void nb_material_set_poisson_module(nb_material_t* mat, double pmodule);
+void nb_material_set_elasticity_module(nb_material_t* mat, double emodule);
+void nb_material_set_density(nb_material_t* mat, double density);
+void nb_material_set_fracture_energy(nb_material_t* mat, double frac_energy);
+void nb_material_set_traction_limit_stress(nb_material_t* mat, double max_stress);
+void nb_material_set_compression_limit_stress(nb_material_t* mat, double max_stress);
 
-double vcn_fem_material_get_poisson_module(const vcn_fem_material_t *const mat);
-double vcn_fem_material_get_elasticity_module(const vcn_fem_material_t *const mat);
-double vcn_fem_material_get_density(const vcn_fem_material_t *const mat);
-double vcn_fem_material_get_fracture_energy(const vcn_fem_material_t *const mat);
-double vcn_fem_material_get_traction_limit_stress(const vcn_fem_material_t *const mat);
-double vcn_fem_material_get_compression_limit_stress(const vcn_fem_material_t *const mat);
-int vcn_fem_material_verify(vcn_fem_material_t* material);
+double nb_material_get_poisson_module(const nb_material_t *const mat);
+double nb_material_get_elasticity_module(const nb_material_t *const mat);
+double nb_material_get_density(const nb_material_t *const mat);
+double nb_material_get_fracture_energy(const nb_material_t *const mat);
+double nb_material_get_traction_limit_stress(const nb_material_t *const mat);
+double nb_material_get_compression_limit_stress(const nb_material_t *const mat);
+int nb_material_verify(nb_material_t* material);
 
 #endif
