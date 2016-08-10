@@ -6,16 +6,16 @@
 #include "nb/geometric_bot.h"
 
 #include "nb/pde_bot/material.h"
+#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
-#include "nb/pde_bot/finite_element/solid_mechanics/analysis2D.h"
 
 int vcn_fem_compute_2D_Solid_Mechanics
 			(const vcn_msh3trg_t *const mesh,
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
 			 const nb_bcond_t *const bcond,
-			 char enable_self_weight,
+			 bool enable_self_weight,
 			 double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,

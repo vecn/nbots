@@ -7,6 +7,7 @@
 
 #include "nb/eigen_bot.h"
 #include "nb/pde_bot/material.h"
+#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"

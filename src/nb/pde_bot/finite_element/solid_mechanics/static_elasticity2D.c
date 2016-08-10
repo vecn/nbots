@@ -12,15 +12,14 @@
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/pde_bot/material.h"
-#include "nb/pde_bot/solid_mechanics_formulas.h"
+#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
+#include "nb/pde_bot/common_solid_mechanics/formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
-#include "nb/pde_bot/finite_element/solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
-  
-#include "../element_struct.h"
+
 #include "pipeline.h"
 
 #define POW2(a) ((a)*(a))
@@ -33,13 +32,13 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 const vcn_fem_elem_t *const elemtype,
 			 const vcn_fem_material_t *const material,
 			 const nb_bcond_t *const bcond,
-			 char enable_self_weight,
+			 bool enable_self_weight,
 			 double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 const bool *elements_enabled, /* NULL to enable all */
 			 double *displacement, /* Output */
-			 double *strain       /* Output */)
+			 double *strain        /* Output */)
 {
 	int status = 0;
 	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
@@ -71,7 +70,6 @@ int vcn_fem_compute_2D_Solid_Mechanics
 
 	pipeline_compute_strain(strain, mesh, displacement, elemtype,
 				analysis2D, material);
-	
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	NB_SOFT_FREE(F_memsize, F);

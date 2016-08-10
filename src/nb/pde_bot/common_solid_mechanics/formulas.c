@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "nb/pde_bot/solid_mechanics_formulas.h"
+#include "nb/pde_bot/common_solid_mechanics/formulas.h"
 
 #define POW2(a) ((a)*(a))
 
