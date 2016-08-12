@@ -36,6 +36,7 @@
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 #include "nb/geometric_bot/mesh/modules2D/extra_fem.h"
 #include "nb/geometric_bot/mesh/modules2D/drawing.h"
+#include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
