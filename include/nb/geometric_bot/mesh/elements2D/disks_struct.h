@@ -1,5 +1,5 @@
-#ifndef __NB_MESH2D_DISKS_STRUCT_H__
-#define __NB_MESH2D_DISKS_STRUCT_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH2D_DISKS_STRUCT_H__
+#define __NB_GEOMETRIC_BOT_MESH2D_DISKS_STRUCT_H__
 
 /**
  * @brief Read-only mesh structure, which stores a 2D sphere packing

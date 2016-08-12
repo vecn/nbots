@@ -1,23 +1,26 @@
-#ifndef __NB_MESH_PARTITION_H__
-#define __NB_MESH_PARTITION_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_PARTITION_H__
+#define __NB_GEOMETRIC_BOT_MESH_PARTITION_H__
 
 #include <stdint.h>
 
 #include "nb/graph_bot.h"
 
 typedef enum {
-	NB_TRIAN, NB_QUAD, NB_DISK, NB_POLY, NB_TRIQUAD
+	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
 } nb_partition_type;
 
 typedef struct nb_partition_s nb_partition_t;
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type);
 void nb_partition_init(nb_partition_t *part, nb_partition_type  type);
+void nb_partition_copy(nb_partition_t *part, const nb_partition_t* srcpart);
 void nb_partition_finish(nb_partition_t *part);
-nb_partition_t* nb_partition_create(void);
+nb_partition_t* nb_partition_create(nb_partition_type type);
 nb_partition_t* nb_partition_clone(nb_partition_t* part);
 void nb_partition_clear(nb_partition_t* part);
 void nb_partition_destroy(nb_partition_t* part);
+
+nb_partition_type nb_partition_get_type(const nb_partition_t *part);
 
 uint32_t nb_partition_get_N_invtx(const nb_partition_t *part);
 uint32_t nb_partition_get_N_insgm(const nb_partition_t *part);
@@ -51,7 +54,7 @@ void nb_partition_load_elem_graph(const nb_partition_t *part,
 				  vcn_graph_t *graph);
 void nb_partition_load_from_mesh(nb_partition_t *part,
 				 const nb_mesh_t *const mesh);
-
-
+void nb_partition_get_enveloping_box(const nb_partition_t *part,
+				     double box[4]);
 
 #endif

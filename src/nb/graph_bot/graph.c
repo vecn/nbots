@@ -65,7 +65,9 @@ void nb_graph_finish(nb_graph_t *graph)
 
 static void graph_clear(nb_graph_t *graph)
 {
-	free(graph->N_adj); /* Includes graph->adj in the same memblock */
+	if (NULL != graph->N_adj)
+		/* Includes graph->adj in the same memblock */
+		free(graph->N_adj);
 
 	if (NULL != graph->wi)
 		free(graph->wi);

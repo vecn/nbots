@@ -10,7 +10,7 @@
 #include "nb/graphics_bot.h"
 
 typedef struct {
-	const vcn_msh3trg_t *msh3trg;
+	const void *msh3trg;
 	uint32_t k_part;
 	const uint32_t *part;
 	uint32_t k_to_draw;
@@ -19,17 +19,17 @@ typedef struct {
 
 static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr);
-static void calculate_partition_centers(const vcn_msh3trg_t *const msh3trg,
+static void calculate_partition_centers(const void *const msh3trg,
 					const uint32_t *const part,
 					uint32_t kpart, double **pcenter);
 static void draw_triangle_partition_edge(nb_graphics_context_t *g,
-					 const vcn_msh3trg_t *const msh3trg,
+					 const void *const msh3trg,
 					 const uint32_t *const part,
 					 uint32_t kpart, double **pcenter,
 					 double scale_partitions,
 					 int trg_id, int edge_id);
 static void draw_triangle_partition_border(nb_graphics_context_t *g,
-					   const vcn_msh3trg_t *const msh3trg,
+					   const void *const msh3trg,
 					   const uint32_t *const part,
 					   uint32_t kpart, double **pcenter,
 					   double scale_partitions,
@@ -41,7 +41,7 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 
 static void scale_vtx(double vtx[2], double center[2], double zoom);
 
-void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
+void vcn_msh3trg_draw(const void *const msh3trg,
 		      const char* filename, int width, int height)
 {
 	nb_graphics_export(filename, width, height,
@@ -51,7 +51,7 @@ void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
 static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 			 const void *const msh3trg_ptr)
 {
-	const vcn_msh3trg_t *const msh3trg = msh3trg_ptr;
+	const void *const msh3trg = msh3trg_ptr;
 	
 	/* Compute cam->center and cam->zoom */
 	double box[4];
@@ -116,7 +116,7 @@ static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 }
 
 static void calculate_partition_centers
-                     (const vcn_msh3trg_t *const restrict msh3trg,
+                     (const void *const restrict msh3trg,
 		      const uint32_t *const restrict part,
 		      uint32_t kpart, double **pcenter)
 {
@@ -144,7 +144,7 @@ static void calculate_partition_centers
 }
 
 static void draw_triangle_partition_edge(nb_graphics_context_t *g,
-					 const vcn_msh3trg_t *const msh3trg,
+					 const void *const msh3trg,
 					 const uint32_t *const part,
 					 uint32_t kpart, double **pcenter,
 					 double scale_partitions,
@@ -170,7 +170,7 @@ static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 }
 
 static void draw_triangle_partition_border(nb_graphics_context_t *g,
-					   const vcn_msh3trg_t *const msh3trg,
+					   const void *const msh3trg,
 					   const uint32_t *const part,
 					   uint32_t kpart, double **pcenter,
 					   double scale_partitions,
@@ -199,7 +199,7 @@ static inline void scale_vtx(double vtx[2], double center[2], double zoom)
 	vtx[1] = (vtx[1] - center[1]) * zoom + center[1];
 }
 
-void vcn_msh3trg_partition_draw(const vcn_msh3trg_t *const msh3trg,
+void vcn_msh3trg_partition_draw(const void *const msh3trg,
 				const char* filename, int width, int height,
 				uint32_t k_part, const uint32_t *const part,
 				uint32_t k_to_draw, double scale_partitions)
@@ -225,17 +225,11 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 				   const void *const part_data)
 {
 	const part_data_t *const data = part_data;
-	const vcn_msh3trg_t *const msh3trg = data->msh3trg;
+	const void *const msh3trg = data->msh3trg;
 
 	/* Compute cam.center and cam.zoom */
 	double box[4];
-	vcn_utils2D_get_enveloping_box_from_subset(msh3trg->N_input_vertices,
-						   msh3trg->input_vertices,
-						   msh3trg->vertices,
-						   2 * sizeof(*(msh3trg->vertices)),
-						   vcn_utils2D_get_x_from_darray,
-						   vcn_utils2D_get_y_from_darray,
-						   box);
+	nb_msh3trg_get_enveloping_box(msh3trg, box);
 
 	nb_graphics_enable_camera(g);
 	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);

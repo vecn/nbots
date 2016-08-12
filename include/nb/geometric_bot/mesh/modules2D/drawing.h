@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
+#include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/polygons_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/quad_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/disks_struct.h"
@@ -17,7 +17,7 @@ void vcn_dewall_draw(const vcn_mesh_t *const restrict mesh,
 		     uint8_t axe, double alpha, uint32_t N,
 		     void *vtx_array);
 
-void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
+void vcn_msh3trg_draw(const void *const msh3trg,
 		      const char* filename, int width, int height);
 
 /**
@@ -31,7 +31,7 @@ void vcn_msh3trg_draw(const vcn_msh3trg_t *const msh3trg,
  * @param[in] k_to_draw Partition to draw. Zero to draw all of them.
  * @param[in] scale_partitions Scale of the size of the partitions, in (0,1].
  */
-void vcn_msh3trg_partition_draw(const vcn_msh3trg_t *const msh3trg,
+void vcn_msh3trg_partition_draw(const void *const msh3trg,
 				const char* filename, int width, int height,
 				uint32_t k_part, const uint32_t *const part,
 				uint32_t k_to_draw, double scale_partitions);
