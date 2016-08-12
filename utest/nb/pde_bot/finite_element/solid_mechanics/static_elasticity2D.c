@@ -66,11 +66,11 @@ static int read_problem_data
 		(const char* filename,
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
-		 vcn_fem_material_t* mat,
+		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D);
 static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model);
-static int read_material(vcn_cfreader_t *cfreader, vcn_fem_material_t *mat);
+static int read_material(vcn_cfreader_t *cfreader, nb_material_t *mat);
 static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
@@ -272,7 +272,7 @@ static int simulate_fem(const char *problem_data,
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *bcond = alloca(bcond_size);
 	nb_bcond_init(bcond, 2);
-	vcn_fem_material_t* material = vcn_fem_material_create();
+	nb_material_t* material = nb_material_create();
 	nb_analysis2D_t analysis2D;
 	nb_analysis2D_params params2D;
 
@@ -316,7 +316,7 @@ CLEANUP_FEM:
 CLEANUP_INPUT:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
-	vcn_fem_material_destroy(material);
+	nb_material_destroy(material);
 
 	return status;
 }
@@ -362,7 +362,7 @@ static int read_problem_data
 		(const char* filename,
 		 vcn_model_t *model,
 		 nb_bcond_t* bcond,
-		 vcn_fem_material_t* mat,
+		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D)
 {      
@@ -469,34 +469,34 @@ EXIT:
 }
 
 
-static int read_material(vcn_cfreader_t *cfreader, vcn_fem_material_t *mat)
+static int read_material(vcn_cfreader_t *cfreader, nb_material_t *mat)
 {
 	int status = 1;
 	double poisson_module;
 	if (0 != vcn_cfreader_read_double(cfreader, &poisson_module))
 		goto EXIT;
-	vcn_fem_material_set_poisson_module(mat, poisson_module);
+	nb_material_set_poisson_module(mat, poisson_module);
 
 	double elasticity_module;
 	if (0 != vcn_cfreader_read_double(cfreader, &elasticity_module))
 		goto EXIT;
-	vcn_fem_material_set_elasticity_module(mat, elasticity_module);
+	nb_material_set_elasticity_module(mat, elasticity_module);
 
 	double fracture_energy;
 	if (0 != vcn_cfreader_read_double(cfreader, &fracture_energy))
 		goto EXIT;
-	vcn_fem_material_set_fracture_energy(mat, fracture_energy);
+	nb_material_set_fracture_energy(mat, fracture_energy);
 
 	double compression_limit_stress;
 	if (0 != vcn_cfreader_read_double(cfreader, &compression_limit_stress))
 		goto EXIT;
-	vcn_fem_material_set_compression_limit_stress(mat,
+	nb_material_set_compression_limit_stress(mat,
 						      compression_limit_stress);
 
 	double traction_limit_stress;
 	if (0 != vcn_cfreader_read_double(cfreader, &traction_limit_stress))
 		goto EXIT;
-	vcn_fem_material_set_traction_limit_stress(mat, traction_limit_stress);
+	nb_material_set_traction_limit_stress(mat, traction_limit_stress);
 	status = 0;
 EXIT:
 	return status;

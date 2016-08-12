@@ -8,9 +8,6 @@
 #include "nb/pde_bot/finite_element/element.h"
 
 bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id);
-void pipeline_get_constitutive_matrix(double D[4], 
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D);
 void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 			      double D[4], double density,
 			      double thickness, double detJ,

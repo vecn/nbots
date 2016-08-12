@@ -134,7 +134,7 @@ static double tension_damage(const nb_material_t *const mat,
 			     nb_analysis2D_t analysis2D)
 {
 	double D[4];
-	pipeline_get_constitutive_matrix(D, mat, analysis2D);
+	nb_pde_get_constitutive_matrix(D, mat, analysis2D);
 	double E = nb_material_get_elasticity_module(mat);
 	double Gf = nb_material_get_fracture_energy(mat);
 	double ft = nb_material_get_traction_limit_stress(mat);
@@ -194,7 +194,7 @@ static double tension_truncated_damage
 			 nb_analysis2D_t analysis2D)
 {
 	double D[4];
-	pipeline_get_constitutive_matrix(D, mat, analysis2D);
+	nb_pde_get_constitutive_matrix(D, mat, analysis2D);
 	double E = nb_material_get_elasticity_module(mat);
 	double Gf = nb_material_get_fracture_energy(mat);
 	double ft = nb_material_get_traction_limit_stress(mat);
@@ -337,8 +337,8 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			pipeline_set_boundary_conditions(mesh, K, F, bcond,
-							 condition_factor);
+			nb_pde_smech_set_bconditions(mesh, K, F, bcond,
+						     condition_factor);
 
 			/*******************************************/
 			/******* > Verify residual *****************/
@@ -507,8 +507,8 @@ static void DMG_pipeline_assemble_system
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = nb_material_get_density(material);
 		if (pipeline_elem_is_enabled(elements_enabled, k)) {
-			pipeline_get_constitutive_matrix(D, material,
-							 analysis2D);
+			nb_pde_get_constitutive_matrix(D, material,
+						       analysis2D);
 			density = 1e-6;
 		}
 

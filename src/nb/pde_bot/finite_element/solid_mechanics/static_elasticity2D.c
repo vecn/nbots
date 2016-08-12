@@ -14,6 +14,7 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
+#include "nb/pde_bot/common_solid_mechanics/boundary_conditions.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
@@ -59,7 +60,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	pipeline_set_boundary_conditions(mesh, K, F, bcond, 1.0);
+	nb_pde_smech_set_bconditions(mesh, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);
@@ -107,8 +108,8 @@ void vcn_fem_compute_stress_from_strain
 	for (uint32_t i = 0; i < N_elements; i++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		if (pipeline_elem_is_enabled(elements_enabled, i))
-			pipeline_get_constitutive_matrix(D, material,
-							 analysis2D);
+			nb_pde_get_constitutive_matrix(D, material,
+						       analysis2D);
 
 		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 		for (int j = 0; j < N_gp; j++) {
