@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nb/geometric_bot/model/model2D_struct.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/graph_bot.h"
+
+#include "nb/geometric_bot/model/model2D_struct.h"
 
 /**
  * @brief Geometry model defining the domain.
@@ -72,34 +72,6 @@ vcn_model_t* vcn_model_create_circle(double radius,
 				     double y_center,
 				     double side_length);
 
-/**
- * @brief Build a geometry model from a triangulation.
- * @param[in] msh3trg Input triangulation.
- * @return Model if success, NULL if something goes wrong.
- */
-vcn_model_t* vcn_model_create_from_msh3trg
-(const vcn_msh3trg_t *const msh3trg);
-
-void vcn_model_generate_from_msh3trg
-(vcn_model_t *model, const vcn_msh3trg_t *const msh3trg);
-
-/**
- * @brief Build a geometry model from a triangulation with disabled
- * triangles.
- * @param[in] msh3trg Input triangulation.
- * @param[in] trg_enabled Array of booleans indicating wich triangles are
- * enabled. NULL to enable all.
- * @param[out] N_real_vtx_boundaries Stores the number of vertices forming
- * the boundary that appears in the original input.
- * @param[out] real_vtx_boundaries Stores an array of the vertices ids in
- * the new model corresponding to original input vertices.
- * @return Model if success, NULL if something goes wrong.
- */
-vcn_model_t* vcn_model_create_from_msh3trg_with_disabled_trg
-(const vcn_msh3trg_t *const msh3trg,
- const bool *const trg_enabled,
- uint32_t *N_real_vtx_boundaries,
- uint32_t **real_vtx_boundaries);
 
 /**
  * @brief Save model into a plain text file.

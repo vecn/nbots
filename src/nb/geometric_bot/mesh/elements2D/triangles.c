@@ -9,7 +9,6 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
 
@@ -346,7 +345,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr,
 	return is_inside;
 }
 
-void nb_msh3trg_load_vtx_graph(const void *msh3trg_ptr, nb_graph_t *graph)
+void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
@@ -404,7 +403,7 @@ void nb_msh3trg_load_vtx_graph(const void *msh3trg_ptr, nb_graph_t *graph)
 	free(l_nodal_CM);
 }
 
-void nb_msh3trg_create_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
+void nb_msh3trg_create_interelem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
@@ -823,4 +822,339 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 		else if (y > box[3])
 			box[3] = y;
 	}
+}
+
+void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
+{
+	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
+	uint32_t N_vtx = nb_msh3trg_get_N_invtx(part);
+	uint32_t N_nod = nb_msh3trg_get_N_nodes(part);
+	uint32_t N_sgm = nb_msh3trg_get_N_insgm(part);
+
+	uint32_t sgm_memsize = 2 * N_sgm * sizeof(uint32_t);
+	uint32_t* segments = NB_SOFT_MALLOC(sgm_memsize);
+
+	uint32_t vtx_memsize = 2 * N_vtx * sizeof(double);
+	double* vertices = NB_SOFT_MALLOC(vtx_memsize);
+
+	uint32_t idx_memsize = N_vtx * sizeof(uint32_t);
+	uint32_t* vtx_index_relation = NB_SOFT_MALLOC(idx_memsize);
+
+	uint32_t N_vertices = 0;
+	for (uint32_t i = 0; i < N_vtx; i++) {
+		uint32_t id = nb_msh3trg_get_invtx(part, i);
+		if (id < N_nod) {
+			vertices[N_vertices * 2] =
+				nb_msh3trg_get_x_node(part, id);
+			vertices[N_vertices*2+1] =
+				nb_msh3trg_get_y_node(part, id);
+
+			vtx_index_relation[i] = N_vertices;
+			N_vertices += 1;
+		}
+	}
+
+	uint32_t N_segments = 0;
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_nod_x_sgm =
+			nb_msh3trg_get_N_nodes_x_insgm(part, i);
+		if (0 < N_nod_x_sgm) {
+			uint32_t v1 = nb_msh3trg_get_node_x_insgm(part, i, 0);
+			uint32_t last_idx = N_nod_x_sgm - 1;
+			uint32_t v2 = nb_msh3trg_get_node_x_insgm(part, i, last_idx);
+			for (uint32_t j = 0; j < N_vtx; j++) {
+				if (nb_msh3trg_get_invtx(part, j) == v1) {
+					v1 = j;
+					break;
+				}
+			}
+			for (uint32_t j = 0; j < N_vtx; j++) {
+				if (nb_msh3trg_get_invtx(part, j) == v2) {
+					v2 = j;
+					break;
+				}
+			}
+			segments[N_segments * 2] = vtx_index_relation[v1];
+			segments[N_segments*2+1] = vtx_index_relation[v2];
+			N_segments += 1;
+		}
+	}
+	/* Build model without holes */
+	vcn_model_clear(model);
+	model->N = N_vertices;
+	model->vertex = malloc(2 * N_vertices * sizeof(*(model->vertex)));
+	memcpy(model->vertex, vertices, 
+	       2 * N_vertices * sizeof(*(model->vertex)));
+	model->M = N_segments;
+	model->edge = malloc(2 * N_segments * sizeof(*(model->edge)));
+	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
+
+	NB_SOFT_FREE(sgm_memsize, segments);
+	NB_SOFT_FREE(vtx_memsize, vertices);
+	NB_SOFT_FREE(idx_memsize, vtx_index_relation);
+
+	/* Build a light mesh to know where are the holes */
+	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
+	vcn_mesh_init(mesh);
+	vcn_mesh_get_simplest_from_model(mesh, model);
+	
+	/* Get holes and destroy mesh */
+	uint32_t N_centroids;
+	double* centroids =
+		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
+	vcn_mesh_finish(mesh);
+
+	uint32_t N_holes = 0;
+	double *holes = NULL;
+
+	if (0 < N_centroids) {
+		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+		memset(mask_centroids, 0, N_centroids);
+		/* get mask */
+		for (uint32_t i = 0; i < N_centroids; i++) {
+			bool not_inside =
+				!nb_msh3trg_is_vtx_inside(part,
+							    centroids[i * 2],
+							    centroids[i*2+1]);
+			if (not_inside) {
+				mask_centroids[i] = 1;
+				N_holes += 1;
+			}
+		}
+
+		if (0 < N_holes) {
+			uint32_t i = 0;
+			holes = malloc(2 * N_holes * sizeof(*holes));
+			for (uint32_t j = 0; j < N_centroids; j++) {
+				if (1 == mask_centroids[j]) {
+					memcpy(&(holes[i*2]),
+					       &(centroids[j*2]),
+					       2 * sizeof(*holes));
+					i += 1;
+				}
+			}
+		}
+
+		NB_SOFT_FREE(N_centroids, mask_centroids);
+		free(centroids);
+	}
+	
+	/* Build model with holes */
+	model->H = N_holes;
+	model->holes = holes;
+}
+
+
+void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
+					   const bool *elems_enabled,
+					   nb_model_t *model,
+					   uint32_t *N_input_vtx,
+					   uint32_t **input_vtx)
+{
+	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
+	/* Allocate model */
+	vcn_model_t* model = vcn_model_create();
+	/* Count segments and mark vertices used */
+	model->M = 0;
+	
+	uint32_t N_nod = nb_msh3trg_get_N_nodes(part);
+	char* vertices_used = NB_SOFT_MALLOC(N_nod);
+	memset(vertices_used, 0, N_nod);
+
+	char* vertices_bndr = NB_SOFT_MALLOC(N_nod);
+	memset(vertices_bndr, 0, N_nod);
+
+	uint32_t N_elems = nb_msh3trg_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++){
+		if (!elems_enabled[i])
+			continue;
+		uint32_t v1 = nb_msh3trg_elem_get_adj(part, i, 0);
+		uint32_t v2 = nb_msh3trg_elem_get_adj(part, i, 1);
+		uint32_t v3 = nb_msh3trg_elem_get_adj(part, i, 2);
+		uint32_t nid = nb_msh3trg_elem_get_ngb(part, i, 0);
+		if (nid == N_elems) {
+			model->M += 1;
+			vertices_bndr[v1] = 1;
+			vertices_bndr[v2] = 1;
+			vertices_used[v1] = 1;
+			vertices_used[v2] = 1;
+		} else if (!elems_enabled[nid]) {
+			model->M += 1;
+			vertices_used[v1] = 1;
+			vertices_used[v2] = 1;
+		}
+
+		nid = nb_msh3trg_elem_get_ngb(part, i, 1);
+		if (nid == N_elems) {
+			model->M += 1;
+			vertices_bndr[v2] = 1;
+			vertices_bndr[v3] = 1;
+			vertices_used[v2] = 1;
+			vertices_used[v3] = 1;
+		} else if (!elems_enabled[nid]) {
+			model->M += 1;
+			N_real_vtx_boundaries[0] += 1;
+			vertices_used[v2] = 1;
+			vertices_used[v3] = 1;
+		}
+
+		nid = nb_msh3trg_elem_get_ngb(part, i, 2);
+		if (nid == N_elems) {
+			model->M += 1;
+			vertices_bndr[v3] = 1;
+			vertices_bndr[v1] = 1;
+			vertices_used[v3] = 1;
+			vertices_used[v1] = 1;
+ 		} else if (!elems_enabled[nid]) {
+			model->M += 1;
+			vertices_used[v3] = 1;
+			vertices_used[v1] = 1;
+		}
+	}
+	/* Count vertices */
+	model->N = 0;
+	for(uint32_t i = 0; i < N_nod; i++){
+		if(vertices_used[i]) 
+			model->N += 1;
+	}
+	NB_SOFT_FREE(N_nod, vertices_used);
+
+	N_real_vtx_boundaries[0] = 0;
+	for (uint32_t i = 0; i < N_nod; i++) {
+		if (vertices_bndr[i]) 
+			N_real_vtx_boundaries[0] += 1;
+	}
+
+	/* Allocate segments and vertices */
+	nb_model_alloc_vertices(model);
+	nb_model_alloc_edges(model);
+
+	real_vtx_boundaries[0] = malloc(N_real_vtx_boundaries[0] * 
+					sizeof(uint32_t));
+
+	/* Set vertices and segments */ 
+	uint32_t idx_memsize = N_nod * sizeof(uint32_t);
+	uint32_t* vertices_idx = NB_SOFT_MALLOC(idx_memsize);
+	memset(vertices_idx, 0, idx_memsize);
+
+	for (uint32_t i = 0; i < N_nod; i++)
+		vertices_idx[i] = N_nod;
+  
+	uint32_t real_vtx_cnt = 0;
+	uint32_t vtx_counter = 0;
+	uint32_t sgm_counter = 0;
+	for (uint32_t i = 0; i < N_elems; i++) {
+		if(!elems_enabled[i])
+			continue;
+		uint32_t v1 = nb_msh3trg_elem_get_adj(part, i, 0);
+		uint32_t v2 = nb_msh3trg_elem_get_adj(part, i, 1);
+		uint32_t v3 = nb_msh3trg_elem_get_adj(part, i, 2);
+
+		/* Check side 1 */
+		uint32_t nid = nb_msh3trg_elem_get_ngb(part, i, 0);
+		bool include_side = false;
+		if (nid == N_elems)
+			include_side = true;
+		else if (!elems_enabled[nid])
+			include_side = true;
+		if (include_side) {
+			if (vertices_idx[v1] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v1);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v1);
+				vertices_idx[v1] = vtx_counter++;
+				if(vertices_bndr[v1])
+					real_vtx_boundaries[0][real_vtx_cnt++] = 
+						vertices_idx[v1];
+			}
+			if(vertices_idx[v2] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v2);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v2);
+				vertices_idx[v2] = vtx_counter++;
+				if(vertices_bndr[v2])
+					real_vtx_boundaries[0][real_vtx_cnt++] =
+						vertices_idx[v2];
+			}
+      
+			model->edge[sgm_counter * 2] = vertices_idx[v1];
+			model->edge[sgm_counter*2+1] = vertices_idx[v2];
+			sgm_counter += 1;
+		}
+
+		/* Check side 2 */
+		nid = nb_msh3trg_elem_get_ngb(part, i, 1);
+		include_side = false;
+		if (nid == N_elems)
+			include_side = true;
+		else if (!elems_enabled[nid])
+			include_side = true;
+		if (include_side) {
+ 			if (vertices_idx[v2] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v2);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v2);
+				vertices_idx[v2] = vtx_counter++;
+				if (vertices_bndr[v2])
+					real_vtx_boundaries[0][real_vtx_cnt++] =
+						vertices_idx[v2];
+			}
+			if (vertices_idx[v3] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v3);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v3);
+				vertices_idx[v3] = vtx_counter++;
+				if (vertices_bndr[v3])
+					real_vtx_boundaries[0][real_vtx_cnt++] = 
+						vertices_idx[v3];
+			}
+      
+			model->edge[sgm_counter * 2] = vertices_idx[v2];
+			model->edge[sgm_counter*2+1] = vertices_idx[v3];
+			sgm_counter += 1;
+		}
+
+		/* Check side 3 */
+		nid = nb_msh3trg_elem_get_ngb(part, i, 2);
+		include_side = false;
+		if (nid == N_elems)
+			include_side = true;
+		else if (!elems_enabled[nid])
+			include_side = true;
+		if (include_side) {
+			if (vertices_idx[v3] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v3);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v3);
+				vertices_idx[v3] = vtx_counter++;
+				if(vertices_bndr[v3])
+					real_vtx_boundaries[0][real_vtx_cnt++] = 
+						vertices_idx[v3];
+			}
+			if (vertices_idx[v1] == N_nod) {
+				model->vertex[vtx_counter * 2] =
+					nb_msh3trg_get_x_node(part, v1);
+				model->vertex[vtx_counter*2+1] =
+					nb_msh3trg_get_y_node(part, v1);
+				vertices_idx[v1] = vtx_counter++;
+				if (vertices_bndr[v1])
+					real_vtx_boundaries[0][real_vtx_cnt++] =
+						vertices_idx[v1];
+			}
+      
+			model->edge[sgm_counter * 2] = vertices_idx[v3];
+			model->edge[sgm_counter*2+1] = vertices_idx[v1];
+			sgm_counter += 1;
+		}
+	}
+	NB_SOFT_FREE(idx_memsize, vertices_idx);
+	NB_SOFT_FREE(N_nod, vertices_bndr);
+
+	/* Return model */
+	return model;
 }

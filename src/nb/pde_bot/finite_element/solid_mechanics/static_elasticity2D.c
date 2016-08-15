@@ -11,6 +11,7 @@
 #include "nb/eigen_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
+#include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
@@ -29,7 +30,7 @@ static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 
 int vcn_fem_compute_2D_Solid_Mechanics
-			(const vcn_msh3trg_t *const mesh,
+			(const nb_partition_t *const part,
 			 const vcn_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
@@ -42,16 +43,19 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double *strain        /* Output */)
 {
 	int status = 0;
-	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
+	vcn_graph_t *graph = malloc(vcn_graph_get_memsize());
+	vcn_graph_init(graph);
+	nb_partition_load_elem_graph(part, graph);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
-	vcn_graph_destroy(graph);
+	vcn_graph_finish(graph);
 
-	uint32_t F_memsize = 2 * mesh->N_vertices * sizeof(double);
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t F_memsize = 2 * N_nod * sizeof(double);
 	double* F = NB_SOFT_MALLOC(F_memsize);
 	memset(F, 0, F_memsize);
 
 	int status_assemble =
-		pipeline_assemble_system(K, NULL, F, mesh, elemtype, material,
+		pipeline_assemble_system(K, NULL, F, part, elemtype, material,
 					 enable_self_weight, gravity,
 					 analysis2D, params2D,
 					 elements_enabled);
@@ -60,7 +64,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	nb_pde_smech_set_bconditions(mesh, K, F, bcond, 1.0);
+	nb_pde_smech_set_bconditions(part, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);
@@ -69,7 +73,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	pipeline_compute_strain(strain, mesh, displacement, elemtype,
+	pipeline_compute_strain(strain, part, displacement, elemtype,
 				analysis2D, material);
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);

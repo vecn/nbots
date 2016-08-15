@@ -32,7 +32,7 @@ double vcn_fem_implicit_get_residual_tolerance
 (vcn_fem_implicit_t* isparams);
 
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
-(const vcn_msh3trg_t *const mesh,
+(const nb_partition_t *const part,
  const vcn_fem_elem_t *const elemtype,
  const nb_material_t *const material,
  const nb_bcond_t *const bcond,

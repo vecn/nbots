@@ -15,7 +15,7 @@
 #define POW2(a) ((a)*(a))
 
 typedef struct {
-	const vcn_msh3trg_t *mesh;
+	const nb_partition_t *part;
 	const double *distortion;
 	double max_distortion;
 	const double *results;
@@ -24,14 +24,14 @@ typedef struct {
 static void draw_fem(nb_graphics_context_t *g, int width, int height,
 		     const void *const data);
 
-static double get_distortion_scale(const vcn_msh3trg_t *msh3trg,
+static double get_distortion_scale(const nb_partition_t *part,
 				   const double *distortion,
 				   double max_distortion);
-static void get_enveloping_box(const vcn_msh3trg_t *msh3trg,
+static void get_enveloping_box(const nb_partition_t *part,
 			       const double *distortion,
 			       double dscale, double box[4]);
 static void get_distortion(double x[2], uint32_t vtx_id,
-			   const double *vertices,
+			   const nb_partition_t *part,
 			   const double *distortion,
 			   double dscale);
 static void set_source_trg(nb_graphics_context_t *g,
@@ -43,7 +43,7 @@ static void set_source_trg(nb_graphics_context_t *g,
 			   uint32_t min_id, uint32_t max_id,
 			   uint32_t id1, uint32_t id2, uint32_t id3);
 
-void nb_fem_save(const vcn_msh3trg_t *const msh3trg,
+void nb_fem_save(const nb_partition_t *const part,
 		 const double *distortion, /* Can be NULL */
 		 double max_distortion,
 		 const double *results,
@@ -51,7 +51,7 @@ void nb_fem_save(const vcn_msh3trg_t *const msh3trg,
 		 int width, int height)
 {
 	fem_data_t data;
-	data.mesh = msh3trg;
+	data.part = part;
 	data.results = results;
 	data.distortion = distortion;
 	data.max_distortion = max_distortion;
@@ -63,17 +63,17 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 		     const void *const data)
 {
 	const fem_data_t *const fem_data = data;
-	const vcn_msh3trg_t *msh3trg = fem_data->mesh;
+	const nb_partition_t *part = fem_data->part;
 	const double *results = fem_data->results;
 	const double *distortion = fem_data->distortion;
 	double max_distortion = fem_data->max_distortion;
 
-	double dscale = get_distortion_scale(msh3trg,
+	double dscale = get_distortion_scale(part,
 					     distortion,
 					     max_distortion);
 	
 	double box[4];
-	get_enveloping_box(msh3trg, distortion, dscale, box);
+	get_enveloping_box(part, distortion, dscale, box);
 	
 	nb_graphics_enable_camera(g);
 	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
@@ -84,20 +84,22 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 
 	uint32_t min_id;
 	uint32_t max_id;
-	vcn_array_get_min_max_ids(results, msh3trg->N_vertices, sizeof(*results),
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	vcn_array_get_min_max_ids(results, N_nod, sizeof(*results),
 				  vcn_compare_double, &min_id, &max_id);
 
 	/* Draw triangles */
 	nb_graphics_set_line_width(g, 0.5);
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
-		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
-		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
-		uint32_t n3 = msh3trg->vertices_forming_triangles[i*3+2];
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t n1 = nb_partition_elem_get_adj(part, i, 0);
+		uint32_t n2 = nb_partition_elem_get_adj(part, i, 1);
+		uint32_t n3 = nb_partition_elem_get_adj(part, i, 2);
 
 		double v1[2], v2[2], v3[2];
-		get_distortion(v1, n1, msh3trg->vertices, distortion, dscale);
-		get_distortion(v2, n2, msh3trg->vertices, distortion, dscale);
-		get_distortion(v3, n3, msh3trg->vertices, distortion, dscale);
+		get_distortion(v1, n1, part, distortion, dscale);
+		get_distortion(v2, n2, part, distortion, dscale);
+		get_distortion(v3, n3, part, distortion, dscale);
 
 		nb_graphics_move_to(g, v1[0], v1[1]);
 		nb_graphics_line_to(g, v2[0], v2[1]);
@@ -116,18 +118,19 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 	nb_graphics_set_source_rgb(g, 0.9, 0.0, 0.8);
 
 	nb_graphics_set_line_width(g, 1.0);
-	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-		uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+	uint32_t N_sgm = nb_partition_get_N_insgm(part);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_vtx = nb_partition_get_N_nodes_x_insgm(part, i);
 		if (0 < N_vtx) {
-			uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
+			uint32_t n1 = nb_partition_get_node_x_insgm(part, i, 0);
 			double v1[2];
-			get_distortion(v1, n1, msh3trg->vertices,
+			get_distortion(v1, n1, part,
 				       distortion, dscale);
 			nb_graphics_move_to(g, v1[0], v1[1]);
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j];
+				uint32_t n2 = pnb_partition_get_node_x_insgm(part, i, j);
 				double v2[2];
-				get_distortion(v2, n2, msh3trg->vertices,
+				get_distortion(v2, n2, part,
 					       distortion, dscale);
 				nb_graphics_line_to(g, v2[0], v2[1]);
 			}
@@ -141,18 +144,18 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 	nb_graphics_palette_destroy(palette);
 }
 
-static double get_distortion_scale(const vcn_msh3trg_t *msh3trg,
+static double get_distortion_scale(const nb_partition_t *part,
 				   const double *distortion,
 				   double max_distortion)
 {
 	double dscale;
 	if (NULL != distortion) {
 		double max_dist = 0.0;
-		uint32_t N_sgm = msh3trg->N_input_segments;
+		uint32_t N_sgm = nb_partition_get_N_insgm(part);
 		for (uint32_t i = 0; i < N_sgm; i++) {
-			uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+			uint32_t N_vtx = nb_partition_get_N_nodes_x_insgm(part, i);
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				uint32_t id = msh3trg->meshvtx_x_inputsgm[i][j];
+				uint32_t id = nb_partition_get_node_x_insgm(part, i, j);
 				double dist = POW2(distortion[id * 2]) +
 					POW2(distortion[id*2+1]);
 				if (dist > max_dist)
@@ -166,18 +169,17 @@ static double get_distortion_scale(const vcn_msh3trg_t *msh3trg,
 	return dscale;
 }
 
-static void get_enveloping_box(const vcn_msh3trg_t *msh3trg,
+static void get_enveloping_box(const nb_partition_t *part,
 			       const double *distortion,
 			       double dscale, double box[4])
 {	
-	uint32_t N_sgm = msh3trg->N_input_segments;
+	uint32_t N_sgm = nb_partition_get_N_insgm(part);
 	for (uint32_t i = 0; i < N_sgm; i++) {
-		uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+		uint32_t N_vtx = nb_partition_get_N_nodes_x_insgm(part, i);
 		for (uint32_t j = 0; j < N_vtx; j++) {
-			uint32_t id = msh3trg->meshvtx_x_inputsgm[i][j];
+			uint32_t id = nb_partition_get_node_x_insgm(part, i, j);
 			double v[2];
-			get_distortion(v, id, msh3trg->vertices,
-				       distortion, dscale);
+			get_distortion(v, id, part, distortion, dscale);
 			if (0 == i && 0 == j) {
 				box[0] = v[0];
 				box[1] = v[1];
@@ -199,15 +201,15 @@ static void get_enveloping_box(const vcn_msh3trg_t *msh3trg,
 }
 
 static void get_distortion(double x[2], uint32_t vtx_id,
-			   const double *vertices,
+			   const nb_partition_t *part,
 			   const double *distortion,
 			   double dscale)
 {
+	x[0] = nb_partition_get_x_node(vtx_id);
+	x[1] = nb_partition_get_y_node(vtx_id);
 	if (NULL != distortion) {
-		x[0] = vertices[vtx_id * 2] + dscale * distortion[vtx_id * 2];
-		x[1] = vertices[vtx_id*2+1] + dscale * distortion[vtx_id*2+1];
-	} else {
-		memcpy(x, &(vertices[vtx_id * 2]), 2 * sizeof(double));
+		x[0] += dscale * distortion[vtx_id * 2];
+		x[1] += dscale * distortion[vtx_id*2+1];
 	}
 }
 

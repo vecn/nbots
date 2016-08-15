@@ -39,11 +39,9 @@ enum {
 /**
  * @brief Write-only mesh structure used to create and modify meshes.
  * This mesh is based on a Delaunay triangulation.
- * In order to read the mesh, it must be "converted" into a read-only 
- * structure, such as vcn_msh3trg_t.
  */
-typedef struct vcn_mesh_s vcn_mesh_t; /* DEPRECATED */
 typedef struct vcn_mesh_s nb_mesh_t;
+typedef nb_mesh_t vcn_mesh_t; /* DEPRECATED */
 
 uint32_t vcn_mesh_get_memsize(void);
 void vcn_mesh_init(vcn_mesh_t *mesh);

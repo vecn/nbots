@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "nb/eigen_bot.h"
+#include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
@@ -47,7 +48,7 @@ static double tension_truncated_damage
 */
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
-		 const vcn_msh3trg_t *const mesh,
+		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -60,7 +61,7 @@ static void DMG_pipeline_assemble_system
 
 static void DMG_pipeline_compute_strain
 			(double *strain,
-			 const vcn_msh3trg_t *const mesh,
+			 const nb_partition_t *const part,
 			 double *displacement,
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
@@ -69,6 +70,8 @@ static void DMG_pipeline_compute_strain
 			 double *damage,
 			 double *r_dmg_prev,
 			 double *r_dmg);
+
+static double get_clfd(const nb_partition_t *part, uint32_t id_elem);
 
 vcn_fem_implicit_t* vcn_fem_implicit_create(void)
 {
@@ -232,7 +235,7 @@ static double tension_truncated_damage
 */
 
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
-			(const vcn_msh3trg_t *const mesh,
+			(const nb_partition_t *const part,
 			 const vcn_fem_elem_t *const elem,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
@@ -242,14 +245,11 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 vcn_fem_implicit_t* params,
-			 bool restore_computation,
 			 const char* logfile)
 /* Quasistatic formulation */
 {
-	uint32_t N_vertices = mesh->N_vertices;
-	uint32_t N_elements = mesh->N_triangles;
-	double* vertices = mesh->vertices;
-	uint32_t* connectivity_mtx = mesh->vertices_forming_triangles;
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 
 	uint32_t omp_parallel_threads = 1;
 
@@ -257,28 +257,31 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	fprintf(log, "FEM: Damage Model\n");
 	fclose(log);
   
-	uint32_t N_system_size = N_vertices * 2;
+	uint32_t N_system_size = N_nod * 2;
 
 	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
 	/*******************************************************************/
-	double* displacement = (double*)calloc(2 * N_vertices, sizeof(double));
-	double* strain = (double*)calloc(3 * N_elements * N_gp, sizeof(double));
-	double* damage = (double*)calloc(N_elements * N_gp, sizeof(double));
-	double* r_dmg = (double*)malloc(N_gp * N_elements * sizeof(double));
+	double* displacement = calloc(2 * N_nod, sizeof(double));
+	double* strain = calloc(3 * N_elem * N_gp, sizeof(double));
+	double* damage = calloc(N_elem * N_gp, sizeof(double));
+	double* r_dmg = malloc(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
-	for (uint32_t i = 0; i < N_gp * N_elements; i++)
+	for (uint32_t i = 0; i < N_gp * N_elems; i++)
 		r_dmg[i] = tension_damage_r0(material);
 
 	/*******************************************************************/
 	/****************** > Allocate system ******************************/
 	/*******************************************************************/
 	/* Allocate global Stiffness Matrices */
-	vcn_graph_t *graph = vcn_msh3trg_create_vtx_graph(mesh);
+	vcn_graph_t *graph = malloc(vcn_graph_get_memsize());
+	vcn_graph_init(graph);
+	nb_partition_load_elem_graph(part, graph);
 	vcn_sparse_t* K = vcn_sparse_create(graph, NULL, 2);
+	vcn_graph_finish(graph);
 	vcn_sparse_t *L = NULL;
 	vcn_sparse_t *U = NULL;
 	/* Allocate the triangular matrices L and U using symbolic Cholesky */
@@ -286,13 +289,13 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 
   
 	/* Allocate force vectors and displacement increment */
-	double* F = (double*)calloc(N_system_size, sizeof(double));
-	double* P = (double*)calloc(N_system_size, sizeof(double));
-	double* residual = (double*)calloc(N_system_size, sizeof(double));
-	double* du = (double*)calloc(N_system_size, sizeof(double));
+	double* F = calloc(N_system_size, sizeof(double));
+	double* P = calloc(N_system_size, sizeof(double));
+	double* residual = calloc(N_system_size, sizeof(double));
+	double* du = calloc(N_system_size, sizeof(double));
 
 	/* Allocate damage parameter 'r' */
-	double* r_dmg_prev = (double*)malloc(N_gp * N_elements * sizeof(double));
+	double* r_dmg_prev = malloc(N_gp * N_elems * sizeof(double));
   
 	/*******************************************************************/
 	/******************* > Start simulation of N steps *****************/
@@ -301,7 +304,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 		log = fopen(logfile, "a");
 		fprintf(log, "  [ Load step %i]\n", n + 1);
 		fclose(log);
-		memcpy(r_dmg_prev, r_dmg, N_gp * N_elements * sizeof(double));
+		memcpy(r_dmg_prev, r_dmg, N_gp * N_elems * sizeof(double));
 
 		/***********************************************************/
 		/*************** > Implicit integration ********************/
@@ -319,7 +322,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/********* > Assemble system **********************/
 			/**************************************************/
 			DMG_pipeline_assemble_system(K, NULL, F,
-						     mesh,
+						     part,
 						     elem,
 						     material,
 						     enable_self_weight,
@@ -337,7 +340,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			nb_pde_smech_set_bconditions(mesh, K, F, bcond,
+			nb_pde_smech_set_bconditions(part, K, F, bcond,
 						     condition_factor);
 
 			/*******************************************/
@@ -436,7 +439,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/**********************************************/
 			/***** > Compute Strain and Damage      *******/
 			/**********************************************/
-			DMG_pipeline_compute_strain(strain, mesh, displacement, elem, true,
+			DMG_pipeline_compute_strain(strain, part, displacement, elem, true,
 						    analysis2D,
 						    material, damage,
 						    r_dmg_prev, r_dmg);
@@ -465,16 +468,11 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
   
 	free(r_dmg_prev);
 	free(r_dmg);
-
-	if(restore_computation){
-		free(vertices);
-		free(connectivity_mtx);
-	}
 }
 
 static void DMG_pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
-		 const vcn_msh3trg_t *const mesh,
+		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -485,7 +483,7 @@ static void DMG_pipeline_assemble_system
 		 double* damage_elem,
 		 bool* elements_enabled /* NULL to enable all */)
 {
-	uint32_t N_elements = mesh->N_triangles;
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 
 	vcn_sparse_reset(K);
 	if (NULL != M)
@@ -503,7 +501,7 @@ static void DMG_pipeline_assemble_system
 
 	/* Assembly global system */
 	uint32_t N_negative_jacobians = 0;
-	for (uint32_t k = 0; k < N_elements; k++) {
+	for (uint32_t k = 0; k < N_elems; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = nb_material_get_density(material);
 		if (pipeline_elem_is_enabled(elements_enabled, k)) {
@@ -544,7 +542,7 @@ static void DMG_pipeline_assemble_system
 
 			/* Compute Jacobian derivatives */
 			double Jinv[4];
-			double detJ = nb_fem_get_jacobian(elem, k, mesh, j, Jinv);
+			double detJ = nb_fem_get_jacobian(elem, k, part, j, Jinv);
 
 			if (0 > detJ)
 				goto EXIT;
@@ -557,7 +555,7 @@ static void DMG_pipeline_assemble_system
 						 Ke, Me, Fe);
 		}
 
-		pipeline_add_to_global_system(elem, k, mesh, Ke, Me, Fe,
+		pipeline_add_to_global_system(elem, k, part, Ke, Me, Fe,
 					      K, M, F);
 
 		free(dNi_dx);
@@ -573,7 +571,7 @@ static void DMG_pipeline_assemble_system
 
 static void DMG_pipeline_compute_strain
 			(double *strain,
-			 const vcn_msh3trg_t *const mesh,
+			 const nb_partition_t *const part,
 			 double *displacement,
 			 const vcn_fem_elem_t *const elem,
 			 bool enable_computing_damage,
@@ -583,16 +581,14 @@ static void DMG_pipeline_compute_strain
 			 double *r_dmg_prev,
 			 double *r_dmg)
 {
-	double *vertices = mesh->vertices;
-	uint32_t N_elements = mesh->N_triangles;
-	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 
 	/* Initialize strains */
 	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
-	memset(strain, 0, 3 * N_gp * N_elements * sizeof(double));
+	memset(strain, 0, 3 * N_gp * N_elems * sizeof(double));
 
 	/* Iterate over elements to compute strain, stress and damage at nodes */
-	for (uint32_t k = 0 ; k < N_elements; k++) {
+	for (uint32_t k = 0 ; k < N_elems; k++) {
 		uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 		double* dNi_dx = malloc(N_nodes * sizeof(double));
 		double* dNi_dy = malloc(N_nodes * sizeof(double));
@@ -601,7 +597,7 @@ static void DMG_pipeline_compute_strain
 		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 		for (uint32_t j = 0; j < N_gp; j++) {
 			double Jinv[4];
-			double detJ = nb_fem_get_jacobian(elem, k, mesh, j, Jinv);      
+			double detJ = nb_fem_get_jacobian(elem, k, part, j, Jinv);      
 			if (nb_fem_elem_is_distorted(detJ))
 				goto EXIT;
 
@@ -610,35 +606,22 @@ static void DMG_pipeline_compute_strain
 			uint32_t idx = k * N_gp + j;
 			/* Compute Strain at Gauss Point */
 			for (uint32_t i = 0; i < N_nodes; i++) {
-				uint32_t inode = conn_mtx[k * N_nodes + i];
+				uint32_t inode = nb_partition_elem_get_adj(part, k, i);
 				strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 				strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 				strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +
 						    dNi_dx[i] * displacement[inode*2+1]);
 			}
 			/* Compute damage */
-			if(enable_computing_damage){
-				uint32_t n1 = conn_mtx[k * 3];
-				uint32_t n2 = conn_mtx[k*3+1];
-				uint32_t n3 = conn_mtx[k*3+2];
-				/* characteristic_length_of_fractured_domain */
-				double clfd =
-					sqrt(((vertices[n2 * 2] -
-					       vertices[n1 * 2]) *
-					      (vertices[n3*2+1] -
-					       vertices[n1*2+1]) -
-					      (vertices[n2*2+1] -
-					       vertices[n1*2+1]) *
-					      (vertices[n3 * 2] -
-					       vertices[n1 * 2])));
+			if (enable_computing_damage) {
+				double clfd = get_clfd(part, k);
       
-				damage[idx] = 
-					tension_damage(material, 
-						       &(strain[idx*3]),
-						       &(r_dmg_prev[idx]),
-						       &(r_dmg[idx]),
-						       clfd,
-						       analysis2D);
+				damage[idx] = tension_damage(material, 
+							     &(strain[idx*3]),
+							     &(r_dmg_prev[idx]),
+							     &(r_dmg[idx]),
+							     clfd,
+							     analysis2D);
 			}
 		}
 		free(dNi_dx);
@@ -646,4 +629,20 @@ static void DMG_pipeline_compute_strain
 	}
 EXIT:
 	return;
+}
+
+static double get_clfd(const nb_partition_t *part, uint32_t id_elem)
+/* characteristic_length_of_fractured_domain */
+{
+	uint32_t n1 = nb_partition_elem_get_adj(part, id_elem, 0);
+	uint32_t n2 = nb_partition_elem_get_adj(part, id_elem, 1);
+	uint32_t n3 = nb_partition_elem_get_adj(part, id_elem, 2);
+	double x1 = nb_partition_get_x_node(part, n1);
+	double y1 = nb_partition_get_y_node(part, n1);
+	double x2 = nb_partition_get_x_node(part, n2);
+	double y2 = nb_partition_get_y_node(part, n2);
+	double x3 = nb_partition_get_x_node(part, n3);
+	double y3 = nb_partition_get_y_node(part, n3);
+	return sqrt((x2 - x1) * (y3 - y1) -
+		    (y2 - y1) * (x3 - x1));
 }

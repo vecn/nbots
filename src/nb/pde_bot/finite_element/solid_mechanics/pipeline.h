@@ -15,12 +15,12 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 			      double fx, double fy,
 			      double *Ke, double *Me, double *Fe);
 void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
-				   const vcn_msh3trg_t *mesh,
+				   const nb_partition_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   vcn_sparse_t *K, double *M, double *F);
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
-		 const vcn_msh3trg_t *const mesh,
+		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elemtype,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -29,13 +29,13 @@ int pipeline_assemble_system
 		 nb_analysis2D_params *params2D,
 		 const bool* elements_enabled /* NULL to enable all */);
 
-void pipeline_set_boundary_conditions(const vcn_msh3trg_t *msh3trg,
+void pipeline_set_boundary_conditions(const nb_partition_t *part,
 				      vcn_sparse_t* K,
 				      double* F, 
 				      const nb_bcond_t *const bcond, 
 				      double factor);
 void pipeline_compute_strain(double *strain,
-			     const vcn_msh3trg_t *const mesh,
+			     const nb_partition_t *const part,
 			     double *displacement,
 			     const vcn_fem_elem_t *const elemtype,
 			     nb_analysis2D_t analysis2D,

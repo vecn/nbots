@@ -11,7 +11,7 @@
 #include "nb/pde_bot/finite_element/element.h"
 
 int vcn_fem_compute_2D_Solid_Mechanics
-			(const vcn_msh3trg_t *const mesh,
+			(const nb_partition_t *const part,
 			 const vcn_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,

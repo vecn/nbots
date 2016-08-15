@@ -12,9 +12,8 @@
 static void draw_disks(nb_graphics_context_t *g, int width, int height,
 		       const void *const mshpack_ptr);
 
-void vcn_mshpack_draw(const vcn_mshpack_t *const mshpack,
-			  const char* filename,
-			  int width, int height)
+void nb_mshpack_draw(const vcn_mshpack_t *const mshpack,
+		     const char* filename, int width, int height)
 {
 	nb_graphics_export(filename, width, height, draw_disks, mshpack);
 }

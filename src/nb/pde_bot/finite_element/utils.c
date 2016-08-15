@@ -7,11 +7,9 @@
 #include "utils.h"
 
 double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
-			     const vcn_msh3trg_t *mesh, int gp_id,
+			     const nb_partition_t *part, int gp_id,
 			     double Jinv[4])
 {
-	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
-
 	/* Compute Jacobian derivatives */
 	double dx_dpsi = 0.0;
 	double dy_dpsi = 0.0;
@@ -20,9 +18,9 @@ double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
 
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t inode = conn_mtx[id * N_nodes + i];
-		double xi = mesh->vertices[inode * 2];
-		double yi = mesh->vertices[inode*2+1];
+		uint32_t inode = nb_partition_elem_get_adj(part, id, i);
+		double xi = nb_partition_get_x_node(part, inode);
+		double yi = nb_partition_get_y_node(part, inode);
 		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
 		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
 		dx_dpsi += dNi_dpsi * xi;

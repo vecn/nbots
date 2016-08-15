@@ -13,7 +13,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static int assemble_system(const vcn_msh3trg_t *const mesh, 
+static int assemble_system(const nb_partition_t *const part, 
 			   const vcn_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
@@ -23,7 +23,7 @@ static int integrate_elemental_system
 		       	(const vcn_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
-			 const vcn_msh3trg_t *mesh,
+			 const nb_partition_t *part,
 			 double *Me, double *be);
 
 static void sum_gauss_point(const vcn_fem_elem_t *elem,
@@ -35,7 +35,7 @@ static void sum_gauss_point(const vcn_fem_elem_t *elem,
 
 static void add_to_global_system(const vcn_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
-				 const vcn_msh3trg_t *mesh,
+				 const nb_partition_t *part,
 				 double *Me, double *be,
 				 double *M, double *b);
 
@@ -44,29 +44,30 @@ static void solve_system(const double *M, const double *b,
 			 uint32_t N_vtx, uint32_t N_comp);
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
-			   uint32_t *conn_mtx,
+			   const nb_partition_t *part,
 			   const vcn_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
 			   double* nodal_values);
 
 int vcn_fem_interpolate_from_gpoints_to_nodes
-		(const vcn_msh3trg_t *const mesh, 
+		(const nb_partition_t *const part, 
 		 const vcn_fem_elem_t *const elem,
 		 uint32_t N_comp,
 		 const double* gp_values,
 		 double* nodal_values /* Output */)
 {
 	int status = 1;
-	double* M = calloc(mesh->N_vertices, sizeof(*M));
-	double* b = calloc(N_comp * mesh->N_vertices, sizeof(*b));
-	status = assemble_system(mesh, elem, N_comp,
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	double* M = calloc(N_nod, sizeof(*M));
+	double* b = calloc(N_comp * N_nod, sizeof(*b));
+	status = assemble_system(part, elem, N_comp,
 				 gp_values, M, b);
 
 	if (0 != status)
 		goto CLEANUP;
 
-	solve_system(M, b, nodal_values, mesh->N_vertices, N_comp);
+	solve_system(M, b, nodal_values, N_nod, N_comp);
 
 	status = 0;
 CLEANUP:
@@ -75,7 +76,7 @@ CLEANUP:
 	return status;
 }
 
-static int assemble_system(const vcn_msh3trg_t *const mesh, 
+static int assemble_system(const nb_partition_t *const part, 
 			   const vcn_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
@@ -83,7 +84,7 @@ static int assemble_system(const vcn_msh3trg_t *const mesh,
 {
 	int status = 1;
 
-	uint32_t N_elem = mesh->N_triangles;
+	uint32_t N_elem = nb_partition_get_N_elems(part);;
 
 	uint8_t N_nodes_x_elem = vcn_fem_elem_get_N_nodes(elem);
 	
@@ -96,13 +97,13 @@ static int assemble_system(const vcn_msh3trg_t *const mesh,
 	for (uint32_t i = 0; i < N_elem; i++) {
 		status = integrate_elemental_system(elem, N_comp,
 						    gp_values,
-						    i, mesh,
+						    i, part,
 						    Me, be);
 
 		if (0 != status)
 			goto EXIT;
 
-		add_to_global_system(elem, N_comp, i, mesh,
+		add_to_global_system(elem, N_comp, i, part,
 				     Me, be, M, b);
 	}
 EXIT:
@@ -114,7 +115,7 @@ static int integrate_elemental_system
 		       	(const vcn_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
-			 const vcn_msh3trg_t *mesh,
+			 const nb_partition_t *part,
 			 double *Me, double *be)
 {
 	int status = 1;
@@ -133,7 +134,7 @@ static int integrate_elemental_system
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id,
-						  mesh, j, Jinv);
+						  part, j, Jinv);
 
 		if (nb_fem_elem_is_distorted(detJ))
 			goto EXIT;
@@ -178,13 +179,13 @@ static void sum_gauss_point(const vcn_fem_elem_t *elem,
 
 static void add_to_global_system(const vcn_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
-				 const vcn_msh3trg_t *mesh,
+				 const nb_partition_t *part,
 				 double *Me, double *be,
 				 double *M, double *b)
 {
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t v1 = mesh->vertices_forming_triangles[id*3+i];
+		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
 		M[v1] += Me[i];
 
 		for (int c = 0; c < N_comp; c++)
@@ -204,29 +205,27 @@ static void solve_system(const double *M, const double *b,
 	}
 }
 
-void vcn_fem_get_error_on_gpoints(const vcn_msh3trg_t *const mesh,
+void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
 				  const vcn_fem_elem_t *const elem,
 				  uint32_t N_comp,
 				  double* gp_values,
 				  double* gp_error)
 {
-	uint32_t N_vtx = mesh->N_vertices;
-	uint32_t N_elem = mesh->N_triangles;
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t N_elem = nb_partition_get_N_elems(part);
 
 	uint32_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
 
 	/* Interpolate strain to nodes */
-	double* nodal_values = calloc(N_comp * N_vtx, sizeof(double));
-	vcn_fem_interpolate_from_gpoints_to_nodes(mesh, elem,
+	double* nodal_values = calloc(N_comp * N_nod, sizeof(double));
+	vcn_fem_interpolate_from_gpoints_to_nodes(part, elem,
 						  N_comp, gp_values,
 						  nodal_values);
 
-	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
-
 	for (uint32_t i = 0; i < N_elem; i++) {
 		for (uint32_t j = 0; j < N_gp; j++) {
-			gp_error[i * N_gp + j] = get_gp_error(i, j, conn_mtx,
+			gp_error[i * N_gp + j] = get_gp_error(i, j, part,
 							      elem, N_comp,
 							      gp_values,
 							      nodal_values);
@@ -238,7 +237,7 @@ void vcn_fem_get_error_on_gpoints(const vcn_msh3trg_t *const mesh,
 }
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
-			   uint32_t *conn_mtx,
+			   const nb_partition_t *part,
 			   const vcn_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
@@ -249,7 +248,8 @@ static double get_gp_error(uint32_t id_elem, int id_gp,
 
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t vid = conn_mtx[id_elem * N_nodes + i];
+		uint32_t vid = nb_partition_elem_get_adj(part, id_elem,
+							 N_nodes + i);
 		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
 		for (int c = 0; c < N_comp; c++)
 			value_gp[c] += Ni * nodal_values[vid * N_comp + c];

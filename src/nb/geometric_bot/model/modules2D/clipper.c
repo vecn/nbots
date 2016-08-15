@@ -11,7 +11,7 @@
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
+#include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "vtx.h"
@@ -1341,13 +1341,13 @@ static void delete_isolated_elements(vcn_model_t *model)
 	if (0 == vcn_mesh_get_N_trg(mesh)) {
 		vcn_model_clear(model);
 	} else {
-		uint32_t msh_memsize = vcn_msh3trg_get_memsize();
-		vcn_msh3trg_t* msh3trg = alloca(msh_memsize);
-		vcn_msh3trg_init(msh3trg);
-		vcn_msh3trg_load_from_mesh(msh3trg, mesh);
+		uint32_t msh_memsize = nb_partition_get_memsize();
+		nb_partition_t* part = alloca(msh_memsize);
+		nb_partition_init(part);
+		nb_partition_load_from_mesh(part, mesh);
 
-		vcn_model_generate_from_msh3trg(model, msh3trg);
-		vcn_msh3trg_finish(msh3trg);
+		nb_model_generate_from_part(model, part);
+		nb_partition_finish(part);
 	}
 	vcn_mesh_finish(mesh);
 }

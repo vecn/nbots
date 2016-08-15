@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "nb/graph_bot.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
 
 typedef enum {
 	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
@@ -56,5 +57,30 @@ void nb_partition_load_from_mesh(nb_partition_t *part,
 				 const nb_mesh_t *const mesh);
 void nb_partition_get_enveloping_box(const nb_partition_t *part,
 				     double box[4]);
+bool nb_partition_is_vtx_inside(const nb_partition_t *part,
+				double x, double y);
+void nb_partition_draw(const nb_partition_t *part, const char *filename,
+		       int width, int height);
+void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
+
+/**
+ * @brief Build a geometry model from a triangulation with disabled
+ * triangles.
+ * @param[in] part Input triangulation.
+ * @param[in] elems_enabled Array of booleans indicating wich triangles are
+ * enabled. NULL to enable all.
+ * @param[out] model Model generated.
+ * @param[out] N_input_vtx Stores the number of vertices forming
+ * the boundary that appears in the original input.
+ * @param[out] input_vtx Stores an array of the vertices ids in
+ * the new model corresponding to original input vertices.
+ */
+void nb_partition_build_model_disabled_elems
+			(const nb_partition_t *part,
+			   const bool *elems_enabled,
+			   nb_model_t *model,
+			   uint32_t *N_input_vtx,
+			   uint32_t **input_vtx);
+
 
 #endif

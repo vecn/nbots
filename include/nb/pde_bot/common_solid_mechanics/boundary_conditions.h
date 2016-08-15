@@ -6,7 +6,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
-void nb_pde_smech_set_bconditions(const vcn_msh3trg_t *msh3trg,
+void nb_pde_smech_set_bconditions(const nb_partition_t *part,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond,
 				  double factor);

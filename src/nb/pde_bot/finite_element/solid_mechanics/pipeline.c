@@ -23,7 +23,7 @@
 #define POW2(a) ((a)*(a))
 
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
-			    const vcn_msh3trg_t *mesh,
+			    const nb_partition_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
@@ -34,12 +34,12 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 static int integrate_elemental_system
 		       	(const vcn_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
-			 const vcn_msh3trg_t *mesh,
+			 const nb_partition_t *part,
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe);
 static int get_element_strain(uint32_t id, double *strain,
-			      const vcn_msh3trg_t *const mesh,
+			      const nb_partition_t *const part,
 			      double *displacement,
 			      const vcn_fem_elem_t *const elem,
 			      nb_analysis2D_t analysis2D,
@@ -47,7 +47,7 @@ static int get_element_strain(uint32_t id, double *strain,
 
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
-		 const vcn_msh3trg_t *const mesh,
+		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -57,7 +57,7 @@ int pipeline_assemble_system
 		 const bool* elements_enabled /* NULL to enable all */)
 {
 	int status = 1;
-	uint32_t N_elem = mesh->N_triangles;
+	uint32_t N_elem = nb_partition_get_N_elems(part);
 	vcn_sparse_reset(K);
 	if (NULL != M)
 		memset(M, 0, vcn_sparse_get_size(K) * sizeof(*M));
@@ -66,7 +66,7 @@ int pipeline_assemble_system
 	for (uint32_t i = 0; i < N_elem; i++) {
 		bool is_enabled = pipeline_elem_is_enabled(elements_enabled, i);
 		int status_element =
-			assemble_element(elem, i, mesh, material, is_enabled,
+			assemble_element(elem, i, part, material, is_enabled,
 					 analysis2D, params2D,
 					 enable_self_weight, gravity,
 					 K, M, F);
@@ -87,7 +87,7 @@ bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id)
 }
 
 static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
-			    const vcn_msh3trg_t *mesh,
+			    const nb_partition_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
@@ -111,13 +111,13 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	double* Fe = malloc(2 * N_nodes * sizeof(*Fe));
 	
 	int status = integrate_elemental_system(elem, id, D, density,
-						gravity, mesh, params2D,
+						gravity, part, params2D,
 						enable_self_weight,
 						Ke, Me, Fe);
 	if (0 != status)
 		goto CLEANUP;
 	
-	pipeline_add_to_global_system(elem, id, mesh, Ke, Me, Fe, K, M, F);
+	pipeline_add_to_global_system(elem, id, part, Ke, Me, Fe, K, M, F);
 
 CLEANUP:
 	free(Ke);
@@ -130,7 +130,7 @@ CLEANUP:
 static int integrate_elemental_system
 		       	(const vcn_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
-			 const vcn_msh3trg_t *mesh,
+			 const nb_partition_t *part,
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe)
@@ -159,7 +159,7 @@ static int integrate_elemental_system
 	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
-		double detJ = nb_fem_get_jacobian(elem, id, mesh, j, Jinv);
+		double detJ = nb_fem_get_jacobian(elem, id, part, j, Jinv);
 
 		if (nb_fem_elem_is_distorted(detJ))
 			goto EXIT;
@@ -236,15 +236,15 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 }
 
 void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
-				   const vcn_msh3trg_t *mesh,
+				   const nb_partition_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   vcn_sparse_t *K, double *M, double *F)
 {
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t v1 = mesh->vertices_forming_triangles[id*3+i];
+		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
 		for (uint32_t j = 0; j < N_nodes; j++) {
-			uint32_t v2 = mesh->vertices_forming_triangles[id*3+j];
+			uint32_t v2 = nb_partition_elem_get_adj(part, id, j);
 			vcn_sparse_add(K, v1 * 2, v2 * 2,
 				       Ke[(i * 2)*(2 * N_nodes) +
 					  (j * 2)]);
@@ -270,31 +270,30 @@ void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
 }
 
 void pipeline_compute_strain(double *strain,
-			     const vcn_msh3trg_t *const mesh,
+			     const nb_partition_t *const part,
 			     double *displacement,
 			     const vcn_fem_elem_t *const elem,
 			     nb_analysis2D_t analysis2D,
 			     const nb_material_t *const material)
 {
-	uint32_t N_elem = mesh->N_triangles;
+	uint32_t N_elem = nb_partition_get_N_elems(part);
 
 	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
 
 	for (uint32_t i = 0; i < N_elem; i++)
-		get_element_strain(i, strain, mesh, displacement,
+		get_element_strain(i, strain, part, displacement,
 				   elem, analysis2D, material);
 }
 
 static int get_element_strain(uint32_t id, double *strain,
-			      const vcn_msh3trg_t *const mesh,
+			      const nb_partition_t *const part,
 			      double *displacement,
 			      const vcn_fem_elem_t *const elem,
 			      nb_analysis2D_t analysis2D,
 			      const nb_material_t *const material)
 {
 	int status = 1;
-	uint32_t *conn_mtx = mesh->vertices_forming_triangles;
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
@@ -307,7 +306,7 @@ static int get_element_strain(uint32_t id, double *strain,
 	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
-		double detJ = nb_fem_get_jacobian(elem, id, mesh, j, Jinv);
+		double detJ = nb_fem_get_jacobian(elem, id, part, j, Jinv);
       
 		if (nb_fem_elem_is_distorted(detJ))
 			goto EXIT;
@@ -317,7 +316,7 @@ static int get_element_strain(uint32_t id, double *strain,
 		uint32_t idx = id * N_gp + j;
 		/* Compute Strain at Gauss Point */
 		for (uint32_t i = 0; i < N_nodes; i++) {
-			uint32_t inode = conn_mtx[id * N_nodes + i];
+			uint32_t inode = nb_partition_elem_get_adj(part, id, i);
 			strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 			strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 			strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +

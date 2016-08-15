@@ -12,7 +12,7 @@ void nb_fem_get_derivatives(const vcn_fem_elem_t *elem,
 bool nb_fem_elem_is_distorted(double detJ);
 
 double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
-			   const vcn_msh3trg_t *mesh, int gp_id,
+			   const nb_partition_t *part, int gp_id,
 			   double Jinv[4]);
 
 #endif

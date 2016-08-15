@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nb/geometric_bot/mesh/elements2D/triangles_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/graph_bot.h"
 

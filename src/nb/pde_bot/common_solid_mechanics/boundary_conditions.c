@@ -14,58 +14,58 @@
 
 #define POW2(a) ((a)*(a))
 
-static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm(const nb_partition_t *part,
 				  double* F, 
 				  const nb_bcond_t *const bcond, 
 				  double factor);
 
-static void set_bcond_neumann_sgm_function(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm_function(const nb_partition_t *part,
 					   double* F, uint8_t N_dof,
 					   const nb_bcond_iter_t *const iter,
 					   double factor);
-static void set_bcond_neumann_sgm_integrated(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm_integrated(const nb_partition_t *part,
 					     double* F, uint8_t N_dof,
 					     const nb_bcond_iter_t *const iter,
 					     double factor);
-static double get_input_sgm_length(const vcn_msh3trg_t *msh3trg,
+static double get_input_sgm_length(const nb_partition_t *part,
 				   uint32_t sgm_id);
-static double get_input_subsgm_length(const vcn_msh3trg_t *msh3trg,
+static double get_input_subsgm_length(const nb_partition_t *part,
 				      uint32_t sgm_id, uint32_t subsgm_id);
-static void set_bcond_neumann(const double *vertices,
+static void set_bcond_neumann(const nb_partition_t *part,
 			      uint8_t N_dof,
 			      double* F, double factor,
 			      nb_bcond_iter_t *iter,
 			      uint32_t vtx_id);
-static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_vtx(const nb_partition_t *part,
 				  double* F, 
 				  const nb_bcond_t *const bcond, 
 				  double factor);
-static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_dirichlet_sgm(const nb_partition_t *part,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
 				    double factor);
-static void set_bcond_dirichlet(const double *vertices,
+static void set_bcond_dirichlet(const nb_partition_t *part,
 				vcn_sparse_t* K, uint8_t N_dof,
 				double* F, double factor,
 				nb_bcond_iter_t *iter,
 				uint32_t vtx_id);
-static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_dirichlet_vtx(const nb_partition_t *part,
 				    vcn_sparse_t* K, double* F, 
 				    const nb_bcond_t *const bcond, 
 				    double factor);
 
-void nb_pde_smech_set_bconditions(const vcn_msh3trg_t *msh3trg,
+void nb_pde_smech_set_bconditions(const nb_partition_t *part,
 				  vcn_sparse_t* K, double* F, 
 				  const nb_bcond_t *const bcond,
 				  double factor)
 {
-	set_bcond_neumann_sgm(msh3trg, F, bcond, factor);
-	set_bcond_neumann_vtx(msh3trg, F, bcond, factor);
-	set_bcond_dirichlet_sgm(msh3trg, K, F, bcond, factor);
-	set_bcond_dirichlet_vtx(msh3trg, K, F, bcond, factor);
+	set_bcond_neumann_sgm(part, F, bcond, factor);
+	set_bcond_neumann_vtx(part, F, bcond, factor);
+	set_bcond_dirichlet_sgm(part, K, F, bcond, factor);
+	set_bcond_dirichlet_vtx(part, K, F, bcond, factor);
 }
 
-static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm(const nb_partition_t *part,
 				  double* F, 
 				  const nb_bcond_t *const bcond, 
 				  double factor)
@@ -80,38 +80,40 @@ static void set_bcond_neumann_sgm(const vcn_msh3trg_t *msh3trg,
 		nb_bcond_iter_go_next(iter);
 		
 		if (nb_bcond_iter_val_is_function(iter))
-			set_bcond_neumann_sgm_function(msh3trg, F, N_dof,
+			set_bcond_neumann_sgm_function(part, F, N_dof,
 						       iter, factor);
 		else
-			set_bcond_neumann_sgm_integrated(msh3trg, F, N_dof,
+			set_bcond_neumann_sgm_integrated(part, F, N_dof,
 							 iter, factor);
 	}
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_bcond_neumann_sgm_function(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm_function(const nb_partition_t *part,
 					   double* F, uint8_t N_dof,
 					   const nb_bcond_iter_t *const iter,
 					   double factor)
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 
-	uint32_t v1_id = 
-		msh3trg->meshvtx_x_inputsgm[model_id][0];
-	double *x = &(msh3trg->vertices[v1_id * 2]);
+	uint32_t v1_id = nb_partition_get_node_x_insgm(part, model_id, 0);
+	double x[2];
+	x[0] = nb_partition_get_x_node(part, v1_id);
+	x[1] = nb_partition_get_y_node(part, v1_id);
 	double *val1 = alloca(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val1);
 
 	double *val2 = alloca(N_dof * sizeof(double));
 
-	uint32_t N = msh3trg->N_vtx_x_inputsgm[model_id];
+	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
-			get_input_subsgm_length(msh3trg, model_id, i);
+			get_input_subsgm_length(part, model_id, i);
 		
-		uint32_t v2_id = 
-			msh3trg->meshvtx_x_inputsgm[model_id][i + 1];
-		x = &(msh3trg->vertices[v2_id * 2]);
+		uint32_t v2_id = nb_partition_get_node_x_insgm(part, model_id,
+							       i + 1);
+		x[0] = nb_partition_get_x_node(part, v2_id);
+		x[1] = nb_partition_get_y_node(part, v2_id);
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val2);
 
 		for (uint8_t j = 0; j < N_dof; j++) {
@@ -133,64 +135,71 @@ static void set_bcond_neumann_sgm_function(const vcn_msh3trg_t *msh3trg,
 	}
 }
 
-static void set_bcond_neumann_sgm_integrated(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_sgm_integrated(const nb_partition_t *part,
 					     double* F, uint8_t N_dof,
 					     const nb_bcond_iter_t *const iter,
 					     double factor)
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
-	double sgm_length = get_input_sgm_length(msh3trg, model_id);
+	double sgm_length = get_input_sgm_length(part, model_id);
 
-	uint32_t N = msh3trg->N_vtx_x_inputsgm[model_id];
+	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
-			get_input_subsgm_length(msh3trg, model_id, i);
+			get_input_subsgm_length(part, model_id, i);
 		double w = subsgm_length / sgm_length;
 
-		uint32_t v1_id = 
-			msh3trg->meshvtx_x_inputsgm[model_id][i];
-		uint32_t v2_id = 
-			msh3trg->meshvtx_x_inputsgm[model_id][i + 1];
+		uint32_t v1_id = nb_partition_get_node_x_insgm(part,
+							       model_id,
+							       i);
+		uint32_t v2_id = nb_partition_get_node_x_insgm(part,
+							       model_id,
+							       i + 1);
 
-		set_bcond_neumann(msh3trg->vertices, N_dof, F,
+		set_bcond_neumann(part, N_dof, F,
 				  factor * w * 0.5, iter, v1_id);
-		set_bcond_neumann(msh3trg->vertices, N_dof, F,
+		set_bcond_neumann(part, N_dof, F,
 				  factor * w * 0.5, iter, v2_id);
 	}
 }
 
-static double get_input_sgm_length(const vcn_msh3trg_t *msh3trg,
+static double get_input_sgm_length(const nb_partition_t *part,
 				   uint32_t sgm_id)
 {
-	uint32_t last_vtx = msh3trg->N_vtx_x_inputsgm[sgm_id] - 1;
-	uint32_t v1 = msh3trg->meshvtx_x_inputsgm[sgm_id][0];
-	uint32_t v2 = msh3trg->meshvtx_x_inputsgm[sgm_id][last_vtx];
-	double x1 = msh3trg->vertices[v1 * 2];
-	double y1 = msh3trg->vertices[v1*2+1];
-	double x2 = msh3trg->vertices[v2 * 2];
-	double y2 = msh3trg->vertices[v2*2+1];
+	uint32_t last_vtx = nb_partition_get_N_nodes_x_insgm(part, sgm_id) - 1;
+	uint32_t v1 = nb_partition_get_node_x_insgm(part, sgm_id, 0);
+	uint32_t v2 = nb_partition_get_node_x_insgm(part, sgm_id, last_vtx);
+	double x1 = nb_partition_get_x_node(part, v1);
+	double y1 = nb_partition_get_y_node(part, v1);
+	double x2 = nb_partition_get_x_node(part, v2);
+	double y2 = nb_partition_get_y_node(part, v2);
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
-static double get_input_subsgm_length(const vcn_msh3trg_t *msh3trg,
+static double get_input_subsgm_length(const nb_partition_t *part,
 				      uint32_t sgm_id, uint32_t subsgm_id)
 {
-	uint32_t v1 = msh3trg->meshvtx_x_inputsgm[sgm_id][subsgm_id];
-	uint32_t v2 = msh3trg->meshvtx_x_inputsgm[sgm_id][subsgm_id + 1];
-	double x1 = msh3trg->vertices[v1 * 2];
-	double y1 = msh3trg->vertices[v1*2+1];
-	double x2 = msh3trg->vertices[v2 * 2];
-	double y2 = msh3trg->vertices[v2*2+1];
+	uint32_t v1 = nb_partition_get_node_x_insgm(part, sgm_id,
+						    subsgm_id);
+	uint32_t v2 = nb_partition_get_node_x_insgm(part, sgm_id,
+						    subsgm_id + 1);
+	double x1 = nb_partition_get_x_node(part, v1);
+	double y1 = nb_partition_get_y_node(part, v1);
+	double x2 = nb_partition_get_x_node(part, v2);
+	double y2 = nb_partition_get_y_node(part, v2);
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
-static void set_bcond_neumann(const double *vertices,
+static void set_bcond_neumann(const nb_partition_t *part,
 			      uint8_t N_dof,
 			      double* F, double factor,
 			      nb_bcond_iter_t *iter,
 			      uint32_t vtx_id)
 {
-	double *x = &(vertices[vtx_id * 2]);
+	double x[2];
+	x[0] = nb_partition_get_x_node(part, vtx_id);
+	x[1] = nb_partition_get_y_node(part, vtx_id);
+	
 	double *val = alloca(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
@@ -203,7 +212,7 @@ static void set_bcond_neumann(const double *vertices,
 
 }
 
-static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_neumann_vtx(const nb_partition_t *part,
 				  double* F, 
 				  const nb_bcond_t *const bcond,
 				  double factor)
@@ -217,14 +226,14 @@ static void set_bcond_neumann_vtx(const vcn_msh3trg_t *msh3trg,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		set_bcond_neumann(msh3trg->vertices, N_dof, F,
-				  factor, iter, mesh_id);
+		uint32_t mesh_id = nb_partition_get_invtx(part, model_id);
+		set_bcond_neumann(part, N_dof, F, factor,
+				  iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_dirichlet_sgm(const nb_partition_t *part,
 				    vcn_sparse_t* K,
 				    double* F, 
 				    const nb_bcond_t *const bcond,
@@ -239,11 +248,11 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = msh3trg->N_vtx_x_inputsgm[model_id];
+		uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t mesh_id = 
-				msh3trg->meshvtx_x_inputsgm[model_id][i];
-			set_bcond_dirichlet(msh3trg->vertices, 
+				nb_partition_get_node_x_insgm(part, model_id, i);
+			set_bcond_dirichlet(part, 
 					    K, N_dof, F, factor,
 					    iter, mesh_id);
 		}
@@ -251,13 +260,16 @@ static void set_bcond_dirichlet_sgm(const vcn_msh3trg_t *msh3trg,
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_bcond_dirichlet(const double *vertices,
+static void set_bcond_dirichlet(const nb_partition_t *part,
 				vcn_sparse_t* K, uint8_t N_dof,
 				double* F, double factor,
 				nb_bcond_iter_t *iter,
 				uint32_t vtx_id)
 {
-	double *x = &(vertices[vtx_id * 2]);
+	double x[2];
+	x[0] = nb_partition_get_x_node(part, vtx_id);
+	x[1] = nb_partition_get_y_node(part, vtx_id);
+
 	double *val = alloca(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
@@ -270,7 +282,7 @@ static void set_bcond_dirichlet(const double *vertices,
 	}
 }
 
-static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
+static void set_bcond_dirichlet_vtx(const nb_partition_t *part,
 				    vcn_sparse_t* K,
 				    double* F, 
 				    const nb_bcond_t *const bcond,
@@ -285,8 +297,8 @@ static void set_bcond_dirichlet_vtx(const vcn_msh3trg_t *msh3trg,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t mesh_id = msh3trg->input_vertices[model_id];
-		set_bcond_dirichlet(msh3trg->vertices, K, N_dof, F,
+		uint32_t mesh_id = nb_partition_get_invtx(part, model_id);
+		set_bcond_dirichlet(part, K, N_dof, F,
 				    factor, iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);

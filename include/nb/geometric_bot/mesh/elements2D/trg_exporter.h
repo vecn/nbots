@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "triangles_struct.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
 

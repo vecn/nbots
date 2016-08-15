@@ -45,15 +45,15 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg,
  * @brief Build a graph from the vertices of the mesh.
  * @param[in] msh3trg Mesh representing the graph.
  */
-void nb_msh3trg_load_vtx_graph(const void *const msh3trg,
+void nb_msh3trg_load_elem_graph(const void *const msh3trg,
 			       nb_graph_t *graph);
 
 /**
  * @brief Build a graph from the elements mesh.
  * @param[in] msh3trg Mesh representing the graph.
  */
-void nb_msh3trg_load_elem_graph(const void *const msh3trg,
-			       nb_graph_t *graph);
+void nb_msh3trg_load_interelem_graph(const void *const msh3trg,
+				     nb_graph_t *graph);
 
 
 void nb_msh3trg_load_from_mesh(void *msh3trg,
@@ -74,4 +74,30 @@ void nb_msh3trg_disable_single_point_connections
 
 void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr);
 
+void nb_msh3trg_draw(const void *msh3trg_ptr,
+		     const char* filename, int width, int height);
+
+/**
+ * @brief Export a PNG image of the partition ans its subdomains.
+ * @param[in] part Partition to be displayed.
+ * @param[in] k_part Number of partitions.
+ * @param[in] part Partition corresponding to the vertex.
+ * @param[in] filename Name of the image file.
+ * @param[in] width Image width.
+ * @param[in] height Image height.
+ * @param[in] k_to_draw Partition to draw. Zero to draw all of them.
+ * @param[in] scale_partitions Scale of the size of the partitions, in (0,1].
+ */
+void nb_msh3trg_draw_subdomain(const void *msh3trg_ptr,
+			       const char* filename, int width, int height,
+			       uint32_t k_part, const uint32_t *const part,
+			       uint32_t k_to_draw, double scale_subdomains);
+
+void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model);
+
+void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
+					   const bool *elems_enabled,
+					   nb_model_t *model,
+					   uint32_t *N_input_vtx,
+					   uint32_t **input_vtx);
 #endif

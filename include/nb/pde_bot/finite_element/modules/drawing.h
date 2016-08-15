@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "nb/geometric_bot.h"
 
-void nb_fem_save(const vcn_msh3trg_t *const msh3trg,
+void nb_fem_save(const nb_partition_t *const part,
 		 const double *distortion, /* Can be NULL */
 		 double max_distortion,
 		 const double *results,
