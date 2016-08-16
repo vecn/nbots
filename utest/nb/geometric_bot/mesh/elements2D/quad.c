@@ -45,8 +45,10 @@ static void test_load_from_mesh(void)
 	vcn_mesh_destroy(mesh);
 	
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(600 < quad->N_elems && 760 > quad->N_elems);
-	CU_ASSERT(1200 < quad->N_edg && 1400 > quad->N_edg);
+	uint32_t N_elems = nb_mshquad_get_N_elems(quad);
+	uint32_t N_edg = nb_mshquad_get_N_edges(quad);
+	CU_ASSERT(600 < N_elems && 760 > N_elems);
+	CU_ASSERT(1200 < N_edg && 1400 > N_edg);
 
 	nb_mshquad_finish(quad);
 }

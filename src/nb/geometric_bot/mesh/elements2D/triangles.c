@@ -15,7 +15,7 @@
 
 #include "../mesh2D_structs.h"
 
-typedef struct {
+struct nb_msh3trg_s {
 	uint32_t N_nod;
 	double *nod;
 
@@ -32,7 +32,7 @@ typedef struct {
 	uint32_t N_sgm;
 	uint32_t *N_nod_x_sgm;
 	uint32_t **nod_x_sgm;
-} nb_msh3trg_t;
+};
 
 #define GET_MSH3TRG_FROM_STRUCT(exp_structure)	\
 	(((void**)(exp_structure))[0])
@@ -403,7 +403,15 @@ void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
 	free(l_nodal_CM);
 }
 
-void nb_msh3trg_create_interelem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
+
+void nb_msh3trg_load_nodal_graph(const void *const msh3trg,
+				 nb_graph_t *graph)
+{
+	nb_msh3trg_load_elem_graph(msh3trg, graph);
+}
+
+void nb_msh3trg_load_interelem_graph(const void *msh3trg_ptr,
+				     nb_graph_t *graph)
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
 

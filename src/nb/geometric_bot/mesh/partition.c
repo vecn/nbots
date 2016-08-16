@@ -38,6 +38,8 @@ struct nb_partition_s {
 	uint32_t (*get_node_x_insgm)(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 	void (*load_elem_graph)(const void *msh, nb_graph_t *graph);
+	void (*load_nodal_graph)(const void *msh, nb_graph_t *graph);
+	void (*load_interelem_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_from_mesh)(void *msh, const nb_mesh_t *const mesh);
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
@@ -64,7 +66,7 @@ uint32_t nb_partition_get_memsize(nb_partition_type  type)
 		mem = nb_msh3trg_get_memsize();
 		break;
 	case NB_QUAD:
-		//mem = nb_mshquad_get_memsize();
+		mem = nb_mshquad_get_memsize();
 		break;
 	case NB_POLY:
 		//mem = nb_mshpoly_get_memsize();
@@ -73,7 +75,7 @@ uint32_t nb_partition_get_memsize(nb_partition_type  type)
 		//mem = nb_mshpack_get_memsize();
 		break;
 	default:
-		//mem = nb_msh3trg_get_memsize();
+		mem = nb_msh3trg_get_memsize();
 		break;
 	}
 	return mem + sizeof(nb_partition_t);
@@ -90,7 +92,7 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 		set_msh3trg_interface(part);
 		break;
 	case NB_QUAD:
-		//nb_mshquad_init(part->msh);
+		nb_mshquad_init(part->msh);
 		set_mshquad_interface(part);
 		break;
 	case NB_POLY:
@@ -102,7 +104,7 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 		set_mshpack_interface(part);
 		break;
 	default:
-		//nb_msh3trg_init(part->msh);
+		nb_msh3trg_init(part->msh);
 		set_msh3trg_interface(part);
 		break;
 	}
@@ -132,6 +134,8 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->get_N_nodes_x_insgm = nb_msh3trg_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_msh3trg_get_node_x_insgm;
 	part->load_elem_graph = nb_msh3trg_load_elem_graph;
+	part->load_nodal_graph = nb_msh3trg_load_nodal_graph;
+	part->load_interelem_graph = nb_msh3trg_load_interelem_graph;
 	part->load_from_mesh = nb_msh3trg_load_from_mesh;
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
@@ -143,7 +147,6 @@ static void set_msh3trg_interface(nb_partition_t *part)
 
 static void set_mshquad_interface(nb_partition_t *part)
 {
-	;/*
 	part->finish = nb_mshquad_finish;
 	part->copy = nb_mshquad_copy;
 	part->clear = nb_mshquad_clear;
@@ -166,6 +169,8 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->get_N_nodes_x_insgm = nb_mshquad_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshquad_get_node_x_insgm;
 	part->load_elem_graph = nb_mshquad_load_elem_graph;
+	part->load_nodal_graph = nb_mshquad_load_nodal_graph;
+	part->load_interelem_graph = nb_mshquad_load_interelem_graph;
 	part->load_from_mesh = nb_mshquad_load_from_mesh;
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
@@ -173,7 +178,6 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->build_model = nb_mshquad_build_model;
 	part->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
-	 */
 }
 
 static void set_mshpoly_interface(nb_partition_t *part)
@@ -201,6 +205,8 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->get_N_nodes_x_insgm = nb_mshpoly_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshpoly_get_node_x_insgm;
 	part->load_elem_graph = nb_mshpoly_load_elem_graph;
+	part->load_nodal_graph = nb_mshpoly_load_nodal_graph;
+	part->load_interelem_graph = nb_mshpoly_load_interelem_graph;
 	part->load_from_mesh = nb_mshpoly_load_from_mesh;
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
@@ -236,6 +242,8 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->get_N_nodes_x_insgm = nb_mshpack_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshpack_get_node_x_insgm;
 	part->load_elem_graph = nb_mshpack_load_elem_graph;
+	part->load_nodal_graph = nb_mshpack_load_nodal_graph;
+	part->load_interelem_graph = nb_mshpack_load_interelem_graph;
 	part->load_from_mesh = nb_mshpack_load_from_mesh;
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
@@ -387,6 +395,18 @@ void nb_partition_load_elem_graph(const nb_partition_t *part,
 				  nb_graph_t *graph)
 {
 	part->load_elem_graph(part->msh, graph);
+}
+
+void nb_partition_load_nodal_graph(const nb_partition_t *part,
+				   vcn_graph_t *graph)
+{
+	part->load_nodal_graph(part->msh, graph);
+}
+
+void nb_partition_load_interelem_graph(const nb_partition_t *part,
+				       vcn_graph_t *graph)
+{
+	part->load_interelem_graph(part->msh, graph);
 }
 
 void nb_partition_load_from_mesh(nb_partition_t *part,

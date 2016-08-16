@@ -10,32 +10,27 @@
 #include "nb/graphics_bot.h"
 
 static void draw_mesh(nb_graphics_context_t *g, int width, int height,
-		      const void *const quad_ptr);
+		      const void *const quad);
 static void draw_quads(nb_graphics_context_t *g,
-		       const nb_mshquad_t *const quad);
+		       const void *const quad);
 static void draw_input_sgm(nb_graphics_context_t *g,
-			   const nb_mshquad_t *const quad);
+			   const void *const quad);
 static void draw_input_vtx(nb_graphics_context_t *g,
-			   const nb_mshquad_t *const quad);
+			   const void *const quad);
 
-void nb_mshquad_draw(const nb_mshquad_t *const quad,
+void nb_mshquad_draw(const void *const quad,
 		     const char* filename, int width, int height)
 {
 	nb_graphics_export(filename, width, height, draw_mesh, quad);
 }
 
 static void draw_mesh(nb_graphics_context_t *g, int width, int height,
-		      const void *const quad_ptr)
+		      const void *const quad)
 {
-	const nb_mshquad_t *const quad = quad_ptr;
 
 	double box[4];
-	vcn_utils2D_get_enveloping_box_from_subset(quad->N_vtx, quad->vtx,
-						   quad->nod,
-						   2 * sizeof(*(quad->nod)),
-						   vcn_utils2D_get_x_from_darray,
-						   vcn_utils2D_get_y_from_darray,
-						   box);
+	nb_mshquad_get_enveloping_box(quad, box);
+
 	nb_graphics_enable_camera(g);
 	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
 	nb_graphics_cam_fit_box(cam, box, width, height);
@@ -46,27 +41,28 @@ static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 }
 
 static void draw_quads(nb_graphics_context_t *g,
-		       const nb_mshquad_t *const quad)
+		       const void *const quad)
 {
 	nb_graphics_set_line_width(g, 0.5);
-	for (uint32_t i = 0; i < quad->N_elems; i++) {
-		uint32_t n1 = quad->adj[i * 4];
-		uint32_t n2 = quad->adj[i*4+1];
-		uint32_t n3 = quad->adj[i*4+2];
-		uint32_t n4 = quad->adj[i*4+3];
+	uint32_t N_elems = nb_mshquad_get_N_elems(quad);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t n1 = nb_mshquad_elem_get_adj(quad, i, 0);
+		uint32_t n2 = nb_mshquad_elem_get_adj(quad, i, 1);
+		uint32_t n3 = nb_mshquad_elem_get_adj(quad, i, 2);
+		uint32_t n4 = nb_mshquad_elem_get_adj(quad, i, 3);
 		nb_graphics_move_to(g,
-				    quad->nod[n1 * 2],
-				    quad->nod[n1*2+1]);
+				    nb_mshquad_get_x_node(quad, n1),
+				    nb_mshquad_get_y_node(quad, n1));
 		nb_graphics_line_to(g,
-				    quad->nod[n2 * 2],
-				    quad->nod[n2*2+1]);
+				    nb_mshquad_get_x_node(quad, n2),
+				    nb_mshquad_get_y_node(quad, n2));
 		nb_graphics_line_to(g,
-				    quad->nod[n3 * 2],
-				    quad->nod[n3*2+1]);
-		if (n4 < quad->N_nod)
+				    nb_mshquad_get_x_node(quad, n3),
+				    nb_mshquad_get_y_node(quad, n3));
+		if (n4 < nb_mshquad_get_N_nodes(quad))
 			nb_graphics_line_to(g,
-					    quad->nod[n4 * 2],
-					    quad->nod[n4*2+1]);
+					    nb_mshquad_get_x_node(quad, n4),
+					    nb_mshquad_get_y_node(quad, n4));
 		nb_graphics_close_path(g);
 
 		nb_graphics_set_source_rgba(g, 25, 75, 255, 128);
@@ -77,22 +73,23 @@ static void draw_quads(nb_graphics_context_t *g,
 	}
 }
 
-static void draw_input_sgm(nb_graphics_context_t *g,
-			   const nb_mshquad_t *const quad)
+static void draw_input_sgm(nb_graphics_context_t *g, const void *const quad)
 {
 	nb_graphics_set_line_width(g, 1.0);
 	nb_graphics_set_source(g, NB_AQUAMARIN);
-	for (uint32_t i = 0; i < quad->N_sgm; i++) {
-		if (0 < quad->N_nod_x_sgm[i]) {
-			uint32_t nj = quad->nod_x_sgm[i][0];
+	uint32_t N_sgm = nb_mshquad_get_N_insgm(quad);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_nod_x_sgm = nb_mshquad_get_N_nodes_x_insgm(quad, i);
+		if (0 < N_nod_x_sgm) {
+			uint32_t nj = nb_mshquad_get_node_x_insgm(quad, i, 0);
 			nb_graphics_move_to(g,
-					    quad->nod[nj * 2],
-					    quad->nod[nj*2+1]);
-			for (uint32_t j = 1; j < quad->N_nod_x_sgm[i]; j++) {
-				nj = quad->nod_x_sgm[i][j];
-				nb_graphics_line_to(g,
-						    quad->nod[nj * 2],
-						    quad->nod[nj*2+1]);
+					    nb_mshquad_get_x_node(quad, nj),
+					    nb_mshquad_get_y_node(quad, nj));
+			for (uint32_t j = 1; j < N_nod_x_sgm; j++) {
+				nj = nb_mshquad_get_node_x_insgm(quad, i, j);
+				double x = nb_mshquad_get_x_node(quad, nj);
+				double y = nb_mshquad_get_y_node(quad, nj);
+				nb_graphics_line_to(g, x, y);
 			}
 			nb_graphics_stroke(g);
 		}
@@ -100,14 +97,15 @@ static void draw_input_sgm(nb_graphics_context_t *g,
 }
 
 static void draw_input_vtx(nb_graphics_context_t *g,
-			   const nb_mshquad_t *const quad)
+			   const void *const quad)
 {
 	nb_graphics_set_source(g, NB_CHARTREUSE);
-	for (uint32_t i = 0; i < quad->N_vtx; i++) {
-		uint32_t ni = quad->vtx[i];
-		if (ni < quad->N_nod) {
-			double x = quad->nod[ni * 2];
-			double y = quad->nod[ni*2+1];
+	uint32_t N_vtx = nb_mshquad_get_N_invtx(quad);
+	for (uint32_t i = 0; i < N_vtx; i++) {
+		uint32_t ni = nb_mshquad_get_invtx(quad, i);
+		if (ni < nb_mshquad_get_N_nodes(quad)) {
+			double x = nb_mshquad_get_x_node(quad, ni);
+			double y = nb_mshquad_get_y_node(quad, ni);
 			nb_graphics_set_point(g, x, y, 6.0);
 			nb_graphics_fill(g);
 		}

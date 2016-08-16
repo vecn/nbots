@@ -29,21 +29,21 @@ static int suite_init(void);
 static int suite_clean(void);
 
 static void test_beam_cantilever(void);
-static void check_beam_cantilever(const void *msh3trg,
+static void check_beam_cantilever(const void *part,
 				  const results_t *results);
 static void test_plate_with_hole(void);
-static void check_plate_with_hole(const void *msh3trg,
+static void check_plate_with_hole(const void *part,
 				  const results_t *results);
-static double get_error_avg_pwh(const void *msh3trg,
+static double get_error_avg_pwh(const void *part,
 				const vcn_fem_elem_t* elem,
 				const double *vm_stress);
 static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
-				 const void *msh3trg,
+				 const void *part,
 				 const vcn_fem_elem_t* elem,
 				 double gp[2]);
 static double get_analytic_vm_stress_pwh(double x, double y);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
-static void modify_bcond_pwh(const void *msh3trg,
+static void modify_bcond_pwh(const void *part,
 			     nb_bcond_t *bcond);
 static void pwh_DC_SGM_cond(double *x, double t, double *out);
 static void pwh_BC_SGM_cond(double *x, double t, double *out);
@@ -53,11 +53,11 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */);
 static int simulate_fem(const char *problem_data,
-			void *msh3trg, results_t *results,
+			void *part, results_t *results,
 			uint32_t N_vtx,
 			void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
-static void get_mesh(const vcn_model_t *model, void *msh3trg,
+static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx);
 
 static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg);
@@ -103,11 +103,11 @@ static void test_beam_cantilever(void)
 		 check_beam_cantilever, NULL);
 }
 
-static void check_beam_cantilever(const void *msh3trg,
+static void check_beam_cantilever(const void *part,
 				  const results_t *results)
 {
 	double max_disp = 0;
-	uint32_t N_nodes = nb_msh3trg_get_N_nodes(msh3trg);
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		double disp2 = POW2(results->disp[i * 2]) +
 			POW2(results->disp[i*2+1]);
@@ -126,7 +126,7 @@ static void test_plate_with_hole(void)
 		 modify_bcond_pwh);
 }
 
-static void check_plate_with_hole(const void *msh3trg,
+static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
 	double *vm_stress = malloc(results->N_trg * sizeof(double));
@@ -136,7 +136,7 @@ static void check_plate_with_hole(const void *msh3trg,
 
 	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	double avg_error = get_error_avg_pwh(msh3trg, elem, vm_stress);
+	double avg_error = get_error_avg_pwh(part, elem, vm_stress);
 
 	CU_ASSERT(avg_error < 9.7e-3);
 	
@@ -145,19 +145,19 @@ static void check_plate_with_hole(const void *msh3trg,
 	free(nodal_values);
 }
 
-static double get_error_avg_pwh(const void *msh3trg,
+static double get_error_avg_pwh(const void *part,
 				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
 	double avg = 0.0;
 	uint32_t N = 0;
-	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
 		N += N_gp;
 		for (int8_t p = 0; p < N_gp; p++) {
 			double gp[2];
-			get_cartesian_gpoint(i, p, msh3trg, elem, gp);
+			get_cartesian_gpoint(i, p, part, elem, gp);
 			double gp_stress =
 				get_analytic_vm_stress_pwh(gp[0], gp[1]);
 			double error;
@@ -173,7 +173,7 @@ static double get_error_avg_pwh(const void *msh3trg,
 }
 
 static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
-				 const void *msh3trg,
+				 const void *part,
 				 const vcn_fem_elem_t* elem,
 				 double gp[2])
 {
@@ -182,9 +182,9 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 	gp[1] = 0.0;
 	for (int i = 0; i < N; i++) {
 		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
-		uint32_t vi = nb_msh3trg_elem_get_adj(msh3trg, id_elem, i);
-		gp[0] += Ni * nb_msh3trg_get_x_node(msh3trg, vi);
-		gp[1] += Ni * nb_msh3trg_get_y_node(msh3trg, vi);
+		uint32_t vi = nb_partition_elem_get_adj(part, id_elem, i);
+		gp[0] += Ni * nb_partition_get_x_node(part, vi);
+		gp[1] += Ni * nb_partition_get_y_node(part, vi);
 	}
 }
 
@@ -212,7 +212,7 @@ static void get_analytic_stress_pwh(double x, double y, double stress[3])
 	stress[2] = tx * (-ar2 * (0.5 * s2t + s4t) + ar4x1p5 * s4t);
 }
 
-static void modify_bcond_pwh(const void *msh3trg,
+static void modify_bcond_pwh(const void *part,
 			     nb_bcond_t *bcond)
 {
 	bool dof_mask[2] = {1, 1};
@@ -248,22 +248,22 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	void *msh3trg = alloca(nb_msh3trg_get_memsize());
-	nb_msh3trg_init(msh3trg);
+	void *part = alloca(nb_partition_get_memsize(NB_TRIAN));
+	nb_partition_init(part, NB_TRIAN);
 
-	int status = simulate_fem(problem_data, msh3trg, &results,
+	int status = simulate_fem(problem_data, part, &results,
 				  N_vtx, modify_bcond);
 	
 	CU_ASSERT(0 == status);
 
-	check_results(msh3trg, &results);
+	check_results(part, &results);
 
-	nb_msh3trg_finish(msh3trg);
+	nb_partition_finish(part);
 	results_finish(&results);
 }
 
 static int simulate_fem(const char *problem_data,
-			void *msh3trg, results_t *results,
+			void *part, results_t *results,
 			uint32_t N_vtx,
 			void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */)
@@ -285,21 +285,21 @@ static int simulate_fem(const char *problem_data,
 				  &analysis2D, &params2D);
 
 	if (NULL != modify_bcond)
-		modify_bcond(msh3trg, bcond);
+		modify_bcond(part, bcond);
 
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
 
-	get_mesh(model, msh3trg, N_vtx);
+	get_mesh(model, part, N_vtx);
 
 	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	uint32_t N_nodes = nb_msh3trg_get_N_nodes(msh3trg);
-	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
 
 	int status_fem =
-		vcn_fem_compute_2D_Solid_Mechanics(msh3trg, elem,
+		vcn_fem_compute_2D_Solid_Mechanics(part, elem,
 						   material, bcond,
 						   false, NULL,
 						   analysis2D,
@@ -324,7 +324,7 @@ CLEANUP_INPUT:
 	return status;
 }
 
-static void get_mesh(const vcn_model_t *model, void *msh3trg,
+static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
 	uint32_t mesh_memsize = vcn_mesh_get_memsize();
@@ -338,7 +338,7 @@ static void get_mesh(const vcn_model_t *model, void *msh3trg,
 					  NB_GEOMETRIC_TOL);
 	vcn_mesh_generate_from_model(mesh, model);
 
-	nb_msh3trg_load_from_mesh(msh3trg, mesh);
+	nb_partition_load_from_mesh(part, mesh);
 	vcn_mesh_finish(mesh);
 }
 

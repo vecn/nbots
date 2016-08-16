@@ -6,6 +6,8 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
 
+typedef struct nb_msh3trg_s nb_msh3trg_t;
+
 uint32_t nb_msh3trg_get_memsize(void);
 void nb_msh3trg_init(void *msh3trg);
 void nb_msh3trg_finish(void *msh3trg);
@@ -38,19 +40,12 @@ uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
-bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
-
-/**
- * @brief Build a graph from the vertices of the mesh.
- * @param[in] msh3trg Mesh representing the graph.
- */
 void nb_msh3trg_load_elem_graph(const void *const msh3trg,
-			       nb_graph_t *graph);
+				nb_graph_t *graph);
 
-/**
- * @brief Build a graph from the elements mesh.
- * @param[in] msh3trg Mesh representing the graph.
- */
+void nb_msh3trg_load_nodal_graph(const void *const msh3trg,
+				 nb_graph_t *graph);
+
 void nb_msh3trg_load_interelem_graph(const void *const msh3trg,
 				     nb_graph_t *graph);
 
@@ -72,6 +67,8 @@ void nb_msh3trg_disable_single_point_connections
 (const void *const msh3trg, bool* enabled_elements);
 
 void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr, double box[4]);
+
+bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
 
 void nb_msh3trg_draw(const void *msh3trg_ptr,
 		     const char* filename, int width, int height);

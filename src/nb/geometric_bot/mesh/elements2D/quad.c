@@ -20,6 +20,28 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
+struct nb_mshquad_s {
+	uint32_t N_nod;
+	double *nod;      /* Nodes coordinates concatenated */
+
+	uint32_t N_edg;
+	uint32_t *edg;
+
+	uint32_t N_elems;
+	int8_t *type;     /* Quad if 0, Trg otherwise. */
+	uint32_t *adj;    /* Connectivity matrix (4 x N_elems) */
+	uint32_t *ngb;    /* Quad-neighbours (4 x N_elems) */
+
+	uint32_t N_vtx;
+	uint32_t *vtx; /* Ids of vtx corresponding to input vtx */
+
+	uint32_t N_sgm;
+	/* Number of nodes forming the input segment */
+	uint32_t *N_nod_x_sgm;
+	/* Sequence of nodal ids forming the input segments */
+	uint32_t** nod_x_sgm;
+};
+
 typedef struct {
 	uint32_t N_matchs;
 	uint32_t N_unmatched_trg;
@@ -274,7 +296,370 @@ void nb_mshquad_clear(void *mshquad_ptr)
 	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	
 }
 
-void nb_mshquad_load_from_mesh(nb_mshquad_t *mshquad,
+uint32_t nb_mshquad_get_N_invtx(const void *msh)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_vtx;
+}
+
+uint32_t nb_mshquad_get_N_insgm(const void *msh)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_sgm;
+}
+
+uint32_t nb_mshquad_get_N_nodes(const void *msh)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_nod;
+}
+
+uint32_t nb_mshquad_get_N_edges(const void *msh)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_edg;
+}
+
+uint32_t nb_mshquad_get_N_elems(const void *msh)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_elems;
+}
+
+double nb_mshquad_get_x_node(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->nod[id * 2];
+}
+
+double nb_mshquad_get_y_node(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->nod[id*2+1];
+}
+
+uint32_t nb_mshquad_get_1n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->edg[id * 2];
+}
+
+uint32_t nb_mshquad_get_2n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->edg[id*2+1];
+}
+
+double nb_mshquad_get_x_elem(const void *msh, uint32_t id)
+{
+	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
+	double x = nb_mshquad_get_x_node(msh, idx);
+
+	idx = nb_mshquad_elem_get_adj(msh, id, 1);
+	x += nb_mshquad_get_x_node(msh, idx);
+
+	idx = nb_mshquad_elem_get_adj(msh, id, 2);
+	x += nb_mshquad_get_x_node(msh, idx);
+
+	double div = 3.0;
+	const nb_mshquad_t *mshquad = msh;
+	if (0 == mshquad->type[id]) {
+		div = 4.0;
+		idx = nb_mshquad_elem_get_adj(msh, id, 3);
+		x += nb_mshquad_get_x_node(msh, idx);
+	}
+	return x / div;
+}
+
+double nb_mshquad_get_y_elem(const void *msh, uint32_t id)
+{
+	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
+	double y = nb_mshquad_get_y_node(msh, idx);
+
+	idx = nb_mshquad_elem_get_adj(msh, id, 1);
+	y += nb_mshquad_get_y_node(msh, idx);
+
+	idx = nb_mshquad_elem_get_adj(msh, id, 2);
+	y += nb_mshquad_get_y_node(msh, idx);
+
+	double div = 3.0;
+	const nb_mshquad_t *mshquad = msh;
+	if (0 == mshquad->type[id]) {
+		div = 4.0;
+		idx = nb_mshquad_elem_get_adj(msh, id, 3);
+		y += nb_mshquad_get_y_node(msh, idx);
+	}
+	return y / div;
+}
+
+uint32_t nb_mshquad_elem_get_N_adj(const void *msh, uint32_t id)
+{
+	uint32_t out;
+	const nb_mshquad_t *mshquad = msh;
+	if (0 == mshquad->type[id])
+		out = 4;
+	else
+		out = 3;
+	return out;
+}
+
+uint32_t nb_mshquad_elem_get_adj(const void *msh,
+				 uint32_t elem_id, uint8_t adj_id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->adj[elem_id * 4 + adj_id];
+}
+
+uint32_t nb_mshquad_elem_get_N_ngb(const void *msh, uint32_t id)
+{
+	uint32_t out;
+	const nb_mshquad_t *mshquad = msh;
+	if (0 == mshquad->type[id])
+		out = 4;
+	else
+		out = 3;
+	return out;
+}
+
+uint32_t nb_mshquad_elem_get_ngb(const void *msh,
+				 uint32_t elem_id, uint8_t ngb_id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->ngb[elem_id * 4 + ngb_id];
+}
+
+uint32_t nb_mshquad_get_invtx(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->vtx[id];
+}
+
+uint32_t nb_mshquad_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->N_nod_x_sgm[id];
+}
+
+uint32_t nb_mshquad_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+				     uint32_t node_id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return mshquad->nod_x_sgm[sgm_id][node_id];
+}
+
+void nb_mshquad_load_elem_graph(const void *mshquad_ptr,
+				nb_graph_t *graph)
+{
+	const nb_mshquad_t *mshquad = mshquad_ptr;
+	graph->N = mshquad->N_nod;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	nodal_graph_allocate_adj(graph, mshquad);
+	fem_graph_count_adj(graph, mshquad);
+	graph_assign_mem_adj(graph);
+	fem_graph_set_adj(graph, mshquad);
+
+}
+
+static void nodal_graph_allocate_adj(nb_graph_t *graph,
+				     const nb_mshquad_t *mshquad)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+}
+
+static void fem_graph_count_adj(nb_graph_t *graph,
+				const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (0 == mshquad->type[i]) {
+			uint32_t id1 = mshquad->adj[i * 4];
+			uint32_t id2 = mshquad->adj[i*4+1];
+			uint32_t id3 = mshquad->adj[i*4+2];
+			uint32_t id4 = mshquad->adj[i*4+3];
+			graph->N_adj[id1] += 1;
+			graph->N_adj[id2] += 1;
+			graph->N_adj[id3] += 1;
+			graph->N_adj[id4] += 1;
+		}
+	}
+}
+
+static void graph_assign_mem_adj(nb_graph_t *graph)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	char *block = (char*) graph->N_adj + memsize_N_adj;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->adj[i] = (void*) block;
+		block += graph->N_adj[i] * sizeof(**(graph->adj));
+	}
+}
+
+static void fem_graph_set_adj(nb_graph_t *graph,
+			      const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->adj[id1][graph->N_adj[id1]] = id2;
+		graph->adj[id2][graph->N_adj[id2]] = id1;
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (0 == mshquad->type[i]) {
+			uint32_t id1 = mshquad->adj[i * 4];
+			uint32_t id2 = mshquad->adj[i*4+1];
+			uint32_t id3 = mshquad->adj[i*4+2];
+			uint32_t id4 = mshquad->adj[i*4+3];
+
+			graph->adj[id1][graph->N_adj[id1]] = id3;
+			graph->adj[id3][graph->N_adj[id3]] = id1;
+
+			graph->adj[id2][graph->N_adj[id2]] = id4;
+			graph->adj[id4][graph->N_adj[id4]] = id2;
+
+			graph->N_adj[id1] += 1;
+			graph->N_adj[id2] += 1;
+			graph->N_adj[id3] += 1;
+			graph->N_adj[id4] += 1;
+		}
+	}
+}
+
+void nb_mshquad_load_nodal_graph(const void *mshquad_ptr,
+				 nb_graph_t *graph)
+{
+	const nb_mshquad_t *mshquad = mshquad_ptr;
+	graph->N = mshquad->N_nod;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	nodal_graph_allocate_adj(graph, mshquad);
+	nodal_graph_count_adj(graph, mshquad);
+	graph_assign_mem_adj(graph);
+	nodal_graph_set_adj(graph, mshquad);
+}
+
+static void nodal_graph_count_adj(nb_graph_t *graph,
+				  const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+}
+
+
+static void nodal_graph_set_adj(nb_graph_t *graph,
+				const nb_mshquad_t *mshquad)
+{
+	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
+	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
+		uint32_t id1 = mshquad->edg[i * 2];
+		uint32_t id2 = mshquad->edg[i*2+1];
+		graph->adj[id1][graph->N_adj[id1]] = id2;
+		graph->adj[id2][graph->N_adj[id2]] = id1;
+		graph->N_adj[id1] += 1;
+		graph->N_adj[id2] += 1;
+	}
+}
+
+void nb_mshquad_load_interelem_graph(const void *mshquad_ptr,
+				     nb_graph_t *graph)
+{
+	const nb_mshquad_t *mshquad = mshquad_ptr;
+	graph->N = mshquad->N_elems;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
+	elemental_graph_allocate_adj(graph, mshquad);
+	elemental_graph_count_adj(graph, mshquad);
+	graph_assign_mem_adj(graph);
+	elemental_graph_set_adj(graph, mshquad);
+}
+
+static void elemental_graph_allocate_adj(nb_graph_t *graph,
+					 const nb_mshquad_t *mshquad)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t N_adj = get_N_elemental_adj(mshquad);
+	uint32_t memsize_adj = 2 * N_adj * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+}
+
+static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)
+{
+	uint32_t N = 0;
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		if (mshquad->N_elems > mshquad->ngb[i * 4])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+1])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+2])
+			N += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+3])
+			N += 1;
+	}
+	return N;
+}
+
+static void elemental_graph_count_adj(nb_graph_t *graph,
+				      const nb_mshquad_t *mshquad)
+{
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		graph->N_adj[i] = 0;
+		if (mshquad->N_elems > mshquad->ngb[i * 4])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+1])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+2])
+			graph->N_adj[i] += 1;
+		if (mshquad->N_elems > mshquad->ngb[i*4+3])
+			graph->N_adj[i] += 1;
+	}
+}
+
+static void elemental_graph_set_adj(nb_graph_t *graph,
+				    const nb_mshquad_t *mshquad)
+{
+	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
+		graph->N_adj[i] = 0;
+		if (mshquad->N_elems > mshquad->ngb[i * 4]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i * 4];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+1]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+1];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+2]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+2];
+			graph->N_adj[i] += 1;
+		}
+
+		if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
+			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+3];
+			graph->N_adj[i] += 1;
+		}
+	}
+}
+void nb_mshquad_load_from_mesh(void *mshquad,
 			       const nb_mesh_t *const mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
@@ -772,212 +1157,44 @@ static void get_match_data(const nb_graph_t *const graph,
 	data->N_matchs /= 2; /* Double counting */
 }
 
-void nb_mshquad_set_fem_graph(const nb_mshquad_t *mshquad,
-			      nb_graph_t *graph)
+void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])
 {
-	graph->N = mshquad->N_nod;
-	graph->wi = NULL;
-	graph->wij = NULL;
-	nodal_graph_allocate_adj(graph, mshquad);
-	fem_graph_count_adj(graph, mshquad);
-	graph_assign_mem_adj(graph);
-	fem_graph_set_adj(graph, mshquad);
+	const nb_mshquad_t *mshquad = mshquad_ptr;
+	box[0] = mshquad->nod[0];
+	box[1] = mshquad->nod[1];
+	box[2] = mshquad->nod[0];
+	box[3] = mshquad->nod[1];
+	for (uint32_t i = 1; i < mshquad->N_nod; i++) {
+		double x = nb_mshquad_get_x_node(mshquad, i);
+		double y = nb_mshquad_get_y_node(mshquad, i);
+		if (x < box[0])
+			box[0] = x;
+		else if (x > box[2])
+			box[2] = x;
 
-}
-
-static void nodal_graph_allocate_adj(nb_graph_t *graph,
-				     const nb_mshquad_t *mshquad)
-{
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
-	graph->N_adj = (void*) memblock;
-}
-
-static void fem_graph_count_adj(nb_graph_t *graph,
-				const nb_mshquad_t *mshquad)
-{
-	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
-	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
-		uint32_t id1 = mshquad->edg[i * 2];
-		uint32_t id2 = mshquad->edg[i*2+1];
-		graph->N_adj[id1] += 1;
-		graph->N_adj[id2] += 1;
+		if (y < box[1])
+			box[1] = y;
+		else if (y > box[3])
+			box[3] = y;
 	}
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		if (0 == mshquad->type[i]) {
-			uint32_t id1 = mshquad->adj[i * 4];
-			uint32_t id2 = mshquad->adj[i*4+1];
-			uint32_t id3 = mshquad->adj[i*4+2];
-			uint32_t id4 = mshquad->adj[i*4+3];
-			graph->N_adj[id1] += 1;
-			graph->N_adj[id2] += 1;
-			graph->N_adj[id3] += 1;
-			graph->N_adj[id4] += 1;
-		}
-	}
+
 }
 
-static void graph_assign_mem_adj(nb_graph_t *graph)
+bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y)
 {
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	char *block = (char*) graph->N_adj + memsize_N_adj;
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->adj[i] = (void*) block;
-		block += graph->N_adj[i] * sizeof(**(graph->adj));
-	}
+	return false;/* PENDING */
 }
 
-static void fem_graph_set_adj(nb_graph_t *graph,
-			      const nb_mshquad_t *mshquad)
+void nb_mshquad_build_model(const void *msh, nb_model_t *model)
 {
-	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
-	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
-		uint32_t id1 = mshquad->edg[i * 2];
-		uint32_t id2 = mshquad->edg[i*2+1];
-		graph->adj[id1][graph->N_adj[id1]] = id2;
-		graph->adj[id2][graph->N_adj[id2]] = id1;
-		graph->N_adj[id1] += 1;
-		graph->N_adj[id2] += 1;
-	}
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		if (0 == mshquad->type[i]) {
-			uint32_t id1 = mshquad->adj[i * 4];
-			uint32_t id2 = mshquad->adj[i*4+1];
-			uint32_t id3 = mshquad->adj[i*4+2];
-			uint32_t id4 = mshquad->adj[i*4+3];
-
-			graph->adj[id1][graph->N_adj[id1]] = id3;
-			graph->adj[id3][graph->N_adj[id3]] = id1;
-
-			graph->adj[id2][graph->N_adj[id2]] = id4;
-			graph->adj[id4][graph->N_adj[id4]] = id2;
-
-			graph->N_adj[id1] += 1;
-			graph->N_adj[id2] += 1;
-			graph->N_adj[id3] += 1;
-			graph->N_adj[id4] += 1;
-		}
-	}
+	;/* PENDING */
 }
 
-void nb_mshquad_set_nodal_graph(const nb_mshquad_t *mshquad,
-				nb_graph_t *graph)
+void nb_mshquad_build_model_disabled_elems(const void *msh,
+					   const bool *elems_enabled,
+					   nb_model_t *model,
+					   uint32_t *N_input_vtx,
+					   uint32_t **input_vtx)
 {
-	graph->N = mshquad->N_nod;
-	graph->wi = NULL;
-	graph->wij = NULL;
-	nodal_graph_allocate_adj(graph, mshquad);
-	nodal_graph_count_adj(graph, mshquad);
-	graph_assign_mem_adj(graph);
-	nodal_graph_set_adj(graph, mshquad);
-}
-
-static void nodal_graph_count_adj(nb_graph_t *graph,
-				  const nb_mshquad_t *mshquad)
-{
-	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
-	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
-		uint32_t id1 = mshquad->edg[i * 2];
-		uint32_t id2 = mshquad->edg[i*2+1];
-		graph->N_adj[id1] += 1;
-		graph->N_adj[id2] += 1;
-	}
-}
-
-
-static void nodal_graph_set_adj(nb_graph_t *graph,
-				const nb_mshquad_t *mshquad)
-{
-	memset(graph->N_adj, 0, graph->N * sizeof(*(graph->N_adj)));
-	for (uint32_t i = 0; i < mshquad->N_edg; i++) {
-		uint32_t id1 = mshquad->edg[i * 2];
-		uint32_t id2 = mshquad->edg[i*2+1];
-		graph->adj[id1][graph->N_adj[id1]] = id2;
-		graph->adj[id2][graph->N_adj[id2]] = id1;
-		graph->N_adj[id1] += 1;
-		graph->N_adj[id2] += 1;
-	}
-}
-
-void nb_mshquad_set_elemental_graph(const nb_mshquad_t *mshquad,
-				    nb_graph_t *graph)
-{
-	graph->N = mshquad->N_elems;
-	graph->wi = NULL;
-	graph->wij = NULL;
-	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
-	elemental_graph_allocate_adj(graph, mshquad);
-	elemental_graph_count_adj(graph, mshquad);
-	graph_assign_mem_adj(graph);
-	elemental_graph_set_adj(graph, mshquad);
-}
-
-static void elemental_graph_allocate_adj(nb_graph_t *graph,
-					 const nb_mshquad_t *mshquad)
-{
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	uint32_t N_adj = get_N_elemental_adj(mshquad);
-	uint32_t memsize_adj = 2 * N_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
-	graph->N_adj = (void*) memblock;
-}
-
-static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)
-{
-	uint32_t N = 0;
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		if (mshquad->N_elems > mshquad->ngb[i * 4])
-			N += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+1])
-			N += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+2])
-			N += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+3])
-			N += 1;
-	}
-	return N;
-}
-
-static void elemental_graph_count_adj(nb_graph_t *graph,
-				      const nb_mshquad_t *mshquad)
-{
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		graph->N_adj[i] = 0;
-		if (mshquad->N_elems > mshquad->ngb[i * 4])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+1])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+2])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+3])
-			graph->N_adj[i] += 1;
-	}
-}
-
-static void elemental_graph_set_adj(nb_graph_t *graph,
-				    const nb_mshquad_t *mshquad)
-{
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		graph->N_adj[i] = 0;
-		if (mshquad->N_elems > mshquad->ngb[i * 4]) {
-			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i * 4];
-			graph->N_adj[i] += 1;
-		}
-
-		if (mshquad->N_elems > mshquad->ngb[i*4+1]) {
-			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+1];
-			graph->N_adj[i] += 1;
-		}
-
-		if (mshquad->N_elems > mshquad->ngb[i*4+2]) {
-			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+2];
-			graph->N_adj[i] += 1;
-		}
-
-		if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
-			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+3];
-			graph->N_adj[i] += 1;
-		}
-	}
+	;/* PENDING */
 }
