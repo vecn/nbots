@@ -49,19 +49,11 @@ void nb_msh3trg_draw(const void *const msh3trg,
 }
 
 static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
-			 const void *const msh3trg_ptr)
+			 const void *const msh3trg)
 {
-	const void *const msh3trg = msh3trg_ptr;
-	
 	/* Compute cam->center and cam->zoom */
 	double box[4];
-	vcn_utils2D_get_enveloping_box_from_subset(msh3trg->N_input_vertices,
-						   msh3trg->input_vertices,
-						   msh3trg->vertices,
-						   2 * sizeof(*(msh3trg->vertices)),
-						   vcn_utils2D_get_x_from_darray,
-						   vcn_utils2D_get_y_from_darray,
-						   box);
+	nb_msh3trg_get_enveloping_box(msh3trg, box);
 
 	nb_graphics_enable_camera(g);
 	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
@@ -69,19 +61,20 @@ static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 
 	/* Draw triangles */
 	nb_graphics_set_line_width(g, 0.5);
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
-		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
-		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
-		uint32_t n3 = msh3trg->vertices_forming_triangles[i*3+2];
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t n1 = nb_msh3trg_elem_get_adj(msh3trg, i, 0);
+		uint32_t n2 = nb_msh3trg_elem_get_adj(msh3trg, i, 1);
+		uint32_t n3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
 		nb_graphics_move_to(g,
-				    msh3trg->vertices[n1 * 2],
-				    msh3trg->vertices[n1*2+1]);
+				    nb_msh3trg_get_x_node(msh3trg, n1),
+				    nb_msh3trg_get_y_node(msh3trg, n1));
 		nb_graphics_line_to(g,
-				    msh3trg->vertices[n2 * 2],
-				    msh3trg->vertices[n2*2+1]);
+				    nb_msh3trg_get_x_node(msh3trg, n2),
+				    nb_msh3trg_get_y_node(msh3trg, n2));
 		nb_graphics_line_to(g,
-				    msh3trg->vertices[n3 * 2],
-				    msh3trg->vertices[n3*2+1]);
+				    nb_msh3trg_get_x_node(msh3trg, n3),
+				    nb_msh3trg_get_y_node(msh3trg, n3));
 		nb_graphics_close_path(g);
 
 		nb_graphics_set_source_rgba(g, 25, 75, 255, 128);
@@ -97,18 +90,22 @@ static void draw_msh3trg(nb_graphics_context_t *g, int width, int height,
 	nb_graphics_set_source(g, NB_AQUAMARIN);
 
 	nb_graphics_set_line_width(g, 1.0);
-	for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-		uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+	uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_vtx = nb_msh3trg_get_N_nodes_x_insgm(msh3trg, i);
 		if (0 < N_vtx) {
-			uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
+			uint32_t n1 = nb_msh3trg_get_node_x_insgm(msh3trg,
+								  i, 0);
 			nb_graphics_move_to(g,
-					    msh3trg->vertices[n1 * 2],
-					    msh3trg->vertices[n1*2+1]);
+					    nb_msh3trg_get_x_node(msh3trg, n1),
+					    nb_msh3trg_get_y_node(msh3trg, n1));
 			for (uint32_t j = 1; j < N_vtx; j++) {
-				uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j];
+				uint32_t n2 = 
+					nb_msh3trg_get_node_x_insgm(msh3trg,
+								    i, j);
 				nb_graphics_line_to(g,
-						    msh3trg->vertices[n2 * 2],
-						    msh3trg->vertices[n2*2+1]);
+						    nb_msh3trg_get_x_node(msh3trg, n2),
+						    nb_msh3trg_get_y_node(msh3trg, n2));
 			}
 		}
 		nb_graphics_stroke(g);
@@ -124,13 +121,14 @@ static void calculate_partition_centers
 		memset(pcenter[k], 0, 2 * sizeof(double));
 
 	uint32_t* ksize = calloc(kpart, sizeof(*ksize));
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	for (uint32_t i = 0; i < N_elems; i++) {
 		double xc = 0.0;
 		double yc = 0.0;
 		for (uint32_t j = 0; j < 3; j++) {
-			uint32_t n = msh3trg->vertices_forming_triangles[i*3+j];
-			xc += msh3trg->vertices[n * 2];
-			yc += msh3trg->vertices[n*2+1];
+			uint32_t n = nb_msh3trg_elem_get_adj(msh3trg, i, j);;
+			xc += nb_msh3trg_get_x_node(msh3trg, n);
+			yc += nb_msh3trg_get_y_node(msh3trg, n);
 		}
 		pcenter[part[i]][0] += xc / 3.0;
 		pcenter[part[i]][1] += yc / 3.0;
@@ -151,17 +149,19 @@ static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 					 int trg_id, int edge_id)
 {
 	double vtx[2];
-	uint32_t n1 = msh3trg->vertices_forming_triangles[trg_id*3+edge_id];
-	uint32_t n2 = msh3trg->vertices_forming_triangles[trg_id*3 +
-							  (edge_id+1)%3];
+	uint32_t n1 = nb_msh3trg_elem_get_adj(msh3trg, trg_id, edge_id);
+	uint32_t n2 = nb_msh3trg_elem_get_adj(msh3trg, trg_id, (edge_id+1)%3);
+	vtx[0] = nb_msh3trg_get_x_node(msh3trg, n1);
+	vtx[1] = nb_msh3trg_get_y_node(msh3trg, n1);
 
-	memcpy(vtx, &(msh3trg->vertices[n1*2]), 2 * sizeof(double));
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
 
 	nb_graphics_move_to(g, vtx[0], vtx[1]);
 
-	memcpy(vtx, &(msh3trg->vertices[n2*2]), 2 * sizeof(double));
+	vtx[0] = nb_msh3trg_get_x_node(msh3trg, n2);
+	vtx[1] = nb_msh3trg_get_y_node(msh3trg, n2);
+
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
 
@@ -176,9 +176,9 @@ static void draw_triangle_partition_border(nb_graphics_context_t *g,
 					   double scale_partitions,
 					   uint32_t trg_id)
 {
-	uint32_t n1 = msh3trg->triangles_sharing_sides[trg_id * 3];
-	uint32_t n2 = msh3trg->triangles_sharing_sides[trg_id*3+1];
-	uint32_t n3 = msh3trg->triangles_sharing_sides[trg_id*3+2];
+	uint32_t n1 = nb_msh3trg_elem_get_ngb(msh3trg, trg_id, 0);
+	uint32_t n2 = nb_msh3trg_elem_get_ngb(msh3trg, trg_id, 1);
+	uint32_t n3 = nb_msh3trg_elem_get_ngb(msh3trg, trg_id, 2);
 
 	if (part[trg_id] != part[n1])
 		draw_triangle_partition_edge(g, msh3trg, part, kpart, pcenter,
@@ -246,28 +246,33 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 	}
 
 	/* Draw triangles */
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	for (uint32_t i = 0; i < N_elems; i++) {
 		if (data->part[i] != data->k_to_draw &&
 		    data->k_to_draw < data->k_part)
 			continue;
     
-		uint32_t n1 = msh3trg->vertices_forming_triangles[i * 3];
-		uint32_t n2 = msh3trg->vertices_forming_triangles[i*3+1];
-		uint32_t n3 = msh3trg->vertices_forming_triangles[i*3+2];
+		uint32_t n1 = nb_msh3trg_elem_get_adj(msh3trg, i, 0);
+		uint32_t n2 = nb_msh3trg_elem_get_adj(msh3trg, i, 1);
+		uint32_t n3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
 
 		double vtx[2];
-		memcpy(vtx, &(msh3trg->vertices[n1*2]), 2 * sizeof(double));
+		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n1);
+		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n1);
+
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
 		nb_graphics_move_to(g, vtx[0], vtx[1]);
 
-		memcpy(vtx, &(msh3trg->vertices[n2*2]), 2 * sizeof(*vtx));
+		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n2);
+		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n2);
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 		nb_graphics_line_to(g, vtx[0], vtx[1]);
 
-		memcpy(vtx, &(msh3trg->vertices[n3*2]), 2 * sizeof(*vtx));
+		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n3);
+		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n3);
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
@@ -302,18 +307,20 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 		nb_graphics_set_source_rgb(g, 255, 0, 200);
 
 		nb_graphics_set_line_width(g, 1.0);
-		for (uint32_t i = 0; i < msh3trg->N_input_segments; i++) {
-			uint32_t N_vtx = msh3trg->N_vtx_x_inputsgm[i];
+		uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
+		for (uint32_t i = 0; i < N_sgm; i++) {
+			uint32_t N_vtx = nb_msh3trg_get_N_nodes_x_insgm(msh3trg,
+									i);
 			if (0 < N_vtx) {
-				uint32_t n1 = msh3trg->meshvtx_x_inputsgm[i][0];
+				uint32_t n1 = nb_msh3trg_get_node_x_insgm(msh3trg, i, 0);
 				nb_graphics_move_to(g,
-						    msh3trg->vertices[n1 * 2],
-						    msh3trg->vertices[n1*2+1]);
+						    nb_msh3trg_get_x_node(msh3trg, n1),
+						    nb_msh3trg_get_y_node(msh3trg, n1));
 				for (uint32_t j = 0; j < N_vtx; j++) {
-					uint32_t n2 = msh3trg->meshvtx_x_inputsgm[i][j];
+					uint32_t n2 = nb_msh3trg_get_node_x_insgm(msh3trg, i, j);
 					nb_graphics_line_to(g,
-							    msh3trg->vertices[n2 * 2],
-							    msh3trg->vertices[n2*2+1]);
+							    nb_msh3trg_get_x_node(msh3trg, n2),
+							    nb_msh3trg_get_y_node(msh3trg, n2));
 				}
 				nb_graphics_stroke(g);
 			}

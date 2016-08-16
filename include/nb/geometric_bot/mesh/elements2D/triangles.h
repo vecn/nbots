@@ -72,7 +72,7 @@ void nb_msh3trg_relabel(void* msh3trg,
 void nb_msh3trg_disable_single_point_connections
 (const void *const msh3trg, bool* enabled_elements);
 
-void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr);
+void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr, double box[4]);
 
 void nb_msh3trg_draw(const void *msh3trg_ptr,
 		     const char* filename, int width, int height);

@@ -103,23 +103,23 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 	memcpy(msh3trg->nod, src->nod, 
 	       2 * msh3trg->N_nod * sizeof(*(msh3trg->nod)));
 
-	msh3trg->N_triangles = src->N_triangles;
-	if (msh3trg->N_triangles > 0) {
+	msh3trg->N_elems = src->N_elems;
+	if (msh3trg->N_elems > 0) {
 		msh3trg->adj =
-			malloc(3 * msh3trg->N_triangles *
+			malloc(3 * msh3trg->N_elems *
 			       sizeof(*(msh3trg->adj)));
 		memcpy(msh3trg->adj,
 		       src->adj,
-		       3 * msh3trg->N_triangles * 
+		       3 * msh3trg->N_elems * 
 		       sizeof(*(msh3trg->adj)));
 	}
 	if (NULL != src->ngb) {
 		msh3trg->ngb =
-			malloc(3 * msh3trg->N_triangles *
+			malloc(3 * msh3trg->N_elems *
 			       sizeof(*(msh3trg->ngb)));
 		memcpy(msh3trg->ngb,
 		       src->ngb,
-		       3 * msh3trg->N_triangles *
+		       3 * msh3trg->N_elems *
 		       sizeof(*(msh3trg->ngb)));
 	}
 	msh3trg->N_vtx = src->N_vtx;
@@ -174,13 +174,13 @@ void* nb_msh3trg_clone(void* msh3trg)
 
 void nb_msh3trg_clear(void* msh3trg_ptr)
 {
-	nb_mshtrg_t *msh3trg = msh3trg_ptr;
+	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
 	if (msh3trg->N_nod > 0) 
 		free(msh3trg->nod);
-	if (msh3trg->N_edges > 0)
-		free(msh3trg->edges);
-	if (msh3trg->N_triangles > 0) {
+	if (msh3trg->N_edg > 0)
+		free(msh3trg->edg);
+	if (msh3trg->N_elems > 0) {
 		free(msh3trg->adj);
 		if (NULL != msh3trg->ngb)
 			free(msh3trg->ngb);
@@ -330,7 +330,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr,
 {
 	const nb_msh3trg_t *msh3trg = mshtrg_ptr;
 	bool is_inside = false;
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+	for (uint32_t i = 0; i < msh3trg->N_elems; i++) {
 		uint32_t id1 = msh3trg->adj[i * 3];
 		uint32_t id2 = msh3trg->adj[i*3+1];
 		uint32_t id3 = msh3trg->adj[i*3+2];
@@ -364,7 +364,7 @@ void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
 	for (uint32_t i = 0; i < graph->N; i++)
 		l_nodal_CM[i] = nb_container_create(NB_SORTED);
   
-	for (uint32_t k = 0; k < msh3trg->N_triangles; k++) {
+	for (uint32_t k = 0; k < msh3trg->N_elems; k++) {
 		for (uint32_t i = 0; i < 2; i++) {
 			for (uint32_t j = i+1; j < 3; j++) {
 				uint32_t* inode = malloc(sizeof(*inode));
@@ -409,7 +409,7 @@ void nb_msh3trg_create_interelem_graph(const void *msh3trg_ptr, nb_graph_t *grap
 
 	nb_graph_clear(graph);
 
-	graph->N = msh3trg->N_triangles;
+	graph->N = msh3trg->N_elems;
 
 	uint32_t memsize = graph->N * (sizeof(*(graph->N_adj)) +
 				       sizeof(*(graph->adj)));
@@ -420,15 +420,15 @@ void nb_msh3trg_create_interelem_graph(const void *msh3trg_ptr, nb_graph_t *grap
 	for (uint32_t i = 0; i < graph->N; i++) {
 		graph->N_adj[i] = 0;
 		if (msh3trg->ngb[i * 3] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->N_adj[i] += 1;      
 
 		if (msh3trg->ngb[i*3+1] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->N_adj[i] += 1;
 
 		if (msh3trg->ngb[i*3+2] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->N_adj[i] += 1;
   }
 
@@ -436,17 +436,17 @@ void nb_msh3trg_create_interelem_graph(const void *msh3trg_ptr, nb_graph_t *grap
 		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
 		uint32_t cnt = 0;
 		if (msh3trg->ngb[i * 3] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->adj[i][cnt++] = 
 				msh3trg->ngb[i * 3];
 
 		if (msh3trg->ngb[i*3+1] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->adj[i][cnt++] =
 				msh3trg->ngb[i*3+1];
 		
 		if (msh3trg->ngb[i*3+2] <
-		    msh3trg->N_triangles)
+		    msh3trg->N_elems)
 			graph->adj[i][cnt++] =
 				msh3trg->ngb[i*3+2];
 	}
@@ -534,39 +534,39 @@ static void msh3trg_set_vtx(void *exp_structure, uint32_t i,
 static void msh3trg_set_N_edg(void *exp_structure, uint32_t N)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	msh3trg->N_edges = N;
+	msh3trg->N_edg = N;
 }
 
 static void msh3trg_malloc_edg(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	uint32_t memsize = 2 * msh3trg->N_edges * sizeof(*(msh3trg->edges));
-	msh3trg->edges = malloc(memsize);
+	uint32_t memsize = 2 * msh3trg->N_edg * sizeof(*(msh3trg->edg));
+	msh3trg->edg = malloc(memsize);
 }
 
 static void msh3trg_set_edg(void *exp_structure, uint32_t i,
 			    uint32_t v1, uint32_t v2)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	msh3trg->edges[i * 2] = v1;
-	msh3trg->edges[i*2+1] = v2;
+	msh3trg->edg[i * 2] = v1;
+	msh3trg->edg[i*2+1] = v2;
 }
 
 static void msh3trg_set_N_trg(void *exp_structure, uint32_t N)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	msh3trg->N_triangles = N;
+	msh3trg->N_elems = N;
 }
 
 static void msh3trg_malloc_trg(void *exp_structure, bool include_neighbours)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
-	uint32_t vtx_memsize = 3 * msh3trg->N_triangles *
+	uint32_t vtx_memsize = 3 * msh3trg->N_elems *
 		sizeof(*(msh3trg->adj));
 	msh3trg->adj = malloc(vtx_memsize);
 
 	if (include_neighbours) {
-		uint32_t nbg_memsize = 3 * msh3trg->N_triangles *
+		uint32_t nbg_memsize = 3 * msh3trg->N_elems *
 			sizeof(*(msh3trg->ngb));
 		msh3trg->ngb = malloc(nbg_memsize);
 	}
@@ -679,7 +679,7 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
 		trg_x_vtx[i] = calloc(10, sizeof(*(trg_x_vtx[i])));
       
 	/* Iterate over triangles to found relations */
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
+	for (uint32_t i = 0; i < msh3trg->N_elems; i++) {
 		if (!enabled_elements[i])
 			continue;
 		uint32_t v1 = msh3trg->adj[i * 3];
@@ -702,7 +702,7 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
 
 		while (itrg_get_right_triangle(msh3trg, 
 					       enabled_elements,
-					       itrg_twist, i) !=  msh3trg->N_triangles) {
+					       itrg_twist, i) !=  msh3trg->N_elems) {
 			itrg_twist = itrg_get_right_triangle(msh3trg, enabled_elements,
 							     itrg_twist, i);
 			if (itrg_twist == itrg) {
@@ -719,7 +719,7 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
 			trg_fan[N_trg_fan++] = itrg_twist;
 			itrg_twist = itrg_get_left_triangle(msh3trg, enabled_elements,
 							    itrg_twist, i);
-		} while (itrg_twist != msh3trg->N_triangles);
+		} while (itrg_twist != msh3trg->N_elems);
 
 		if (N_trg_fan == N_trg_x_vtx[i])
 			continue;
@@ -751,26 +751,26 @@ static uint32_t itrg_get_right_triangle(const nb_msh3trg_t *const delaunay,
 {
 	if (delaunay->adj[itrg * 3] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg * 3];
-		if (id < delaunay->N_triangles)
+		if (id < delaunay->N_elems)
 			if (enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
 	if (delaunay->adj[itrg*3+1] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg*3+1];
-		if (id < delaunay->N_triangles)
+		if (id < delaunay->N_elems)
 			if (enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
 	if (delaunay->adj[itrg*3+2] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg*3+2];
-		if (id < delaunay->N_triangles)
+		if (id < delaunay->N_elems)
 			if (enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
-	return delaunay->N_triangles;
+	return delaunay->N_elems;
 }
 
 static uint32_t itrg_get_left_triangle(const nb_msh3trg_t *const delaunay,
@@ -779,26 +779,26 @@ static uint32_t itrg_get_left_triangle(const nb_msh3trg_t *const delaunay,
 {
 	if(delaunay->adj[itrg * 3] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg*3+2];
-		if(id < delaunay->N_triangles)
+		if(id < delaunay->N_elems)
 			if(enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
 	if (delaunay->adj[itrg*3+1] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg * 3];
-		if(id < delaunay->N_triangles)
+		if(id < delaunay->N_elems)
 			if(enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
 	if (delaunay->adj[itrg*3+2] == ivtx) {
 		uint32_t id = delaunay->ngb[itrg*3+1];
-		if(id < delaunay->N_triangles)
+		if(id < delaunay->N_elems)
 			if(enabled_elements[id])
 				return id;
-		return delaunay->N_triangles;
+		return delaunay->N_elems;
 	}
-	return delaunay->N_triangles;
+	return delaunay->N_elems;
 }
 
 void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
