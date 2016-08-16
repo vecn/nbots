@@ -1341,12 +1341,12 @@ static void delete_isolated_elements(vcn_model_t *model)
 	if (0 == vcn_mesh_get_N_trg(mesh)) {
 		vcn_model_clear(model);
 	} else {
-		uint32_t msh_memsize = nb_partition_get_memsize();
+		uint32_t msh_memsize = nb_partition_get_memsize(NB_TRIAN);
 		nb_partition_t* part = alloca(msh_memsize);
-		nb_partition_init(part);
+		nb_partition_init(part, NB_TRIAN);
 		nb_partition_load_from_mesh(part, mesh);
 
-		nb_model_generate_from_part(model, part);
+		nb_partition_build_model(part, model);
 		nb_partition_finish(part);
 	}
 	vcn_mesh_finish(mesh);

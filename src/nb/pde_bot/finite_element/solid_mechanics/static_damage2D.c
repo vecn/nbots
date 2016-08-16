@@ -9,6 +9,7 @@
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
+#include "nb/pde_bot/common_solid_mechanics/formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
@@ -249,7 +250,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 /* Quasistatic formulation */
 {
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elem = nb_partition_get_N_elems(part);
 
 	uint32_t omp_parallel_threads = 1;
 
@@ -270,18 +271,18 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	double* r_dmg = malloc(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
-	for (uint32_t i = 0; i < N_gp * N_elems; i++)
+	for (uint32_t i = 0; i < N_gp * N_elem; i++)
 		r_dmg[i] = tension_damage_r0(material);
 
 	/*******************************************************************/
 	/****************** > Allocate system ******************************/
 	/*******************************************************************/
 	/* Allocate global Stiffness Matrices */
-	vcn_graph_t *graph = malloc(vcn_graph_get_memsize());
-	vcn_graph_init(graph);
+	nb_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_init(graph);
 	nb_partition_load_elem_graph(part, graph);
 	vcn_sparse_t* K = vcn_sparse_create(graph, NULL, 2);
-	vcn_graph_finish(graph);
+	nb_graph_finish(graph);
 	vcn_sparse_t *L = NULL;
 	vcn_sparse_t *U = NULL;
 	/* Allocate the triangular matrices L and U using symbolic Cholesky */
@@ -295,7 +296,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	double* du = calloc(N_system_size, sizeof(double));
 
 	/* Allocate damage parameter 'r' */
-	double* r_dmg_prev = malloc(N_gp * N_elems * sizeof(double));
+	double* r_dmg_prev = malloc(N_gp * N_elem * sizeof(double));
   
 	/*******************************************************************/
 	/******************* > Start simulation of N steps *****************/
@@ -304,7 +305,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 		log = fopen(logfile, "a");
 		fprintf(log, "  [ Load step %i]\n", n + 1);
 		fclose(log);
-		memcpy(r_dmg_prev, r_dmg, N_gp * N_elems * sizeof(double));
+		memcpy(r_dmg_prev, r_dmg, N_gp * N_elem * sizeof(double));
 
 		/***********************************************************/
 		/*************** > Implicit integration ********************/

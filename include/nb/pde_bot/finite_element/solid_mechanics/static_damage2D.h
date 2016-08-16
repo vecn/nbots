@@ -32,18 +32,17 @@ double vcn_fem_implicit_get_residual_tolerance
 (vcn_fem_implicit_t* isparams);
 
 void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
-(const nb_partition_t *const part,
- const vcn_fem_elem_t *const elemtype,
- const nb_material_t *const material,
- const nb_bcond_t *const bcond,
- bool enable_self_weight,
- double gravity[2],
- bool enable_Cholesky_solver,
- nb_analysis2D_t analysis2D,
- nb_analysis2D_params *params2D,
- vcn_fem_implicit_t* params,
- bool restore_computation, /* Restore computation after crash */
- const char* logfile);
+		(const nb_partition_t *const part,
+		 const vcn_fem_elem_t *const elemtype,
+		 const nb_material_t *const material,
+		 const nb_bcond_t *const bcond,
+		 bool enable_self_weight,
+		 double gravity[2],
+		 bool enable_Cholesky_solver,
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
+		 vcn_fem_implicit_t* params,
+		 const char* logfile);
 
 
 #endif

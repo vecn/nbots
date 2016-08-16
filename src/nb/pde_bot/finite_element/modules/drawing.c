@@ -128,7 +128,7 @@ static void draw_fem(nb_graphics_context_t *g, int width, int height,
 				       distortion, dscale);
 			nb_graphics_move_to(g, v1[0], v1[1]);
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				uint32_t n2 = pnb_partition_get_node_x_insgm(part, i, j);
+				uint32_t n2 = nb_partition_get_node_x_insgm(part, i, j);
 				double v2[2];
 				get_distortion(v2, n2, part,
 					       distortion, dscale);
@@ -205,8 +205,8 @@ static void get_distortion(double x[2], uint32_t vtx_id,
 			   const double *distortion,
 			   double dscale)
 {
-	x[0] = nb_partition_get_x_node(vtx_id);
-	x[1] = nb_partition_get_y_node(vtx_id);
+	x[0] = nb_partition_get_x_node(part, vtx_id);
+	x[1] = nb_partition_get_y_node(part, vtx_id);
 	if (NULL != distortion) {
 		x[0] += dscale * distortion[vtx_id * 2];
 		x[1] += dscale * distortion[vtx_id*2+1];

@@ -7,9 +7,7 @@
 #include <CUnit/Basic.h>
 
 #include "nb/math_bot.h"
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
-#include "nb/geometric_bot/mesh/constrained_delaunay.h"
+#include "nb/geometric_bot.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -304,22 +302,34 @@ static void input_clear(input_t *input)
 
 static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
 {
-	uint32_t memsize = vcn_msh3trg_get_memsize();
-	vcn_msh3trg_t *msh3trg = alloca(memsize);
-	vcn_msh3trg_init(msh3trg);
-	vcn_msh3trg_load_from_mesh(msh3trg, mesh);
+	uint32_t memsize = nb_msh3trg_get_memsize();
+	void *msh3trg = alloca(memsize);
+	nb_msh3trg_init(msh3trg);
+	nb_msh3trg_load_from_mesh(msh3trg, mesh);
 
 	bool all_delaunay = true;
-	for (uint32_t i = 0; i < msh3trg->N_triangles; i++) {
-		uint32_t id1 = vcn_msh3trg_get_1st_vtx_id_of_trg(msh3trg, i);
-		uint32_t id2 = vcn_msh3trg_get_2nd_vtx_id_of_trg(msh3trg, i);
-		uint32_t id3 = vcn_msh3trg_get_3rd_vtx_id_of_trg(msh3trg, i);
-		double *v1 = vcn_msh3trg_view_vtx(msh3trg, id1);
-		double *v2 = vcn_msh3trg_view_vtx(msh3trg, id2);
-		double *v3 = vcn_msh3trg_view_vtx(msh3trg, id3);
-		for (uint32_t j = 0; j < msh3trg->N_vertices; j++) {
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t id1 = nb_msh3trg_elem_get_adj(msh3trg, i, 0);
+		uint32_t id2 = nb_msh3trg_elem_get_adj(msh3trg, i, 1);
+		uint32_t id3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
+		
+		double v1[2];
+		v1[0] = nb_msh3trg_get_x_node(msh3trg, id1);
+		v1[1] = nb_msh3trg_get_y_node(msh3trg, id1);
+		double v2[2];
+		v2[0] = nb_msh3trg_get_x_node(msh3trg, id2);
+		v2[1] = nb_msh3trg_get_y_node(msh3trg, id2);
+		double v3[2];
+		v3[0] = nb_msh3trg_get_x_node(msh3trg, id3);
+		v3[1] = nb_msh3trg_get_y_node(msh3trg, id3);
+
+		uint32_t N_nodes = nb_msh3trg_get_N_nodes(msh3trg);
+		for (uint32_t j = 0; j < N_nodes; j++) {
 			if (id1 != j && id2 != j && id3 != j) {
-				double *p = &(msh3trg->vertices[j*2]);
+				double p[2];
+				p[0] = nb_msh3trg_get_x_node(msh3trg, id3);
+				p[1] = nb_msh3trg_get_y_node(msh3trg, id3);
 				if (is_not_constrained(v1, v2, v3, p, input)) {
 					all_delaunay = false;
 					break;
@@ -327,7 +337,7 @@ static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
 			}
 		}
 	}
-	vcn_msh3trg_finish(msh3trg);
+	nb_msh3trg_finish(msh3trg);
 	return all_delaunay;
 }
 

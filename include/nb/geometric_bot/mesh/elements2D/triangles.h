@@ -38,8 +38,7 @@ uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
-bool nb_msh3trg_is_vtx_inside(const void *msh3trg,
-			      const double x[2]);
+bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
 
 /**
  * @brief Build a graph from the vertices of the mesh.

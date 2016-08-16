@@ -43,11 +43,11 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double *strain        /* Output */)
 {
 	int status = 0;
-	vcn_graph_t *graph = malloc(vcn_graph_get_memsize());
-	vcn_graph_init(graph);
+	nb_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_init(graph);
 	nb_partition_load_elem_graph(part, graph);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
-	vcn_graph_finish(graph);
+	nb_graph_finish(graph);
 
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
 	uint32_t F_memsize = 2 * N_nod * sizeof(double);

@@ -11,6 +11,7 @@
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
+#include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "../mesh2D_structs.h"
 
@@ -291,25 +292,24 @@ uint32_t nb_msh3trg_elem_get_adj(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
-	return msh3trg->adj[elem_id][adj_id];
+	return msh3trg->adj[elem_id * 3 + adj_id];
 }
 
 uint32_t nb_msh3trg_elem_get_N_ngb(const void *msh, uint32_t id)
 {
-	const nb_msh3trg_t *msh3trg = msh;
-	return msh3trg->N_ngb[id];
+	return 3;
 }
 uint32_t nb_msh3trg_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
-	return msh3trg->ngb[elem_id][ngb_id];
+	return msh3trg->ngb[elem_id * 3 + ngb_id];
 }
 
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
-	return msh3trg->vtx[elem_id][id];
+	return msh3trg->vtx[id];
 }
 
 uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id)
@@ -325,10 +325,9 @@ uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 	return msh3trg->nod_x_sgm[sgm_id][node_id];
 }
 
-bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr,
-			      const double x[2])
+bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 {
-	const nb_msh3trg_t *msh3trg = mshtrg_ptr;
+	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
 	bool is_inside = false;
 	for (uint32_t i = 0; i < msh3trg->N_elems; i++) {
 		uint32_t id1 = msh3trg->adj[i * 3];
@@ -337,7 +336,8 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr,
 		double *v1 = &(msh3trg->nod[id1*2]);
 		double *v2 = &(msh3trg->nod[id2*2]);
 		double *v3 = &(msh3trg->nod[id3*2]);
-		if (vcn_utils2D_pnt_lies_in_trg(v1, v2, v3, x)) {
+		double p[2] = {x, y};
+		if (vcn_utils2D_pnt_lies_in_trg(v1, v2, v3, p)) {
 			is_inside = true;
 			break;
 		}
@@ -810,8 +810,8 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 	box[2] = msh3trg->nod[0];
 	box[3] = msh3trg->nod[1];
 	for (uint32_t i = 1; i < msh3trg->N_nod; i++) {
-		double x = nb_msh3trg_x_node(msh3trg, i);
-		double y = nb_msh3trg_x_node(msh3trg, i);
+		double x = nb_msh3trg_get_x_node(msh3trg, i);
+		double y = nb_msh3trg_get_y_node(msh3trg, i);
 		if (x < box[0])
 			box[0] = x;
 		else if (x > box[2])
@@ -826,10 +826,9 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 {
-	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-	uint32_t N_vtx = nb_msh3trg_get_N_invtx(part);
-	uint32_t N_nod = nb_msh3trg_get_N_nodes(part);
-	uint32_t N_sgm = nb_msh3trg_get_N_insgm(part);
+	uint32_t N_vtx = nb_msh3trg_get_N_invtx(msh3trg);
+	uint32_t N_nod = nb_msh3trg_get_N_nodes(msh3trg);
+	uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
 
 	uint32_t sgm_memsize = 2 * N_sgm * sizeof(uint32_t);
 	uint32_t* segments = NB_SOFT_MALLOC(sgm_memsize);
@@ -842,12 +841,12 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < N_vtx; i++) {
-		uint32_t id = nb_msh3trg_get_invtx(part, i);
+		uint32_t id = nb_msh3trg_get_invtx(msh3trg, i);
 		if (id < N_nod) {
 			vertices[N_vertices * 2] =
-				nb_msh3trg_get_x_node(part, id);
+				nb_msh3trg_get_x_node(msh3trg, id);
 			vertices[N_vertices*2+1] =
-				nb_msh3trg_get_y_node(part, id);
+				nb_msh3trg_get_y_node(msh3trg, id);
 
 			vtx_index_relation[i] = N_vertices;
 			N_vertices += 1;
@@ -857,19 +856,19 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	uint32_t N_segments = 0;
 	for (uint32_t i = 0; i < N_sgm; i++) {
 		uint32_t N_nod_x_sgm =
-			nb_msh3trg_get_N_nodes_x_insgm(part, i);
+			nb_msh3trg_get_N_nodes_x_insgm(msh3trg, i);
 		if (0 < N_nod_x_sgm) {
-			uint32_t v1 = nb_msh3trg_get_node_x_insgm(part, i, 0);
+			uint32_t v1 = nb_msh3trg_get_node_x_insgm(msh3trg, i, 0);
 			uint32_t last_idx = N_nod_x_sgm - 1;
-			uint32_t v2 = nb_msh3trg_get_node_x_insgm(part, i, last_idx);
+			uint32_t v2 = nb_msh3trg_get_node_x_insgm(msh3trg, i, last_idx);
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				if (nb_msh3trg_get_invtx(part, j) == v1) {
+				if (nb_msh3trg_get_invtx(msh3trg, j) == v1) {
 					v1 = j;
 					break;
 				}
 			}
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				if (nb_msh3trg_get_invtx(part, j) == v2) {
+				if (nb_msh3trg_get_invtx(msh3trg, j) == v2) {
 					v2 = j;
 					break;
 				}
@@ -913,7 +912,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 		/* get mask */
 		for (uint32_t i = 0; i < N_centroids; i++) {
 			bool not_inside =
-				!nb_msh3trg_is_vtx_inside(part,
+				!nb_msh3trg_is_vtx_inside(msh3trg,
 							    centroids[i * 2],
 							    centroids[i*2+1]);
 			if (not_inside) {
@@ -945,33 +944,30 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 }
 
 
-void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
+void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 					   const bool *elems_enabled,
 					   nb_model_t *model,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx)
 {
-	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-	/* Allocate model */
-	vcn_model_t* model = vcn_model_create();
 	/* Count segments and mark vertices used */
 	model->M = 0;
 	
-	uint32_t N_nod = nb_msh3trg_get_N_nodes(part);
+	uint32_t N_nod = nb_msh3trg_get_N_nodes(msh3trg);
 	char* vertices_used = NB_SOFT_MALLOC(N_nod);
 	memset(vertices_used, 0, N_nod);
 
 	char* vertices_bndr = NB_SOFT_MALLOC(N_nod);
 	memset(vertices_bndr, 0, N_nod);
 
-	uint32_t N_elems = nb_msh3trg_get_N_elems(part);
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
 	for (uint32_t i = 0; i < N_elems; i++){
 		if (!elems_enabled[i])
 			continue;
-		uint32_t v1 = nb_msh3trg_elem_get_adj(part, i, 0);
-		uint32_t v2 = nb_msh3trg_elem_get_adj(part, i, 1);
-		uint32_t v3 = nb_msh3trg_elem_get_adj(part, i, 2);
-		uint32_t nid = nb_msh3trg_elem_get_ngb(part, i, 0);
+		uint32_t v1 = nb_msh3trg_elem_get_adj(msh3trg, i, 0);
+		uint32_t v2 = nb_msh3trg_elem_get_adj(msh3trg, i, 1);
+		uint32_t v3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
+		uint32_t nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 0);
 		if (nid == N_elems) {
 			model->M += 1;
 			vertices_bndr[v1] = 1;
@@ -984,7 +980,7 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 			vertices_used[v2] = 1;
 		}
 
-		nid = nb_msh3trg_elem_get_ngb(part, i, 1);
+		nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 1);
 		if (nid == N_elems) {
 			model->M += 1;
 			vertices_bndr[v2] = 1;
@@ -993,12 +989,12 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 			vertices_used[v3] = 1;
 		} else if (!elems_enabled[nid]) {
 			model->M += 1;
-			N_real_vtx_boundaries[0] += 1;
+			N_input_vtx[0] += 1;
 			vertices_used[v2] = 1;
 			vertices_used[v3] = 1;
 		}
 
-		nid = nb_msh3trg_elem_get_ngb(part, i, 2);
+		nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 2);
 		if (nid == N_elems) {
 			model->M += 1;
 			vertices_bndr[v3] = 1;
@@ -1019,17 +1015,17 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 	}
 	NB_SOFT_FREE(N_nod, vertices_used);
 
-	N_real_vtx_boundaries[0] = 0;
+	N_input_vtx[0] = 0;
 	for (uint32_t i = 0; i < N_nod; i++) {
 		if (vertices_bndr[i]) 
-			N_real_vtx_boundaries[0] += 1;
+			N_input_vtx[0] += 1;
 	}
 
 	/* Allocate segments and vertices */
 	nb_model_alloc_vertices(model);
 	nb_model_alloc_edges(model);
 
-	real_vtx_boundaries[0] = malloc(N_real_vtx_boundaries[0] * 
+	input_vtx[0] = malloc(N_input_vtx[0] * 
 					sizeof(uint32_t));
 
 	/* Set vertices and segments */ 
@@ -1046,12 +1042,12 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		if(!elems_enabled[i])
 			continue;
-		uint32_t v1 = nb_msh3trg_elem_get_adj(part, i, 0);
-		uint32_t v2 = nb_msh3trg_elem_get_adj(part, i, 1);
-		uint32_t v3 = nb_msh3trg_elem_get_adj(part, i, 2);
+		uint32_t v1 = nb_msh3trg_elem_get_adj(msh3trg, i, 0);
+		uint32_t v2 = nb_msh3trg_elem_get_adj(msh3trg, i, 1);
+		uint32_t v3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
 
 		/* Check side 1 */
-		uint32_t nid = nb_msh3trg_elem_get_ngb(part, i, 0);
+		uint32_t nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 0);
 		bool include_side = false;
 		if (nid == N_elems)
 			include_side = true;
@@ -1060,22 +1056,22 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 		if (include_side) {
 			if (vertices_idx[v1] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v1);
+					nb_msh3trg_get_x_node(msh3trg, v1);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v1);
+					nb_msh3trg_get_y_node(msh3trg, v1);
 				vertices_idx[v1] = vtx_counter++;
 				if(vertices_bndr[v1])
-					real_vtx_boundaries[0][real_vtx_cnt++] = 
+					input_vtx[0][real_vtx_cnt++] = 
 						vertices_idx[v1];
 			}
 			if(vertices_idx[v2] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v2);
+					nb_msh3trg_get_x_node(msh3trg, v2);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v2);
+					nb_msh3trg_get_y_node(msh3trg, v2);
 				vertices_idx[v2] = vtx_counter++;
 				if(vertices_bndr[v2])
-					real_vtx_boundaries[0][real_vtx_cnt++] =
+					input_vtx[0][real_vtx_cnt++] =
 						vertices_idx[v2];
 			}
       
@@ -1085,7 +1081,7 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 		}
 
 		/* Check side 2 */
-		nid = nb_msh3trg_elem_get_ngb(part, i, 1);
+		nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 1);
 		include_side = false;
 		if (nid == N_elems)
 			include_side = true;
@@ -1094,22 +1090,22 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 		if (include_side) {
  			if (vertices_idx[v2] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v2);
+					nb_msh3trg_get_x_node(msh3trg, v2);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v2);
+					nb_msh3trg_get_y_node(msh3trg, v2);
 				vertices_idx[v2] = vtx_counter++;
 				if (vertices_bndr[v2])
-					real_vtx_boundaries[0][real_vtx_cnt++] =
+					input_vtx[0][real_vtx_cnt++] =
 						vertices_idx[v2];
 			}
 			if (vertices_idx[v3] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v3);
+					nb_msh3trg_get_x_node(msh3trg, v3);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v3);
+					nb_msh3trg_get_y_node(msh3trg, v3);
 				vertices_idx[v3] = vtx_counter++;
 				if (vertices_bndr[v3])
-					real_vtx_boundaries[0][real_vtx_cnt++] = 
+					input_vtx[0][real_vtx_cnt++] = 
 						vertices_idx[v3];
 			}
       
@@ -1119,7 +1115,7 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 		}
 
 		/* Check side 3 */
-		nid = nb_msh3trg_elem_get_ngb(part, i, 2);
+		nid = nb_msh3trg_elem_get_ngb(msh3trg, i, 2);
 		include_side = false;
 		if (nid == N_elems)
 			include_side = true;
@@ -1128,22 +1124,22 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 		if (include_side) {
 			if (vertices_idx[v3] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v3);
+					nb_msh3trg_get_x_node(msh3trg, v3);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v3);
+					nb_msh3trg_get_y_node(msh3trg, v3);
 				vertices_idx[v3] = vtx_counter++;
 				if(vertices_bndr[v3])
-					real_vtx_boundaries[0][real_vtx_cnt++] = 
+					input_vtx[0][real_vtx_cnt++] = 
 						vertices_idx[v3];
 			}
 			if (vertices_idx[v1] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(part, v1);
+					nb_msh3trg_get_x_node(msh3trg, v1);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(part, v1);
+					nb_msh3trg_get_y_node(msh3trg, v1);
 				vertices_idx[v1] = vtx_counter++;
 				if (vertices_bndr[v1])
-					real_vtx_boundaries[0][real_vtx_cnt++] =
+					input_vtx[0][real_vtx_cnt++] =
 						vertices_idx[v1];
 			}
       
@@ -1154,7 +1150,4 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 	}
 	NB_SOFT_FREE(idx_memsize, vertices_idx);
 	NB_SOFT_FREE(N_nod, vertices_bndr);
-
-	/* Return model */
-	return model;
 }
