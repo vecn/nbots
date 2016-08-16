@@ -813,23 +813,11 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 				   double box[4])
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-	box[0] = msh3trg->nod[0];
-	box[1] = msh3trg->nod[1];
-	box[2] = msh3trg->nod[0];
-	box[3] = msh3trg->nod[1];
-	for (uint32_t i = 1; i < msh3trg->N_nod; i++) {
-		double x = nb_msh3trg_get_x_node(msh3trg, i);
-		double y = nb_msh3trg_get_y_node(msh3trg, i);
-		if (x < box[0])
-			box[0] = x;
-		else if (x > box[2])
-			box[2] = x;
-
-		if (y < box[1])
-			box[1] = y;
-		else if (y > box[3])
-			box[3] = y;
-	}
+	vcn_utils2D_get_enveloping_box(msh3trg->N_nod, msh3trg->nod,
+				       2 * sizeof(*(msh3trg->nod)),
+				       vcn_utils2D_get_x_from_darray,
+				       vcn_utils2D_get_y_from_darray,
+				       box);
 }
 
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)

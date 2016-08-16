@@ -19,7 +19,7 @@
 #define POW2(a) ((a)*(a))
 
 static int assemble_system(vcn_sparse_t *K, double *F,
-			   const nb_mshpoly_t *const mesh,
+			   const nb_partition_t *const part,
 			   const nb_material_t *material,
 			   bool enable_self_weight,
 			   double gravity[2],
@@ -27,7 +27,7 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   nb_analysis2D_params *params2D);
 
 static void assemble_face(uint32_t elem_id, uint16_t face_id,
-			  const nb_mshpoly_t *const mesh,
+			  const nb_partition_t *const part,
 			  const nb_material_t *material,
 			  bool enable_self_weight,
 			  double gravity[2],
@@ -37,8 +37,8 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 static void get_Ke(const double D[4], const double xi[2],
 		   const double xj[2], double Ke[8]);
 static double get_face_length(uint32_t elem_id, uint16_t face_id,
-			      const nb_mshpoly_t *const mesh);
-static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
+			      const nb_partition_t *const part);
+static int set_boundary_conditions(const nb_partition_t *const part,
 				   vcn_sparse_t *K, double *F,
 				   const nb_bcond_t *const bcond,
 				   double factor);
@@ -46,13 +46,13 @@ static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 
 static void compute_strain(double *strain,
-			   const nb_mshpoly_t *const mesh,
+			   const nb_partition_t *const part,
 			   double *disp,
 			   nb_analysis2D_t analysis2D,
 			   const nb_material_t *const material);
 
 int nb_cvfa_compute_2D_Solid_Mechanics
-			(const nb_mshpoly_t *const mesh,
+			(const nb_partition_t *const part,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
@@ -65,15 +65,16 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	int status = 0;
 	vcn_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_mshpoly_set_elemental_graph(mesh, graph);
+	nb_mshpoly_set_elemental_graph(part, graph);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 
-	uint32_t F_memsize = 2 * mesh->N_nod * sizeof(double);
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t F_memsize = 2 * N_nod * sizeof(double);
 	double* F = NB_SOFT_MALLOC(F_memsize);
 	memset(F, 0, F_memsize);
 
-	int status_assemble = assemble_system(K, F, mesh, material,
+	int status_assemble = assemble_system(K, F, part, material,
 					      enable_self_weight, gravity,
 					      analysis2D, params2D);
 	if (0 != status_assemble) {
@@ -81,7 +82,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	set_boundary_conditions(mesh, K, F, bcond, 1.0);
+	set_boundary_conditions(part, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);
@@ -90,7 +91,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	compute_strain(strain, mesh, displacement,
+	compute_strain(strain, part, displacement,
 		       analysis2D, material);
 
 	status = 0;
@@ -101,21 +102,21 @@ CLEANUP_LINEAR_SYSTEM:
 }
 
 static int assemble_system(vcn_sparse_t *K, double *F,
-			   const nb_mshpoly_t *const mesh,
+			   const nb_partition_t *const part,
 			   const nb_material_t *material,
 			   bool enable_self_weight,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D)
 {
-	uint32_t N_elems = mesh->N_elems;
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	vcn_sparse_reset(K);
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
 
 	for (uint32_t i = 0; i < N_elems; i++) {
-		uint16_t N_faces = mesh->N_adj[i];
+		uint16_t N_faces = nb_partition_elem_get_N_adj(part, i);
 		for (uint16_t j = 0; j < N_faces; j++) {
-			assemble_face(i, j, mesh, material,
+			assemble_face(i, j, part, material,
 				      enable_self_weight, gravity,
 				      analysis2D, params2D, K, F);
 		}
@@ -124,7 +125,7 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 }
 
 static void assemble_face(uint32_t elem_id, uint16_t face_id,
-			  const nb_mshpoly_t *const mesh,
+			  const nb_partition_t *const part,
 			  const nb_material_t *material,
 			  bool enable_self_weight,
 			  double gravity[2],
@@ -133,9 +134,13 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  vcn_sparse_t *K, double *F)
 {
 	uint32_t i = elem_id;
-	uint32_t j = mesh->ngb[elem_id][face_id];
-	double *xi = &(mesh->cen[i * 2]);
-	double *xj = &(mesh->cen[j * 2]);
+	uint32_t j = nb_partition_elem_get_ngb(part, elem_id, face_id);
+	double xi[2];
+	xi[0] = nb_partition_get_x_elem(part, i);
+	xi[1] = nb_partition_get_y_elem(part, i);
+	double xj[2];
+	xj[0] = nb_partition_get_x_elem(part, j);
+	xj[1] = nb_partition_get_y_elem(part, j);
 
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
@@ -143,7 +148,7 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 	double Ke[8];
 	get_Ke(D, xi, xj, Ke);
 
-	double lij = get_face_length(elem_id, face_id, mesh);
+	double lij = get_face_length(elem_id, face_id, part);
 
 	vcn_sparse_add(K, i * 2, i * 2, Ke[0]);
 	vcn_sparse_add(K, i * 2, i*2+1, Ke[1]);
@@ -178,19 +183,25 @@ static void get_Ke(const double D[4], const double xi[2],
 }
 
 static double get_face_length(uint32_t elem_id, uint16_t face_id,
-			      const nb_mshpoly_t *const mesh)
+			      const nb_partition_t *const part)
 {
-	uint32_t id1 = mesh->adj[elem_id][face_id];
-	uint16_t next_node = (face_id + 1) % mesh->N_adj[elem_id];
-	uint32_t id2 = mesh->adj[elem_id][next_node];
+	uint32_t id1 = nb_partition_elem_get_adj(part, elem_id, face_id);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	uint16_t next_node = (face_id + 1) % N_adj;
+	uint32_t id2 = nb_partition_elem_get_adj(part, elem_id, next_node);
 
-	double *v1 = &(mesh->nod[id1*2]);
-	double *v2 = &(mesh->nod[id2*2]);
+	double v1[2];
+	v1[0] = nb_partition_get_x_node(part, id1);
+	v1[1] = nb_partition_get_y_node(part, id1);
+
+	double v2[2];
+	v2[0] = nb_partition_get_x_node(part, id2);
+	v2[1] = nb_partition_get_y_node(part, id2);
 
 	return sqrt(POW2(v2[0] - v1[0]) + POW2(v2[1] - v1[1]));
 }
 
-static int set_boundary_conditions(const nb_mshpoly_t *const mesh,
+static int set_boundary_conditions(const nb_partition_t *const part,
 				   vcn_sparse_t *K, double *F,
 				   const nb_bcond_t *const bcond,
 				   double factor)
@@ -215,7 +226,7 @@ static int solver(const vcn_sparse_t *const A,
 }
 
 static void compute_strain(double *strain,
-			   const nb_mshpoly_t *const mesh,
+			   const nb_partition_t *const part,
 			   double *disp,
 			   nb_analysis2D_t analysis2D,
 			   const nb_material_t *const material)

@@ -20,6 +20,30 @@
 
 #define POW2(a) ((a)*(a))
 
+struct nb_mshpoly_s {
+	uint32_t N_nod;
+	double *nod;      /* Nodes coordinates concatenated */
+
+	uint32_t N_edg;
+	uint32_t *edg;
+
+	uint32_t N_elems;
+	double *cen;      /* Centroids */
+	uint16_t *N_adj;
+	uint32_t **adj;   /* Connectivity matrix */
+	uint32_t **ngb;   /* Neighbours */
+
+	uint32_t N_vtx;
+	uint32_t *vtx; /* Ids of elems corresponding to input vtx.
+			     * 'N_elems' for input vtx on the boundary. */
+
+	uint32_t N_sgm;
+	/* Number of nodes forming the input segment */
+	uint32_t *N_nod_x_sgm;
+	/* Sequence of nodal ids forming the input segments */
+	uint32_t **nod_x_sgm;
+};
+
 typedef struct {
 	uint32_t N;
 	uint16_t *N_adj;
@@ -198,7 +222,7 @@ static void set_arrays_memory(nb_mshpoly_t *poly)
 	uint32_t N_adj_size = poly->N_elems * sizeof(*(poly->N_adj));
 	uint32_t adj_size = poly->N_elems * sizeof(*(poly->adj));
 	uint32_t ngb_size = poly->N_elems * sizeof(*(poly->ngb));
-	uint32_t elem_vtx_size = poly->N_vtx * sizeof(*(poly->elem_vtx));
+	uint32_t elem_vtx_size = poly->N_vtx * sizeof(*(poly->vtx));
 	uint32_t N_nod_x_sgm_size = poly->N_sgm * sizeof(*(poly->N_nod_x_sgm));
 	uint32_t nod_x_sgm_size = poly->N_sgm * sizeof(*(poly->nod_x_sgm));
 
@@ -214,8 +238,8 @@ static void set_arrays_memory(nb_mshpoly_t *poly)
 	poly->N_adj = (void*) ((char*)(poly->cen) + cen_size);
 	poly->adj = (void*) ((char*)(poly->N_adj) + N_adj_size);
 	poly->ngb = (void*) ((char*)(poly->adj) + adj_size);
-	poly->elem_vtx = (void*) ((char*)(poly->ngb) + ngb_size);
-	poly->N_nod_x_sgm = (void*) ((char*)(poly->elem_vtx) +
+	poly->vtx = (void*) ((char*)(poly->ngb) + ngb_size);
+	poly->N_nod_x_sgm = (void*) ((char*)(poly->vtx) +
 				     elem_vtx_size);
 	poly->nod_x_sgm = (void*) ((char*)(poly->N_nod_x_sgm) +
 				   N_nod_x_sgm_size);
@@ -281,8 +305,8 @@ static void copy_adj_and_ngb(nb_mshpoly_t* poly,
 static void copy_elem_vtx(nb_mshpoly_t* poly,
 			  const nb_mshpoly_t *const src_poly)
 {
-	memcpy(poly->elem_vtx, src_poly->elem_vtx,
-	       poly->N_vtx * sizeof(*(poly->elem_vtx)));
+	memcpy(poly->vtx, src_poly->vtx,
+	       poly->N_vtx * sizeof(*(poly->vtx)));
 }
 
 static void copy_N_nod_x_sgm(nb_mshpoly_t* poly,
@@ -362,6 +386,186 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 		free(poly->nod);		
 	}
 	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
+}
+
+uint32_t nb_mshpoly_get_N_invtx(const void *msh)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_vtx;
+}
+
+uint32_t nb_mshpoly_get_N_insgm(const void *msh)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_sgm;
+}
+
+uint32_t nb_mshpoly_get_N_nodes(const void *msh)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_nod;
+}
+
+uint32_t nb_mshpoly_get_N_edges(const void *msh)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_edg;
+}
+
+uint32_t nb_mshpoly_get_N_elems(const void *msh)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_elems;
+}
+
+double nb_mshpoly_get_x_node(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->nod[id * 2];
+}
+
+double nb_mshpoly_get_y_node(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->nod[id*2+1];
+}
+
+uint32_t nb_mshpoly_get_1n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->edg[id * 2];
+}
+
+uint32_t nb_mshpoly_get_2n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->edg[id*2+1];
+}
+
+double nb_mshpoly_get_x_elem(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->cen[id * 2];
+}
+
+double nb_mshpoly_get_y_elem(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->cen[id*2+1];
+}
+
+uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_adj[id];
+}
+
+uint32_t nb_mshpoly_elem_get_adj(const void *msh,
+				 uint32_t elem_id, uint8_t adj_id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->adj[elem_id][adj_id];
+}
+
+uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_ngb[id];
+}
+
+uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
+				 uint32_t elem_id, uint8_t ngb_id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->ngb[elem_id][ngb_id];
+}
+
+uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->vtx[id];
+}
+
+uint32_t nb_mshpoly_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->N_nod_x_sgm[id];
+}
+
+uint32_t nb_mshpoly_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+				     uint32_t node_id)
+{
+	const nb_mshpoly_t *poly;
+	return poly->nod_x_sgm[sgm_id][node_id];
+}
+
+void nb_mshpoly_load_elem_graph(const nb_mshpoly_t *mshpoly,
+			       nb_graph_t *graph)
+{
+	;/* PENDING */
+}
+
+void nb_mshpoly_load_nodal_graph(const nb_mshpoly_t *mshpoly,
+				nb_graph_t *graph)
+{
+	;/* PENDING */
+}
+
+void nb_mshpoly_load_interelem_graph(const nb_mshpoly_t *mshpoly,
+				    nb_graph_t *graph)
+{
+	graph->N = mshpoly->N_elems;
+	
+	uint32_t memsize1 = graph->N * sizeof(*(graph->N_adj));
+	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
+
+	uint32_t memsize3 = 0;
+	for (uint32_t i = 0; i < graph->N; i++)
+		memsize3 += mshpoly->N_adj[i];
+
+	char *memblock = calloc(memsize1 + memsize2 + memsize3, 1);
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize1);
+	graph->wi = NULL;
+	graph->wij = NULL;
+	
+	memblock += memsize1 + memsize2;
+	for (uint32_t i = 0; i < graph->N; i++) {
+		graph->N_adj[i] = mshpoly->N_adj[i];
+		graph->adj[i] = (void*) memblock;
+		memblock += graph->N_adj[i] * sizeof(**(graph->adj));
+		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
+		  graph->adj[i][j] = mshpoly->ngb[i][j];
+	}
+}
+
+void nb_mshpoly_get_enveloping_box(const void *msh, double box[4])
+{
+	const nb_mshpoly_t *poly = msh;
+	vcn_utils2D_get_enveloping_box(poly->N_nod, poly->nod,
+				       2 * sizeof(*(poly->nod)),
+				       vcn_utils2D_get_x_from_darray,
+				       vcn_utils2D_get_y_from_darray,
+				       box);
+}
+
+bool nb_mshpoly_is_vtx_inside(const void *msh, double x, double y)
+{
+	/* PENDING */
+}
+
+void nb_mshpoly_build_model(const void *msh, nb_model_t *model)
+{
+	/* PENDING */
+}
+
+void nb_mshpoly_build_model_disabled_elems(const void *msh,
+					   const bool *elems_enabled,
+					   nb_model_t *model,
+					   uint32_t *N_input_vtx,
+					   uint32_t **input_vtx)
+{
+	/* PENDING */
 }
 
 void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
@@ -951,9 +1155,9 @@ static void set_elem_vtx(nb_mshpoly_t *poly,
 		msh_vtx_t *vtx = mesh->input_vtx[i];
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			int id = mvtx_get_id(vtx);
-			poly->elem_vtx[i] = vinfo->vtx_map[id];
+			poly->vtx[i] = vinfo->vtx_map[id];
 		} else {
-			poly->elem_vtx[i] = poly->N_elems;
+			poly->vtx[i] = poly->N_elems;
 		}
 	}
 }
@@ -1037,36 +1241,7 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],
 						  const void *data),
-				const void *density_data);
-
-void nb_mshpoly_set_fem_graph(const nb_mshpoly_t *mshpoly,
-				nb_graph_t *graph);
-void nb_mshpoly_set_nodal_graph(const nb_mshpoly_t *mshpoly,
-				nb_graph_t *graph);
-void nb_mshpoly_set_elemental_graph(const nb_mshpoly_t *mshpoly,
-				    nb_graph_t *graph)
+				const void *density_data)
 {
-	graph->N = mshpoly->N_elems;
-	
-	uint32_t memsize1 = graph->N * sizeof(*(graph->N_adj));
-	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
-
-	uint32_t memsize3 = 0;
-	for (uint32_t i = 0; i < graph->N; i++)
-		memsize3 += mshpoly->N_adj[i];
-
-	char *memblock = calloc(memsize1 + memsize2 + memsize3, 1);
-	graph->N_adj = (void*) memblock;
-	graph->adj = (void*) (memblock + memsize1);
-	graph->wi = NULL;
-	graph->wij = NULL;
-	
-	memblock += memsize1 + memsize2;
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = mshpoly->N_adj[i];
-		graph->adj[i] = (void*) memblock;
-		memblock += graph->N_adj[i] * sizeof(**(graph->adj));
-		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-		  graph->adj[i][j] = mshpoly->ngb[i][j];
-	}
+	;/* PENDING */
 }

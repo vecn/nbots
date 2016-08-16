@@ -69,7 +69,7 @@ uint32_t nb_partition_get_memsize(nb_partition_type  type)
 		mem = nb_mshquad_get_memsize();
 		break;
 	case NB_POLY:
-		//mem = nb_mshpoly_get_memsize();
+		mem = nb_mshpoly_get_memsize();
 		break;
 	case NB_DISK:
 		//mem = nb_mshpack_get_memsize();
@@ -96,7 +96,7 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 		set_mshquad_interface(part);
 		break;
 	case NB_POLY:
-		//nb_mshpoly_init(part->msh);
+		nb_mshpoly_init(part->msh);
 		set_mshpoly_interface(part);
 		break;
 	case NB_DISK:
@@ -182,7 +182,6 @@ static void set_mshquad_interface(nb_partition_t *part)
 
 static void set_mshpoly_interface(nb_partition_t *part)
 {
-	;/*
 	part->finish = nb_mshpoly_finish;
 	part->copy = nb_mshpoly_copy;
 	part->clear = nb_mshpoly_clear;
@@ -214,7 +213,6 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->build_model = nb_mshpoly_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
-	 */
 }
 
 static void set_mshpack_interface(nb_partition_t *part)

@@ -41,7 +41,6 @@
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/quad.h"
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
-#include "nb/geometric_bot/mesh/elements2D/polygons_struct.h"
 #include "nb/geometric_bot/mesh/elements2D/disks.h"
 #include "nb/geometric_bot/mesh/elements2D/disks_struct.h"
 

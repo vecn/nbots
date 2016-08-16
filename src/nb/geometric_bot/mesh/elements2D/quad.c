@@ -1160,24 +1160,11 @@ static void get_match_data(const nb_graph_t *const graph,
 void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])
 {
 	const nb_mshquad_t *mshquad = mshquad_ptr;
-	box[0] = mshquad->nod[0];
-	box[1] = mshquad->nod[1];
-	box[2] = mshquad->nod[0];
-	box[3] = mshquad->nod[1];
-	for (uint32_t i = 1; i < mshquad->N_nod; i++) {
-		double x = nb_mshquad_get_x_node(mshquad, i);
-		double y = nb_mshquad_get_y_node(mshquad, i);
-		if (x < box[0])
-			box[0] = x;
-		else if (x > box[2])
-			box[2] = x;
-
-		if (y < box[1])
-			box[1] = y;
-		else if (y > box[3])
-			box[3] = y;
-	}
-
+	vcn_utils2D_get_enveloping_box(mshquad->N_nod, mshquad->nod,
+				       2 * sizeof(*(mshquad->nod)),
+				       vcn_utils2D_get_x_from_darray,
+				       vcn_utils2D_get_y_from_darray,
+				       box);
 }
 
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y)
