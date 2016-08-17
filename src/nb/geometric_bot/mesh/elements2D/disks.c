@@ -20,26 +20,268 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+struct nb_mshpack_s {
+	uint32_t N_elems;
+	double* cen;
+	double* radii;
+	uint32_t* N_ngb;
+	uint32_t** ngb;
+};
+
+static void clear_pack(nb_mshpack_t* pack);
+static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems);
 static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh);
+static void pack_assemble_adjacencies(const vcn_mesh_t *const mesh,
+				       nb_mshpack_t *pack,
+				       nb_container_t *segments);
+static bool vtx_is_forming_input(const msh_vtx_t *const vtx);
+static double pack_optimize_assemble_system(nb_container_t *segments,
+					     uint32_t N_spheres,
+					     double *Xk,
+					     vcn_sparse_t *Hk,
+					     double *Bk,
+					     double *Xb,
+					     double gamma);
+static int8_t compare_id(const void* const ptrA,
+			 const void* const ptrB);
+static void pack_optimize(const vcn_mesh_t *const mesh,
+			   nb_mshpack_t *pack, 
+			   nb_container_t *segments,
+			   double *Xk,
+			   double overlapping_factor,
+			   uint32_t iterations);
+static void pack_update_disks(const vcn_mesh_t *const mesh,
+			       nb_mshpack_t *pack,
+			       double *Xk);
 
-bool vtx_is_forming_input(const msh_vtx_t *const vtx);
-
-static vcn_mshpack_t* spack_create(uint32_t N_spheres)
+uint32_t nb_mshpack_get_memsize(void)
 {
-	vcn_mshpack_t* spack = calloc(1, sizeof(*spack));
-	spack->N_spheres = N_spheres;
-
-	spack->centers = malloc(2 * N_spheres * sizeof(*(spack->centers)));
-	spack->radii = malloc(N_spheres * sizeof(*(spack->radii)));
-
-	spack->N_adj = calloc(N_spheres, sizeof(*(spack->N_adj)));
-	spack->adj = malloc(N_spheres * sizeof(*(spack->adj)));
-
-	return spack;
+	return sizeof(nb_mshpack_t);
 }
 
-static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
-				       vcn_mshpack_t *spack,
+void nb_mshpack_init(void *msh)
+{
+	memset(msh, 0, nb_mshpack_get_memsize());
+}
+
+void nb_mshpack_finish(void *msh)
+{
+	clear_pack(msh);
+}
+
+static void clear_pack(nb_mshpack_t* pack)
+{
+	if (pack->N_elems > 0) {
+		free(pack->cen);
+		free(pack->radii);
+	}
+	if (NULL != pack->ngb) {
+		for (uint32_t i=0; i < pack->N_elems; i++)
+			free(pack->ngb[i]);
+		free(pack->N_ngb);
+		free(pack->ngb);
+		pack->ngb = NULL;
+		pack->N_ngb = NULL;
+	}
+}
+
+void nb_mshpack_copy(void *msh, const void *mshsrc)
+{
+	/* PENDING */
+}
+
+void nb_mshpack_clear(void *msh)
+{
+	clear_pack(msh);
+	memset(msh, 0, nb_mshpack_get_memsize());
+}
+
+uint32_t nb_mshpack_get_N_invtx(const void *msh)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_get_N_insgm(const void *msh)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_get_N_nodes(const void *msh)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_get_N_edges(const void *msh)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_get_N_elems(const void *msh)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+double nb_mshpack_get_x_node(const void *msh, uint32_t id)
+{
+	return 0.0;
+}
+
+double nb_mshpack_get_y_node(const void *msh, uint32_t id)
+{
+	return 0.0;
+}
+
+uint32_t nb_mshpack_get_1n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+uint32_t nb_mshpack_get_2n_edge(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+double nb_mshpack_get_x_elem(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->cen[id * 2];
+}
+
+double nb_mshpack_get_y_elem(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->cen[id*2+1];
+}
+
+double nb_mshpack_get_elem_radii(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->radii[id*2+1];
+}
+
+uint32_t nb_mshpack_elem_get_N_adj(const void *msh, uint32_t id)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_elem_get_adj(const void *msh,
+				 uint32_t elem_id, uint8_t ngb_id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+uint32_t nb_mshpack_elem_get_N_ngb(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_ngb[id];
+}
+
+uint32_t nb_mshpack_elem_get_ngb(const void *msh,
+				 uint32_t elem_id, uint8_t ngb_id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->ngb[elem_id][ngb_id];
+}
+
+uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+uint32_t nb_mshpack_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+{
+	return 0;
+}
+
+uint32_t nb_mshpack_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+				     uint32_t node_id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->N_elems;
+}
+
+void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph)
+{
+	;/* PENDING */
+}
+
+void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph)
+{
+	;/* PENDING */
+}
+
+void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph)
+{
+	;/* PENDING */
+}
+
+void nb_mshpack_load_from_mesh_with_overlap(void *msh,
+					    const nb_mesh_t *mesh,
+					    double ov_factor)
+{
+	nb_mshpack_t *pack = msh;
+	uint32_t iterations = 100;
+	uint32_t N_elems =
+		mesh_enumerate_input_and_steiner_vtx((vcn_mesh_t*)mesh);
+
+	if (N_elems != 0) {
+		allocate_mem(pack, N_elems);
+
+		nb_container_t* segments = nb_container_create(NB_QUEUE);
+
+		pack_assemble_adjacencies(mesh, pack, segments);
+
+		double* Xk = malloc(3 * pack->N_elems * sizeof(*Xk));
+		pack_optimize(mesh, pack, segments, Xk, ov_factor,
+			       iterations);
+  
+		pack_update_disks(mesh, pack, Xk);
+	
+		/* Free memory */
+		nb_container_set_destroyer(segments, free);
+		nb_container_destroy(segments);
+		free(Xk);
+	}
+}
+
+static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems)
+{
+	pack->N_elems = N_elems;
+
+	pack->cen = malloc(2 * N_elems * sizeof(*(pack->cen)));
+	pack->radii = malloc(N_elems * sizeof(*(pack->radii)));
+
+	pack->N_ngb = calloc(N_elems, sizeof(*(pack->N_ngb)));
+	pack->ngb = malloc(N_elems * sizeof(*(pack->ngb)));
+}
+
+static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh)
+{
+	uint32_t N_steiner = 0;
+	uint32_t N_input = 0;
+	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_init(iter);
+	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (vcn_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+		uint32_t id;
+		if (!vtx_is_forming_input(vtx))
+			id = N_steiner ++; /* Numeration for steiner points */
+		else
+			id = N_input ++; /* Numeration for fixed nodes in the boundary */
+		mvtx_set_id(vtx, id);
+	}
+	vcn_bins2D_iter_finish(iter);
+	return N_steiner;
+}
+
+static void pack_assemble_adjacencies(const vcn_mesh_t *const mesh,
+				       nb_mshpack_t *pack,
 				       nb_container_t *segments)
 {
 	nb_iterator_t* iter = nb_iterator_create();
@@ -86,46 +328,46 @@ static void spack_assemble_adjacencies(const vcn_mesh_t *const mesh,
 			
 			sgm_struct[0] = idx1;
 			sgm_struct[1] = idx2;
-			sgm_struct[2] = spack->N_spheres;   /* inner/inner segment */
+			sgm_struct[2] = pack->N_elems;   /* inner/inner segment */
 			
-			spack->N_adj[idx1] += 1;
-			spack->N_adj[idx2] += 1;
+			pack->N_ngb[idx1] += 1;
+			pack->N_ngb[idx2] += 1;
 		}
 	}
 	nb_iterator_destroy(iter);
 
-	for (uint32_t i=0; i < spack->N_spheres; i++)
-		spack->adj[i] = malloc(spack->N_adj[i] *
-				       sizeof(*(spack->adj[i])));
+	for (uint32_t i=0; i < pack->N_elems; i++)
+		pack->ngb[i] = malloc(pack->N_ngb[i] *
+				       sizeof(*(pack->ngb[i])));
 
-	uint32_t* adj_matrix_next_idx = 
-		calloc(spack->N_spheres, sizeof(*adj_matrix_next_idx));
+	uint32_t* ngb_matrix_next_idx = 
+		calloc(pack->N_elems, sizeof(*ngb_matrix_next_idx));
 
 	nb_iterator_t* sgm_iter = nb_iterator_create();
 	nb_iterator_set_container(sgm_iter, segments);
 	while (nb_iterator_has_more(sgm_iter)) {
 		const uint32_t* sgm_struct = nb_iterator_get_next(sgm_iter);    
-		if(sgm_struct[2] < spack->N_spheres)
+		if(sgm_struct[2] < pack->N_elems)
 			/* Does not consider the nodes on the boundary */
 			continue;
     		uint32_t idx1 = sgm_struct[0];
 		uint32_t idx2 = sgm_struct[1];
-		spack->adj[idx1][adj_matrix_next_idx[idx1]] = idx2;
-		spack->adj[idx2][adj_matrix_next_idx[idx2]] = idx1;
-		adj_matrix_next_idx[idx1] += 1;
-		adj_matrix_next_idx[idx2] += 1;
+		pack->ngb[idx1][ngb_matrix_next_idx[idx1]] = idx2;
+		pack->ngb[idx2][ngb_matrix_next_idx[idx2]] = idx1;
+		ngb_matrix_next_idx[idx1] += 1;
+		ngb_matrix_next_idx[idx2] += 1;
 	}
 	nb_iterator_destroy(sgm_iter);
-	free(adj_matrix_next_idx);
+	free(ngb_matrix_next_idx);
 }
 
-bool vtx_is_forming_input(const msh_vtx_t *const vtx)
+static bool vtx_is_forming_input(const msh_vtx_t *const vtx)
 {
 	return mvtx_is_type_origin(vtx, INPUT) ||
 		mvtx_is_type_location(vtx, ONSEGMENT);
 }
 
-static double spack_optimize_assemble_system(nb_container_t *segments,
+static double pack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
 					     vcn_sparse_t *Hk,
@@ -219,8 +461,8 @@ static double spack_optimize_assemble_system(nb_container_t *segments,
 	return global_min;
 }
 
-static inline int8_t compare_id(const void* const ptrA,
-				const void* const ptrB)
+static int8_t compare_id(const void* const ptrA,
+			 const void* const ptrB)
 {
 	uint32_t* A = (uint32_t*) ptrA;
 	uint32_t* B = (uint32_t*) ptrB;
@@ -234,8 +476,8 @@ static inline int8_t compare_id(const void* const ptrA,
 	return out;
 }
 
-static void spack_optimize(const vcn_mesh_t *const mesh,
-			   vcn_mshpack_t *spack, 
+static void pack_optimize(const vcn_mesh_t *const mesh,
+			   nb_mshpack_t *pack, 
 			   nb_container_t *segments,
 			   double *Xk,
 			   double overlapping_factor,
@@ -243,10 +485,10 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 {
 	double gamma = 1 - 0.3 * overlapping_factor;
 	/* Allocate Optimization vectors */
-	double* hk = calloc(3 * spack->N_spheres,  sizeof(*hk));
-	double* Bk = malloc(3 * spack->N_spheres * sizeof(*Bk));
+	double* hk = calloc(3 * pack->N_elems,  sizeof(*hk));
+	double* Bk = malloc(3 * pack->N_elems * sizeof(*Bk));
 	/* Allocate boundaries positions */
-	uint32_t N_input_vtx = vcn_bins2D_get_length(mesh->ug_vtx) - spack->N_spheres;
+	uint32_t N_input_vtx = vcn_bins2D_get_length(mesh->ug_vtx) - pack->N_elems;
 	double* Xb =  malloc(N_input_vtx * 2 * sizeof(*Xb));
   
 	/***************** Optimize position + radius ***********************/
@@ -270,22 +512,22 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	}
 	vcn_bins2D_iter_finish(iter);
 
-	for (uint32_t i = 0; i < spack->N_spheres; i++) {
+	for (uint32_t i = 0; i < pack->N_elems; i++) {
 		/* Initial radii */
 		double radii = 0.0;
-		for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
-			uint32_t j_id = spack->adj[i][j];
+		for (uint32_t j = 0; j < pack->N_ngb[i]; j++) {
+			uint32_t j_id = pack->ngb[i][j];
 			radii += (0.5/gamma) * vcn_utils2D_get_dist(&(Xk[i*3]), &(Xk[j_id*3]));
 		}
-		radii /= spack->N_adj[i];
+		radii /= pack->N_ngb[i];
 		Xk[i*3+2] = radii; /* Initial ratio */
 	}
 
 	/* Allocate Hessian as a sparse matrix */
 	vcn_graph_t graph;
-	graph.N = spack->N_spheres;
-	graph.N_adj = spack->N_adj;
-	graph.adj = spack->adj;
+	graph.N = pack->N_elems;
+	graph.N_adj = pack->N_ngb;
+	graph.adj = pack->ngb;
 	vcn_sparse_t* Hk = vcn_sparse_create(&graph, NULL, 3);
 
 	/* Start to minimize contact gaps and intersections 
@@ -306,17 +548,17 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 		while (global_min > NB_GEOMETRIC_TOL && optim_k < max_optim_iter) {
 			optim_k ++;
 			/* Reset global Hessian and Independent vector */
-			memset(Bk, 0, 3 * spack->N_spheres * sizeof(double));
+			memset(Bk, 0, 3 * pack->N_elems * sizeof(double));
 			vcn_sparse_make_diagonal(Hk, 1.0);
 			global_min =       
-				spack_optimize_assemble_system(segments, spack->N_spheres,
+				pack_optimize_assemble_system(segments, pack->N_elems,
 							       Xk, Hk, Bk, Xb, gamma);
 			/* Solve system for qk */
 			vcn_sparse_solve_CG_precond_Jacobi(Hk, Bk, hk,
 							   vcn_sparse_get_size(Hk) * 2,
 							   1e-8, NULL, NULL, 1); 
 			/* Xk = Xk + hk */
-			for (uint32_t i = 0; i < 3 * spack->N_spheres; i++)
+			for (uint32_t i = 0; i < 3 * pack->N_elems; i++)
 				/* Compute next step */
 				Xk[i] += hk[i];
     			/* Stop criteria */
@@ -329,44 +571,44 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 			if (k > 10)
 				break;
 
-			printf("min(spack): %e       (%i/%i):(%i/%i)\r", /* TEMPORAL */
+			printf("min(pack): %e       (%i/%i):(%i/%i)\r", /* TEMPORAL */
 			       global_min, optim_k, max_optim_iter,      /* TEMPORAL */
 			       super_k, max_super_iter);                 /* TEMPORAL */
 			fflush(stdout);                                  /* TEMPORAL */
 		}
 		printf("                                                 \r"); /* TEMP */
 		bool change_adjacencies = false;
-		nb_container_t** new_adj = malloc(spack->N_spheres * sizeof(*new_adj));
-		for (uint32_t i = 0; i < spack->N_spheres; i++) {
+		nb_container_t** new_ngb = malloc(pack->N_elems * sizeof(*new_ngb));
+		for (uint32_t i = 0; i < pack->N_elems; i++) {
 			double gap_factor = 1.5;
-			new_adj[i] = nb_container_create(NB_QUEUE);
-			nb_container_set_comparer(new_adj[i], compare_id);
+			new_ngb[i] = nb_container_create(NB_QUEUE);
+			nb_container_set_comparer(new_ngb[i], compare_id);
 			/* Add current adjacencies close enough */
-			for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
-				uint32_t j_id = spack->adj[i][j];
+			for (uint32_t j = 0; j < pack->N_ngb[i]; j++) {
+				uint32_t j_id = pack->ngb[i][j];
 				if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[j_id*3])) <
 				    POW2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
 					uint32_t* id = malloc(sizeof(*id));
 					id[0] = j_id;
-					nb_container_insert(new_adj[i], id);
+					nb_container_insert(new_ngb[i], id);
 				} else {
 					change_adjacencies = true;
 				}
 			}
 			/* Add adjacencies of adjacent nodes which are close enough */
-			for (uint32_t j = 0; j < spack->N_adj[i]; j++) {
-				uint32_t j_id = spack->adj[i][j];
-				for (k = 0; k < spack->N_adj[j_id]; k++) {
-					uint32_t k_id = spack->adj[j_id][k];
+			for (uint32_t j = 0; j < pack->N_ngb[i]; j++) {
+				uint32_t j_id = pack->ngb[i][j];
+				for (k = 0; k < pack->N_ngb[j_id]; k++) {
+					uint32_t k_id = pack->ngb[j_id][k];
 					if(k_id == i)
 						continue;
-					if (NULL != nb_container_exist(new_adj[i], &k_id))
+					if (NULL != nb_container_exist(new_ngb[i], &k_id))
 						continue;
 					if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
 					    POW2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
 						uint32_t* id = malloc(sizeof(*id));
 						id[0] = k_id;
-						nb_container_insert(new_adj[i], id);
+						nb_container_insert(new_ngb[i], id);
 						change_adjacencies = true;
 					}
 				}
@@ -380,46 +622,46 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 			nb_iterator_set_container(sgm_iter, segments);
 			while (nb_iterator_has_more(sgm_iter)) {
 				uint32_t* sgm_struct = (uint32_t*)nb_iterator_get_next(sgm_iter);
-				if (sgm_struct[2] ==  spack->N_spheres)
+				if (sgm_struct[2] ==  pack->N_elems)
 					nb_container_delete(segments, sgm_struct);
 			}
 			nb_iterator_destroy(sgm_iter);
 
 			/* Reallocate adjacencies and insert new inner/inner segments */
-			for (uint32_t i = 0; i < spack->N_spheres; i++) {
-				free(spack->adj[i]);
-				spack->N_adj[i] = nb_container_get_length(new_adj[i]);
-				spack->adj[i] = malloc(spack->N_adj[i] * sizeof(*(spack->adj[i])));
+			for (uint32_t i = 0; i < pack->N_elems; i++) {
+				free(pack->ngb[i]);
+				pack->N_ngb[i] = nb_container_get_length(new_ngb[i]);
+				pack->ngb[i] = malloc(pack->N_ngb[i] * sizeof(*(pack->ngb[i])));
 				uint32_t j = 0;
-				while (nb_container_is_not_empty(new_adj[i])) {
-					uint32_t* id = nb_container_delete_first(new_adj[i]);
+				while (nb_container_is_not_empty(new_ngb[i])) {
+					uint32_t* id = nb_container_delete_first(new_ngb[i]);
 					if (id[0] > i) {
 						uint32_t* sgm_struct =
 							malloc(3 * sizeof(*sgm_struct));
 						sgm_struct[0] = i;
 						sgm_struct[1] = id[0];
-						sgm_struct[2] = spack->N_spheres;
+						sgm_struct[2] = pack->N_elems;
 						nb_container_insert(segments, sgm_struct);
 					}
-					spack->adj[i][j++] = id[0];
+					pack->ngb[i][j++] = id[0];
 					free(id);
 				}
-				nb_container_destroy(new_adj[i]);
+				nb_container_destroy(new_ngb[i]);
 			}
 			vcn_sparse_destroy(Hk);
 			
 			vcn_graph_t graph;
-			graph.N = spack->N_spheres;
-			graph.N_adj = spack->N_adj;
-			graph.adj = spack->adj;
+			graph.N = pack->N_elems;
+			graph.N_adj = pack->N_ngb;
+			graph.adj = pack->ngb;
 			Hk = vcn_sparse_create(&graph, NULL, 3);
 		} else {
-			for (uint32_t i = 0; i < spack->N_spheres; i++) {
-				nb_container_set_destroyer(new_adj[i], free);
-				nb_container_destroy(new_adj[i]);
+			for (uint32_t i = 0; i < pack->N_elems; i++) {
+				nb_container_set_destroyer(new_ngb[i], free);
+				nb_container_destroy(new_ngb[i]);
 			}
 		}
-		free(new_adj);
+		free(new_ngb);
 	}
 
 	/* Free memory */
@@ -429,102 +671,8 @@ static void spack_optimize(const vcn_mesh_t *const mesh,
 	free(Xb);
 }
 
-static uint32_t spack_porosity(vcn_mshpack_t *spack,
-			   double porosity_factor,
-			   bool include_adjacencies)
-{
-	uint32_t N_porosity_spheres = (uint32_t)
-		((1.0 - 0.5 * porosity_factor) * spack->N_spheres);
-
-	if (N_porosity_spheres >= spack->N_spheres)
-		return 0;
-
-	uint32_t N_removed_by_porosity = spack->N_spheres - N_porosity_spheres;
-	uint32_t id_divisor_porosity = spack->N_spheres / N_removed_by_porosity;
-
-	if (include_adjacencies) {
-		uint32_t* N_adj = malloc(N_porosity_spheres * sizeof(*N_adj));
-		uint32_t** adj = malloc(N_porosity_spheres * sizeof(*adj));
-		for (uint32_t i = 0; i < spack->N_spheres; i++) {
-			if (i % id_divisor_porosity != 0 ||
-			    i/id_divisor_porosity >= N_removed_by_porosity) {
-				uint32_t id = 
-					i - MIN(i/id_divisor_porosity+1, N_removed_by_porosity);
-				adj[id] = spack->adj[i];
-				N_adj[id] = spack->N_adj[i];
-				uint32_t j = 0;
-				while (j < N_adj[id]) {
-					uint32_t j_id = adj[id][j];
-					if (j_id % id_divisor_porosity == 0 && 
-					    j_id/id_divisor_porosity < N_removed_by_porosity) {
-						uint32_t* local_adj = NULL;
-						N_adj[id] -= 1;
-						if (N_adj[id] > 0) {
-							local_adj = malloc(N_adj[id] * sizeof(*local_adj));
-							if (j > 0)
-								memcpy(local_adj, adj[id], j * sizeof(*local_adj));
-							if (j < N_adj[id])
-								memcpy(&(local_adj[j]), &(adj[id][j+1]), 
-								       (N_adj[id] - j) * sizeof(*local_adj));
-						}
-						free(adj[id]);
-						adj[id] = local_adj;
-					} else {
-						adj[id][j] = j_id - 
-							MIN(j_id/id_divisor_porosity+1, N_removed_by_porosity);
-						j++;
-					}
-				}
-			} else {
-				free(spack->adj[i]);
-			}
-		}
-		free(spack->adj);
-		free(spack->N_adj);
-		spack->adj = adj;
-		spack->N_adj = N_adj;
-	}
-	free(spack->centers);
-	free(spack->radii);
-	spack->N_spheres = N_porosity_spheres;
-	spack->centers =
-		malloc(2 * N_porosity_spheres * sizeof(*(spack->centers)));
-	spack->radii =
-		malloc(N_porosity_spheres * sizeof(*spack->radii));
-	return N_removed_by_porosity;
-}
-
-static void spack_update_disks_porosity(const vcn_mesh_t *const mesh,
-					vcn_mshpack_t *spack,
-					double *Xk,
-					uint32_t N_removed_by_porosity)
-{
-	uint32_t id_divisor_porosity = spack->N_spheres / N_removed_by_porosity;
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
-		if (!vtx_is_forming_input(vtx)) {
-			uint32_t id = mvtx_get_id(vtx);
-			if (id % id_divisor_porosity != 0 ||
-			    id / id_divisor_porosity >= N_removed_by_porosity) {
-				uint32_t id_corrected = id - 
-					MIN(id/id_divisor_porosity + 1, N_removed_by_porosity);
-				/* Export centroids */
-				spack->centers[id_corrected * 2] = 
-					Xk[id * 3]/mesh->scale + mesh->xdisp;
-				spack->centers[id_corrected*2+1] = 
-					Xk[id*3+1]/mesh->scale + mesh->ydisp;
-				spack->radii[id_corrected] = Xk[id*3+2] / mesh->scale;
-			}
-		}
-	}
-	vcn_bins2D_iter_finish(iter);
-}
-
-static void spack_update_disks(const vcn_mesh_t *const mesh,
-			       vcn_mshpack_t *spack,
+static void pack_update_disks(const vcn_mesh_t *const mesh,
+			       nb_mshpack_t *pack,
 			       double *Xk)
 {
 
@@ -535,97 +683,55 @@ static void spack_update_disks(const vcn_mesh_t *const mesh,
 		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
 		if (!vtx_is_forming_input(vtx)) {
 			uint32_t id = mvtx_get_id(vtx);
-			spack->centers[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
-			spack->centers[id*2+1] = Xk[id*3+1]/mesh->scale + mesh->ydisp;
-			spack->radii[id] = Xk[id*3+2] / mesh->scale;
+			pack->cen[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
+			pack->cen[id*2+1] = Xk[id*3+1]/mesh->scale + mesh->ydisp;
+			pack->radii[id] = Xk[id*3+2] / mesh->scale;
 		}
 	}
 	vcn_bins2D_iter_finish(iter);
 }
 
-vcn_mshpack_t* vcn_mesh_get_mshpack
-        (const vcn_mesh_t *const mesh,
-	 bool include_adjacencies,
-	 uint32_t iterations,
-	 double overlapping_factor,  /* Overlapping percentage [0,1] */
-	 double porosity_factor,     /* Porosity percentage [0,1] */
-	 uint32_t* (*labeling)(const vcn_graph_t *const))
+
+void nb_mshpack_load_from_mesh(void *msh, const nb_mesh_t *mesh)
 {
-	uint32_t N_spheres =  /* Casting mesh to non-const */
-		mesh_enumerate_input_and_steiner_vtx((vcn_mesh_t*)mesh);
-
-	if (N_spheres == 0) {
-		return NULL;
-	}
-
-	vcn_mshpack_t* spack = spack_create(N_spheres);
-
-	nb_container_t* segments = nb_container_create(NB_QUEUE);
-
-	spack_assemble_adjacencies(mesh, spack, segments);
-
-	double* Xk = malloc(3 * spack->N_spheres * sizeof(*Xk));
-	spack_optimize(mesh, spack, segments, Xk, overlapping_factor,
-		       iterations);
-  
-	if (!include_adjacencies)
-		vcn_mshpack_clear_adj(spack);
-  
-	uint32_t N_removed_by_porosity =
-		spack_porosity(spack, porosity_factor, include_adjacencies);
-
-	if (N_removed_by_porosity > 0)
-		spack_update_disks_porosity(mesh, spack, Xk,
-					    N_removed_by_porosity);
-	else
-		spack_update_disks(mesh, spack, Xk);
-	
-	/* Free memory */
-	nb_container_set_destroyer(segments, free);
-	nb_container_destroy(segments);
-	free(Xk);
-
-	return spack;
+	nb_mshpack_load_from_mesh_with_overlap(msh, mesh, 0.0);
 }
 
-void vcn_mshpack_clear_adj(vcn_mshpack_t* spack)
+void nb_mshpack_get_enveloping_box(const void *msh, double box[4])
 {
-	if (NULL != spack->adj) {
-		for (uint32_t i=0; i < spack->N_spheres; i++)
-			free(spack->adj[i]);
-		free(spack->N_adj);
-		free(spack->adj);
-		spack->adj = NULL;
-		spack->N_adj = NULL;
+	const nb_mshpack_t *mshpack = msh;
+
+	box[0] = mshpack->cen[0] - mshpack->radii[0];
+	box[1] = mshpack->cen[1] - mshpack->radii[0];
+	box[2] = mshpack->cen[0] + mshpack->radii[0];
+	box[3] = mshpack->cen[1] + mshpack->radii[0];
+	for (uint32_t i = 1; i < mshpack->N_elems; i++) {
+		if (box[0] > mshpack->cen[i * 2] - mshpack->radii[i])
+			box[0] = mshpack->cen[i * 2] - mshpack->radii[i];
+		else if (box[2] < mshpack->cen[i * 2] + mshpack->radii[i]) 
+			box[2] = mshpack->cen[i * 2] + mshpack->radii[i];
+		if (box[1] > mshpack->cen[i*2+1] - mshpack->radii[i]) 
+			box[1] = mshpack->cen[i*2+1] - mshpack->radii[i];
+		else if (box[3] < mshpack->cen[i*2+1] + mshpack->radii[i])
+			box[3] = mshpack->cen[i*2+1] + mshpack->radii[i];
 	}
 }
 
-void vcn_mshpack_destroy(vcn_mshpack_t* spack)
+bool nb_mshpack_is_vtx_inside(const void *msh, double x, double y)
 {
-	if (spack->N_spheres > 0) {
-		free(spack->centers);
-		free(spack->radii);
-	}
-	vcn_mshpack_clear_adj(spack);
-	free(spack);
+	return false;/* PENDING */
 }
 
-static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh)
+void nb_mshpack_build_model(const void *msh, nb_model_t *model)
 {
-	uint32_t N_steiner = 0;
-	uint32_t N_input = 0;
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		uint32_t id;
-		if (!vtx_is_forming_input(vtx))
-			id = N_steiner ++; /* Numeration for steiner points */
-		else
-			id = N_input ++; /* Numeration for fixed nodes in the boundary */
-		mvtx_set_id(vtx, id);
-	}
-	vcn_bins2D_iter_finish(iter);
-	return N_steiner;
+	;/* PENDING */
+}
+
+void nb_mshpack_build_model_disabled_elems(const void *msh,
+					   const bool *elems_enabled,
+					   nb_model_t *model,
+					   uint32_t *N_input_vtx,
+					   uint32_t **input_vtx)
+{
+	;/* PENDING */
 }
