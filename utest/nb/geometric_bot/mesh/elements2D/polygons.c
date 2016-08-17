@@ -50,7 +50,6 @@ static void test_load_from_mesh(void)
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	uint32_t N_elems = nb_mshpoly_get_N_elems(poly);
 	uint32_t N_edges = nb_mshpoly_get_N_edges(poly);
-	printf("\n --N: %zu %zu\n", N_elems, N_edges);/* TEMPORAL */
 	CU_ASSERT(2750 < N_elems && 3150 > N_elems);
 	CU_ASSERT(8700 < N_edges && 9200 > N_edges);
 

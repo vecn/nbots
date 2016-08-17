@@ -33,14 +33,14 @@ double nb_mshpoly_get_x_elem(const void *msh, uint32_t id);
 double nb_mshpoly_get_y_elem(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_elem_get_adj(const void *msh,
-			 uint32_t elem_id, uint8_t adj_id);
+				 uint32_t elem_id, uint8_t adj_id);
 uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
-			 uint32_t elem_id, uint8_t ngb_id);
+				 uint32_t elem_id, uint8_t ngb_id);
 uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_get_N_nodes_x_insgm(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_get_node_x_insgm(const void *msh, uint32_t sgm_id,
-			     uint32_t node_id);
+				     uint32_t node_id);
 
 void nb_mshpoly_load_elem_graph(const void *mshpoly,
 				nb_graph_t *graph);

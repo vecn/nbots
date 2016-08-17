@@ -182,9 +182,9 @@ uint32_t nb_mshpoly_get_memsize(void)
 	return sizeof(nb_mshpoly_t);
 }
 
-void nb_mshpoly_init(void *mshpoly_ptr)
+void nb_mshpoly_init(void *mshpoly)
 {
-	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
+	memset(mshpoly, 0, nb_mshpoly_get_memsize());
 }
 
 void nb_mshpoly_copy(void *dest, const void *const src)
@@ -390,112 +390,112 @@ void nb_mshpoly_clear(void *mshpoly_ptr)
 
 uint32_t nb_mshpoly_get_N_invtx(const void *msh)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_vtx;
 }
 
 uint32_t nb_mshpoly_get_N_insgm(const void *msh)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_sgm;
 }
 
 uint32_t nb_mshpoly_get_N_nodes(const void *msh)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_nod;
 }
 
 uint32_t nb_mshpoly_get_N_edges(const void *msh)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_edg;
 }
 
 uint32_t nb_mshpoly_get_N_elems(const void *msh)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_elems;
 }
 
 double nb_mshpoly_get_x_node(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->nod[id * 2];
 }
 
 double nb_mshpoly_get_y_node(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->nod[id*2+1];
 }
 
 uint32_t nb_mshpoly_get_1n_edge(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->edg[id * 2];
 }
 
 uint32_t nb_mshpoly_get_2n_edge(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->edg[id*2+1];
 }
 
 double nb_mshpoly_get_x_elem(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->cen[id * 2];
 }
 
 double nb_mshpoly_get_y_elem(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->cen[id*2+1];
 }
 
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_adj[id];
 }
 
 uint32_t nb_mshpoly_elem_get_adj(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->adj[elem_id][adj_id];
 }
 
 uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_adj[id];
 }
 
 uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->ngb[elem_id][ngb_id];
 }
 
 uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->vtx[id];
 }
 
 uint32_t nb_mshpoly_get_N_nodes_x_insgm(const void *msh, uint32_t id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->N_nod_x_sgm[id];
 }
 
 uint32_t nb_mshpoly_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id)
 {
-	const nb_mshpoly_t *poly;
+	const nb_mshpoly_t *poly = msh;
 	return poly->nod_x_sgm[sgm_id][node_id];
 }
 
