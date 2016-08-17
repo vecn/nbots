@@ -40,7 +40,7 @@ struct nb_partition_s {
 	void (*load_elem_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_nodal_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_interelem_graph)(const void *msh, nb_graph_t *graph);
-	void (*load_from_mesh)(void *msh, const nb_mesh_t *const mesh);
+	void (*load_from_mesh)(void *msh, const nb_mesh_t *mesh);
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
 	void (*draw)(const void *msh, const char *filename,

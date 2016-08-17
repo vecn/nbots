@@ -46,7 +46,7 @@ void nb_mshpoly_load_elem_graph(const void *mshpoly,
 				nb_graph_t *graph);
 void nb_mshpoly_load_nodal_graph(const void *mshpoly,
 				 nb_graph_t *graph);
-void nb_mshpoly_load_intereleml_graph(const void *mshpoly,
+void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 				      nb_graph_t *graph);
 
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4]);
@@ -60,7 +60,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh);
+void nb_mshpoly_load_from_mesh(void *mshpoly, const nb_mesh_t *mesh);
 
 void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],

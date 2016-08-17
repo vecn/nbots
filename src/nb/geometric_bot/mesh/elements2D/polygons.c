@@ -470,7 +470,7 @@ uint32_t nb_mshpoly_elem_get_adj(const void *msh,
 uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly;
-	return poly->N_ngb[id];
+	return poly->N_adj[id];
 }
 
 uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
@@ -499,29 +499,29 @@ uint32_t nb_mshpoly_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 	return poly->nod_x_sgm[sgm_id][node_id];
 }
 
-void nb_mshpoly_load_elem_graph(const nb_mshpoly_t *mshpoly,
-			       nb_graph_t *graph)
-{
-	;/* PENDING */
-}
-
-void nb_mshpoly_load_nodal_graph(const nb_mshpoly_t *mshpoly,
+void nb_mshpoly_load_elem_graph(const void *mshpoly,
 				nb_graph_t *graph)
 {
 	;/* PENDING */
 }
 
-void nb_mshpoly_load_interelem_graph(const nb_mshpoly_t *mshpoly,
-				    nb_graph_t *graph)
+void nb_mshpoly_load_nodal_graph(const void *mshpoly,
+				 nb_graph_t *graph)
 {
-	graph->N = mshpoly->N_elems;
+	;/* PENDING */
+}
+
+void nb_mshpoly_load_interelem_graph(const void *mshpoly,
+				     nb_graph_t *graph)
+{
+	graph->N = nb_mshpoly_get_N_elems(mshpoly);
 	
 	uint32_t memsize1 = graph->N * sizeof(*(graph->N_adj));
 	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
 
 	uint32_t memsize3 = 0;
 	for (uint32_t i = 0; i < graph->N; i++)
-		memsize3 += mshpoly->N_adj[i];
+		memsize3 += nb_mshpoly_elem_get_N_adj(mshpoly, i);
 
 	char *memblock = calloc(memsize1 + memsize2 + memsize3, 1);
 	graph->N_adj = (void*) memblock;
@@ -531,11 +531,12 @@ void nb_mshpoly_load_interelem_graph(const nb_mshpoly_t *mshpoly,
 	
 	memblock += memsize1 + memsize2;
 	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = mshpoly->N_adj[i];
+		graph->N_adj[i] = nb_mshpoly_elem_get_N_adj(mshpoly, i);
 		graph->adj[i] = (void*) memblock;
 		memblock += graph->N_adj[i] * sizeof(**(graph->adj));
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-		  graph->adj[i][j] = mshpoly->ngb[i][j];
+			graph->adj[i][j] = nb_mshpoly_elem_get_ngb(mshpoly,
+								   i, j);
 	}
 }
 
@@ -568,7 +569,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 	/* PENDING */
 }
 
-void nb_mshpoly_load_from_mesh(nb_mshpoly_t *mshpoly, nb_mesh_t *mesh)
+void nb_mshpoly_load_from_mesh(void *mshpoly, const nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
 		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
@@ -1238,7 +1239,7 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 	}
 }
 
-void nb_mshpoly_Lloyd_iteration(nb_mshpoly_t *mshpoly, uint32_t max_iter,
+void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],
 						  const void *data),
 				const void *density_data)

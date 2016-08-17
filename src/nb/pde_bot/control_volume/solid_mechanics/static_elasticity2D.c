@@ -65,7 +65,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	int status = 0;
 	vcn_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_mshpoly_set_elemental_graph(part, graph);
+	nb_partition_load_interelem_graph(part, graph);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 

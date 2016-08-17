@@ -41,15 +41,18 @@ static void test_load_from_mesh(void)
 					  0.05);
 	vcn_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t size = nb_mshpoly_get_memsize();
-	nb_mshpoly_t *poly = alloca(size);
+
+	void *poly = alloca(nb_mshpoly_get_memsize());
 	nb_mshpoly_init(poly);
 	nb_mshpoly_load_from_mesh(poly, mesh);
 	vcn_mesh_destroy(mesh);
 
 	/* TEMPORAL FAIL: Produce different triangles each time */
-	CU_ASSERT(2750 < poly->N_elems && 3150 > poly->N_elems);
-	CU_ASSERT(8700 < poly->N_edg && 9200 > poly->N_edg);
+	uint32_t N_elems = nb_mshpoly_get_N_elems(poly);
+	uint32_t N_edges = nb_mshpoly_get_N_edges(poly);
+	printf("\n --N: %zu %zu\n", N_elems, N_edges);/* TEMPORAL */
+	CU_ASSERT(2750 < N_elems && 3150 > N_elems);
+	CU_ASSERT(8700 < N_edges && 9200 > N_edges);
 
 	nb_mshpoly_finish(poly);
 }

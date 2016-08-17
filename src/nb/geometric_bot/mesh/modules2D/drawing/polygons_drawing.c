@@ -47,7 +47,8 @@ static void draw_polygons(nb_graphics_context_t *g,
 		double x = nb_mshpoly_get_x_node(poly, id);
 		double y = nb_mshpoly_get_y_node(poly, id);
 		nb_graphics_move_to(g, x, y);
-		for (uint16_t j = 1; j < poly->N_adj[i]; j++) {
+		uint16_t N_adj = nb_mshpoly_elem_get_N_adj(poly, i);
+		for (uint16_t j = 1; j < N_adj; j++) {
 			id = nb_mshpoly_elem_get_adj(poly, i, j);
 			x = nb_mshpoly_get_x_node(poly, id);
 			y = nb_mshpoly_get_y_node(poly, id);
@@ -76,7 +77,7 @@ static void draw_input_sgm(nb_graphics_context_t *g,
 			nb_graphics_move_to(g,
 					    nb_mshpoly_get_x_node(poly, nj),
 					    nb_mshpoly_get_y_node(poly, nj));
-			for (uint32_t j = 1; j < poly->N_nod_x_sgm[i]; j++) {
+			for (uint32_t j = 1; j < N_nod_x_sgm; j++) {
 				nj = nb_mshpoly_get_node_x_insgm(poly, i, j);
 				nb_graphics_line_to(g,
 						    nb_mshpoly_get_x_node(poly, nj),
