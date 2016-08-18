@@ -271,7 +271,7 @@ static void set_bcond_dirichlet(const nb_partition_t *part,
 	x[0] = nb_partition_get_x_node(part, vtx_id);
 	x[1] = nb_partition_get_y_node(part, vtx_id);
 
-	double *val = alloca(N_dof * sizeof(double));
+	double *val = alloca(N_dof * sizeof(*val));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
 		bool mask = nb_bcond_iter_get_mask(iter, j);

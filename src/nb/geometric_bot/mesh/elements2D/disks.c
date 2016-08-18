@@ -6,6 +6,7 @@
 #include <math.h>
 #include <alloca.h>
 
+#include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -154,6 +155,12 @@ double nb_mshpack_get_y_elem(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->cen[id*2+1];
+}
+
+double nb_mshpack_elem_get_area(const void *msh, uint32_t id)
+{
+	double r = nb_mshpack_get_elem_radii(msh, id);
+	return NB_PI * POW2(r);
 }
 
 double nb_mshpack_get_elem_radii(const void *msh, uint32_t id)

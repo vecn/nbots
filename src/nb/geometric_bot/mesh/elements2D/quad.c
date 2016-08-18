@@ -392,6 +392,29 @@ double nb_mshquad_get_y_elem(const void *msh, uint32_t id)
 	return y / div;
 }
 
+double nb_mshquad_elem_get_area(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *mshquad = msh;
+
+	uint32_t v1 = nb_mshquad_elem_get_adj(msh, id, 0);
+	uint32_t v2 = nb_mshquad_elem_get_adj(msh, id, 1);
+	uint32_t v3 = nb_mshquad_elem_get_adj(msh, id, 2);
+
+	double *t1 = &(mshquad->nod[v1 * 2]);
+	double *t2 = &(mshquad->nod[v2 * 2]);
+	double *t3 = &(mshquad->nod[v3 * 2]);
+
+	double area = vcn_utils2D_get_trg_area(t1, t2, t3);
+
+	if (0 == mshquad->type[id]) {
+		uint32_t v4 = nb_mshquad_elem_get_adj(msh, id, 3);
+		double *t4 = &(mshquad->nod[v4 * 2]);
+		area += vcn_utils2D_get_trg_area(t1, t3, t4);
+	}
+
+	return area;
+}
+
 uint32_t nb_mshquad_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	uint32_t out;

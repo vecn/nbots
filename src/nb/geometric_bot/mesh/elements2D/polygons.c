@@ -454,6 +454,24 @@ double nb_mshpoly_get_y_elem(const void *msh, uint32_t id)
 	return poly->cen[id*2+1];
 }
 
+double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
+{
+	double area = 0.0;
+
+	uint32_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t n1 = nb_mshpoly_elem_get_adj(msh, id, i);
+		uint32_t n2 = nb_mshpoly_elem_get_adj(msh, id,
+						      (i+1) % N_adj);
+		double x1 = nb_mshpoly_get_x_node(msh, n1);
+		double y1 = nb_mshpoly_get_y_node(msh, n1);
+		double x2 = nb_mshpoly_get_x_node(msh, n2);
+		double y2 = nb_mshpoly_get_y_node(msh, n2);
+		area += x1 * y2 - x2 * y1;
+	}
+	return 0.5 * area;
+}
+
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;

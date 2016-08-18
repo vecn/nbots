@@ -27,6 +27,10 @@ struct nb_partition_s {
 	uint32_t (*get_2n_edge)(const void *msh, uint32_t id);
 	double (*get_x_elem)(const void *msh, uint32_t id);
 	double (*get_y_elem)(const void *msh, uint32_t id);
+	double (*elem_get_area)(const void *msh, uint32_t id);
+	double (*elem_face_get_length)(const void *msh,
+				       uint32_t elem_id,
+				       uint16_t face_id);
 	uint32_t (*elem_get_N_adj)(const void *msh, uint32_t id);
 	uint32_t (*elem_get_adj)(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id);
@@ -128,6 +132,7 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->get_2n_edge = nb_msh3trg_get_2n_edge;
 	part->get_x_elem = nb_msh3trg_get_x_elem;
 	part->get_y_elem = nb_msh3trg_get_y_elem;
+	part->elem_get_area = nb_msh3trg_elem_get_area;
 	part->elem_get_N_adj = nb_msh3trg_elem_get_N_adj;
 	part->elem_get_adj = nb_msh3trg_elem_get_adj;
 	part->elem_get_N_ngb = nb_msh3trg_elem_get_N_ngb;
@@ -164,6 +169,7 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->get_2n_edge = nb_mshquad_get_2n_edge;
 	part->get_x_elem = nb_mshquad_get_x_elem;
 	part->get_y_elem = nb_mshquad_get_y_elem;
+	part->elem_get_area = nb_mshquad_elem_get_area;
 	part->elem_get_N_adj = nb_mshquad_elem_get_N_adj;
 	part->elem_get_adj = nb_mshquad_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshquad_elem_get_N_ngb;
@@ -200,6 +206,7 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->get_2n_edge = nb_mshpoly_get_2n_edge;
 	part->get_x_elem = nb_mshpoly_get_x_elem;
 	part->get_y_elem = nb_mshpoly_get_y_elem;
+	part->elem_get_area = nb_mshpoly_elem_get_area;
 	part->elem_get_N_adj = nb_mshpoly_elem_get_N_adj;
 	part->elem_get_adj = nb_mshpoly_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshpoly_elem_get_N_ngb;
@@ -236,6 +243,7 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->get_2n_edge = nb_mshpack_get_2n_edge;
 	part->get_x_elem = nb_mshpack_get_x_elem;
 	part->get_y_elem = nb_mshpack_get_y_elem;
+	part->elem_get_area = nb_mshpack_elem_get_area;
 	part->elem_get_N_adj = nb_mshpack_elem_get_N_adj;
 	part->elem_get_adj = nb_mshpack_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshpack_elem_get_N_ngb;
@@ -332,6 +340,17 @@ double nb_partition_get_x_node(const nb_partition_t *part, uint32_t id)
 double nb_partition_get_y_node(const nb_partition_t *part, uint32_t id)
 {
 	return part->get_y_node(part->msh, id);
+}
+
+double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id)
+{
+	return part->elem_get_area(part->msh, id);
+}
+
+double nb_partition_elem_face_get_length(const nb_partition_t *part,
+					 uint32_t elem_id, uint16_t face_id)
+{
+	return part->elem_face_get_length(part->msh, elem_id, face_id);
 }
 
 uint32_t nb_partition_get_1n_edge(const nb_partition_t *part, uint32_t id)

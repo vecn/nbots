@@ -29,6 +29,10 @@ uint32_t nb_msh3trg_get_1n_edge(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_get_2n_edge(const void *msh, uint32_t id);
 double nb_msh3trg_get_x_elem(const void *msh, uint32_t id);
 double nb_msh3trg_get_y_elem(const void *msh, uint32_t id);
+double nb_msh3trg_elem_get_area(const void *msh, uint32_t id);
+double nb_msh3trg_elem_face_get_length(const void *msh,
+				       uint32_t elem_id,
+				       uint16_t face_id);
 uint32_t nb_msh3trg_elem_get_N_adj(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_elem_get_adj(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id);

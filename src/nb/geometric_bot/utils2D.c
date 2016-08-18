@@ -31,19 +31,19 @@ static double det_circumcircle(const double t1[2],
 			       const double t3[2],
 			       const double p[2]);
 
-inline double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
+double vcn_utils2D_get_x_from_darray(const void *const vtx_ptr)
 {
 	const double *const vtx = vtx_ptr;
 	return vtx[0];
 }
 
-inline double vcn_utils2D_get_y_from_darray(const void *const vtx_ptr)
+double vcn_utils2D_get_y_from_darray(const void *const vtx_ptr)
 {
 	const double *const vtx = vtx_ptr;
 	return vtx[1];
 }
 
-inline void vcn_utils2D_get_normal(const double x1[2],
+void vcn_utils2D_get_normal(const double x1[2],
 				   const double x2[2],
 				   double normal[2])
 /* Return normal from x1 towards x2 */
@@ -56,12 +56,12 @@ inline void vcn_utils2D_get_normal(const double x1[2],
 	normal[1] /= normalizer;
 }
 
-inline double vcn_utils2D_get_dist(const double p1[2], const double p2[2])
+double vcn_utils2D_get_dist(const double p1[2], const double p2[2])
 {
 	return vcn_math_hypo(p2[0]-p1[0], p2[1]-p1[1]);
 }
 
-inline double vcn_utils2D_get_dist2(const double p1[2], const double p2[2])
+double vcn_utils2D_get_dist2(const double p1[2], const double p2[2])
 {
 	return POW2(p2[0]-p1[0]) + POW2(p2[1]-p1[1]);
 }
@@ -184,7 +184,7 @@ void vcn_utils2D_get_enveloping_box_from_subset
 	}
 }
 
-inline double vcn_utils2D_orient(const double t1[2],
+double vcn_utils2D_orient(const double t1[2],
 				 const double t2[2],
 				 const double t3[2])
 {
@@ -208,18 +208,31 @@ bool vcn_utils2D_is_in_half_side(const double v1[2],
 	return (sign >= NB_GEOMETRIC_TOL);
 }
 
-inline double vcn_utils2D_get_trg_area
-                     (const double t1[2],
-		      const double t2[2],
-		      const double t3[2])
+double vcn_utils2D_get_poly_area(const double *p, uint16_t N)
+{	
+	double orient = 0.0;
+	for (uint16_t i = 0; i < N; i++) {
+		double x1 = p[i][0];
+		double y1 = p[i][1];
+		uint16_t j = (i + 1) % N;
+		double x2 = p[j][0];
+		double y2 = p[j][1];
+		orient += x1 * y2 - x2 * y1;
+	}
+	return 0.5 * area;
+}
+
+double vcn_utils2D_get_trg_area(const double t1[2],
+				const double t2[2],
+				const double t3[2])
 {
 	return 0.5 * vcn_utils2D_orient(t1, t2, t3);
 }
 
-inline void vcn_utils2D_get_trg_centroid(const double t1[2],
-					 const double t2[2],
-					 const double t3[2],
-					 double centroid[2])
+void vcn_utils2D_get_trg_centroid(const double t1[2],
+				  const double t2[2],
+				  const double t3[2],
+				  double centroid[2])
 {
 	centroid[0] = (t1[0] + t2[0] + t3[0]) / 3.0;
 	centroid[1] = (t1[1] + t2[1] + t3[1]) / 3.0;
@@ -276,26 +289,26 @@ void vcn_utils2D_get_circumcenter_from_sgm(const double s1[2],
 	circumcenter[1] = 0.5 * (s1[1] + s2[1]) + a * n[1];
 }
 
-inline double vcn_utils2D_get_trg_min_angle(const double t1[2],
-					    const double t2[2],
-					    const double t3[2])
+double vcn_utils2D_get_trg_min_angle(const double t1[2],
+				     const double t2[2],
+				     const double t3[2])
 {
 	double cr2se = vcn_utils2D_get_cr2se_ratio(t1, t2, t3);
 	return asin(1.0 / (2.0 * cr2se));
 }
 
-inline double vcn_utils2D_get_cr2se_ratio(const double t1[2],
-					  const double t2[2],
-					  const double t3[2])
+double vcn_utils2D_get_cr2se_ratio(const double t1[2],
+				   const double t2[2],
+				   const double t3[2])
 /* Get circumradius to shortest edge ratio */
 {
 	double shortest_edge = vcn_utils2D_get_min_trg_edge(t1, t2, t3);
 	return vcn_utils2D_get_circumradius(t1, t2, t3) / shortest_edge;
 }
 
-inline double vcn_utils2D_get_trg_quality(const double t1[2],
-					  const double t2[2],
-					  const double t3[2])
+double vcn_utils2D_get_trg_quality(const double t1[2],
+				   const double t2[2],
+				   const double t3[2])
 {
 	double B = vcn_utils2D_get_cr2se_ratio(t1, t2, t3);
 	return NB_MATH_INV_SQRT3/B;

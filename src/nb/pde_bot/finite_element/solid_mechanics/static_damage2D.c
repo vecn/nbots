@@ -17,6 +17,7 @@
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
   
 #include "../utils.h"
+#include "set_bconditions.h"
 #include "pipeline.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -341,8 +342,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			nb_pde_smech_set_bconditions(part, K, F, bcond,
-						     condition_factor);
+			nb_set_bconditions(part, K, F, bcond, condition_factor);
 
 			/*******************************************/
 			/******* > Verify residual *****************/

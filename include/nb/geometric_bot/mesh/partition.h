@@ -37,6 +37,9 @@ uint32_t nb_partition_get_2n_edge(const nb_partition_t *part, uint32_t id);
 
 double nb_partition_get_x_elem(const nb_partition_t *part, uint32_t id);
 double nb_partition_get_y_elem(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_face_get_length(const nb_partition_t *part,
+					 uint32_t elem_id, uint16_t face_id);
 
 uint32_t nb_partition_elem_get_N_adj(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_adj(const nb_partition_t *part,
