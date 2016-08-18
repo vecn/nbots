@@ -53,7 +53,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */);
 static int simulate_fem(const char *problem_data,
-			void *part, results_t *results,
+			nb_partition_t *part, results_t *results,
 			uint32_t N_vtx,
 			void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
@@ -248,7 +248,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	void *part = alloca(nb_partition_get_memsize(NB_TRIAN));
+	nb_partition_t *part = alloca(nb_partition_get_memsize(NB_TRIAN));
 	nb_partition_init(part, NB_TRIAN);
 
 	int status = simulate_fem(problem_data, part, &results,
@@ -263,7 +263,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 }
 
 static int simulate_fem(const char *problem_data,
-			void *part, results_t *results,
+			nb_partition_t *part, results_t *results,
 			uint32_t N_vtx,
 			void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */)

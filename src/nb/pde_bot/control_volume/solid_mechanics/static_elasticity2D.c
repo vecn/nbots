@@ -12,7 +12,6 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
-#include "nb/pde_bot/common_solid_mechanics/boundary_conditions.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
@@ -24,24 +23,44 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   bool enable_self_weight,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D);
+			   nb_analysis2D_params *params2D,
+			   nb_bcond_t *bcond);
+
+static void integrate_elem_force(const nb_partition_t *part,
+				 bool enable_self_weight,
+				 double gravity[2],
+				 uint32_t elem_id,
+				 double *F);
 
 static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  const nb_partition_t *const part,
 			  const nb_material_t *material,
-			  bool enable_self_weight,
-			  double gravity[2],
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  vcn_sparse_t *K, double *F);
+			  vcn_sparse_t *K,  double *F,
+			  nb_bcond_t *bcond);
+
+static void integrate_inface(uint32_t elem_id, uint16_t face_id,
+			     const nb_partition_t *const part,
+			     const nb_material_t *material,
+			     nb_analysis2D_t analysis2D,
+			     nb_analysis2D_params *params2D,
+			     vcn_sparse_t *K);
+
 static void get_Ke(const double D[4], const double xi[2],
 		   const double xj[2], double Ke[8]);
+
 static double get_face_length(uint32_t elem_id, uint16_t face_id,
 			      const nb_partition_t *const part);
+
 static int set_boundary_conditions(const nb_partition_t *const part,
 				   vcn_sparse_t *K, double *F,
 				   const nb_bcond_t *const bcond,
 				   double factor);
+static void get_force_on_face(const nb_bcond_t *bcond,
+			      const nb_partition_t *part,
+			      uint32_t elem_id, uint16_t face_id,
+			      double force[2]);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 
@@ -76,14 +95,11 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	int status_assemble = assemble_system(K, F, part, material,
 					      enable_self_weight, gravity,
-					      analysis2D, params2D);
+					      analysis2D, params2D, bcond);
 	if (0 != status_assemble) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
-
-	set_boundary_conditions(part, K, F, bcond, 1.0);
-
   
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
@@ -107,41 +123,70 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   bool enable_self_weight,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D)
+			   nb_analysis2D_params *params2D,
+			   nb_bcond_t *bcond)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	vcn_sparse_reset(K);
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
 
 	for (uint32_t i = 0; i < N_elems; i++) {
+		integrate_elem_force(part, enable_self_weight,
+				     gravity, i, F);
 		uint16_t N_faces = nb_partition_elem_get_N_adj(part, i);
 		for (uint16_t j = 0; j < N_faces; j++) {
 			assemble_face(i, j, part, material,
-				      enable_self_weight, gravity,
-				      analysis2D, params2D, K, F);
+				      analysis2D, params2D,
+				      K, F, bcond);
 		}
 	}
 	return 0;
 }
 
+static void integrate_elem_force(const nb_partition_t *part,
+				 bool enable_self_weight,
+				 double gravity[2],
+				 uint32_t elem_id,
+				 double *F)
+{
+	/* PENDING */
+}
+
 static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  const nb_partition_t *const part,
 			  const nb_material_t *material,
-			  bool enable_self_weight,
-			  double gravity[2],
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  vcn_sparse_t *K, double *F)
+			  vcn_sparse_t *K, double *F,
+			  nb_bcond_t *bcond)
+{
+	if (nb_partition_elem_has_ngb(part, elem_id, face_id)) {
+		integrate_inface(elem_id, face_id, part, material,
+				 analysis2D, params2D, K);
+	} else {
+		double fij[2];
+		get_force_on_face(bcond, part, elem_id, face_id, fij);
+		/* AQUI VOY */
+	}
+}
+
+static void integrate_inface(uint32_t elem_id, uint16_t face_id,
+			     const nb_partition_t *const part,
+			     const nb_material_t *material,
+			     nb_analysis2D_t analysis2D,
+			     nb_analysis2D_params *params2D,
+			     vcn_sparse_t *K)
 {
 	uint32_t i = elem_id;
 	uint32_t j = nb_partition_elem_get_ngb(part, elem_id, face_id);
+
 	double xi[2];
 	xi[0] = nb_partition_get_x_elem(part, i);
 	xi[1] = nb_partition_get_y_elem(part, i);
 	double xj[2];
 	xj[0] = nb_partition_get_x_elem(part, j);
 	xj[1] = nb_partition_get_y_elem(part, j);
-
+	
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
@@ -149,15 +194,16 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 	get_Ke(D, xi, xj, Ke);
 
 	double lij = get_face_length(elem_id, face_id, part);
+	double factor = lij * params2D->thickness;
 
-	vcn_sparse_add(K, i * 2, i * 2, Ke[0]);
-	vcn_sparse_add(K, i * 2, i*2+1, Ke[1]);
-	vcn_sparse_add(K, i * 2, j * 2, Ke[2]);
-	vcn_sparse_add(K, i * 2, j*2+1, Ke[3]);
-	vcn_sparse_add(K, i*2+1, i * 2, Ke[4]);
-	vcn_sparse_add(K, i*2+1, i*2+1, Ke[5]);
-	vcn_sparse_add(K, i*2+1, j * 2, Ke[6]);
-	vcn_sparse_add(K, i*2+1, j*2+1, Ke[7]);
+	vcn_sparse_add(K, i * 2, i * 2, factor * Ke[0]);
+	vcn_sparse_add(K, i * 2, i*2+1, factor * Ke[1]);
+	vcn_sparse_add(K, i * 2, j * 2, factor * Ke[2]);
+	vcn_sparse_add(K, i * 2, j*2+1, factor * Ke[3]);
+	vcn_sparse_add(K, i*2+1, i * 2, factor * Ke[4]);
+	vcn_sparse_add(K, i*2+1, i*2+1, factor * Ke[5]);
+	vcn_sparse_add(K, i*2+1, j * 2, factor * Ke[6]);
+	vcn_sparse_add(K, i*2+1, j*2+1, factor * Ke[7]);
 }
 
 static void get_Ke(const double D[4], const double xi[2],
@@ -201,12 +247,16 @@ static double get_face_length(uint32_t elem_id, uint16_t face_id,
 	return sqrt(POW2(v2[0] - v1[0]) + POW2(v2[1] - v1[1]));
 }
 
-static int set_boundary_conditions(const nb_partition_t *const part,
-				   vcn_sparse_t *K, double *F,
-				   const nb_bcond_t *const bcond,
-				   double factor)
+static void get_force_on_face(const nb_bcond_t *bcond,
+			      const nb_partition_t *part,
+			      uint32_t elem_id, uint16_t face_id,
+			      double force[2])
 {
-	return 1;
+	uint32_t n1 = nb_partition_elem_get_adj(part, elem_id, face_id);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	uint32_t n2 = nb_partition_elem_get_adj(part, elem_id,
+						(face_id + 1) % N_adj);
+	/* PENDING */
 }
 
 static int solver(const vcn_sparse_t *const A,

@@ -12,7 +12,6 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
-#include "nb/pde_bot/common_solid_mechanics/boundary_conditions.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_read.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"

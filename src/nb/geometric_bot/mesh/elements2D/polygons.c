@@ -480,6 +480,14 @@ uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
 	return poly->ngb[elem_id][ngb_id];
 }
 
+bool nb_mshpoly_elem_has_ngb(const void *msh, uint32_t elem_id,
+			     uint16_t ngb_id)
+{
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint32_t id = nb_mshpoly_elem_get_ngb(msh, elem_id, ngb_id);
+	return id < N_elems;
+}
+
 uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;

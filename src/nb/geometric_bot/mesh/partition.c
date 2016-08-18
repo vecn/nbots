@@ -33,6 +33,8 @@ struct nb_partition_s {
 	uint32_t (*elem_get_N_ngb)(const void *msh, uint32_t id);
 	uint32_t (*elem_get_ngb)(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
+	bool (*elem_has_ngb)(const void *msh, uint32_t elem_id,
+			     uint16_t face_id);
 	uint32_t (*get_invtx)(const void *msh, uint32_t id);
 	uint32_t (*get_N_nodes_x_insgm)(const void *msh, uint32_t id);
 	uint32_t (*get_node_x_insgm)(const void *msh, uint32_t sgm_id,
@@ -130,6 +132,7 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->elem_get_adj = nb_msh3trg_elem_get_adj;
 	part->elem_get_N_ngb = nb_msh3trg_elem_get_N_ngb;
 	part->elem_get_ngb = nb_msh3trg_elem_get_ngb;
+	part->elem_has_ngb = nb_msh3trg_elem_has_ngb;
 	part->get_invtx = nb_msh3trg_get_invtx;
 	part->get_N_nodes_x_insgm = nb_msh3trg_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_msh3trg_get_node_x_insgm;
@@ -165,6 +168,7 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->elem_get_adj = nb_mshquad_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshquad_elem_get_N_ngb;
 	part->elem_get_ngb = nb_mshquad_elem_get_ngb;
+	part->elem_has_ngb = nb_mshquad_elem_has_ngb;
 	part->get_invtx = nb_mshquad_get_invtx;
 	part->get_N_nodes_x_insgm = nb_mshquad_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshquad_get_node_x_insgm;
@@ -200,6 +204,7 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->elem_get_adj = nb_mshpoly_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshpoly_elem_get_N_ngb;
 	part->elem_get_ngb = nb_mshpoly_elem_get_ngb;
+	part->elem_has_ngb = nb_mshpoly_elem_has_ngb;
 	part->get_invtx = nb_mshpoly_get_invtx;
 	part->get_N_nodes_x_insgm = nb_mshpoly_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshpoly_get_node_x_insgm;
@@ -235,6 +240,7 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->elem_get_adj = nb_mshpack_elem_get_adj;
 	part->elem_get_N_ngb = nb_mshpack_elem_get_N_ngb;
 	part->elem_get_ngb = nb_mshpack_elem_get_ngb;
+	part->elem_has_ngb = nb_mshpack_elem_has_ngb;
 	part->get_invtx = nb_mshpack_get_invtx;
 	part->get_N_nodes_x_insgm = nb_mshpack_get_N_nodes_x_insgm;
 	part->get_node_x_insgm = nb_mshpack_get_node_x_insgm;
@@ -368,6 +374,12 @@ uint32_t nb_partition_elem_get_ngb(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t ngb_id)
 {
 	return part->elem_get_ngb(part->msh, elem_id, ngb_id);
+}
+
+bool nb_partition_elem_has_ngb(const nb_partition_t *part, uint32_t elem_id,
+			       uint16_t face_id)
+{
+	return part->elem_has_ngb(part->msh, elem_id, face_id);
 }
 
 uint32_t nb_partition_get_invtx(const nb_partition_t *part, uint32_t id)

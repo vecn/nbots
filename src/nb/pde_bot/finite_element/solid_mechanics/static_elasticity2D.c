@@ -15,13 +15,13 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
-#include "nb/pde_bot/common_solid_mechanics/boundary_conditions.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
+#include "set_bconditions.h"
 #include "pipeline.h"
 
 #define POW2(a) ((a)*(a))
@@ -64,7 +64,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	nb_pde_smech_set_bconditions(part, K, F, bcond, 1.0);
+	nb_set_bconditions(part, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);

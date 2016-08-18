@@ -35,6 +35,8 @@ uint32_t nb_msh3trg_elem_get_adj(const void *msh,
 uint32_t nb_msh3trg_elem_get_N_ngb(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
+bool nb_msh3trg_elem_has_ngb(const void *msh, uint32_t elem_id,
+			     uint16_t ngb_id);
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,

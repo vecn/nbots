@@ -32,6 +32,7 @@ void nb_bcond_push(nb_bcond_t *bcond, nb_bcond_id type_id,
 void nb_bcond_push_function(nb_bcond_t *bcond, nb_bcond_id type_id,
 			    nb_bcond_where type_elem, uint32_t elem_id,
 			    const bool dof_mask[],
-			    void (*fval)(const double *x, double t, double *out));
+			    void (*fval)(const double *x, double t,
+					 double *out));
 
 #endif
