@@ -6,6 +6,7 @@
 #include <math.h>
 #include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
@@ -24,9 +25,9 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 					uint32_t elem_id);
 
 void nb_cvfa_set_bcondtions(const nb_partition_t *part,
-				   const nb_cond_t *bcond,
-				   vcn_sparse_t* K, double* F,
-				   double factor)
+			    const nb_bcond_t *bcond,
+			    vcn_sparse_t* K, double* F,
+			    double factor)
 {
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);

@@ -46,7 +46,7 @@ struct nb_partition_s {
 	void (*load_elem_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_nodal_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_interelem_graph)(const void *msh, nb_graph_t *graph);
-	void (*load_from_mesh)(void *msh, const nb_mesh_t *mesh);
+	void (*load_from_mesh)(void *msh, nb_mesh_t *mesh);
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
 	void (*draw)(const void *msh, const char *filename,
@@ -441,7 +441,7 @@ void nb_partition_load_interelem_graph(const nb_partition_t *part,
 }
 
 void nb_partition_load_from_mesh(nb_partition_t *part,
-				 const nb_mesh_t *const mesh)
+				 nb_mesh_t *mesh)
 {
 	part->load_from_mesh(part->msh, mesh);
 }

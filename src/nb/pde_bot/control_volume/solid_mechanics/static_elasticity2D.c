@@ -149,11 +149,11 @@ static void assemble_elem(uint32_t elem_id,
 			  nb_analysis2D_params *params2D)
 {
 	integrate_elem_force(part, material, enable_self_weight,
-			     gravity, i, F);
+			     gravity, elem_id, F);
 
-	uint16_t N_faces = nb_partition_elem_get_N_adj(part, i);
+	uint16_t N_faces = nb_partition_elem_get_N_adj(part, elem_id);
 	for (uint16_t j = 0; j < N_faces; j++) {
-		assemble_face(i, j, part, material,
+		assemble_face(elem_id, j, part, material,
 			      analysis2D, params2D,
 			      K, F);
 	}

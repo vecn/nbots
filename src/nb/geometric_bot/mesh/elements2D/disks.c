@@ -145,11 +145,18 @@ double nb_mshpack_elem_face_get_length(const void *msh,
 {
 	uint32_t nj = nb_mshpack_elem_get_ngb(msh, elem_id, face_id);
 	double ri = nb_mshpack_elem_get_radii(msh, elem_id);
-	/* AQUI VOY */
+	double rj = nb_mshpack_elem_get_radii(msh, nj);
 
-	double *s1 = &(mshpack->nod[n1 * 2]);
-	double *s2 = &(mshpack->nod[n2 * 2]);
-	return vcn_utils2D_get_dist(s1, s2);
+	double Ri2 = POW2(ri);
+	double Rj2 = POW2(rj);
+	double Qij2 = POW2(Ri2 - Rj2);
+
+	const nb_mshpack_t *pack = msh;
+	double *s1 = &(pack->cen[elem_id * 2]);
+	double *s2 = &(pack->cen[nj * 2]);
+	double dij2 = vcn_utils2D_get_dist2(s1, s2);
+
+	return sqrt(3 * Ri2 + Rj2 - dij2 - Qij2 / dij2);
 }
 
 uint32_t nb_mshpack_get_2n_edge(const void *msh, uint32_t id)
@@ -172,11 +179,11 @@ double nb_mshpack_get_y_elem(const void *msh, uint32_t id)
 
 double nb_mshpack_elem_get_area(const void *msh, uint32_t id)
 {
-	double r = nb_mshpack_get_elem_radii(msh, id);
+	double r = nb_mshpack_elem_get_radii(msh, id);
 	return NB_PI * POW2(r);
 }
 
-double nb_mshpack_get_elem_radii(const void *msh, uint32_t id)
+double nb_mshpack_elem_get_radii(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->radii[id*2+1];

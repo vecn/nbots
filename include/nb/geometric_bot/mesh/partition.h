@@ -62,7 +62,7 @@ void nb_partition_load_nodal_graph(const nb_partition_t *part,
 void nb_partition_load_interelem_graph(const nb_partition_t *part,
 				       vcn_graph_t *graph);
 void nb_partition_load_from_mesh(nb_partition_t *part,
-				 const nb_mesh_t *const mesh);
+				 nb_mesh_t *mesh);
 void nb_partition_get_enveloping_box(const nb_partition_t *part,
 				     double box[4]);
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,

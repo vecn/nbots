@@ -208,7 +208,7 @@ bool vcn_utils2D_is_in_half_side(const double v1[2],
 	return (sign >= NB_GEOMETRIC_TOL);
 }
 
-double vcn_utils2D_get_poly_area(const double *p, uint16_t N)
+double vcn_utils2D_get_poly_area(const double *p[2], uint16_t N)
 {	
 	double orient = 0.0;
 	for (uint16_t i = 0; i < N; i++) {
@@ -219,7 +219,7 @@ double vcn_utils2D_get_poly_area(const double *p, uint16_t N)
 		double y2 = p[j][1];
 		orient += x1 * y2 - x2 * y1;
 	}
-	return 0.5 * area;
+	return 0.5 * orient;
 }
 
 double vcn_utils2D_get_trg_area(const double t1[2],

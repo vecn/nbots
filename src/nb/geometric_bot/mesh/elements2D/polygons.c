@@ -477,7 +477,7 @@ double nb_mshpoly_elem_face_get_length(const void *msh,
 				       uint16_t face_id)
 {
 	const nb_mshpoly_t *mshpoly = msh;
-	uint16_t N_Adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
 	uint32_t n1 = nb_mshpoly_elem_get_adj(msh, elem_id, face_id);
 	uint32_t n2 = nb_mshpoly_elem_get_adj(msh, elem_id,
 					      (face_id + 1) % N_adj);
@@ -609,7 +609,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 	/* PENDING */
 }
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, const nb_mesh_t *mesh)
+void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
 		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
