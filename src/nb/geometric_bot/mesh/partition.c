@@ -422,6 +422,34 @@ uint32_t nb_partition_get_node_x_insgm(const nb_partition_t *part,
 	return part->get_node_x_insgm(part->msh, sgm_id, node_id);
 }
 
+double nb_partition_insgm_get_length(const nb_partition_t *part,
+				     uint32_t sgm_id)
+{
+	uint32_t last_vtx = nb_partition_get_N_nodes_x_insgm(part, sgm_id) - 1;
+	uint32_t v1 = nb_partition_get_node_x_insgm(part, sgm_id, 0);
+	uint32_t v2 = nb_partition_get_node_x_insgm(part, sgm_id, last_vtx);
+	double x1 = nb_partition_get_x_node(part, v1);
+	double y1 = nb_partition_get_y_node(part, v1);
+	double x2 = nb_partition_get_x_node(part, v2);
+	double y2 = nb_partition_get_y_node(part, v2);
+	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
+}
+
+double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
+					    uint32_t sgm_id,
+					    uint32_t subsgm_id)
+{
+	uint32_t v1 = nb_partition_get_node_x_insgm(part, sgm_id,
+						    subsgm_id);
+	uint32_t v2 = nb_partition_get_node_x_insgm(part, sgm_id,
+						    subsgm_id + 1);
+	double x1 = nb_partition_get_x_node(part, v1);
+	double y1 = nb_partition_get_y_node(part, v1);
+	double x2 = nb_partition_get_x_node(part, v2);
+	double y2 = nb_partition_get_y_node(part, v2);
+	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
+}
+
 void nb_partition_load_elem_graph(const nb_partition_t *part,
 				  nb_graph_t *graph)
 {
