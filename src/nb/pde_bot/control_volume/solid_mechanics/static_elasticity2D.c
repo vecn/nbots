@@ -15,6 +15,8 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
+#include "set_bconditions.h"
+
 #define POW2(a) ((a)*(a))
 
 static int assemble_system(vcn_sparse_t *K, double *F,
@@ -23,17 +25,7 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   bool enable_self_weight,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D,
-			   nb_bcond_t *bcond);
-static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
-				    const nb_partition_t *const part,
-				    nb_bcond_t *bcond);
-
-static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
-					vcn_sparse_t* K, uint8_t N_dof,
-					double* F,
-					nb_bcond_iter_t *iter,
-					uint32_t elem_id);
+			   nb_analysis2D_params *params2D);
 static void assemble_elem(uint32_t elem_id,
 			  vcn_sparse_t *K, double *F,
 			  const nb_partition_t *const part,
@@ -41,9 +33,7 @@ static void assemble_elem(uint32_t elem_id,
 			  bool enable_self_weight,
 			  double gravity[2],
 			  nb_analysis2D_t analysis2D,
-			  nb_analysis2D_params *params2D,
-			  nb_bcond_t *bcond,
-			  bool *have_dirichlet);
+			  nb_analysis2D_params *params2D);
 
 static void integrate_elem_force(const nb_partition_t *part,
 				 const nb_material_t *material,
@@ -57,9 +47,7 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  vcn_sparse_t *K,  double *F,
-			  nb_bcond_t *bcond,
-			  bool is_dirichlet[2]);
+			  vcn_sparse_t *K,  double *F);
 
 static void integrate_inface(uint32_t elem_id, uint16_t face_id,
 			     const nb_partition_t *const part,
@@ -71,32 +59,6 @@ static void integrate_inface(uint32_t elem_id, uint16_t face_id,
 static void get_Ke(const double D[4], const double xi[2],
 		   const double xj[2], double Ke[8]);
 
-static int set_boundary_conditions(const nb_partition_t *const part,
-				   vcn_sparse_t *K, double *F,
-				   const nb_bcond_t *const bcond,
-				   double factor);
-static void get_bcond_force_on_face(const nb_bcond_t *bcond,
-				    const nb_partition_t *part,
-				    uint32_t elem_id, uint16_t face_id,
-				    double force[2], bool is_dirichlet[2]);
-static void get_force_neumann_on_sgm(const nb_bcond_t *bcond,
-				     const nb_partition_t *part,
-				     uint32_t elem_id, uint16_t face_id,
-				     double force[2]);
-static void get_force_neumann_on_vtx(const nb_bcond_t *bcond,
-				     const nb_partition_t *part,
-				     uint32_t elem_id, uint16_t face_id,
-				     double force[2]);
-static void get_force_dirichlet_on_sgm(const nb_bcond_t *bcond,
-				       const nb_partition_t *part,
-				       uint32_t elem_id, uint16_t face_id,
-				       double force[2],
-				       bool is_dirichlet[2]);
-static void get_force_dirichlet_on_vtx(const nb_bcond_t *bcond,
-				       const nb_partition_t *part,
-				       uint32_t elem_id, uint16_t face_id,
-				       double force[2],
-				       bool is_dirichlet[2]);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 
@@ -131,12 +93,14 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	int status_assemble = assemble_system(K, F, part, material,
 					      enable_self_weight, gravity,
-					      analysis2D, params2D, bcond);
+					      analysis2D, params2D);
 	if (0 != status_assemble) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
   
+	nb_cvfa_set_bconditions(part, K, F, bcond, 1.0);
+
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
 		status = 2;
@@ -159,78 +123,20 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   bool enable_self_weight,
 			   double gravity[2],
 			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D,
-			   nb_bcond_t *bcond)
+			   nb_analysis2D_params *params2D)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	vcn_sparse_reset(K);
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
 
-	uint16_t bcond_size = nb_bcond_get_memsize(2);
-	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
-	nb_bcond_init(bcond, 2);
 	for (uint32_t i = 0; i < N_elems; i++) {
-		bool have_dirichlet[2];
 		assemble_elem(i, K, F, part, material,
 			      enable_self_weight, gravity,
-			      analysis2D, params2D, bcond,
-			      have_dirichlet);
-		if (have_dirichlet[0] || have_dirichlet[1]) {
-			nb_bcond_push(numeric_bcond,
-				      NB_DIRICHLET,
-				      NB_BC_ON_POINT,
-				      i, have_dirichlet,
-				      &(F[i * 2]));
-		}
+			      analysis2D, params2D);
 			
 	}
 
-	set_numeric_bconditions(K, F, part, numeric_bcond);
-
-	NB_SOFT_FREE(bcond_size, numeric_bcond);
 	return 0;
-}
-
-static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
-				    const nb_partition_t *const part,
-				    nb_bcond_t *bcond)
-{
-	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
-	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
-	nb_bcond_iter_init(iter);
-	nb_bcond_iter_set_conditions(iter, bcond,
-				     NB_DIRICHLET,
-				     NB_BC_ON_POINT);
-	while (nb_bcond_iter_has_more(iter)) {
-		nb_bcond_iter_go_next(iter);
-		uint32_t elem_id = nb_bcond_iter_get_id(iter);
-		set_numeric_bcond_dirichlet(part, K, N_dof,
-					    F, iter, elem_id);
-	}
-	nb_bcond_iter_finish(iter);
-}
-
-static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
-					vcn_sparse_t* K, uint8_t N_dof,
-					double* F,
-					nb_bcond_iter_t *iter,
-					uint32_t elem_id)
-{
-	double x[2];
-	x[0] = nb_partition_get_x_elem(part, elem_id);
-	x[1] = nb_partition_get_y_elem(part, elem_id);
-
-	double *val = alloca(N_dof * sizeof(*val));
-	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
-	for (uint8_t j = 0; j < N_dof; j++) {
-		bool mask = nb_bcond_iter_get_mask(iter, j);
-		if (mask) {
-			uint32_t mtx_id = elem_id * N_dof + j;
-			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
-							   val[j]);
-		}
-	}
 }
 
 static void assemble_elem(uint32_t elem_id,
@@ -240,26 +146,16 @@ static void assemble_elem(uint32_t elem_id,
 			  bool enable_self_weight,
 			  double gravity[2],
 			  nb_analysis2D_t analysis2D,
-			  nb_analysis2D_params *params2D,
-			  nb_bcond_t *bcond,
-			  bool *have_dirichlet)
+			  nb_analysis2D_params *params2D)
 {
 	integrate_elem_force(part, material, enable_self_weight,
 			     gravity, i, F);
 
-	have_dirichlet[0] = false;
-	have_dirichlet[1] = false;
 	uint16_t N_faces = nb_partition_elem_get_N_adj(part, i);
 	for (uint16_t j = 0; j < N_faces; j++) {
-		bool is_dirichlet[2];
 		assemble_face(i, j, part, material,
 			      analysis2D, params2D,
-			      K, F, bcond, is_dirichlet);
-
-		if (is_dirichlet[0])
-			have_dirichlet[0] = true;
-		if (is_dirichlet[1])
-			have_dirichlet[1] = true;
+			      K, F);
 	}
 }
 
@@ -283,19 +179,11 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  vcn_sparse_t *K, double *F,
-			  nb_bcond_t *bcond,
-			  bool is_dirichlet[2])
+			  vcn_sparse_t *K, double *F)
 {
 	if (nb_partition_elem_has_ngb(part, elem_id, face_id)) {
 		integrate_inface(elem_id, face_id, part, material,
 				 analysis2D, params2D, K);
-	} else {
-		double fij[2];
-		get_bcond_force_on_face(bcond, part, elem_id, face_id,
-					fij, is_dirichlet);
-		F[elem_id * 2] -= fij[0];
-		F[elem_id*2+1] -= fij[1];
 	}
 }
 
@@ -358,54 +246,6 @@ static void get_Ke(const double D[4], const double xi[2],
 	Ke[7] = -Ke[5];
 }
 
-static void get_bcond_force_on_face(const nb_bcond_t *bcond,
-				    const nb_partition_t *part,
-				    uint32_t elem_id, uint16_t face_id,
-				    double force[2],
-				    bool is_dirichlet[2])
-{
-	memset(force, 0, 2 * sizeof(*force));
-	get_force_neumann_on_sgm(bcond, part, elem_id, face_id, force);
-	get_force_neumann_on_vtx(bcond, part, elem_id, face_id, force);
-	get_force_dirichlet_on_sgm(bcond, part, elem_id, face_id, force,
-				   is_dirichlet);
-	get_force_dirichlet_on_vtx(bcond, part, elem_id, face_id, force,
-				   is_dirichlet);
-}
-
-static void get_force_neumann_on_sgm(const nb_bcond_t *bcond,
-				     const nb_partition_t *part,
-				     uint32_t elem_id, uint16_t face_id,
-				     double force[2])
-{
-	;/* PENDING */
-}
-
-static void get_force_neumann_on_vtx(const nb_bcond_t *bcond,
-				     const nb_partition_t *part,
-				     uint32_t elem_id, uint16_t face_id,
-				     double force[2])
-{
-	;/* PENDING */
-}
-
-static void get_force_dirichlet_on_sgm(const nb_bcond_t *bcond,
-				       const nb_partition_t *part,
-				       uint32_t elem_id, uint16_t face_id,
-				       double force[2],
-				       bool is_dirichlet[2])
-{
-	;/* PENDING */
-}
-
-static void get_force_dirichlet_on_vtx(const nb_bcond_t *bcond,
-				       const nb_partition_t *part,
-				       uint32_t elem_id, uint16_t face_id,
-				       double force[2],
-				       bool is_dirichlet[2])
-{
-	;/* PENDING y NPI de como hacerlo */
-}
 
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x)

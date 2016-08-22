@@ -298,6 +298,18 @@ double nb_msh3trg_elem_get_area(const void *msh, uint32_t id)
 	return vcn_utils2D_get_trg_area(t1, t2, t3);
 }
 
+double nb_msh3trg_elem_face_get_length(const void *msh, 
+				       uint32_t elem_id,
+				       uint16_t face_id)
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	uint32_t n1 = nb_msh3trg_elem_get_adj(msh, elem_id, face_id);
+	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, elem_id, (face_id + 1)%3);
+	double *s1 = &(msh3trg->nod[n1 * 2]);
+	double *s2 = &(msh3trg->nod[n2 * 2]);
+	return vcn_utils2D_get_dist(s1, s2);
+}
+
 uint32_t nb_msh3trg_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	return 3;

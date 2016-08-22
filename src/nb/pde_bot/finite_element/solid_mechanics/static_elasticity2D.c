@@ -64,7 +64,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	nb_set_bconditions(part, K, F, bcond, 1.0);
+	nb_fem_set_bconditions(part, K, F, bcond, 1.0);
 
   
 	int solver_status = solver(K, F, displacement);

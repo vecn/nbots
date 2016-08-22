@@ -55,10 +55,10 @@ static void set_bcond_dirichlet_vtx(const nb_partition_t *part,
 				    const nb_bcond_t *const bcond, 
 				    double factor);
 
-void nb_set_bconditions(const nb_partition_t *part,
-			vcn_sparse_t* K, double* F, 
-			const nb_bcond_t *const bcond,
-			double factor)
+void nb_fem_set_bconditions(const nb_partition_t *part,
+			    vcn_sparse_t* K, double* F, 
+			    const nb_bcond_t *const bcond,
+			    double factor)
 {
 	set_bcond_neumann_sgm(part, F, bcond, factor);
 	set_bcond_neumann_vtx(part, F, bcond, factor);

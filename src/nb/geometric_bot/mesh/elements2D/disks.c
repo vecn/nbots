@@ -139,6 +139,19 @@ uint32_t nb_mshpack_get_1n_edge(const void *msh, uint32_t id)
 	return pack->N_elems;
 }
 
+double nb_mshpack_elem_face_get_length(const void *msh, 
+				       uint32_t elem_id,
+				       uint16_t face_id)
+{
+	uint32_t nj = nb_mshpack_elem_get_ngb(msh, elem_id, face_id);
+	double ri = nb_mshpack_elem_get_radii(msh, elem_id);
+	/* AQUI VOY */
+
+	double *s1 = &(mshpack->nod[n1 * 2]);
+	double *s2 = &(mshpack->nod[n2 * 2]);
+	return vcn_utils2D_get_dist(s1, s2);
+}
+
 uint32_t nb_mshpack_get_2n_edge(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;

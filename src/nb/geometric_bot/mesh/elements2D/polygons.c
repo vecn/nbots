@@ -472,6 +472,20 @@ double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
 	return 0.5 * area;
 }
 
+double nb_mshpoly_elem_face_get_length(const void *msh, 
+				       uint32_t elem_id,
+				       uint16_t face_id)
+{
+	const nb_mshpoly_t *mshpoly = msh;
+	uint16_t N_Adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint32_t n1 = nb_mshpoly_elem_get_adj(msh, elem_id, face_id);
+	uint32_t n2 = nb_mshpoly_elem_get_adj(msh, elem_id,
+					      (face_id + 1) % N_adj);
+	double *s1 = &(mshpoly->nod[n1 * 2]);
+	double *s2 = &(mshpoly->nod[n2 * 2]);
+	return vcn_utils2D_get_dist(s1, s2);
+}
+
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
