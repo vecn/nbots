@@ -25,10 +25,6 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
-static double nb_partition_insgm_get_length(const nb_partition_t *part,
-				   uint32_t sgm_id);
-static double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
-				      uint32_t sgm_id, uint32_t subsgm_id);
 static void set_neumann_vtx(const nb_partition_t *part,
 			    double* F, 
 			    const nb_bcond_t *const bcond, 
@@ -147,25 +143,19 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       const nb_bcond_iter_t *const iter,
 				       double factor)
 {
-	/* PENDING */
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 	double sgm_length = nb_partition_insgm_get_length(part, model_id);
 
-	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
+	uint32_t N = nb_partition_insgm_get_N_subsgm(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
 			nb_partition_insgm_subsgm_get_length(part, model_id, i);
 		double w = subsgm_length / sgm_length;
 
-		uint32_t v1_id = nb_partition_get_node_x_insgm(part,
-							       model_id,
-							       i);
-		uint32_t v2_id = nb_partition_get_node_x_insgm(part,
-							       model_id,
-							       i + 1);
+		uint32_t elem_id = 
+			nb_partition_insgm_subsgm_get_elem(part, model_id, i);
 
-		set_neumann(part, N_dof, F, factor * w * 0.5, iter, v1_id);
-		set_neumann(part, N_dof, F, factor * w * 0.5, iter, v2_id);
+		set_neumann(part, N_dof, F, factor * w, iter, elem_id);/* AQUI VOY */
 	}
 }
 

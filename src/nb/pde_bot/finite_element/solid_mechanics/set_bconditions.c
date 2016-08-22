@@ -27,10 +27,6 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
-static double nb_partition_insgm_get_length(const nb_partition_t *part,
-				   uint32_t sgm_id);
-static double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
-				      uint32_t sgm_id, uint32_t subsgm_id);
 static void set_neumann(const nb_partition_t *part, uint8_t N_dof,
 			double* F, double factor, nb_bcond_iter_t *iter,
 			uint32_t vtx_id);
