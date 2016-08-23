@@ -160,12 +160,9 @@ static void set_neumann(const nb_partition_t *part,
 			nb_bcond_iter_t *iter,
 			uint32_t vtx_id)
 {
-	double x[2];
-	x[0] = nb_partition_get_x_node(part, vtx_id);
-	x[1] = nb_partition_get_y_node(part, vtx_id);
-	
+	double x_dummy[2] = {0, 0};
 	double *val = alloca(N_dof * sizeof(double));
-	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
+	nb_bcond_iter_get_val(iter, N_dof, x_dummy, 0, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
 		bool mask = nb_bcond_iter_get_mask(iter, j);
 		if (mask) {
@@ -173,7 +170,6 @@ static void set_neumann(const nb_partition_t *part,
 			F[mtx_id] += factor * val[j];
 		}
 	}
-
 }
 
 static void set_neumann_vtx(const nb_partition_t *part,

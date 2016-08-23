@@ -14,28 +14,45 @@
 
 #include "set_bconditions.h"
 
-static void set_neumann_sgm(const nb_partition_t *part,  double* F, 
+static uint32_t **malloc_elem_adj(const nb_partition_t *part);
+static void free_elem_adj(uint32_t **elem_adj);
+static void set_neumann_sgm(const nb_partition_t *part,
+			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
 static void set_neumann_sgm_function(const nb_partition_t *part,
+				     uint32_t **elem_adj,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor);
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
+				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
+static void set_neumann(const nb_partition_t *part,
+			uint8_t N_dof, double* F, double factor,
+			double val[2], bool mask[2],
+			uint32_t elem_id);
 static void set_neumann_vtx(const nb_partition_t *part,
-			    double* F, 
+			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
+static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
+					   uint32_t **elem_adj,
+					   double* F, uint8_t N_dof,
+					   double factor, double val[2],
+					   bool mask[2], uint32_t sgm_id,
+					   uint32_t subsgm_id);
+static void get_subsgm_adj_to_node(const nb_partition_t *part,
+				   uint32_t node_id, uint32_t subsgm_id[4]);
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      double* F, 
+			      uint32_t **elem_adj, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond);
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      double* F, 
+			      uint32_t **elem_adj, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond);
@@ -58,17 +75,49 @@ void nb_cvfa_set_bcondtions(const nb_partition_t *part,
 	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
 
-	set_neumann_sgm(part, F, bcond, factor);
-	set_neumann_vtx(part, F, bcond, factor);
-	set_dirichlet_sgm(part, F, bcond, factor, numeric_bcond);
-	set_dirichlet_vtx(part, F, bcond, factor, numeric_bcond);
+	uint32_t **elem_adj = malloc_elem_adj(part);
+	nb_partition_insgm_get_elem_adj(part, elem_adj);
+
+	set_neumann_sgm(part, elem_adj, F, bcond, factor);
+	set_neumann_vtx(part, elem_adj, F, bcond, factor);
+	set_dirichlet_sgm(part, elem_adj, F, bcond, factor, numeric_bcond);
+	set_dirichlet_vtx(part, elem_adj, F, bcond, factor, numeric_bcond);
 
 	set_numeric_bconditions(K, F, part, numeric_bcond);
 
+	free_elem_adj(elem_adj);
 	NB_SOFT_FREE(bcond_size, numeric_bcond);
 }
 
-static void set_neumann_sgm(const nb_partition_t *part,  double* F, 
+static uint32_t **malloc_elem_adj(const nb_partition_t *part)
+{
+	uint32_t N_insgm = nb_partition_get_N_insgm(part);
+	uint32_t memsize = N_insgm * sizeof(*uint32_t);
+	for (uint32_t i = 0; i < N_insgm; i++) {
+		uint16_t N_subsgm = nb_partition_insgm_get_N_subsgm(part);
+		memsize += N_subsgm * sizeof(uint32_t);
+	}
+
+	char *memblock = malloc(memsize);
+
+	uint32_t **elem_adj = (void*) memblock;
+	memblock += N_insgm * sizeof(*uint32_t);
+	for (uint32_t i = 0; i < N_insgm; i++) {
+		elem_adj[i] = (void*) memblock;
+		uint16_t N_subsgm = nb_partition_insgm_get_N_subsgm(part);
+		memblock += N_subsgm * sizeof(uint32_t);
+	}
+
+	return elem_adj;
+}
+
+static inline void free_elem_adj(uint32_t **elem_adj)
+{
+	free(elem_adj);
+}
+
+static void set_neumann_sgm(const nb_partition_t *part,
+			    uint32_t **elem_adj,  double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
 {
@@ -82,21 +131,21 @@ static void set_neumann_sgm(const nb_partition_t *part,  double* F,
 		nb_bcond_iter_go_next(iter);
 		
 		if (nb_bcond_iter_val_is_function(iter))
-			set_neumann_sgm_function(part, F, N_dof,
-						 iter, factor);
+			set_neumann_sgm_function(part, elem_adj, F,
+						 N_dof, iter, factor);
 		else
-			set_neumann_sgm_integrated(part, F, N_dof,
-						   iter, factor);
+			set_neumann_sgm_integrated(part, elem_adj, F,
+						   N_dof, iter, factor);
 	}
 	nb_bcond_iter_finish(iter);
 }
 
 static void set_neumann_sgm_function(const nb_partition_t *part,
+				     uint32_t **elem_adj,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor)
 {
-	/* PENDING */
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 
 	uint32_t v1_id = nb_partition_get_node_x_insgm(part, model_id, 0);
@@ -108,8 +157,8 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 	double *val2 = alloca(N_dof * sizeof(double));
 
-	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
-	for (uint32_t i = 0; i < N - 1; i++) {
+	uint32_t N = nb_partition_insgm_get_N_subsgm(part, model_id);
+	for (uint32_t i = 0; i < N; i++) {
 		double subsgm_length =
 			nb_partition_insgm_subsgm_get_length(part, model_id, i);
 		
@@ -119,19 +168,14 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 		x[1] = nb_partition_get_y_node(part, v2_id);
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val2);
 
-		for (uint8_t j = 0; j < N_dof; j++) {
-			bool mask = nb_bcond_iter_get_mask(iter, j);
-			if (mask) {
-				double val = 0.5 * (val1[j] + val2[j]) *
-					subsgm_length;
+		double val[2];
+		val[0] = 0.5 * (val1[0] + val2[0]) * subsgm_length;
+		val[1] = 0.5 * (val1[1] + val2[1]) * subsgm_length;
 
-				uint32_t mtx_id1 = v1_id * N_dof + j;
-				F[mtx_id1] += factor * val * 0.5;
+		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
+				nb_bcond_iter_get_mask(iter, 1)};
 
-				uint32_t mtx_id2 = v2_id * N_dof + j;
-				F[mtx_id2] += factor * val * 0.5;
-			}
-		}
+		set_neumann(part, N_dof, F, factor, val, mask, elem_id);
 
 		v1_id = v2_id;
 		memcpy(val1, val2, N_dof * sizeof(double));
@@ -139,15 +183,13 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 }
 
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
+				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor)
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 	double sgm_length = nb_partition_insgm_get_length(part, model_id);
-
-	uint32_t *elem_adj[N_insgm][N_subsgm];/* AQUI VOY */
-	nb_partition_insgm_get_elem_adj(part, elem_adj);
 
 	uint32_t N = nb_partition_insgm_get_N_subsgm(part, model_id);
 	for (uint32_t i = 0; i < N; i++) {
@@ -157,23 +199,117 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 
 		uint32_t elem_id = elem_adj[model_id][i];
 
-		set_neumann(part, N_dof, F, factor * w, iter, elem_id);/* AQUI VOY */
-	}
+		double x_dummy[2] = {0, 0};
+		double *val = alloca(N_dof * sizeof(double));
+		nb_bcond_iter_get_val(iter, N_dof, x_dummy, 0, val);
 
-	/* FREE elem_adj */
+		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
+				nb_bcond_iter_get_mask(iter, 1)};
+		set_neumann(part, N_dof, F, factor * w, val, mask, elem_id);
+	}
+}
+
+static void set_neumann(const nb_partition_t *part,
+			uint8_t N_dof, double* F, double factor,
+			double val[2], bool mask[2],
+			uint32_t elem_id)
+{	
+	for (uint8_t j = 0; j < N_dof; j++) {
+		if (mask[j]) {
+			uint32_t mtx_id = elem_id * N_dof + j;
+			F[mtx_id] += factor * val[j];
+		}
+	}
 }
 
 static void set_neumann_vtx(const nb_partition_t *part,
-			    double* F, 
+			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
-{
-	/* PENDING */
+{	
+	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
+	uint16_t size = nb_bcond_iter_get_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
+				     NB_BC_ON_POINT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
 
+		uint32_t node_id = nb_bcond_iter_get_id(iter);
+		uint32_t subsgm_id[4];
+		get_subsgm_adj_to_node(part, node_id, subsgm_id);
+
+		double x[2];
+		x[0] = nb_partition_get_x_node(part, node_id);
+		x[1] = nb_partition_get_y_node(part, node_id);
+		double *val = alloca(N_dof * sizeof(double));
+		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
+
+		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
+				nb_bcond_iter_get_mask(iter, 1)};
+
+		set_neumann_subsgm_adj_to_node(part, elem_adj, F, N_dof,
+					       factor, val, mask,
+					       subsgm_id[0], subsgm_id[1]);
+
+		set_neumann_subsgm_adj_to_node(part, elem_adj, F, N_dof,
+					       factor, val, mask,
+					       subsgm_id[2], subsgm_id[3]);
+	}
+	nb_bcond_iter_finish(iter);
+}
+
+static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
+					   uint32_t **elem_adj,
+					   double* F, uint8_t N_dof,
+					   double factor, double val[2],
+					   bool mask[2], uint32_t sgm_id,
+					   uint32_t subsgm_id)
+{
+	double subsgm_length =
+		nb_partition_insgm_subsgm_get_length(part, sgm_id, subsgm_id);
+	uint32_t elem_id = elem_adj[sgm_id][subsgm_id];
+	double integral_factor = 0.5 * subsgm_length;
+	set_neumann(part, N_dof, F, factor * integral_factor,
+		    val, mask, elem_id);
+}
+
+static void get_subsgm_adj_to_node(const nb_partition_t *part,
+				   uint32_t node_id, uint32_t subsgm_id[4])
+{
+	uint8_t isgm = 0;
+	uint32_t N_sgm = nb_partition_get_N_insgm(part);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N = nb_partition_get_N_nodes_x_insgm(part, i);
+		for (uint16_t j = 0; j < N; j++) {
+			uint32_t sid = nb_partition_get_node_x_insgm(part, 0);
+			if (sid == node_id) {
+				if (j > 0) {
+					subsgm_id[isgm * 2] = i;
+					subsgm_id[isgm*2+2] = j - 1;
+					isgm ++;
+				}
+
+				if (j < N - 1) {
+					subsgm_id[isgm * 2] = i;
+					subsgm_id[isgm*2+2] = j;
+					isgm ++;
+				}
+				
+				if (isgm < 2)
+					break;
+				else
+					goto EXIT;
+			}
+		}
+	}
+EXIT:
+	return;
 }
 
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      double* F, 
+			      uint32_t **elem_adj, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond)
@@ -183,7 +319,7 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 }
 
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      double* F, 
+			      uint32_t **elem_adj, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond)
