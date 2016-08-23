@@ -60,9 +60,8 @@ double nb_partition_insgm_get_length(const nb_partition_t *part,
 double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 					    uint32_t sgm_id,
 					    uint32_t subsgm_id);
-uint32_t nb_partition_insgm_subsgm_get_elem(const nb_partition_t *part,
-					    uint32_t sgm_id,
-					    uint32_t subsgm_id);
+void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
+				     uint32_t **elem_adj);
 
 void nb_partition_load_elem_graph(const nb_partition_t *part,
 				  vcn_graph_t *graph);

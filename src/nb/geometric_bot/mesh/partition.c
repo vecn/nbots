@@ -65,6 +65,14 @@ static void set_mshquad_interface(nb_partition_t *part);
 static void set_mshpoly_interface(nb_partition_t *part);
 static void set_mshpack_interface(nb_partition_t *part);
 
+static void check_elem_adj(const nb_partition_t *part,
+			   uint32_t **elem_adj, uint32_t elem_id);
+static void check_boundary_face_adj(const nb_partition_t *part,
+				    uint32_t **elem_adj,
+				    uint32_t elem_id, uint16_t face_id);
+static bool face_is_the_same(uint32_t n1, uint32_t n2,
+			     uint32_t s1, uint32_t s2);
+
 uint32_t nb_partition_get_memsize(nb_partition_type  type)
 {
 	uint32_t mem;
@@ -455,35 +463,52 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
-uint32_t nb_partition_insgm_subsgm_get_elem(const nb_partition_t *part,
-					    uint32_t sgm_id,
-					    uint32_t subsgm_id)
+void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
+				     uint32_t **elem_adj)
 {
-	/* AQUI VOY */
-	uint32_t n1 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id);
-	uint32_t n2 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id + 1);
-	bool follow_boundary = false;
-	uint32_t elem_id = 0;
-	while (elem_is_not_adj_to_subsgm(part, elem_id, n1, n2)) {
-		if (follow_boundary) {
-		} else {
-			elem_id = elem_get_ngb_closest_to_node(part, elem_id,
-							       n1);
-		}
+	uint32_t N_elems = part->get_N_elems(part->msh);
+	for (uint32_t i = 0; i < N_elems; i++)
+		check_elem_adj(part, elem_adj, i);
+}
+
+static void check_elem_adj(const nb_partition_t *part,
+			   uint32_t **elem_adj, uint32_t elem_id)
+{
+	uint16_t N_ngb = part->elem_get_N_ngb(part->msh, elem_id);
+	for (uint16_t i = 0; i < N_ngb; i++) {
+		uint32_t ngb = part->elem_get_ngb(part->msh, elem_id, i);
+		if (ngb >= N_elems)
+			check_boundary_face_adj(part, elem_adj, elem_id, i);
 	}
 }
 
-static bool elem_is_not_adj_to_subsgm(const nb_partition_t *part,
-				      uint32_t elem_id, uint32_t n1,
-				      uint32_t n2)
+static void check_boundary_face_adj(const nb_partition_t *part,
+				    uint32_t **elem_adj,
+				    uint32_t elem_id, uint16_t face_id)
 {
+	uint16_t N_adj = part->elem_get_N_adj(part->msh, elem_id);
+	uint32_t n1 = part->elem_get_adj(part->msh, elem_id, face_id);
+	uint32_t n2 = part->elem_get_adj(part->msh, elem_id,
+					 (face_id + 1) % N_adj);
+
+	uint32_t N_insgm = part->get_N_insgm(part->msh);
+	for (uint32_t i = 0; i < N_insgm; i++) {
+		uint32_t N_subsgm = part->get_N_nodes_x_insgm(part->msh);
+		for (uint32_t j = 1; j < N_subsgm; j++) {
+			uint32_t s1 = part->get_node_x_insgm(part->msh,
+							     i, j - 1);
+			uint32_t s2 = part->get_node_x_insgm(part->msh, i, j);
+			if (face_is_the_same(n1, n2, s1, s2))
+				elem_adj[i][j-1] = elem_id;
+		}
+	}
 
 }
 
-static uint32_t elem_get_ngb_closest_to_node(const nb_partition_t *part,
-					     uint32_t elem_id, uint32_t n1)
+static inline bool face_is_the_same(uint32_t n1, uint32_t n2,
+				    uint32_t s1, uint32_t s2)
 {
-
+	return ((n1 == s1) && (n2 == s2)) || ((n1 == s2) && (n2 == s1));
 }
 
 void nb_partition_load_elem_graph(const nb_partition_t *part,

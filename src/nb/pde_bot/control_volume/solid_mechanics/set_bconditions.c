@@ -146,17 +146,21 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 	double sgm_length = nb_partition_insgm_get_length(part, model_id);
 
+	uint32_t *elem_adj[N_insgm][N_subsgm];/* AQUI VOY */
+	nb_partition_insgm_get_elem_adj(part, elem_adj);
+
 	uint32_t N = nb_partition_insgm_get_N_subsgm(part, model_id);
-	for (uint32_t i = 0; i < N - 1; i++) {
+	for (uint32_t i = 0; i < N; i++) {
 		double subsgm_length =
 			nb_partition_insgm_subsgm_get_length(part, model_id, i);
 		double w = subsgm_length / sgm_length;
 
-		uint32_t elem_id = 
-			nb_partition_insgm_subsgm_get_elem(part, model_id, i);
+		uint32_t elem_id = elem_adj[model_id][i];
 
 		set_neumann(part, N_dof, F, factor * w, iter, elem_id);/* AQUI VOY */
 	}
+
+	/* FREE elem_adj */
 }
 
 static void set_neumann_vtx(const nb_partition_t *part,
