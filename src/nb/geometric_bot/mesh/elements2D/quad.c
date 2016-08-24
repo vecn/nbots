@@ -415,6 +415,23 @@ double nb_mshquad_elem_get_area(const void *msh, uint32_t id)
 	return area;
 }
 
+double nb_mshquad_elem_face_get_length(const void *msh,
+				       uint32_t elem_id,
+				       uint16_t face_id)
+{
+	const nb_mshquad_t *mshquad = msh;
+
+	uint16_t N_adj = nb_mshquad_elem_get_N_adj(msh, elem_id);
+	uint32_t v1 = nb_mshquad_elem_get_adj(msh, elem_id, face_id);
+	uint32_t v2 = nb_mshquad_elem_get_adj(msh, elem_id,
+					      (face_id + 1) % N_adj);
+
+	double *t1 = &(mshquad->nod[v1 * 2]);
+	double *t2 = &(mshquad->nod[v2 * 2]);
+
+	return vcn_utils2D_get_dist(t1, t2);	
+}
+
 uint32_t nb_mshquad_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	uint32_t out;
@@ -690,8 +707,7 @@ static void elemental_graph_set_adj(nb_graph_t *graph,
 		}
 	}
 }
-void nb_mshquad_load_from_mesh(void *mshquad,
-			       const nb_mesh_t *const mesh)
+void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
 		mesh_enumerate_vtx((vcn_mesh_t*)mesh);

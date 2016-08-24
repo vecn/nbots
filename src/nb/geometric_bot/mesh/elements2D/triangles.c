@@ -495,8 +495,7 @@ void nb_msh3trg_load_interelem_graph(const void *msh3trg_ptr,
 	}
 }
 
-void nb_msh3trg_load_from_mesh(void *msh3trg_ptr,
-			       const vcn_mesh_t *const mesh)
+void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 

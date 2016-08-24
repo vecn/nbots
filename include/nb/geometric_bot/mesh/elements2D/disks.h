@@ -45,10 +45,9 @@ uint32_t nb_mshpack_get_node_x_insgm(const void *msh, uint32_t sgm_id,
 void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph);
 void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph);
 void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph);
-void nb_mshpack_load_from_mesh_with_overlap(void *msh,
-					    const nb_mesh_t *mesh,
+void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 					    double ov_factor);
-void nb_mshpack_load_from_mesh(void *msh, const nb_mesh_t *mesh);
+void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh);
 void nb_mshpack_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpack_is_vtx_inside(const void *msh, double x, double y);
 void nb_mshpack_draw(const void *msh, const char *filename,

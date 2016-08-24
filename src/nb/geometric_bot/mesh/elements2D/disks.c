@@ -255,8 +255,7 @@ void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph)
 	;/* PENDING */
 }
 
-void nb_mshpack_load_from_mesh_with_overlap(void *msh,
-					    const nb_mesh_t *mesh,
+void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 					    double ov_factor)
 {
 	nb_mshpack_t *pack = msh;
@@ -727,7 +726,7 @@ static void pack_update_disks(const vcn_mesh_t *const mesh,
 }
 
 
-void nb_mshpack_load_from_mesh(void *msh, const nb_mesh_t *mesh)
+void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh)
 {
 	nb_mshpack_load_from_mesh_with_overlap(msh, mesh, 0.0);
 }

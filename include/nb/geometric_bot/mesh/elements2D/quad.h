@@ -55,8 +55,7 @@ void nb_mshquad_load_nodal_graph(const void *mshquad,
 void nb_mshquad_load_interelem_graph(const void *mshquad,
 				     nb_graph_t *graph);
 
-void nb_mshquad_load_from_mesh(void *mshquad,
-			       const nb_mesh_t *const mesh);
+void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh);
 
 void nb_mshquad_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y);

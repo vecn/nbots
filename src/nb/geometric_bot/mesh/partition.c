@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
@@ -10,6 +11,8 @@
 #include "nb/geometric_bot/mesh/elements2D/disks.h"
 
 #include "nb/geometric_bot/mesh/partition.h"
+
+#define POW2(a) ((a)*(a))
 
 struct nb_partition_s {
 	void *msh;
@@ -419,7 +422,8 @@ uint32_t nb_partition_get_invtx(const nb_partition_t *part, uint32_t id)
 	return part->get_invtx(part->msh, id);
 }
 
-uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part)
+uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part,
+					 uint32_t id)
 {
 	uint32_t N = part->get_N_nodes_x_insgm(part->msh, id);
 	return N - 1;
@@ -474,6 +478,7 @@ void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
 static void check_elem_adj(const nb_partition_t *part,
 			   uint32_t **elem_adj, uint32_t elem_id)
 {
+	uint32_t N_elems = part->get_N_elems(part->msh);
 	uint16_t N_ngb = part->elem_get_N_ngb(part->msh, elem_id);
 	for (uint16_t i = 0; i < N_ngb; i++) {
 		uint32_t ngb = part->elem_get_ngb(part->msh, elem_id, i);
@@ -493,7 +498,7 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 
 	uint32_t N_insgm = part->get_N_insgm(part->msh);
 	for (uint32_t i = 0; i < N_insgm; i++) {
-		uint32_t N_subsgm = part->get_N_nodes_x_insgm(part->msh);
+		uint32_t N_subsgm = nb_partition_insgm_get_N_subsgm(part, i);
 		for (uint32_t j = 1; j < N_subsgm; j++) {
 			uint32_t s1 = part->get_node_x_insgm(part->msh,
 							     i, j - 1);

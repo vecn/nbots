@@ -50,7 +50,8 @@ uint32_t nb_partition_elem_get_ngb(const nb_partition_t *part,
 bool nb_partition_elem_has_ngb(const nb_partition_t *part, uint32_t elem_id,
 			       uint16_t face_id);
 uint32_t nb_partition_get_invtx(const nb_partition_t *part, uint32_t id);
-uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part);
+uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part,
+					 uint32_t id);
 uint32_t nb_partition_get_N_nodes_x_insgm(const nb_partition_t *part,
 					  uint32_t id);
 uint32_t nb_partition_get_node_x_insgm(const nb_partition_t *part,

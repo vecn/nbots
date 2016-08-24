@@ -33,7 +33,7 @@ static void draw_disks(nb_graphics_context_t *g, int width, int height,
 		for (uint32_t i = 0; i < N_elems; i++) {
 			double x = nb_mshpack_get_x_elem(mshpack, i);
 			double y = nb_mshpack_get_y_elem(mshpack, i);
-			double r = nb_mshpack_get_elem_radii(mshpack, i);
+			double r = nb_mshpack_elem_get_radii(mshpack, i);
 			nb_graphics_set_circle(g, x, y, r);
 		
 			nb_graphics_set_source_rgba(g, 25, 75, 255, 128);

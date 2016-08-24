@@ -342,7 +342,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				(n + 1.0)/(double) vcn_fem_implicit_get_N_steps(params);
 
 			/* Set Boundary Conditions */
-			nb_set_bconditions(part, K, F, bcond, condition_factor);
+			nb_fem_set_bconditions(part, K, F, bcond, condition_factor);
 
 			/*******************************************/
 			/******* > Verify residual *****************/

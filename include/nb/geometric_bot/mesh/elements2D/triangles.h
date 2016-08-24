@@ -56,8 +56,7 @@ void nb_msh3trg_load_interelem_graph(const void *const msh3trg,
 				     nb_graph_t *graph);
 
 
-void nb_msh3trg_load_from_mesh(void *msh3trg,
-				const vcn_mesh_t *const mesh);
+void nb_msh3trg_load_from_mesh(void *msh3trg, vcn_mesh_t *mesh);
 
 void nb_msh3trg_relabel(void* msh3trg,
 			 uint32_t* (*labeling)(const nb_graph_t *const));
