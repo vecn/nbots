@@ -206,13 +206,13 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 				     NB_BC_ON_SEGMENT);
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
-		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
+		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
+		uint32_t N = nb_partition_get_N_nodes_x_insgm(part, sgm_id);
 		for (uint32_t i = 0; i < N; i++) {
-			uint32_t mesh_id = 
-				nb_partition_get_node_x_insgm(part, model_id, i);
+			uint32_t nid = 
+				nb_partition_get_node_x_insgm(part, sgm_id, i);
 			set_dirichlet(part, K, N_dof, F, factor,
-				      iter, mesh_id);
+				      iter, nid);
 		}
 	}
 	nb_bcond_iter_finish(iter);

@@ -47,12 +47,12 @@ static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
 static void get_subsgm_adj_to_node(const nb_partition_t *part,
 				   uint32_t node_id, uint32_t subsgm_id[4]);
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      uint32_t **elem_adj, double* F, 
+			      uint32_t **elem_adj,
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond);
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      uint32_t **elem_adj, double* F, 
+			      uint32_t **elem_adj,
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond);
@@ -80,8 +80,8 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 
 	set_neumann_sgm(part, elem_adj, F, bcond, factor);
 	set_neumann_vtx(part, elem_adj, F, bcond, factor);
-	set_dirichlet_sgm(part, elem_adj, F, bcond, factor, numeric_bcond);
-	set_dirichlet_vtx(part, elem_adj, F, bcond, factor, numeric_bcond);
+	set_dirichlet_sgm(part, elem_adj, bcond, factor, numeric_bcond);
+	set_dirichlet_vtx(part, elem_adj, bcond, factor, numeric_bcond);
 
 	set_numeric_bconditions(K, F, part, numeric_bcond);
 
@@ -227,7 +227,7 @@ static void set_neumann_vtx(const nb_partition_t *part,
 			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
-{	
+{
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
 	nb_bcond_iter_t *iter = alloca(size);
@@ -309,23 +309,78 @@ EXIT:
 }
 
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      uint32_t **elem_adj, double* F, 
+			      uint32_t **elem_adj,
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond)
 {
-	/* PENDING */
+	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
+	uint16_t size = nb_bcond_iter_get_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
+				     NB_BC_ON_SEGMENT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
+		uint32_t N = nb_partition_insgm_get_N_subsgm(part, sgm_id);
+		for (uint32_t i = 0; i < N; i++) {
+			uint32_t elem_id = elem_adj[sgm_id][i];
+			
+			bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
+					nb_bcond_iter_get_mask(iter, 1)};
+			
+			double x[2] = {nb_partition_get_x_elem(part, elem_id),
+				       nb_partition_get_y_elem(part, elem_id)};
+			double *val = alloca(N_dof * sizeof(double));
+			nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
+			val[0] *= factor;
+			val[1] *= factor;
 
+			nb_bcond_push(numeric_bcond, NB_DIRICHLET,
+				      NB_BC_ON_POINT, elem_id, mask, val);
+		}
+	}
+	nb_bcond_iter_finish(iter);	
 }
 
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      uint32_t **elem_adj, double* F, 
+			      uint32_t **elem_adj,
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond)
 {
-	/* PENDING */
+	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
+	uint16_t size = nb_bcond_iter_get_memsize();
+	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
+				     NB_BC_ON_POINT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t node_id = nb_bcond_iter_get_id(iter);
+		uint32_t subsgm_id[4];
+		get_subsgm_adj_to_node(part, node_id, subsgm_id);
+			
+		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
+				nb_bcond_iter_get_mask(iter, 1)};
+			
+		double x[2] = {nb_partition_get_x_node(part, node_id),
+			       nb_partition_get_y_node(part, node_id)};
+		double *val = alloca(N_dof * sizeof(double));
+		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
+		val[0] *= factor;
+		val[1] *= factor;
 
+		uint8_t N_subsgm_adj_to_node = 2;
+		for (uint8_t i = 0; i < N_subsgm_adj_to_node; i++) {
+			uint32_t elem_id = 
+				elem_adj[subsgm_id[i*2]][subsgm_id[i*2+1]];
+			nb_bcond_push(numeric_bcond, NB_DIRICHLET,
+				      NB_BC_ON_POINT, elem_id, mask, val);
+		}
+	}
+	nb_bcond_iter_finish(iter);
 }
 
 static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
