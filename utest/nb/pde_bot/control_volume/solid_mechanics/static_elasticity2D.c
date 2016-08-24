@@ -35,12 +35,7 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const void *part,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *part,
-				const vcn_fem_elem_t* elem,
 				const double *vm_stress);
-static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
-				 const void *part,
-				 const vcn_fem_elem_t* elem,
-				 double gp[2]);
 static double get_analytic_vm_stress_pwh(double x, double y);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part,
@@ -76,7 +71,7 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 				    nb_analysis2D_params *params2D);
 
 
-void cunit_nb_pde_bot_fem_sm_static_elasticity(void)
+void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 {
 	CU_pSuite suite =
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
@@ -134,58 +129,32 @@ static void check_plate_with_hole(const void *part,
 
 	nb_pde_compute_von_mises(results->N_trg, results->stress, vm_stress);
 
-	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
-
-	double avg_error = get_error_avg_pwh(part, elem, vm_stress);
+	double avg_error = get_error_avg_pwh(part, vm_stress);
 
 	CU_ASSERT(avg_error < 9.7e-3);
-	
-	vcn_fem_elem_destroy(elem);
+
 	free(vm_stress);
 	free(nodal_values);
 }
 
 static double get_error_avg_pwh(const void *part,
-				const vcn_fem_elem_t* elem,
 				const double *vm_stress)
 {
 	double avg = 0.0;
-	uint32_t N = 0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
-		int8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
-		N += N_gp;
-		for (int8_t p = 0; p < N_gp; p++) {
-			double gp[2];
-			get_cartesian_gpoint(i, p, part, elem, gp);
-			double gp_stress =
-				get_analytic_vm_stress_pwh(gp[0], gp[1]);
-			double error;
-			if (fabs(gp_stress) > 1e-10)
-				error = fabs(1.0 - vm_stress[i * N_gp + p]/
-					     gp_stress);
-			else
-				error = fabs(vm_stress[i * N_gp + p]);
-			avg += error;
-		}
+		double x = nb_partition_get_x_elem(part, i);
+		double y = nb_partition_get_y_elem(part, i);
+		double stress =
+			get_analytic_vm_stress_pwh(x, y);
+		double error;
+		if (fabs(stress) > 1e-10)
+			error = fabs(1.0 - vm_stress[i] / stress);
+		else
+			error = fabs(vm_stress[i]);
+		avg += error;
 	}
-	return avg /= N;
-}
-
-static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
-				 const void *part,
-				 const vcn_fem_elem_t* elem,
-				 double gp[2])
-{
-	int8_t N = vcn_fem_elem_get_N_nodes(elem);
-	gp[0] = 0.0;
-	gp[1] = 0.0;
-	for (int i = 0; i < N; i++) {
-		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
-		uint32_t vi = nb_partition_elem_get_adj(part, id_elem, i);
-		gp[0] += Ni * nb_partition_get_x_node(part, vi);
-		gp[1] += Ni * nb_partition_get_y_node(part, vi);
-	}
+	return avg /= N_elems;
 }
 
 static double get_analytic_vm_stress_pwh(double x, double y)
@@ -288,35 +257,28 @@ static int simulate(const char *problem_data,
 		modify_bcond(part, bcond);
 
 	if (0 != read_status)
-		goto CLEANUP_INPUT;
+		goto CLEANUP;
 
 	get_mesh(model, part, N_vtx);
-
-	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
 
-	int status_fem =
-		vcn_fem_compute_2D_Solid_Mechanics(part, elem,
-						   material, bcond,
+	int status_cvfa =
+		nb_cvfa_compute_2D_Solid_Mechanics(part, material, bcond,
 						   false, NULL,
 						   analysis2D,
-						   &params2D, NULL,
+						   &params2D,
 						   results->disp,
 						   results->strain);
-	if (0 != status_fem)
-		goto CLEANUP_FEM;
+	if (0 != status_cvfa)
+		goto CLEANUP;
 
-	vcn_fem_compute_stress_from_strain(N_elems, elem, material,
-					   analysis2D, results->strain, NULL,
-					   results->stress);
+	/* PENDING TO COMPUTE STRESS HERE */
 
 	status = 0;
-CLEANUP_FEM:
-	vcn_fem_elem_destroy(elem);
-CLEANUP_INPUT:
+CLEANUP:
 	vcn_model_finish(model);
 	nb_bcond_finish(bcond);
 	nb_material_destroy(material);

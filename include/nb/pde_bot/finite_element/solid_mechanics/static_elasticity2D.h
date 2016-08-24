@@ -32,8 +32,4 @@ void vcn_fem_compute_stress_from_strain
 			 const bool* elements_enabled /* NULL to enable all */,
 			 double* stress /* Output */);
 
-void vcn_fem_compute_von_mises(uint32_t N,
-			       double *stress,
-			       double *von_mises /* Output */);
-
 #endif

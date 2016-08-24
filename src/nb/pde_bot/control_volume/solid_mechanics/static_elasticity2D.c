@@ -269,5 +269,5 @@ static void compute_strain(double *strain,
 			   nb_analysis2D_t analysis2D,
 			   const nb_material_t *const material)
 {
-	;/* PENDING */
+	;/* AQUI VOY PENDING */
 }

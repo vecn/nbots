@@ -126,14 +126,3 @@ void vcn_fem_compute_stress_from_strain
 		}
 	}
 }
-
-void vcn_fem_compute_von_mises(uint32_t N,
-			       double *stress,
-			       double *von_mises /* Output */)
-{
-	for (uint32_t i = 0; i < N; i++) {
-		von_mises[i] = nb_pde_get_vm_stress(stress[i * 3],
-						    stress[i*3+1],
-						    stress[i*3+2]);
-	}
-}
