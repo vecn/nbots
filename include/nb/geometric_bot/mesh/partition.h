@@ -10,6 +10,11 @@ typedef enum {
 	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
 } nb_partition_type;
 
+typedef enum {
+	NB_DRAW_WIRES, NB_DRAW_NODAL_VALUES, NB_DRAW_ELEM_VALUES,
+} nb_partition_draw_type;
+
+
 typedef struct nb_partition_s nb_partition_t;
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type);
@@ -22,6 +27,11 @@ void nb_partition_clear(nb_partition_t* part);
 void nb_partition_destroy(nb_partition_t* part);
 
 nb_partition_type nb_partition_get_type(const nb_partition_t *part);
+
+double nb_partition_distort_with_nodal_field(nb_partition_t *part,
+					     double *disp, double max_disp);
+double nb_partition_distort_with_elem_field(nb_partition_t *part,
+					    double *disp, double max_disp);
 
 uint32_t nb_partition_get_N_invtx(const nb_partition_t *part);
 uint32_t nb_partition_get_N_insgm(const nb_partition_t *part);
@@ -50,11 +60,11 @@ uint32_t nb_partition_elem_get_ngb(const nb_partition_t *part,
 bool nb_partition_elem_has_ngb(const nb_partition_t *part, uint32_t elem_id,
 			       uint16_t face_id);
 uint32_t nb_partition_get_invtx(const nb_partition_t *part, uint32_t id);
+uint32_t nb_partition_insgm_get_N_nodes(const nb_partition_t *part,
+					  uint32_t id);
 uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part,
 					 uint32_t id);
-uint32_t nb_partition_get_N_nodes_x_insgm(const nb_partition_t *part,
-					  uint32_t id);
-uint32_t nb_partition_get_node_x_insgm(const nb_partition_t *part,
+uint32_t nb_partition_insgm_get_node(const nb_partition_t *part,
 				       uint32_t sgm_id, uint32_t node_id);
 double nb_partition_insgm_get_length(const nb_partition_t *part,
 				     uint32_t sgm_id);
@@ -77,7 +87,8 @@ void nb_partition_get_enveloping_box(const nb_partition_t *part,
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 				double x, double y);
 void nb_partition_draw(const nb_partition_t *part, const char *filename,
-		       int width, int height);
+		       int width, int height, double *values,
+		       nb_partition_draw_type draw_type);
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
 
 /**

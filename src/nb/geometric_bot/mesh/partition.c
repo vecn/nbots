@@ -20,6 +20,12 @@ struct nb_partition_s {
 	void (*finish)(void *msh);
 	void (*copy)(void *msh, const void *mshsrc);
 	void (*clear)(void *msh);
+	
+	double (*distort_with_nodal_field)(void *msh, double *disp,
+					   double max_disp);
+	double (*distort_with_elem_field)(void *msh, double *disp,
+					  double max_disp);/* AQUI VOY */
+
 	uint32_t (*get_N_invtx)(const void *msh);
 	uint32_t (*get_N_insgm)(const void *msh);
 	uint32_t (*get_N_nodes)(const void *msh);
@@ -44,8 +50,8 @@ struct nb_partition_s {
 	bool (*elem_has_ngb)(const void *msh, uint32_t elem_id,
 			     uint16_t face_id);
 	uint32_t (*get_invtx)(const void *msh, uint32_t id);
-	uint32_t (*get_N_nodes_x_insgm)(const void *msh, uint32_t id);
-	uint32_t (*get_node_x_insgm)(const void *msh, uint32_t sgm_id,
+	uint32_t (*insgm_get_N_nodes)(const void *msh, uint32_t id);
+	uint32_t (*insgm_get_node)(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 	void (*load_elem_graph)(const void *msh, nb_graph_t *graph);
 	void (*load_nodal_graph)(const void *msh, nb_graph_t *graph);
@@ -53,8 +59,12 @@ struct nb_partition_s {
 	void (*load_from_mesh)(void *msh, nb_mesh_t *mesh);
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
-	void (*draw)(const void *msh, const char *filename,
-		     int width, int height);
+	void (*draw_wires)(const void *msh, const char *filename,
+			   int width, int height);
+	void (*draw_nodal_values)(const void *msh, const char *filename,
+				  int width, int height, double *values);
+	void (*draw_elem_values)(const void *msh, const char *filename,
+				 int width, int height, double *values);
 	void (*build_model)(const void *msh, nb_model_t *model);
 	void (*build_model_disabled_elems)(const void *msh,
 					   const bool *elems_enabled,
@@ -152,15 +162,17 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->elem_get_ngb = nb_msh3trg_elem_get_ngb;
 	part->elem_has_ngb = nb_msh3trg_elem_has_ngb;
 	part->get_invtx = nb_msh3trg_get_invtx;
-	part->get_N_nodes_x_insgm = nb_msh3trg_get_N_nodes_x_insgm;
-	part->get_node_x_insgm = nb_msh3trg_get_node_x_insgm;
+	part->insgm_get_N_nodes = nb_msh3trg_insgm_get_N_nodes;
+	part->insgm_get_node = nb_msh3trg_insgm_get_node;
 	part->load_elem_graph = nb_msh3trg_load_elem_graph;
 	part->load_nodal_graph = nb_msh3trg_load_nodal_graph;
 	part->load_interelem_graph = nb_msh3trg_load_interelem_graph;
 	part->load_from_mesh = nb_msh3trg_load_from_mesh;
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
-	part->draw = nb_msh3trg_draw;
+	part->draw_wires = nb_msh3trg_draw_wires;
+	part->draw_nodal_values = nb_msh3trg_draw_nodal_values;
+	part->draw_elem_values = nb_msh3trg_draw_elem_values;
 	part->build_model = nb_msh3trg_build_model;
 	part->build_model_disabled_elems =
 		nb_msh3trg_build_model_disabled_elems;
@@ -190,15 +202,17 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->elem_get_ngb = nb_mshquad_elem_get_ngb;
 	part->elem_has_ngb = nb_mshquad_elem_has_ngb;
 	part->get_invtx = nb_mshquad_get_invtx;
-	part->get_N_nodes_x_insgm = nb_mshquad_get_N_nodes_x_insgm;
-	part->get_node_x_insgm = nb_mshquad_get_node_x_insgm;
+	part->insgm_get_N_nodes = nb_mshquad_insgm_get_N_nodes;
+	part->insgm_get_node = nb_mshquad_insgm_get_node;
 	part->load_elem_graph = nb_mshquad_load_elem_graph;
 	part->load_nodal_graph = nb_mshquad_load_nodal_graph;
 	part->load_interelem_graph = nb_mshquad_load_interelem_graph;
 	part->load_from_mesh = nb_mshquad_load_from_mesh;
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
-	part->draw = nb_mshquad_draw;
+	part->draw_wires = nb_mshquad_draw_wires;
+	part->draw_nodal_values = nb_mshquad_draw_nodal_values;
+	part->draw_elem_values = nb_mshquad_draw_elem_values;
 	part->build_model = nb_mshquad_build_model;
 	part->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
@@ -228,15 +242,17 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->elem_get_ngb = nb_mshpoly_elem_get_ngb;
 	part->elem_has_ngb = nb_mshpoly_elem_has_ngb;
 	part->get_invtx = nb_mshpoly_get_invtx;
-	part->get_N_nodes_x_insgm = nb_mshpoly_get_N_nodes_x_insgm;
-	part->get_node_x_insgm = nb_mshpoly_get_node_x_insgm;
+	part->insgm_get_N_nodes = nb_mshpoly_insgm_get_N_nodes;
+	part->insgm_get_node = nb_mshpoly_insgm_get_node;
 	part->load_elem_graph = nb_mshpoly_load_elem_graph;
 	part->load_nodal_graph = nb_mshpoly_load_nodal_graph;
 	part->load_interelem_graph = nb_mshpoly_load_interelem_graph;
 	part->load_from_mesh = nb_mshpoly_load_from_mesh;
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
-	part->draw = nb_mshpoly_draw;
+	part->draw_wires = nb_mshpoly_draw_wires;
+	part->draw_nodal_values = nb_mshpoly_draw_nodal_values;
+	part->draw_elem_values = nb_mshpoly_draw_elem_values;
 	part->build_model = nb_mshpoly_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
@@ -266,15 +282,17 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->elem_get_ngb = nb_mshpack_elem_get_ngb;
 	part->elem_has_ngb = nb_mshpack_elem_has_ngb;
 	part->get_invtx = nb_mshpack_get_invtx;
-	part->get_N_nodes_x_insgm = nb_mshpack_get_N_nodes_x_insgm;
-	part->get_node_x_insgm = nb_mshpack_get_node_x_insgm;
+	part->insgm_get_N_nodes = nb_mshpack_insgm_get_N_nodes;
+	part->insgm_get_node = nb_mshpack_insgm_get_node;
 	part->load_elem_graph = nb_mshpack_load_elem_graph;
 	part->load_nodal_graph = nb_mshpack_load_nodal_graph;
 	part->load_interelem_graph = nb_mshpack_load_interelem_graph;
 	part->load_from_mesh = nb_mshpack_load_from_mesh;
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
-	part->draw = nb_mshpack_draw;
+	part->draw_wires = nb_mshpack_draw_wires;
+	part->draw_nodal_values = nb_mshpack_draw_nodal_values;
+	part->draw_elem_values = nb_mshpack_draw_elem_values;
 	part->build_model = nb_mshpack_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpack_build_model_disabled_elems;
@@ -422,31 +440,31 @@ uint32_t nb_partition_get_invtx(const nb_partition_t *part, uint32_t id)
 	return part->get_invtx(part->msh, id);
 }
 
+uint32_t nb_partition_insgm_get_N_nodes(const nb_partition_t *part,
+					  uint32_t id)
+{
+	return part->insgm_get_N_nodes(part->msh, id);
+}
+
 uint32_t nb_partition_insgm_get_N_subsgm(const nb_partition_t *part,
 					 uint32_t id)
 {
-	uint32_t N = part->get_N_nodes_x_insgm(part->msh, id);
+	uint32_t N = part->insgm_get_N_nodes(part->msh, id);
 	return N - 1;
 }
 
-uint32_t nb_partition_get_N_nodes_x_insgm(const nb_partition_t *part,
-					  uint32_t id)
-{
-	return part->get_N_nodes_x_insgm(part->msh, id);
-}
-
-uint32_t nb_partition_get_node_x_insgm(const nb_partition_t *part,
+uint32_t nb_partition_insgm_get_node(const nb_partition_t *part,
 				       uint32_t sgm_id, uint32_t node_id)
 {
-	return part->get_node_x_insgm(part->msh, sgm_id, node_id);
+	return part->insgm_get_node(part->msh, sgm_id, node_id);
 }
 
 double nb_partition_insgm_get_length(const nb_partition_t *part,
 				     uint32_t sgm_id)
 {
-	uint32_t last_vtx = part->get_N_nodes_x_insgm(part->msh, sgm_id) - 1;
-	uint32_t n1 = part->get_node_x_insgm(part->msh, sgm_id, 0);
-	uint32_t n2 = part->get_node_x_insgm(part->msh, sgm_id, last_vtx);
+	uint32_t last_vtx = part->insgm_get_N_nodes(part->msh, sgm_id) - 1;
+	uint32_t n1 = part->insgm_get_node(part->msh, sgm_id, 0);
+	uint32_t n2 = part->insgm_get_node(part->msh, sgm_id, last_vtx);
 	double x1 = part->node_get_x(part->msh, n1);
 	double y1 = part->node_get_y(part->msh, n1);
 	double x2 = part->node_get_x(part->msh, n2);
@@ -458,8 +476,8 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 					    uint32_t sgm_id,
 					    uint32_t subsgm_id)
 {
-	uint32_t n1 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id);
-	uint32_t n2 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id + 1);
+	uint32_t n1 = part->insgm_get_node(part->msh, sgm_id, subsgm_id);
+	uint32_t n2 = part->insgm_get_node(part->msh, sgm_id, subsgm_id + 1);
 	double x1 = part->node_get_x(part->msh, n1);
 	double y1 = part->node_get_y(part->msh, n1);
 	double x2 = part->node_get_x(part->msh, n2);
@@ -500,9 +518,9 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 	for (uint32_t i = 0; i < N_insgm; i++) {
 		uint32_t N_subsgm = nb_partition_insgm_get_N_subsgm(part, i);
 		for (uint32_t j = 1; j < N_subsgm; j++) {
-			uint32_t s1 = part->get_node_x_insgm(part->msh,
+			uint32_t s1 = part->insgm_get_node(part->msh,
 							     i, j - 1);
-			uint32_t s2 = part->get_node_x_insgm(part->msh, i, j);
+			uint32_t s2 = part->insgm_get_node(part->msh, i, j);
 			if (face_is_the_same(n1, n2, s1, s2))
 				elem_adj[i][j-1] = elem_id;
 		}
@@ -553,9 +571,24 @@ bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 }
 
 void nb_partition_draw(const nb_partition_t *part, const char *filename,
-		       int width, int height)
+		       int width, int height, double *values,
+		       nb_partition_draw_type draw_type)
 {
-	part->draw(part->msh, filename, width, height);
+	switch (draw_type) {
+	case NB_DRAW_WIRES:
+		part->draw_wires(part->msh, filename, width, height);
+		break;
+	case NB_DRAW_NODAL_VALUES:
+		part->draw_nodal_values(part->msh, filename, width, height,
+					values);
+		break;
+	case NB_DRAW_ELEM_VALUES:
+		part->draw_elem_values(part->msh, filename, width, height,
+				       values);
+		break;
+	default:
+		part->draw_wires(part->msh, filename, width, height);
+	}
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

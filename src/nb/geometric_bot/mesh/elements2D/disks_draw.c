@@ -45,3 +45,19 @@ static void draw_disks(nb_graphics_context_t *g, int width, int height,
 		}
 	}
 }
+
+void nb_mshpack_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values)
+{
+	/* PENDING */
+}
+
+void nb_mshpack_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values)
+{
+	/* PENDING */
+}

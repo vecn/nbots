@@ -482,13 +482,13 @@ uint32_t nb_mshquad_get_invtx(const void *msh, uint32_t id)
 	return mshquad->vtx[id];
 }
 
-uint32_t nb_mshquad_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+uint32_t nb_mshquad_insgm_get_N_nodes(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->N_nod_x_sgm[id];
 }
 
-uint32_t nb_mshquad_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id)
 {
 	const nb_mshquad_t *mshquad = msh;

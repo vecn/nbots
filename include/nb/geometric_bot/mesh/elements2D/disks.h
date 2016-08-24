@@ -39,8 +39,8 @@ uint32_t nb_mshpack_elem_get_ngb(const void *msh,
 bool nb_mshpack_elem_has_ngb(const void *msh, uint32_t elem_id,
 			     uint16_t ngb_id);
 uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id);
-uint32_t nb_mshpack_get_N_nodes_x_insgm(const void *msh, uint32_t id);
-uint32_t nb_mshpack_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_mshpack_insgm_get_N_nodes(const void *msh, uint32_t id);
+uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph);
 void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph);
@@ -50,8 +50,17 @@ void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh);
 void nb_mshpack_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpack_is_vtx_inside(const void *msh, double x, double y);
-void nb_mshpack_draw(const void *msh, const char *filename,
-		     int width, int height);
+
+void nb_mshpack_draw_wires(const void *msh3trg_ptr, const char* filename,
+			   int width, int height);
+void nb_mshpack_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values);
+void nb_mshpack_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values);
 void nb_mshpack_build_model(const void *msh, nb_model_t *model);
 void nb_mshpack_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

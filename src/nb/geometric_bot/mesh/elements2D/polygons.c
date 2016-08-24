@@ -526,13 +526,13 @@ uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id)
 	return poly->vtx[id];
 }
 
-uint32_t nb_mshpoly_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+uint32_t nb_mshpoly_insgm_get_N_nodes(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->N_nod_x_sgm[id];
 }
 
-uint32_t nb_mshpoly_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id)
 {
 	const nb_mshpoly_t *poly = msh;

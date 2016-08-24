@@ -228,12 +228,12 @@ uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id)
 	return pack->N_elems;
 }
 
-uint32_t nb_mshpack_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+uint32_t nb_mshpack_insgm_get_N_nodes(const void *msh, uint32_t id)
 {
 	return 0;
 }
 
-uint32_t nb_mshpack_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id)
 {
 	const nb_mshpack_t *pack = msh;

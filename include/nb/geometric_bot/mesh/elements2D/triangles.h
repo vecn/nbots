@@ -42,8 +42,8 @@ uint32_t nb_msh3trg_elem_get_ngb(const void *msh,
 bool nb_msh3trg_elem_has_ngb(const void *msh, uint32_t elem_id,
 			     uint16_t ngb_id);
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id);
-uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id);
-uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_msh3trg_insgm_get_N_nodes(const void *msh, uint32_t id);
+uint32_t nb_msh3trg_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
 void nb_msh3trg_load_elem_graph(const void *const msh3trg,
@@ -75,8 +75,16 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr, double box[4]);
 
 bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
 
-void nb_msh3trg_draw(const void *msh3trg_ptr,
-		     const char* filename, int width, int height);
+void nb_msh3trg_draw_wires(const void *msh3trg_ptr, const char* filename,
+			   int width, int height);
+void nb_msh3trg_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values);
+void nb_msh3trg_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values);
 
 /**
  * @brief Export a PNG image of the partition ans its subdomains.

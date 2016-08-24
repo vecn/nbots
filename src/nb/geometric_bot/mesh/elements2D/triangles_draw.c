@@ -41,8 +41,8 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 
 static void scale_vtx(double vtx[2], double center[2], double zoom);
 
-void nb_msh3trg_draw(const void *const msh3trg,
-		     const char* filename, int width, int height)
+void nb_msh3trg_draw_wires(const void *const msh3trg,
+			   const char* filename, int width, int height)
 {
 	nb_graphics_export(filename, width, height,
 			   draw_msh3trg, msh3trg);
@@ -199,7 +199,23 @@ static inline void scale_vtx(double vtx[2], double center[2], double zoom)
 	vtx[1] = (vtx[1] - center[1]) * zoom + center[1];
 }
 
-void nb_partition_draw_subdomain(const void *const msh3trg,
+void nb_msh3trg_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values)
+{
+	/* PENDING */
+}
+
+void nb_msh3trg_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values)
+{
+	/* PENDING */
+}
+
+void nb_msh3trg_draw_subdomain(const void *const msh3trg,
 				 const char* filename, int width, int height,
 				 uint32_t k_part, const uint32_t *const part,
 				 uint32_t k_to_draw, double scale_partitions)

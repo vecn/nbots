@@ -347,13 +347,13 @@ uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id)
 	return msh3trg->vtx[id];
 }
 
-uint32_t nb_msh3trg_get_N_nodes_x_insgm(const void *msh, uint32_t id)
+uint32_t nb_msh3trg_insgm_get_N_nodes(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->N_nod_x_sgm[id];
 }
 
-uint32_t nb_msh3trg_get_node_x_insgm(const void *msh, uint32_t sgm_id,
+uint32_t nb_msh3trg_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
@@ -886,11 +886,11 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	uint32_t N_segments = 0;
 	for (uint32_t i = 0; i < N_sgm; i++) {
 		uint32_t N_nod_x_sgm =
-			nb_msh3trg_get_N_nodes_x_insgm(msh3trg, i);
+			nb_msh3trg_insgm_get_N_nodes(msh3trg, i);
 		if (0 < N_nod_x_sgm) {
-			uint32_t v1 = nb_msh3trg_get_node_x_insgm(msh3trg, i, 0);
+			uint32_t v1 = nb_msh3trg_insgm_get_node(msh3trg, i, 0);
 			uint32_t last_idx = N_nod_x_sgm - 1;
-			uint32_t v2 = nb_msh3trg_get_node_x_insgm(msh3trg, i, last_idx);
+			uint32_t v2 = nb_msh3trg_insgm_get_node(msh3trg, i, last_idx);
 			for (uint32_t j = 0; j < N_vtx; j++) {
 				if (nb_msh3trg_get_invtx(msh3trg, j) == v1) {
 					v1 = j;

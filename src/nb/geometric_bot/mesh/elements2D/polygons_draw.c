@@ -88,3 +88,19 @@ static void draw_input_sgm(nb_graphics_context_t *g,
 	}
 
 }
+
+void nb_mshpoly_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values)
+{
+	/* PENDING */
+}
+
+void nb_mshpoly_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values)
+{
+	/* PENDING */
+}

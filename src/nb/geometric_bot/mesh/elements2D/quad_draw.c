@@ -18,8 +18,8 @@ static void draw_input_sgm(nb_graphics_context_t *g,
 static void draw_input_vtx(nb_graphics_context_t *g,
 			   const void *const quad);
 
-void nb_mshquad_draw(const void *const quad,
-		     const char* filename, int width, int height)
+void nb_mshquad_draw_wires(const void *const quad,
+			   const char* filename, int width, int height)
 {
 	nb_graphics_export(filename, width, height, draw_mesh, quad);
 }
@@ -110,4 +110,20 @@ static void draw_input_vtx(nb_graphics_context_t *g,
 			nb_graphics_fill(g);
 		}
 	}
+}
+
+void nb_mshquad_draw_nodal_values(const void *msh3trg_ptr,
+				  const char* filename,
+				  int width, int height,
+				  double *values)
+{
+	/* PENDING */
+}
+
+void nb_mshquad_draw_elem_values(const void *msh3trg_ptr,
+				 const char* filename,
+				 int width, int height,
+				 double *values)
+{
+	/* PENDING */
 }
