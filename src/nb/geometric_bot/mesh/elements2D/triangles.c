@@ -235,25 +235,25 @@ uint32_t nb_msh3trg_get_N_elems(const void *msh)
 	return msh3trg->N_elems;
 }
 
-double nb_msh3trg_get_x_node(const void *msh, uint32_t id)
+double nb_msh3trg_node_get_x(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->nod[id * 2];
 }
 
-double nb_msh3trg_get_y_node(const void *msh, uint32_t id)
+double nb_msh3trg_node_get_y(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->nod[id*2+1];
 }
 
-uint32_t nb_msh3trg_get_1n_edge(const void *msh, uint32_t id)
+uint32_t nb_msh3trg_edge_get_1n(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->edg[id * 2];
 }
 
-uint32_t nb_msh3trg_get_2n_edge(const void *msh, uint32_t id)
+uint32_t nb_msh3trg_edge_get_2n(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->edg[id*2+1];
@@ -265,9 +265,9 @@ double nb_msh3trg_get_x_elem(const void *msh, uint32_t id)
 	uint32_t v2 = nb_msh3trg_elem_get_adj(msh, id, 1);
 	uint32_t v3 = nb_msh3trg_elem_get_adj(msh, id, 2);
 	double x_centroid =
-		(nb_msh3trg_get_x_node(msh, v1) +
-		 nb_msh3trg_get_x_node(msh, v2) +
-		 nb_msh3trg_get_x_node(msh, v3)) / 3.0;
+		(nb_msh3trg_node_get_x(msh, v1) +
+		 nb_msh3trg_node_get_x(msh, v2) +
+		 nb_msh3trg_node_get_x(msh, v3)) / 3.0;
 	return x_centroid;
 }
 
@@ -277,9 +277,9 @@ double nb_msh3trg_get_y_elem(const void *msh, uint32_t id)
 	uint32_t v2 = nb_msh3trg_elem_get_adj(msh, id, 1);
 	uint32_t v3 = nb_msh3trg_elem_get_adj(msh, id, 2);
 	double y_centroid =
-		(nb_msh3trg_get_y_node(msh, v1) +
-		 nb_msh3trg_get_y_node(msh, v2) +
-		 nb_msh3trg_get_y_node(msh, v3)) / 3.0;
+		(nb_msh3trg_node_get_y(msh, v1) +
+		 nb_msh3trg_node_get_y(msh, v2) +
+		 nb_msh3trg_node_get_y(msh, v3)) / 3.0;
 	return y_centroid;
 }
 
@@ -874,9 +874,9 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 		uint32_t id = nb_msh3trg_get_invtx(msh3trg, i);
 		if (id < N_nod) {
 			vertices[N_vertices * 2] =
-				nb_msh3trg_get_x_node(msh3trg, id);
+				nb_msh3trg_node_get_x(msh3trg, id);
 			vertices[N_vertices*2+1] =
-				nb_msh3trg_get_y_node(msh3trg, id);
+				nb_msh3trg_node_get_y(msh3trg, id);
 
 			vtx_index_relation[i] = N_vertices;
 			N_vertices += 1;
@@ -1086,9 +1086,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 		if (include_side) {
 			if (vertices_idx[v1] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v1);
+					nb_msh3trg_node_get_x(msh3trg, v1);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v1);
+					nb_msh3trg_node_get_y(msh3trg, v1);
 				vertices_idx[v1] = vtx_counter++;
 				if(vertices_bndr[v1])
 					input_vtx[0][real_vtx_cnt++] = 
@@ -1096,9 +1096,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 			}
 			if(vertices_idx[v2] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v2);
+					nb_msh3trg_node_get_x(msh3trg, v2);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v2);
+					nb_msh3trg_node_get_y(msh3trg, v2);
 				vertices_idx[v2] = vtx_counter++;
 				if(vertices_bndr[v2])
 					input_vtx[0][real_vtx_cnt++] =
@@ -1120,9 +1120,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 		if (include_side) {
  			if (vertices_idx[v2] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v2);
+					nb_msh3trg_node_get_x(msh3trg, v2);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v2);
+					nb_msh3trg_node_get_y(msh3trg, v2);
 				vertices_idx[v2] = vtx_counter++;
 				if (vertices_bndr[v2])
 					input_vtx[0][real_vtx_cnt++] =
@@ -1130,9 +1130,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 			}
 			if (vertices_idx[v3] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v3);
+					nb_msh3trg_node_get_x(msh3trg, v3);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v3);
+					nb_msh3trg_node_get_y(msh3trg, v3);
 				vertices_idx[v3] = vtx_counter++;
 				if (vertices_bndr[v3])
 					input_vtx[0][real_vtx_cnt++] = 
@@ -1154,9 +1154,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 		if (include_side) {
 			if (vertices_idx[v3] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v3);
+					nb_msh3trg_node_get_x(msh3trg, v3);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v3);
+					nb_msh3trg_node_get_y(msh3trg, v3);
 				vertices_idx[v3] = vtx_counter++;
 				if(vertices_bndr[v3])
 					input_vtx[0][real_vtx_cnt++] = 
@@ -1164,9 +1164,9 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 			}
 			if (vertices_idx[v1] == N_nod) {
 				model->vertex[vtx_counter * 2] =
-					nb_msh3trg_get_x_node(msh3trg, v1);
+					nb_msh3trg_node_get_x(msh3trg, v1);
 				model->vertex[vtx_counter*2+1] =
-					nb_msh3trg_get_y_node(msh3trg, v1);
+					nb_msh3trg_node_get_y(msh3trg, v1);
 				vertices_idx[v1] = vtx_counter++;
 				if (vertices_bndr[v1])
 					input_vtx[0][real_vtx_cnt++] =

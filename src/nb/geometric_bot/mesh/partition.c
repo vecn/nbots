@@ -25,12 +25,12 @@ struct nb_partition_s {
 	uint32_t (*get_N_nodes)(const void *msh);
 	uint32_t (*get_N_edges)(const void *msh);
 	uint32_t (*get_N_elems)(const void *msh);
-	double (*get_x_node)(const void *msh, uint32_t id);
-	double (*get_y_node)(const void *msh, uint32_t id);
-	uint32_t (*get_1n_edge)(const void *msh, uint32_t id);
-	uint32_t (*get_2n_edge)(const void *msh, uint32_t id);
-	double (*get_x_elem)(const void *msh, uint32_t id);
-	double (*get_y_elem)(const void *msh, uint32_t id);
+	double (*node_get_x)(const void *msh, uint32_t id);
+	double (*node_get_y)(const void *msh, uint32_t id);
+	uint32_t (*edge_get_1n)(const void *msh, uint32_t id);
+	uint32_t (*edge_get_2n)(const void *msh, uint32_t id);
+	double (*elem_get_x)(const void *msh, uint32_t id);
+	double (*elem_get_y)(const void *msh, uint32_t id);
 	double (*elem_get_area)(const void *msh, uint32_t id);
 	double (*elem_face_get_length)(const void *msh,
 				       uint32_t elem_id,
@@ -138,12 +138,12 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->get_N_nodes = nb_msh3trg_get_N_nodes;
 	part->get_N_edges = nb_msh3trg_get_N_edges;
 	part->get_N_elems = nb_msh3trg_get_N_elems;
-	part->get_x_node = nb_msh3trg_get_x_node;
-	part->get_y_node = nb_msh3trg_get_y_node;
-	part->get_1n_edge = nb_msh3trg_get_1n_edge;
-	part->get_2n_edge = nb_msh3trg_get_2n_edge;
-	part->get_x_elem = nb_msh3trg_get_x_elem;
-	part->get_y_elem = nb_msh3trg_get_y_elem;
+	part->node_get_x = nb_msh3trg_node_get_x;
+	part->node_get_y = nb_msh3trg_node_get_y;
+	part->edge_get_1n = nb_msh3trg_edge_get_1n;
+	part->edge_get_2n = nb_msh3trg_edge_get_2n;
+	part->elem_get_x = nb_msh3trg_elem_get_x;
+	part->elem_get_y = nb_msh3trg_elem_get_y;
 	part->elem_get_area = nb_msh3trg_elem_get_area;
 	part->elem_face_get_length = nb_msh3trg_elem_face_get_length;
 	part->elem_get_N_adj = nb_msh3trg_elem_get_N_adj;
@@ -176,12 +176,12 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->get_N_nodes = nb_mshquad_get_N_nodes;
 	part->get_N_edges = nb_mshquad_get_N_edges;
 	part->get_N_elems = nb_mshquad_get_N_elems;
-	part->get_x_node = nb_mshquad_get_x_node;
-	part->get_y_node = nb_mshquad_get_y_node;
-	part->get_1n_edge = nb_mshquad_get_1n_edge;
-	part->get_2n_edge = nb_mshquad_get_2n_edge;
-	part->get_x_elem = nb_mshquad_get_x_elem;
-	part->get_y_elem = nb_mshquad_get_y_elem;
+	part->node_get_x = nb_mshquad_node_get_x;
+	part->node_get_y = nb_mshquad_node_get_y;
+	part->edge_get_1n = nb_mshquad_edge_get_1n;
+	part->edge_get_2n = nb_mshquad_edge_get_2n;
+	part->elem_get_x = nb_mshquad_elem_get_x;
+	part->elem_get_y = nb_mshquad_elem_get_y;
 	part->elem_get_area = nb_mshquad_elem_get_area;
 	part->elem_face_get_length = nb_mshquad_elem_face_get_length;
 	part->elem_get_N_adj = nb_mshquad_elem_get_N_adj;
@@ -214,12 +214,12 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->get_N_nodes = nb_mshpoly_get_N_nodes;
 	part->get_N_edges = nb_mshpoly_get_N_edges;
 	part->get_N_elems = nb_mshpoly_get_N_elems;
-	part->get_x_node = nb_mshpoly_get_x_node;
-	part->get_y_node = nb_mshpoly_get_y_node;
-	part->get_1n_edge = nb_mshpoly_get_1n_edge;
-	part->get_2n_edge = nb_mshpoly_get_2n_edge;
-	part->get_x_elem = nb_mshpoly_get_x_elem;
-	part->get_y_elem = nb_mshpoly_get_y_elem;
+	part->node_get_x = nb_mshpoly_node_get_x;
+	part->node_get_y = nb_mshpoly_node_get_y;
+	part->edge_get_1n = nb_mshpoly_edge_get_1n;
+	part->edge_get_2n = nb_mshpoly_edge_get_2n;
+	part->elem_get_x = nb_mshpoly_elem_get_x;
+	part->elem_get_y = nb_mshpoly_elem_get_y;
 	part->elem_get_area = nb_mshpoly_elem_get_area;
 	part->elem_face_get_length = nb_mshpoly_elem_face_get_length;
 	part->elem_get_N_adj = nb_mshpoly_elem_get_N_adj;
@@ -252,12 +252,12 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->get_N_nodes = nb_mshpack_get_N_nodes;
 	part->get_N_edges = nb_mshpack_get_N_edges;
 	part->get_N_elems = nb_mshpack_get_N_elems;
-	part->get_x_node = nb_mshpack_get_x_node;
-	part->get_y_node = nb_mshpack_get_y_node;
-	part->get_1n_edge = nb_mshpack_get_1n_edge;
-	part->get_2n_edge = nb_mshpack_get_2n_edge;
-	part->get_x_elem = nb_mshpack_get_x_elem;
-	part->get_y_elem = nb_mshpack_get_y_elem;
+	part->node_get_x = nb_mshpack_node_get_x;
+	part->node_get_y = nb_mshpack_node_get_y;
+	part->edge_get_1n = nb_mshpack_edge_get_1n;
+	part->edge_get_2n = nb_mshpack_edge_get_2n;
+	part->elem_get_x = nb_mshpack_elem_get_x;
+	part->elem_get_y = nb_mshpack_elem_get_y;
 	part->elem_get_area = nb_mshpack_elem_get_area;
 	part->elem_face_get_length = nb_mshpack_elem_face_get_length;
 	part->elem_get_N_adj = nb_mshpack_elem_get_N_adj;
@@ -348,14 +348,14 @@ uint32_t nb_partition_get_N_elems(const nb_partition_t *part)
 	return part->get_N_elems(part->msh);
 }
 
-double nb_partition_get_x_node(const nb_partition_t *part, uint32_t id)
+double nb_partition_node_get_x(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_x_node(part->msh, id);
+	return part->node_get_x(part->msh, id);
 }
 
-double nb_partition_get_y_node(const nb_partition_t *part, uint32_t id)
+double nb_partition_node_get_y(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_y_node(part->msh, id);
+	return part->node_get_y(part->msh, id);
 }
 
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id)
@@ -369,24 +369,24 @@ double nb_partition_elem_face_get_length(const nb_partition_t *part,
 	return part->elem_face_get_length(part->msh, elem_id, face_id);
 }
 
-uint32_t nb_partition_get_1n_edge(const nb_partition_t *part, uint32_t id)
+uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_1n_edge(part->msh, id);
+	return part->edge_get_1n(part->msh, id);
 }
 
-uint32_t nb_partition_get_2n_edge(const nb_partition_t *part, uint32_t id)
+uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_2n_edge(part->msh, id);
+	return part->edge_get_2n(part->msh, id);
 }
 
-double nb_partition_get_x_elem(const nb_partition_t *part, uint32_t id)
+double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_x_elem(part->msh, id);
+	return part->elem_get_x(part->msh, id);
 }
 
-double nb_partition_get_y_elem(const nb_partition_t *part, uint32_t id)
+double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id)
 {
-	return part->get_y_elem(part->msh, id);
+	return part->elem_get_y(part->msh, id);
 }
 
 uint32_t nb_partition_elem_get_N_adj(const nb_partition_t *part, uint32_t id)
@@ -447,10 +447,10 @@ double nb_partition_insgm_get_length(const nb_partition_t *part,
 	uint32_t last_vtx = part->get_N_nodes_x_insgm(part->msh, sgm_id) - 1;
 	uint32_t n1 = part->get_node_x_insgm(part->msh, sgm_id, 0);
 	uint32_t n2 = part->get_node_x_insgm(part->msh, sgm_id, last_vtx);
-	double x1 = part->get_x_node(part->msh, n1);
-	double y1 = part->get_y_node(part->msh, n1);
-	double x2 = part->get_x_node(part->msh, n2);
-	double y2 = part->get_y_node(part->msh, n2);
+	double x1 = part->node_get_x(part->msh, n1);
+	double y1 = part->node_get_y(part->msh, n1);
+	double x2 = part->node_get_x(part->msh, n2);
+	double y2 = part->node_get_y(part->msh, n2);
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
@@ -460,10 +460,10 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 {
 	uint32_t n1 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id);
 	uint32_t n2 = part->get_node_x_insgm(part->msh, sgm_id, subsgm_id + 1);
-	double x1 = part->get_x_node(part->msh, n1);
-	double y1 = part->get_y_node(part->msh, n1);
-	double x2 = part->get_x_node(part->msh, n2);
-	double y2 = part->get_y_node(part->msh, n2);
+	double x1 = part->node_get_x(part->msh, n1);
+	double y1 = part->node_get_y(part->msh, n1);
+	double x2 = part->node_get_x(part->msh, n2);
+	double y2 = part->node_get_y(part->msh, n2);
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 

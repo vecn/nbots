@@ -326,25 +326,25 @@ uint32_t nb_mshquad_get_N_elems(const void *msh)
 	return mshquad->N_elems;
 }
 
-double nb_mshquad_get_x_node(const void *msh, uint32_t id)
+double nb_mshquad_node_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->nod[id * 2];
 }
 
-double nb_mshquad_get_y_node(const void *msh, uint32_t id)
+double nb_mshquad_node_get_y(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->nod[id*2+1];
 }
 
-uint32_t nb_mshquad_get_1n_edge(const void *msh, uint32_t id)
+uint32_t nb_mshquad_edge_get_1n(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->edg[id * 2];
 }
 
-uint32_t nb_mshquad_get_2n_edge(const void *msh, uint32_t id)
+uint32_t nb_mshquad_edge_get_2n(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->edg[id*2+1];
@@ -353,20 +353,20 @@ uint32_t nb_mshquad_get_2n_edge(const void *msh, uint32_t id)
 double nb_mshquad_get_x_elem(const void *msh, uint32_t id)
 {
 	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
-	double x = nb_mshquad_get_x_node(msh, idx);
+	double x = nb_mshquad_node_get_x(msh, idx);
 
 	idx = nb_mshquad_elem_get_adj(msh, id, 1);
-	x += nb_mshquad_get_x_node(msh, idx);
+	x += nb_mshquad_node_get_x(msh, idx);
 
 	idx = nb_mshquad_elem_get_adj(msh, id, 2);
-	x += nb_mshquad_get_x_node(msh, idx);
+	x += nb_mshquad_node_get_x(msh, idx);
 
 	double div = 3.0;
 	const nb_mshquad_t *mshquad = msh;
 	if (0 == mshquad->type[id]) {
 		div = 4.0;
 		idx = nb_mshquad_elem_get_adj(msh, id, 3);
-		x += nb_mshquad_get_x_node(msh, idx);
+		x += nb_mshquad_node_get_x(msh, idx);
 	}
 	return x / div;
 }
@@ -374,20 +374,20 @@ double nb_mshquad_get_x_elem(const void *msh, uint32_t id)
 double nb_mshquad_get_y_elem(const void *msh, uint32_t id)
 {
 	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
-	double y = nb_mshquad_get_y_node(msh, idx);
+	double y = nb_mshquad_node_get_y(msh, idx);
 
 	idx = nb_mshquad_elem_get_adj(msh, id, 1);
-	y += nb_mshquad_get_y_node(msh, idx);
+	y += nb_mshquad_node_get_y(msh, idx);
 
 	idx = nb_mshquad_elem_get_adj(msh, id, 2);
-	y += nb_mshquad_get_y_node(msh, idx);
+	y += nb_mshquad_node_get_y(msh, idx);
 
 	double div = 3.0;
 	const nb_mshquad_t *mshquad = msh;
 	if (0 == mshquad->type[id]) {
 		div = 4.0;
 		idx = nb_mshquad_elem_get_adj(msh, id, 3);
-		y += nb_mshquad_get_y_node(msh, idx);
+		y += nb_mshquad_node_get_y(msh, idx);
 	}
 	return y / div;
 }

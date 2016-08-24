@@ -29,14 +29,14 @@ uint32_t nb_partition_get_N_nodes(const nb_partition_t *part);
 uint32_t nb_partition_get_N_edges(const nb_partition_t *part);
 uint32_t nb_partition_get_N_elems(const nb_partition_t *part);
 
-double nb_partition_get_x_node(const nb_partition_t *part, uint32_t id);
-double nb_partition_get_y_node(const nb_partition_t *part, uint32_t id);
+double nb_partition_node_get_x(const nb_partition_t *part, uint32_t id);
+double nb_partition_node_get_y(const nb_partition_t *part, uint32_t id);
 
-uint32_t nb_partition_get_1n_edge(const nb_partition_t *part, uint32_t id);
-uint32_t nb_partition_get_2n_edge(const nb_partition_t *part, uint32_t id);
+uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id);
+uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id);
 
-double nb_partition_get_x_elem(const nb_partition_t *part, uint32_t id);
-double nb_partition_get_y_elem(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_face_get_length(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id);

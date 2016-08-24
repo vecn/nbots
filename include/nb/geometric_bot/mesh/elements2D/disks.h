@@ -19,12 +19,12 @@ uint32_t nb_mshpack_get_N_insgm(const void *msh);
 uint32_t nb_mshpack_get_N_nodes(const void *msh);
 uint32_t nb_mshpack_get_N_edges(const void *msh);
 uint32_t nb_mshpack_get_N_elems(const void *msh);
-double nb_mshpack_get_x_node(const void *msh, uint32_t id);
-double nb_mshpack_get_y_node(const void *msh, uint32_t id);
-uint32_t nb_mshpack_get_1n_edge(const void *msh, uint32_t id);
-uint32_t nb_mshpack_get_2n_edge(const void *msh, uint32_t id);
-double nb_mshpack_get_x_elem(const void *msh, uint32_t id);
-double nb_mshpack_get_y_elem(const void *msh, uint32_t id);
+double nb_mshpack_node_get_x(const void *msh, uint32_t id);
+double nb_mshpack_node_get_y(const void *msh, uint32_t id);
+uint32_t nb_mshpack_edge_get_1n(const void *msh, uint32_t id);
+uint32_t nb_mshpack_edge_get_2n(const void *msh, uint32_t id);
+double nb_mshpack_elem_get_x(const void *msh, uint32_t id);
+double nb_mshpack_elem_get_y(const void *msh, uint32_t id);
 double nb_mshpack_elem_get_area(const void *msh, uint32_t id);
 double nb_mshpack_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,

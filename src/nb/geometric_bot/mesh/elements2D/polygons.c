@@ -418,25 +418,25 @@ uint32_t nb_mshpoly_get_N_elems(const void *msh)
 	return poly->N_elems;
 }
 
-double nb_mshpoly_get_x_node(const void *msh, uint32_t id)
+double nb_mshpoly_node_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->nod[id * 2];
 }
 
-double nb_mshpoly_get_y_node(const void *msh, uint32_t id)
+double nb_mshpoly_node_get_y(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->nod[id*2+1];
 }
 
-uint32_t nb_mshpoly_get_1n_edge(const void *msh, uint32_t id)
+uint32_t nb_mshpoly_edge_get_1n(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->edg[id * 2];
 }
 
-uint32_t nb_mshpoly_get_2n_edge(const void *msh, uint32_t id)
+uint32_t nb_mshpoly_edge_get_2n(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->edg[id*2+1];
@@ -463,10 +463,10 @@ double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
 		uint32_t n1 = nb_mshpoly_elem_get_adj(msh, id, i);
 		uint32_t n2 = nb_mshpoly_elem_get_adj(msh, id,
 						      (i+1) % N_adj);
-		double x1 = nb_mshpoly_get_x_node(msh, n1);
-		double y1 = nb_mshpoly_get_y_node(msh, n1);
-		double x2 = nb_mshpoly_get_x_node(msh, n2);
-		double y2 = nb_mshpoly_get_y_node(msh, n2);
+		double x1 = nb_mshpoly_node_get_x(msh, n1);
+		double y1 = nb_mshpoly_node_get_y(msh, n1);
+		double x2 = nb_mshpoly_node_get_x(msh, n2);
+		double y2 = nb_mshpoly_node_get_y(msh, n2);
 		area += x1 * y2 - x2 * y1;
 	}
 	return 0.5 * area;
