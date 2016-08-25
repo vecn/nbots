@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "nb/graph_bot.h"
+#include "nb/graphics_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/elements2D/triangles.h"
 #include "nb/geometric_bot/mesh/elements2D/polygons.h"
@@ -60,11 +61,19 @@ struct nb_partition_s {
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
 	void (*draw_wires)(const void *msh, const char *filename,
-			   int width, int height);
+			   int width, int height,
+			   float rgb_sgm[3], float rgb_edg[3],
+			   float rgb_bg[3], float rgba_elem[4]);
 	void (*draw_nodal_values)(const void *msh, const char *filename,
-				  int width, int height, double *values);
+				  int width, int height, double *values,
+				  float rgb_sgm[3], float rgb_edg[3],
+				  float rgb_bg[3],
+				  nb_graphics_palette_preset palette);
 	void (*draw_elem_values)(const void *msh, const char *filename,
-				 int width, int height, double *values);
+				 int width, int height, double *values,
+				 float rgb_sgm[3], float rgb_edg[3],
+				 float rgb_bg[3],
+				 nb_graphics_palette_preset palette);/* AQUI VOY */
 	void (*build_model)(const void *msh, nb_model_t *model);
 	void (*build_model_disabled_elems)(const void *msh,
 					   const bool *elems_enabled,

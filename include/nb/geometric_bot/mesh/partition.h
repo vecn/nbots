@@ -11,8 +11,8 @@ typedef enum {
 } nb_partition_type;
 
 typedef enum {
-	NB_DRAW_WIRES, NB_DRAW_NODAL_VALUES, NB_DRAW_ELEM_VALUES,
-} nb_partition_draw_type;
+	NB_DRAW_NODAL_VALUES, NB_DRAW_ELEM_VALUES,
+} nb_partition_draw_fill_t;
 
 
 typedef struct nb_partition_s nb_partition_t;
@@ -87,8 +87,11 @@ void nb_partition_get_enveloping_box(const nb_partition_t *part,
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 				double x, double y);
 void nb_partition_draw(const nb_partition_t *part, const char *filename,
-		       int width, int height, double *values,
-		       nb_partition_draw_type draw_type);
+		       int width, int height);
+void nb_partition_draw_values(const nb_partition_t *part, const char *filename,
+			      int width, int height,
+			      bool draw_wires, double *values, 
+			      nb_partition_draw_fill_t fill_type);
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
 
 /**
