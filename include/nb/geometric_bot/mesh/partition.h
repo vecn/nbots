@@ -10,11 +10,6 @@ typedef enum {
 	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
 } nb_partition_type;
 
-typedef enum {
-	NB_DRAW_NODAL_VALUES, NB_DRAW_ELEM_VALUES,
-} nb_partition_draw_fill_t;
-
-
 typedef struct nb_partition_s nb_partition_t;
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type);
@@ -28,6 +23,10 @@ void nb_partition_destroy(nb_partition_t* part);
 
 nb_partition_type nb_partition_get_type(const nb_partition_t *part);
 
+void nb_partition_extrapolate_elems_to_nodes(nb_partition_t *part,
+					     uint8_t N_comp,
+					     const double *elem_values,
+					     double *nodal_values);
 double nb_partition_distort_with_nodal_field(nb_partition_t *part,
 					     double *disp, double max_disp);
 double nb_partition_distort_with_elem_field(nb_partition_t *part,
@@ -86,12 +85,27 @@ void nb_partition_get_enveloping_box(const nb_partition_t *part,
 				     double box[4]);
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 				double x, double y);
-void nb_partition_draw(const nb_partition_t *part, const char *filename,
-		       int width, int height);
-void nb_partition_draw_values(const nb_partition_t *part, const char *filename,
-			      int width, int height,
-			      bool draw_wires, double *values, 
-			      nb_partition_draw_fill_t fill_type);
+void nb_partition_draw_wires(const nb_partition_t *part, const char *filename,
+			     int width, int height);
+void nb_partition_draw_nodal_values(const nb_partition_t *part,
+				    const char *filename,
+				    int width, int height,
+				    const double *values,
+				    bool draw_wires);
+void nb_partition_draw_elem_values(const nb_partition_t *part,
+				   const char *filename,
+				   int width, int height,
+				   const double *values,
+				   bool draw_wires);
+void nb_partition_draw_nodal_class(const nb_partition_t *part,
+				   const char *filename,
+				   int width, int height,
+				   const uin8_t *class);
+void nb_partition_draw_elem_class(const nb_partition_t *part,
+				  const char *filename,
+				  int width, int height,
+				  const uint8_t class,
+				  bool draw_wires);
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
 
 /**

@@ -21,11 +21,11 @@ struct nb_partition_s {
 	void (*finish)(void *msh);
 	void (*copy)(void *msh, const void *mshsrc);
 	void (*clear)(void *msh);
-	
+
 	double (*distort_with_nodal_field)(void *msh, double *disp,
 					   double max_disp);
 	double (*distort_with_elem_field)(void *msh, double *disp,
-					  double max_disp);/* AQUI VOY */
+					  double max_disp);
 
 	uint32_t (*get_N_invtx)(const void *msh);
 	uint32_t (*get_N_insgm)(const void *msh);
@@ -60,20 +60,20 @@ struct nb_partition_s {
 	void (*load_from_mesh)(void *msh, nb_mesh_t *mesh);
 	void (*get_enveloping_box)(const void *msh, double box[4]);
 	bool (*is_vtx_inside)(const void *msh, double x, double y);
-	void (*draw_wires)(const void *msh, const char *filename,
-			   int width, int height,
-			   float rgb_sgm[3], float rgb_edg[3],
-			   float rgb_bg[3], float rgba_elem[4]);
-	void (*draw_nodal_values)(const void *msh, const char *filename,
-				  int width, int height, double *values,
-				  float rgb_sgm[3], float rgb_edg[3],
-				  float rgb_bg[3],
-				  nb_graphics_palette_preset palette);
-	void (*draw_elem_values)(const void *msh, const char *filename,
-				 int width, int height, double *values,
-				 float rgb_sgm[3], float rgb_edg[3],
-				 float rgb_bg[3],
-				 nb_graphics_palette_preset palette);/* AQUI VOY */
+	void (*draw_wires)(nb_graphics_context_t *g, int width, int height,
+			   const void draw_data);
+	void (*draw_nodal_values)(nb_graphics_context_t *g,
+				  int width, int height,
+				  const void draw_data);
+	void (*draw_elem_values)(nb_graphics_context_t *g,
+				 int width, int height,
+				 const void draw_data);
+	void (*draw_nodal_class)(nb_graphics_context_t *g,
+				 int width, int height,
+				 const void draw_data);
+	void (*draw_elem_class)(nb_graphics_context_t *g,
+				int width, int height,
+				const void draw_data);
 	void (*build_model)(const void *msh, nb_model_t *model);
 	void (*build_model_disabled_elems)(const void *msh,
 					   const bool *elems_enabled,
@@ -81,6 +81,16 @@ struct nb_partition_s {
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
 };
+
+typedef struct {
+	const void *msh;
+	nb_graphics_color_t rgb_bg;
+	nb_graphics_color_t rgb_wire;
+	nb_graphics_color_t rgb_bound;
+	nb_graphics_color_t rgb_elem;
+	nb_graphics_palette_preset palette;
+	nb_graphics_color_t color_class[10];
+} draw_data;
 
 static void set_msh3trg_interface(nb_partition_t *part);
 static void set_mshquad_interface(nb_partition_t *part);
@@ -94,6 +104,7 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 				    uint32_t elem_id, uint16_t face_id);
 static bool face_is_the_same(uint32_t n1, uint32_t n2,
 			     uint32_t s1, uint32_t s2);
+static void init_draw_data(draw_data *data, const void *msh);
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type)
 {
@@ -350,6 +361,18 @@ nb_partition_type nb_partition_get_type(const nb_partition_t *part)
 	return part->type;
 }
 
+double nb_partition_distort_with_nodal_field(nb_partition_t *part,
+					     double *disp, double max_disp)
+{
+	return part->distort_with_nodal_field(part->msh, disp, max_disp);
+}
+
+double nb_partition_distort_with_elem_field(nb_partition_t *part,
+					    double *disp, double max_disp)
+{
+	return part->distort_with_elem_field(part->msh, disp, max_disp);
+}
+
 uint32_t nb_partition_get_N_invtx(const nb_partition_t *part)
 {
 	return part->get_N_invtx(part->msh);
@@ -583,21 +606,82 @@ void nb_partition_draw(const nb_partition_t *part, const char *filename,
 		       int width, int height, double *values,
 		       nb_partition_draw_type draw_type)
 {
-	switch (draw_type) {
-	case NB_DRAW_WIRES:
-		part->draw_wires(part->msh, filename, width, height);
-		break;
-	case NB_DRAW_NODAL_VALUES:
-		part->draw_nodal_values(part->msh, filename, width, height,
-					values);
-		break;
-	case NB_DRAW_ELEM_VALUES:
-		part->draw_elem_values(part->msh, filename, width, height,
-				       values);
-		break;
-	default:
-		part->draw_wires(part->msh, filename, width, height);
-	}
+	draw_data data;
+	init_draw_data(&data, part->msh);
+
+	nb_graphics_export(filename, width, height,
+			   part->draw_wires, &draw_data);
+}
+
+static void init_draw_data(draw_data *data, const void *msh)
+{
+	data->msh = msh;
+	data->rgb_bg = NB_ULTRALIGHT_GRAY;
+	data->rgb_wire = NB_LIGHT_PURPLE;
+	data->rgb_bound = NB_PURPLE;
+	data->rgb_elem = NB_LIGHT_BLUE;
+	data->palette = NB_RAINBOW;
+	data->color_class[0] = NB_BLUE;
+	data->color_class[1] = NB_RED;
+	data->color_class[2] = NB_VIOLET;
+	data->color_class[3] = NB_AZURE;
+	data->color_class[4] = NB_GREEN;
+	data->color_class[5] = NB_YELLOW;
+	data->color_class[6] = NB_ROSE;
+	data->color_class[7] = NB_CHARTREUSE;
+	data->color_class[8] = NB_LIGHT_GRAY;
+	data->color_class[9] = NB_AQUAMARIN;
+}
+
+void nb_partition_draw_nodal_values(const nb_partition_t *part,
+				    const char *filename,
+				    int width, int height,
+				    const double *values,
+				    bool draw_wires)
+{
+	draw_data data;
+	init_draw_data(&data, part->msh);
+
+	nb_graphics_export(filename, width, height,
+			   part->draw_nodal_values, &draw_data);
+}
+
+void nb_partition_draw_elem_values(const nb_partition_t *part,
+				   const char *filename,
+				   int width, int height,
+				   const double *values,
+				   bool draw_wires)
+{
+	draw_data data;
+	init_draw_data(&data, part->msh);
+
+	nb_graphics_export(filename, width, height,
+			   part->draw_elem_values, &draw_data);
+}
+
+void nb_partition_draw_nodal_class(const nb_partition_t *part,
+				   const char *filename,
+				   int width, int height,
+				   const uin8_t *class)
+{
+	draw_data data;
+	init_draw_data(&data, part->msh);
+
+	nb_graphics_export(filename, width, height,
+			   part->draw_nodal_class, &draw_data);
+}
+
+void nb_partition_draw_elem_class(const nb_partition_t *part,
+				  const char *filename,
+				  int width, int height,
+				  const uint8_t class,
+				  bool draw_wires)
+{
+	draw_data data;
+	init_draw_data(&data, part->msh);
+
+	nb_graphics_export(filename, width, height,
+			   part->draw_elem_class, &draw_data);
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

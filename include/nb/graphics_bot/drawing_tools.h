@@ -8,7 +8,8 @@ typedef struct nb_graphics_context_s nb_graphics_context_t;
 typedef struct nb_graphics_palette_s nb_graphics_palette_t;
 
 typedef enum {
-	NB_LINEAR, NB_RADIAL
+	NB_LINEAR,
+	NB_RADIAL
 } nb_graphics_grad_t;
 
 typedef enum {
@@ -18,12 +19,27 @@ typedef enum {
 } nb_graphics_palette_preset;
 
 typedef enum {
-	NB_WHITE, NB_BLACK,
-	NB_GRAY, NB_LIGHT_GRAY, NB_DARK_GRAY,
-	NB_RED, NB_GREEN, NB_BLUE,
-	NB_YELLOW, NB_CYAN, NB_MAGENTA,
-	NB_ORANGE, NB_AQUAMARIN, NB_VIOLET,
-	NB_ROSE, NB_CHARTREUSE, NB_AZURE
+	NB_WHITE,
+	NB_BLACK,
+	NB_GRAY,
+	NB_ULTRALIGHT_GRAY,
+	NB_LIGHT_GRAY,
+	NB_DARK_GRAY,
+	NB_RED,
+	NB_GREEN,
+	NB_BLUE,
+	NB_LIGHT_BLUE,
+	NB_YELLOW,
+	NB_CYAN,
+	NB_MAGENTA,
+	NB_ORANGE,
+	NB_AQUAMARIN,
+	NB_VIOLET,
+	NB_LIGHT_PURPLE,
+	NB_PURPLE,
+	NB_ROSE,
+	NB_CHARTREUSE,
+	NB_AZURE
 } nb_graphics_color_t;
 
 typedef struct {

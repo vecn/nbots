@@ -442,6 +442,9 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 	case NB_GRAY:
 		_SET_RGB(g, 128, 128, 128);
 		break;
+	case NB_ULTRALIGHT_GRAY:
+		_SET_RGB(g, 230, 230, 230);
+		break;
 	case NB_LIGHT_GRAY:
 		_SET_RGB(g, 200, 200, 200);
 		break;
@@ -457,6 +460,9 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 	case NB_BLUE:
 		_SET_RGB(g, 0, 0, 255);
 		break;
+	case NB_LIGHT_BLUE:
+		_SET_RGB(g, 128, 128, 255);
+		break;
 	case NB_YELLOW:
 		_SET_RGB(g, 255, 255, 0);
 		break;
@@ -471,6 +477,12 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 		break;
 	case NB_AQUAMARIN:
 		_SET_RGB(g, 0, 255, 128);
+		break;
+	case NB_PURPLE:
+		_SET_RGB(g, 102, 0, 255);
+		break;
+	case NB_LIGHT_PURPLE:
+		_SET_RGB(g, 141, 95, 211);
 		break;
 	case NB_VIOLET:
 		_SET_RGB(g, 128, 0, 255);
