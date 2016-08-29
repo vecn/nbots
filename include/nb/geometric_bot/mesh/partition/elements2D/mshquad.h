@@ -1,12 +1,13 @@
-#ifndef __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_QUAD_H__
-#define __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_QUAD_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSHQUAD_H__
+#define __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSHQUAD_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "nb/graph_bot.h"
-
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
 
 typedef struct nb_mshquad_s nb_mshquad_t;
 
@@ -60,16 +61,10 @@ void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh);
 void nb_mshquad_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y);
 
-void nb_mshquad_draw_wires(const void *msh3trg_ptr, const char* filename,
-			   int width, int height);
-void nb_mshquad_draw_nodal_values(const void *msh3trg_ptr,
-				  const char* filename,
-				  int width, int height,
-				  double *values);
-void nb_mshquad_draw_elem_values(const void *msh3trg_ptr,
-				 const char* filename,
-				 int width, int height,
-				 double *values);
+double nb_mshquad_distort_with_field(void *msh, 
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp);
 void nb_mshquad_build_model(const void *msh, nb_model_t *model);
 void nb_mshquad_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

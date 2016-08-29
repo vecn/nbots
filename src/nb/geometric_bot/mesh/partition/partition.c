@@ -6,30 +6,40 @@
 #include "nb/graph_bot.h"
 #include "nb/graphics_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
-#include "nb/geometric_bot/mesh/elements2D/polygons.h"
-#include "nb/geometric_bot/mesh/elements2D/quad.h"
-#include "nb/geometric_bot/mesh/elements2D/disks.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/msh3trg.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshquad.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpack.h"
 
 #include "nb/geometric_bot/mesh/partition.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
 #include "partition_struct.h"
 
 #define POW2(a) ((a)*(a))
 
 typedef struct {
-	const void *msh;
-	nb_graphics_color_t rgb_bg;
-	nb_graphics_color_t rgb_wire;
-	nb_graphics_color_t rgb_bound;
-	nb_graphics_color_t rgb_elem;
-	nb_graphics_palette_preset palette;
-	nb_graphics_color_t color_class[10];
+	const nb_partition_t *part;
+	const void *values;
+	nb_partition_entity vals_entity;
+	nb_partition_array_type vals_type;
+	bool draw_wires;
 } draw_data;
 
 static void set_msh3trg_interface(nb_partition_t *part);
+static void set_msh3trg_main_interface(nb_partition_t *part);
+static void set_msh3trg_drawing_interface(nb_partition_t *part);
+
 static void set_mshquad_interface(nb_partition_t *part);
+static void set_mshquad_main_interface(nb_partition_t *part);
+static void set_mshquad_drawing_interface(nb_partition_t *part);
+
 static void set_mshpoly_interface(nb_partition_t *part);
+static void set_mshpoly_main_interface(nb_partition_t *part);
+static void set_mshpoly_drawing_interface(nb_partition_t *part);
+
 static void set_mshpack_interface(nb_partition_t *part);
+static void set_mshpack_main_interface(nb_partition_t *part);
+static void set_mshpack_drawing_interface(nb_partition_t *part);
 
 static void check_elem_adj(const nb_partition_t *part,
 			   uint32_t **elem_adj, uint32_t elem_id);
@@ -38,7 +48,18 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 				    uint32_t elem_id, uint16_t face_id);
 static bool face_is_the_same(uint32_t n1, uint32_t n2,
 			     uint32_t s1, uint32_t s2);
-static void init_draw_data(draw_data *data, const void *msh);
+static void init_draw_data(draw_data *data,
+			   const nb_partition_t *part,
+			   const void *values,
+			   bool draw_wires);
+
+static void draw(nb_graphics_context_t *g, int width, int height,
+		 const void *draw_data);
+static void set_camera(nb_graphics_context_t *g, int width, int height,
+		       const nb_partition_t *part);
+static void fill(const nb_partition_t *part,
+		 nb_graphics_context_t *g,
+		 const draw_data *data);
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type)
 {
@@ -94,6 +115,12 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 
 static void set_msh3trg_interface(nb_partition_t *part)
 {
+	set_msh3trg_main_interface(part);
+	set_msh3trg_drawing_interface(part);
+}
+
+static void set_msh3trg_main_interface(nb_partition_t *part)
+{
 	part->finish = nb_msh3trg_finish;
 	part->copy = nb_msh3trg_copy;
 	part->clear = nb_msh3trg_clear;
@@ -124,15 +151,33 @@ static void set_msh3trg_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_msh3trg_load_from_mesh;
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
-	part->draw_wires = nb_msh3trg_draw_wires;
-	part->draw_nodal_values = nb_msh3trg_draw_nodal_values;
-	part->draw_elem_values = nb_msh3trg_draw_elem_values;
+	part->distort_with_field = nb_msh3trg_distort_with_field;
 	part->build_model = nb_msh3trg_build_model;
 	part->build_model_disabled_elems =
 		nb_msh3trg_build_model_disabled_elems;
 }
 
+static void set_msh3trg_drawing_interface(nb_partition_t *part)
+{
+	part->di.draw_wires = nb_msh3trg_draw_wires;
+	part->di.draw_boundaries = nb_msh3trg_draw_boundaries;
+	part->di.fill_elems = nb_msh3trg_fill_elems;
+	part->di.fill_elems_field_on_nodes =
+		nb_msh3trg_fill_elems_field_on_nodes;
+	part->di.fill_elems_field_on_elems =
+		nb_msh3trg_fill_elems_field_on_elems;
+	part->di.fill_elems_classes = nb_msh3trg_fill_elems_classes;
+	part->di.fill_nodes = nb_msh3trg_fill_nodes;
+	part->di.fill_nodes_classes = nb_msh3trg_fill_nodes_classes;
+}
+
 static void set_mshquad_interface(nb_partition_t *part)
+{
+	set_mshquad_main_interface(part);
+	set_mshquad_drawing_interface(part);
+}
+
+static void set_mshquad_main_interface(nb_partition_t *part)
 {
 	part->finish = nb_mshquad_finish;
 	part->copy = nb_mshquad_copy;
@@ -164,15 +209,33 @@ static void set_mshquad_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshquad_load_from_mesh;
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
-	part->draw_wires = nb_mshquad_draw_wires;
-	part->draw_nodal_values = nb_mshquad_draw_nodal_values;
-	part->draw_elem_values = nb_mshquad_draw_elem_values;
+	part->distort_with_field = nb_mshquad_distort_with_field;
 	part->build_model = nb_mshquad_build_model;
 	part->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
 }
 
+static void set_mshquad_drawing_interface(nb_partition_t *part)
+{
+	part->di.draw_wires = nb_mshquad_draw_wires;
+	part->di.draw_boundaries = nb_mshquad_draw_boundaries;
+	part->di.fill_elems = nb_mshquad_fill_elems;
+	part->di.fill_elems_field_on_nodes =
+		nb_mshquad_fill_elems_field_on_nodes;
+	part->di.fill_elems_field_on_elems =
+		nb_mshquad_fill_elems_field_on_elems;
+	part->di.fill_elems_classes = nb_mshquad_fill_elems_classes;
+	part->di.fill_nodes = nb_mshquad_fill_nodes;
+	part->di.fill_nodes_classes = nb_mshquad_fill_nodes_classes;
+}
+
 static void set_mshpoly_interface(nb_partition_t *part)
+{
+	set_mshpoly_main_interface(part);
+	set_mshpoly_drawing_interface(part);
+}
+
+static void set_mshpoly_main_interface(nb_partition_t *part)
 {
 	part->finish = nb_mshpoly_finish;
 	part->copy = nb_mshpoly_copy;
@@ -204,15 +267,33 @@ static void set_mshpoly_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshpoly_load_from_mesh;
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
-	part->draw_wires = nb_mshpoly_draw_wires;
-	part->draw_nodal_values = nb_mshpoly_draw_nodal_values;
-	part->draw_elem_values = nb_mshpoly_draw_elem_values;
+	part->distort_with_field = nb_mshpoly_distort_with_field;
 	part->build_model = nb_mshpoly_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
 }
 
+static void set_mshpoly_drawing_interface(nb_partition_t *part)
+{
+	part->di.draw_wires = nb_mshpoly_draw_wires;
+	part->di.draw_boundaries = nb_mshpoly_draw_boundaries;
+	part->di.fill_elems = nb_mshpoly_fill_elems;
+	part->di.fill_elems_field_on_nodes =
+		nb_mshpoly_fill_elems_field_on_nodes;
+	part->di.fill_elems_field_on_elems =
+		nb_mshpoly_fill_elems_field_on_elems;
+	part->di.fill_elems_classes = nb_mshpoly_fill_elems_classes;
+	part->di.fill_nodes = nb_mshpoly_fill_nodes;
+	part->di.fill_nodes_classes = nb_mshpoly_fill_nodes_classes;
+}
+
 static void set_mshpack_interface(nb_partition_t *part)
+{
+	set_mshpack_main_interface(part);
+	set_mshpack_drawing_interface(part);
+}
+
+static void set_mshpack_main_interface(nb_partition_t *part)
 {
 	part->finish = nb_mshpack_finish;
 	part->copy = nb_mshpack_copy;
@@ -244,12 +325,24 @@ static void set_mshpack_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshpack_load_from_mesh;
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
-	part->draw_wires = nb_mshpack_draw_wires;
-	part->draw_nodal_values = nb_mshpack_draw_nodal_values;
-	part->draw_elem_values = nb_mshpack_draw_elem_values;
+	part->distort_with_field = nb_mshpack_distort_with_field;
 	part->build_model = nb_mshpack_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpack_build_model_disabled_elems;
+}
+
+static void set_mshpack_drawing_interface(nb_partition_t *part)
+{
+	part->di.draw_wires = nb_mshpack_draw_wires;
+	part->di.draw_boundaries = nb_mshpack_draw_boundaries;
+	part->di.fill_elems = nb_mshpack_fill_elems;
+	part->di.fill_elems_field_on_nodes =
+		nb_mshpack_fill_elems_field_on_nodes;
+	part->di.fill_elems_field_on_elems =
+		nb_mshpack_fill_elems_field_on_elems;
+	part->di.fill_elems_classes = nb_mshpack_fill_elems_classes;
+	part->di.fill_nodes = nb_mshpack_fill_nodes;
+	part->di.fill_nodes_classes = nb_mshpack_fill_nodes_classes;
 }
 
 void nb_partition_copy(nb_partition_t *part, const nb_partition_t* srcpart)
@@ -293,18 +386,6 @@ void nb_partition_destroy(nb_partition_t* part)
 nb_partition_type nb_partition_get_type(const nb_partition_t *part)
 {
 	return part->type;
-}
-
-double nb_partition_distort_with_nodal_field(nb_partition_t *part,
-					     double *disp, double max_disp)
-{
-	return part->distort_with_nodal_field(part->msh, disp, max_disp);
-}
-
-double nb_partition_distort_with_elem_field(nb_partition_t *part,
-					    double *disp, double max_disp)
-{
-	return part->distort_with_elem_field(part->msh, disp, max_disp);
 }
 
 uint32_t nb_partition_get_N_invtx(const nb_partition_t *part)
@@ -536,86 +617,119 @@ bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 	return part->is_vtx_inside(part->msh, x, y);
 }
 
-void nb_partition_draw(const nb_partition_t *part, const char *filename,
-		       int width, int height, double *values,
-		       nb_partition_draw_type draw_type)
+double nb_partition_distort_with_field(nb_partition_t *part,
+				       nb_partition_entity field_entity,
+				       double *disp, double max_disp)
 {
-	draw_data data;
-	init_draw_data(&data, part->msh);
-
-	nb_graphics_export(filename, width, height,
-			   part->draw_wires, &draw_data);
+	return part->distort_with_field(part->msh, field_entity,
+					disp, max_disp);
 }
 
-static void init_draw_data(draw_data *data, const void *msh)
-{
-	data->msh = msh;
-	data->rgb_bg = NB_ULTRALIGHT_GRAY;
-	data->rgb_wire = NB_LIGHT_PURPLE;
-	data->rgb_bound = NB_PURPLE;
-	data->rgb_elem = NB_LIGHT_BLUE;
-	data->palette = NB_RAINBOW;
-	data->color_class[0] = NB_BLUE;
-	data->color_class[1] = NB_RED;
-	data->color_class[2] = NB_VIOLET;
-	data->color_class[3] = NB_AZURE;
-	data->color_class[4] = NB_GREEN;
-	data->color_class[5] = NB_YELLOW;
-	data->color_class[6] = NB_ROSE;
-	data->color_class[7] = NB_CHARTREUSE;
-	data->color_class[8] = NB_LIGHT_GRAY;
-	data->color_class[9] = NB_AQUAMARIN;
-}
-
-void nb_partition_draw_nodal_values(const nb_partition_t *part,
-				    const char *filename,
-				    int width, int height,
-				    const double *values,
-				    bool draw_wires)
+void nb_partition_export_draw(const nb_partition_t *part,
+			      const char *filename,
+			      int width, int height,
+			      nb_partition_entity vals_entity,
+			      nb_partition_array_type vals_type,
+			      const void *values,
+			      bool draw_wires)
 {
 	draw_data data;
-	init_draw_data(&data, part->msh);
+	init_draw_data(&data, part, vals_entity,
+		       vals_type, values, draw_wires);
+
 
 	nb_graphics_export(filename, width, height,
-			   part->draw_nodal_values, &draw_data);
+			   draw, &draw_data);
 }
 
-void nb_partition_draw_elem_values(const nb_partition_t *part,
-				   const char *filename,
-				   int width, int height,
-				   const double *values,
-				   bool draw_wires)
+static void init_draw_data(draw_data *data,
+			   const nb_partition_t *part,
+			   nb_partition_entity vals_entity,
+			   nb_partition_array_type vals_type,
+			   const void *values,
+			   bool draw_wires)
 {
-	draw_data data;
-	init_draw_data(&data, part->msh);
-
-	nb_graphics_export(filename, width, height,
-			   part->draw_elem_values, &draw_data);
+	data->part = part;
+	data->values = values;
+	data->vals_entity = vals_entity;
+	data->vals_type = vals_type;
+	data->draw_wires = draw_wires;
 }
 
-void nb_partition_draw_nodal_class(const nb_partition_t *part,
-				   const char *filename,
-				   int width, int height,
-				   const uin8_t *class)
+static void draw(nb_graphics_context_t *g, int width, int height,
+		 const void *draw_data)
 {
-	draw_data data;
-	init_draw_data(&data, part->msh);
+	const nb_partition_draw_data *data = draw_data;
+	const nb_partition_t *part = data->part;
 
-	nb_graphics_export(filename, width, height,
-			   part->draw_nodal_class, &draw_data);
+	if (!nb_graphics_is_camera_enabled(g))
+		set_camera(g, width, height, part);
+
+	fill(part, g, data);
+
+	if (data->draw_wires) {
+		nb_graphics_set_source(g, NB_LIGHT_PURPLE);
+		nb_graphics_set_line_width(g, 0.5);
+		part->di.draw_wires(part->msh, g);
+	}
+
+	nb_graphics_set_source(g, NB_PURPLE);
+	nb_graphics_set_line_width(g, 1.5);
+	part->di.draw_boundaries(part->msh, g);
 }
 
-void nb_partition_draw_elem_class(const nb_partition_t *part,
-				  const char *filename,
-				  int width, int height,
-				  const uint8_t class,
-				  bool draw_wires)
+static void set_camera(nb_graphics_context_t *g, int width, int height,
+		       const nb_partition_t *part)
 {
-	draw_data data;
-	init_draw_data(&data, part->msh);
+	double box[4];
+	part->get_enveloping_box(part->msh, box);
 
-	nb_graphics_export(filename, width, height,
-			   part->draw_elem_class, &draw_data);
+	nb_graphics_enable_camera(g);
+	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+	nb_graphics_cam_fit_box(cam, box, width, height);
+}
+
+static void fill(const nb_partition_t *part,
+		 nb_graphics_context_t *g,
+		 const draw_data *data)
+{
+	void **source_data = alloca(2 * sizeof(void*));
+	uint32_t minmax[2];
+	source_data[0] = data->values;
+	source_data[1] = minmax;
+	init_source_data(part, data, source_data);
+
+	void *set_source = get_source_function(data);
+
+	part->di.fill_elems(part->msh, g, source_data,
+			    set_source);
+}
+
+static void init_source_data(const nb_partition_t *part,
+			     const draw_data *data)
+{
+	uint32_t *min_id;
+	uint32_t *max_id;
+	double *values = data->values;
+	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	vcn_array_get_min_max_ids(values, N_nod, sizeof(*results),
+				  vcn_compare_double, min_id, max_id);
+	
+}
+
+static void d()
+{
+	nb_graphics_color_t color[10];
+	color[0] = NB_BLUE;
+	color[1] = NB_RED;
+	color[2] = NB_VIOLET;
+	color[3] = NB_AZURE;
+	color[4] = NB_GREEN;
+	color[5] = NB_YELLOW;
+	color[6] = NB_ROSE;
+	color[7] = NB_CHARTREUSE;
+	color[8] = NB_LIGHT_GRAY;
+	color[9] = NB_AQUAMARIN;
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

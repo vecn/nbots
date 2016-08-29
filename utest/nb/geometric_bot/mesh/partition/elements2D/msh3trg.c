@@ -12,9 +12,9 @@ static int suite_clean(void);
 
 static void test_load_from_mesh(void);
 
-void cunit_nb_geometric_bot_mesh_elements2D_triangles(void)
+void cunit_nb_msh3trg(void)
 {
-	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/elements2D/triangles.c",
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/partition/elements2D/msh3trg.c",
 				       suite_init, suite_clean);
 	CU_add_test(suite, "load_from_mesh()", test_load_from_mesh);
 }

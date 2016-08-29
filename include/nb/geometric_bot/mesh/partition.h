@@ -5,6 +5,7 @@
 
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
 
 typedef enum {
 	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
@@ -22,25 +23,6 @@ void nb_partition_clear(nb_partition_t* part);
 void nb_partition_destroy(nb_partition_t* part);
 
 nb_partition_type nb_partition_get_type(const nb_partition_t *part);
-
-void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
-					     uint8_t N_comp,
-					     const double *elem_values,
-					     double *nodal_values);
-void nb_partition_extrapolate_elem_points_to_nodes
-			(const nb_partition_t *part,
-			 uint8_t N_comp,
-			 const double *elem_values,
-			 double *nodal_values,
-			 void (*assemble_elem)(const nb_partition_t *part,
-					       uint8_t N_comp,
-					       const double *elem_values,
-					       uint32_t elem_id,
-					       double *F, double *M));
-double nb_partition_distort_with_nodal_field(nb_partition_t *part,
-					     double *disp, double max_disp);
-double nb_partition_distort_with_elem_field(nb_partition_t *part,
-					    double *disp, double max_disp);
 
 uint32_t nb_partition_get_N_invtx(const nb_partition_t *part);
 uint32_t nb_partition_get_N_insgm(const nb_partition_t *part);
@@ -95,27 +77,32 @@ void nb_partition_get_enveloping_box(const nb_partition_t *part,
 				     double box[4]);
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 				double x, double y);
-void nb_partition_draw_wires(const nb_partition_t *part, const char *filename,
-			     int width, int height);
-void nb_partition_draw_nodal_values(const nb_partition_t *part,
-				    const char *filename,
-				    int width, int height,
-				    const double *values,
-				    bool draw_wires);
-void nb_partition_draw_elem_values(const nb_partition_t *part,
-				   const char *filename,
-				   int width, int height,
-				   const double *values,
-				   bool draw_wires);
-void nb_partition_draw_nodal_class(const nb_partition_t *part,
-				   const char *filename,
-				   int width, int height,
-				   const uin8_t *class);
-void nb_partition_draw_elem_class(const nb_partition_t *part,
-				  const char *filename,
-				  int width, int height,
-				  const uint8_t class,
-				  bool draw_wires);
+void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
+					     uint8_t N_comp,
+					     const double *elem_values,
+					     double *nodal_values);
+void nb_partition_extrapolate_elem_points_to_nodes
+			(const nb_partition_t *part,
+			 uint8_t N_comp,
+			 const double *elem_values,
+			 double *nodal_values,
+			 void (*assemble_elem)(const nb_partition_t *part,
+					       uint8_t N_comp,
+					       const double *elem_values,
+					       uint32_t elem_id,
+					       double *F, double *M));
+double nb_partition_distort_with_field(nb_partition_t *part,
+				       nb_partition_entity field_type,
+				       double *disp, double max_disp);
+
+void nb_partition_export_draw(const nb_partition_t *part,
+			      const char *filename,
+			      int width, int height,
+			      nb_partition_entity vals_entity,
+			      nb_partition_array_type vals_type,
+			      const void *values,
+			      bool draw_wires);
+
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
 
 /**

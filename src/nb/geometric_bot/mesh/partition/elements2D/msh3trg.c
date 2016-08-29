@@ -4,13 +4,12 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/elements2D/triangles.h"
-#include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
+#include "nb/geometric_bot/mesh/partition/msh3trg.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "../mesh2D_structs.h"
@@ -378,6 +377,14 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 		}
 	}
 	return is_inside;
+}
+
+double nb_msh3trg_distort_with_field(void *msh,
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp)
+{
+	return 0;/* PENDING */
 }
 
 void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)

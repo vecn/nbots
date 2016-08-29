@@ -1,11 +1,13 @@
-#ifndef __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_POLYGONS_H__
-#define __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_POLYGONS_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSHPOLY_H__
+#define __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSHPOLY_H__
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/graph_bot.h"
+#include "nb/geometric_bot/model/model2D.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
 
 typedef struct nb_mshpoly_s nb_mshpoly_t;
 
@@ -58,16 +60,11 @@ void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpoly_is_vtx_inside(const void *msh, double x, double y);
 
-void nb_mshpoly_draw_wires(const void *msh3trg_ptr, const char* filename,
-			   int width, int height);
-void nb_mshpoly_draw_nodal_values(const void *msh3trg_ptr,
-				  const char* filename,
-				  int width, int height,
-				  double *values);
-void nb_mshpoly_draw_elem_values(const void *msh3trg_ptr,
-				 const char* filename,
-				 int width, int height,
-				 double *values);
+double nb_mshpoly_distort_with_field(void *msh, 
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp);
+
 void nb_mshpoly_build_model(const void *msh, nb_model_t *model);
 void nb_mshpoly_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

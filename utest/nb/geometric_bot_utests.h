@@ -9,9 +9,9 @@ void cunit_nb_geometric_bot_dewall(void);
 void cunit_nb_geometric_bot_constrained_delaunay(void);
 void cunit_nb_geometric_bot_mesh2D(void);
 void cunit_nb_geometric_bot_mesh2D_image_density(void);
-void cunit_nb_geometric_bot_mesh_elements2D_triangles(void);
-void cunit_nb_geometric_bot_mesh_elements2D_quad(void);
-void cunit_nb_geometric_bot_mesh_elements2D_poly(void);
+void cunit_nb_msh3trg(void);
+void cunit_nb_mshquad(void);
+void cunit_nb_mshpoly(void);
 void cunit_nb_geometric_bot_model2D_clipper(void);
 void cunit_nb_geometric_bot_model2D_verifier(void);
 

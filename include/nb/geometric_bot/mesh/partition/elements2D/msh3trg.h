@@ -1,10 +1,13 @@
-#ifndef __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_H__
-#define __NB_GEOMETRIC_BOT_MESH_ELEMENTS2D_TRIANGLES_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSH3TRG_H__
+#define __NB_GEOMETRIC_BOT_MESH_PARTITION_ELEMENTS2D_MSH3TRG_H__
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "nb/geometric_bot/mesh/mesh2D.h"
+
 #include "nb/graph_bot.h"
+#include "nb/geometric_bot/model/model2D.h"
+#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
 
 typedef struct nb_msh3trg_s nb_msh3trg_t;
 
@@ -75,32 +78,10 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr, double box[4]);
 
 bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
 
-void nb_msh3trg_draw_wires(const void *msh3trg_ptr, const char* filename,
-			   int width, int height);
-void nb_msh3trg_draw_nodal_values(const void *msh3trg_ptr,
-				  const char* filename,
-				  int width, int height,
-				  double *values);
-void nb_msh3trg_draw_elem_values(const void *msh3trg_ptr,
-				 const char* filename,
-				 int width, int height,
-				 double *values);
-
-/**
- * @brief Export a PNG image of the partition ans its subdomains.
- * @param[in] part Partition to be displayed.
- * @param[in] k_part Number of partitions.
- * @param[in] part Partition corresponding to the vertex.
- * @param[in] filename Name of the image file.
- * @param[in] width Image width.
- * @param[in] height Image height.
- * @param[in] k_to_draw Partition to draw. Zero to draw all of them.
- * @param[in] scale_partitions Scale of the size of the partitions, in (0,1].
- */
-void nb_msh3trg_draw_subdomain(const void *msh3trg_ptr,
-			       const char* filename, int width, int height,
-			       uint32_t k_part, const uint32_t *const part,
-			       uint32_t k_to_draw, double scale_subdomains);
+double nb_msh3trg_distort_with_field(void *msh, 
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp);
 
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model);
 
@@ -109,4 +90,5 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 					   nb_model_t *model,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
+
 #endif
