@@ -315,21 +315,21 @@ static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
 		uint32_t id3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
 		
 		double v1[2];
-		v1[0] = nb_msh3trg_get_x_node(msh3trg, id1);
-		v1[1] = nb_msh3trg_get_y_node(msh3trg, id1);
+		v1[0] = nb_msh3trg_node_get_x(msh3trg, id1);
+		v1[1] = nb_msh3trg_node_get_y(msh3trg, id1);
 		double v2[2];
-		v2[0] = nb_msh3trg_get_x_node(msh3trg, id2);
-		v2[1] = nb_msh3trg_get_y_node(msh3trg, id2);
+		v2[0] = nb_msh3trg_node_get_x(msh3trg, id2);
+		v2[1] = nb_msh3trg_node_get_y(msh3trg, id2);
 		double v3[2];
-		v3[0] = nb_msh3trg_get_x_node(msh3trg, id3);
-		v3[1] = nb_msh3trg_get_y_node(msh3trg, id3);
+		v3[0] = nb_msh3trg_node_get_x(msh3trg, id3);
+		v3[1] = nb_msh3trg_node_get_y(msh3trg, id3);
 
 		uint32_t N_nodes = nb_msh3trg_get_N_nodes(msh3trg);
 		for (uint32_t j = 0; j < N_nodes; j++) {
 			if (id1 != j && id2 != j && id3 != j) {
 				double p[2];
-				p[0] = nb_msh3trg_get_x_node(msh3trg, id3);
-				p[1] = nb_msh3trg_get_y_node(msh3trg, id3);
+				p[0] = nb_msh3trg_node_get_x(msh3trg, id3);
+				p[1] = nb_msh3trg_node_get_y(msh3trg, id3);
 				if (is_not_constrained(v1, v2, v3, p, input)) {
 					all_delaunay = false;
 					break;

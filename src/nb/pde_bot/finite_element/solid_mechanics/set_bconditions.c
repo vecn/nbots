@@ -90,24 +90,24 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 
-	uint32_t v1_id = nb_partition_get_node_x_insgm(part, model_id, 0);
+	uint32_t v1_id = nb_partition_insgm_get_node(part, model_id, 0);
 	double x[2];
-	x[0] = nb_partition_get_x_node(part, v1_id);
-	x[1] = nb_partition_get_y_node(part, v1_id);
+	x[0] = nb_partition_node_get_x(part, v1_id);
+	x[1] = nb_partition_node_get_y(part, v1_id);
 	double *val1 = alloca(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val1);
 
 	double *val2 = alloca(N_dof * sizeof(double));
 
-	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
+	uint32_t N = nb_partition_insgm_get_N_nodes(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
 			nb_partition_insgm_subsgm_get_length(part, model_id, i);
 		
-		uint32_t v2_id = nb_partition_get_node_x_insgm(part, model_id,
+		uint32_t v2_id = nb_partition_insgm_get_node(part, model_id,
 							       i + 1);
-		x[0] = nb_partition_get_x_node(part, v2_id);
-		x[1] = nb_partition_get_y_node(part, v2_id);
+		x[0] = nb_partition_node_get_x(part, v2_id);
+		x[1] = nb_partition_node_get_y(part, v2_id);
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val2);
 
 		for (uint8_t j = 0; j < N_dof; j++) {
@@ -137,18 +137,15 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 	double sgm_length = nb_partition_insgm_get_length(part, model_id);
 
-	uint32_t N = nb_partition_get_N_nodes_x_insgm(part, model_id);
+	uint32_t N = nb_partition_insgm_get_N_nodes(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
 			nb_partition_insgm_subsgm_get_length(part, model_id, i);
 		double w = subsgm_length / sgm_length;
 
-		uint32_t v1_id = nb_partition_get_node_x_insgm(part,
-							       model_id,
-							       i);
-		uint32_t v2_id = nb_partition_get_node_x_insgm(part,
-							       model_id,
-							       i + 1);
+		uint32_t v1_id = nb_partition_insgm_get_node(part, model_id, i);
+		uint32_t v2_id = nb_partition_insgm_get_node(part, model_id,
+							     i + 1);
 
 		set_neumann(part, N_dof, F, factor * w * 0.5, iter, v1_id);
 		set_neumann(part, N_dof, F, factor * w * 0.5, iter, v2_id);
@@ -207,10 +204,10 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = nb_partition_get_N_nodes_x_insgm(part, sgm_id);
+		uint32_t N = nb_partition_insgm_get_N_nodes(part, sgm_id);
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t nid = 
-				nb_partition_get_node_x_insgm(part, sgm_id, i);
+				nb_partition_insgm_get_node(part, sgm_id, i);
 			set_dirichlet(part, K, N_dof, F, factor,
 				      iter, nid);
 		}
@@ -225,8 +222,8 @@ static void set_dirichlet(const nb_partition_t *part,
 			  uint32_t vtx_id)
 {
 	double x[2];
-	x[0] = nb_partition_get_x_node(part, vtx_id);
-	x[1] = nb_partition_get_y_node(part, vtx_id);
+	x[0] = nb_partition_node_get_x(part, vtx_id);
+	x[1] = nb_partition_node_get_y(part, vtx_id);
 
 	double *val = alloca(N_dof * sizeof(*val));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);

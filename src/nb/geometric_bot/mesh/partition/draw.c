@@ -5,6 +5,8 @@
 #include "nb/graphics_bot.h"
 
 #include "nb/memory_bot.h"
+#include "nb/container_bot.h"
+#include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
 #include "nb/geometric_bot/mesh/partition/draw.h"
@@ -16,7 +18,15 @@ typedef struct {
 	nb_partition_entity vals_entity;
 	nb_partition_array_type vals_type;
 	bool draw_wires;
-} draw_data;
+} nb_partition_draw_data;
+
+
+static void init_draw_data(nb_partition_draw_data *data,
+			   const nb_partition_t *part,
+			   nb_partition_entity vals_entity,
+			   nb_partition_array_type vals_type,
+			   const void *values,
+			   bool draw_wires);
 
 static void draw(nb_graphics_context_t *g, int width, int height,
 		 const void *draw_data);
@@ -24,7 +34,7 @@ static void set_camera(nb_graphics_context_t *g, int width, int height,
 		       const nb_partition_t *part);
 static void fill(const nb_partition_t *part,
 		 nb_graphics_context_t *g,
-		 const draw_data *data);
+		 const nb_partition_draw_data *data);
 
 static void fill_elems_field_on_nodes(const nb_partition_t *part,
 				      nb_graphics_context_t *g,
@@ -59,16 +69,15 @@ void nb_partition_export_draw(const nb_partition_t *part,
 			      const void *values,
 			      bool draw_wires)
 {
-	draw_data data;
+	nb_partition_draw_data data;
 	init_draw_data(&data, part, vals_entity,
 		       vals_type, values, draw_wires);
 
-
 	nb_graphics_export(filename, width, height,
-			   draw, &draw_data);
+			   draw, &data);
 }
 
-static void init_draw_data(draw_data *data,
+static void init_draw_data(nb_partition_draw_data *data,
 			   const nb_partition_t *part,
 			   nb_partition_entity vals_entity,
 			   nb_partition_array_type vals_type,
@@ -115,7 +124,7 @@ static void set_camera(nb_graphics_context_t *g, int width, int height,
 
 static void fill(const nb_partition_t *part,
 		 nb_graphics_context_t *g,
-		 const draw_data *data)
+		 const nb_partition_draw_data *data)
 {
 	nb_partition_entity enty = data->vals_entity;
 	nb_partition_array_type type = data->vals_type;
@@ -145,7 +154,7 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 	
 	part->di.fill_elems_field_on_nodes(part->msh, g,
 					   normalized_values,
-					   NB_PALETTE_RAINBOW);
+					   NB_RAINBOW);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -177,7 +186,7 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 	
 	part->di.fill_elems_field_on_elems(part->msh, g,
 					   normalized_values,
-					   NB_PALETTE_RAINBOW);
+					   NB_RAINBOW);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -208,7 +217,7 @@ static void set_class_colors(nb_graphics_color_t color[10])
 static void fill_elems(const nb_partition_t *part,
 		       nb_graphics_context_t *g)
 {
-	nb_graphics_set_color(g, NB_LIGHT_BLUE);
+	nb_graphics_set_source(g, NB_LIGHT_BLUE);
 	part->di.fill_elems(part->msh, g);
 }
 

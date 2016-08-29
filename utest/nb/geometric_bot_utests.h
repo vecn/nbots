@@ -25,9 +25,9 @@ static void cunit_suites_nb_geometric_bot(void)
 	cunit_nb_geometric_bot_constrained_delaunay();
 	cunit_nb_geometric_bot_mesh2D();
 	cunit_nb_geometric_bot_mesh2D_image_density();
-	cunit_nb_geometric_bot_mesh_elements2D_triangles();
-	cunit_nb_geometric_bot_mesh_elements2D_quad();
-	cunit_nb_geometric_bot_mesh_elements2D_poly();
+	cunit_nb_msh3trg();
+	cunit_nb_mshquad();
+	cunit_nb_mshpoly();
 	cunit_nb_geometric_bot_model2D_clipper();
 	cunit_nb_geometric_bot_model2D_verifier();
 }

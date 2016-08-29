@@ -638,12 +638,12 @@ static double get_clfd(const nb_partition_t *part, uint32_t id_elem)
 	uint32_t n1 = nb_partition_elem_get_adj(part, id_elem, 0);
 	uint32_t n2 = nb_partition_elem_get_adj(part, id_elem, 1);
 	uint32_t n3 = nb_partition_elem_get_adj(part, id_elem, 2);
-	double x1 = nb_partition_get_x_node(part, n1);
-	double y1 = nb_partition_get_y_node(part, n1);
-	double x2 = nb_partition_get_x_node(part, n2);
-	double y2 = nb_partition_get_y_node(part, n2);
-	double x3 = nb_partition_get_x_node(part, n3);
-	double y3 = nb_partition_get_y_node(part, n3);
+	double x1 = nb_partition_node_get_x(part, n1);
+	double y1 = nb_partition_node_get_y(part, n1);
+	double x2 = nb_partition_node_get_x(part, n2);
+	double y2 = nb_partition_node_get_y(part, n2);
+	double x3 = nb_partition_node_get_x(part, n3);
+	double y3 = nb_partition_node_get_y(part, n3);
 	return sqrt((x2 - x1) * (y3 - y1) -
 		    (y2 - y1) * (x3 - x1));
 }

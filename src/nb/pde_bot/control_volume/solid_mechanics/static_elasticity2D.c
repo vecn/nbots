@@ -198,11 +198,11 @@ static void integrate_inface(uint32_t elem_id, uint16_t face_id,
 	uint32_t j = nb_partition_elem_get_ngb(part, elem_id, face_id);
 
 	double xi[2];
-	xi[0] = nb_partition_get_x_elem(part, i);
-	xi[1] = nb_partition_get_y_elem(part, i);
+	xi[0] = nb_partition_elem_get_x(part, i);
+	xi[1] = nb_partition_elem_get_y(part, i);
 	double xj[2];
-	xj[0] = nb_partition_get_x_elem(part, j);
-	xj[1] = nb_partition_get_y_elem(part, j);
+	xj[0] = nb_partition_elem_get_x(part, j);
+	xj[1] = nb_partition_elem_get_y(part, j);
 	
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);

@@ -8,9 +8,9 @@
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/elements2D/trg_exporter.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
 
-#include "../mesh2D_structs.h"
+#include "../../mesh2D_structs.h"
 
 static void export_vertices(const vcn_mesh_t *const mesh,
 			    nb_trg_exporter_interface_t *exp);

@@ -28,15 +28,15 @@ static void subarea_clear(void *subarea_ptr);
 static int8_t subarea_compare_size(const void *subarea1_ptr,
 				   const void *subarea2_ptr);
 
-static void group_trg_by_areas(const vcn_mesh_t *const mesh,
+static void group_trg_by_areas(const nb_mesh_t *const mesh,
 			       nb_container_t *areas);
-static double* get_centroids(const vcn_mesh_t *mesh,
+static double* get_centroids(const nb_mesh_t *mesh,
 			     nb_container_t *areas, uint32_t *N_centroids);
-static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
+static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 				      nb_container_t *areas,
 				      uint32_t *N_centroids);
 static bool area_is_enclosed(const nb_container_t *area_trg);
-static void calculate_area_centroid(const vcn_mesh_t *mesh,
+static void calculate_area_centroid(const nb_mesh_t *mesh,
 				    nb_container_t *area_trg,
 				    double centroid[2]);
 static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
@@ -48,12 +48,12 @@ static double spread_infection(msh_trg_t* trg_infected,
 
 static int8_t compare_area1_isGreaterThan_area2(const void *const  a1,
 						const void *const  a2);
-static void get_useful_vtx(const vcn_mesh_t *mesh, nb_container_t *useful_vtx);
-static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx);
-static void get_unused_vtx(const vcn_mesh_t *mesh,
+static void get_useful_vtx(const nb_mesh_t *mesh, nb_container_t *useful_vtx);
+static void delete_unused_vtx(nb_mesh_t *mesh, nb_container_t *useful_vtx);
+static void get_unused_vtx(const nb_mesh_t *mesh,
 			   const nb_container_t *useful_vtx,
 			   nb_container_t *unused_vtx);
-static void update_input_array(vcn_mesh_t *mesh, const msh_vtx_t *vtx);
+static void update_input_array(nb_mesh_t *mesh, const msh_vtx_t *vtx);
 static uint16_t get_N_areas(const nb_mesh_t *mesh,
 			    bool block_with_input_sgm);
 static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
@@ -107,7 +107,7 @@ static int8_t subarea_compare_size(const void *subarea1_ptr,
 	return out;
 }
 
-double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
+double* vcn_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -123,7 +123,7 @@ double* vcn_mesh_get_centroids_of_subareas(const vcn_mesh_t *const mesh,
 	return centroids;
 }
 
-static void group_trg_by_areas(const vcn_mesh_t *const mesh,
+static void group_trg_by_areas(const nb_mesh_t *const mesh,
 			       nb_container_t *areas)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
@@ -143,7 +143,7 @@ static void group_trg_by_areas(const vcn_mesh_t *const mesh,
 	uninfect((nb_mesh_t*)mesh);
 }
 
-static double* get_centroids(const vcn_mesh_t *mesh,
+static double* get_centroids(const nb_mesh_t *mesh,
 			     nb_container_t *areas, uint32_t *N_centroids)
 {
 	*N_centroids = nb_container_get_length(areas);
@@ -163,7 +163,7 @@ static double* get_centroids(const vcn_mesh_t *mesh,
 }
 
 
-static void calculate_area_centroid(const vcn_mesh_t *mesh,
+static void calculate_area_centroid(const nb_mesh_t *mesh,
 				    nb_container_t *area_trg,
 				    double centroid[2])
 {
@@ -275,7 +275,7 @@ static int8_t compare_area1_isGreaterThan_area2
 		return 0;
 }
 
-double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
+double* vcn_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
 						  uint32_t* N_centroids)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -292,7 +292,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const vcn_mesh_t *const mesh,
 	return centroids;
 }
 
-static double* get_centroids_if_enclosed(const vcn_mesh_t *mesh,
+static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 					 nb_container_t *areas,
 					 uint32_t *N_centroids)
 {
@@ -344,7 +344,7 @@ static bool area_is_enclosed(const nb_container_t *area_trg)
 	return out;
 }
 
-double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
+double vcn_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 				     double* area_removed)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -410,7 +410,7 @@ double vcn_mesh_clear_enveloped_areas(vcn_mesh_t* mesh,
 	return ret_val;
 }
 
-double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
+double vcn_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 					    double* area_removed)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -475,7 +475,7 @@ double vcn_mesh_keep_biggest_continuum_area(vcn_mesh_t* mesh,
 	return ret_val;
 }
 
-uint32_t vcn_mesh_delete_isolated_segments(vcn_mesh_t *const restrict mesh)
+uint32_t vcn_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
 {
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -498,7 +498,7 @@ uint32_t vcn_mesh_delete_isolated_segments(vcn_mesh_t *const restrict mesh)
 	return removed;
 }
 
-uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh)
+uint32_t vcn_mesh_delete_internal_input_segments(nb_mesh_t *const restrict mesh)
 {
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -518,7 +518,7 @@ uint32_t vcn_mesh_delete_internal_input_segments(vcn_mesh_t *const restrict mesh
 	return removed;
 }
 
-uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
+uint32_t vcn_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
 {
 	nb_container_t* useful_vtx =
 		alloca(nb_container_get_memsize(NB_SORTED));
@@ -533,7 +533,7 @@ uint32_t vcn_mesh_delete_isolated_vertices(vcn_mesh_t* mesh)
 	return length - vcn_bins2D_get_length(mesh->ug_vtx);
 }
 
-static void get_useful_vtx(const vcn_mesh_t *mesh, nb_container_t *useful_vtx)
+static void get_useful_vtx(const nb_mesh_t *mesh, nb_container_t *useful_vtx)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
@@ -547,7 +547,7 @@ static void get_useful_vtx(const vcn_mesh_t *mesh, nb_container_t *useful_vtx)
 	nb_iterator_finish(iter);
 }
 
-static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx)
+static void delete_unused_vtx(nb_mesh_t *mesh, nb_container_t *useful_vtx)
 {
 	nb_container_t *unused_vtx = alloca(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(unused_vtx, NB_QUEUE);
@@ -563,7 +563,7 @@ static void delete_unused_vtx(vcn_mesh_t *mesh, nb_container_t *useful_vtx)
 	nb_container_finish(unused_vtx);
 }
 
-static void get_unused_vtx(const vcn_mesh_t *mesh,
+static void get_unused_vtx(const nb_mesh_t *mesh,
 			   const nb_container_t *useful_vtx,
 			   nb_container_t *unused_vtx)
 {
@@ -579,7 +579,7 @@ static void get_unused_vtx(const vcn_mesh_t *mesh,
 	vcn_bins2D_iter_finish(iter);
 }
 
-static void update_input_array(vcn_mesh_t *mesh, const msh_vtx_t *vtx)
+static void update_input_array(nb_mesh_t *mesh, const msh_vtx_t *vtx)
 {
 	if (mvtx_is_type_origin(vtx, INPUT)) {
 		for (uint32_t i = 0; i < mesh->N_input_vtx; i++) {
@@ -593,13 +593,13 @@ EXIT:
 	return;
 }
 
-bool vcn_mesh_is_continuum(const vcn_mesh_t *mesh)
+bool vcn_mesh_is_continuum(const nb_mesh_t *mesh)
 {
 	uint16_t N = vcn_mesh_get_N_continuum_areas(mesh);
 	return (N == 1);
 }
 
-inline uint16_t vcn_mesh_get_N_subareas(const vcn_mesh_t *mesh)
+inline uint16_t vcn_mesh_get_N_subareas(const nb_mesh_t *mesh)
 {
 	return get_N_areas(mesh, true);
 }
@@ -645,7 +645,7 @@ static void uninfect(nb_mesh_t *mesh)
 	nb_iterator_finish(iter);	
 }
 
-uint16_t nb_mesh_get_subareas(const vcn_mesh_t *mesh, uint16_t *area_id)
+uint16_t nb_mesh_get_subareas(const nb_mesh_t *mesh, uint16_t *area_id)
 {	
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
@@ -686,7 +686,7 @@ static void set_id_to_trg_in_area(const nb_mesh_t *mesh,
 
 }
 
-inline uint16_t vcn_mesh_get_N_continuum_areas(const vcn_mesh_t *mesh)
+inline uint16_t vcn_mesh_get_N_continuum_areas(const nb_mesh_t *mesh)
 {
 	return get_N_areas(mesh, false);
 }

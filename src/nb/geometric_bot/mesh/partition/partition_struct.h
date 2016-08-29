@@ -4,7 +4,35 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct drawing_interface_s drawing_interface;
+#include "nb/graphics_bot.h"
+
+typedef struct {
+	void (*draw_wires)(const void *msh,
+			   nb_graphics_context_t *g);
+	void (*draw_boundaries)(const void *msh,
+				nb_graphics_context_t *g);
+	void (*fill_elems)(const void *msh,
+			   nb_graphics_context_t *g);
+	void (*fill_elems_field_on_nodes)(const void *msh,
+					  nb_graphics_context_t *g,
+					  const double *normalized_field,
+					  nb_graphics_palette_preset palette);
+	void (*fill_elems_field_on_elems)(const void *msh,
+					  nb_graphics_context_t *g,
+					  const double *normalized_field,
+					  nb_graphics_palette_preset palette);
+	void (*fill_elems_classes)(const void *msh,
+				   nb_graphics_context_t *g,
+				   const uint8_t *class, uint8_t N_colors,
+				   const nb_graphics_color_t *colors);
+	void (*fill_nodes)(const void *msh,
+			   nb_graphics_context_t *g);
+	void (*fill_nodes_classes)(const void *msh,
+				   nb_graphics_context_t *g,
+				   const uint8_t *class, uint8_t N_colors,
+				   const nb_graphics_color_t *colors);
+			  
+} nb_partition_drawing_i;
 
 struct nb_partition_s {
 	void *msh;
@@ -56,35 +84,7 @@ struct nb_partition_s {
 					   nb_model_t *model,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
-	drawing_interface di;
-};
-
-struct drawing_interface_s {
-	void (*draw_wires)(const void *msh,
-			   nb_graphics_context_t *g);
-	void (*draw_boundaries)(const void *msh,
-				nb_graphics_context_t *g);
-	void (*fill_elems)(const void *msh,
-			   nb_graphics_context_t *g);
-	void (*fill_elems_field_on_nodes)(const void *msh,
-					  nb_graphics_context_t *g,
-					  const double *normalized_field,
-					  nb_graphics_palette_preset palette);
-	void (*fill_elems_field_on_elems)(const void *msh,
-					  nb_graphics_context_t *g,
-					  const double *normalized_field,
-					  nb_graphics_palette_preset palette);
-	void (*fill_elems_classes)(const void *msh,
-				   nb_graphics_context_t *g,
-				   const uint8_t *class, uint8_t N_colors,
-				   const nb_graphics_color_t *colors);
-	void (*fill_nodes)(const void *msh,
-			   nb_graphics_context_t *g);
-	void (*fill_nodes_classes)(const void *msh,
-				   nb_graphics_context_t *g,
-				   const uint8_t *class, uint8_t N_colors,
-				   const nb_graphics_color_t *colors);
-			  
+	nb_partition_drawing_i di;
 };
 
 #endif

@@ -13,10 +13,10 @@
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
-#include "nb/geometric_bot/mesh/elements2D/polygons.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly.h"
 
-#include "../mesh2D_structs.h"
-#include "../ruppert/ruppert.h"
+#include "../../mesh2D_structs.h"
+#include "../../ruppert/ruppert.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -442,13 +442,13 @@ uint32_t nb_mshpoly_edge_get_2n(const void *msh, uint32_t id)
 	return poly->edg[id*2+1];
 }
 
-double nb_mshpoly_get_x_elem(const void *msh, uint32_t id)
+double nb_mshpoly_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->cen[id * 2];
 }
 
-double nb_mshpoly_get_y_elem(const void *msh, uint32_t id)
+double nb_mshpoly_elem_get_y(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->cen[id*2+1];
@@ -537,6 +537,14 @@ uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->nod_x_sgm[sgm_id][node_id];
+}
+
+double nb_mshpoly_distort_with_field(void *msh,
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp)
+{
+	return 0;/* PENDING */
 }
 
 void nb_mshpoly_load_elem_graph(const void *mshpoly,

@@ -12,9 +12,9 @@
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
-#include "nb/geometric_bot/mesh/elements2D/quad.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshquad.h"
 
-#include "../mesh2D_structs.h"
+#include "../../mesh2D_structs.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -350,7 +350,7 @@ uint32_t nb_mshquad_edge_get_2n(const void *msh, uint32_t id)
 	return mshquad->edg[id*2+1];
 }
 
-double nb_mshquad_get_x_elem(const void *msh, uint32_t id)
+double nb_mshquad_elem_get_x(const void *msh, uint32_t id)
 {
 	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
 	double x = nb_mshquad_node_get_x(msh, idx);
@@ -371,7 +371,7 @@ double nb_mshquad_get_x_elem(const void *msh, uint32_t id)
 	return x / div;
 }
 
-double nb_mshquad_get_y_elem(const void *msh, uint32_t id)
+double nb_mshquad_elem_get_y(const void *msh, uint32_t id)
 {
 	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
 	double y = nb_mshquad_node_get_y(msh, idx);
@@ -493,6 +493,14 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->nod_x_sgm[sgm_id][node_id];
+}
+
+double nb_mshquad_distort_with_field(void *msh,
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp)
+{
+	return 0;/* PENDING */
 }
 
 void nb_mshquad_load_elem_graph(const void *mshquad_ptr,

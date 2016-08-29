@@ -7,7 +7,6 @@ typedef enum {
 } nb_partition_entity;
 
 typedef enum {
-	NB_NULL,
 	NB_FIELD,
 	NB_CLASS
 } nb_partition_array_type;

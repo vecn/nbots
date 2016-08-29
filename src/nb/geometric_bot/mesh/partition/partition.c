@@ -7,9 +7,13 @@
 #include "nb/graphics_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/msh3trg.h"
-#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/msh3trg_draw.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/mshquad.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshquad_draw.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly_draw.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/mshpack.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpack_draw.h"
 
 #include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
@@ -23,7 +27,7 @@ typedef struct {
 	nb_partition_entity vals_entity;
 	nb_partition_array_type vals_type;
 	bool draw_wires;
-} draw_data;
+} draw_data_t;
 
 static void set_msh3trg_interface(nb_partition_t *part);
 static void set_msh3trg_main_interface(nb_partition_t *part);
@@ -48,18 +52,6 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 				    uint32_t elem_id, uint16_t face_id);
 static bool face_is_the_same(uint32_t n1, uint32_t n2,
 			     uint32_t s1, uint32_t s2);
-static void init_draw_data(draw_data *data,
-			   const nb_partition_t *part,
-			   const void *values,
-			   bool draw_wires);
-
-static void draw(nb_graphics_context_t *g, int width, int height,
-		 const void *draw_data);
-static void set_camera(nb_graphics_context_t *g, int width, int height,
-		       const nb_partition_t *part);
-static void fill(const nb_partition_t *part,
-		 nb_graphics_context_t *g,
-		 const draw_data *data);
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type)
 {
@@ -623,113 +615,6 @@ double nb_partition_distort_with_field(nb_partition_t *part,
 {
 	return part->distort_with_field(part->msh, field_entity,
 					disp, max_disp);
-}
-
-void nb_partition_export_draw(const nb_partition_t *part,
-			      const char *filename,
-			      int width, int height,
-			      nb_partition_entity vals_entity,
-			      nb_partition_array_type vals_type,
-			      const void *values,
-			      bool draw_wires)
-{
-	draw_data data;
-	init_draw_data(&data, part, vals_entity,
-		       vals_type, values, draw_wires);
-
-
-	nb_graphics_export(filename, width, height,
-			   draw, &draw_data);
-}
-
-static void init_draw_data(draw_data *data,
-			   const nb_partition_t *part,
-			   nb_partition_entity vals_entity,
-			   nb_partition_array_type vals_type,
-			   const void *values,
-			   bool draw_wires)
-{
-	data->part = part;
-	data->values = values;
-	data->vals_entity = vals_entity;
-	data->vals_type = vals_type;
-	data->draw_wires = draw_wires;
-}
-
-static void draw(nb_graphics_context_t *g, int width, int height,
-		 const void *draw_data)
-{
-	const nb_partition_draw_data *data = draw_data;
-	const nb_partition_t *part = data->part;
-
-	if (!nb_graphics_is_camera_enabled(g))
-		set_camera(g, width, height, part);
-
-	fill(part, g, data);
-
-	if (data->draw_wires) {
-		nb_graphics_set_source(g, NB_LIGHT_PURPLE);
-		nb_graphics_set_line_width(g, 0.5);
-		part->di.draw_wires(part->msh, g);
-	}
-
-	nb_graphics_set_source(g, NB_PURPLE);
-	nb_graphics_set_line_width(g, 1.5);
-	part->di.draw_boundaries(part->msh, g);
-}
-
-static void set_camera(nb_graphics_context_t *g, int width, int height,
-		       const nb_partition_t *part)
-{
-	double box[4];
-	part->get_enveloping_box(part->msh, box);
-
-	nb_graphics_enable_camera(g);
-	nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
-	nb_graphics_cam_fit_box(cam, box, width, height);
-}
-
-static void fill(const nb_partition_t *part,
-		 nb_graphics_context_t *g,
-		 const draw_data *data)
-{
-	void **source_data = alloca(2 * sizeof(void*));
-	uint32_t minmax[2];
-	source_data[0] = data->values;
-	source_data[1] = minmax;
-	init_source_data(part, data, source_data);
-
-	void *set_source = get_source_function(data);
-
-	part->di.fill_elems(part->msh, g, source_data,
-			    set_source);
-}
-
-static void init_source_data(const nb_partition_t *part,
-			     const draw_data *data)
-{
-	uint32_t *min_id;
-	uint32_t *max_id;
-	double *values = data->values;
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	vcn_array_get_min_max_ids(values, N_nod, sizeof(*results),
-				  vcn_compare_double, min_id, max_id);
-	
-}
-
-static void d()
-{
-	nb_graphics_color_t color[10];
-	color[0] = NB_BLUE;
-	color[1] = NB_RED;
-	color[2] = NB_VIOLET;
-	color[3] = NB_AZURE;
-	color[4] = NB_GREEN;
-	color[5] = NB_YELLOW;
-	color[6] = NB_ROSE;
-	color[7] = NB_CHARTREUSE;
-	color[8] = NB_LIGHT_GRAY;
-	color[9] = NB_AQUAMARIN;
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

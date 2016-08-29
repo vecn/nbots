@@ -8,11 +8,11 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/partition/msh3trg.h"
-#include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/msh3trg.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
 
-#include "../mesh2D_structs.h"
+#include "../../mesh2D_structs.h"
 
 struct nb_msh3trg_s {
 	uint32_t N_nod;
@@ -258,7 +258,7 @@ uint32_t nb_msh3trg_edge_get_2n(const void *msh, uint32_t id)
 	return msh3trg->edg[id*2+1];
 }
 
-double nb_msh3trg_get_x_elem(const void *msh, uint32_t id)
+double nb_msh3trg_elem_get_x(const void *msh, uint32_t id)
 {
 	uint32_t v1 = nb_msh3trg_elem_get_adj(msh, id, 0);
 	uint32_t v2 = nb_msh3trg_elem_get_adj(msh, id, 1);
@@ -270,7 +270,7 @@ double nb_msh3trg_get_x_elem(const void *msh, uint32_t id)
 	return x_centroid;
 }
 
-double nb_msh3trg_get_y_elem(const void *msh, uint32_t id)
+double nb_msh3trg_elem_get_y(const void *msh, uint32_t id)
 {
 	uint32_t v1 = nb_msh3trg_elem_get_adj(msh, id, 0);
 	uint32_t v2 = nb_msh3trg_elem_get_adj(msh, id, 1);

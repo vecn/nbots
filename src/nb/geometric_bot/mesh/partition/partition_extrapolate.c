@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "nb/memory_bot.h"
 #include "nb/geometric_bot/mesh/partition.h"
@@ -44,22 +45,6 @@ void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
 {
 	extrapolate_to_nodes(part, N_comp, elem_values, nodal_values,
 			     assemble_elem_centroids);
-}
-
-
-void nb_partition_extrapolate_elem_points_to_nodes
-			(const nb_partition_t *part,
-			 uint8_t N_comp,
-			 const double *elem_values,
-			 double *nodal_values,
-			 void (*assemble_elem)(const nb_partition_t *part,
-					       const double *elem_values,
-					       uint32_t elem_id,
-					       uint8_t N_comp,
-					       double *M, double *F))
-{
-	extrapolate_to_nodes(part, N_comp, elem_values, nodal_values,
-			     assemble_elem);
 }
 
 static void extrapolate_to_nodes
@@ -159,8 +144,7 @@ static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 	double x = part->elem_get_x(part->msh, elem_id);
 	double y = part->elem_get_y(part->msh, elem_id);
 	for (uint16_t i = 0; i < N_adj; i++) {
-		double node_id = part->elem_get_adj(part->msh, elem_id,
-						    intranode_id);
+		double node_id = part->elem_get_adj(part->msh, elem_id, i);
 		double xn = part->node_get_x(part->msh, node_id);
 		double yn = part->node_get_x(part->msh, node_id);
 		double dist2 = POW2(x - xn) + POW2(y - yn);

@@ -183,8 +183,8 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 	for (int i = 0; i < N; i++) {
 		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
 		uint32_t vi = nb_partition_elem_get_adj(part, id_elem, i);
-		gp[0] += Ni * nb_partition_get_x_node(part, vi);
-		gp[1] += Ni * nb_partition_get_y_node(part, vi);
+		gp[0] += Ni * nb_partition_node_get_x(part, vi);
+		gp[1] += Ni * nb_partition_node_get_y(part, vi);
 	}
 }
 

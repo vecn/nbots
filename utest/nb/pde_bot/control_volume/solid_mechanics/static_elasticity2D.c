@@ -143,8 +143,8 @@ static double get_error_avg_pwh(const void *part,
 	double avg = 0.0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
-		double x = nb_partition_get_x_elem(part, i);
-		double y = nb_partition_get_y_elem(part, i);
+		double x = nb_partition_elem_get_x(part, i);
+		double y = nb_partition_elem_get_y(part, i);
 		double stress =
 			get_analytic_vm_stress_pwh(x, y);
 		double error;

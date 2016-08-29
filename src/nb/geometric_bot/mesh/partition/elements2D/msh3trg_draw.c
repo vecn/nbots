@@ -25,17 +25,13 @@ static void draw_sgm(const nb_msh3trg_t *msh3trg,
 
 static void fill_elems(const nb_msh3trg_t *msh,
 		       nb_graphics_context_t *g,
-		       const void *source_data,
+		       void *source_data,
 		       void (*set_source)(const nb_msh3trg_t *msh,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data));
 static void set_source_null(const nb_msh3trg_t *msh,
 			    nb_graphics_context_t *g,
 			    uint32_t i, void *data);
-
-static void set_source_field_on_nodes(const nb_msh3trg_t *msh,
-				      nb_graphics_context_t *g,
-				      uint32_t i, void *data);
 
 static void set_source_field_on_elems(const nb_msh3trg_t *msh,
 				      nb_graphics_context_t *g,
@@ -47,7 +43,7 @@ static void set_source_classes(const nb_msh3trg_t *msh,
 
 static void fill_nodes(const nb_msh3trg_t *msh,
 		       nb_graphics_context_t *g,
-		       const void *source_data,
+		       void *source_data,
 		       void (*set_source)(const nb_msh3trg_t *msh,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data));
@@ -144,7 +140,7 @@ static void set_source_null(const nb_msh3trg_t *msh,
 
 static void fill_elems(const nb_msh3trg_t *msh,
 		       nb_graphics_context_t *g,
-		       const void *source_data,
+		       void *source_data,
 		       void (*set_source)(const nb_msh3trg_t *msh,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data))
@@ -152,18 +148,18 @@ static void fill_elems(const nb_msh3trg_t *msh,
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		uint32_t nid = nb_msh3trg_elem_get_adj(msh, i, 0);
-		double x = nb_msh3trg_get_x_node(msh, nid);
-		double y = nb_msh3trg_get_y_node(msh, nid);
+		double x = nb_msh3trg_node_get_x(msh, nid);
+		double y = nb_msh3trg_node_get_y(msh, nid);
 		nb_graphics_move_to(g, x, y);
 
 		nid = nb_msh3trg_elem_get_adj(msh, i, 1);
-		x = nb_msh3trg_get_x_node(msh, nid);
-		y = nb_msh3trg_get_y_node(msh, nid);
+		x = nb_msh3trg_node_get_x(msh, nid);
+		y = nb_msh3trg_node_get_y(msh, nid);
 		nb_graphics_line_to(g, x, y);
 
 		nid = nb_msh3trg_elem_get_adj(msh, i, 2);
-		x = nb_msh3trg_get_x_node(msh, nid);
-		y = nb_msh3trg_get_y_node(msh, nid);
+		x = nb_msh3trg_node_get_x(msh, nid);
+		y = nb_msh3trg_node_get_y(msh, nid);
 		nb_graphics_line_to(g, x, y);
 
 		nb_graphics_close_path(g);
@@ -180,43 +176,39 @@ void nb_msh3trg_fill_elems_field_on_nodes(const void *msh,
 					  const double *normalized_field,
 					  nb_graphics_palette_preset palette)
 {
-	const void *data[2];
-	data[0] = (void*) normalized_field;
-	data[1] = nb_graphics_palette_create_preset(palette);
-	
-	fill_elems(msh, g, data, set_source_field_on_nodes);
-	
-	nb_graphics_palette_destroy(data[1]);
-}
+	nb_graphics_palette_t *pal = 
+		nb_graphics_palette_create_preset(palette);
 
-static void set_source_field_on_nodes(const nb_msh3trg_t *msh,
-				      nb_graphics_context_t *g,
-				      uint32_t i, void *data)
-{
-	void **cls_data = data;
-	double *field = data[0];
-	nb_graphics_palette_t *palette = data[1];
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t n1 = nb_msh3trg_elem_get_adj(msh, i, 0);
+		double x1 = nb_msh3trg_node_get_x(msh, n1);
+		double y1 = nb_msh3trg_node_get_y(msh, n1);
+		
+		uint32_t n2 = nb_msh3trg_elem_get_adj(msh, i, 1);
+		double x2 = nb_msh3trg_node_get_x(msh, n2);
+		double y2 = nb_msh3trg_node_get_y(msh, n2);
 
-	uint32_t n1 = nb_msh3trg_elem_get_adj(msh, i, 0);
-	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, i, 1);
-	uint32_t n3 = nb_msh3trg_elem_get_adj(msh, i, 2);
+		uint32_t n3 = nb_msh3trg_elem_get_adj(msh, i, 2);
+		double x3 = nb_msh3trg_node_get_x(msh, n3);
+		double y3 = nb_msh3trg_node_get_y(msh, n3);
 
-	double x1 = nb_msh3trg_node_get_x(msh, n1);
-	double y1 = nb_msh3trg_node_get_y(msh, n1);
+		uint8_t c1[4], c2[4], c3[4];
+		nb_graphics_palette_get_rgba(pal, normalized_field[n1], c1);
+		nb_graphics_palette_get_rgba(pal, normalized_field[n2], c2);
+		nb_graphics_palette_get_rgba(pal, normalized_field[n3], c3);
 
-	double x2 = nb_msh3trg_node_get_x(msh, n2);
-	double y2 = nb_msh3trg_node_get_y(msh, n2);
+		nb_graphics_set_source_trg(g, x1, y1, x2, y2,
+					   x3, y3, c1, c2, c3);
 
-	double x3 = nb_msh3trg_node_get_x(msh, n3);
-	double y3 = nb_msh3trg_node_get_y(msh, n3); 
+		nb_graphics_move_to(g, x1, y1);
+		nb_graphics_line_to(g, x2, y2);
+		nb_graphics_line_to(g, x3, y3);
+		nb_graphics_close_path(g);
 
-	uint8_t c1[4], c2[4], c3[4];
-	nb_graphics_palette_get_rgba(palette, field[n1], c1);
-	nb_graphics_palette_get_rgba(palette, field[n2], c2);
-	nb_graphics_palette_get_rgba(palette, field[n3], c3);
-
-	nb_graphics_set_source_trg(g, x1, y1, x2, y2,
-				   x3, y3, c1, c2, c3);
+		nb_graphics_fill(g);
+	}
+	nb_graphics_palette_destroy(pal);
 }
 
 void nb_msh3trg_fill_elems_field_on_elems(const void *msh,
@@ -224,7 +216,7 @@ void nb_msh3trg_fill_elems_field_on_elems(const void *msh,
 					  const double *normalized_field,
 					  nb_graphics_palette_preset palette)
 {
-	const void *data[2];
+	void *data[2];
 	data[0] = (void*) normalized_field;
 	data[1] = nb_graphics_palette_create_preset(palette);
 	
@@ -238,8 +230,8 @@ static void set_source_field_on_elems(const nb_msh3trg_t *msh,
 				      uint32_t i, void *data)
 {
 	void **cls_data = data;
-	double *field = data[0];
-	nb_graphics_palette_t *palette = data[1];
+	double *field = cls_data[0];
+	nb_graphics_palette_t *palette = cls_data[1];
 	
 	uint8_t c[4];
 	nb_graphics_palette_get_rgba(palette, field[i], c);
@@ -268,7 +260,7 @@ static void set_source_classes(const nb_msh3trg_t *msh,
 	uint8_t *N_colors = cls_data[2];
 	
 	uint8_t id_class = class[i];
-	nb_graphics_color c = colors[id_class % *N_colors];
+	nb_graphics_color_t c = colors[id_class % *N_colors];
 
 	nb_graphics_set_source(g, c);
 }
@@ -281,7 +273,7 @@ void nb_msh3trg_fill_nodes(const void *msh,
 
 static void fill_nodes(const nb_msh3trg_t *msh,
 		       nb_graphics_context_t *g,
-		       const void *source_data,
+		       void *source_data,
 		       void (*set_source)(const nb_msh3trg_t *msh,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data))
@@ -326,8 +318,8 @@ static void calculate_partition_centers
 		double yc = 0.0;
 		for (uint32_t j = 0; j < 3; j++) {
 			uint32_t n = nb_msh3trg_elem_get_adj(msh3trg, i, j);;
-			xc += nb_msh3trg_get_x_node(msh3trg, n);
-			yc += nb_msh3trg_get_y_node(msh3trg, n);
+			xc += nb_msh3trg_node_get_x(msh3trg, n);
+			yc += nb_msh3trg_node_get_y(msh3trg, n);
 		}
 		pcenter[part[i]][0] += xc / 3.0;
 		pcenter[part[i]][1] += yc / 3.0;
@@ -350,16 +342,16 @@ static void draw_triangle_partition_edge(nb_graphics_context_t *g,
 	double vtx[2];
 	uint32_t n1 = nb_msh3trg_elem_get_adj(msh3trg, trg_id, edge_id);
 	uint32_t n2 = nb_msh3trg_elem_get_adj(msh3trg, trg_id, (edge_id+1)%3);
-	vtx[0] = nb_msh3trg_get_x_node(msh3trg, n1);
-	vtx[1] = nb_msh3trg_get_y_node(msh3trg, n1);
+	vtx[0] = nb_msh3trg_node_get_x(msh3trg, n1);
+	vtx[1] = nb_msh3trg_node_get_y(msh3trg, n1);
 
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
 
 	nb_graphics_move_to(g, vtx[0], vtx[1]);
 
-	vtx[0] = nb_msh3trg_get_x_node(msh3trg, n2);
-	vtx[1] = nb_msh3trg_get_y_node(msh3trg, n2);
+	vtx[0] = nb_msh3trg_node_get_x(msh3trg, n2);
+	vtx[1] = nb_msh3trg_node_get_y(msh3trg, n2);
 
 	if (scale_partitions > 0.0 && scale_partitions < 1.0)
 		scale_vtx(vtx, pcenter[part[trg_id]], scale_partitions);
@@ -403,20 +395,15 @@ void nb_msh3trg_draw_subdomain(const void *const msh3trg,
 				 uint32_t k_part, const uint32_t *const part,
 				 uint32_t k_to_draw, double scale_partitions)
 {
-	if (k_part < 2) {
-		nb_graphics_export(filename, width, height,
-				   draw_msh3trg, msh3trg);
-	} else {
-		part_data_t part_data;
-		part_data.msh3trg = msh3trg;
-		part_data.k_part = k_part;
-		part_data.part = part;
-		part_data.k_to_draw = k_to_draw;
-		part_data.scale = scale_partitions;
-		nb_graphics_export(filename, width, height,
-				   draw_msh3trg_partition,
-				   &part_data);
-	}
+	part_data_t part_data;
+	part_data.msh3trg = msh3trg;
+	part_data.k_part = k_part;
+	part_data.part = part;
+	part_data.k_to_draw = k_to_draw;
+	part_data.scale = scale_partitions;
+	nb_graphics_export(filename, width, height,
+			   draw_msh3trg_partition,
+			   &part_data);
 }
 
 static void draw_msh3trg_partition(nb_graphics_context_t *g,
@@ -456,22 +443,22 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 		uint32_t n3 = nb_msh3trg_elem_get_adj(msh3trg, i, 2);
 
 		double vtx[2];
-		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n1);
-		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n1);
+		vtx[0] = nb_msh3trg_node_get_x(msh3trg, n1);
+		vtx[1] = nb_msh3trg_node_get_y(msh3trg, n1);
 
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
 		nb_graphics_move_to(g, vtx[0], vtx[1]);
 
-		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n2);
-		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n2);
+		vtx[0] = nb_msh3trg_node_get_x(msh3trg, n2);
+		vtx[1] = nb_msh3trg_node_get_y(msh3trg, n2);
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 		nb_graphics_line_to(g, vtx[0], vtx[1]);
 
-		vtx[0] = nb_msh3trg_get_x_node(msh3trg, n3);
-		vtx[1] = nb_msh3trg_get_y_node(msh3trg, n3);
+		vtx[0] = nb_msh3trg_node_get_x(msh3trg, n3);
+		vtx[1] = nb_msh3trg_node_get_y(msh3trg, n3);
 		if (data->scale > 0.0 && data->scale < 1.0)
 			scale_vtx(vtx, pcenter[data->part[i]], data->scale);
 
@@ -508,18 +495,18 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 		nb_graphics_set_line_width(g, 1.0);
 		uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
 		for (uint32_t i = 0; i < N_sgm; i++) {
-			uint32_t N_vtx = nb_msh3trg_get_N_nodes_x_insgm(msh3trg,
+			uint32_t N_vtx = nb_msh3trg_insgm_get_N_nodes(msh3trg,
 									i);
 			if (0 < N_vtx) {
-				uint32_t n1 = nb_msh3trg_get_node_x_insgm(msh3trg, i, 0);
+				uint32_t n1 = nb_msh3trg_insgm_get_node(msh3trg, i, 0);
 				nb_graphics_move_to(g,
-						    nb_msh3trg_get_x_node(msh3trg, n1),
-						    nb_msh3trg_get_y_node(msh3trg, n1));
+						    nb_msh3trg_node_get_x(msh3trg, n1),
+						    nb_msh3trg_node_get_y(msh3trg, n1));
 				for (uint32_t j = 0; j < N_vtx; j++) {
-					uint32_t n2 = nb_msh3trg_get_node_x_insgm(msh3trg, i, j);
+					uint32_t n2 = nb_msh3trg_insgm_get_node(msh3trg, i, j);
 					nb_graphics_line_to(g,
-							    nb_msh3trg_get_x_node(msh3trg, n2),
-							    nb_msh3trg_get_y_node(msh3trg, n2));
+							    nb_msh3trg_node_get_x(msh3trg, n2),
+							    nb_msh3trg_node_get_y(msh3trg, n2));
 				}
 				nb_graphics_stroke(g);
 			}

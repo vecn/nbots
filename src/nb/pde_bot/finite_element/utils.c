@@ -19,8 +19,8 @@ double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t inode = nb_partition_elem_get_adj(part, id, i);
-		double xi = nb_partition_get_x_node(part, inode);
-		double yi = nb_partition_get_y_node(part, inode);
+		double xi = nb_partition_node_get_x(part, inode);
+		double yi = nb_partition_node_get_y(part, inode);
 		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
 		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
 		dx_dpsi += dNi_dpsi * xi;

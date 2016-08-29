@@ -41,8 +41,8 @@ static void draw_disks(const nb_mshpack_t *mshpack,
 {
 	uint32_t N_elems = nb_mshpack_get_N_elems(mshpack);
 	for (uint32_t i = 0; i < N_elems; i++) {
-		double x = nb_mshpack_get_x_elem(mshpack, i);
-		double y = nb_mshpack_get_y_elem(mshpack, i);
+		double x = nb_mshpack_elem_get_x(mshpack, i);
+		double y = nb_mshpack_elem_get_y(mshpack, i);
 		double r = nb_mshpack_elem_get_radii(mshpack, i);
 		nb_graphics_set_circle(g, x, y, r);
 		
@@ -101,8 +101,8 @@ static void set_source_field(const nb_msh3trg_t *msh,
 			     uint32_t i, void *data)
 {
 	void **cls_data = data;
-	double *field = data[0];
-	nb_graphics_palette_t *palette = data[1];
+	double *field = cls_data[0];
+	nb_graphics_palette_t *palette = cls_data[1];
 	
 	uint8_t c[4];
 	nb_graphics_palette_get_rgba(palette, field[i], c);
@@ -131,7 +131,7 @@ static void set_source_classes(const nb_msh3trg_t *msh,
 	uint8_t *N_colors = cls_data[2];
 	
 	uint8_t id_class = class[i];
-	nb_graphics_color c = colors[id_class % *N_colors];
+	nb_graphics_color_t c = colors[id_class % *N_colors];
 
 	nb_graphics_set_source(g, c);
 }

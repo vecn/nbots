@@ -13,9 +13,9 @@
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/elements2D/disks.h"
+#include "nb/geometric_bot/mesh/partition/elements2D/mshpack.h"
 
-#include "../mesh2D_structs.h"
+#include "../../mesh2D_structs.h"
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -123,7 +123,7 @@ uint32_t nb_mshpack_get_N_elems(const void *msh)
 	return pack->N_elems;
 }
 
-double nb_mshpack_get_node_x(const void *msh, uint32_t id)
+double nb_mshpack_node_get_x(const void *msh, uint32_t id)
 {
 	return 0.0;
 }
@@ -145,13 +145,13 @@ uint32_t nb_mshpack_edge_get_2n(const void *msh, uint32_t id)
 	return pack->N_elems;
 }
 
-double nb_mshpack_get_x_elem(const void *msh, uint32_t id)
+double nb_mshpack_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->cen[id * 2];
 }
 
-double nb_mshpack_get_y_elem(const void *msh, uint32_t id)
+double nb_mshpack_elem_get_y(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->cen[id*2+1];
@@ -238,6 +238,14 @@ uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->N_elems;
+}
+
+double nb_mshpack_distort_with_field(void *msh,
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp)
+{
+	return 0;/* PENDING */
 }
 
 void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph)
