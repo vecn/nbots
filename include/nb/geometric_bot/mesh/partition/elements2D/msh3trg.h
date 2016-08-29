@@ -82,6 +82,9 @@ double nb_msh3trg_distort_with_field(void *msh,
 				     nb_partition_entity field_entity,
 				     double *disp,
 				     double max_disp);
+void nb_msh3trg_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values);
 
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model);
 

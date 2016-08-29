@@ -65,6 +65,9 @@ double nb_mshquad_distort_with_field(void *msh,
 				     nb_partition_entity field_entity,
 				     double *disp,
 				     double max_disp);
+void nb_mshquad_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values);
 void nb_mshquad_build_model(const void *msh, nb_model_t *model);
 void nb_mshquad_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

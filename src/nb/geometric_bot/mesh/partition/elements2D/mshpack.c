@@ -248,14 +248,21 @@ double nb_mshpack_distort_with_field(void *msh,
 	return 0;/* PENDING */
 }
 
+void nb_mshpack_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values)
+{
+	; /* NULL statement */
+}
+
 void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph)
 {
-	;/* PENDING */
+	;/* NULL statement */
 }
 
 void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph)
 {
-	;/* PENDING */
+	;/* NULL statement */
 }
 
 void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph)

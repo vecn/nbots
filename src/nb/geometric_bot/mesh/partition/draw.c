@@ -152,7 +152,7 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 
 	normalize_values(normalized_values, values, N);
 	
-	part->di.fill_elems_field_on_nodes(part->msh, g,
+	part->graphics.fill_elems_field_on_nodes(part->msh, g,
 					   normalized_values,
 					   NB_RAINBOW);
 
@@ -184,7 +184,7 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 
 	normalize_values(normalized_values, values, N);
 	
-	part->di.fill_elems_field_on_elems(part->msh, g,
+	part->graphics.fill_elems_field_on_elems(part->msh, g,
 					   normalized_values,
 					   NB_RAINBOW);
 
@@ -197,7 +197,7 @@ static void fill_elems_classes(const nb_partition_t *part,
 {
 	nb_graphics_color_t color[10];
 	set_class_colors(color);
-	part->di.fill_elems_classes(part->msh, g, class, 10, color);
+	part->graphics.fill_elems_classes(part->msh, g, class, 10, color);
 }
 
 static void set_class_colors(nb_graphics_color_t color[10])
@@ -218,7 +218,7 @@ static void fill_elems(const nb_partition_t *part,
 		       nb_graphics_context_t *g)
 {
 	nb_graphics_set_source(g, NB_LIGHT_BLUE);
-	part->di.fill_elems(part->msh, g);
+	part->graphics.fill_elems(part->msh, g);
 }
 
 static void draw_wires(const nb_partition_t *part,
@@ -226,7 +226,7 @@ static void draw_wires(const nb_partition_t *part,
 {
 	nb_graphics_set_source(g, NB_LIGHT_PURPLE);
 	nb_graphics_set_line_width(g, 0.5);
-	part->di.draw_wires(part->msh, g);
+	part->graphics.draw_wires(part->msh, g);
 }
 
 static void draw_boundaries(const nb_partition_t *part,
@@ -234,7 +234,7 @@ static void draw_boundaries(const nb_partition_t *part,
 {
 	nb_graphics_set_source(g, NB_PURPLE);
 	nb_graphics_set_line_width(g, 1.5);
-	part->di.draw_boundaries(part->msh, g);
+	part->graphics.draw_boundaries(part->msh, g);
 }
 
 static void fill_nodes_classes(const nb_partition_t *part,
@@ -243,5 +243,5 @@ static void fill_nodes_classes(const nb_partition_t *part,
 {
 	nb_graphics_color_t color[10];
 	set_class_colors(color);
-	part->di.fill_nodes_classes(part->msh, g, class, 10, color);
+	part->graphics.fill_nodes_classes(part->msh, g, class, 10, color);
 }

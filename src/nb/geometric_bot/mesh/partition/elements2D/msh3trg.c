@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include <alloca.h>
+#include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -13,6 +15,8 @@
 #include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
 
 #include "../../mesh2D_structs.h"
+
+#define POW2(a) ((a)*(a))
 
 struct nb_msh3trg_s {
 	uint32_t N_nod;
@@ -38,6 +42,11 @@ struct nb_msh3trg_s {
 #define GET_ISGM_FROM_STRUCT(exp_structure)	\
 	(*((uint32_t*)((void**)(exp_structure))[1]))
 
+static double distort_using_nodal_field(nb_msh3trg_t *msh, double *disp,
+					double max_disp);
+static double get_max_displacement(uint32_t N, double *disp);
+static double distort_using_elem_field(nb_msh3trg_t *msh, double *disp,
+				       double max_disp);
 static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp);
 static void null_statement(void *param){ ; }
 static void msh3trg_set_N_vtx(void *exp_structure, uint32_t N);
@@ -384,7 +393,57 @@ double nb_msh3trg_distort_with_field(void *msh,
 				     double *disp,
 				     double max_disp)
 {
-	return 0;/* PENDING */
+	double scale = 1.0;
+	if (NB_NODE == field_entity)
+		scale = distort_using_nodal_field(msh, disp, max_disp);
+	else if (NB_ELEMENT == field_entity)
+		scale = distort_using_elem_field(msh, disp, max_disp);
+	return scale;
+}
+
+static double distort_using_nodal_field(nb_msh3trg_t *msh, double *disp,
+					double max_disp)
+{
+	uint32_t N = nb_msh3trg_get_N_nodes(msh);
+	double max_field_disp = get_max_displacement(N, disp);
+	double scale = max_disp / max_field_disp;
+	
+	for (uint32_t i = 0; i < 2 * N; i++)
+		msh->nod[i] += disp[i] * scale;
+
+	return scale;
+}
+
+static double get_max_displacement(uint32_t N, double *disp)
+{
+	double max = 0;
+	for (uint32_t i = 0; i < N; i++) {
+		double disp2 = POW2(disp[i * 2]) + POW2(disp[i*2+1]);
+		if (dips2 > max)
+			max = disp2;
+	}
+	return sqrt(max);
+}
+
+static double distort_using_elem_field(nb_msh3trg_t *msh, double *disp,
+				       double max_disp)
+{
+	uint32_t N = nb_msh3trg_get_N_elems(msh);
+	uint32_t memsize = 2 * N * sizeof(*nodal_disp);
+	double *nodal_disp = NB_SOFT_MALLOC(msh, memsize);
+	nb_msh3trg_extrapolate_elems_to_nodes(msh, 2, disp, nodal_disp);
+
+	double scale = distort_using_nodal_field(msh, nodal_disp, max_disp);
+
+	NB_SOFT_FREE(memsize, nodal_disp);
+	return scale;
+}
+
+void nb_msh3trg_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values)
+{
+	/* PENDING */
 }
 
 void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)

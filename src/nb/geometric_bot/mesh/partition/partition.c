@@ -31,19 +31,19 @@ typedef struct {
 
 static void set_msh3trg_interface(nb_partition_t *part);
 static void set_msh3trg_main_interface(nb_partition_t *part);
-static void set_msh3trg_drawing_interface(nb_partition_t *part);
+static void set_msh3trg_graphics_interface(nb_partition_t *part);
 
 static void set_mshquad_interface(nb_partition_t *part);
 static void set_mshquad_main_interface(nb_partition_t *part);
-static void set_mshquad_drawing_interface(nb_partition_t *part);
+static void set_mshquad_graphics_interface(nb_partition_t *part);
 
 static void set_mshpoly_interface(nb_partition_t *part);
 static void set_mshpoly_main_interface(nb_partition_t *part);
-static void set_mshpoly_drawing_interface(nb_partition_t *part);
+static void set_mshpoly_graphics_interface(nb_partition_t *part);
 
 static void set_mshpack_interface(nb_partition_t *part);
 static void set_mshpack_main_interface(nb_partition_t *part);
-static void set_mshpack_drawing_interface(nb_partition_t *part);
+static void set_mshpack_graphics_interface(nb_partition_t *part);
 
 static void check_elem_adj(const nb_partition_t *part,
 			   uint32_t **elem_adj, uint32_t elem_id);
@@ -108,7 +108,7 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 static void set_msh3trg_interface(nb_partition_t *part)
 {
 	set_msh3trg_main_interface(part);
-	set_msh3trg_drawing_interface(part);
+	set_msh3trg_graphics_interface(part);
 }
 
 static void set_msh3trg_main_interface(nb_partition_t *part)
@@ -144,29 +144,31 @@ static void set_msh3trg_main_interface(nb_partition_t *part)
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
 	part->distort_with_field = nb_msh3trg_distort_with_field;
+	part->extrapolate_elems_to_nodes = 
+		nb_msh3trg_extrapolate_elems_to_nodes;
 	part->build_model = nb_msh3trg_build_model;
 	part->build_model_disabled_elems =
 		nb_msh3trg_build_model_disabled_elems;
 }
 
-static void set_msh3trg_drawing_interface(nb_partition_t *part)
+static void set_msh3trg_graphics_interface(nb_partition_t *part)
 {
-	part->di.draw_wires = nb_msh3trg_draw_wires;
-	part->di.draw_boundaries = nb_msh3trg_draw_boundaries;
-	part->di.fill_elems = nb_msh3trg_fill_elems;
-	part->di.fill_elems_field_on_nodes =
+	part->graphics.draw_wires = nb_msh3trg_draw_wires;
+	part->graphics.draw_boundaries = nb_msh3trg_draw_boundaries;
+	part->graphics.fill_elems = nb_msh3trg_fill_elems;
+	part->graphics.fill_elems_field_on_nodes =
 		nb_msh3trg_fill_elems_field_on_nodes;
-	part->di.fill_elems_field_on_elems =
+	part->graphics.fill_elems_field_on_elems =
 		nb_msh3trg_fill_elems_field_on_elems;
-	part->di.fill_elems_classes = nb_msh3trg_fill_elems_classes;
-	part->di.fill_nodes = nb_msh3trg_fill_nodes;
-	part->di.fill_nodes_classes = nb_msh3trg_fill_nodes_classes;
+	part->graphics.fill_elems_classes = nb_msh3trg_fill_elems_classes;
+	part->graphics.fill_nodes = nb_msh3trg_fill_nodes;
+	part->graphics.fill_nodes_classes = nb_msh3trg_fill_nodes_classes;
 }
 
 static void set_mshquad_interface(nb_partition_t *part)
 {
 	set_mshquad_main_interface(part);
-	set_mshquad_drawing_interface(part);
+	set_mshquad_graphics_interface(part);
 }
 
 static void set_mshquad_main_interface(nb_partition_t *part)
@@ -202,29 +204,31 @@ static void set_mshquad_main_interface(nb_partition_t *part)
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
 	part->distort_with_field = nb_mshquad_distort_with_field;
+	part->extrapolate_elems_to_nodes = 
+		nb_mshquad_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshquad_build_model;
 	part->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
 }
 
-static void set_mshquad_drawing_interface(nb_partition_t *part)
+static void set_mshquad_graphics_interface(nb_partition_t *part)
 {
-	part->di.draw_wires = nb_mshquad_draw_wires;
-	part->di.draw_boundaries = nb_mshquad_draw_boundaries;
-	part->di.fill_elems = nb_mshquad_fill_elems;
-	part->di.fill_elems_field_on_nodes =
+	part->graphics.draw_wires = nb_mshquad_draw_wires;
+	part->graphics.draw_boundaries = nb_mshquad_draw_boundaries;
+	part->graphics.fill_elems = nb_mshquad_fill_elems;
+	part->graphics.fill_elems_field_on_nodes =
 		nb_mshquad_fill_elems_field_on_nodes;
-	part->di.fill_elems_field_on_elems =
+	part->graphics.fill_elems_field_on_elems =
 		nb_mshquad_fill_elems_field_on_elems;
-	part->di.fill_elems_classes = nb_mshquad_fill_elems_classes;
-	part->di.fill_nodes = nb_mshquad_fill_nodes;
-	part->di.fill_nodes_classes = nb_mshquad_fill_nodes_classes;
+	part->graphics.fill_elems_classes = nb_mshquad_fill_elems_classes;
+	part->graphics.fill_nodes = nb_mshquad_fill_nodes;
+	part->graphics.fill_nodes_classes = nb_mshquad_fill_nodes_classes;
 }
 
 static void set_mshpoly_interface(nb_partition_t *part)
 {
 	set_mshpoly_main_interface(part);
-	set_mshpoly_drawing_interface(part);
+	set_mshpoly_graphics_interface(part);
 }
 
 static void set_mshpoly_main_interface(nb_partition_t *part)
@@ -260,29 +264,31 @@ static void set_mshpoly_main_interface(nb_partition_t *part)
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
 	part->distort_with_field = nb_mshpoly_distort_with_field;
+	part->extrapolate_elems_to_nodes = 
+		nb_mshpoly_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshpoly_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
 }
 
-static void set_mshpoly_drawing_interface(nb_partition_t *part)
+static void set_mshpoly_graphics_interface(nb_partition_t *part)
 {
-	part->di.draw_wires = nb_mshpoly_draw_wires;
-	part->di.draw_boundaries = nb_mshpoly_draw_boundaries;
-	part->di.fill_elems = nb_mshpoly_fill_elems;
-	part->di.fill_elems_field_on_nodes =
+	part->graphics.draw_wires = nb_mshpoly_draw_wires;
+	part->graphics.draw_boundaries = nb_mshpoly_draw_boundaries;
+	part->graphics.fill_elems = nb_mshpoly_fill_elems;
+	part->graphics.fill_elems_field_on_nodes =
 		nb_mshpoly_fill_elems_field_on_nodes;
-	part->di.fill_elems_field_on_elems =
+	part->graphics.fill_elems_field_on_elems =
 		nb_mshpoly_fill_elems_field_on_elems;
-	part->di.fill_elems_classes = nb_mshpoly_fill_elems_classes;
-	part->di.fill_nodes = nb_mshpoly_fill_nodes;
-	part->di.fill_nodes_classes = nb_mshpoly_fill_nodes_classes;
+	part->graphics.fill_elems_classes = nb_mshpoly_fill_elems_classes;
+	part->graphics.fill_nodes = nb_mshpoly_fill_nodes;
+	part->graphics.fill_nodes_classes = nb_mshpoly_fill_nodes_classes;
 }
 
 static void set_mshpack_interface(nb_partition_t *part)
 {
 	set_mshpack_main_interface(part);
-	set_mshpack_drawing_interface(part);
+	set_mshpack_graphics_interface(part);
 }
 
 static void set_mshpack_main_interface(nb_partition_t *part)
@@ -318,23 +324,25 @@ static void set_mshpack_main_interface(nb_partition_t *part)
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
 	part->distort_with_field = nb_mshpack_distort_with_field;
+	part->extrapolate_elems_to_nodes = 
+		nb_mshpack_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshpack_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpack_build_model_disabled_elems;
 }
 
-static void set_mshpack_drawing_interface(nb_partition_t *part)
+static void set_mshpack_graphics_interface(nb_partition_t *part)
 {
-	part->di.draw_wires = nb_mshpack_draw_wires;
-	part->di.draw_boundaries = nb_mshpack_draw_boundaries;
-	part->di.fill_elems = nb_mshpack_fill_elems;
-	part->di.fill_elems_field_on_nodes =
+	part->graphics.draw_wires = nb_mshpack_draw_wires;
+	part->graphics.draw_boundaries = nb_mshpack_draw_boundaries;
+	part->graphics.fill_elems = nb_mshpack_fill_elems;
+	part->graphics.fill_elems_field_on_nodes =
 		nb_mshpack_fill_elems_field_on_nodes;
-	part->di.fill_elems_field_on_elems =
+	part->graphics.fill_elems_field_on_elems =
 		nb_mshpack_fill_elems_field_on_elems;
-	part->di.fill_elems_classes = nb_mshpack_fill_elems_classes;
-	part->di.fill_nodes = nb_mshpack_fill_nodes;
-	part->di.fill_nodes_classes = nb_mshpack_fill_nodes_classes;
+	part->graphics.fill_elems_classes = nb_mshpack_fill_elems_classes;
+	part->graphics.fill_nodes = nb_mshpack_fill_nodes;
+	part->graphics.fill_nodes_classes = nb_mshpack_fill_nodes_classes;
 }
 
 void nb_partition_copy(nb_partition_t *part, const nb_partition_t* srcpart)
@@ -615,6 +623,15 @@ double nb_partition_distort_with_field(nb_partition_t *part,
 {
 	return part->distort_with_field(part->msh, field_entity,
 					disp, max_disp);
+}
+
+void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
+					     uint8_t N_comp,
+					     const double *elem_values,
+					     double *nodal_values)
+{
+	part->extrapolate_elems_to_nodes(part->msh, N_comp, elem_values,
+					 nodal_values);
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

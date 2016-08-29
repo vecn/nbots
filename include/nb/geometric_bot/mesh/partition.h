@@ -81,16 +81,6 @@ void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
 					     uint8_t N_comp,
 					     const double *elem_values,
 					     double *nodal_values);
-void nb_partition_extrapolate_elem_points_to_nodes
-			(const nb_partition_t *part,
-			 uint8_t N_comp,
-			 const double *elem_values,
-			 double *nodal_values,
-			 void (*assemble_elem)(const nb_partition_t *part,
-					       uint8_t N_comp,
-					       const double *elem_values,
-					       uint32_t elem_id,
-					       double *F, double *M));
 double nb_partition_distort_with_field(nb_partition_t *part,
 				       nb_partition_entity field_type,
 				       double *disp, double max_disp);

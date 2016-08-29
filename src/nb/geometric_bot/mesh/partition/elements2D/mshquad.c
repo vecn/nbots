@@ -503,6 +503,13 @@ double nb_mshquad_distort_with_field(void *msh,
 	return 0;/* PENDING */
 }
 
+void nb_mshquad_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values)
+{
+	/* PENDING */
+}
+
 void nb_mshquad_load_elem_graph(const void *mshquad_ptr,
 				nb_graph_t *graph)
 {
