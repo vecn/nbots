@@ -476,6 +476,12 @@ bool nb_mshquad_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_mshquad_elem_is_quad(const void *msh, uint32_t elem_id)
+{
+	const nb_mshquad_t *mshquad = msh;
+	return 0 == mshquad->type[elem_id];
+}
+
 uint32_t nb_mshquad_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_mshquad_t *mshquad = msh;
@@ -501,13 +507,6 @@ double nb_mshquad_distort_with_field(void *msh,
 				     double max_disp)
 {
 	return 0;/* PENDING */
-}
-
-void nb_mshquad_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values)
-{
-	/* PENDING */
 }
 
 void nb_mshquad_load_elem_graph(const void *mshquad_ptr,

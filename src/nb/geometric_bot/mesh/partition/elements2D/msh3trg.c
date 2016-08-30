@@ -419,7 +419,7 @@ static double get_max_displacement(uint32_t N, double *disp)
 	double max = 0;
 	for (uint32_t i = 0; i < N; i++) {
 		double disp2 = POW2(disp[i * 2]) + POW2(disp[i*2+1]);
-		if (dips2 > max)
+		if (disp2 > max)
 			max = disp2;
 	}
 	return sqrt(max);
@@ -429,21 +429,14 @@ static double distort_using_elem_field(nb_msh3trg_t *msh, double *disp,
 				       double max_disp)
 {
 	uint32_t N = nb_msh3trg_get_N_elems(msh);
-	uint32_t memsize = 2 * N * sizeof(*nodal_disp);
-	double *nodal_disp = NB_SOFT_MALLOC(msh, memsize);
+	uint32_t memsize = 2 * N * sizeof(double);
+	double *nodal_disp = NB_SOFT_MALLOC(memsize);
 	nb_msh3trg_extrapolate_elems_to_nodes(msh, 2, disp, nodal_disp);
 
 	double scale = distort_using_nodal_field(msh, nodal_disp, max_disp);
 
 	NB_SOFT_FREE(memsize, nodal_disp);
 	return scale;
-}
-
-void nb_msh3trg_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values)
-{
-	/* PENDING */
 }
 
 void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)

@@ -1,0 +1,231 @@
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <alloca.h>
+
+#include "nb/geometric_bot/mesh/partition/elements2D/mshquad.h"
+
+#define INV_3 0.33333333333333333333333333333
+
+#define POW2(a) ((a)*(a))
+
+static void assemble_system(const void *msh, 
+			    const double* elem_values,
+			    uint32_t N_comp,
+			    double *M, double *f);
+
+static void trg_assemble_elem(const void *msh,
+			      const double *elem_values,
+			      uint32_t elem_id,
+			      uint8_t N_comp,
+			      double *M, double *F);
+
+static double trg_get_jacobian(const void *msh, uint32_t id, double Jinv[4]);
+static void trg_get_deriv(double Jinv[4], double dNi_dx[3], double dNi_dy[3]);
+
+static void quad_assemble_elem(const void *msh,
+			      const double *elem_values,
+			      uint32_t elem_id,
+			      uint8_t N_comp,
+			      double *M, double *F);
+
+static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4]);
+static void quad_get_deriv(double Jinv[4], double dNi_dx[4], double dNi_dy[4]);
+
+static void solve_system(const void *msh,
+			 uint8_t N_comp, double *M, double *F,
+			 double *nodal_values);
+
+void nb_mshquad_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+					   const double *elem_values,
+					   double *nodal_values)
+{
+	uint32_t N_nodes = nb_mshquad_get_N_nodes(msh);
+
+	char *memblock = malloc((1 + N_comp) * N_nodes * sizeof(double));
+
+	double *M = (void*) memblock;
+	double *F = (void*) (memblock + N_nodes * sizeof(double));
+	memset(M, 0, N_nodes * sizeof(*M));
+	memset(F, 0, N_nodes * N_comp * sizeof(*F));
+	
+	assemble_system(msh, elem_values, N_comp, M, F);
+
+	solve_system(msh, N_comp, M, F, nodal_values);
+
+	free(memblock);
+}
+
+static void assemble_system(const void *msh, 
+			    const double* elem_values,
+			    uint32_t N_comp,
+			    double *M, double *F)
+{
+	uint32_t N_elems = nb_mshquad_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		if (nb_mshquad_elem_is_quad(msh, i))
+			quad_assemble_elem(msh, elem_values,
+					   i, N_comp, M, F);
+		else
+			trg_assemble_elem(msh, elem_values,
+					  i, N_comp, M, F);
+	}
+}
+
+static void trg_assemble_elem(const void *msh,
+			      const double *elem_values,
+			      uint32_t elem_id,
+			      uint8_t N_comp,
+			      double *M, double *F)
+{
+	double Jinv[4];
+	double detJ = trg_get_jacobian(msh, elem_id, Jinv);
+
+	double dNi_dx[3];
+	double dNi_dy[3];
+	trg_get_deriv(Jinv, dNi_dx, dNi_dy);
+
+	double wp = 0.5;
+	for (uint8_t i = 0; i < 3; i++) {
+		uint32_t id = nb_mshquad_elem_get_adj(msh, elem_id, i);
+		double Ni = INV_3;
+		for (uint32_t j = 0; j < 3; j++) {
+			double Nj = INV_3;
+			double integral = Ni * Nj * detJ * wp;
+			M[id] += integral;
+		}
+
+		for (int c = 0; c < N_comp; c++) {
+			double val = elem_values[elem_id * N_comp + c];
+			double integral = Ni * val * detJ * wp;
+			F[id * N_comp + c] += integral;
+		}
+	}
+}
+
+static double trg_get_jacobian(const void *msh, uint32_t id,
+			       double Jinv[4])
+{
+	/* Compute Jacobian derivatives */
+	double dx_dpsi = 0.0;
+	double dy_dpsi = 0.0;
+	double dx_deta = 0.0;
+	double dy_deta = 0.0;
+
+	double dNi_dpsi[3] = {-1, 1, 0};
+	double dNi_deta[3] = {-1, 0, 1};
+	for (int i = 0; i < 3; i++) {
+		uint32_t inode = nb_mshquad_elem_get_adj(msh, id, i);
+		double xi = nb_mshquad_node_get_x(msh, inode);
+		double yi = nb_mshquad_node_get_y(msh, inode);
+		dx_dpsi += dNi_dpsi[i] * xi;
+		dx_deta += dNi_deta[i] * xi;
+		dy_dpsi += dNi_dpsi[i] * yi;
+		dy_deta += dNi_deta[i] * yi;
+	}
+
+	/* Compute Jacobian inverse and determinant */
+	double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
+      
+	Jinv[0] =  dy_deta / detJ;
+	Jinv[1] = -dy_dpsi / detJ;
+	Jinv[2] = -dx_deta / detJ;
+	Jinv[3] =  dx_dpsi / detJ;
+
+	return detJ;
+}
+
+static void trg_get_deriv(double Jinv[4], double dNi_dx[3], double dNi_dy[3])
+{
+	double dNi_dpsi[3] = {-1, 1, 0};
+	double dNi_deta[3] = {-1, 0, 1};
+	for (uint8_t i = 0; i < 3; i++) {
+		dNi_dx[i] = Jinv[0] * dNi_dpsi[i] + Jinv[1] * dNi_deta[i];
+		dNi_dy[i] = Jinv[2] * dNi_dpsi[i] + Jinv[3] * dNi_deta[i];
+	}
+}
+
+static void quad_assemble_elem(const void *msh,
+			       const double *elem_values,
+			       uint32_t elem_id, uint8_t N_comp,
+			       double *M, double *F)
+{
+	double Jinv[4];
+	double detJ = quad_get_jacobian(msh, elem_id, Jinv);
+
+	double dNi_dx[4];
+	double dNi_dy[4];
+	quad_get_deriv(Jinv, dNi_dx, dNi_dy);
+	
+	double wp = 4;
+	for (uint8_t i = 0; i < 4; i++) {
+		uint32_t id = nb_mshquad_elem_get_adj(msh, elem_id, i);
+		double Ni = 0.25;
+		for (uint32_t j = 0; j < 4; j++) {
+			double Nj = 0.25;
+			double integral = Ni * Nj * detJ * wp;
+			M[id] += integral;
+		}
+
+		for (int c = 0; c < N_comp; c++) {
+			double val = elem_values[elem_id * N_comp + c];
+			double integral = Ni * val * detJ * wp;
+			F[id * N_comp + c] += integral;
+		}
+	}
+}
+
+static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4])
+{
+	/* Compute Jacobian derivatives */
+	double dx_dpsi = 0.0;
+	double dy_dpsi = 0.0;
+	double dx_deta = 0.0;
+	double dy_deta = 0.0;
+
+	double dNi_dpsi[4] = {-0.25, 0.25, 0.25, -0.25};
+	double dNi_deta[4] = {-0.25, 0.25, -0.25, 0.25};
+	for (int i = 0; i < 4; i++) {
+		uint32_t inode = nb_mshquad_elem_get_adj(msh, id, i);
+		double xi = nb_mshquad_node_get_x(msh, inode);
+		double yi = nb_mshquad_node_get_y(msh, inode);
+		dx_dpsi += dNi_dpsi[i] * xi;
+		dx_deta += dNi_deta[i] * xi;
+		dy_dpsi += dNi_dpsi[i] * yi;
+		dy_deta += dNi_deta[i] * yi;
+	}
+
+	/* Compute Jacobian inverse and determinant */
+	double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
+      
+	Jinv[0] =  dy_deta / detJ;
+	Jinv[1] = -dy_dpsi / detJ;
+	Jinv[2] = -dx_deta / detJ;
+	Jinv[3] =  dx_dpsi / detJ;
+
+	return detJ;
+}
+
+static void quad_get_deriv(double Jinv[4], double dNi_dx[4], double dNi_dy[4])
+{
+	double dNi_dpsi[4] = {-0.25, 0.25, 0.25, -0.25};
+	double dNi_deta[4] = {-0.25, 0.25, -0.25, 0.25};
+	for (uint8_t i = 0; i < 4; i++) {
+		dNi_dx[i] = Jinv[0] * dNi_dpsi[i] + Jinv[1] * dNi_deta[i];
+		dNi_dy[i] = Jinv[2] * dNi_dpsi[i] + Jinv[3] * dNi_deta[i];
+	}
+}
+
+static void solve_system(const void *msh,
+			 uint8_t N_comp, double *M, double *F,
+			 double *nodal_values)
+{
+	uint32_t N_nodes = nb_mshquad_get_N_nodes(msh);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		for (uint8_t j = 0; j < N_comp; j++) {
+			uint32_t id = i * N_comp + j;
+			nodal_values[id] = F[id] / M[i];
+		}
+	}
+}
