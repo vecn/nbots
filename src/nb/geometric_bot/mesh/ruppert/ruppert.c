@@ -168,6 +168,8 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
+static void initialize_subsgm(const nb_mesh_t *mesh, nb_container_t *subsgm);
+static void split_segments(vcn_mesh_t *const mesh,  nb_container_t *subsgm);
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
 				    nb_container_t *exterior_trg);
 static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
@@ -845,7 +847,7 @@ static inline void insert_midpoint
 	medge_free(mesh, sgm);
 }
 
-static inline void split_encroached_segments
+static void split_encroached_segments
                              (vcn_mesh_t *const mesh,
 			      nb_container_t *const restrict encroached_sgm,
 			      nb_container_t *const restrict big_trg,
@@ -1306,6 +1308,50 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	if(NULL != big_ratio)
 		*big_ratio = size_ratio;
 	return is_too_big;
+}
+
+void nb_ruppert_split_all_subsgm(nb_mesh_t *mesh)
+{
+	nb_container_t *subsgm = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(subsgm, NB_QUEUE);
+	
+	initialize_subsgm(mesh, subsgm);
+	split_segments(mesh, subsgm);
+
+	nb_container_finish(subsgm);
+	
+}
+
+static void initialize_subsgm(const nb_mesh_t *mesh, nb_container_t *subsgm)
+{
+	for (uint32_t i = 0; i < N_input_sgm; i++) {
+		msh_edge_t* restrict sgm = mesh->input_sgm[i];
+		while (sgm != NULL) {
+			nb_container_insert(subsgm, sgm);
+			sgm = medge_subsgm_next(sgm);
+		}
+	}	
+}
+
+static void split_segments(vcn_mesh_t *const mesh,  nb_container_t *lsgm)
+{
+	/* AQUI VOY */
+	while (nb_container_is_not_empty(lsgm)) {
+		msh_edge_t* sgm = nb_container_delete_first(lsgm);
+		msh_vtx_t *v = get_midpoint(mesh, sgm);
+		/* Split the segment */
+		nb_container_t* l_new_trg =
+			alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_container_init(l_new_trg, NB_QUEUE);
+
+		msh_edge_t* subsgm[2];
+		insert_midpoint(mesh, sgm, v, big_trg, poor_quality_trg,
+				lsgm, l_new_trg);
+
+		nb_container_finish(l_new_trg);
+
+		mesh->do_after_insert_vtx(mesh);
+	}
 }
 
 void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)

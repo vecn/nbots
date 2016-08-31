@@ -232,8 +232,8 @@ static void test_show_text(void)
 static void show_text(nb_graphics_context_t *g, int w, int h,
 		       const void *const datxa)
 {
-	const char *label = "Heljo world, "
-		"I'am Victor Eduardo Cardoso Nungaray "
+	const char *label = "Hello, "
+		"This test is to show our bitmap font ;)    "
 		"1234567890";
 	
 	nb_graphics_set_font_type(g, "");
@@ -288,8 +288,8 @@ static void show_text(nb_graphics_context_t *g, int w, int h,
 
 	nb_graphics_set_source(g, NB_BLUE);
 	const char *multiline = "Hello world, this is a multiline string\n"
-		"to test our library, we love how people\n"
-		"tastes... so we will test you:\n(;'\"#$%&/=?[]{})";
+		"to test our library, if anything is wrong please\n"
+		"send an email to victorc@cimat.mx ...:\n(;'\"#$%&/=?[]{})";
 
 	nb_graphics_set_font_size(g, 8);
 	nb_graphics_show_text(g, 10, 290, multiline);
@@ -312,8 +312,8 @@ static void test_show_text_tt(void)
 static void show_text_tt(nb_graphics_context_t *g, int w, int h,
 		       const void *const datxa)
 {
-	const char *label = "Heljo world, "
-		"I'am Victor Eduardo Cardoso Nungaray "
+	const char *label = "Hello world, "
+		"This test is to show True type rasterizer "
 		"1234567890";
 	
 	nb_graphics_set_font_type(g, "FreeSerif");
@@ -385,8 +385,9 @@ static void show_text_tt(nb_graphics_context_t *g, int w, int h,
 
 	nb_graphics_set_source(g, NB_BLUE);
 	const char *multiline = "Hello world, this is a multiline string\n"
-		"to test our library, we love how people\n"
-		"tastes... so we will test you:\n(;'\"#$%&/=?[]{})";
+		"to test our library, if anything is wrong please\n"
+		"send an email to victorc@cimat.mx ...:\n(;'\"#$%&/=?[]{})\n"
+		"Environment var for TT fonts is NB_FONTS_DIR";
 
 	nb_graphics_set_font_type(g, "FreeSerif");
 	nb_graphics_set_font_size(g, 25);
