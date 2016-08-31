@@ -98,7 +98,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
-  
+
 	nb_cvfa_set_bconditions(part, K, F, bcond, 1.0);
 
 	int solver_status = solver(K, F, displacement);

@@ -85,14 +85,6 @@ double nb_partition_distort_with_field(nb_partition_t *part,
 				       nb_partition_entity field_type,
 				       double *disp, double max_disp);
 
-void nb_partition_export_draw(const nb_partition_t *part,
-			      const char *filename,
-			      int width, int height,
-			      nb_partition_entity vals_entity,
-			      nb_partition_array_type vals_type,
-			      const void *values,
-			      bool draw_wires);
-
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model);
 
 /**

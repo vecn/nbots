@@ -16,20 +16,16 @@
 #include "nb/geometric_bot/mesh/partition/elements2D/mshpack.h"
 
 #include "../../mesh2D_structs.h"
+#include "mshpack_struct.h"
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-struct nb_mshpack_s {
-	uint32_t N_elems;
-	double* cen;
-	double* radii;
-	uint32_t* N_ngb;
-	uint32_t** ngb;
-};
-
 static void clear_pack(nb_mshpack_t* pack);
+static double distort_using_elem_field(nb_mshpack_t *msh, double *disp,
+				       double max_disp);
+static double get_max_displacement(uint32_t N, double *disp);
 static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems);
 static uint32_t mesh_enumerate_input_and_steiner_vtx(vcn_mesh_t *mesh);
 static void pack_assemble_adjacencies(const vcn_mesh_t *const mesh,
@@ -240,19 +236,47 @@ uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 	return pack->N_elems;
 }
 
-double nb_mshpack_distort_with_field(void *msh,
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp)
-{
-	return 0;/* PENDING */
-}
 
 void nb_mshpack_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
 					   const double *elem_values,
 					   double *nodal_values)
 {
 	; /* NULL statement */
+}
+
+double nb_mshpack_distort_with_field(void *msh,
+				     nb_partition_entity field_entity,
+				     double *disp,
+				     double max_disp)
+{
+	double scale = 1.0;
+	if (NB_ELEMENT == field_entity)
+		scale = distort_using_elem_field(msh, disp, max_disp);
+	return scale;
+}
+
+static double distort_using_elem_field(nb_mshpack_t *msh, double *disp,
+					double max_disp)
+{
+	uint32_t N_elems = nb_mshpack_get_N_elems(msh);
+	double max_field_disp = get_max_displacement(N_elems, disp);
+	double scale = max_disp / max_field_disp;
+	
+	for (uint32_t i = 0; i < 2 * N_elems; i++)
+		msh->cen[i] += disp[i] * scale;
+
+	return scale;
+}
+
+static double get_max_displacement(uint32_t N, double *disp)
+{
+	double max = 0;
+	for (uint32_t i = 0; i < N; i++) {
+		double disp2 = POW2(disp[i * 2]) + POW2(disp[i*2+1]);
+		if (disp2 > max)
+			max = disp2;
+	}
+	return sqrt(max);
 }
 
 void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph)

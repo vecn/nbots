@@ -77,7 +77,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//TEMPORAL CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
 	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
@@ -217,8 +217,8 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	nb_partition_t *part = alloca(nb_partition_get_memsize(NB_TRIAN));
-	nb_partition_init(part, NB_TRIAN);
+	nb_partition_t *part = alloca(nb_partition_get_memsize(NB_POLY));
+	nb_partition_init(part, NB_POLY);
 
 	int status = simulate(problem_data, part, &results,
 			      N_vtx, modify_bcond);
@@ -260,6 +260,8 @@ static int simulate(const char *problem_data,
 		goto CLEANUP;
 
 	get_mesh(model, part, N_vtx);
+	nb_partition_export_draw(part, "../../../Temp_part.png", 1000, 800,
+				 NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t N_elems = nb_partition_get_N_elems(part);

@@ -14,33 +14,12 @@
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/mshquad.h"
 
+#include "mshquad_struct.h"
 #include "../../mesh2D_structs.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
-
-struct nb_mshquad_s {
-	uint32_t N_nod;
-	double *nod;      /* Nodes coordinates concatenated */
-
-	uint32_t N_edg;
-	uint32_t *edg;
-
-	uint32_t N_elems;
-	int8_t *type;     /* Quad if 0, Trg otherwise. */
-	uint32_t *adj;    /* Connectivity matrix (4 x N_elems) */
-	uint32_t *ngb;    /* Quad-neighbours (4 x N_elems) */
-
-	uint32_t N_vtx;
-	uint32_t *vtx; /* Ids of vtx corresponding to input vtx */
-
-	uint32_t N_sgm;
-	/* Number of nodes forming the input segment */
-	uint32_t *N_nod_x_sgm;
-	/* Sequence of nodal ids forming the input segments */
-	uint32_t** nod_x_sgm;
-};
 
 typedef struct {
 	uint32_t N_matchs;
@@ -499,14 +478,6 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->nod_x_sgm[sgm_id][node_id];
-}
-
-double nb_mshquad_distort_with_field(void *msh,
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp)
-{
-	return 0;/* PENDING */
 }
 
 void nb_mshquad_load_elem_graph(const void *mshquad_ptr,

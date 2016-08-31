@@ -12,6 +12,21 @@
 #include "nb/geometric_bot/mesh/partition/draw.h"
 #include "partition_struct.h"
 
+#define COLOR_EDGE NB_DARK_GRAY
+#define COLOR_ELEM NB_LIGHT_BLUE
+#define COLOR_SGM NB_BLACK
+#define PALETTE_FIELD NB_RAINBOW
+#define COLOR_CLASS_0 NB_BLUE
+#define COLOR_CLASS_1 NB_RED
+#define COLOR_CLASS_2 NB_VIOLET
+#define COLOR_CLASS_3 NB_AZURE
+#define COLOR_CLASS_4 NB_GREEN
+#define COLOR_CLASS_5 NB_YELLOW
+#define COLOR_CLASS_6 NB_ROSE
+#define COLOR_CLASS_7 NB_CHARTREUSE
+#define COLOR_CLASS_8 NB_LIGHT_GRAY
+#define COLOR_CLASS_9 NB_AQUAMARIN
+
 typedef struct {
 	const nb_partition_t *part;
 	const void *values;
@@ -154,7 +169,7 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 	
 	part->graphics.fill_elems_field_on_nodes(part->msh, g,
 					   normalized_values,
-					   NB_RAINBOW);
+					   PALETTE_FIELD);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -186,7 +201,7 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 	
 	part->graphics.fill_elems_field_on_elems(part->msh, g,
 					   normalized_values,
-					   NB_RAINBOW);
+					   PALETTE_FIELD);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -202,37 +217,37 @@ static void fill_elems_classes(const nb_partition_t *part,
 
 static void set_class_colors(nb_graphics_color_t color[10])
 {
-	color[0] = NB_BLUE;
-	color[1] = NB_RED;
-	color[2] = NB_VIOLET;
-	color[3] = NB_AZURE;
-	color[4] = NB_GREEN;
-	color[5] = NB_YELLOW;
-	color[6] = NB_ROSE;
-	color[7] = NB_CHARTREUSE;
-	color[8] = NB_LIGHT_GRAY;
-	color[9] = NB_AQUAMARIN;
+	color[0] = COLOR_CLASS_0;
+	color[1] = COLOR_CLASS_1;
+	color[2] = COLOR_CLASS_2;
+	color[3] = COLOR_CLASS_3;
+	color[4] = COLOR_CLASS_4;
+	color[5] = COLOR_CLASS_5;
+	color[6] = COLOR_CLASS_6;
+	color[7] = COLOR_CLASS_7;
+	color[8] = COLOR_CLASS_8;
+	color[9] = COLOR_CLASS_9;
 }
 
 static void fill_elems(const nb_partition_t *part,
 		       nb_graphics_context_t *g)
 {
-	nb_graphics_set_source(g, NB_LIGHT_BLUE);
+	nb_graphics_set_source(g, COLOR_ELEM);
 	part->graphics.fill_elems(part->msh, g);
 }
 
 static void draw_wires(const nb_partition_t *part,
 		       nb_graphics_context_t *g)
 {
-	nb_graphics_set_source(g, NB_LIGHT_PURPLE);
-	nb_graphics_set_line_width(g, 0.5);
+	nb_graphics_set_source(g, COLOR_EDGE);
+	nb_graphics_set_line_width(g, 1.0);
 	part->graphics.draw_wires(part->msh, g);
 }
 
 static void draw_boundaries(const nb_partition_t *part,
 			    nb_graphics_context_t *g)
 {
-	nb_graphics_set_source(g, NB_PURPLE);
+	nb_graphics_set_source(g, COLOR_SGM);
 	nb_graphics_set_line_width(g, 1.5);
 	part->graphics.draw_boundaries(part->msh, g);
 }

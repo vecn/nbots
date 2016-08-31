@@ -461,7 +461,7 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 		_SET_RGB(g, 0, 0, 255);
 		break;
 	case NB_LIGHT_BLUE:
-		_SET_RGB(g, 128, 128, 255);
+		_SET_RGB(g, 158, 158, 235);
 		break;
 	case NB_YELLOW:
 		_SET_RGB(g, 255, 255, 0);
@@ -495,6 +495,12 @@ void nb_graphics_set_source(nb_graphics_context_t *g,
 		break;
 	case NB_AZURE:
 		_SET_RGB(g, 0, 128, 255);
+		break;
+	case NB_PINK:
+		_SET_RGB(g, 255, 20, 147);
+		break;
+	case NB_DARK_GREEN:
+	  _SET_RGB(g, 0, 100, 0);
 		break;
 	default:
 		_SET_RGB(g, 0, 0, 0);

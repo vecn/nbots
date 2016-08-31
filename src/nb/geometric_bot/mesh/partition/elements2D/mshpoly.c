@@ -17,32 +17,10 @@
 
 #include "../../mesh2D_structs.h"
 #include "../../ruppert/ruppert.h"
+#include "mshpoly_struct.h"
+
 
 #define POW2(a) ((a)*(a))
-
-struct nb_mshpoly_s {
-	uint32_t N_nod;
-	double *nod;      /* Nodes coordinates concatenated */
-
-	uint32_t N_edg;
-	uint32_t *edg;
-
-	uint32_t N_elems;
-	double *cen;      /* Centroids */
-	uint16_t *N_adj;
-	uint32_t **adj;   /* Connectivity matrix */
-	uint32_t **ngb;   /* Neighbours */
-
-	uint32_t N_vtx;
-	uint32_t *vtx; /* Ids of elems corresponding to input vtx.
-			     * 'N_elems' for input vtx on the boundary. */
-
-	uint32_t N_sgm;
-	/* Number of nodes forming the input segment */
-	uint32_t *N_nod_x_sgm;
-	/* Sequence of nodal ids forming the input segments */
-	uint32_t **nod_x_sgm;
-};
 
 typedef struct {
 	uint32_t N;
@@ -539,14 +517,6 @@ uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
 	return poly->nod_x_sgm[sgm_id][node_id];
 }
 
-double nb_mshpoly_distort_with_field(void *msh,
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp)
-{
-	return 0;/* PENDING */
-}
-
 void nb_mshpoly_load_elem_graph(const void *mshpoly,
 				nb_graph_t *graph)
 {
@@ -568,8 +538,10 @@ void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
 
 	uint32_t memsize3 = 0;
-	for (uint32_t i = 0; i < graph->N; i++)
-		memsize3 += nb_mshpoly_elem_get_N_adj(mshpoly, i);
+	for (uint32_t i = 0; i < graph->N; i++) {
+		uint16_t N = nb_mshpoly_elem_get_N_adj(mshpoly, i);
+		memsize3 += N * sizeof(**(graph->adj));
+	}
 
 	char *memblock = calloc(memsize1 + memsize2 + memsize3, 1);
 	graph->N_adj = (void*) memblock;

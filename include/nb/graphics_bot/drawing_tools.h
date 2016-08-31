@@ -39,7 +39,9 @@ typedef enum {
 	NB_PURPLE,
 	NB_ROSE,
 	NB_CHARTREUSE,
-	NB_AZURE
+	NB_AZURE,
+	NB_PINK,
+	NB_DARK_GREEN
 } nb_graphics_color_t;
 
 typedef struct {

@@ -1,10 +1,3 @@
-/******************************************************************************
- *   Graph's Bot: Fast graph theory tools.                                    *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 /**
  * @file graph_bot.h
  * @brief The graph bot is a set of numerical procedures to handle graphs,
