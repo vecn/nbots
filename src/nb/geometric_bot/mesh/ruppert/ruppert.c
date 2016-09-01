@@ -136,9 +136,8 @@ static void get_sgm_encroached_by_vertex
 			   const msh_vtx_t *const vtx,
 			   nb_container_t *encroached_sgm);
 
-static bool split_is_permitted
-                          (const msh_edge_t *const sgm,
-			   double d);
+static bool split_is_permitted(const msh_edge_t *const sgm,
+			       double d);
 
 static void get_subsgm_cluster(const msh_edge_t *const sgm,
 			       const msh_vtx_t *const vtx,
@@ -1342,9 +1341,9 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 static bool is_exterior_with_a_sgm_face(const msh_trg_t *trg)
 {
 	bool out = false;
-	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
-		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
-			if (mvtx_is_type_location(trg->v3, ONSEGMENT))
+	if (medge_is_boundary(trg->s1)) {
+		if (medge_is_boundary(trg->s2)) {
+			if (medge_is_boundary(trg->s3))
 				out = true;
 		}
 	}
