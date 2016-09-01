@@ -168,14 +168,14 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
-static void initialize_subsgm(const nb_mesh_t *mesh, nb_container_t *subsgm);
-static void split_segments(vcn_mesh_t *const mesh,  nb_container_t *subsgm);
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg);
-static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
-				      const msh_trg_t *trg);
+				    nb_container_t *exterior_trg,
+				    bool (*is_exterior)(const msh_trg_t* trg));
+
+static bool is_exterior_with_a_sgm_face(const msh_trg_t *trg);
 static void delete_exterior_trg(nb_mesh_t *mesh,
 				nb_container_t *exterior_trg);
+static bool is_exterior_with_all_nodes_in_sgm(const msh_trg_t *trg);
 
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
@@ -1310,87 +1310,45 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	return is_too_big;
 }
 
-void nb_ruppert_split_all_subsgm(nb_mesh_t *mesh)
-{
-	nb_container_t *subsgm = alloca(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(subsgm, NB_QUEUE);
-	
-	initialize_subsgm(mesh, subsgm);
-	split_segments(mesh, subsgm);
-
-	nb_container_finish(subsgm);
-	
-}
-
-static void initialize_subsgm(const nb_mesh_t *mesh, nb_container_t *subsgm)
-{
-	for (uint32_t i = 0; i < N_input_sgm; i++) {
-		msh_edge_t* restrict sgm = mesh->input_sgm[i];
-		while (sgm != NULL) {
-			nb_container_insert(subsgm, sgm);
-			sgm = medge_subsgm_next(sgm);
-		}
-	}	
-}
-
-static void split_segments(vcn_mesh_t *const mesh,  nb_container_t *lsgm)
-{
-	/* AQUI VOY */
-	while (nb_container_is_not_empty(lsgm)) {
-		msh_edge_t* sgm = nb_container_delete_first(lsgm);
-		msh_vtx_t *v = get_midpoint(mesh, sgm);
-		/* Split the segment */
-		nb_container_t* l_new_trg =
-			alloca(nb_container_get_memsize(NB_QUEUE));
-		nb_container_init(l_new_trg, NB_QUEUE);
-
-		msh_edge_t* subsgm[2];
-		insert_midpoint(mesh, sgm, v, big_trg, poor_quality_trg,
-				lsgm, l_new_trg);
-
-		nb_container_finish(l_new_trg);
-
-		mesh->do_after_insert_vtx(mesh);
-	}
-}
-
-void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)
+void nb_ruppert_split_trg_with_a_sgm_face(nb_mesh_t *mesh)
 {
 	nb_container_t *exterior_trg =
 		alloca(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(exterior_trg, NB_QUEUE);
 	
-	initialize_exterior_trg(mesh, exterior_trg);
+	initialize_exterior_trg(mesh, exterior_trg,
+				is_exterior_with_a_sgm_face);
 	delete_exterior_trg(mesh, exterior_trg);
 
 	nb_container_finish(exterior_trg);
 }
 
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg)
+				    nb_container_t *exterior_trg,
+				    bool (*is_exterior)(const msh_trg_t* trg))
 {
 	uint32_t size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
-		const msh_trg_t *restrict trg =
-			nb_iterator_get_next(iter);
-		insert_trg_if_is_exterior(exterior_trg, trg);
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		if (is_exterior(trg))
+			nb_container_insert(exterior_trg, trg);
 	}
 	nb_iterator_finish(iter);
 }
 
-static void insert_trg_if_is_exterior(nb_container_t *exterior_trg,
-				      const msh_trg_t *trg)
+static bool is_exterior_with_a_sgm_face(const msh_trg_t *trg)
 {
+	bool out = false;
 	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
 		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
-			if (mvtx_is_type_location(trg->v3, ONSEGMENT)) {
-				nb_container_insert(exterior_trg, trg);
-			}
+			if (mvtx_is_type_location(trg->v3, ONSEGMENT))
+				out = true;
 		}
 	}
+	return out;
 }
 
 static void delete_exterior_trg(nb_mesh_t *mesh,
@@ -1409,4 +1367,29 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 		insert_vertex(mesh, trg_containing_cc, cc, NULL, NULL, NULL);
 	}
 
+}
+
+void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)
+{
+	nb_container_t *exterior_trg =
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(exterior_trg, NB_QUEUE);
+	
+	initialize_exterior_trg(mesh, exterior_trg,
+				is_exterior_with_all_nodes_in_sgm);
+	delete_exterior_trg(mesh, exterior_trg);
+
+	nb_container_finish(exterior_trg);
+}
+
+static bool is_exterior_with_all_nodes_in_sgm(const msh_trg_t *trg)
+{
+	bool out = false;
+	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
+		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
+			if (mvtx_is_type_location(trg->v3, ONSEGMENT))
+				out = true;
+		}
+	}
+	return out;
 }

@@ -592,7 +592,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		nb_ruppert_split_all_subsgm(mesh);
+		nb_ruppert_split_trg_with_a_sgm_face(mesh);
 		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
 
 		mesh_enumerate_vtx(mesh);
