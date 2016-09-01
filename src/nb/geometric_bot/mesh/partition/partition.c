@@ -102,6 +102,31 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 		nb_msh3trg_init(part->msh);
 		set_msh3trg_interface(part);
 		break;
+	}/* AQUI VOY */
+}
+
+void nb_partition_init_from_msh(nb_partition_t *part, void *msh,
+				nb_partition_type  type)
+{
+	char *memblock = (void*) part;
+	part->msh = msh;
+	part->type = type;
+	switch (type) {
+	case NB_TRIAN:
+		set_msh3trg_interface(part);
+		break;
+	case NB_QUAD:
+		set_mshquad_interface(part);
+		break;
+	case NB_POLY:
+		set_mshpoly_interface(part);
+		break;
+	case NB_DISK:
+		set_mshpack_interface(part);
+		break;
+	default:
+		set_msh3trg_interface(part);
+		break;
 	}
 }
 

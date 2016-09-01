@@ -57,7 +57,7 @@ double vcn_utils2D_get_trg_area(const double t1[2],
 				const double t2[2],
 				const double t3[2]);
 double vcn_utils2D_get_poly_area(const double *p[2], uint16_t N);
-void vcn_utils2D_get_trg_centroid(const double t1[2],
+void vcn_utils2D_trg_get_centroid(const double t1[2],
 				  const double t2[2],
 				  const double t3[2],
 				  double centroid[2]);

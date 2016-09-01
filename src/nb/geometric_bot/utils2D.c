@@ -229,7 +229,7 @@ double vcn_utils2D_get_trg_area(const double t1[2],
 	return 0.5 * vcn_utils2D_orient(t1, t2, t3);
 }
 
-void vcn_utils2D_get_trg_centroid(const double t1[2],
+void vcn_utils2D_trg_get_centroid(const double t1[2],
 				  const double t2[2],
 				  const double t3[2],
 				  double centroid[2])

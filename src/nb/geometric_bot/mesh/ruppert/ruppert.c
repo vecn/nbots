@@ -168,13 +168,12 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    double *big_ratio);
 
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg,
-				    bool (*is_exterior)(const msh_trg_t* trg));
-
-static bool is_exterior_with_a_sgm_face(const msh_trg_t *trg);
+				    nb_container_t *exterior_trg);
+static bool is_exterior(const msh_trg_t *trg);
+static bool have_a_sgm_face(const msh_trg_t *trg);
+static bool have_all_nodes_in_sgm(const msh_trg_t *trg);
 static void delete_exterior_trg(nb_mesh_t *mesh,
 				nb_container_t *exterior_trg);
-static bool is_exterior_with_all_nodes_in_sgm(const msh_trg_t *trg);
 
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
@@ -281,10 +280,10 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
 	if (NULL == trg) {
 		mvtx_destroy(mesh, new_vtx);
 		return false;
+	} else {
+		insert_vertex(mesh, trg, new_vtx, NULL, NULL, NULL);
+		return true;
 	}
-
-	insert_vertex(mesh, trg, new_vtx, NULL, NULL, NULL);
-	return true;
 }
 
 static void delete_bad_trg(vcn_mesh_t *mesh,
@@ -954,7 +953,7 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 
 		/* Calculate centroid of the triangle */
 		double centroid[2];
-		vcn_utils2D_get_trg_centroid(trg_containing_cc->v1->x,
+		vcn_utils2D_trg_get_centroid(trg_containing_cc->v1->x,
 					     trg_containing_cc->v2->x,
 					     trg_containing_cc->v3->x,
 					     centroid);
@@ -1309,22 +1308,20 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	return is_too_big;
 }
 
-void nb_ruppert_split_trg_with_a_sgm_face(nb_mesh_t *mesh)
+void nb_ruppert_split_exterior_trg(nb_mesh_t *mesh)
 {
 	nb_container_t *exterior_trg =
 		alloca(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(exterior_trg, NB_QUEUE);
 	
-	initialize_exterior_trg(mesh, exterior_trg,
-				is_exterior_with_a_sgm_face);
+	initialize_exterior_trg(mesh, exterior_trg);
 	delete_exterior_trg(mesh, exterior_trg);
 
 	nb_container_finish(exterior_trg);
 }
 
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg,
-				    bool (*is_exterior)(const msh_trg_t* trg))
+				    nb_container_t *exterior_trg)
 {
 	uint32_t size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(size);
@@ -1338,50 +1335,22 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 	nb_iterator_finish(iter);
 }
 
-static bool is_exterior_with_a_sgm_face(const msh_trg_t *trg)
+static bool is_exterior(const msh_trg_t *trg)
 {
-	bool out = false;
-	if (medge_is_boundary(trg->s1)) {
-		if (medge_is_boundary(trg->s2)) {
-			if (medge_is_boundary(trg->s3))
-				out = true;
-		}
-	}
+	bool out = have_a_sgm_face(trg);
+	if (!out)
+		out = have_all_nodes_in_sgm(trg);
 	return out;
 }
 
-static void delete_exterior_trg(nb_mesh_t *mesh,
-				nb_container_t *exterior_trg)
+static bool have_a_sgm_face(const msh_trg_t *trg)
 {
-	while (nb_container_is_not_empty(exterior_trg)) {
-		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
-
-		msh_vtx_t *cc = mvtx_create(mesh);
-		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
-					     trg->v3->x, cc->x);
-    
-		msh_trg_t *trg_containing_cc =
-			get_trg_containing_circumcenter(mesh, trg, cc);
-
-		insert_vertex(mesh, trg_containing_cc, cc, NULL, NULL, NULL);
-	}
-
+	return medge_is_subsgm(trg->s1) ||
+		medge_is_subsgm(trg->s2) ||
+		medge_is_subsgm(trg->s3);
 }
 
-void nb_ruppert_split_trg_with_all_nodes_in_sgm(nb_mesh_t *mesh)
-{
-	nb_container_t *exterior_trg =
-		alloca(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(exterior_trg, NB_QUEUE);
-	
-	initialize_exterior_trg(mesh, exterior_trg,
-				is_exterior_with_all_nodes_in_sgm);
-	delete_exterior_trg(mesh, exterior_trg);
-
-	nb_container_finish(exterior_trg);
-}
-
-static bool is_exterior_with_all_nodes_in_sgm(const msh_trg_t *trg)
+static bool have_all_nodes_in_sgm(const msh_trg_t *trg)
 {
 	bool out = false;
 	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
@@ -1391,4 +1360,20 @@ static bool is_exterior_with_all_nodes_in_sgm(const msh_trg_t *trg)
 		}
 	}
 	return out;
+}
+
+
+static void delete_exterior_trg(nb_mesh_t *mesh,
+				nb_container_t *exterior_trg)
+{
+	while (nb_container_is_not_empty(exterior_trg)) {
+		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
+
+		msh_vtx_t *cen = mvtx_create(mesh);
+		vcn_utils2D_trg_get_centroid(trg->v1->x, trg->v2->x,
+					     trg->v3->x, cen->x);
+
+		insert_vertex(mesh, trg, cen,  NULL, NULL, NULL);
+	}
+
 }

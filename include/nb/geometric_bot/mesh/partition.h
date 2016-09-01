@@ -15,6 +15,8 @@ typedef struct nb_partition_s nb_partition_t;
 
 uint32_t nb_partition_get_memsize(nb_partition_type  type);
 void nb_partition_init(nb_partition_t *part, nb_partition_type  type);
+void nb_partition_init_from_msh(nb_partition_t *part, void *msh,
+				nb_partition_type  type);
 void nb_partition_copy(nb_partition_t *part, const nb_partition_t* srcpart);
 void nb_partition_finish(nb_partition_t *part);
 nb_partition_t* nb_partition_create(nb_partition_type type);

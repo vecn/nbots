@@ -34,9 +34,6 @@ static void test_load_from_mesh(void)
 	vcn_model_t *model = vcn_model_create_polygon(1, 0, 0, 6);
 	vcn_mesh_t* mesh = vcn_mesh_create();
 	vcn_mesh_set_geometric_constraint(mesh,
-					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
-					  0.02);
-	vcn_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.05);
 	vcn_mesh_generate_from_model(mesh, model);
@@ -50,8 +47,8 @@ static void test_load_from_mesh(void)
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	uint32_t N_elems = nb_mshpoly_get_N_elems(poly);
 	uint32_t N_edges = nb_mshpoly_get_N_edges(poly);
-	CU_ASSERT(2750 < N_elems && 3150 > N_elems);
-	CU_ASSERT(8700 < N_edges && 9200 > N_edges);
+	CU_ASSERT(2700 < N_elems && 2900 > N_elems);
+	CU_ASSERT(8100 < N_edges && 8300 > N_edges);
 
 	nb_mshpoly_finish(poly);
 }

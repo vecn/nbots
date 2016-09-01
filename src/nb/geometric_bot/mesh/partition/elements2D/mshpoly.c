@@ -592,12 +592,13 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		nb_ruppert_split_trg_with_a_sgm_face(mesh);
-		nb_ruppert_split_trg_with_all_nodes_in_sgm(mesh);
+		vcn_mesh_draw(mesh, "../../../TEMP_mesh1.png", 1000, 800);
+		nb_ruppert_split_exterior_trg(mesh);
+		vcn_mesh_draw(mesh, "../../../TEMP_mesh2.png", 1000, 800);
 
 		mesh_enumerate_vtx(mesh);
 		mesh_enumerate_trg(mesh);
-	
+
 		vinfo_t vinfo;
 		init_voronoi_info(&vinfo, mesh);
 

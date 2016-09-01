@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <signal.h>
 
 #include "nb/memory_bot/nb_malloc.h"
 #include "nb/memory_bot/membank.h"
@@ -169,8 +170,8 @@ void nb_membank_data_free(nb_membank_t *membank, void *obj)
 		block = block->next;
 	}
 
-	fputs("\nnb_block: unallocated free.\n\n", stderr);
-	exit(EXIT_FAILURE);
+	fputs("\nNB_MEMORY ERROR: unallocated free.\n\n", stderr);
+	raise(SIGSEGV);
 EXIT:
 	return;
 }
@@ -195,8 +196,8 @@ static void block_data_free(block_t *block, uint16_t type_size,
 				1 + get_last_allocated_id(block->mask,
 							  block->N_max);
 	} else {
-		fputs("\nnb_block: double free.\n\n", stderr);
-		exit(EXIT_FAILURE);
+		fputs("\nNB_MEMORY ERROR: double free.\n\n", stderr);
+		raise(SIGSEGV);
 	}
 }
 

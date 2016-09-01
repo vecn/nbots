@@ -172,7 +172,7 @@ static void calculate_area_centroid(const nb_mesh_t *mesh,
 		memset(centroid, 0, 2 * sizeof(*centroid));
 	} else if (1 == N_trg) {
 		msh_trg_t* trg = nb_container_delete_first(area_trg);
-		vcn_utils2D_get_trg_centroid(trg->v1->x, trg->v2->x,
+		vcn_utils2D_trg_get_centroid(trg->v1->x, trg->v2->x,
 					     trg->v3->x, centroid);
 	} else {
 		msh_edge_t *max_edge = NULL;

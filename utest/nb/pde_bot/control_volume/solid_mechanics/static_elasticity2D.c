@@ -262,6 +262,7 @@ static int simulate(const char *problem_data,
 	get_mesh(model, part, N_vtx);
 	nb_partition_export_draw(part, "../../../Temp_part.png", 1000, 800,
 				 NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+	printf("--- DRAWING FINISHED!\n");                     /* TEMPORAL */
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t N_elems = nb_partition_get_N_elems(part);

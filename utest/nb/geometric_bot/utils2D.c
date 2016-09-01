@@ -31,7 +31,7 @@ static void test_orient(void);
 static void test_orient_neg(void);
 static void test_orient_robust(void);
 static void test_get_trg_area(void);
-static void test_get_trg_centroid(void);
+static void test_trg_get_centroid(void);
 static void test_get_circumradius(void);
 static void test_get_circumcenter(void);
 static void test_get_circumcenter_from_sgm(void);
@@ -96,8 +96,8 @@ void cunit_nb_geometric_bot_utils2D(void)
 	CU_add_test(suite, "orient_neg()", test_orient_neg);
 	CU_add_test(suite, "orient_robust()", test_orient_robust);
 	CU_add_test(suite, "get_trg_area()", test_get_trg_area);
-	CU_add_test(suite, "get_trg_centroid()",
-		    test_get_trg_centroid);
+	CU_add_test(suite, "trg_get_centroid()",
+		    test_trg_get_centroid);
 	CU_add_test(suite, "get_circumradius()",
 		    test_get_circumradius);
 	CU_add_test(suite, "get_circumcenter()",
@@ -350,13 +350,13 @@ static void test_get_trg_area(void)
 	CU_ASSERT(fabs(area - 0.5) < TOLERANCE);
 }
 
-static void test_get_trg_centroid(void)
+static void test_trg_get_centroid(void)
 {
 	double t1[2] = {0, 0};
 	double t2[2] = {1, 0};
 	double t3[2] = {1, 1};
 	double centroid[2];
-	vcn_utils2D_get_trg_centroid(t1, t2, t3, centroid);
+	vcn_utils2D_trg_get_centroid(t1, t2, t3, centroid);
 	CU_ASSERT(fabs(centroid[0] - 2.0/3.0) < TOLERANCE);
 	CU_ASSERT(fabs(centroid[1] - 1.0/3.0) < TOLERANCE);
 }
