@@ -592,7 +592,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		vcn_mesh_draw(mesh, "../../../TEMP_mesh1.png", 1000, 800);
+		vcn_mesh_draw(mesh, "../../../TEMP_mesh1.png", 1000, 800);/* AQUI VOY */
 		nb_ruppert_split_exterior_trg(mesh);
 		vcn_mesh_draw(mesh, "../../../TEMP_mesh2.png", 1000, 800);
 

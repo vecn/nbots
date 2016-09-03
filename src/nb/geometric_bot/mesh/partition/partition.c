@@ -29,6 +29,8 @@ typedef struct {
 	bool draw_wires;
 } draw_data_t;
 
+static void set_msh_interface(nb_partition_t *part, nb_partition_type  type);
+
 static void set_msh3trg_interface(nb_partition_t *part);
 static void set_msh3trg_main_interface(nb_partition_t *part);
 static void set_msh3trg_graphics_interface(nb_partition_t *part);
@@ -81,36 +83,12 @@ void nb_partition_init(nb_partition_t *part, nb_partition_type  type)
 	char *memblock = (void*) part;
 	part->msh = (void*) (memblock + sizeof(nb_partition_t));
 	part->type = type;
-	switch (type) {
-	case NB_TRIAN:
-		nb_msh3trg_init(part->msh);
-		set_msh3trg_interface(part);
-		break;
-	case NB_QUAD:
-		nb_mshquad_init(part->msh);
-		set_mshquad_interface(part);
-		break;
-	case NB_POLY:
-		nb_mshpoly_init(part->msh);
-		set_mshpoly_interface(part);
-		break;
-	case NB_DISK:
-		nb_mshpack_init(part->msh);
-		set_mshpack_interface(part);
-		break;
-	default:
-		nb_msh3trg_init(part->msh);
-		set_msh3trg_interface(part);
-		break;
-	}/* AQUI VOY */
+	set_msh_interface(part, type);
+	part->init(part->msh);
 }
 
-void nb_partition_init_from_msh(nb_partition_t *part, void *msh,
-				nb_partition_type  type)
+static void set_msh_interface(nb_partition_t *part, nb_partition_type  type)
 {
-	char *memblock = (void*) part;
-	part->msh = msh;
-	part->type = type;
 	switch (type) {
 	case NB_TRIAN:
 		set_msh3trg_interface(part);
@@ -130,6 +108,15 @@ void nb_partition_init_from_msh(nb_partition_t *part, void *msh,
 	}
 }
 
+void nb_partition_init_from_msh(nb_partition_t *part, void *msh,
+				nb_partition_type  type)
+{
+	char *memblock = (void*) part;
+	part->msh = msh;
+	part->type = type;
+	set_msh_interface(part, type);
+}
+
 static void set_msh3trg_interface(nb_partition_t *part)
 {
 	set_msh3trg_main_interface(part);
@@ -138,6 +125,7 @@ static void set_msh3trg_interface(nb_partition_t *part)
 
 static void set_msh3trg_main_interface(nb_partition_t *part)
 {
+	part->init = nb_msh3trg_init;
 	part->finish = nb_msh3trg_finish;
 	part->copy = nb_msh3trg_copy;
 	part->clear = nb_msh3trg_clear;
@@ -198,6 +186,7 @@ static void set_mshquad_interface(nb_partition_t *part)
 
 static void set_mshquad_main_interface(nb_partition_t *part)
 {
+	part->init = nb_mshquad_init;
 	part->finish = nb_mshquad_finish;
 	part->copy = nb_mshquad_copy;
 	part->clear = nb_mshquad_clear;
@@ -258,6 +247,7 @@ static void set_mshpoly_interface(nb_partition_t *part)
 
 static void set_mshpoly_main_interface(nb_partition_t *part)
 {
+	part->init = nb_mshpoly_init;
 	part->finish = nb_mshpoly_finish;
 	part->copy = nb_mshpoly_copy;
 	part->clear = nb_mshpoly_clear;
@@ -318,6 +308,7 @@ static void set_mshpack_interface(nb_partition_t *part)
 
 static void set_mshpack_main_interface(nb_partition_t *part)
 {
+	part->init = nb_mshpack_init;
 	part->finish = nb_mshpack_finish;
 	part->copy = nb_mshpack_copy;
 	part->clear = nb_mshpack_clear;
