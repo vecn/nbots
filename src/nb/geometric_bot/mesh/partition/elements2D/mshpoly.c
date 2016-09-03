@@ -155,7 +155,6 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 			      uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
 static void split_exterior_trg(nb_mesh_t *mesh);
-static void split_input_sgm(nb_mesh_t *mesh);
 static void initialize_exterior_trg(const nb_mesh_t *mesh,
 				    nb_container_t *exterior_trg);
 static bool is_exterior(const msh_trg_t *trg);
@@ -600,10 +599,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		vcn_mesh_draw(mesh, "../../../TEMP_mesh1.png", 1000, 800);/* AQUI VOY */
 		split_exterior_trg(mesh);
-		split_input_sgm(mesh);
-		vcn_mesh_draw(mesh, "../../../TEMP_mesh2.png", 1000, 800);
 
 		mesh_enumerate_vtx(mesh);
 		mesh_enumerate_trg(mesh);
@@ -1226,8 +1222,10 @@ static void set_sgm_nodes(nb_mshpoly_t *poly,
 	if (NULL != sgm_prev) {
 		msh_edge_t *sgm = medge_subsgm_next(sgm_prev);
 		if (NULL == sgm) {
-			poly->nod_x_sgm[sgm_id][0] = mvtx_get_id(sgm_prev->v1);
-			poly->nod_x_sgm[sgm_id][1] = mvtx_get_id(sgm_prev->v2);
+			uint32_t id1 = mvtx_get_id(sgm_prev->v1);
+			uint32_t id2 = mvtx_get_id(sgm_prev->v2);
+			poly->nod_x_sgm[sgm_id][0] = vinfo->vtx_map[id1];
+			poly->nod_x_sgm[sgm_id][1] = vinfo->vtx_map[id2];
 		} else {
 			assemble_sgm_wire(poly, vinfo,
 					  sgm_id, sgm_prev, sgm);
@@ -1334,20 +1332,6 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 		}
 	}
 
-}
-
-static void split_input_sgm(nb_mesh_t *mesh)
-{
-	uint32_t N_sgm = mesh->N_input_sgm;
-	for (uint32_t i = 0; i < N_sgm; i++) {
-		msh_edge_t *sgm = mesh->input_sgm[i];
-		while (sgm != NULL) {
-			msh_edge_t *sgm2split = sgm;
-			sgm = medge_subsgm_next(sgm);
-			nb_ruppert_insert_verified_subsgm_midpoint(mesh,
-								   sgm2split);
-		}		
-	}
 }
 
 void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,

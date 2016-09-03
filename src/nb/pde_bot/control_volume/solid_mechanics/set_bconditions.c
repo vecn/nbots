@@ -71,6 +71,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     const nb_bcond_t *bcond,
 			     double factor)
 {
+	printf("--- DRAWING FINISHED!\n");    /* AQUI VOY */
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
