@@ -154,6 +154,14 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 			      const vinfo_t *const vinfo,
 			      uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
+static void split_exterior_trg(nb_mesh_t *mesh);
+static void split_input_sgm(nb_mesh_t *mesh);
+static void initialize_exterior_trg(const nb_mesh_t *mesh,
+				    nb_container_t *exterior_trg);
+static bool is_exterior(const msh_trg_t *trg);
+static bool have_all_nodes_in_sgm(const msh_trg_t *trg);
+static void delete_exterior_trg(nb_mesh_t *mesh,
+				nb_container_t *exterior_trg);
 
 uint32_t nb_mshpoly_get_memsize(void)
 {
@@ -593,7 +601,8 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
 	if (vcn_mesh_get_N_trg(mesh) > 0) {
 		vcn_mesh_draw(mesh, "../../../TEMP_mesh1.png", 1000, 800);/* AQUI VOY */
-		nb_ruppert_split_exterior_trg(mesh);
+		split_exterior_trg(mesh);
+		split_input_sgm(mesh);
 		vcn_mesh_draw(mesh, "../../../TEMP_mesh2.png", 1000, 800);
 
 		mesh_enumerate_vtx(mesh);
@@ -1258,6 +1267,86 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 			id_chain = id1;
 		}
 		sgm = medge_subsgm_next(sgm);
+	}
+}
+
+static void split_exterior_trg(nb_mesh_t *mesh)
+{
+	nb_container_t *exterior_trg =
+		alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_init(exterior_trg, NB_QUEUE);
+	
+	initialize_exterior_trg(mesh, exterior_trg);
+	delete_exterior_trg(mesh, exterior_trg);
+
+	nb_container_finish(exterior_trg);
+}
+
+static void initialize_exterior_trg(const nb_mesh_t *mesh,
+				    nb_container_t *exterior_trg)
+{
+	uint32_t size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = alloca(size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		const msh_trg_t *trg = nb_iterator_get_next(iter);
+		if (is_exterior(trg))
+			nb_container_insert(exterior_trg, trg);
+	}
+	nb_iterator_finish(iter);
+}
+
+static bool is_exterior(const msh_trg_t *trg)
+{
+	bool out = mtrg_has_an_input_sgm(trg);
+	if (!out)
+		out = have_all_nodes_in_sgm(trg);
+	return out;
+}
+
+static bool have_all_nodes_in_sgm(const msh_trg_t *trg)
+{
+	bool out = false;
+	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
+		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
+			if (mvtx_is_type_location(trg->v3, ONSEGMENT))
+				out = true;
+		}
+	}
+	return out;
+}
+
+
+static void delete_exterior_trg(nb_mesh_t *mesh,
+				nb_container_t *exterior_trg)
+{
+	while (nb_container_is_not_empty(exterior_trg)) {
+		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
+		if (nb_container_exist(mesh->ht_trg, trg)) {
+			msh_vtx_t *cen = mvtx_create(mesh);
+			vcn_utils2D_trg_get_centroid(trg->v1->x,
+						     trg->v2->x,
+						     trg->v3->x,
+						     cen->x);
+			nb_ruppert_insert_verified_vtx(mesh, trg,
+						       cen);
+		}
+	}
+
+}
+
+static void split_input_sgm(nb_mesh_t *mesh)
+{
+	uint32_t N_sgm = mesh->N_input_sgm;
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		msh_edge_t *sgm = mesh->input_sgm[i];
+		while (sgm != NULL) {
+			msh_edge_t *sgm2split = sgm;
+			sgm = medge_subsgm_next(sgm);
+			nb_ruppert_insert_verified_subsgm_midpoint(mesh,
+								   sgm2split);
+		}		
 	}
 }
 

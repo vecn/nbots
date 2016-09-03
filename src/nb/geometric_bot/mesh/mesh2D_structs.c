@@ -416,14 +416,30 @@ void mtrg_free(vcn_mesh_t *mesh, msh_trg_t *trg)
 	nb_membank_data_free(mesh->trg_membank, trg);
 }
 
-inline bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
+bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
 {
 	return mvtx_is_type_origin(trg->v1, INPUT) ||
 		mvtx_is_type_origin(trg->v2, INPUT) ||
 		mvtx_is_type_origin(trg->v3, INPUT);
 }
 
-inline msh_edge_t* mtrg_get_largest_edge(const msh_trg_t *const trg)
+bool mtrg_has_an_input_sgm(const msh_trg_t *trg)
+{
+	return medge_is_subsgm(trg->s1) ||
+		medge_is_subsgm(trg->s2) ||
+		medge_is_subsgm(trg->s3);
+}
+
+bool mtrg_contains_circumcenter(const msh_trg_t *const trg)
+{
+	double cc[2];
+	vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
+				     trg->v3->x, cc);
+	return vcn_utils2D_pnt_lies_in_trg(trg->v1->x, trg->v2->x,
+					   trg->v3->x, cc);
+}
+
+msh_edge_t* mtrg_get_largest_edge(const msh_trg_t *const trg)
 {
 	/* This function assumes that the length is stored as an attribute */
 	msh_edge_t* sgm = trg->s1;

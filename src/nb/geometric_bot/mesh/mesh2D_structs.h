@@ -183,7 +183,9 @@ void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 msh_trg_t *mtrg_calloc(vcn_mesh_t *mesh);
 void mtrg_free(vcn_mesh_t *mesh, msh_trg_t *trg);
 
-bool mtrg_has_an_input_vertex(const msh_trg_t *const trg);
+bool mtrg_has_an_input_vertex(const msh_trg_t *trg);
+bool mtrg_has_an_input_sgm(const msh_trg_t *trg);
+bool mtrg_contains_circumcenter(const msh_trg_t *const trg);
 msh_vtx_t* mtrg_get_opposite_vertex_guided(const msh_trg_t *const trg, 
 					   const msh_edge_t *const sgm,
 					   bool same_vertices_order);

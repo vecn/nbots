@@ -94,9 +94,12 @@ static void insert_vertex(vcn_mesh_t *mesh,
 static void insert_midpoint(vcn_mesh_t *const mesh,
 			    msh_edge_t *const sgm,
 			    const msh_vtx_t *const v,
+			    /* big_trg: NULL if not required */
 			    nb_container_t *const big_trg,
+			    /* poor_quality_trg: NULL if not required */
 			    hash_trg_t *const poor_quality_trg,
 			    msh_edge_t* subsgm[2],
+			    /* l_new_trg: NULL if not required */
 			    nb_container_t *const l_new_trg);
 
 static void split_encroached_segments(vcn_mesh_t *const mesh,
@@ -166,14 +169,6 @@ static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 			    const msh_trg_t *const restrict trg,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
-
-static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg);
-static bool is_exterior(const msh_trg_t *trg);
-static bool have_a_sgm_face(const msh_trg_t *trg);
-static bool have_all_nodes_in_sgm(const msh_trg_t *trg);
-static void delete_exterior_trg(nb_mesh_t *mesh,
-				nb_container_t *exterior_trg);
 
 void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 {
@@ -281,9 +276,26 @@ bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
 		mvtx_destroy(mesh, new_vtx);
 		return false;
 	} else {
-		insert_vertex(mesh, trg, new_vtx, NULL, NULL, NULL);
+		nb_ruppert_insert_verified_vtx(mesh, trg, new_vtx);
 		return true;
 	}
+}
+
+void nb_ruppert_insert_verified_vtx(nb_mesh_t *restrict mesh,
+				    msh_trg_t *trg,
+				    const msh_vtx_t *vtx)
+{
+	insert_vertex(mesh, trg, vtx, NULL, NULL, NULL);
+
+}
+
+void nb_ruppert_insert_verified_subsgm_midpoint(nb_mesh_t *restrict mesh,
+						msh_edge_t *sgm)
+{
+	msh_vtx_t *v = get_midpoint(mesh, sgm);
+	msh_edge_t* subsgm[2];
+	insert_midpoint(mesh, sgm, v, NULL, NULL, subsgm, NULL);
+
 }
 
 static void delete_bad_trg(vcn_mesh_t *mesh,
@@ -774,14 +786,16 @@ void insert_vertex(vcn_mesh_t *mesh,
 	mesh->do_after_insert_vtx(mesh);
 }
 
-static inline void insert_midpoint
-                             (vcn_mesh_t *const restrict mesh,
-			      msh_edge_t *const restrict sgm,
-			      const msh_vtx_t *const restrict v,
-			      nb_container_t *const restrict big_trg,
-			      hash_trg_t *const restrict poor_quality_trg,
-			      msh_edge_t* subsgm[2],
-			      nb_container_t *const restrict l_new_trg)
+static void insert_midpoint(vcn_mesh_t *const mesh,
+			    msh_edge_t *const sgm,
+			    const msh_vtx_t *const v,
+			    /* big_trg: NULL if not required */
+			    nb_container_t *const big_trg,
+			    /* poor_quality_trg: NULL if not required */
+			    hash_trg_t *const poor_quality_trg,
+			    msh_edge_t* subsgm[2],
+			    /* l_new_trg: NULL if not required */
+			    nb_container_t *const l_new_trg)
 {
 	vcn_bins2D_insert(mesh->ug_vtx, v);
 
@@ -1306,74 +1320,4 @@ static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
 	if(NULL != big_ratio)
 		*big_ratio = size_ratio;
 	return is_too_big;
-}
-
-void nb_ruppert_split_exterior_trg(nb_mesh_t *mesh)
-{
-	nb_container_t *exterior_trg =
-		alloca(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(exterior_trg, NB_QUEUE);
-	
-	initialize_exterior_trg(mesh, exterior_trg);
-	delete_exterior_trg(mesh, exterior_trg);
-
-	nb_container_finish(exterior_trg);
-}
-
-static void initialize_exterior_trg(const nb_mesh_t *mesh,
-				    nb_container_t *exterior_trg)
-{
-	uint32_t size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(size);
-	nb_iterator_init(iter);
-	nb_iterator_set_container(iter, mesh->ht_trg);
-	while (nb_iterator_has_more(iter)) {
-		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		if (is_exterior(trg))
-			nb_container_insert(exterior_trg, trg);
-	}
-	nb_iterator_finish(iter);
-}
-
-static bool is_exterior(const msh_trg_t *trg)
-{
-	bool out = have_a_sgm_face(trg);
-	if (!out)
-		out = have_all_nodes_in_sgm(trg);
-	return out;
-}
-
-static bool have_a_sgm_face(const msh_trg_t *trg)
-{
-	return medge_is_subsgm(trg->s1) ||
-		medge_is_subsgm(trg->s2) ||
-		medge_is_subsgm(trg->s3);
-}
-
-static bool have_all_nodes_in_sgm(const msh_trg_t *trg)
-{
-	bool out = false;
-	if (mvtx_is_type_location(trg->v1, ONSEGMENT)) {
-		if (mvtx_is_type_location(trg->v2, ONSEGMENT)) {
-			if (mvtx_is_type_location(trg->v3, ONSEGMENT))
-				out = true;
-		}
-	}
-	return out;
-}
-
-
-static void delete_exterior_trg(nb_mesh_t *mesh,
-				nb_container_t *exterior_trg)
-{
-	while (nb_container_is_not_empty(exterior_trg)) {
-		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
-
-		msh_vtx_t *cen = mvtx_create(mesh);
-		vcn_utils2D_trg_get_centroid(trg->v1->x, trg->v2->x,
-					     trg->v3->x, cen->x);
-
-		insert_vertex(mesh, trg, cen,  NULL, NULL, NULL);
-	}
-
 }
