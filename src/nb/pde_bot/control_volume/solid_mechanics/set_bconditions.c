@@ -15,6 +15,14 @@
 #include "set_bconditions.h"
 
 static uint32_t **malloc_elem_adj(const nb_partition_t *part);
+static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj);
+static void check_elem_adj(const nb_partition_t *part,
+			   uint32_t **elem_adj, uint32_t elem_id);
+static void check_boundary_face_adj(const nb_partition_t *part,
+				    uint32_t **elem_adj,
+				    uint32_t elem_id, uint16_t face_id);
+static bool face_is_the_same(uint32_t n1, uint32_t n2,
+			     uint32_t s1, uint32_t s2);
 static void free_elem_adj(uint32_t **elem_adj);
 static void set_neumann_sgm(const nb_partition_t *part,
 			    uint32_t **elem_adj, double* F, 
@@ -71,13 +79,12 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     const nb_bcond_t *bcond,
 			     double factor)
 {
-	printf("--- DRAWING FINISHED!\n");    /* AQUI VOY */
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
 
 	uint32_t **elem_adj = malloc_elem_adj(part);
-	nb_partition_insgm_get_elem_adj(part, elem_adj);
+	get_elem_adj(part, elem_adj);
 
 	set_neumann_sgm(part, elem_adj, F, bcond, factor);
 	set_neumann_vtx(part, elem_adj, F, bcond, factor);
@@ -110,6 +117,54 @@ static uint32_t **malloc_elem_adj(const nb_partition_t *part)
 	}
 
 	return elem_adj;
+}
+
+static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++)
+		check_elem_adj(part, elem_adj, i);
+}
+
+static void check_elem_adj(const nb_partition_t *part,
+			   uint32_t **elem_adj, uint32_t elem_id)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_ngb = nb_partition_elem_get_N_ngb(part, elem_id);
+	for (uint16_t i = 0; i < N_ngb; i++) {
+		uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id, i);
+		if (ngb >= N_elems)
+			check_boundary_face_adj(part, elem_adj, elem_id, i);
+	}
+}
+
+static void check_boundary_face_adj(const nb_partition_t *part,
+				    uint32_t **elem_adj,
+				    uint32_t elem_id, uint16_t face_id)
+{
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	uint32_t n1 = nb_partition_elem_get_adj(part, elem_id, face_id);
+	uint32_t n2 = nb_partition_elem_get_adj(part, elem_id,
+						(face_id + 1) % N_adj);
+
+	uint32_t N_insgm = nb_partition_get_N_insgm(part);
+	for (uint32_t i = 0; i < N_insgm; i++) {
+		uint32_t N = nb_partition_insgm_get_N_subsgm(part, i);
+		for (uint32_t j = 0; j < N; j++) {
+			uint32_t s1 = nb_partition_insgm_get_node(part, i, j);
+			uint32_t s2 = nb_partition_insgm_get_node(part, i,
+								  j + 1);
+			if (face_is_the_same(n1, n2, s1, s2))
+				elem_adj[i][j] = elem_id;
+		}
+	}
+
+}
+
+static inline bool face_is_the_same(uint32_t n1, uint32_t n2,
+				    uint32_t s1, uint32_t s2)
+{
+	return ((n1 == s1) && (n2 == s2)) || ((n1 == s2) && (n2 == s1));
 }
 
 static inline void free_elem_adj(uint32_t **elem_adj)
@@ -177,6 +232,7 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 				nb_bcond_iter_get_mask(iter, 1)};
 
 		uint32_t elem_id = elem_adj[sgm_id][i];
+
 		set_neumann(part, N_dof, F, factor, val, mask, elem_id);
 
 		v1_id = v2_id;
@@ -215,7 +271,7 @@ static void set_neumann(const nb_partition_t *part,
 			uint8_t N_dof, double* F, double factor,
 			double val[2], bool mask[2],
 			uint32_t elem_id)
-{	
+{
 	for (uint8_t j = 0; j < N_dof; j++) {
 		if (mask[j]) {
 			uint32_t mtx_id = elem_id * N_dof + j;

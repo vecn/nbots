@@ -131,6 +131,7 @@ static void check_plate_with_hole(const void *part,
 
 	double avg_error = get_error_avg_pwh(part, vm_stress);
 
+	printf("--- AVG ERROR: %e\n", avg_error); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
 
 	free(vm_stress);
@@ -224,6 +225,10 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 			      N_vtx, modify_bcond);
 	
 	CU_ASSERT(0 == status);
+
+	nb_partition_export_draw(part, "CVFA.png", 1000, 800,
+				 NB_ELEMENT, NB_FIELD,
+				 results->disp, true);/* TEMPORAL */
 
 	check_results(part, &results);
 

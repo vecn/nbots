@@ -65,6 +65,7 @@ static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 			   const nb_mshpoly_t *const src_poly);
 static void* malloc_poly(void);
 
+static uint32_t get_N_ngb(const void *msh, uint32_t elem_id);
 static void init_voronoi_info(vinfo_t *vinfo,
 			      const nb_mesh_t *const mesh);
 static void init_trg_cc_map(uint32_t *trg_cc_map, uint32_t Nt);
@@ -539,14 +540,15 @@ void nb_mshpoly_load_nodal_graph(const void *mshpoly,
 void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 				     nb_graph_t *graph)
 {
-	graph->N = nb_mshpoly_get_N_elems(mshpoly);
+	uint32_t N_elems = nb_mshpoly_get_N_elems(mshpoly);
+	graph->N = N_elems;
 	
 	uint32_t memsize1 = graph->N * sizeof(*(graph->N_adj));
 	uint32_t memsize2 = graph->N * sizeof(*(graph->adj));
 
 	uint32_t memsize3 = 0;
 	for (uint32_t i = 0; i < graph->N; i++) {
-		uint16_t N = nb_mshpoly_elem_get_N_adj(mshpoly, i);
+		uint32_t N = get_N_ngb(mshpoly, i);
 		memsize3 += N * sizeof(**(graph->adj));
 	}
 
@@ -558,13 +560,33 @@ void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 	
 	memblock += memsize1 + memsize2;
 	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = nb_mshpoly_elem_get_N_adj(mshpoly, i);
+		graph->N_adj[i] = get_N_ngb(mshpoly, i);
 		graph->adj[i] = (void*) memblock;
 		memblock += graph->N_adj[i] * sizeof(**(graph->adj));
-		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-			graph->adj[i][j] = nb_mshpoly_elem_get_ngb(mshpoly,
-								   i, j);
+
+		uint16_t N_adj = nb_mshpoly_elem_get_N_adj(mshpoly, i);
+		uint16_t cnt = 0;
+		for (uint32_t j = 0; j < N_adj; j++) {
+			uint32_t ngb = nb_mshpoly_elem_get_ngb(mshpoly, i, j);
+			if (ngb < N_elems) {
+				graph->adj[i][cnt] = ngb;
+				cnt += 1;
+			}
+		}
 	}
+}
+
+static uint32_t get_N_ngb(const void *msh, uint32_t elem_id)
+{
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint16_t N = 0;
+	for (uint32_t j = 0; j < N_adj; j++) {
+		uint32_t ngb = nb_mshpoly_elem_get_ngb(msh, elem_id, j);
+		if (ngb < N_elems)
+			N += 1;
+	}
+	return N;
 }
 
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4])
