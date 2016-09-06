@@ -745,7 +745,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		dot_gg = 0;
 
 #pragma omp parallel for reduction(+:dot_pw, dot_gg, dot_gq) num_threads(omp_parallel_threads)
-		for (uint32_t i = 0; i < A->N; i++){
+		for (uint32_t i = 0; i < A->N; i++) {
 			w[i] = 0;
 			for (uint32_t j = 0; j <  A->rows_size[i]; j++)
 				w[i] += A->rows_values[i][j] * p[A->rows_index[i][j]];
@@ -757,7 +757,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		double dot_gkqk = 0;
 		
 #pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
-		for(uint32_t i=0; i< A->N; i++){
+		for (uint32_t i=0; i< A->N; i++) {
 			_x[i] += alphak*p[i];
 			g[i] += alphak*w[i];
 			q[i] = g[i]/Aii[i];
@@ -767,7 +767,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		double betak = dot_gkqk/dot_gq;
 		
 #pragma omp parallel for num_threads(omp_parallel_threads)
-		for(uint32_t i=0; i< A->N; i++)
+		for (uint32_t i=0; i< A->N; i++)
 			p[i] = -q[i]+betak*p[i];
 		k++;
 	}

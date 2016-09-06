@@ -18,8 +18,8 @@
 #define POW2(a) ((a)*(a))
 
 typedef struct {
-	uint32_t N_vtx;
-	uint32_t N_trg;
+	uint32_t N_nodes;
+	uint32_t N_elems;
 	double *disp;
 	double *strain;
 	double *stress;
@@ -55,7 +55,7 @@ static int simulate(const char *problem_data,
 static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx);
 
-static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg);
+static void results_init(results_t *results, uint32_t N_nodes, uint32_t N_elems);
 static void results_finish(results_t *results);
 static int read_problem_data
 		(const char* filename,
@@ -102,15 +102,15 @@ static void check_beam_cantilever(const void *part,
 				  const results_t *results)
 {
 	double max_disp = 0;
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
-	for (uint32_t i = 0; i < N_nodes; i++) {
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++) {
 		double disp2 = POW2(results->disp[i * 2]) +
 			POW2(results->disp[i*2+1]);
 		if (max_disp < disp2)
 			max_disp = disp2;
 	}
 	max_disp = sqrt(max_disp);
-	CU_ASSERT(fabs(max_disp - 1.00701e-1) < 1e-6);
+	CU_ASSERT(fabs(max_disp - 1.000109e-1) < 1e-6);
 }
 
 
@@ -124,10 +124,10 @@ static void test_plate_with_hole(void)
 static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
-	double *vm_stress = malloc(results->N_trg * sizeof(double));
-	double *nodal_values = malloc(results->N_vtx * sizeof(double));
+	double *vm_stress = malloc(results->N_elems * sizeof(double));
+	double *nodal_values = malloc(results->N_nodes * sizeof(double));
 
-	nb_pde_compute_von_mises(results->N_trg, results->stress, vm_stress);
+	nb_pde_compute_von_mises(results->N_elems, results->stress, vm_stress);
 
 	double avg_error = get_error_avg_pwh(part, vm_stress);
 
@@ -211,6 +211,22 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 	out[1] = stress[1];
 }
 
+static void TEMPORAL(nb_partition_t *part, results_t *results)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	double *total_disp = malloc(N_elems * sizeof(*total_disp));
+
+	for (uint32_t i = 0; i < N_elems; i++) {
+		total_disp[i] = sqrt(POW2(results->disp[i*2]) +
+				     POW2(results->disp[i*2+1]));
+	}
+
+	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
+				 NB_ELEMENT, NB_FIELD,
+				 total_disp, true);/* TEMPORAL */
+	free(total_disp);
+}
+
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const void*,
 					   const results_t*),
@@ -226,9 +242,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	
 	CU_ASSERT(0 == status);
 
-	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
-				 NB_ELEMENT, NB_FIELD,
-				 results.disp, true);/* TEMPORAL */
+	TEMPORAL(part, &results);
 
 	check_results(part, &results);
 
@@ -309,15 +323,16 @@ static void get_mesh(const vcn_model_t *model, void *part,
 	vcn_mesh_finish(mesh);
 }
 
-static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)
+static void results_init(results_t *results, uint32_t N_nodes,
+			 uint32_t N_elems)
 {
-	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
-	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
+	uint32_t size_disp = N_elems * 2 * sizeof(*(results->disp));
+	uint32_t size_strain = N_elems * 3 * sizeof(*(results->strain));
 	uint32_t total_size = size_disp + 2 * size_strain;
 	char *memblock = malloc(total_size);
 
-	results->N_vtx = N_vtx;
-	results->N_trg = N_trg;
+	results->N_nodes = N_nodes;
+	results->N_elems = N_elems;
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);

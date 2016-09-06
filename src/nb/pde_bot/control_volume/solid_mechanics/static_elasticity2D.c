@@ -86,8 +86,8 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	uint32_t F_memsize = 2 * N_nod * sizeof(double);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t F_memsize = 2 * N_elems * sizeof(double);
 	double* F = NB_SOFT_MALLOC(F_memsize);
 	memset(F, 0, F_memsize);
 
@@ -252,6 +252,7 @@ static int solver(const vcn_sparse_t *const A,
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
+	uint32_t niter; double tol;
 	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
 							1e-8, NULL,
 							NULL, 1);
