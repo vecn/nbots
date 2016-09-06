@@ -40,8 +40,8 @@ static double get_analytic_vm_stress_pwh(double x, double y);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part,
 			     nb_bcond_t *bcond);
-static void pwh_DC_SGM_cond(double *x, double t, double *out);
-static void pwh_BC_SGM_cond(double *x, double t, double *out);
+static void pwh_DC_SGM_cond(const double *x, double t, double *out);
+static void pwh_BC_SGM_cond(const double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const void*,
 					   const results_t*),
@@ -77,8 +77,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//TEMPORAL CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -195,7 +195,7 @@ static void modify_bcond_pwh(const void *part,
 			       BC_sgm, dof_mask, pwh_BC_SGM_cond);
 }
 
-static void pwh_DC_SGM_cond(double *x, double t, double *out)
+static void pwh_DC_SGM_cond(const double *x, double t, double *out)
 {
 	double stress[3];
 	get_analytic_stress_pwh(x[0], x[1], stress);
@@ -203,7 +203,7 @@ static void pwh_DC_SGM_cond(double *x, double t, double *out)
 	out[1] = stress[2];	
 }
 
-static void pwh_BC_SGM_cond(double *x, double t, double *out)
+static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 {
 	double stress[3];
 	get_analytic_stress_pwh(x[0], x[1], stress);
@@ -226,9 +226,9 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	
 	CU_ASSERT(0 == status);
 
-	nb_partition_export_draw(part, "CVFA.png", 1000, 800,
+	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
 				 NB_ELEMENT, NB_FIELD,
-				 results->disp, true);/* TEMPORAL */
+				 results.disp, true);/* TEMPORAL */
 
 	check_results(part, &results);
 

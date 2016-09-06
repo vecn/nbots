@@ -27,16 +27,20 @@
 #define COLOR_CLASS_8 NB_LIGHT_GRAY
 #define COLOR_CLASS_9 NB_AQUAMARIN
 
+#define PALETTE_W 30
+#define PALETTE_H 250
+#define PALETTE_MARGIN 40
+
 typedef struct {
 	const nb_partition_t *part;
 	const void *values;
 	nb_partition_entity vals_entity;
 	nb_partition_array_type vals_type;
 	bool draw_wires;
-} nb_partition_draw_data;
+} draw_data;
 
 
-static void init_draw_data(nb_partition_draw_data *data,
+static void init_draw_data(draw_data *data,
 			   const nb_partition_t *part,
 			   nb_partition_entity vals_entity,
 			   nb_partition_array_type vals_type,
@@ -49,7 +53,7 @@ static void set_camera(nb_graphics_context_t *g, int width, int height,
 		       const nb_partition_t *part);
 static void fill(const nb_partition_t *part,
 		 nb_graphics_context_t *g,
-		 const nb_partition_draw_data *data);
+		 const draw_data *data);
 
 static void fill_elems_field_on_nodes(const nb_partition_t *part,
 				      nb_graphics_context_t *g,
@@ -75,6 +79,12 @@ static void draw_boundaries(const nb_partition_t *part,
 static void fill_nodes_classes(const nb_partition_t *part,
 			       nb_graphics_context_t *g,
 			       const uint8_t *class);
+static void add_palette(const nb_partition_t *part,
+			const draw_data *data,
+			nb_graphics_context_t *g, int width, int height);
+static void get_min_max(const nb_partition_t *part,
+			const draw_data *data,
+			double *min, double *max);
 
 void nb_partition_export_draw(const nb_partition_t *part,
 			      const char *filename,
@@ -84,7 +94,7 @@ void nb_partition_export_draw(const nb_partition_t *part,
 			      const void *values,
 			      bool draw_wires)
 {
-	nb_partition_draw_data data;
+	draw_data data;
 	init_draw_data(&data, part, vals_entity,
 		       vals_type, values, draw_wires);
 
@@ -92,7 +102,7 @@ void nb_partition_export_draw(const nb_partition_t *part,
 			   draw, &data);
 }
 
-static void init_draw_data(nb_partition_draw_data *data,
+static void init_draw_data(draw_data *data,
 			   const nb_partition_t *part,
 			   nb_partition_entity vals_entity,
 			   nb_partition_array_type vals_type,
@@ -107,9 +117,9 @@ static void init_draw_data(nb_partition_draw_data *data,
 }
 
 static void draw(nb_graphics_context_t *g, int width, int height,
-		 const void *draw_data)
+		 const void *data_ptr)
 {
-	const nb_partition_draw_data *data = draw_data;
+	const draw_data *data = data_ptr;
 	const nb_partition_t *part = data->part;
 
 	if (!nb_graphics_is_camera_enabled(g))
@@ -124,6 +134,9 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 
 	if (NB_NODE == data->vals_entity && NB_CLASS == data->vals_type)
 		fill_nodes_classes(part, g, data->values);
+
+	if (NB_FIELD == data->vals_type)
+		add_palette(part, data, g, width, height);
 }
 
 static void set_camera(nb_graphics_context_t *g, int width, int height,
@@ -139,7 +152,7 @@ static void set_camera(nb_graphics_context_t *g, int width, int height,
 
 static void fill(const nb_partition_t *part,
 		 nb_graphics_context_t *g,
-		 const nb_partition_draw_data *data)
+		 const draw_data *data)
 {
 	nb_partition_entity enty = data->vals_entity;
 	nb_partition_array_type type = data->vals_type;
@@ -168,8 +181,8 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 	normalize_values(normalized_values, values, N);
 	
 	part->graphics.fill_elems_field_on_nodes(part->msh, g,
-					   normalized_values,
-					   PALETTE_FIELD);
+						 normalized_values,
+						 PALETTE_FIELD);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -200,8 +213,8 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 	normalize_values(normalized_values, values, N);
 	
 	part->graphics.fill_elems_field_on_elems(part->msh, g,
-					   normalized_values,
-					   PALETTE_FIELD);
+						 normalized_values,
+						 PALETTE_FIELD);
 
 	NB_SOFT_FREE(memsize, normalized_values);
 }
@@ -259,4 +272,45 @@ static void fill_nodes_classes(const nb_partition_t *part,
 	nb_graphics_color_t color[10];
 	set_class_colors(color);
 	part->graphics.fill_nodes_classes(part->msh, g, class, 10, color);
+}
+
+static void add_palette(const nb_partition_t *part,
+			const draw_data *data,
+			nb_graphics_context_t *g, int width, int height)
+{
+	nb_graphics_palette_t *palette =
+		nb_graphics_palette_create_preset(PALETTE_FIELD);
+	double min, max;
+	get_min_max(part, data, &min, &max);
+	
+	float label_width = 55;
+	nb_graphics_palette_draw(g, palette,
+				 width - PALETTE_W - PALETTE_MARGIN -
+				 label_width,
+				 height - PALETTE_H - PALETTE_MARGIN,
+				 PALETTE_W,
+				 PALETTE_H,
+				 1, min, max);
+	nb_graphics_palette_destroy(palette);
+}
+
+static void get_min_max(const nb_partition_t *part,
+			const draw_data *data,
+			double *min, double *max)
+{
+	uint32_t N;
+	if (NB_ELEMENT == data->vals_entity)
+		N = nb_partition_get_N_elems(part);
+	else
+		N = nb_partition_get_N_nodes(part);
+
+	const double *values = data->values;
+	*min = values[0];
+	*max = values[0];
+	for (uint32_t i = 1; i < N; i++) {
+		if (values[i] < *min)
+			*min = values[i];
+		else if (values[i] > *max)
+			*max = values[i];
+	}
 }

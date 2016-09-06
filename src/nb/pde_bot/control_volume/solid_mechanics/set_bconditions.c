@@ -74,6 +74,30 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 					nb_bcond_iter_t *iter,
 					uint32_t elem_id);
 
+static void TEMPORAL(const nb_partition_t *const part,
+		     const nb_bcond_t *bcond)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint8_t *class = calloc(N_elems,1);
+
+	nb_bcond_iter_t *iter = alloca(nb_bcond_iter_get_memsize());
+	nb_bcond_iter_init(iter);
+	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
+				     NB_BC_ON_POINT);
+	while (nb_bcond_iter_has_more(iter)) {
+		nb_bcond_iter_go_next(iter);
+		uint32_t id = nb_bcond_iter_get_id(iter);
+		printf("--BCOND: %i/%i\n", id, N_elems);
+		class[id] = 1;
+	}
+	nb_bcond_iter_finish(iter);
+
+	nb_partition_export_draw(part, "../../../CVFA_bcond.png", 1000, 800,
+				 NB_ELEMENT, NB_CLASS,
+				 class, true);/* TEMPORAL */
+	free(class);
+}
+
 void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     vcn_sparse_t* K, double* F,
 			     const nb_bcond_t *bcond,
@@ -91,6 +115,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 	set_dirichlet_sgm(part, elem_adj, bcond, factor, numeric_bcond);
 	set_dirichlet_vtx(part, elem_adj, bcond, factor, numeric_bcond);
 
+	TEMPORAL(part, numeric_bcond);
 	set_numeric_bconditions(K, F, part, numeric_bcond);
 
 	free_elem_adj(elem_adj);
@@ -333,28 +358,29 @@ static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
 		    val, mask, elem_id);
 }
 
-static void get_subsgm_adj_to_node(const nb_partition_t *part,
-				   uint32_t node_id, uint32_t subsgm_id[4])
+static void get_subsgm_adj_to_node(const nb_partition_t *part, uint32_t node_id,
+				   uint32_t subsgm_data[4])
 {
 	uint32_t N_sgm = nb_partition_get_N_insgm(part);
+	uint8_t cnt = 0;
 	for (uint32_t i = 0; i < N_sgm; i++) {
 		uint32_t N = nb_partition_insgm_get_N_nodes(part, i);
 		for (uint16_t j = 0; j < N; j++) {
-			uint32_t sid = nb_partition_insgm_get_node(part, i, j);
-			if (sid == node_id) {
+			uint32_t nid = nb_partition_insgm_get_node(part, i, j);
+			if (nid == node_id) {
 				if (j > 0) {
-					subsgm_id[i * 2] = i;
-					subsgm_id[i*2+1] = j - 1;
-					i ++;
+					subsgm_data[cnt * 2] = i;
+					subsgm_data[cnt*2+1] = j - 1;
+					cnt ++;
 				}
 
 				if (j < N - 1) {
-					subsgm_id[i * 2] = i;
-					subsgm_id[i*2+1] = j;
-					i ++;
+					subsgm_data[cnt * 2] = i;
+					subsgm_data[cnt*2+1] = j;
+					cnt ++;
 				}
 				
-				if (i < 2)
+				if (cnt < 2)
 					break;
 				else
 					goto EXIT;
@@ -416,8 +442,8 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t node_id = nb_bcond_iter_get_id(iter);
-		uint32_t subsgm_id[4];
-		get_subsgm_adj_to_node(part, node_id, subsgm_id);
+		uint32_t subsgm_data[4];
+		get_subsgm_adj_to_node(part, node_id, subsgm_data);
 			
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
@@ -431,8 +457,11 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 
 		uint8_t N_subsgm_adj_to_node = 2;
 		for (uint8_t i = 0; i < N_subsgm_adj_to_node; i++) {
-			uint32_t elem_id = 
-				elem_adj[subsgm_id[i*2]][subsgm_id[i*2+1]];
+			uint32_t sgm_id = subsgm_data[i*2];
+			uint32_t subsgm_id = subsgm_data[i*2+1];
+			uint32_t elem_id = elem_adj[sgm_id][subsgm_id];
+			printf("-- BCOND ON VTX: %i->%i\n",
+			       node_id, elem_id);/* AQUI VOY TEMPORAL */
 			nb_bcond_push(numeric_bcond, NB_DIRICHLET,
 				      NB_BC_ON_POINT, elem_id, mask, val);
 		}
@@ -454,6 +483,7 @@ static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t elem_id = nb_bcond_iter_get_id(iter);
+		printf("-- NUMERIC ON VTX: %i\n", elem_id);/* TEMPORAL */
 		set_numeric_bcond_dirichlet(part, K, N_dof,
 					    F, iter, elem_id);
 	}
