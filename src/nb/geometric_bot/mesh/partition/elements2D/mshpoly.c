@@ -1203,7 +1203,7 @@ static void set_elem_vtx(nb_mshpoly_t *poly,
 {
 	for (uint32_t i = 0; i < poly->N_vtx; i++) {
 		msh_vtx_t *vtx = mesh->input_vtx[i];
-		if (mvtx_is_type_location(vtx, INTERIOR)) {
+		if (mvtx_is_type_location(vtx, ONSEGMENT)) {
 			int id = mvtx_get_id(vtx);
 			poly->vtx[i] = vinfo->vtx_map[id];
 		} else {
