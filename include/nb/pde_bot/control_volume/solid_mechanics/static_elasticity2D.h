@@ -21,4 +21,10 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *displacement, /* Output */
 			 double *strain       /* Output */);
 
+void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
+					const nb_material_t *const material,
+					nb_analysis2D_t analysis2D,
+					double* strain,
+					double* stress /* Output */);
+
 #endif

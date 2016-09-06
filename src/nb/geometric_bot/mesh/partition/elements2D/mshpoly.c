@@ -472,6 +472,41 @@ double nb_mshpoly_elem_face_get_length(const void *msh,
 	return vcn_utils2D_get_dist(s1, s2);
 }
 
+double nb_mshpoly_elem_face_get_normal(const void *msh, uint32_t elem_id,
+				       uint16_t face_id, double normal[2])
+{
+	const nb_mshpoly_t *mshpoly = msh;
+	uint8_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint32_t n1 = nb_mshpoly_elem_get_adj(msh, elem_id, face_id);
+	uint32_t n2 = nb_mshpoly_elem_get_adj(msh, elem_id,
+					      (face_id + 1) % N_adj);
+	double *s1 = &(mshpoly->nod[n1 * 2]);
+	double *s2 = &(mshpoly->nod[n2 * 2]);
+	double length = vcn_utils2D_get_dist(s1, s2);
+	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[1] = -(s2[0] - s1[0]) / length;
+	return length;
+}
+
+double nb_mshpoly_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
+				      uint16_t ngb_id, double normal[2])
+{
+	const nb_mshpoly_t *mshpoly = msh;
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint32_t nid = nb_mshpoly_elem_get_ngb(msh, elem_id, ngb_id);
+	memset(normal, 0, 2 * sizeof(double));
+	double dist = 0;
+	if (nid < N_elems) {
+		double *id1 = &(mshpoly->cen[elem_id * 2]);
+		double *id2 = &(mshpoly->cen[nid * 2]);
+
+		dist = vcn_utils2D_get_dist(id1, id2);
+		normal[0] = (id2[0] - id1[0]) / dist;
+		normal[1] = (id2[1] - id1[1]) / dist;
+	}
+	return dist;
+}
+
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;

@@ -78,7 +78,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
 	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -211,7 +211,7 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 	out[1] = stress[1];
 }
 
-static void TEMPORAL(nb_partition_t *part, results_t *results)
+static void TEMPORAL1(nb_partition_t *part, results_t *results)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	double *total_disp = malloc(N_elems * sizeof(*total_disp));
@@ -219,12 +219,44 @@ static void TEMPORAL(nb_partition_t *part, results_t *results)
 	for (uint32_t i = 0; i < N_elems; i++) {
 		total_disp[i] = sqrt(POW2(results->disp[i*2]) +
 				     POW2(results->disp[i*2+1]));
+		total_disp[i] = results->disp[i*2];/* AQUI VOY Apachurra en vez de jalar */
 	}
 
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
+
+	nb_partition_extrapolate_elems_to_nodes(part, 1, total_disp,
+						disp_nodes);
+
 	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
-				 NB_ELEMENT, NB_FIELD,
-				 total_disp, true);/* TEMPORAL */
+				 NB_NODE, NB_FIELD,
+				 disp_nodes, true);/* TEMPORAL */
 	free(total_disp);
+	free(disp_nodes);
+}
+
+static void TEMPORAL2(nb_partition_t *part, results_t *results)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	double *vm_stress = malloc(N_elems * sizeof(*vm_stress));
+
+	for (uint32_t i = 0; i < N_elems; i++) {
+		vm_stress[i] = nb_pde_get_vm_stress(results->stress[i * 3],
+						    results->stress[i*3+1],
+						    results->stress[i*3+2]);
+	}
+
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	double *vm_nodes = malloc(N_nodes * sizeof(*vm_nodes));
+
+	nb_partition_extrapolate_elems_to_nodes(part, 1, vm_stress,
+						vm_nodes);
+
+	nb_partition_export_draw(part, "../../../CVFA_stress.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_nodes, true);/* TEMPORAL */
+	free(vm_stress);
+	free(vm_nodes);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
@@ -242,7 +274,8 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	
 	CU_ASSERT(0 == status);
 
-	TEMPORAL(part, &results);
+	TEMPORAL1(part, &results);
+	TEMPORAL2(part, &results);
 
 	check_results(part, &results);
 
@@ -294,7 +327,9 @@ static int simulate(const char *problem_data,
 	if (0 != status_cvfa)
 		goto CLEANUP;
 
-	/* PENDING TO COMPUTE STRESS HERE */
+	nb_cvfa_compute_stress_from_strain(part,  material, analysis2D,
+					   results->strain,
+					   results->stress);
 
 	status = 0;
 CLEANUP:

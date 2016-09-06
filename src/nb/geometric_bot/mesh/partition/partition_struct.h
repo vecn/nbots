@@ -57,6 +57,12 @@ struct nb_partition_s {
 	double (*elem_face_get_length)(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
+	double (*elem_face_get_normal)(const nb_partition_t *part,
+				       uint32_t elem_id, uint16_t face_id,
+				       double normal[2]);
+	double (*elem_ngb_get_normal)(const nb_partition_t *part,
+				      uint32_t elem_id, uint16_t ngb_id,
+				      double normal[2]);
 	uint32_t (*elem_get_N_adj)(const void *msh, uint32_t id);
 	uint32_t (*elem_get_adj)(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id);

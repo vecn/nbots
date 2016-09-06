@@ -179,6 +179,32 @@ double nb_mshpack_elem_face_get_length(const void *msh,
 	return sqrt(3 * Ri2 + Rj2 - dij2 - Qij2 / dij2);
 }
 
+double nb_mshpack_elem_face_get_normal(const void *msh, uint32_t elem_id,
+				       uint16_t face_id, double normal[2])
+{
+	const nb_mshpack_t *mshpack = msh;
+	memset(normal, 0, 2 * sizeof(double));
+	return 0.0;
+}
+
+double nb_mshpack_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
+				      uint16_t ngb_id, double normal[2])
+{
+	const nb_mshpack_t *mshpack = msh;
+	uint32_t N_elems = nb_mshpack_get_N_elems(msh);
+	uint32_t nid = nb_mshpack_elem_get_ngb(msh, elem_id, ngb_id);
+	memset(normal, 0, 2 * sizeof(double));
+	double dist = 0;
+	if (nid < N_elems) {
+		double *id1 = &(mshpack->cen[elem_id * 2]);
+		double *id2 = &(mshpack->cen[nid * 2]);
+		dist = vcn_utils2D_get_dist(id1, id2);
+		normal[0] = (id2[0] - id1[0]) / dist;
+		normal[1] = (id2[1] - id1[1]) / dist;
+	}
+	return dist;
+}
+
 double nb_mshpack_elem_get_radii(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;

@@ -296,6 +296,44 @@ double nb_msh3trg_elem_face_get_length(const void *msh,
 	return vcn_utils2D_get_dist(s1, s2);
 }
 
+double nb_msh3trg_elem_face_get_normal(const void *msh, uint32_t elem_id,
+				       uint16_t face_id, double normal[2])
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	uint32_t n1 = nb_msh3trg_elem_get_adj(msh, elem_id, face_id);
+	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, elem_id, (face_id + 1) % 3);
+	double *s1 = &(msh3trg->nod[n1 * 2]);
+	double *s2 = &(msh3trg->nod[n2 * 2]);
+	double length = vcn_utils2D_get_dist(s1, s2);
+	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[1] = -(s2[0] - s1[0]) / length;
+	return length;
+}
+
+double nb_msh3trg_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
+				      uint16_t ngb_id, double normal[2])
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	uint32_t N_elems = nb_msh3trg_get_N_elems(msh);
+	uint32_t nid = nb_msh3trg_elem_get_ngb(msh, elem_id, ngb_id);
+	memset(normal, 0, 2 * sizeof(double));
+	double dist = 0;
+	if (nid < N_elems) {
+		double id1[2];
+		id1[0] = nb_msh3trg_elem_get_x(msh, elem_id);
+		id1[1] = nb_msh3trg_elem_get_y(msh, elem_id);
+
+		double id2[2];
+		id2[0] = nb_msh3trg_elem_get_x(msh, nid);
+		id2[1] = nb_msh3trg_elem_get_y(msh, nid);
+
+		dist = vcn_utils2D_get_dist(id1, id2);
+		normal[0] = (id2[0] - id1[0]) / dist;
+		normal[1] = (id2[1] - id1[1]) / dist;
+	}
+	return dist;
+}
+
 uint32_t nb_msh3trg_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	return 3;
