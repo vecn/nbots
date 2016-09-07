@@ -53,6 +53,7 @@ double nb_partition_elem_ngb_get_normal(const nb_partition_t *part,
 uint32_t nb_partition_elem_get_N_adj(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_adj(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t adj_id);
+uint32_t nb_partition_elem_get_N_ngb(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_ngb(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t ngb_id);
 bool nb_partition_elem_has_ngb(const nb_partition_t *part, uint32_t elem_id,

@@ -129,11 +129,10 @@ static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj)
 static void check_elem_adj(const nb_partition_t *part,
 			   uint32_t **elem_adj, uint32_t elem_id)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N_ngb = nb_partition_elem_get_N_ngb(part, elem_id);
 	for (uint16_t i = 0; i < N_ngb; i++) {
-		uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id, i);
-		if (ngb >= N_elems)
+		bool no_ngb = !nb_partition_elem_has_ngb(part, elem_id, i);
+		if (no_ngb)
 			check_boundary_face_adj(part, elem_adj, elem_id, i);
 	}
 }
@@ -158,7 +157,6 @@ static void check_boundary_face_adj(const nb_partition_t *part,
 				elem_adj[i][j] = elem_id;
 		}
 	}
-
 }
 
 static inline bool face_is_the_same(uint32_t n1, uint32_t n2,
@@ -233,14 +231,11 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 		uint32_t elem_id = elem_adj[sgm_id][i];
 
-		printf("---- bug 1 %i \n", elem_id);/* TEMPORAL */
+		if (elem_id > nb_partition_get_N_elems(part))
 		set_neumann(N_dof, F, factor, val, mask, elem_id);
-		printf("---- bug 2\n");/* TEMPORAL */
 
 		v1_id = v2_id;
-		printf("---- bug 3\n");/* TEMPORAL */
 		memcpy(val1, val2, N_dof * sizeof(double));
-		printf("---- bug 4\n");/* TEMPORAL */
 	}
 }
 

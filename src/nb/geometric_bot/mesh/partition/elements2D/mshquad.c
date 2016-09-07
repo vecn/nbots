@@ -107,6 +107,7 @@ static void elemental_graph_allocate_adj(nb_graph_t *graph,
 static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad);
 static void elemental_graph_count_adj(nb_graph_t *graph,
 				      const nb_mshquad_t *mshquad);
+static uint16_t get_N_real_ngb(const nb_mshquad_t *mshquad, uint32_t elem_id);
 static void elemental_graph_set_adj(nb_graph_t *graph,
 				    const nb_mshquad_t *mshquad);
 
@@ -462,8 +463,8 @@ uint32_t nb_mshquad_elem_get_N_adj(const void *msh, uint32_t id)
 	return out;
 }
 
-uint32_t nb_mshquad_elem_get_adj(const void *msh,
-				 uint32_t elem_id, uint8_t adj_id)
+uint32_t nb_mshquad_elem_get_adj(const void *msh, uint32_t elem_id,
+				 uint8_t adj_id)
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->adj[elem_id * 4 + adj_id];
@@ -688,8 +689,10 @@ static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)
 			N += 1;
 		if (mshquad->N_elems > mshquad->ngb[i*4+2])
 			N += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+3])
-			N += 1;
+		if (0 == mshquad->type[i]) {
+			if (mshquad->N_elems > mshquad->ngb[i*4+3])
+				N += 1;
+		}
 	}
 	return N;
 }
@@ -697,16 +700,18 @@ static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)
 static void elemental_graph_count_adj(nb_graph_t *graph,
 				      const nb_mshquad_t *mshquad)
 {
-	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		graph->N_adj[i] = 0;
+	for (uint32_t i = 0; i < mshquad->N_elems; i++)
+		graph->N_adj[i] = get_N_real_ngb(mshquad, i);
+}
+
+static uint16_t get_N_real_ngb(const nb_mshquad_t *mshquad,
+			       uint32_t elem_id)
+{
+	uint32_t N_adj = nb_mshquad_elem_get_N_adj(mshquad, elem_id);
+	uint16_t N_ngb = 0;
+	for (uint32_t i = 0; i < N_adj; i++) {
 		if (mshquad->N_elems > mshquad->ngb[i * 4])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+1])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+2])
-			graph->N_adj[i] += 1;
-		if (mshquad->N_elems > mshquad->ngb[i*4+3])
-			graph->N_adj[i] += 1;
+			N_ngb += 1;/* AQUI VOY */
 	}
 }
 
@@ -729,10 +734,11 @@ static void elemental_graph_set_adj(nb_graph_t *graph,
 			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+2];
 			graph->N_adj[i] += 1;
 		}
-
-		if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
-			graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+3];
-			graph->N_adj[i] += 1;
+		if (0 == mshquad->type[i]) {
+			if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
+				graph->adj[i][graph->N_adj[i]] = mshquad->ngb[i*4+3];
+				graph->N_adj[i] += 1;
+			}
 		}
 	}
 }
@@ -1092,13 +1098,13 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 	} else if (trg->t2 == match_trg) {
 		t1 = mtrg_get_left_triangle(match_trg, vtx[1]);
 		t2 = mtrg_get_right_triangle(match_trg, vtx[1]);
-		t3 = trg->t2;
-		t4 = trg->t3;
+		t3 = trg->t3;
+		t4 = trg->t1;
 	} else {
 		t1 = mtrg_get_left_triangle(match_trg, vtx[1]);
 		t2 = mtrg_get_right_triangle(match_trg, vtx[1]);
-		t3 = trg->t2;
-		t4 = trg->t3;
+		t3 = trg->t1;
+		t4 = trg->t2;
 	}
 	quad->adj[elem_id * 4] = mvtx_get_id(vtx[0]);
 	quad->adj[elem_id*4+1] = mvtx_get_id(vtx[1]);
