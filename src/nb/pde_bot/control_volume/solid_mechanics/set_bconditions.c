@@ -38,8 +38,7 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
-static void set_neumann(const nb_partition_t *part,
-			uint8_t N_dof, double* F, double factor,
+static void set_neumann(uint8_t N_dof, double* F, double factor,
 			double val[2], bool mask[2],
 			uint32_t elem_id);
 static void set_neumann_vtx(const nb_partition_t *part,
@@ -234,10 +233,14 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 		uint32_t elem_id = elem_adj[sgm_id][i];
 
-		set_neumann(part, N_dof, F, factor, val, mask, elem_id);
+		printf("---- bug 1 %i \n", elem_id);/* TEMPORAL */
+		set_neumann(N_dof, F, factor, val, mask, elem_id);
+		printf("---- bug 2\n");/* TEMPORAL */
 
 		v1_id = v2_id;
+		printf("---- bug 3\n");/* TEMPORAL */
 		memcpy(val1, val2, N_dof * sizeof(double));
+		printf("---- bug 4\n");/* TEMPORAL */
 	}
 }
 
@@ -264,12 +267,11 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
-		set_neumann(part, N_dof, F, factor * w, val, mask, elem_id);
+		set_neumann(N_dof, F, factor * w, val, mask, elem_id);
 	}
 }
 
-static void set_neumann(const nb_partition_t *part,
-			uint8_t N_dof, double* F, double factor,
+static void set_neumann(uint8_t N_dof, double* F, double factor,
 			double val[2], bool mask[2],
 			uint32_t elem_id)
 {
@@ -331,7 +333,7 @@ static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
 		nb_partition_insgm_subsgm_get_length(part, sgm_id, subsgm_id);
 	uint32_t elem_id = elem_adj[sgm_id][subsgm_id];
 	double integral_factor = 0.5 * subsgm_length;
-	set_neumann(part, N_dof, F, factor * integral_factor,
+	set_neumann(N_dof, F, factor * integral_factor,
 		    val, mask, elem_id);
 }
 

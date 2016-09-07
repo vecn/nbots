@@ -538,9 +538,11 @@ static void nodal_graph_allocate_adj(nb_graph_t *graph,
 				     const nb_mshquad_t *mshquad)
 {
 	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj));
+	uint32_t memsize_adj = 2 * mshquad->N_edg * sizeof(**(graph->adj)) +
+		graph->N * sizeof(*(graph->adj));
 	char *memblock = malloc(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize_N_adj);
 }
 
 static void fem_graph_count_adj(nb_graph_t *graph,
@@ -569,8 +571,9 @@ static void fem_graph_count_adj(nb_graph_t *graph,
 
 static void graph_assign_mem_adj(nb_graph_t *graph)
 {
-	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	char *block = (char*) graph->N_adj + memsize_N_adj;
+	uint32_t mem_used = graph->N * sizeof(*(graph->N_adj)) +
+		graph->N * sizeof(*(graph->adj));
+	char *block = (char*) graph->N_adj + mem_used;
 	for (uint32_t i = 0; i < graph->N; i++) {
 		graph->adj[i] = (void*) block;
 		block += graph->N_adj[i] * sizeof(**(graph->adj));
@@ -657,7 +660,6 @@ void nb_mshquad_load_interelem_graph(const void *mshquad_ptr,
 	graph->N = mshquad->N_elems;
 	graph->wi = NULL;
 	graph->wij = NULL;
-	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
 	elemental_graph_allocate_adj(graph, mshquad);
 	elemental_graph_count_adj(graph, mshquad);
 	graph_assign_mem_adj(graph);
@@ -669,9 +671,11 @@ static void elemental_graph_allocate_adj(nb_graph_t *graph,
 {
 	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
 	uint32_t N_adj = get_N_elemental_adj(mshquad);
-	uint32_t memsize_adj = 2 * N_adj * sizeof(**(graph->adj));
+	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
+		N_adj * sizeof(**(graph->adj));
 	char *memblock = malloc(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize_N_adj);	
 }
 
 static uint32_t get_N_elemental_adj(const nb_mshquad_t *mshquad)

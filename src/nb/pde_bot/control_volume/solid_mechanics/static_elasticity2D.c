@@ -204,7 +204,7 @@ static void integrate_inface(uint32_t elem_id, uint16_t face_id,
 
 	double lij = nb_partition_elem_face_get_length(part, elem_id,
 						       face_id);
-	double factor = lij * params2D->thickness;
+	double factor = params2D->thickness;
 
 	uint32_t i = elem_id;
 	uint32_t j = nb_partition_elem_get_ngb(part, elem_id, face_id);
@@ -222,21 +222,27 @@ static void get_Ke(const nb_partition_t *const part,
 		   uint32_t elem_i, uint16_t ngb_id,
 		   const double D[4], double Ke[8])
 {
-	double n[2];
+	double nf[2];
+	double lij = nb_partition_elem_face_get_normal(part, elem_i,
+						       ngb_id, nf);
+	double nij[2];
 	double dist = nb_partition_elem_ngb_get_normal(part, elem_i,
-						       ngb_id, n);
+						       ngb_id, nij);
 
-	double aij = -n[0] / dist;
-	double bij = -n[1] / dist;
+	double aij = nij[0] / dist;
+	double bij = nij[1] / dist;
 
-	Ke[0] = aij * n[0] * D[0] + bij * n[1] * D[3];
-	Ke[1] = bij * n[0] * D[1] + aij * n[1] * D[3];
+	Ke[0] = aij * nf[0] * D[0] + bij * nf[1] * D[3];
+	Ke[1] = bij * nf[0] * D[1] + aij * nf[1] * D[3];
 	Ke[2] = -Ke[0];
 	Ke[3] = -Ke[1];
-	Ke[4] = aij * n[1] * D[1] + bij * n[0] * D[3];
-	Ke[5] = bij * n[1] * D[2] + aij * n[0] * D[3];
+	Ke[4] = aij * nf[1] * D[1] + bij * nf[0] * D[3];
+	Ke[5] = bij * nf[1] * D[2] + aij * nf[0] * D[3];
 	Ke[6] = -Ke[4];
 	Ke[7] = -Ke[5];
+
+	for (uint8_t k = 0; k < 8; k++)
+		Ke[k] *= lij;
 }
 
 

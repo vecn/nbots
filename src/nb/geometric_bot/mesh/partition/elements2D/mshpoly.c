@@ -108,7 +108,8 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vgraph_t *const vgraph,
 				    const vinfo_t *const vinfo,
 				    const nb_mesh_t *const mesh);
-
+static void scale_vtx(double out[2], double in[2],
+		      const nb_mesh_t *mesh);
 static void set_edges(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
@@ -1014,13 +1015,11 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 		uint32_t id = mvtx_get_id(vtx);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t ielem = vinfo->vtx_map[id];
-			memcpy(&(poly->cen[ielem * 2]), vtx->x,
-			       2 * sizeof(*(vtx->x)));
+			scale_vtx(&(poly->cen[ielem * 2]), vtx->x, mesh);
 		} else {
 			/* TEMPORAL: Enhance estimation at boundaries */
 			uint32_t inode = vinfo->vtx_map[id];
-			memcpy(&(poly->nod[inode * 2]), vtx->x,
-			       2 * sizeof(*(vtx->x)));
+			scale_vtx(&(poly->nod[inode * 2]), vtx->x, mesh);
 		}
 	}
 	vcn_bins2D_iter_finish(biter);
@@ -1039,11 +1038,18 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 						     trg->v3->x,
 						     circumcenter);
 			uint32_t inode = vinfo->trg_map[id];
-			memcpy(&(poly->nod[inode * 2]), circumcenter,
-			       2 * sizeof(*circumcenter));
+			scale_vtx(&(poly->nod[inode * 2]),
+				  circumcenter, mesh);;
 		}
 	}
 	nb_iterator_finish(iter);
+}
+
+static void scale_vtx(double out[2], double in[2],
+		      const nb_mesh_t *mesh)
+{
+	out[0] = in[0] / mesh->scale + mesh->xdisp;
+	out[1] = in[1] / mesh->scale + mesh->ydisp;
 }
 
 static void set_edges(nb_mshpoly_t *poly,
