@@ -343,8 +343,7 @@ double nb_mshquad_elem_get_x(const void *msh, uint32_t id)
 	x += nb_mshquad_node_get_x(msh, idx);
 
 	double div = 3.0;
-	const nb_mshquad_t *mshquad = msh;
-	if (0 == mshquad->type[id]) {
+	if (nb_mshquad_elem_is_quad(msh, id)) {
 		div = 4.0;
 		idx = nb_mshquad_elem_get_adj(msh, id, 3);
 		x += nb_mshquad_node_get_x(msh, idx);
@@ -364,8 +363,7 @@ double nb_mshquad_elem_get_y(const void *msh, uint32_t id)
 	y += nb_mshquad_node_get_y(msh, idx);
 
 	double div = 3.0;
-	const nb_mshquad_t *mshquad = msh;
-	if (0 == mshquad->type[id]) {
+	if (nb_mshquad_elem_is_quad(msh, id)) {
 		div = 4.0;
 		idx = nb_mshquad_elem_get_adj(msh, id, 3);
 		y += nb_mshquad_node_get_y(msh, idx);
@@ -387,7 +385,7 @@ double nb_mshquad_elem_get_area(const void *msh, uint32_t id)
 
 	double area = vcn_utils2D_get_trg_area(t1, t2, t3);
 
-	if (0 == mshquad->type[id]) {
+	if (nb_mshquad_elem_is_quad(msh, id)) {
 		uint32_t v4 = nb_mshquad_elem_get_adj(msh, id, 3);
 		double *t4 = &(mshquad->nod[v4 * 2]);
 		area += vcn_utils2D_get_trg_area(t1, t3, t4);
@@ -407,10 +405,10 @@ double nb_mshquad_elem_face_get_length(const void *msh,
 	uint32_t v2 = nb_mshquad_elem_get_adj(msh, elem_id,
 					      (face_id + 1) % N_adj);
 
-	double *t1 = &(mshquad->nod[v1 * 2]);
-	double *t2 = &(mshquad->nod[v2 * 2]);
+	double *n1 = &(mshquad->nod[v1 * 2]);
+	double *n2 = &(mshquad->nod[v2 * 2]);
 
-	return vcn_utils2D_get_dist(t1, t2);	
+	return vcn_utils2D_get_dist(n1, n2);	
 }
 
 double nb_mshquad_elem_face_get_normal(const void *msh, uint32_t elem_id,
@@ -456,8 +454,7 @@ double nb_mshquad_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 uint32_t nb_mshquad_elem_get_N_adj(const void *msh, uint32_t id)
 {
 	uint32_t out;
-	const nb_mshquad_t *mshquad = msh;
-	if (0 == mshquad->type[id])
+	if (nb_mshquad_elem_is_quad(msh, id))
 		out = 4;
 	else
 		out = 3;
@@ -474,8 +471,7 @@ uint32_t nb_mshquad_elem_get_adj(const void *msh, uint32_t elem_id,
 uint32_t nb_mshquad_elem_get_N_ngb(const void *msh, uint32_t id)
 {
 	uint32_t out;
-	const nb_mshquad_t *mshquad = msh;
-	if (0 == mshquad->type[id])
+	if (nb_mshquad_elem_is_quad(msh, id))
 		out = 4;
 	else
 		out = 3;
@@ -558,7 +554,7 @@ static void fem_graph_count_adj(nb_graph_t *graph,
 		graph->N_adj[id2] += 1;
 	}
 	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		if (0 == mshquad->type[i]) {
+		if (nb_mshquad_elem_is_quad(mshquad, i)) {
 			uint32_t id1 = mshquad->adj[i * 4];
 			uint32_t id2 = mshquad->adj[i*4+1];
 			uint32_t id3 = mshquad->adj[i*4+2];
@@ -595,7 +591,7 @@ static void fem_graph_set_adj(nb_graph_t *graph,
 		graph->N_adj[id2] += 1;
 	}
 	for (uint32_t i = 0; i < mshquad->N_elems; i++) {
-		if (0 == mshquad->type[i]) {
+		if (nb_mshquad_elem_is_quad(mshquad, i)) {
 			uint32_t id1 = mshquad->adj[i * 4];
 			uint32_t id2 = mshquad->adj[i*4+1];
 			uint32_t id3 = mshquad->adj[i*4+2];
@@ -727,7 +723,7 @@ static void elemental_graph_set_adj(nb_graph_t *graph,
 			cnt += 1;
 		}
 
-		if (0 == mshquad->type[i]) {
+		if (nb_mshquad_elem_is_quad(mshquad, i)) {
 			if (mshquad->N_elems > mshquad->ngb[i*4+3]) {
 				graph->adj[i][cnt] = mshquad->ngb[i*4+3];
 				cnt += 1;
@@ -952,15 +948,11 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches)
 {
-	bool out;
-	if (medge_is_boundary(edge)) {
-		out = true;
-	} else {
+	bool out = true;
+	if (!medge_is_boundary(edge)) {
 		uint32_t id1 = edge->t1->id;
 		uint32_t id2 = edge->t2->id;
-		if (matches[id1] != id2)
-			out = true;
-		else
+		if (matches[id1] == id2)
 			out = false;
 	}
 	return out;
@@ -970,18 +962,17 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
 	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t *new_elem_id = malloc(N_trg * sizeof(new_elem_id));
+	uint32_t memsize = N_trg * sizeof(uint32_t);
+	uint32_t *new_elem_id = NB_SOFT_MALLOC(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
 	update_neighbors_ids(quad, new_elem_id);
-	free(new_elem_id);
+	NB_SOFT_FREE(memsize, new_elem_id);
 }
 
 static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		       const uint32_t *const matches,
 		       uint32_t *new_elem_id)
 {
-	memset(new_elem_id, 0, sizeof(*new_elem_id));
-
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = alloca(iter_size);
 	nb_iterator_init(iter);
@@ -1023,24 +1014,24 @@ static void set_trg_element(nb_mshquad_t *quad,
 	if (NULL != trg->t1)
 		t1 = trg->t1->id;
 	else
-		t1 = quad->N_elems;
+		t1 = UINT32_MAX;
 
 	uint32_t t2;
 	if (NULL != trg->t2)
 		t2 = trg->t2->id;
 	else
-		t2 = quad->N_elems;
+		t2 = UINT32_MAX;
 
 	uint32_t t3;
 	if (NULL != trg->t3)
 		t3 = trg->t3->id;
 	else
-		t3 = quad->N_elems;
+		t3 = UINT32_MAX;
 
 	quad->ngb[elem_id * 4] = t1;
 	quad->ngb[elem_id*4+1] = t2;
 	quad->ngb[elem_id*4+2] = t3;
-	quad->ngb[elem_id*4+3] = quad->N_elems;
+	quad->ngb[elem_id*4+3] = UINT32_MAX;
 }
 
 static void set_quad_element(nb_mshquad_t *quad,
@@ -1102,25 +1093,25 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 	if (NULL != trg1)
 		t1 = trg1->id;
 	else
-	        t1 = quad->N_elems;
+	        t1 = UINT32_MAX;
 
 	uint32_t t2;
 	if (NULL != trg2)
 		t2 = trg2->id;
 	else
-	        t2 = quad->N_elems;
+	        t2 = UINT32_MAX;
 
 	uint32_t t3;
 	if (NULL != trg3)
 		t3 = trg3->id;
 	else
-	        t3 = quad->N_elems;
+	        t3 = UINT32_MAX;
 
 	uint32_t t4;
 	if (NULL != trg4)
 		t4 = trg4->id;
 	else
-	        t4 = quad->N_elems;
+	        t4 = UINT32_MAX;
 
 	quad->ngb[elem_id * 4] = t1;
 	quad->ngb[elem_id*4+1] = t2;
@@ -1132,7 +1123,9 @@ static void update_neighbors_ids(nb_mshquad_t *quad,
 				 const uint32_t *const new_elem_id)
 {
 	for (uint32_t i = 0; i < 4 * quad->N_elems; i++) {
-		if (quad->ngb[i] < quad->N_elems)
+		if (quad->ngb[i] == UINT32_MAX)
+			quad->ngb[i] = quad->N_elems;
+		else
 			quad->ngb[i] = new_elem_id[quad->ngb[i]];
 	}
 }
@@ -1153,14 +1146,18 @@ static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 {
 	uint32_t N_nod = 0;
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
-		msh_edge_t* sgm = mesh->input_sgm[i];
-		uint32_t counter = 0;
-		while (NULL != sgm) {
-			counter++;
-			sgm = medge_subsgm_next(sgm);
+		if (NULL != mesh->input_sgm[i]) {
+			msh_edge_t* sgm = mesh->input_sgm[i];
+			uint32_t counter = 0;
+			while (NULL != sgm) {
+				counter++;
+				sgm = medge_subsgm_next(sgm);
+			}
+			quad->N_nod_x_sgm[i] = counter + 1;
+			N_nod += quad->N_nod_x_sgm[i];
+		} else {
+			quad->N_nod_x_sgm[i] = 0;
 		}
-		quad->N_nod_x_sgm[i] = counter + 1;
-		N_nod += quad->N_nod_x_sgm[i];
 	}
 	return N_nod * sizeof(**(quad->nod_x_sgm));
 }

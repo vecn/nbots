@@ -33,8 +33,10 @@ static void quad_assemble_elem(const void *msh,
 			      uint8_t N_comp,
 			      double *M, double *F);
 
-static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4]);
-static void quad_get_deriv(double Jinv[4], double dNi_dx[4], double dNi_dy[4]);
+static double quad_get_jacobian(const void *msh, uint32_t id,
+				uint8_t gp, double Jinv[4]);
+static void quad_get_deriv(uint8_t gp, double Jinv[4], double dNi_dx[4],
+			   double dNi_dy[4]);
 
 static void solve_system(const void *msh,
 			 uint8_t N_comp, double *M, double *F,
@@ -161,32 +163,51 @@ static void quad_assemble_elem(const void *msh,
 			       uint32_t elem_id, uint8_t N_comp,
 			       double *M, double *F)
 {
-	double Jinv[4];
-	double detJ = quad_get_jacobian(msh, elem_id, Jinv);
+	double wp = 1.0;
+	/* Ni(p,n) = (1 + p pi)(1 + n ni)/4 */
+	/* GP location = (+-) sqrt(3) / 3 = (+-) 0.577350269190... */
+	double Nk[16] = 
+		{0.622008467928, 0.166666666667,
+		 0.044658198739, 0.166666666667,
+		 /*****************************/
+		 0.166666666667, 0.622008467928,
+		 0.166666666667, 0.044658198739,
+		 /*****************************/
+		 0.044658198739, 0.166666666667,
+		 0.622008467928, 0.166666666667,
+		 /*****************************/
+		 0.166666666667, 0.044658198739,
+		 0.166666666667, 0.622008467928};
 
-	double dNi_dx[4];
-	double dNi_dy[4];
-	quad_get_deriv(Jinv, dNi_dx, dNi_dy);
+	for (uint8_t gp = 0; gp < 4; gp++) {
+		double Jinv[4];
+		double detJ = quad_get_jacobian(msh, elem_id, gp, Jinv);
+
+		double dNi_dx[4];
+		double dNi_dy[4];
+		quad_get_deriv(gp, Jinv, dNi_dx, dNi_dy);
 	
-	double wp = 4;
-	for (uint8_t i = 0; i < 4; i++) {
-		uint32_t id = nb_mshquad_elem_get_adj(msh, elem_id, i);
-		double Ni = 0.25;
-		for (uint32_t j = 0; j < 4; j++) {
-			double Nj = 0.25;
-			double integral = Ni * Nj * detJ * wp;
-			M[id] += integral;
-		}
+		for (uint8_t i = 0; i < 4; i++) {
+			double Ni = Nk[i * 4 + gp];
+			uint32_t id = nb_mshquad_elem_get_adj(msh, elem_id, i);
+			for (uint32_t j = 0; j < 4; j++) {
+				double Nj = Nk[j * 4 + gp];
+				double integral = Ni * Nj * detJ * wp;
+				M[id] += integral;
+			}
 
-		for (int c = 0; c < N_comp; c++) {
-			double val = elem_values[elem_id * N_comp + c];
-			double integral = Ni * val * detJ * wp;
-			F[id * N_comp + c] += integral;
+			for (int c = 0; c < N_comp; c++) {
+				double w = 0.25; /* Dividing centroid between GP */
+				double val = w * elem_values[elem_id * N_comp + c];
+				double integral = Ni * val * detJ * wp;
+				F[id * N_comp + c] += integral;
+			}
 		}
-	}
+	}	
 }
 
-static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4])
+static double quad_get_jacobian(const void *msh, uint32_t id,
+				uint8_t gp, double Jinv[4])
 {
 	/* Compute Jacobian derivatives */
 	double dx_dpsi = 0.0;
@@ -194,16 +215,41 @@ static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4])
 	double dx_deta = 0.0;
 	double dy_deta = 0.0;
 
-	double dNi_dpsi[4] = {-0.25, 0.25, 0.25, -0.25};
-	double dNi_deta[4] = {-0.25, 0.25, -0.25, 0.25};
+	double dNi_dpsi[16] =
+		{-0.394337567297, -0.394337567297,
+		 -0.105662432703, -0.105662432703,
+		 /*******************************/
+		 0.394337567297, 0.394337567297,
+		 0.105662432703, 0.105662432703,
+		 /*******************************/
+		 0.105662432703, 0.105662432703,
+		 0.394337567297, 0.394337567297,
+		 /*******************************/
+		 -0.105662432703, -0.105662432703,
+		 -0.394337567297, -0.394337567297};
+	double dNi_deta[16] =
+		{-0.394337567297, -0.105662432703,
+		 -0.105662432703, -0.394337567297,
+		 /*******************************/
+		 -0.105662432703, -0.394337567297,
+		 -0.394337567297, -0.105662432703,
+		 /*******************************/
+		 0.105662432703, 0.394337567297,
+		 0.394337567297, 0.105662432703,
+		 /*******************************/
+		 0.394337567297, 0.105662432703,
+		 0.105662432703, 0.394337567297};
+
 	for (int i = 0; i < 4; i++) {
 		uint32_t inode = nb_mshquad_elem_get_adj(msh, id, i);
 		double xi = nb_mshquad_node_get_x(msh, inode);
 		double yi = nb_mshquad_node_get_y(msh, inode);
-		dx_dpsi += dNi_dpsi[i] * xi;
-		dx_deta += dNi_deta[i] * xi;
-		dy_dpsi += dNi_dpsi[i] * yi;
-		dy_deta += dNi_deta[i] * yi;
+		for (uint8_t gp = 0; gp < 4; gp++) {
+			dx_dpsi += dNi_dpsi[i * 4 + gp] * xi;
+			dx_deta += dNi_deta[i * 4 + gp] * xi;
+			dy_dpsi += dNi_dpsi[i * 4 + gp] * yi;
+			dy_deta += dNi_deta[i * 4 + gp] * yi;
+		}
 	}
 
 	/* Compute Jacobian inverse and determinant */
@@ -217,13 +263,40 @@ static double quad_get_jacobian(const void *msh, uint32_t id, double Jinv[4])
 	return detJ;
 }
 
-static void quad_get_deriv(double Jinv[4], double dNi_dx[4], double dNi_dy[4])
+static void quad_get_deriv(uint8_t gp, double Jinv[4], double dNi_dx[4],
+			   double dNi_dy[4])
 {
-	double dNi_dpsi[4] = {-0.25, 0.25, 0.25, -0.25};
-	double dNi_deta[4] = {-0.25, 0.25, -0.25, 0.25};
+	double dNi_dpsi[16] =
+		{-0.394337567297, -0.394337567297,
+		 -0.105662432703, -0.105662432703,
+		 /*******************************/
+		 0.394337567297, 0.394337567297,
+		 0.105662432703, 0.105662432703,
+		 /*******************************/
+		 0.105662432703, 0.105662432703,
+		 0.394337567297, 0.394337567297,
+		 /*******************************/
+		 -0.105662432703, -0.105662432703,
+		 -0.394337567297, -0.394337567297};
+	double dNi_deta[16] =
+		{-0.394337567297, -0.105662432703,
+		 -0.105662432703, -0.394337567297,
+		 /*******************************/
+		 -0.105662432703, -0.394337567297,
+		 -0.394337567297, -0.105662432703,
+		 /*******************************/
+		 0.105662432703, 0.394337567297,
+		 0.394337567297, 0.105662432703,
+		 /*******************************/
+		 0.394337567297, 0.105662432703,
+		 0.105662432703, 0.394337567297};
 	for (uint8_t i = 0; i < 4; i++) {
-		dNi_dx[i] = Jinv[0] * dNi_dpsi[i] + Jinv[1] * dNi_deta[i];
-		dNi_dy[i] = Jinv[2] * dNi_dpsi[i] + Jinv[3] * dNi_deta[i];
+		dNi_dx[i] =
+			Jinv[0] * dNi_dpsi[i*4+gp] +
+			Jinv[1] * dNi_deta[i*4+gp];
+		dNi_dy[i] =
+			Jinv[2] * dNi_dpsi[i*4+gp] +
+			Jinv[3] * dNi_deta[i*4+gp];
 	}
 }
 

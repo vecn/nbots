@@ -673,7 +673,9 @@ void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
 				  float factor,
 				  uint8_t rgba[4])
 {
-	if (factor <= palette->tics[0]) {
+	if (factor != factor) {
+		memcpy(rgba, palette->rgba, 4);		
+	} if (factor <= palette->tics[0]) {
 		memcpy(rgba, palette->rgba, 4);
 	} else if (factor >= palette->tics[palette->ntics-1]) {
 		memcpy(rgba, &(palette->rgba[(palette->ntics-1)*4]), 4);

@@ -203,8 +203,6 @@ static void integrate_inface(uint32_t elem_id, uint16_t face_id,
 	double Ke[8];
 	get_Ke(part, elem_id, face_id, D, Ke);
 
-	double lij = nb_partition_elem_face_get_length(part, elem_id,
-						       face_id);
 	double factor = params2D->thickness;
 
 	uint32_t i = elem_id;
@@ -230,8 +228,8 @@ static void get_Ke(const nb_partition_t *const part,
 	double dist = nb_partition_elem_ngb_get_normal(part, elem_i,
 						       ngb_id, nij);
 
-	double aij = nij[0] / dist;
-	double bij = nij[1] / dist;
+	double aij = -nij[0] / dist;
+	double bij = -nij[1] / dist;
 
 	Ke[0] = aij * nf[0] * D[0] + bij * nf[1] * D[3];
 	Ke[1] = bij * nf[0] * D[1] + aij * nf[1] * D[3];

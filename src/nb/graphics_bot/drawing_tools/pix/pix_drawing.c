@@ -15,6 +15,7 @@
 
 #include "pix_drawing.h"
 
+
 #define TURTLE_STATIC_MEMSIZE 20       /* turtle_step */
 #define TURTLE_DYNAMIC_MEMINCREASE 25  /* turtle_step */
 #define PIXMASK_STATIC_MEMSIZE 2500    /* Bytes */
@@ -26,6 +27,7 @@
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#define VALIDATE_VALUE(x) (((x) == (x))?(x):0)
 
 enum {
 	SOLID, GRAD, TRG
@@ -216,6 +218,8 @@ void nb_graphics_pix_export_context(const void *ctx, const char *filename)
 void nb_graphics_pix_move_to(void *ctx, float x, float y)
 {
 	context_t *c = ctx;
+	x = VALIDATE_VALUE(x);
+	y = VALIDATE_VALUE(y);
 	turtle_add(c->turtle, MOVE_TO, x, y,
 		   0, 0, 0, 0);
 }
@@ -256,6 +260,8 @@ static void turtle_add(turtle_t *turtle, uint8_t type,
 void nb_graphics_pix_line_to(void *ctx, float x, float y)
 {
 	context_t *c = ctx;
+	x = VALIDATE_VALUE(x);
+	y = VALIDATE_VALUE(y);
 	turtle_add(c->turtle, LINE_TO, x, y,
 		   0, 0, 0, 0);
 }
@@ -264,6 +270,10 @@ void nb_graphics_pix_qcurve_to(void *ctx, float x, float y,
 			       float xcontrol, float ycontrol)
 {
 	context_t *c = ctx;
+	x = VALIDATE_VALUE(x);
+	y = VALIDATE_VALUE(y);
+	xcontrol = VALIDATE_VALUE(xcontrol);
+	ycontrol = VALIDATE_VALUE(ycontrol);
 	turtle_add(c->turtle, QCURVE_TO, x, y,
 		   xcontrol, ycontrol, 0, 0);
 }
@@ -272,6 +282,11 @@ void nb_graphics_pix_qrcurve_to(void *ctx, float x, float y,
 				float xcontrol, float ycontrol, float w)
 {
 	context_t *c = ctx;
+	x = VALIDATE_VALUE(x);
+	y = VALIDATE_VALUE(y);
+	xcontrol = VALIDATE_VALUE(xcontrol);
+	ycontrol = VALIDATE_VALUE(ycontrol);
+	w = VALIDATE_VALUE(w);
 	turtle_add(c->turtle, QRCURVE_TO, x, y,
 		   xcontrol, ycontrol, w, 0);
 }
@@ -280,6 +295,12 @@ void nb_graphics_pix_curve_to(void *ctx, float x, float y,
 			      float x1_control, float y1_control)
 {
 	context_t *c = ctx;
+	x = VALIDATE_VALUE(x);
+	y = VALIDATE_VALUE(y);
+	x0_control = VALIDATE_VALUE(x0_control);
+	y0_control = VALIDATE_VALUE(y0_control);
+	x1_control = VALIDATE_VALUE(x1_control);
+	y1_control = VALIDATE_VALUE(y1_control);
 	turtle_add(c->turtle, CURVE_TO, x, y,
 		   x0_control, y0_control,
 		   x1_control, y1_control);

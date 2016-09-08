@@ -43,6 +43,7 @@ static void modify_bcond_pwh(const void *part,
 static void pwh_DC_SGM_cond(const double *x, double t, double *out);
 static void pwh_BC_SGM_cond(const double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
+		     nb_partition_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
@@ -94,7 +95,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000,
+	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
@@ -117,7 +118,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000,
+	run_test("%s/plate_with_hole.txt", 1000, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -227,7 +228,7 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 
 	nb_partition_extrapolate_elems_to_nodes(part, 1, total_disp,
 						disp_nodes);
-	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
+	//nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
 
 	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
@@ -261,14 +262,15 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
+		     nb_partition_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	nb_partition_t *part = alloca(nb_partition_get_memsize(NB_QUAD));
-	nb_partition_init(part, NB_QUAD);
+	nb_partition_t *part = alloca(nb_partition_get_memsize(part_type));
+	nb_partition_init(part, part_type);
 
 	int status = simulate(problem_data, part, &results,
 			      N_vtx, modify_bcond);

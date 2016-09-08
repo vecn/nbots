@@ -111,7 +111,6 @@ static void fill_elems(const nb_mshquad_t *msh,
 		uint32_t n1 = nb_mshquad_elem_get_adj(msh, i, 0);
 		uint32_t n2 = nb_mshquad_elem_get_adj(msh, i, 1);
 		uint32_t n3 = nb_mshquad_elem_get_adj(msh, i, 2);
-		uint32_t n4 = nb_mshquad_elem_get_adj(msh, i, 3);
 
 		double x = nb_mshquad_node_get_x(msh, n1);
 		double y = nb_mshquad_node_get_y(msh, n1);
@@ -125,7 +124,8 @@ static void fill_elems(const nb_mshquad_t *msh,
 		y = nb_mshquad_node_get_y(msh, n3);
 		nb_graphics_line_to(g, x, y);
 
-		if (n4 < nb_mshquad_get_N_nodes(msh)) {
+		if (nb_mshquad_elem_is_quad(msh, i)) {
+			uint32_t n4 = nb_mshquad_elem_get_adj(msh, i, 3);
 			x = nb_mshquad_node_get_x(msh, n4);
 			y = nb_mshquad_node_get_y(msh, n4);
 			nb_graphics_line_to(g, x, y);
@@ -164,7 +164,6 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 		nb_graphics_palette_get_rgba(pal, normalized_field[n1], c1);
 		nb_graphics_palette_get_rgba(pal, normalized_field[n2], c2);
 		nb_graphics_palette_get_rgba(pal, normalized_field[n3], c3);
-
 		nb_graphics_set_source_trg(g, x1, y1, x2, y2,
 					   x3, y3, c1, c2, c3);
 
@@ -175,8 +174,8 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 
 		nb_graphics_fill(g);
 
-		uint32_t n4 = nb_mshquad_elem_get_adj(msh, i, 3);
-		if (n4 < nb_mshquad_get_N_nodes(msh)) {
+		if (nb_mshquad_elem_is_quad(msh, i)) {
+			uint32_t n4 = nb_mshquad_elem_get_adj(msh, i, 3);
 			double x4 = nb_mshquad_node_get_x(msh, n4);
 			double y4 = nb_mshquad_node_get_y(msh, n4);
 
@@ -194,8 +193,7 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 
 			nb_graphics_fill(g);
 		}
-	}	
-
+	}
 	nb_graphics_palette_destroy(pal);
 }
 
