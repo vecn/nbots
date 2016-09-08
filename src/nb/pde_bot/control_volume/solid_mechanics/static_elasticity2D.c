@@ -96,6 +96,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	int status_assemble = assemble_system(K, F, part, material,
 					      enable_self_weight, gravity,
 					      analysis2D, params2D);
+
 	if (0 != status_assemble) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
