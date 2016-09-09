@@ -118,7 +118,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -228,7 +228,7 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 
 	nb_partition_extrapolate_elems_to_nodes(part, 1, total_disp,
 						disp_nodes);
-	//nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
+	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
 
 	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
 				 NB_NODE, NB_FIELD,

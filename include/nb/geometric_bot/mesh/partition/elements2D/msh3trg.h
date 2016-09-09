@@ -83,14 +83,6 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr, double box[4]);
 
 bool nb_msh3trg_is_vtx_inside(const void *msh3trg, double x, double y);
 
-double nb_msh3trg_distort_with_field(void *msh, 
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp);
-void nb_msh3trg_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values);
-
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model);
 
 void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,

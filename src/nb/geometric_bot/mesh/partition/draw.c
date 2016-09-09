@@ -39,7 +39,6 @@ typedef struct {
 	bool draw_wires;
 } draw_data;
 
-
 static void init_draw_data(draw_data *data,
 			   const nb_partition_t *part,
 			   nb_partition_entity vals_entity,

@@ -57,15 +57,6 @@ void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh);
 void nb_mshpack_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpack_is_vtx_inside(const void *msh, double x, double y);
-
-double nb_mshpack_distort_with_field(void *msh, 
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp);
-void nb_mshpack_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values);
-
 void nb_mshpack_build_model(const void *msh, nb_model_t *model);
 void nb_mshpack_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

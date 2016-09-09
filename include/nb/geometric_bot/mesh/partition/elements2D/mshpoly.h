@@ -64,15 +64,6 @@ void nb_mshpoly_load_interelem_graph(const void *mshpoly,
 
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpoly_is_vtx_inside(const void *msh, double x, double y);
-
-double nb_mshpoly_distort_with_field(void *msh, 
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp);
-void nb_mshpoly_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values);
-
 void nb_mshpoly_build_model(const void *msh, nb_model_t *model);
 void nb_mshpoly_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

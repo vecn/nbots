@@ -7,6 +7,7 @@ typedef struct vcn_fem_elem_s vcn_fem_elem_t;
 
 typedef enum {
 	NB_TRG_LINEAR,
+	NB_QUAD_LINEAR
 } vcn_elem_id;
 
 vcn_fem_elem_t* vcn_fem_elem_create(vcn_elem_id type);

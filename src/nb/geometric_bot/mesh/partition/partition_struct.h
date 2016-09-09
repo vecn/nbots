@@ -85,10 +85,6 @@ struct nb_partition_s {
 				     nb_partition_entity field_entity,
 				     double *disp,
 				     double max_disp);
-	void (*extrapolate_elems_to_nodes)(const void *msh,
-					   uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values);
 	void (*build_model)(const void *msh, nb_model_t *model);
 	void (*build_model_disabled_elems)(const void *msh,
 					   const bool *elems_enabled,

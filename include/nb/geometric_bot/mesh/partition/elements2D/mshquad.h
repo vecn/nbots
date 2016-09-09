@@ -54,26 +54,15 @@ uint32_t nb_mshquad_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_mshquad_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
-
 void nb_mshquad_load_elem_graph(const void *mshquad,
 				nb_graph_t *graph);
 void nb_mshquad_load_nodal_graph(const void *mshquad,
 				 nb_graph_t *graph);
 void nb_mshquad_load_interelem_graph(const void *mshquad,
 				     nb_graph_t *graph);
-
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh);
-
 void nb_mshquad_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y);
-
-double nb_mshquad_distort_with_field(void *msh, 
-				     nb_partition_entity field_entity,
-				     double *disp,
-				     double max_disp);
-void nb_mshquad_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
-					   const double *elem_values,
-					   double *nodal_values);
 void nb_mshquad_build_model(const void *msh, nb_model_t *model);
 void nb_mshquad_build_model_disabled_elems(const void *msh,
 					   const bool *elems_enabled,

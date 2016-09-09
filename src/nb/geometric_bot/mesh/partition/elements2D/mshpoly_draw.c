@@ -171,7 +171,6 @@ void nb_mshpoly_fill_elems_field_on_nodes(const void *msh,
 
 			nb_graphics_set_source_trg(g, xc, yc, x1, y1,
 						   x2, y2, cc, c1, c2);
-
 			nb_graphics_fill(g);
 		}
 	}

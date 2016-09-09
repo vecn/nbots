@@ -21,14 +21,6 @@
 
 #define POW2(a) ((a)*(a))
 
-typedef struct {
-	const nb_partition_t *part;
-	const void *values;
-	nb_partition_entity vals_entity;
-	nb_partition_array_type vals_type;
-	bool draw_wires;
-} draw_data_t;
-
 static void set_msh_interface(nb_partition_t *part, nb_partition_type  type);
 
 static void set_msh3trg_interface(nb_partition_t *part);
@@ -150,9 +142,6 @@ static void set_msh3trg_main_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_msh3trg_load_from_mesh;
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
-	part->distort_with_field = nb_msh3trg_distort_with_field;
-	part->extrapolate_elems_to_nodes = 
-		nb_msh3trg_extrapolate_elems_to_nodes;
 	part->build_model = nb_msh3trg_build_model;
 	part->build_model_disabled_elems =
 		nb_msh3trg_build_model_disabled_elems;
@@ -213,9 +202,6 @@ static void set_mshquad_main_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshquad_load_from_mesh;
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
-	part->distort_with_field = nb_mshquad_distort_with_field;
-	part->extrapolate_elems_to_nodes = 
-		nb_mshquad_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshquad_build_model;
 	part->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
@@ -276,9 +262,6 @@ static void set_mshpoly_main_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshpoly_load_from_mesh;
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
-	part->distort_with_field = nb_mshpoly_distort_with_field;
-	part->extrapolate_elems_to_nodes = 
-		nb_mshpoly_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshpoly_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
@@ -339,9 +322,6 @@ static void set_mshpack_main_interface(nb_partition_t *part)
 	part->load_from_mesh = nb_mshpack_load_from_mesh;
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
-	part->distort_with_field = nb_mshpack_distort_with_field;
-	part->extrapolate_elems_to_nodes = 
-		nb_mshpack_extrapolate_elems_to_nodes;
 	part->build_model = nb_mshpack_build_model;
 	part->build_model_disabled_elems =
 		nb_mshpack_build_model_disabled_elems;
@@ -598,23 +578,6 @@ bool nb_partition_is_vtx_inside(const nb_partition_t *part,
 				double x, double y)
 {
 	return part->is_vtx_inside(part->msh, x, y);
-}
-
-double nb_partition_distort_with_field(nb_partition_t *part,
-				       nb_partition_entity field_entity,
-				       double *disp, double max_disp)
-{
-	return part->distort_with_field(part->msh, field_entity,
-					disp, max_disp);
-}
-
-void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
-					     uint8_t N_comp,
-					     const double *elem_values,
-					     double *nodal_values)
-{
-	part->extrapolate_elems_to_nodes(part->msh, N_comp, elem_values,
-					 nodal_values);
 }
 
 void nb_partition_build_model(const nb_partition_t *part, nb_model_t *model)

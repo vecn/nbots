@@ -3,36 +3,40 @@
 #include <string.h>
 
 #include "nb/memory_bot.h"
-#include "nb/geometric_bot/mesh/partition/elements2D/mshpoly.h"
+#include "nb/geometric_bot/mesh/partition.h"
 
-#include "mshpoly_struct.h"
+#include "partition_struct.h"
+#include "partition_private.h"
 
 #define POW2(a) ((a)*(a))
 
-static void assemble_system(const void *part,
+static void assemble_system(const nb_partition_t *part,
 			    const double *elem_values,
 			    uint8_t N_comp, double *M, double *F);
-static void assemble_elem(const void *msh, const double *elem_values,
+static void assemble_elem(const nb_partition_t *part,
+			  const double *elem_values,
 			  uint32_t elem_id, uint8_t N_comp,
 			  double *M, double *F);
-static void eval_shape_funcs(const void *msh, uint32_t elem_id, double *f);
+static void eval_shape_funcs(const nb_partition_t *part,
+			     uint32_t elem_id, double *f);
 static double monotonic_func(double x);
-static void solve_system(const void *msh, uint8_t N_comp, 
+static void solve_system(const nb_partition_t *part, uint8_t N_comp, 
 			 double *M, double *F, double *nodal_values);
-static double distort_using_nodal_field(nb_mshpoly_t *msh, double *disp,
+static double distort_using_nodal_field(nb_partition_t *part, double *disp,
 					double max_disp);
-static void elem_get_interpolation(const nb_mshpoly_t *msh, uint32_t elem_id,
+static void elem_get_interpolation(const nb_partition_t *part, uint32_t elem_id,
 				   const double *value, uint8_t N_comp,
 				   double *out);
 static double get_max_displacement(uint32_t N, double *disp);
-static double distort_using_elem_field(nb_mshpoly_t *msh, double *disp,
+static double distort_using_elem_field(nb_partition_t *part, double *disp,
 				       double max_disp);
 
-void nb_mshpoly_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
+void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
+					   uint8_t N_comp,
 					   const double *elem_values,
 					   double *nodal_values)
 {
-	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 
 	char *memblock = malloc((1 + N_comp) * N_nodes * sizeof(double));
 
@@ -41,35 +45,35 @@ void nb_mshpoly_extrapolate_elems_to_nodes(const void *msh, uint8_t N_comp,
 	memset(M, 0, N_nodes * sizeof(*M));
 	memset(F, 0, N_nodes * N_comp * sizeof(*F));
 	
-	assemble_system(msh, elem_values, N_comp, M, F);
+	assemble_system(part, elem_values, N_comp, M, F);
 
-	solve_system(msh, N_comp, M, F, nodal_values);
+	solve_system(part, N_comp, M, F, nodal_values);
 
 	free(memblock);
 }
 
-static void assemble_system(const void *msh,
+static void assemble_system(const nb_partition_t *part,
 			    const double *elem_values,
 			    uint8_t N_comp, double *M, double *F)
 {
-	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++)
-		assemble_elem(msh, elem_values, i, N_comp, M, F);
+		assemble_elem(part, elem_values, i, N_comp, M, F);
 }
 
-static void assemble_elem(const void *msh, const double *elem_values,
+static void assemble_elem(const nb_partition_t *part, const double *elem_values,
 			  uint32_t elem_id, uint8_t N_comp,
 			  double *M, double *F)
 {
-	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	uint16_t f_memsize = N_adj * sizeof(double);
 	double *f = NB_SOFT_MALLOC(f_memsize);
-	eval_shape_funcs(msh, elem_id, f);
+	eval_shape_funcs(part, elem_id, f);
 
-	double area = nb_mshpoly_elem_get_area(msh, elem_id);
+	double area = nb_partition_elem_get_area(part, elem_id);
 
 	for (uint32_t i = 0; i < N_adj; i++) {
-		uint32_t node_id = nb_mshpoly_elem_get_adj(msh, elem_id, i);
+		uint32_t node_id = nb_partition_elem_get_adj(part, elem_id, i);
 		/* Assemble mass matrix */
 		for (uint32_t j = 0; j < N_adj; j++) {
 			M[node_id] += area * f[i] * f[j];
@@ -85,22 +89,22 @@ static void assemble_elem(const void *msh, const double *elem_values,
 	NB_SOFT_FREE(f_memsize, f);
 }
 
-static void eval_shape_funcs(const void *msh, uint32_t elem_id,
+static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 			     double *f)
 {
-	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	uint16_t memsize = 2 * N_adj * sizeof(double);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	
 	double *g = (void*) memblock;
 	double *h = (void*) (memblock + N_adj * sizeof(double));
 	
-	double x = nb_mshpoly_elem_get_x(msh, elem_id);
-	double y = nb_mshpoly_elem_get_y(msh, elem_id);
+	double x = nb_partition_elem_get_x(part, elem_id);
+	double y = nb_partition_elem_get_y(part, elem_id);
 	for (uint16_t i = 0; i < N_adj; i++) {
-		double node_id = nb_mshpoly_elem_get_adj(msh, elem_id, i);
-		double xn = nb_mshpoly_node_get_x(msh, node_id);
-		double yn = nb_mshpoly_node_get_x(msh, node_id);
+		double node_id = nb_partition_elem_get_adj(part, elem_id, i);
+		double xn = nb_partition_node_get_x(part, node_id);
+		double yn = nb_partition_node_get_x(part, node_id);
 		double dist2 = POW2(x - xn) + POW2(y - yn);
 		h[i] = monotonic_func(dist2);
 	}
@@ -128,10 +132,10 @@ static inline double monotonic_func(double x)
 	return x;
 }
 
-static void solve_system(const void *msh, uint8_t N_comp, 
+static void solve_system(const nb_partition_t *part, uint8_t N_comp, 
 			 double *M, double *F, double *nodal_values)
 {
-	uint32_t N_nodes = nb_msh3trg_get_N_nodes(msh);
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		for (uint8_t j = 0; j < N_comp; j++) {
 			uint32_t id = i * N_comp + j;
@@ -141,53 +145,57 @@ static void solve_system(const void *msh, uint8_t N_comp,
 }
 
 
-double nb_mshpoly_distort_with_field(void *msh,
+double nb_partition_distort_with_field(nb_partition_t *part,
 				     nb_partition_entity field_entity,
 				     double *disp,
 				     double max_disp)
 {
 	double scale = 1.0;
 	if (NB_NODE == field_entity)
-		scale = distort_using_nodal_field(msh, disp, max_disp);
+		scale = distort_using_nodal_field(part, disp, max_disp);
 	else if (NB_ELEMENT == field_entity)
-		scale = distort_using_elem_field(msh, disp, max_disp);
+		scale = distort_using_elem_field(part, disp, max_disp);
 	return scale;
 }
 
-static double distort_using_nodal_field(nb_mshpoly_t *msh, double *disp,
+static double distort_using_nodal_field(nb_partition_t *part, double *disp,
 					double max_disp)
 {
-	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
+	nb_partition_private_i priv;
+	nb_partition_init_private_interface(&priv, part);
+
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	double max_field_disp = get_max_displacement(N_nodes, disp);
 	double scale = max_disp / max_field_disp;
 	
-	for (uint32_t i = 0; i < 2 * N_nodes; i++)
-		msh->nod[i] += disp[i] * scale;
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		priv.node_move_x(part->msh, i, disp[i * 2] * scale);
+		priv.node_move_y(part->msh, i, disp[i*2+1] * scale);
+	}
 
-
-	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double d[2];
-		elem_get_interpolation(msh, i, disp, 2, d);
-		msh->cen[i * 2] += d[0] * scale;
-		msh->cen[i*2+1] += d[1] * scale;
+		elem_get_interpolation(part, i, disp, 2, d);
+		priv.elem_move_x(part->msh, i, d[0] * scale);
+		priv.elem_move_y(part->msh, i, d[1] * scale);
 	}
 
 	return scale;
 }
 
-static void elem_get_interpolation(const nb_mshpoly_t *msh, uint32_t elem_id,
+static void elem_get_interpolation(const nb_partition_t *part, uint32_t elem_id,
 				   const double *value, uint8_t N_comp,
 				   double *out)
 {
 	memset(out, 0, N_comp * sizeof(*out));
 	
-	uint32_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	double *f = alloca(N_adj * sizeof(*f));
-	eval_shape_funcs(msh, elem_id, f);
+	eval_shape_funcs(part, elem_id, f);
 
 	for (uint32_t j = 0; j < N_adj; j++) {
-		uint32_t id = nb_mshpoly_elem_get_adj(msh, elem_id, j);
+		uint32_t id = nb_partition_elem_get_adj(part, elem_id, j);
 		for (uint8_t c = 0; c < N_comp; c++)
 			out[c] += value[id * N_comp + c] * f[j];
 	}
@@ -204,24 +212,31 @@ static double get_max_displacement(uint32_t N, double *disp)
 	return sqrt(max);
 }
 
-static double distort_using_elem_field(nb_mshpoly_t *msh, double *disp,
+static double distort_using_elem_field(nb_partition_t *part, double *disp,
 				       double max_disp)
 {
-	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
-	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	nb_partition_private_i priv;
+	nb_partition_init_private_interface(&priv, part);
+
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 
 	double max_field_disp = get_max_displacement(N_elems, disp);
 	double scale = max_disp / max_field_disp;
 
-	for (uint32_t i = 0; i < 2 * N_elems; i++)
-		msh->cen[i] += disp[i] * scale;
+	for (uint32_t i = 0; i < N_elems; i++) {
+		priv.elem_move_x(part->msh, i, disp[i * 2] * scale);
+		priv.elem_move_y(part->msh, i, disp[i*2+1] * scale);
+	}
 
 	uint32_t memsize = 2 * N_nodes * sizeof(double);
 	double *nodal_disp = NB_SOFT_MALLOC(memsize);
-	nb_mshpoly_extrapolate_elems_to_nodes(msh, 2, disp, nodal_disp);
+	nb_partition_extrapolate_elems_to_nodes(part, 2, disp, nodal_disp);
 	
-	for (uint32_t i = 0; i < 2 * N_nodes; i++)
-		msh->nod[i] += nodal_disp[i] * scale;
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		priv.node_move_x(part->msh, i, nodal_disp[i * 2] * scale);
+		priv.node_move_y(part->msh, i, nodal_disp[i*2+1] * scale);
+	}
 
 	NB_SOFT_FREE(memsize, nodal_disp);
 	return scale;

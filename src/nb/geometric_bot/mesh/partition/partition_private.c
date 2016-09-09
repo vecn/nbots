@@ -1,0 +1,72 @@
+#include <stdlib.h>
+#include <stdint.h>
+
+#include "nb/geometric_bot/mesh/partition.h"
+#include "nb/geometric_bot/mesh/partition/info.h"
+
+#include "partition_struct.h"
+#include "partition_private.h"
+
+#include "elements2D/msh3trg_private.h"
+#include "elements2D/mshquad_private.h"
+#include "elements2D/mshpoly_private.h"
+#include "elements2D/mshpack_private.h"
+
+static void set_msh3trg_interface(nb_partition_private_i *priv);
+static void set_mshquad_interface(nb_partition_private_i *priv);
+static void set_mshpoly_interface(nb_partition_private_i *priv);
+static void set_mshpack_interface(nb_partition_private_i *priv);
+
+void nb_partition_init_private_interface(nb_partition_private_i *priv,
+					 const nb_partition_t *part)
+{
+	switch (part->type) {
+	case NB_TRIAN:
+		set_msh3trg_interface(priv);
+		break;
+	case NB_QUAD:
+		set_mshquad_interface(priv);
+		break;
+	case NB_POLY:
+		set_mshpoly_interface(priv);
+		break;
+	case NB_DISK:
+		set_mshpack_interface(priv);
+		break;
+	default:
+		set_msh3trg_interface(priv);
+		break;
+	}	
+}
+
+static void set_msh3trg_interface(nb_partition_private_i *priv)
+{
+	priv->node_move_x = nb_msh3trg_node_move_x;
+	priv->node_move_y = nb_msh3trg_node_move_y;
+	priv->elem_move_x = nb_msh3trg_elem_move_x;
+	priv->elem_move_y = nb_msh3trg_elem_move_y;
+}
+
+static void set_mshquad_interface(nb_partition_private_i *priv)
+{
+	priv->node_move_x = nb_mshquad_node_move_x;
+	priv->node_move_y = nb_mshquad_node_move_y;
+	priv->elem_move_x = nb_mshquad_elem_move_x;
+	priv->elem_move_y = nb_mshquad_elem_move_y;
+}
+
+static void set_mshpoly_interface(nb_partition_private_i *priv)
+{
+	priv->node_move_x = nb_mshpoly_node_move_x;
+	priv->node_move_y = nb_mshpoly_node_move_y;
+	priv->elem_move_x = nb_mshpoly_elem_move_x;
+	priv->elem_move_y = nb_mshpoly_elem_move_y;
+}
+
+static void set_mshpack_interface(nb_partition_private_i *priv)
+{
+	priv->node_move_x = nb_mshpack_node_move_x;
+	priv->node_move_y = nb_mshpack_node_move_y;
+	priv->elem_move_x = nb_mshpack_elem_move_x;
+	priv->elem_move_y = nb_mshpack_elem_move_y;
+}
