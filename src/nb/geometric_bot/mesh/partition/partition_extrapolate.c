@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "nb/memory_bot.h"
+#include "nb/interpolation_bot.h"
 #include "nb/geometric_bot/mesh/partition.h"
 
 #include "partition_struct.h"
@@ -17,9 +19,8 @@ static void assemble_elem(const nb_partition_t *part,
 			  const double *elem_values,
 			  uint32_t elem_id, uint8_t N_comp,
 			  double *M, double *F);
-static void eval_shape_funcs(const nb_partition_t *part,
-			     uint32_t elem_id, double *f);
-static double monotonic_func(double x);
+static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
+			     double *f);
 static void solve_system(const nb_partition_t *part, uint8_t N_comp, 
 			 double *M, double *F, double *nodal_values);
 static double distort_using_nodal_field(nb_partition_t *part, double *disp,
@@ -68,6 +69,7 @@ static void assemble_elem(const nb_partition_t *part, const double *elem_values,
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	uint16_t f_memsize = N_adj * sizeof(double);
 	double *f = NB_SOFT_MALLOC(f_memsize);
+
 	eval_shape_funcs(part, elem_id, f);
 
 	double area = nb_partition_elem_get_area(part, elem_id);
@@ -92,44 +94,23 @@ static void assemble_elem(const nb_partition_t *part, const double *elem_values,
 static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 			     double *f)
 {
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	uint16_t memsize = 2 * N_adj * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	
-	double *g = (void*) memblock;
-	double *h = (void*) (memblock + N_adj * sizeof(double));
-	
-	double x = nb_partition_elem_get_x(part, elem_id);
-	double y = nb_partition_elem_get_y(part, elem_id);
-	for (uint16_t i = 0; i < N_adj; i++) {
+	uint16_t N = nb_partition_elem_get_N_adj(part, elem_id);
+
+	double x[2];
+	x[0] = nb_partition_elem_get_x(part, elem_id);
+	x[1] = nb_partition_elem_get_y(part, elem_id);
+
+	uint32_t memsize = 2 * N * sizeof(double);
+	double *ni = NB_SOFT_MALLOC(memsize);
+	for (uint16_t i = 0; i < N; i++) {
 		double node_id = nb_partition_elem_get_adj(part, elem_id, i);
-		double xn = nb_partition_node_get_x(part, node_id);
-		double yn = nb_partition_node_get_x(part, node_id);
-		double dist2 = POW2(x - xn) + POW2(y - yn);
-		h[i] = monotonic_func(dist2);
+		ni[i * 2] = nb_partition_node_get_x(part, node_id);
+		ni[i*2+1] = nb_partition_node_get_y(part, node_id);
 	}
+	
+	nb_nonpolynomial_simple_eval(N, 2, ni, x, f);
 
-	for (uint16_t i = 0; i < N_adj; i++) {
-		g[i] = 1;
-		for (uint16_t j = 0; j < N_adj; j++) {
-			if (i != j)
-				g[i] *= h[j];
-		}
-	}
-
-	double sum = 0;
-	for (uint16_t i = 0; i < N_adj; i++)
-		sum += g[i];
-
-	for (uint16_t i = 0; i < N_adj; i++)
-		f[i] = g[i] / sum;
-
-	NB_SOFT_FREE(memsize, memblock);
-}
-
-static inline double monotonic_func(double x)
-{
-	return x;
+	NB_SOFT_FREE(memsize, ni);
 }
 
 static void solve_system(const nb_partition_t *part, uint8_t N_comp, 

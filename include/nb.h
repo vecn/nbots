@@ -13,6 +13,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
+#include "nb/interpolation_bot.h"
 #include "nb/statistics_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/container_bot.h"
