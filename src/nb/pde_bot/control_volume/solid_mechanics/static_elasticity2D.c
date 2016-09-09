@@ -184,10 +184,9 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  nb_analysis2D_params *params2D,
 			  vcn_sparse_t *K, double *F)
 {
-	if (nb_partition_elem_has_ngb(part, elem_id, face_id)) {
+	if (nb_partition_elem_has_ngb(part, elem_id, face_id))
 		integrate_inface(elem_id, face_id, part, material,
 				 analysis2D, params2D, K);
-	}
 }
 
 static void integrate_inface(uint32_t elem_id, uint16_t face_id,

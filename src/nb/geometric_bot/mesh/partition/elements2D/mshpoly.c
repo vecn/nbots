@@ -912,7 +912,7 @@ static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
 		double x = v2->x[0] - v1->x[0];
 		double y = v2->x[1] - v1->x[1];
 		double angle_j = atan2(y, x);
-		if (angle_j < angle_id) {
+		if (angle_j > angle_id) {
 			msh_edge_t *aux = vgraph->adj[id_global][j];
 			vgraph->adj[id_global][j] = (msh_edge_t*) edge;
 			edge = aux;
@@ -1229,9 +1229,9 @@ static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 	msh_trg_t *trg;
 	msh_edge_t *edge = vgraph->adj[i][j];
 	if (i == mvtx_get_id(edge->v1))
-		trg = edge->t1;
-	else if (i == mvtx_get_id(edge->v2))
 		trg = edge->t2;
+	else if (i == mvtx_get_id(edge->v2))
+		trg = edge->t1;
 	else
 		trg = NULL;
 	return trg;
