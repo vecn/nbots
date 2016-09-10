@@ -43,6 +43,9 @@ double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_face_get_length(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id);
+void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
+					 uint32_t elem_id, uint16_t face_id,
+					 double w, double midpoint[2]);
 double nb_partition_elem_face_get_normal(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id,
 					 double normal[2]);

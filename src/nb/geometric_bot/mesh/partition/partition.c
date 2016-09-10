@@ -430,6 +430,15 @@ double nb_partition_elem_face_get_length(const nb_partition_t *part,
 	return part->elem_face_get_length(part->msh, elem_id, face_id);
 }
 
+void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
+					 uint32_t elem_id, uint16_t face_id,
+					 double w, double midpoint[2])
+{
+	part->elem_face_get_midpoint(part->msh, elem_id, face_id, w, midpoint);
+	/* AQUI VOY: Falta agregar en struct y en implementaciones,
+	 falta agregar a set_interface. */
+}
+
 double nb_partition_elem_face_get_normal(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id,
 					 double normal[2])

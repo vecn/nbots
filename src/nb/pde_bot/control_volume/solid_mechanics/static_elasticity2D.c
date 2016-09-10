@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
+#include "nb/interpolation_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/graph_bot.h"
@@ -46,15 +47,23 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
 			  vcn_sparse_t *K,  double *F);
-static void integrate_inface(uint32_t elem_id, uint16_t face_id,
-			     const nb_partition_t *const part,
-			     const nb_material_t *material,
-			     nb_analysis2D_t analysis2D,
-			     nb_analysis2D_params *params2D,
-			     vcn_sparse_t *K);
-static void get_Ke(const nb_partition_t *const part,
-		   uint32_t elem_i, uint16_t ngb_id,
-		   const double D[4], double Ke[8]);
+static void integrate_face(uint32_t elem_id, uint16_t face_id,
+			   const nb_partition_t *const part,
+			   const nb_material_t *material,
+			   nb_analysis2D_t analysis2D,
+			   nb_analysis2D_params *params2D,
+			   vcn_sparse_t *K);
+static uint16_t get_neighbours(const nb_partition_t *part,
+			       uint32_t elem_id, uint16_t face_id,
+			       uint16_t max_ngb, uint32_t *ngb);
+static void get_Kf(const nb_partition_t *const part,
+		   uint32_t elem_i, uint16_t face_id,
+		   const double D[4], uint16_t N_ngb,
+		   const uint32_t *ngb, double *Kf);
+static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
+			uint32_t elem_id, uint16_t face_id,
+			uint16_t N_ngb, const uint32_t *ngb,
+			double factor);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
 static void compute_strain(double *strain,
@@ -62,9 +71,6 @@ static void compute_strain(double *strain,
 			   double *disp,
 			   nb_analysis2D_t analysis2D,
 			   const nb_material_t *const material);
-static void estimate_Du(uint32_t elem_id,
-			const nb_partition_t *const part,
-			double *u, double Du[4]);
 
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
@@ -180,65 +186,92 @@ static void assemble_face(uint32_t elem_id, uint16_t face_id,
 			  nb_analysis2D_params *params2D,
 			  vcn_sparse_t *K, double *F)
 {
-	if (nb_partition_elem_has_ngb(part, elem_id, face_id))
-		integrate_inface(elem_id, face_id, part, material,
-				 analysis2D, params2D, K);
+	if (nb_partition_elem_has_ngb(part, elem_id, face_id)) {
+		uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id,
+							    face_id);
+		if (elem_id < ngb_id)
+			/* Integrate face of both elements */
+			integrate_face(elem_id, face_id, part, material,
+				       analysis2D, params2D, K);
+	}
 }
 
-static void integrate_inface(uint32_t elem_id, uint16_t face_id,
-			     const nb_partition_t *const part,
-			     const nb_material_t *material,
-			     nb_analysis2D_t analysis2D,
-			     nb_analysis2D_params *params2D,
-			     vcn_sparse_t *K)
+static void integrate_face(uint32_t elem_id, uint16_t face_id,
+			   const nb_partition_t *const part,
+			   const nb_material_t *material,
+			   nb_analysis2D_t analysis2D,
+			   nb_analysis2D_params *params2D,
+			   vcn_sparse_t *K)
 {	
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
-	double Ke[8];
-	get_Ke(part, elem_id, face_id, D, Ke);
+	uint32_t ngb[10];
+	uint16_t N_ngb = get_neighbours(part, elem_id, face_id, 10, ngb);
+	
+	uint32_t memsize = 2 * N_ngb;
+	double *Kf = NB_SOFT_MALLOC(memsize);
+	get_Kf(part, elem_id, face_id, D, N_ngb, ngb, Kf);
 
 	double factor = params2D->thickness;
 
-	uint32_t i = elem_id;
-	uint32_t j = nb_partition_elem_get_ngb(part, elem_id, face_id);
-	vcn_sparse_add(K, i * 2, i * 2, factor * Ke[0]);
-	vcn_sparse_add(K, i * 2, i*2+1, factor * Ke[1]);
-	vcn_sparse_add(K, i * 2, j * 2, factor * Ke[2]);
-	vcn_sparse_add(K, i * 2, j*2+1, factor * Ke[3]);
-	vcn_sparse_add(K, i*2+1, i * 2, factor * Ke[4]);
-	vcn_sparse_add(K, i*2+1, i*2+1, factor * Ke[5]);
-	vcn_sparse_add(K, i*2+1, j * 2, factor * Ke[6]);
-	vcn_sparse_add(K, i*2+1, j*2+1, factor * Ke[7]);
+	add_Kf_to_K(K, Kf, elem_id, face_id, N_ngb, ngb, factor);
+
+	NB_SOFT_FREE(memsize, Kf);
 }
 
-static void get_Ke(const nb_partition_t *const part,
-		   uint32_t elem_i, uint16_t ngb_id,
-		   const double D[4], double Ke[8])
+static uint16_t get_neighbours(const nb_partition_t *part,
+			       uint32_t elem_id, uint16_t face_id,
+			       uint16_t max_ngb, uint32_t *ngb)
+{
+	/* AQUI VOY */
+}
+
+static void get_Kf(const nb_partition_t *const part,
+		   uint32_t elem_i, uint16_t face_id,
+		   const double D[4], uint16_t N_ngb,
+		   const uint32_t *ngb, double *Kf)
 {
 	double nf[2];
 	double lij = nb_partition_elem_face_get_normal(part, elem_i,
-						       ngb_id, nf);
-	double nij[2];
-	double dist = nb_partition_elem_ngb_get_normal(part, elem_i,
-						       ngb_id, nij);
+						       face_id, nf);
+	double x[2];
+	nb_partition_elem_face_get_midpoint(part, elem_id, face_id, 0.5, x);
+	/* AQUI VOY: Aceptar N puntos de integracion */
 
-	double aij = nij[0] / dist;
-	double bij = nij[1] / dist;
-
-	Ke[0] = aij * nf[0] * D[0] + bij * nf[1] * D[3];
-	Ke[1] = bij * nf[0] * D[1] + aij * nf[1] * D[3];
-	Ke[2] = -Ke[0];
-	Ke[3] = -Ke[1];
-	Ke[4] = aij * nf[1] * D[1] + bij * nf[0] * D[3];
-	Ke[5] = bij * nf[1] * D[2] + aij * nf[0] * D[3];
-	Ke[6] = -Ke[4];
-	Ke[7] = -Ke[5];
-
-	for (uint8_t k = 0; k < 8; k++)
-		Ke[k] *= lij;
+	for (uint8_t k = 0; k < 4 * N_ngb; k++)
+		Kf[k] *= lij;
 }
 
+static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
+			uint32_t elem_id, uint16_t face_id,
+			uint16_t N_ngb, const uint32_t *ngb,
+			double factor)
+{
+	uint16_t size = 2 * N_ngb;
+	/* Add equations of element */
+	uint32_t i = elem_id;
+	for (uint32_t k = 0; k < N_ngb; k++) {
+		uint32_t j = ngb[k];
+		uint8_t c1 = k * 2;
+		uint8_t c2 = k * 2 + 1;
+		vcn_sparse_add(K, i * 2, j * 2, factor * Kf[c1]);
+		vcn_sparse_add(K, i * 2, j*2+1, factor * Kf[c2]);
+		vcn_sparse_add(K, i*2+1, j * 2, factor * Kf[size + c1]);
+		vcn_sparse_add(K, i*2+1, j*2+1, factor * Kf[size + c2]);
+	}
+	/* Add equations of neighbour */
+	i = nb_partition_elem_get_ngb(part, elem_id, face_id);
+	for (uint32_t k = 0; k < N_ngb; k++) {
+		uint32_t j = ngb[k];
+		uint8_t c1 = k * 2;
+		uint8_t c2 = k * 2 + 1;
+		vcn_sparse_add(K, i * 2, j * 2, -factor * Kf[c1]);
+		vcn_sparse_add(K, i * 2, j*2+1, -factor * Kf[c2]);
+		vcn_sparse_add(K, i*2+1, j * 2, -factor * Kf[size + c1]);
+		vcn_sparse_add(K, i*2+1, j*2+1, -factor * Kf[size + c2]);
+	}
+}
 
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x)
@@ -265,39 +298,11 @@ static void compute_strain(double *strain,
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
-		double Du[4];
-		estimate_Du(i, part, disp, Du);
+		double Du[4] = {1,2,3,4};
 		strain[i * 3] = Du[0];
 		strain[i*3+1] = Du[3];
 		strain[i*3+2] = (Du[1] + Du[2]);
 	}
-}
-
-#include "nb/pde_bot/frechet_derivative.h"/* TEMPORAL */
-static void estimate_Du(uint32_t elem_id,
-			const nb_partition_t *const part,
-			double *u, double Du[4])
-{
-	uint16_t N_elems = nb_partition_get_N_elems(part);
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	double *ni = alloca(2 * N_adj * sizeof(double));
-	double *fi = alloca(2 * N_adj * sizeof(double));
-	double x[2];
-	x[0] = nb_partition_elem_get_x(part, elem_id);
-	x[1] = nb_partition_elem_get_y(part, elem_id);
-	uint8_t N = 0;
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t nid = nb_partition_elem_get_ngb(part, elem_id, i);
-		if (nid < N_elems) {
-			ni[N * 2] = nb_partition_elem_get_x(part, nid);
-			ni[N*2+1] = nb_partition_elem_get_y(part, nid);
-			fi[N * 2] = u[nid * 2];
-			fi[N*2+1] = u[nid*2+1];
-			N ++;
-		}
-	}
-	nb_pde_get_frechet_derivative(N, 2, 2, x, &(u[elem_id * 2]),
-				      ni, fi, Du);
 }
 
 void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
