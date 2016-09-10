@@ -1667,10 +1667,10 @@ void vcn_matrix_3X3_inverse_destructive(double *A){
 	A[8] = (a22*a11-a21*a12)/det;
 }
 
-int vcn_matrix_cholesky_decomposition
-(const double *const A,
- double* _LplusLt,      /* Out */
- uint32_t N){
+int vcn_matrix_cholesky_decomposition(const double *const A,
+				      double* _LplusLt,   /* Out */
+				      uint32_t N)
+{
 	/* The 'L' computed correspond to [L + Lt] */
 	for (uint32_t j=0; j < N; j++) {
 		_LplusLt[j*N+j] = A[j*N+j];

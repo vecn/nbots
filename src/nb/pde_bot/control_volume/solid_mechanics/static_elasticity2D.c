@@ -65,10 +65,6 @@ static void compute_strain(double *strain,
 static void estimate_Du(uint32_t elem_id,
 			const nb_partition_t *const part,
 			double *u, double Du[4]);
-static uint16_t get_N_ngb_and_calculate_G(uint32_t elem_id,
-					  const nb_partition_t *const part,
-					  double *u, double G[4],
-					  double Du_sum[4]);
 
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
@@ -277,67 +273,31 @@ static void compute_strain(double *strain,
 	}
 }
 
+#include "nb/pde_bot/frechet_derivative.h"/* TEMPORAL */
 static void estimate_Du(uint32_t elem_id,
 			const nb_partition_t *const part,
 			double *u, double Du[4])
 {
-	double G[4], Du_sum[4];
-	uint16_t N_ngb = get_N_ngb_and_calculate_G(elem_id, part, u,
-						   G, Du_sum);
-	
-  
-	if (1e-5 > fabs(vcn_matrix_2X2_det(G))) {
-		/* Only normal information */
-		Du[0] = Du_sum[0] / N_ngb;
-		Du[1] = Du_sum[1] / N_ngb;
-		Du[2] = Du_sum[2] / N_ngb;
-		Du[3] = Du_sum[3] / N_ngb;
-	} else {
-		vcn_matrix_2X2_inverse_destructive(G);      
-		Du[0] = G[0] * Du_sum[0] + G[1] * Du_sum[1];
-		Du[1] = G[0] * Du_sum[2] + G[1] * Du_sum[3];
-		Du[2] = G[2] * Du_sum[0] + G[3] * Du_sum[1];
-		Du[3] = G[2] * Du_sum[2] + G[3] * Du_sum[3];
-	}
-}
-
-static uint16_t get_N_ngb_and_calculate_G(uint32_t elem_id,
-					  const nb_partition_t *const part,
-					  double *u, double G[4],
-					  double Du_sum[4])
-{
-	uint32_t N_elems = nb_partition_get_N_elems(part);
-	memset(G, 0, 4 * sizeof(*G));
-	memset(Du_sum, 0, 4 * sizeof(*Du_sum));
-	uint16_t N_ngb = 0;
+	uint16_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	for (uint16_t j = 0; j < N_adj; j++) {
-		uint16_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, j);
-		if (ngb_id < N_elems) {
-			double nij[2];
-			double dist =
-				nb_partition_elem_ngb_get_normal(part,
-								 elem_id,
-								 j, nij);
-
-			double uij[2];
-			uij[0] = u[ngb_id * 2] - u[elem_id * 2];
-			uij[1] = u[ngb_id*2+1] - u[elem_id*2+1];
-
-			G[0] += nij[0] * nij[0];
-			G[1] += nij[0] * nij[1];
-			G[2] += nij[1] * nij[0];
-			G[3] += nij[1] * nij[1];
-      
-			Du_sum[0] += uij[0] * nij[0] / dist;
-			Du_sum[1] += uij[0] * nij[1] / dist;
-			Du_sum[2] += uij[1] * nij[0] / dist;
-			Du_sum[3] += uij[1] * nij[1] / dist;
-      
-			N_ngb += 1;
+	double *ni = alloca(2 * N_adj * sizeof(double));
+	double *fi = alloca(2 * N_adj * sizeof(double));
+	double x[2];
+	x[0] = nb_partition_elem_get_x(part, elem_id);
+	x[1] = nb_partition_elem_get_y(part, elem_id);
+	uint8_t N = 0;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t nid = nb_partition_elem_get_ngb(part, elem_id, i);
+		if (nid < N_elems) {
+			ni[N * 2] = nb_partition_elem_get_x(part, nid);
+			ni[N*2+1] = nb_partition_elem_get_y(part, nid);
+			fi[N * 2] = u[nid * 2];
+			fi[N*2+1] = u[nid*2+1];
+			N ++;
 		}
 	}
-	return N_ngb;
+	nb_pde_get_frechet_derivative(N, 2, 2, x, &(u[elem_id * 2]),
+				      ni, fi, Du);
 }
 
 void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,

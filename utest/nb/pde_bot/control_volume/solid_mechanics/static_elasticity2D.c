@@ -254,6 +254,10 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 	nb_partition_extrapolate_elems_to_nodes(part, 1, vm_stress,
 						vm_nodes);
 
+	nb_partition_export_draw(part, "../../../CVFA_stress_elems.png",
+				 1000, 800,
+				 NB_ELEMENT, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
 	nb_partition_export_draw(part, "../../../CVFA_stress.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_nodes, true);/* TEMPORAL */
