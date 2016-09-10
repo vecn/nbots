@@ -296,6 +296,19 @@ double nb_msh3trg_elem_face_get_length(const void *msh,
 	return vcn_utils2D_get_dist(s1, s2);
 }
 
+void nb_msh3trg_elem_face_get_midpoint(const void *msh,
+				       uint32_t elem_id, uint16_t face_id,
+				       double w, double midpoint[2])
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	uint32_t n1 = nb_msh3trg_elem_get_adj(msh, elem_id, face_id);
+	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, elem_id, (face_id + 1)%3);
+	double *s1 = &(msh3trg->nod[n1 * 2]);
+	double *s2 = &(msh3trg->nod[n2 * 2]);
+	midpoint[0] = (1 - w) * s1[0] + w * s2[0];
+	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
+}
+
 double nb_msh3trg_elem_face_get_normal(const void *msh, uint32_t elem_id,
 				       uint16_t face_id, double normal[2])
 {

@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "nb/memory_bot.h"
 #include "nb/interpolation_bot/nonpolynomial.h"
 
 #define POW2(a) ((a)*(a))
 
+static double thin_plate(double x);
+static double d_thin_plate(double x);
 static void eval_gi(uint8_t N, uint8_t dim, const double *ni,
 		   const double *ri, const double *x,
 		   double *eval, double (*g)(double));
@@ -45,6 +48,30 @@ void nb_nonpolynomial_simple_eval_grad(uint8_t N, uint8_t dim,
 {
 	nb_nonpolynomial_custom_eval_grad(N, dim, ni, NULL, x,
 					  eval, NULL, NULL);
+}
+
+void nb_nonpolynomial_thin_plate_eval(uint8_t N, uint8_t dim, const double *ni,
+				      const double *x, double *eval)
+{
+	nb_nonpolynomial_custom_eval(N, dim, ni, NULL, x, eval, thin_plate);
+}
+
+void nb_nonpolynomial_thin_plate_eval_grad(uint8_t N, uint8_t dim,
+					   const double *ni, const double *x,
+					   double *eval)
+{
+	nb_nonpolynomial_custom_eval_grad(N, dim, ni, NULL, x, eval,
+					  thin_plate, d_thin_plate);
+}
+
+static double thin_plate(double x)
+{
+	return POW2(x) * log(x);
+}
+
+static double d_thin_plate(double x)
+{
+	return x * (2 + log(x));
 }
 
 void nb_nonpolynomial_custom_eval(uint8_t N, uint8_t dim, const double *ni,

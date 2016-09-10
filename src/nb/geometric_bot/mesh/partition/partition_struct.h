@@ -57,6 +57,9 @@ struct nb_partition_s {
 	double (*elem_face_get_length)(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
+	void (*elem_face_get_midpoint)(const nb_partition_t *part,
+				       uint32_t elem_id, uint16_t face_id,
+					 double w, double midpoint[2]);
 	double (*elem_face_get_normal)(const nb_partition_t *part,
 				       uint32_t elem_id, uint16_t face_id,
 				       double normal[2]);

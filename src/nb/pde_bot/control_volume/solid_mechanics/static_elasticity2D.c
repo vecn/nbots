@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "nb/math.h"
 #include "nb/memory_bot.h"
 #include "nb/interpolation_bot.h"
 #include "nb/eigen_bot.h"
@@ -17,6 +18,15 @@
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
 #include "set_bconditions.h"
+
+#define QUADRATURE_POINTS 1
+#define MAX_INTERPOLATORS 2
+#define INTERPOLATOR NB_SIMPLE
+
+typedef enum {
+	NB_SIMPLE, NB_THIN_PLATE
+} interpolator_t;
+
 
 #define POW2(a) ((a)*(a))
 
@@ -59,7 +69,8 @@ static uint16_t get_neighbours(const nb_partition_t *part,
 static void get_Kf(const nb_partition_t *const part,
 		   uint32_t elem_i, uint16_t face_id,
 		   const double D[4], uint16_t N_ngb,
-		   const uint32_t *ngb, double *Kf);
+		   const uint32_t *ngb, uint8_t N_qp,
+		   double *Kf);
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
 			uint32_t elem_id, uint16_t face_id,
 			uint16_t N_ngb, const uint32_t *ngb,
@@ -206,12 +217,13 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
-	uint32_t ngb[10];
-	uint16_t N_ngb = get_neighbours(part, elem_id, face_id, 10, ngb);
+	uint32_t ngb[MAX_INTERPOLATORS];
+	uint16_t N_ngb = get_neighbours(part, elem_id, face_id,
+					MAX_INTERPOLATORS, ngb);
 	
-	uint32_t memsize = 2 * N_ngb;
+	uint32_t memsize = 4 * N_ngb;
 	double *Kf = NB_SOFT_MALLOC(memsize);
-	get_Kf(part, elem_id, face_id, D, N_ngb, ngb, Kf);
+	get_Kf(part, elem_id, face_id, D, N_ngb, ngb, QUADRATURE_POINTS, Kf);
 
 	double factor = params2D->thickness;
 
@@ -230,17 +242,84 @@ static uint16_t get_neighbours(const nb_partition_t *part,
 static void get_Kf(const nb_partition_t *const part,
 		   uint32_t elem_i, uint16_t face_id,
 		   const double D[4], uint16_t N_ngb,
-		   const uint32_t *ngb, double *Kf)
+		   const uint32_t *ngb, uint8_t N_qp,
+		   double *Kf)
 {
-	double nf[2];
-	double lij = nb_partition_elem_face_get_normal(part, elem_i,
-						       face_id, nf);
-	double x[2];
-	nb_partition_elem_face_get_midpoint(part, elem_id, face_id, 0.5, x);
-	/* AQUI VOY: Aceptar N puntos de integracion */
+	uint32_t memsize = (3 * N_qp + 2 * N_ngb) * sizeof(double);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double *wqp = (void*) memblock;
+	double *xqp = (void*) (memblock + N_qp * sizeof(double));
+	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
 
-	for (uint8_t k = 0; k < 4 * N_ngb; k++)
-		Kf[k] *= lij;
+	double nf[2];
+	double lf = nb_partition_elem_face_get_normal(part, elem_i,
+						      face_id, nf);
+
+	get_quadrature_points(part, elem_id, face_id, lf, N_qp, xqp, wqp);
+
+	memset(Kf, 0, 4 * N_ngb * sizeof(double));
+	for (uint8_t q = 0; q < N_qp; q++) {
+		interpolators_eval_grad(part, N_ngb, ngb, 
+					&(xqp[q*2]), grad_phi);
+	
+		for (uint16_t i = 0; i < N_ngb; i++) {
+			double Kfi[4];
+			get_Kf_nodal_contribution(part, D, nf, i,
+						  grad_phi, Kfi);
+			Kf[i * 2] += wqp[q] * Kfi[0];
+			Kf[i*2+1] += wqp[q] * Kfi[1];
+			Kf[2 * N_ngb + i * 2] += wqp[q] * Kfi[2];
+			Kf[2 * N_ngb + i*2+1] += wqp[q] * Kfi[3];
+		}
+	}
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void get_quadrature_points(const nb_partition_t *part,
+				  uint32_t elem_id, uint16_t face_id,
+				  double lf, uint8_t N_qp,
+				  double *xqp, double *wqp)
+{
+	vcn_Gauss_Legendre_table_t *glt = vcn_GLtable_create(N_qp);
+	for (uint8_t q = 0; q < N_qp; q++) {
+		wqp[q] = 0.5 * glt->w[q] * lf;
+		double w = (glt->x[q] + 1)/2.0;
+		nb_partition_elem_face_get_midpoint(part, elem_id, face_id,
+						    w, &(xqp[q*2]));
+	}
+	vcn_GLtable_destroy(glt);
+}
+
+static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
+				    const uint32_t *ngb, const double x[2],
+				    double *grad_phi)
+{
+	void (*eval_grad)(uint8_t N, uint8_t dim, const double *ni,
+			  const double *x, double *eval);
+	eval_grad = get_interpolator_grad(INTERPOLATOR);
+	/* AQUI VOY */
+}
+
+static void *get_interpolator_grad(interpolator_t id)
+{
+	void *func;
+	switch (id) {
+	case NB_SIMPLE:
+		func = nb_nonpolynomial_simple_eval_grad;
+		break;
+	case NB_THIN_PLATE:
+		func = nb_nonpolynomial_thin_plate_eval_grad;
+		break;
+	default:
+		func = nb_nonpolynomial_simple_eval_grad;
+		break;
+	}
+	return func;
+}
+
+static void get_Kf_nodal_contribution()
+{
+	/* AQUI VOY */
 }
 
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,

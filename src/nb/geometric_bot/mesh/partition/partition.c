@@ -126,6 +126,7 @@ static void set_msh3trg_main_interface(nb_partition_t *part)
 	part->elem_get_y = nb_msh3trg_elem_get_y;
 	part->elem_get_area = nb_msh3trg_elem_get_area;
 	part->elem_face_get_length = nb_msh3trg_elem_face_get_length;
+	part->elem_face_get_midpoint = nb_msh3trg_elem_face_get_midpoint;
 	part->elem_face_get_normal = nb_msh3trg_elem_face_get_normal;
 	part->elem_ngb_get_normal = nb_msh3trg_elem_ngb_get_normal;
 	part->elem_get_N_adj = nb_msh3trg_elem_get_N_adj;
@@ -186,6 +187,7 @@ static void set_mshquad_main_interface(nb_partition_t *part)
 	part->elem_get_y = nb_mshquad_elem_get_y;
 	part->elem_get_area = nb_mshquad_elem_get_area;
 	part->elem_face_get_length = nb_mshquad_elem_face_get_length;
+	part->elem_face_get_midpoint = nb_mshquad_elem_face_get_midpoint;
 	part->elem_face_get_normal = nb_mshquad_elem_face_get_normal;
 	part->elem_ngb_get_normal = nb_mshquad_elem_ngb_get_normal;
 	part->elem_get_N_adj = nb_mshquad_elem_get_N_adj;
@@ -246,6 +248,7 @@ static void set_mshpoly_main_interface(nb_partition_t *part)
 	part->elem_get_y = nb_mshpoly_elem_get_y;
 	part->elem_get_area = nb_mshpoly_elem_get_area;
 	part->elem_face_get_length = nb_mshpoly_elem_face_get_length;
+	part->elem_face_get_midpoint = nb_mshpoly_elem_face_get_midpoint;
 	part->elem_face_get_normal = nb_mshpoly_elem_face_get_normal;
 	part->elem_ngb_get_normal = nb_mshpoly_elem_ngb_get_normal;
 	part->elem_get_N_adj = nb_mshpoly_elem_get_N_adj;
@@ -306,6 +309,7 @@ static void set_mshpack_main_interface(nb_partition_t *part)
 	part->elem_get_y = nb_mshpack_elem_get_y;
 	part->elem_get_area = nb_mshpack_elem_get_area;
 	part->elem_face_get_length = nb_mshpack_elem_face_get_length;
+	part->elem_face_get_midpoint = nb_mshpack_elem_face_get_midpoint;
 	part->elem_face_get_normal = nb_mshpack_elem_face_get_normal;
 	part->elem_ngb_get_normal = nb_mshpack_elem_ngb_get_normal;
 	part->elem_get_N_adj = nb_mshpack_elem_get_N_adj;
@@ -435,8 +439,6 @@ void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
 					 double w, double midpoint[2])
 {
 	part->elem_face_get_midpoint(part->msh, elem_id, face_id, w, midpoint);
-	/* AQUI VOY: Falta agregar en struct y en implementaciones,
-	 falta agregar a set_interface. */
 }
 
 double nb_partition_elem_face_get_normal(const nb_partition_t *part,

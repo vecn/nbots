@@ -31,6 +31,9 @@ double nb_mshpack_elem_get_area(const void *msh, uint32_t id);
 double nb_mshpack_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
+void nb_mshpack_elem_face_get_midpoint(const void *msh,
+				       uint32_t elem_id, uint16_t face_id,
+				       double w, double midpoint[2]);
 double nb_mshpack_elem_face_get_normal(const void *msh, uint32_t elem_id,
 				       uint16_t face_id, double normal[2]);
 double nb_mshpack_elem_ngb_get_normal(const void *msh,
