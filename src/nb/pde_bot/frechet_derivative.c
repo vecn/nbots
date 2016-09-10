@@ -21,6 +21,8 @@ static void sum_G(uint8_t dim_x, const double *nij, double *G);
 static void sum_Ah(uint8_t dim_x, uint8_t dim_f,
 		   const double *nij, const double *fij,
 		   double dist, double *Ah_sum);
+static void transpose_Df(double *Df, double *Df_aux,
+			 uint8_t dim_x, uint8_t dim_f);
 
 void nb_pde_get_frechet_derivative(uint8_t N, uint8_t dim_x, uint8_t dim_f,
 				   const double *x, const double *f,
@@ -48,6 +50,7 @@ void nb_pde_get_frechet_derivative(uint8_t N, uint8_t dim_x, uint8_t dim_f,
 			vcn_matrix_cholesky_solve(LLt, &(Ah_sum[i*dim_x]),
 						  &(Df[i*dim_x]), dim_x);
 	}
+	transpose_Df(Df, Ah_sum, dim_x, dim_f);
 	NB_SOFT_FREE(memsize, memblock);
 }
 
@@ -108,5 +111,16 @@ static void sum_Ah(uint8_t dim_x, uint8_t dim_f,
 	for (uint8_t l = 0; l < dim_f; l++) {
 		for (uint8_t m = 0; m < dim_x; m++)
 			Ah_sum[l * dim_x + m] += (fij[l] * nij[m]) / dist;
+	}
+}
+
+static void transpose_Df(double *Df, double *Df_aux,
+			 uint8_t dim_x, uint8_t dim_f)
+{
+	memcpy(Df_aux, Df, dim_x * dim_f * sizeof(double));
+	for (uint8_t i = 0; i < dim_x; i++) {
+		for (uint8_t j = 0; j < dim_f; j++) {
+			Df[i * dim_f + j] = Df_aux[j * dim_x + i];
+		}
 	}
 }
