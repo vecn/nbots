@@ -441,6 +441,8 @@ static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
 			double factor)
 {
 	uint16_t size = 2 * N_ngb;
+	factor *= -1;
+
 	/* Add equations of element */
 	uint32_t i = elem_id;
 	for (uint32_t k = 0; k < N_ngb; k++) {
@@ -469,12 +471,7 @@ static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
-	memset(x, 0, N * sizeof(*x));
-	double tol;/* TEMPORAL */
-	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
-							1e-8, NULL,
-							&tol, 1);
-	printf(" --- SOLVER ERROR: %e\n", tol);/* TEMPORAL */
+	int status = vcn_sparse_solve_using_LU(A, b, x, 1);
 	return status;
 }
 

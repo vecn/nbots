@@ -73,8 +73,8 @@ uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A);
 
 void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads);
-void vcn_sparse_multiply_vector(vcn_sparse_t* A, double* in, double* out,
-				uint32_t omp_parallel_threads);
+void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
+				double* out, uint32_t omp_parallel_threads);
   
 /* Functions to explore sparse matrix */
 int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,

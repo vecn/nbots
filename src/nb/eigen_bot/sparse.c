@@ -375,8 +375,8 @@ void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 
 }
 
-void vcn_sparse_multiply_vector(vcn_sparse_t* A, double* in, double* out,
-				uint32_t omp_parallel_threads)
+void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
+				double* out, uint32_t omp_parallel_threads)
 {
 #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
 	for (uint32_t i = 0; i < A->N; i++) {
