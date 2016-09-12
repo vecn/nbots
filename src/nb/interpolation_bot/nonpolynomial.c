@@ -122,7 +122,7 @@ static double eval_g(double x, double (*g)(double))
 	if (NULL != g)
 		gx = g(x);
 	else
-		gx = sqrt(x);/* AQUI voy: test e(-x) */
+		gx = 1-exp(-x) + sqrt(x);/* AQUI voy */
 	return gx;
 }
 
@@ -215,7 +215,7 @@ static double eval_dg(double x, double (*dg)(double))
 	if (NULL != dg)
 		dgx = dg(x);
 	else
-		dgx = 1/(2*sqrt(x));
+		dgx = exp(-x) + 1/(2*sqrt(x));
 	return dgx;
 }
 
