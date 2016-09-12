@@ -15,6 +15,7 @@ static void nodal_graph_count_adj(nb_graph_t *graph,
 static void graph_assign_mem_adj(nb_graph_t *graph);
 static void nodal_graph_set_adj(nb_graph_t *graph,
 				const nb_partition_t *part);
+
 static void load_graph_elems_by_edges(const void *part, nb_graph_t *graph);
 static void elemental_graph_allocate_adj(nb_graph_t *graph,
 					 const nb_partition_t *part);
@@ -25,24 +26,31 @@ static void elemental_graph_count_adj(nb_graph_t *graph,
 				      const nb_partition_t *part);
 static void elemental_graph_set_adj(nb_graph_t *graph,
 				    const nb_partition_t *part);
+
 static void load_graph_nodes_by_elems(const void *part, nb_graph_t *graph);
+static void nod_by_elem_graph_allocate_adj(nb_graph_t *graph,
+					   const nb_partition_t *part);
+static uint32_t nod_by_elem_get_N_adj(const nb_partition_t *part);
 static void nod_by_elem_graph_count_adj(nb_graph_t *graph,
 					const nb_partition_t *part);
 static void nod_by_elem_graph_set_adj(nb_graph_t *graph,
 				      const nb_partition_t *part);
 static void set_nod_by_elem_adj(nb_graph_t *graph, const nb_partition_t *part,
 				uint32_t elem_id);
+
 static void load_graph_elems_by_nodes(const void *part, nb_graph_t *graph);
-static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
-					const nb_partition_t *part);
-static void count_elem_by_nod_adj(nb_graph_t *graph,
-				  const nb_partition_t *part,
-				  uint32_t elem_id);
-static uint16_t get_N_elems_around_node(const nb_partition_t *part,
-					uint32_t elem_id, uint16_t local_nid,
-					bool *is_interior_node);
+static void elem_by_nod_graph_allocate_adj(nb_graph_t *graph,
+					   const nb_partition_t *part);
+static uint32_t elem_by_nod_get_N_adj(const nb_partition_t *part);
+static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
+				      uint32_t elem_id);
+static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
+				      uint32_t elem_id, uint16_t face_id,
+				      bool *is_interior_node);
 static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
 			       uint32_t ngb_id);
+static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
+					const nb_partition_t *part);
 static void elem_by_nod_graph_set_adj(nb_graph_t *graph,
 				      const nb_partition_t *part);
 static void set_elem_by_nod_adj(nb_graph_t *graph,
@@ -214,10 +222,35 @@ static void load_graph_nodes_by_elems(const void *part, nb_graph_t *graph)
 	graph->N = nb_partition_get_N_nodes(part);
 	graph->wi = NULL;
 	graph->wij = NULL;
-	nodal_graph_allocate_adj(graph, part);
+	nod_by_elem_graph_allocate_adj(graph, part);
 	nod_by_elem_graph_count_adj(graph, part);
 	graph_assign_mem_adj(graph);
 	nod_by_elem_graph_set_adj(graph, part);
+}
+
+static void nod_by_elem_graph_allocate_adj(nb_graph_t *graph,
+					   const nb_partition_t *part)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t N_adj = nod_by_elem_get_N_adj(part);
+	uint32_t memsize_adj = N_adj * sizeof(**(graph->adj)) +
+		graph->N * sizeof(*(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize_N_adj);
+}
+
+static uint32_t nod_by_elem_get_N_adj(const nb_partition_t *part)
+{
+	uint32_t N_edges = nb_partition_get_N_edges(part);
+	uint32_t N = 2 * N_edges;
+
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint16_t N_adj = nb_partition_elem_get_N_adj(part, i);
+		N += N_adj * (N_adj - 3);
+	}
+	return N;
 }
 
 static void nod_by_elem_graph_count_adj(nb_graph_t *graph,
@@ -289,49 +322,62 @@ static void load_graph_elems_by_nodes(const void *part, nb_graph_t *graph)
 	graph->N = nb_partition_get_N_elems(part);
 	graph->wi = NULL;
 	graph->wij = NULL;
-	elemental_graph_allocate_adj(graph, part);
+	elem_by_nod_graph_allocate_adj(graph, part);
 	elem_by_nod_graph_count_adj(graph, part);
 	graph_assign_mem_adj(graph);
 	elem_by_nod_graph_set_adj(graph, part);
 }
 
-static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
-					const nb_partition_t *part)
+static void elem_by_nod_graph_allocate_adj(nb_graph_t *graph,
+					   const nb_partition_t *part)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
-	for (uint32_t i = 0; i < N_elems; i++)
-		count_elem_by_nod_adj(graph, part, i);
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t N_adj = elem_by_nod_get_N_adj(part);
+	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
+		N_adj * sizeof(**(graph->adj));
+	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize_N_adj);	
 }
 
-static void count_elem_by_nod_adj(nb_graph_t *graph,
-				  const nb_partition_t *part,
-				  uint32_t elem_id)
+static uint32_t elem_by_nod_get_N_adj(const nb_partition_t *part)
 {
-	graph->N_adj[elem_id] = 0;
+	uint32_t N = 0;
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++)
+		N += count_elem_by_nod_adj(part, i);
+	return N;
+}
+
+static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
+				      uint32_t elem_id)
+{
+	uint32_t N_elem_adj = 0;
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	for (uint16_t j = 0; j < N_adj; j++) {
 		if (nb_partition_elem_has_ngb(part, elem_id, j)) {
 			bool is_interior_node;
-			uint16_t N = get_N_elems_around_node(part, elem_id,
-							     (j + 1) % N_adj,
-							     &is_interior_node);
+			uint16_t N = get_N_elems_around_2n(part, elem_id, j,
+							   &is_interior_node);
 			if (is_interior_node)
-				graph->N_adj[elem_id] += N - 2;
+				N_elem_adj += N - 2;
 			else
-				graph->N_adj[elem_id] += 1;
+				N_elem_adj += 1;
 		}
-			
 	}
+	return N_elem_adj;
 }
 
-static uint16_t get_N_elems_around_node(const nb_partition_t *part,
-					uint32_t elem_id, uint16_t local_nid,
-					bool *is_interior_node)
+static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
+				      uint32_t elem_id, uint16_t face_id,
+				      bool *is_interior_node)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
 	uint16_t N = 0;
-	uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id, local_nid);
+	uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id,
+						 (face_id + 1) % N_adj);
 	if (ngb >= N_elems) {
 		*is_interior_node = false;
 		goto EXIT;
@@ -382,6 +428,14 @@ static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
 	return right_elem;	
 }
 
+static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
+					const nb_partition_t *part)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elems; i++)
+		graph->N_adj[i] = count_elem_by_nod_adj(part, i);
+}
+
 static void elem_by_nod_graph_set_adj(nb_graph_t *graph,
 				      const nb_partition_t *part)
 {
@@ -410,12 +464,12 @@ static uint32_t set_elem_by_nod_rounding_adj(nb_graph_t *graph,
 					     uint16_t face_id,
 					     uint16_t cnt)
 {
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	bool is_interior_node;
-	get_N_elems_around_node(part, elem_id, (face_id + 1) % N_adj,
-				&is_interior_node);
+	get_N_elems_around_2n(part, elem_id, face_id,
+			      &is_interior_node);
 
 	if (is_interior_node) {
+		uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 		uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id,
 							 (face_id+1) % N_adj);
 		uint32_t prev_id = ngb;
@@ -425,7 +479,7 @@ static uint32_t set_elem_by_nod_rounding_adj(nb_graph_t *graph,
 			prev_id = id;
 			id = get_right_elem(part, id, aux);
 			if (ngb != id) {
-				graph->adj[elem_id][cnt] = ngb;
+				graph->adj[elem_id][cnt] = id;
 				cnt += 1;				
 			}
 		}

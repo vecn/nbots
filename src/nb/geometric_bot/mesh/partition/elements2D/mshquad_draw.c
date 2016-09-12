@@ -159,7 +159,6 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 		double x3 = nb_mshquad_node_get_x(msh, n3);
 		double y3 = nb_mshquad_node_get_y(msh, n3);
 
-
 		uint8_t c1[4], c2[4], c3[4];
 		nb_graphics_palette_get_rgba(pal, normalized_field[n1], c1);
 		nb_graphics_palette_get_rgba(pal, normalized_field[n2], c2);

@@ -13,13 +13,6 @@
 #define NB_MATH_INV_SQRT3 (0.57735026919)  /* 1/sqrt(3) */
 #define NB_MATH_INV_SQRT6 (0.40824829046)  /* 1/sqrt(6) */
 #define NB_MATH_LOG2 (0.69314718056)
-
-typedef struct {
-  uint32_t N;
-  double* w;
-  double* x;
-} vcn_Gauss_Legendre_table_t;
-
   
 int vcn_math_pow2i(int a);
 int vcn_math_powk(int a, uint32_t k);
@@ -40,8 +33,5 @@ double vcn_math_maxd(double a, double b);
 double vcn_math_hypo(double a, double b);
 double vcn_math_harmonic_avg(double a, double b);
 double vcn_math_log2(double arg);  
-
-vcn_Gauss_Legendre_table_t* vcn_GLtable_create(uint32_t N_points);
-void vcn_GLtable_destroy(vcn_Gauss_Legendre_table_t* GLtable);
 
 #endif

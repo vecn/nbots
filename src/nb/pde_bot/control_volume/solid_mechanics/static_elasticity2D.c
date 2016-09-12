@@ -12,6 +12,7 @@
 #include "nb/geometric_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/pde_bot/material.h"
+#include "nb/pde_bot/gauss_legendre_quad.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
@@ -20,7 +21,7 @@
 #include "set_bconditions.h"
 
 #define QUADRATURE_POINTS 1
-#define MAX_INTERPOLATORS 10
+#define MAX_INTERPOLATORS 15
 #define INTERPOLATOR NB_SIMPLE
 
 typedef enum {
@@ -123,6 +124,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	int status_assemble = assemble_system(K, F, part, material,
 					      enable_self_weight, gravity,
 					      analysis2D, params2D);
+
 
 	if (0 != status_assemble) {
 		status = 1;
@@ -251,8 +253,6 @@ static uint16_t get_neighbours(const nb_partition_t *part,
 			       uint32_t elem_id, uint16_t face_id,
 			       uint16_t max_ngb, uint32_t *ngb)
 {
-	/* AQUI VOY: Solo esta conectado con los que están directamente
-	   adyacentes a ambos */
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	ngb[0] = elem_id;
 	ngb[1] = nb_partition_elem_get_ngb(part, elem_id, face_id);
@@ -260,30 +260,42 @@ static uint16_t get_neighbours(const nb_partition_t *part,
 	if (N >= max_ngb)
 		goto EXIT;
 
+	uint16_t N_prev = N;
 	uint32_t nid_prev = ngb[1];
 	uint32_t nid = ngb[0];
 	while (nid != ngb[1]) {
 		uint32_t aux = nid_prev;
 		nid_prev = nid;
 		nid = get_right_elem(part, nid, aux);
-		if (nid >= N_elems)
+		if (nid >= N_elems) {
+			/* Ignore elems if vtx is boundary */
+			N = N_prev;
 			break;
-		ngb[N] = nid;
-		N += 1;
+		}
+		if (nid != ngb[1]) {
+			ngb[N] = nid;
+			N += 1;
+		}
 		if (N >= max_ngb)
 			goto EXIT;
 	}
 
+	N_prev = N;
 	nid_prev = ngb[0];
 	nid = ngb[1];
 	while (nid != ngb[0]) {
 		uint32_t aux = nid_prev;
 		nid_prev = nid;
 		nid = get_right_elem(part, nid, aux);
-		if (nid >= N_elems)
+		if (nid >= N_elems) {
+			/* Ignore elems if vtx is boundary */
+			N = N_prev;
 			break;
-		ngb[N] = nid;
-		N += 1;
+		}
+		if (nid != ngb[0]) {
+			ngb[N] = nid;
+			N += 1;
+		}
 		if (N >= max_ngb)
 			goto EXIT;
 	}
@@ -359,15 +371,17 @@ static void get_quadrature_points(const nb_partition_t *part,
 				  double lf, uint8_t N_qp,
 				  double *xqp, double *wqp)
 {
-	/* AQUI VOY: Lento por los malloc de GLT */
-	vcn_Gauss_Legendre_table_t *glt = vcn_GLtable_create(N_qp);
+	nb_glquadrature_t glq;
+	glq.x = alloca(N_qp * sizeof(*(glq.x)));
+	glq.w = alloca(N_qp * sizeof(*(glq.w)));
+	nb_glquadrature_load(&glq, N_qp);
+
 	for (uint8_t q = 0; q < N_qp; q++) {
-		wqp[q] = 0.5 * glt->w[q] * lf;
-		double w = (glt->x[q] + 1)/2.0;
+		wqp[q] = 0.5 * glq.w[q] * lf;
+		double w = (glq.x[q] + 1)/2.0;
 		nb_partition_elem_face_get_midpoint(part, elem_id, face_id,
 						    w, &(xqp[q*2]));
 	}
-	vcn_GLtable_destroy(glt);
 }
 
 static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
@@ -456,15 +470,12 @@ static int solver(const vcn_sparse_t *const A,
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
+	double tol;/* TEMPORAL */
 	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
 							1e-8, NULL,
-							NULL, 1);
-	int out;
-	if (0 == status)
-		out = 0;
-	else
-		out = 1; /* Tolerance not reached in CG Jacobi */
-	return out;
+							&tol, 1);
+	printf(" --- SOLVER ERROR: %e\n", tol);/* TEMPORAL */
+	return status;
 }
 
 static void compute_strain(double *strain,
