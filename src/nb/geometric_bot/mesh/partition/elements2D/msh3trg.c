@@ -417,121 +417,6 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 	return is_inside;
 }
 
-void nb_msh3trg_load_elem_graph(const void *msh3trg_ptr, nb_graph_t *graph)
-{
-	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-
-	nb_graph_clear(graph);
-	graph->N = msh3trg->N_nod;
-
-	uint32_t memsize = graph->N * (sizeof(*(graph->N_adj)) +
-				       sizeof(*(graph->adj)));
-	char *memblock = malloc(memsize);
-	memset(memblock, 0, memsize);
-	graph->N_adj = (void*) memblock;
-	graph->adj = (void*) (memblock + graph->N * sizeof(*(graph->N_adj)));
-
-	/* Connectivity Matrix stored in container */
-	nb_container_t** l_nodal_CM = malloc(graph->N * sizeof(*l_nodal_CM));
-	for (uint32_t i = 0; i < graph->N; i++)
-		l_nodal_CM[i] = nb_container_create(NB_SORTED);
-  
-	for (uint32_t k = 0; k < msh3trg->N_elems; k++) {
-		for (uint32_t i = 0; i < 2; i++) {
-			for (uint32_t j = i+1; j < 3; j++) {
-				uint32_t* inode = malloc(sizeof(*inode));
-				uint32_t* jnode = malloc(sizeof(*jnode));
-				*inode = msh3trg->adj[k * 3 + i];
-				*jnode = msh3trg->adj[k * 3 + j];
-				uint32_t length1 = nb_container_get_length(l_nodal_CM[inode[0]]);
-				uint32_t length2 = nb_container_get_length(l_nodal_CM[jnode[0]]);
-				if (nb_container_exist(l_nodal_CM[inode[0]], jnode) == NULL)
-					nb_container_insert(l_nodal_CM[inode[0]], jnode);
-				if (nb_container_exist(l_nodal_CM[jnode[0]], inode) == NULL)
-					nb_container_insert(l_nodal_CM[jnode[0]], inode);
-				bool free_j = false;
-				if (length1 == nb_container_get_length(l_nodal_CM[inode[0]]))
-					free_j = true;
-				if (length2 == nb_container_get_length(l_nodal_CM[jnode[0]]))
-					free(inode);
-				if (free_j) 
-					free(jnode);
-			}
-		}
-	}
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = nb_container_get_length(l_nodal_CM[i]);
-		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
-    
-		int j = 0;
-		while (nb_container_is_not_empty(l_nodal_CM[i])) {
-			uint32_t* inode = 
-				nb_container_delete_first(l_nodal_CM[i]);
-			graph->adj[i][j++] = *inode;
-			free(inode);
-		}
-		nb_container_destroy(l_nodal_CM[i]);
-	}
-	free(l_nodal_CM);
-}
-
-
-void nb_msh3trg_load_nodal_graph(const void *const msh3trg,
-				 nb_graph_t *graph)
-{
-	nb_msh3trg_load_elem_graph(msh3trg, graph);
-}
-
-void nb_msh3trg_load_interelem_graph(const void *msh3trg_ptr,
-				     nb_graph_t *graph)
-{
-	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-
-	nb_graph_clear(graph);
-
-	graph->N = msh3trg->N_elems;
-
-	uint32_t memsize = graph->N * (sizeof(*(graph->N_adj)) +
-				       sizeof(*(graph->adj)));
-	char *memblock = malloc(memsize);
-	memset(memblock, 0, memsize);
-	graph->N_adj = (void*) memblock;
-	graph->adj = (void*) (memblock + graph->N * sizeof(*(graph->N_adj)));
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->N_adj[i] = 0;
-		if (msh3trg->ngb[i * 3] <
-		    msh3trg->N_elems)
-			graph->N_adj[i] += 1;      
-
-		if (msh3trg->ngb[i*3+1] <
-		    msh3trg->N_elems)
-			graph->N_adj[i] += 1;
-
-		if (msh3trg->ngb[i*3+2] <
-		    msh3trg->N_elems)
-			graph->N_adj[i] += 1;
-  }
-
-	for (uint32_t i = 0; i < graph->N; i++) {
-		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(uint32_t));
-		uint32_t cnt = 0;
-		if (msh3trg->ngb[i * 3] <
-		    msh3trg->N_elems)
-			graph->adj[i][cnt++] = 
-				msh3trg->ngb[i * 3];
-
-		if (msh3trg->ngb[i*3+1] <
-		    msh3trg->N_elems)
-			graph->adj[i][cnt++] =
-				msh3trg->ngb[i*3+1];
-		
-		if (msh3trg->ngb[i*3+2] <
-		    msh3trg->N_elems)
-			graph->adj[i][cnt++] =
-				msh3trg->ngb[i*3+2];
-	}
-}
-
 void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
@@ -737,12 +622,6 @@ static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t isgm = GET_ISGM_FROM_STRUCT(exp_structure);
 	msh3trg->nod_x_sgm[isgm][ivtx] = vtx_id;
-}
-
-void nb_msh3trg_relabel(void* msh3trg_ptr,
-			uint32_t* (*labeling)(const nb_graph_t *const))
-{
-	;/* PENDING */
 }
 
 void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nb/graph_bot.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
@@ -57,20 +56,7 @@ uint32_t nb_msh3trg_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
-void nb_msh3trg_load_elem_graph(const void *const msh3trg,
-				nb_graph_t *graph);
-
-void nb_msh3trg_load_nodal_graph(const void *const msh3trg,
-				 nb_graph_t *graph);
-
-void nb_msh3trg_load_interelem_graph(const void *const msh3trg,
-				     nb_graph_t *graph);
-
-
 void nb_msh3trg_load_from_mesh(void *msh3trg, vcn_mesh_t *mesh);
-
-void nb_msh3trg_relabel(void* msh3trg,
-			 uint32_t* (*labeling)(const nb_graph_t *const));
 
 /**
  * @brief Disable the elements sharing single point connections.

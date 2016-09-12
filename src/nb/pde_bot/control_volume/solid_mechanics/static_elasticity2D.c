@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "nb/math.h"
+#include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/interpolation_bot.h"
 #include "nb/eigen_bot.h"
@@ -20,7 +20,7 @@
 #include "set_bconditions.h"
 
 #define QUADRATURE_POINTS 1
-#define MAX_INTERPOLATORS 2
+#define MAX_INTERPOLATORS 10
 #define INTERPOLATOR NB_SIMPLE
 
 typedef enum {
@@ -66,13 +66,27 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 static uint16_t get_neighbours(const nb_partition_t *part,
 			       uint32_t elem_id, uint16_t face_id,
 			       uint16_t max_ngb, uint32_t *ngb);
+static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
+			       uint32_t ngb_id);
 static void get_Kf(const nb_partition_t *const part,
-		   uint32_t elem_i, uint16_t face_id,
+		   uint32_t elem_id, uint16_t face_id,
 		   const double D[4], uint16_t N_ngb,
 		   const uint32_t *ngb, uint8_t N_qp,
 		   double *Kf);
+static void get_quadrature_points(const nb_partition_t *part,
+				  uint32_t elem_id, uint16_t face_id,
+				  double lf, uint8_t N_qp,
+				  double *xqp, double *wqp);
+static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
+				    const uint32_t *ngb, const double x[2],
+				    double *grad_phi);
+static void *get_interpolator_grad(interpolator_t id);
+static void get_Kf_nodal_contribution(const nb_partition_t *part,
+				      const double D[4], const double nf[2],
+				      uint16_t i, const double *grad_phi,
+				      double Kfi[4]);
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
-			uint32_t elem_id, uint16_t face_id,
+			uint32_t elem_id, uint32_t ngb_id,
 			uint16_t N_ngb, const uint32_t *ngb,
 			double factor);
 static int solver(const vcn_sparse_t *const A,
@@ -97,7 +111,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	int status = 0;
 	vcn_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_partition_load_interelem_graph(part, graph);
+	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 
@@ -213,7 +227,7 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D,
 			   vcn_sparse_t *K)
-{	
+{
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
@@ -221,13 +235,14 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 	uint16_t N_ngb = get_neighbours(part, elem_id, face_id,
 					MAX_INTERPOLATORS, ngb);
 	
-	uint32_t memsize = 4 * N_ngb;
+	uint32_t memsize = 4 * N_ngb * sizeof(double);
 	double *Kf = NB_SOFT_MALLOC(memsize);
 	get_Kf(part, elem_id, face_id, D, N_ngb, ngb, QUADRATURE_POINTS, Kf);
 
 	double factor = params2D->thickness;
 
-	add_Kf_to_K(K, Kf, elem_id, face_id, N_ngb, ngb, factor);
+	uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, face_id);
+	add_Kf_to_K(K, Kf, elem_id, ngb_id, N_ngb, ngb, factor);
 
 	NB_SOFT_FREE(memsize, Kf);
 }
@@ -236,11 +251,75 @@ static uint16_t get_neighbours(const nb_partition_t *part,
 			       uint32_t elem_id, uint16_t face_id,
 			       uint16_t max_ngb, uint32_t *ngb)
 {
-	/* AQUI VOY */
+	/* AQUI VOY: Solo esta conectado con los que están directamente
+	   adyacentes a ambos */
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	ngb[0] = elem_id;
+	ngb[1] = nb_partition_elem_get_ngb(part, elem_id, face_id);
+	uint16_t N = 2;
+	if (N >= max_ngb)
+		goto EXIT;
+
+	uint32_t nid_prev = ngb[1];
+	uint32_t nid = ngb[0];
+	while (nid != ngb[1]) {
+		uint32_t aux = nid_prev;
+		nid_prev = nid;
+		nid = get_right_elem(part, nid, aux);
+		if (nid >= N_elems)
+			break;
+		ngb[N] = nid;
+		N += 1;
+		if (N >= max_ngb)
+			goto EXIT;
+	}
+
+	nid_prev = ngb[0];
+	nid = ngb[1];
+	while (nid != ngb[0]) {
+		uint32_t aux = nid_prev;
+		nid_prev = nid;
+		nid = get_right_elem(part, nid, aux);
+		if (nid >= N_elems)
+			break;
+		ngb[N] = nid;
+		N += 1;
+		if (N >= max_ngb)
+			goto EXIT;
+	}
+EXIT:
+	return N;
+}
+
+static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
+			      uint32_t ngb_id)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	uint16_t face_id = N_adj;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t ingb = nb_partition_elem_get_ngb(part, elem_id, i);
+		if (ingb == ngb_id) {
+			face_id = i;
+			break;
+		}
+	}
+	uint32_t right_elem;
+	if (face_id < N_adj) {
+		if (0 == face_id)
+			face_id = N_adj - 1;
+		else
+			face_id -= 1;
+		right_elem = nb_partition_elem_get_ngb(part, elem_id,
+						       face_id);
+	} else {
+		right_elem = N_elems;
+	}
+	return right_elem;	
 }
 
 static void get_Kf(const nb_partition_t *const part,
-		   uint32_t elem_i, uint16_t face_id,
+		   uint32_t elem_id, uint16_t face_id,
 		   const double D[4], uint16_t N_ngb,
 		   const uint32_t *ngb, uint8_t N_qp,
 		   double *Kf)
@@ -252,7 +331,7 @@ static void get_Kf(const nb_partition_t *const part,
 	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
 
 	double nf[2];
-	double lf = nb_partition_elem_face_get_normal(part, elem_i,
+	double lf = nb_partition_elem_face_get_normal(part, elem_id,
 						      face_id, nf);
 
 	get_quadrature_points(part, elem_id, face_id, lf, N_qp, xqp, wqp);
@@ -280,6 +359,7 @@ static void get_quadrature_points(const nb_partition_t *part,
 				  double lf, uint8_t N_qp,
 				  double *xqp, double *wqp)
 {
+	/* AQUI VOY: Lento por los malloc de GLT */
 	vcn_Gauss_Legendre_table_t *glt = vcn_GLtable_create(N_qp);
 	for (uint8_t q = 0; q < N_qp; q++) {
 		wqp[q] = 0.5 * glt->w[q] * lf;
@@ -297,7 +377,18 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 	void (*eval_grad)(uint8_t N, uint8_t dim, const double *ni,
 			  const double *x, double *eval);
 	eval_grad = get_interpolator_grad(INTERPOLATOR);
-	/* AQUI VOY */
+	
+	uint32_t memsize = 2 * N_ngb * sizeof(double);
+	double *ni = NB_SOFT_MALLOC(memsize);
+
+	for (uint32_t i = 0; i < N_ngb; i++) {
+		ni[i * 2] = nb_partition_elem_get_x(part, ngb[i]);
+		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
+	}
+
+	eval_grad(N_ngb, 2, ni, x, grad_phi);	
+
+	NB_SOFT_FREE(memsize, ni);
 }
 
 static void *get_interpolator_grad(interpolator_t id)
@@ -317,13 +408,21 @@ static void *get_interpolator_grad(interpolator_t id)
 	return func;
 }
 
-static void get_Kf_nodal_contribution()
+static void get_Kf_nodal_contribution(const nb_partition_t *part,
+				      const double D[4], const double nf[2],
+				      uint16_t i, const double *grad_phi,
+				      double Kfi[4])
 {
-	/* AQUI VOY */
+	double dphi_dx = grad_phi[i * 2];
+	double dphi_dy = grad_phi[i*2+1];
+	Kfi[0] = nf[0] * D[0] * dphi_dx + nf[1] * D[3] * dphi_dy;
+	Kfi[1] = nf[0] * D[1] * dphi_dy + nf[1] * D[3] * dphi_dx;
+	Kfi[2] = nf[1] * D[1] * dphi_dx + nf[0] * D[3] * dphi_dy;
+	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
 }
 
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
-			uint32_t elem_id, uint16_t face_id,
+			uint32_t elem_id, uint32_t ngb_id,
 			uint16_t N_ngb, const uint32_t *ngb,
 			double factor)
 {
@@ -340,7 +439,7 @@ static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
 		vcn_sparse_add(K, i*2+1, j*2+1, factor * Kf[size + c2]);
 	}
 	/* Add equations of neighbour */
-	i = nb_partition_elem_get_ngb(part, elem_id, face_id);
+	i = ngb_id;
 	for (uint32_t k = 0; k < N_ngb; k++) {
 		uint32_t j = ngb[k];
 		uint8_t c1 = k * 2;
@@ -357,12 +456,11 @@ static int solver(const vcn_sparse_t *const A,
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
-	uint32_t niter; double tol;
 	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
 							1e-8, NULL,
 							NULL, 1);
 	int out;
-	if (0 == status || 1 == status)
+	if (0 == status)
 		out = 0;
 	else
 		out = 1; /* Tolerance not reached in CG Jacobi */
@@ -393,8 +491,7 @@ void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double D[4];
-		nb_pde_get_constitutive_matrix(D, material,
-					       analysis2D);
+		nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
 		stress[i * 3] = strain[i * 3] * D[0] +
 			strain[i*3+1] * D[1];

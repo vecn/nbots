@@ -76,12 +76,10 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
 				     uint32_t **elem_adj);
 
-void nb_partition_load_elem_graph(const nb_partition_t *part,
-				  vcn_graph_t *graph);
-void nb_partition_load_nodal_graph(const nb_partition_t *part,
-				   vcn_graph_t *graph);
-void nb_partition_load_interelem_graph(const nb_partition_t *part,
-				       vcn_graph_t *graph);
+void nb_partition_load_graph(const nb_partition_t *part,
+			     vcn_graph_t *graph,
+			     nb_partition_graph_type type);
+
 void nb_partition_load_from_mesh(nb_partition_t *part,
 				 nb_mesh_t *mesh);
 void nb_partition_get_enveloping_box(const nb_partition_t *part,

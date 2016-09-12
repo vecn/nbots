@@ -70,7 +70,7 @@ static int read_material(vcn_cfreader_t *cfreader, nb_material_t *mat);
 static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
-
+static void show_cvfa_error_msg(int cvfa_status);
 
 void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 {
@@ -78,8 +78,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -95,7 +95,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
@@ -118,7 +118,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 1000, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -331,8 +331,11 @@ static int simulate(const char *problem_data,
 						   &params2D,
 						   results->disp,
 						   results->strain);
-	if (0 != status_cvfa)
+
+	if (0 != status_cvfa) {
+		show_cvfa_error_msg(status_cvfa);
 		goto CLEANUP;
+	}
 
 	nb_cvfa_compute_stress_from_strain(part,  material, analysis2D,
 					   results->strain,
@@ -559,4 +562,19 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 	status = 0;
 EXIT:
 	return status;
+}
+
+static void show_cvfa_error_msg(int cvfa_status)
+{
+	switch (cvfa_status) {
+	case 1:
+		printf("-- NB_ERROR: CVFA assembly fails.\n");
+		break;
+	case 2:
+		printf("-- NB_ERROR: CVFA solver fails.\n");
+		break;
+	default:
+		printf("-- NB_ERROR: CVFA fails.\n");
+		break;
+	}
 }

@@ -196,14 +196,14 @@ void nb_mshpack_elem_face_get_midpoint(const void *msh,
 	double *c2 = &(pack->cen[nj * 2]);
 	double dij2 = vcn_utils2D_get_dist2(c1, c2);
 
-	midpoint[0] = c1[0] + 0.5 * (1 + (Ri2 - Rj2)/dist2) * (c2[0] - c1[0]);
-	midpoint[1] = c1[1] + 0.5 * (1 + (Ri2 - Rj2)/dist2) * (c2[1] - c1[1]);
+	midpoint[0] = c1[0] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[0] - c1[0]);
+	midpoint[1] = c1[1] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[1] - c1[1]);
 }
 
 double nb_mshpack_elem_face_get_normal(const void *msh, uint32_t elem_id,
 				       uint16_t face_id, double normal[2])
 {
-	return nb_mshpack_elem_get_ngb_normal(msh, elem_id, face_id, normal);
+	return nb_mshpack_elem_ngb_get_normal(msh, elem_id, face_id, normal);
 }
 
 double nb_mshpack_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
@@ -322,21 +322,6 @@ static double get_max_displacement(uint32_t N, double *disp)
 			max = disp2;
 	}
 	return sqrt(max);
-}
-
-void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph)
-{
-	;/* NULL statement */
-}
-
-void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph)
-{
-	;/* NULL statement */
-}
-
-void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph)
-{
-	;/* PENDING */
 }
 
 void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,

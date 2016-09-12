@@ -281,7 +281,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/* Allocate global Stiffness Matrices */
 	nb_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_partition_load_elem_graph(part, graph);
+	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	vcn_sparse_t* K = vcn_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 	vcn_sparse_t *L = NULL;

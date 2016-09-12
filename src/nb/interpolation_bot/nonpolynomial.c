@@ -71,7 +71,7 @@ static double thin_plate(double x)
 
 static double d_thin_plate(double x)
 {
-	return x * (2 + log(x));
+	return x * (1 + 2 * log(x));
 }
 
 void nb_nonpolynomial_custom_eval(uint8_t N, uint8_t dim, const double *ni,
@@ -167,7 +167,7 @@ void nb_nonpolynomial_custom_eval_grad(uint8_t N, uint8_t dim,
 				       /* NULL for g'(x) = 1 */
 				       double (*dg)(double))
 {
-	uint16_t memsize = ((3 + dim) * N + dim) * sizeof(double);
+	uint32_t memsize = ((3 + dim) * N + dim) * sizeof(double);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	
 	double *phi = (void*) memblock;
@@ -223,6 +223,7 @@ static void eval_grad_phi(uint8_t N, uint8_t dim, const double *ni,
 			  const double *dgi, const double *x,
 			  double *grad_phi)
 {
+	memset(grad_phi, 0, dim * N * sizeof(*grad_phi));
 	for (uint8_t i = 0; i < N; i++) {
 		for (uint8_t j = 0; j < N; j++) {
 			if (j != i) {
@@ -231,7 +232,7 @@ static void eval_grad_phi(uint8_t N, uint8_t dim, const double *ni,
 				for (uint8_t d = 0; d < dim; d++) {
 					double h = x[d] - ni[j * dim + d];
 					double eval = 2 * c1 * c2 * h;
-					grad_phi[i * dim + d] = eval;
+					grad_phi[i * dim + d] += eval;
 				}
 			}
 		}

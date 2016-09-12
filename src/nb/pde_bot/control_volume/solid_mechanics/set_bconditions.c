@@ -272,7 +272,7 @@ static void set_neumann(uint8_t N_dof, double* F, double factor,
 	for (uint8_t j = 0; j < N_dof; j++) {
 		if (mask[j]) {
 			uint32_t mtx_id = elem_id * N_dof + j;
-			F[mtx_id] += factor * val[j];
+			F[mtx_id] -= factor * val[j];
 		}
 	}
 }

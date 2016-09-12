@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "nb/graph_bot.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
@@ -52,9 +51,6 @@ uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_mshpack_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
-void nb_mshpack_load_elem_graph(const void *msh, nb_graph_t *graph);
-void nb_mshpack_load_nodal_graph(const void *msh, nb_graph_t *graph);
-void nb_mshpack_load_interelem_graph(const void *msh, nb_graph_t *graph);
 void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 					    double ov_factor);
 void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh);

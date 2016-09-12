@@ -11,4 +11,9 @@ typedef enum {
 	NB_CLASS
 } nb_partition_array_type;
 
+typedef enum {
+	NB_NODES_LINKED_BY_EDGES, NB_ELEMS_LINKED_BY_EDGES,
+	NB_NODES_LINKED_BY_ELEMS, NB_ELEMS_LINKED_BY_NODES
+} nb_partition_graph_type;
+
 #endif

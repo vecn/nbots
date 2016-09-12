@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nb/graph_bot.h"
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
@@ -60,13 +59,6 @@ uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
-
-void nb_mshpoly_load_elem_graph(const void *mshpoly,
-				nb_graph_t *graph);
-void nb_mshpoly_load_nodal_graph(const void *mshpoly,
-				 nb_graph_t *graph);
-void nb_mshpoly_load_interelem_graph(const void *mshpoly,
-				      nb_graph_t *graph);
 
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpoly_is_vtx_inside(const void *msh, double x, double y);
