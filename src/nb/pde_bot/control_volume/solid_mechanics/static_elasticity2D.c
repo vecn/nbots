@@ -20,13 +20,8 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 1
+#define QUADRATURE_POINTS 4
 #define MAX_INTERPOLATORS 15
-#define INTERPOLATOR NB_SIMPLE
-
-typedef enum {
-	NB_SIMPLE, NB_THIN_PLATE
-} interpolator_t;
 
 
 #define POW2(a) ((a)*(a))
@@ -81,7 +76,6 @@ static void get_quadrature_points(const nb_partition_t *part,
 static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 				    const uint32_t *ngb, const double x[2],
 				    double *grad_phi);
-static void *get_interpolator_grad(interpolator_t id);
 static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
@@ -387,11 +381,7 @@ static void get_quadrature_points(const nb_partition_t *part,
 static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 				    const uint32_t *ngb, const double x[2],
 				    double *grad_phi)
-{
-	void (*eval_grad)(uint8_t N, uint8_t dim, const double *ni,
-			  const double *x, double *eval);
-	eval_grad = get_interpolator_grad(INTERPOLATOR);
-	
+{	
 	uint32_t memsize = 2 * N_ngb * sizeof(double);
 	double *ni = NB_SOFT_MALLOC(memsize);
 
@@ -400,26 +390,9 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
 	}
 
-	eval_grad(N_ngb, 2, ni, x, grad_phi);	
+	nb_nonpolynomial_simple_eval_grad(N_ngb, 2, ni, x, grad_phi);	
 
 	NB_SOFT_FREE(memsize, ni);
-}
-
-static void *get_interpolator_grad(interpolator_t id)
-{
-	void *func;
-	switch (id) {
-	case NB_SIMPLE:
-		func = nb_nonpolynomial_simple_eval_grad;
-		break;
-	case NB_THIN_PLATE:
-		func = nb_nonpolynomial_thin_plate_eval_grad;
-		break;
-	default:
-		func = nb_nonpolynomial_simple_eval_grad;
-		break;
-	}
-	return func;
 }
 
 static void get_Kf_nodal_contribution(const nb_partition_t *part,

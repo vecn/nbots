@@ -8,12 +8,10 @@
 
 #define POW2(a) ((a)*(a))
 
-static double thin_plate(double x);
-static double d_thin_plate(double x);
 static void eval_gi(uint8_t N, uint8_t dim, const double *ni,
 		   const double *ri, const double *x,
 		   double *eval, double (*g)(double));
-static double get_dist(uint8_t dim, const double *x1, const double *x2);
+static double get_dist2(uint8_t dim, const double *x1, const double *x2);
 static double eval_g(double x, double (*g)(double));
 static double get_ri(const double *ri, uint8_t i);
 static void eval_phi(uint8_t N, const double *gi, double *phi);
@@ -51,30 +49,6 @@ void nb_nonpolynomial_simple_eval_grad(uint8_t N, uint8_t dim,
 					  eval, NULL, NULL);
 }
 
-void nb_nonpolynomial_thin_plate_eval(uint8_t N, uint8_t dim, const double *ni,
-				      const double *x, double *eval)
-{
-	nb_nonpolynomial_custom_eval(N, dim, ni, NULL, x, eval, thin_plate);
-}
-
-void nb_nonpolynomial_thin_plate_eval_grad(uint8_t N, uint8_t dim,
-					   const double *ni, const double *x,
-					   double *eval)
-{
-	nb_nonpolynomial_custom_eval_grad(N, dim, ni, NULL, x, eval,
-					  thin_plate, d_thin_plate);
-}
-
-static double thin_plate(double x)
-{
-	return POW2(x) * log(x);
-}
-
-static double d_thin_plate(double x)
-{
-	return x * (1 + 2 * log(x));
-}
-
 void nb_nonpolynomial_custom_eval(uint8_t N, uint8_t dim, const double *ni,
 				  /* NULL for all ri = 1*/ const double *ri,
 				  const double *x, double *eval,
@@ -102,18 +76,19 @@ static void eval_gi(uint8_t N, uint8_t dim, const double *ni,
 		    double *eval, double (*g)(double))
 {
 	for (uint8_t i = 0; i < N; i++) {
-		double di = get_dist(dim, x, &(ni[i*dim]));
-		double zi = di / get_ri(ri, i);
+		double d2i = get_dist2(dim, x, &(ni[i*dim]));
+		double r = get_ri(ri, i);
+		double zi = d2i / POW2(r);
 		eval[i] = eval_g(zi, g);
 	}
 }
 
-static double get_dist(uint8_t dim, const double *x1, const double *x2)
+static double get_dist2(uint8_t dim, const double *x1, const double *x2)
 {
 	double sum = 0;
 	for (uint8_t i = 0; i < dim; i++)
 		sum += POW2(x1[i] - x2[i]);
-	return sqrt(sum);
+	return sum;
 }
 
 static double eval_g(double x, double (*g)(double))
@@ -122,7 +97,7 @@ static double eval_g(double x, double (*g)(double))
 	if (NULL != g)
 		gx = g(x);
 	else
-		gx = 1-exp(-x) + sqrt(x);/* AQUI voy */
+		gx = x;
 	return gx;
 }
 
@@ -202,8 +177,9 @@ static void eval_gi_and_dgi(uint8_t N, uint8_t dim, const double *ni,
 			    double (*g)(double), double (*dg)(double))
 {
 	for (uint8_t i = 0; i < N; i++) {
-		double di = get_dist(dim, x, &(ni[i*dim]));
-		double zi = di / get_ri(ri, i);
+		double d2i = get_dist2(dim, x, &(ni[i*dim]));
+		double r = get_ri(ri, i);
+		double zi = d2i / POW2(r);
 		gi[i] = eval_g(zi, g);
 		dgi[i] = eval_dg(zi, dg);
 	}
@@ -215,7 +191,7 @@ static double eval_dg(double x, double (*dg)(double))
 	if (NULL != dg)
 		dgx = dg(x);
 	else
-		dgx = exp(-x) + 1/(2*sqrt(x));
+		1;
 	return dgx;
 }
 
@@ -230,11 +206,10 @@ static void eval_grad_phi(uint8_t N, uint8_t dim, const double *ni,
 			if (j != i) {			  
 				double c1 = get_prod(N, gi, i, j);
 				double rj = get_ri(ri, j);
-				double dj = get_dist(dim, x, &(ni[j*dim]));
-				double c2 = dgi[j] / (dj * rj);
+				double c2 = dgi[j] / POW2(rj);
 				for (uint8_t d = 0; d < dim; d++) {
 					double h = x[d] - ni[j * dim + d];
-					double eval = c1 * c2 * h;
+					double eval = 2 * c1 * c2 * h;
 					grad_phi[i * dim + d] += eval;
 				}
 			}
