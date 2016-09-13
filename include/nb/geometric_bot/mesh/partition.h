@@ -49,10 +49,17 @@ void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
 double nb_partition_elem_face_get_normal(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id,
 					 double normal[2]);
+uint32_t nb_partition_elem_face_get_left_ngb(const nb_partition_t *part,
+					     uint32_t elem_id,
+					     uint16_t face_id);
+uint32_t nb_partition_elem_face_get_right_ngb(const nb_partition_t *part,
+					      uint32_t elem_id,
+					      uint16_t face_id);
 double nb_partition_elem_ngb_get_normal(const nb_partition_t *part,
 					uint32_t elem_id, uint16_t face_id,
 					double normal[2]);
-
+uint16_t nb_partition_elem_ngb_get_face(const nb_partition_t *part,
+					uint32_t elem_id, uint32_t ngb_id);
 uint32_t nb_partition_elem_get_N_adj(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_adj(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t adj_id);

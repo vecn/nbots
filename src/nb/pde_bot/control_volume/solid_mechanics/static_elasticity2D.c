@@ -21,7 +21,7 @@
 #include "set_bconditions.h"
 
 #define QUADRATURE_POINTS 4
-#define MAX_INTERPOLATORS 15
+#define ALL_NEIGHBOURS true
 
 
 #define POW2(a) ((a)*(a))
@@ -59,11 +59,12 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D,
 			   vcn_sparse_t *K);
-static uint16_t get_neighbours(const nb_partition_t *part,
-			       uint32_t elem_id, uint16_t face_id,
-			       uint16_t max_ngb, uint32_t *ngb);
-static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
-			       uint32_t ngb_id);
+static uint16_t get_neighbours(const nb_partition_t *part, uint32_t elem_id,
+			       uint16_t face_id, uint32_t *ngb);
+static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
+					 uint32_t *ngb, uint16_t current_id,
+					 uint32_t elem_id,
+					 uint32_t front_ngb_id);
 static void get_Kf(const nb_partition_t *const part,
 		   uint32_t elem_id, uint16_t face_id,
 		   const double D[4], uint16_t N_ngb,
@@ -227,9 +228,8 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
-	uint32_t ngb[MAX_INTERPOLATORS];
-	uint16_t N_ngb = get_neighbours(part, elem_id, face_id,
-					MAX_INTERPOLATORS, ngb);
+	uint32_t ngb[16];
+	uint16_t N_ngb = get_neighbours(part, elem_id, face_id, ngb);
 	
 	uint32_t memsize = 4 * N_ngb * sizeof(double);
 	double *Kf = NB_SOFT_MALLOC(memsize);
@@ -243,85 +243,56 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 	NB_SOFT_FREE(memsize, Kf);
 }
 
-static uint16_t get_neighbours(const nb_partition_t *part,
-			       uint32_t elem_id, uint16_t face_id,
-			       uint16_t max_ngb, uint32_t *ngb)
+static uint16_t get_neighbours(const nb_partition_t *part, uint32_t elem_id,
+			       uint16_t face_id, uint32_t *ngb)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	ngb[0] = elem_id;
 	ngb[1] = nb_partition_elem_get_ngb(part, elem_id, face_id);
 	uint16_t N = 2;
-	if (N >= max_ngb)
-		goto EXIT;
 
-	uint16_t N_prev = N;
-	uint32_t nid_prev = ngb[1];
-	uint32_t nid = ngb[0];
-	while (nid != ngb[1]) {
-		uint32_t aux = nid_prev;
-		nid_prev = nid;
-		nid = get_right_elem(part, nid, aux);
-		if (nid >= N_elems) {
-			/* Ignore elems if vtx is boundary */
-			N = N_prev;
-			break;
-		}
-		if (nid != ngb[1]) {
-			ngb[N] = nid;
-			N += 1;
-		}
-		if (N >= max_ngb)
-			goto EXIT;
+	if (ALL_NEIGHBOURS) {
+		N = get_ngb_around_right_vtx(part, ngb, N, ngb[0], ngb[1]);
+		N = get_ngb_around_right_vtx(part, ngb, N, ngb[1], ngb[0]);
 	}
-
-	N_prev = N;
-	nid_prev = ngb[0];
-	nid = ngb[1];
-	while (nid != ngb[0]) {
-		uint32_t aux = nid_prev;
-		nid_prev = nid;
-		nid = get_right_elem(part, nid, aux);
-		if (nid >= N_elems) {
-			/* Ignore elems if vtx is boundary */
-			N = N_prev;
-			break;
-		}
-		if (nid != ngb[0]) {
-			ngb[N] = nid;
-			N += 1;
-		}
-		if (N >= max_ngb)
-			goto EXIT;
-	}
-EXIT:
 	return N;
 }
 
-static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
-			      uint32_t ngb_id)
+static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
+					 uint32_t *ngb, uint16_t current_id,
+					 uint32_t elem_id,
+					 uint32_t front_ngb_id)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	uint16_t face_id = N_adj;
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t ingb = nb_partition_elem_get_ngb(part, elem_id, i);
-		if (ingb == ngb_id) {
-			face_id = i;
+
+	uint32_t nid_prev = front_ngb_id;
+	uint32_t nid = elem_id;
+	while (nid != front_ngb_id) {
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, nid, nid_prev);
+		nid_prev = nid;
+		nid = nb_partition_elem_face_get_right_ngb(part, nid, aux);
+		if (nid >= N_elems)
 			break;
+		if (nid != front_ngb_id) {
+			ngb[current_id] = nid;
+			current_id += 1;
 		}
 	}
-	uint32_t right_elem;
-	if (face_id < N_adj) {
-		if (0 == face_id)
-			face_id = N_adj - 1;
-		else
-			face_id -= 1;
-		right_elem = nb_partition_elem_get_ngb(part, elem_id,
-						       face_id);
-	} else {
-		right_elem = N_elems;
+	if (nid >= N_elems) {
+		nid_prev = elem_id;
+		nid = front_ngb_id;
+		while (nid != elem_id) {
+			uint16_t aux = nb_partition_elem_ngb_get_face(part, nid, nid_prev);
+			nid_prev = nid;
+			nid = nb_partition_elem_face_get_left_ngb(part, nid, aux);
+			if (nid >= N_elems)
+				break;
+			if (nid != elem_id) {
+				ngb[current_id] = nid;
+				current_id += 1;
+			}
+		}
 	}
-	return right_elem;	
+	return current_id;
 }
 
 static void get_Kf(const nb_partition_t *const part,

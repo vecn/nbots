@@ -437,12 +437,66 @@ double nb_partition_elem_face_get_normal(const nb_partition_t *part,
 					  face_id, normal);
 }
 
+uint32_t nb_partition_elem_face_get_left_ngb(const nb_partition_t *part,
+					     uint32_t elem_id,
+					     uint16_t face_id)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+
+	uint32_t left_elem;
+	if (face_id < N_adj) {
+		face_id = (face_id + 1) % N_adj;
+		left_elem = nb_partition_elem_get_ngb(part, elem_id,
+						      face_id);
+	} else {
+		left_elem = N_elems;
+	}
+	return left_elem;	
+}
+
+uint32_t nb_partition_elem_face_get_right_ngb(const nb_partition_t *part,
+					      uint32_t elem_id,
+					      uint16_t face_id)
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+
+	uint32_t right_elem;
+	if (face_id < N_adj) {
+		if (0 == face_id)
+			face_id = N_adj - 1;
+		else
+			face_id -= 1;
+		right_elem = nb_partition_elem_get_ngb(part, elem_id,
+						       face_id);
+	} else {
+		right_elem = N_elems;
+	}
+	return right_elem;	
+}
+
 double nb_partition_elem_ngb_get_normal(const nb_partition_t *part,
 					uint32_t elem_id, uint16_t ngb_id,
 					double normal[2])
 {
 	return part->elem_ngb_get_normal(part->msh, elem_id,
 					 ngb_id, normal);
+}
+
+uint16_t nb_partition_elem_ngb_get_face(const nb_partition_t *part,
+					uint32_t elem_id, uint32_t ngb_id)
+{
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	uint16_t face_id = N_adj;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t ingb = nb_partition_elem_get_ngb(part, elem_id, i);
+		if (ingb == ngb_id) {
+			face_id = i;
+			break;
+		}
+	}
+	return face_id;
 }
 
 uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id)

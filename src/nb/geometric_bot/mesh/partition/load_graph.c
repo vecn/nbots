@@ -47,8 +47,6 @@ static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
 static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
 				      uint32_t elem_id, uint16_t face_id,
 				      bool *is_interior_node);
-static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
-			       uint32_t ngb_id);
 static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
 					const nb_partition_t *part);
 static void elem_by_nod_graph_set_adj(nb_graph_t *graph,
@@ -356,22 +354,17 @@ static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	for (uint16_t j = 0; j < N_adj; j++) {
 		if (nb_partition_elem_has_ngb(part, elem_id, j)) {
-			bool is_interior_node;
-			uint16_t N = get_N_elems_around_2n(part, elem_id, j,
-							   &is_interior_node);
-			if (is_interior_node)
-				N_elem_adj += N - 2;
-			else
-				N_elem_adj += 1;
+			uint16_t N = get_N_elems_around_2n(part, elem_id, j);
+			N_elem_adj += N - 2;
 		}
 	}
 	return N_elem_adj;
 }
 
 static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
-				      uint32_t elem_id, uint16_t face_id,
-				      bool *is_interior_node)
+				      uint32_t elem_id, uint16_t face_id)
 {
+	/* AQUI VOY (cvfa->static_elasticity done), update this to include boundaries */
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
@@ -399,33 +392,6 @@ static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
 	*is_interior_node = true;
 EXIT:
 	return N;
-}
-
-static uint32_t get_right_elem(const nb_partition_t *part, uint32_t elem_id,
-			       uint32_t ngb_id)
-{
-	uint32_t N_elems = nb_partition_get_N_elems(part);
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	uint16_t face_id = N_adj;
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t ingb = nb_partition_elem_get_ngb(part, elem_id, i);
-		if (ingb == ngb_id) {
-			face_id = i;
-			break;
-		}
-	}
-	uint32_t right_elem;
-	if (face_id < N_adj) {
-		if (0 == face_id)
-			face_id = N_adj - 1;
-		else
-			face_id -= 1;
-		right_elem = nb_partition_elem_get_ngb(part, elem_id,
-						       face_id);
-	} else {
-		right_elem = N_elems;
-	}
-	return right_elem;	
 }
 
 static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
