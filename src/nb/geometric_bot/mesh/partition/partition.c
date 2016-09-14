@@ -441,7 +441,6 @@ uint32_t nb_partition_elem_face_get_left_ngb(const nb_partition_t *part,
 					     uint32_t elem_id,
 					     uint16_t face_id)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
 	uint32_t left_elem;
@@ -450,7 +449,7 @@ uint32_t nb_partition_elem_face_get_left_ngb(const nb_partition_t *part,
 		left_elem = nb_partition_elem_get_ngb(part, elem_id,
 						      face_id);
 	} else {
-		left_elem = N_elems;
+		left_elem = nb_partition_get_N_elems(part);
 	}
 	return left_elem;	
 }
@@ -459,19 +458,15 @@ uint32_t nb_partition_elem_face_get_right_ngb(const nb_partition_t *part,
 					      uint32_t elem_id,
 					      uint16_t face_id)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
 	uint32_t right_elem;
 	if (face_id < N_adj) {
-		if (0 == face_id)
-			face_id = N_adj - 1;
-		else
-			face_id -= 1;
+		face_id = (face_id == 0)?(N_adj-1):(face_id-1);
 		right_elem = nb_partition_elem_get_ngb(part, elem_id,
 						       face_id);
 	} else {
-		right_elem = N_elems;
+		right_elem = nb_partition_get_N_elems(part);
 	}
 	return right_elem;	
 }
