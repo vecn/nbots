@@ -87,8 +87,6 @@ static void eval_gi(uint8_t N, const double *phi, double c, double *eval)
 {
 	for (uint8_t i = 0; i < N; i++)
 		eval[i] = 2 * get_Pi(N, phi, i) / (1 + pow(phi[i], c));
-	for (uint8_t i = 0; i < N; i++)/* TEMPORAL */
-		eval[i] = get_Pi(N, phi, i);
 }
 
 static double get_Pi(uint8_t N, const double *phi, uint8_t i)
@@ -116,7 +114,7 @@ static void eval_interpolator(uint8_t N, const double *gi,
 		eval[i] = gi[i] / k;
 }
 
-void nb_nonpolynomial_eval_grad(uint8_t N, uint8_t dim,
+void vnb_nonpolynomial_eval_grad(uint8_t N, uint8_t dim,
 				const double *ni,
 				/* NULL for all ri = 1*/
 				const double *ri, const double *x,
@@ -160,7 +158,6 @@ static void eval_grad_gi(uint8_t N, uint8_t dim, const double *ni,
 			double sum = grad_Pi[d] * (1 + phic);
 			double prod = sum - subs;
 			eval[i*dim + d] = 2 * prod / div;
-			eval[i*dim + d] = grad_Pi[d];/* TEMPORAL */
 		}
 	}
 }
@@ -180,7 +177,7 @@ static double eval_grad_Pi(uint8_t N, uint8_t dim, const double *ni,
 				double h = x[d] - ni[j * dim + d];
 				eval[d] += prod * h;
 			}
-			Pi = phi[j] * Pij; /* Same cheap operation */
+			Pi *= phi[j];
 		}
 	}
 	return Pi;
@@ -207,16 +204,16 @@ static void get_grad_k(uint8_t N, uint8_t dim, const double *grad_gi,
 }
 
 static void eval_grad_interpolator(uint8_t N, uint8_t dim,
-				   const double *phi, const double *grad_phi,
+				   const double *gi, const double *grad_gi,
 				   double k, const double *grad_k,
 				   double *eval)
 {
 	double k2 = POW2(k);
 	for (uint8_t i = 0; i < N; i++) {
 		for (uint8_t d = 0; d < dim; d++) {
-			double dphi = grad_phi[i * dim + d];
+			double dgi = grad_gi[i * dim + d];
 			double dk = grad_k[d];
-			double divisor = (dphi * k - phi[i] * dk);
+			double divisor = (dgi * k - gi[i] * dk);
 			eval[i * dim + d] = divisor / k2;
 		}
 	}
