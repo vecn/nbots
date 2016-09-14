@@ -251,8 +251,10 @@ static uint16_t get_neighbours(const nb_partition_t *part, uint32_t elem_id,
 	uint16_t N = 2;
 
 	if (ALL_NEIGHBOURS) {
-		N = get_ngb_around_right_vtx(part, ngb, N, ngb[0], ngb[1]);
-		N = get_ngb_around_right_vtx(part, ngb, N, ngb[1], ngb[0]);
+		N = get_ngb_around_right_vtx(part, ngb, N, ngb[0], face_id);
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, ngb[1],
+							      ngb[0]);
+		N = get_ngb_around_right_vtx(part, ngb, N, ngb[1], aux);
 	}
 	return N;
 }
@@ -260,36 +262,31 @@ static uint16_t get_neighbours(const nb_partition_t *part, uint32_t elem_id,
 static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 					 uint32_t *ngb, uint16_t current_id,
 					 uint32_t elem_id,
-					 uint32_t front_ngb_id)
+					 uint32_t face_id)/* AQUI VOY */
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 
 	uint32_t nid_prev = front_ngb_id;
 	uint32_t nid = elem_id;
-	while (nid != front_ngb_id) {
-		uint16_t aux = nb_partition_elem_ngb_get_face(part, nid, nid_prev);
+	while (nid != front_ngb_id && nid < N_elems) {
+		ngb[current_id] = nid;
+		current_id += 1;
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, nid,
+							      nid_prev);
 		nid_prev = nid;
 		nid = nb_partition_elem_face_get_right_ngb(part, nid, aux);
-		if (nid >= N_elems)
-			break;
-		if (nid != front_ngb_id) {
-			ngb[current_id] = nid;
-			current_id += 1;
-		}
 	}
 	if (nid >= N_elems) {
 		nid_prev = elem_id;
 		nid = front_ngb_id;
-		while (nid != elem_id) {
-			uint16_t aux = nb_partition_elem_ngb_get_face(part, nid, nid_prev);
+		while (nid < N_elems) {
+			ngb[current_id] = nid;
+			current_id += 1;
+			uint16_t aux = nb_partition_elem_ngb_get_face(part, nid,
+								      nid_prev);
 			nid_prev = nid;
-			nid = nb_partition_elem_face_get_left_ngb(part, nid, aux);
-			if (nid >= N_elems)
-				break;
-			if (nid != elem_id) {
-				ngb[current_id] = nid;
-				current_id += 1;
-			}
+			nid = nb_partition_elem_face_get_left_ngb(part, nid,
+								  aux);
 		}
 	}
 	return current_id;

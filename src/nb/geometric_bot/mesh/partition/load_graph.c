@@ -7,6 +7,8 @@
 #include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
 
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 static void load_graph_nodes_by_edges(const void *part, nb_graph_t *graph);
 static void nodal_graph_allocate_adj(nb_graph_t *graph,
 				     const nb_partition_t *part);
@@ -45,8 +47,7 @@ static uint32_t elem_by_nod_get_N_adj(const nb_partition_t *part);
 static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
 				      uint32_t elem_id);
 static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
-				      uint32_t elem_id, uint16_t face_id,
-				      bool *is_interior_node);
+				      uint32_t elem_id, uint16_t face_id);
 static void elem_by_nod_graph_count_adj(nb_graph_t *graph,
 					const nb_partition_t *part);
 static void elem_by_nod_graph_set_adj(nb_graph_t *graph,
@@ -353,10 +354,8 @@ static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
 	uint32_t N_elem_adj = 0;
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	for (uint16_t j = 0; j < N_adj; j++) {
-		if (nb_partition_elem_has_ngb(part, elem_id, j)) {
-			uint16_t N = get_N_elems_around_2n(part, elem_id, j);
-			N_elem_adj += N - 2;
-		}
+		uint16_t N = get_N_elems_around_2n(part, elem_id, j);
+		N_elem_adj += MAX(0, N - 2);
 	}
 	return N_elem_adj;
 }
@@ -364,33 +363,36 @@ static uint32_t count_elem_by_nod_adj(const nb_partition_t *part,
 static uint16_t get_N_elems_around_2n(const nb_partition_t *part,
 				      uint32_t elem_id, uint16_t face_id)
 {
-	/* AQUI VOY (cvfa->static_elasticity done), update this to include boundaries */
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
-	uint16_t N = 0;
-	uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id,
-						 (face_id + 1) % N_adj);
-	if (ngb >= N_elems) {
-		*is_interior_node = false;
-		goto EXIT;
-	}
-
-	N = 1;
-	uint32_t prev_id = ngb;
-	uint32_t id = elem_id;
-	while (ngb != id) {
-		uint32_t aux = prev_id;
-		prev_id = id;
-		id = get_right_elem(part, id, aux);
-		if (id >= N_elems) {
-			*is_interior_node = false;
-			goto EXIT;
-		}
+	uint16_t N = 1;
+	uint32_t nid_prev = elem_id;
+	uint32_t nid = nb_partition_elem_face_get_right_ngb(part, elem_id,
+							    face_id);
+	while(nid != elem_id && nid < N_elems) {
 		N += 1;
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, nid,
+							      nid_prev);
+		nid_prev = nid;
+		nid = nb_partition_elem_face_get_right_ngb(part, nid, aux);
 	}
-	*is_interior_node = true;
-EXIT:
+	if (nid >= N_elems) {
+		uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+		uint32_t prev_face = (face_id == 0)?(N_adj-1):(face_id-1);
+		uint32_t nid_prev = elem_id;
+		uint32_t nid = nb_partition_elem_face_get_left_ngb(part,
+								   elem_id,
+								   prev_face);
+		while(nid < N_elems) {
+			N += 1;
+			uint16_t aux = nb_partition_elem_ngb_get_face(part, nid,
+								      nid_prev);
+			nid_prev = nid;
+			nid = nb_partition_elem_face_get_left_ngb(part, nid,
+								  aux);
+		}
+
+	}
 	return N;
 }
 
@@ -430,30 +432,39 @@ static uint32_t set_elem_by_nod_rounding_adj(nb_graph_t *graph,
 					     uint16_t face_id,
 					     uint16_t cnt)
 {
-	bool is_interior_node;
-	get_N_elems_around_2n(part, elem_id, face_id,
-			      &is_interior_node);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 
-	if (is_interior_node) {
-		uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-		uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id,
-							 (face_id+1) % N_adj);
-		uint32_t prev_id = ngb;
-		uint32_t id = elem_id;
-		while (ngb != id) {
-			uint32_t aux = prev_id;
-			prev_id = id;
-			id = get_right_elem(part, id, aux);
-			if (ngb != id) {
-				graph->adj[elem_id][cnt] = id;
-				cnt += 1;				
-			}
-		}
-	} else {
-		uint32_t ngb = nb_partition_elem_get_ngb(part, elem_id,
-							 face_id);
-		graph->adj[elem_id][cnt] = ngb;
+	uint32_t nid_prev = elem_id;
+	uint32_t nid = nb_partition_elem_face_get_right_ngb(part, elem_id,
+							    (face_id+1)%N_adj);
+	uint32_t front_ngb = nb_partition_elem_get_ngb(part, elem_id,
+						       (face_id+1)%N_adj);
+	while(nid != front_ngb && nid < N_elems) {
+		graph->adj[elem_id][cnt] = nid;
 		cnt += 1;
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, nid,
+							      nid_prev);
+		nid_prev = nid;
+		nid = nb_partition_elem_face_get_right_ngb(part, nid, aux);
+	}
+	if (nid >= N_elems && front_ngb < N_elems) {
+		uint16_t aux = nb_partition_elem_ngb_get_face(part, front_ngb,
+							      elem_id);
+		uint32_t nid_prev = front_ngb;
+		uint32_t nid = nb_partition_elem_face_get_left_ngb(part,
+								   front_ngb,
+								   aux);
+		while(nid < N_elems) {
+			graph->adj[elem_id][cnt] = nid;
+			cnt += 1;
+			aux = nb_partition_elem_ngb_get_face(part, nid,
+							     nid_prev);
+			nid_prev = nid;
+			nid = nb_partition_elem_face_get_left_ngb(part, nid,
+								  aux);
+		}
+
 	}
 	return cnt;
 }
