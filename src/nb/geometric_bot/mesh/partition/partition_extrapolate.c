@@ -108,7 +108,7 @@ static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 		ni[i*2+1] = nb_partition_node_get_y(part, node_id);
 	}
 	
-	nb_nonpolynomial_simple_eval(N, 2, ni, x, f);
+	nb_nonpolynomial_eval(N, 2, ni, NULL, x, 0, f);
 
 	NB_SOFT_FREE(memsize, ni);
 }

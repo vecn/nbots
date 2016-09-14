@@ -95,7 +95,39 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_TRIAN,
+	uint8_t N = 6;                                       /* TEMPORAL */
+	double c = 0;                                                  /**/
+	double xi[12] = {0,0,                                          /**/
+			 1.5, 0,				       /**/
+			 0.464, 1.4265,				       /**/
+			 -1.2135, 0.8817,			       /**/
+			 -1.2135, -0.8817,			       /**/
+			 0.4635, -1.4265};			       /**/
+	double eval[6];						       /**/
+	double grad[12];					       /**/
+	FILE *fp =  fopen("../../../phi_1.txt", "w");		       /**/
+	fprintf(fp, "#g(x) = x\n");				       /**/
+	uint16_t N_grid = 50;					       /**/
+	double step = 6.0/(N_grid-1);				       /**/
+	for (uint16_t i = 0; i < N_grid; i++) {			       /**/
+		double x[2];					       /**/
+		x[0] = i * step - 3;				       /**/
+		for (uint16_t j = 0; j < N_grid; j++) {		       /**/
+			x[1] = j * step - 3;			       /**/
+			nb_nonpolynomial_eval(N, 2, xi, NULL,          /**/
+					      x, c, eval);             /**/
+			nb_nonpolynomial_eval_grad(N, 2, xi, NULL,     /**/
+						   x, c, grad);        /**/
+			fprintf(fp, "%e %e", x[0], x[1]);	       /**/
+			for (uint8_t k = 0; k < N; k++)		       /**/
+				fprintf(fp, " %e %e %e", eval[k],      /**/
+					grad[k*2], grad[k*2+1]);       /**/
+			fprintf(fp, "\n");			       /**/
+		}						       /**/
+		fprintf(fp, "\n");				       /**/
+	}                                                              /**/
+	fclose(fp);                                          /* TEMPORAL */
+	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 

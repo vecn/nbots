@@ -361,7 +361,7 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
 	}
 
-	nb_nonpolynomial_simple_eval_grad(N_ngb, 2, ni, x, grad_phi);	
+	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, NULL, x, 0, grad_phi);	
 
 	NB_SOFT_FREE(memsize, ni);
 }
