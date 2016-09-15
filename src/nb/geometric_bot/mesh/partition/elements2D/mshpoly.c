@@ -1311,9 +1311,10 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 
 static bool is_exterior(const msh_trg_t *trg)
 {
-	bool out = mtrg_has_an_input_sgm(trg);
-	if (!out)
-		out = have_all_nodes_in_sgm(trg);
+	/* bool out = mtrg_has_an_input_sgm(trg);
+	   if (!out) TEMPORAL commented because 
+	   error on boundary */
+	bool out = have_all_nodes_in_sgm(trg);
 	return out;
 }
 

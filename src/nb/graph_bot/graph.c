@@ -1,19 +1,10 @@
-/******************************************************************************
- *   Graph's Bot: Fast graph theory tools.                                    *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "nb/container_bot.h"
-#include "nb/geometric_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/graph_bot/graph.h"
 
