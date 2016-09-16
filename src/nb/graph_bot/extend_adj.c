@@ -13,31 +13,40 @@ typedef struct {
 } node_t;
 
 static int8_t node_comparer(const void *n1, const void *n2);
+static void extend_adj_1degree(const nb_graph_t *graph,
+			       nb_container_t **extended_adj,
+			       nb_container_type type,
+			       nb_membank_t *membank);
+static void set_current_adj(const nb_graph_t *graph,
+			    nb_container_t **current_adj,
+			    nb_membank_t *membank);
+static double get_weight(const nb_graph_t *graph, uint32_t i, uint16_t j);
+static void add_1degree_adj(const nb_graph_t *graph,
+			    nb_container_t **extended_adj /* NULL */,
+			    nb_container_t **current_adj,
+			    nb_container_t **new_adj,
+			    nb_membank_t *membank);
+
+static void add_nodal_1degree_adj(const nb_graph_t *graph,
+				  nb_container_t **extended_adj /* NULL */,
+				  nb_container_t **current_adj,
+				  nb_container_t **new_adj,
+				  uint32_t i, const node_t *node,
+				  nb_membank_t *membank);
+static bool node_is_not_connected(nb_container_t **extended_adj /* NULL */,
+				  nb_container_t **current_adj,
+				  nb_container_t **new_adj,
+				  uint32_t i, const node_t *node);
+static void move_adj(uint32_t N, nb_container_t **dest_adj,
+		     nb_container_t **orig_adj);
 static void extend_adj(const nb_graph_t *graph,
 		       nb_container_t **extended_adj,
 		       nb_container_type type,
-		       uint8_t N_degrees);
-static void set_current_adj(const nb_graph_t *graph,
-			    nb_container_t **current_adj);
-static void add_1degree_adj(const nb_graph_t *graph,
-			    nb_container_t **current_adj,
-			    nb_container_t **extended_adj,
-			    nb_container_t **new_adj);
-
-static void add_nodal_1degree_adj(const nb_graph_t *graph,
-				  nb_container_t **current_adj,
-				  nb_container_t **extended_adj,
-				  nb_container_t **new_adj,
-				  uint32_t i, const node_t *node);
-static bool node_is_not_connected(nb_container_t **current_adj,
-				  nb_container_t **extended_adj,
-				  nb_container_t **new_adj,
-				  uint32_t i, const node_t *node);
-static double get_weight(const nb_graph_t *graph, uint32_t i, uint16_t j);
-static void move_adj(uint32_t N, nb_container_t **dest_adj,
-		     nb_container_t **orig_adj);
+		       uint8_t N_degrees,
+		       nb_membank_t *membank);
 static void get_extended_graph(nb_graph_t *graph,
-			       nb_container_t **extended_adj);
+			       nb_container_t **extended_adj,
+			       nb_membank_t *membank);
 static void realloc_memory(nb_graph_t *graph,
 			   nb_container_t **extended_adj);
 static uint32_t get_N_total_adj(uint32_t N,
@@ -50,21 +59,29 @@ void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees)
 	nb_container_type type = NB_SORTED;
 
 	uint32_t cnt_size = nb_container_get_memsize(type);
-	uint32_t memsize = N * (sizeof(void*) + cnt_size);
+	uint32_t bank_size = nb_membank_get_memsize();
+	uint32_t memsize = bank_size +
+		N * (sizeof(void*) + cnt_size);
 	char *memblock = NB_SOFT_MALLOC(memsize);
-	nb_container_t ** extended_adj = (void*) memblock;
-	memblock += N * sizeof(void*);
+	nb_membank_t *membank = (void*) memblock;
+	nb_membank_init(membank, sizeof(node_t));
+	nb_container_t ** extended_adj = (void*) (memblock + bank_size);
+	char *mem = memblock + bank_size + N * sizeof(void*);
 	for (uint32_t i = 0; i < N; i++) {
-		extended_adj[i] = (void*) memblock;
-		memblock += cnt_size;
+		extended_adj[i] = (void*) mem;
+		mem += cnt_size;
 		nb_container_init(extended_adj[i], type);
 		nb_container_set_comparer(extended_adj[i], node_comparer);
 	}
-
-	extend_adj(graph, extended_adj, type, N_degrees);
 	
-	get_extended_graph(graph, extended_adj);
+	if (1 == N_degrees)
+		extend_adj_1degree(graph, extended_adj, type, membank);
+	else if (1 < N_degrees)
+		extend_adj(graph, extended_adj, type, N_degrees, membank);
+	
+	get_extended_graph(graph, extended_adj, membank);
 
+	nb_membank_finish(membank);
 	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(extended_adj[i]);
 	NB_SOFT_FREE(memsize, memblock);
@@ -84,54 +101,43 @@ static int8_t node_comparer(const void *n1, const void *n2)
 	return out;
 }
 
-static void extend_adj(const nb_graph_t *graph,
-		       nb_container_t **extended_adj,
-		       nb_container_type type,
-		       uint8_t N_degrees)
+static void extend_adj_1degree(const nb_graph_t *graph,
+			       nb_container_t **extended_adj,
+			       nb_container_type type,
+			       nb_membank_t *membank)
 {
 	uint32_t N = graph->N;
 
 	uint32_t cnt_size = nb_container_get_memsize(type);
-	uint32_t memsize = 2 * N * (sizeof(void*) + cnt_size);
+	uint32_t memsize = N * (sizeof(void*) + cnt_size);
 	char *memblock = NB_SOFT_MALLOC(memsize);
-	nb_container_t ** current_adj = (void*) memblock;
-	nb_container_t ** new_adj = (void*) (memblock + N * sizeof(void*));
-	memblock += 2 * N * sizeof(void*);
+	nb_container_t ** new_adj = (void*) memblock;
+	char *mem = memblock + N * sizeof(void*);
 	for (uint32_t i = 0; i < N; i++) {
-		current_adj[i] = (void*) memblock;
-		memblock += cnt_size;
-		nb_container_init(current_adj[i], type);
-		nb_container_set_comparer(current_adj[i], node_comparer);
-
-		new_adj[i] = (void*) memblock;
-		memblock += cnt_size;
+		new_adj[i] = (void*) mem;
+		mem += cnt_size;
 		nb_container_init(new_adj[i], type);
 		nb_container_set_comparer(new_adj[i], node_comparer);
 	}
 
-	set_current_adj(graph, current_adj);
-	for (uint32_t i = 0; i < N_degrees; i++) {
-		add_1degree_adj(graph, current_adj, extended_adj, new_adj);
-		move_adj(N, extended_adj, current_adj);
-		move_adj(N, current_adj, new_adj);
-	}
-	move_adj(N, extended_adj, current_adj);
+	set_current_adj(graph, extended_adj, membank);
+	add_1degree_adj(graph, NULL, extended_adj, new_adj, membank);
+	move_adj(N, extended_adj, new_adj);
 
-	for (uint32_t i = 0; i < N; i++) {
-		nb_container_finish(current_adj[i]);
+	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(new_adj[i]);
-	}
 	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void set_current_adj(const nb_graph_t *graph,
-			    nb_container_t **current_adj)
+			    nb_container_t **current_adj,
+			    nb_membank_t *membank)
 {
 	uint32_t N = graph->N;
 	for (uint32_t i = 0; i < N; i++) {
 		nb_container_t *cnt = current_adj[i];
 		for (uint16_t j = 0; j < graph->N_adj[i]; j++) {
-			node_t *node = nb_malloc(sizeof(node_t));
+			node_t *node = nb_membank_data_calloc(membank);
 			node->id = graph->adj[i][j];
 			node->w = get_weight(graph, i, j);
 			nb_container_insert(cnt, node);
@@ -150,9 +156,10 @@ static double get_weight(const nb_graph_t *graph, uint32_t i, uint16_t j)
 }
 
 static void add_1degree_adj(const nb_graph_t *graph,
+			    nb_container_t **extended_adj /* NULL */,
 			    nb_container_t **current_adj,
-			    nb_container_t **extended_adj,
-			    nb_container_t **new_adj)
+			    nb_container_t **new_adj,
+			    nb_membank_t *membank)
 {
 	uint32_t N = graph->N;
 	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
@@ -161,9 +168,9 @@ static void add_1degree_adj(const nb_graph_t *graph,
 		nb_iterator_set_container(iter, current_adj[i]);
 		while (nb_iterator_has_more(iter)) {
 			const node_t *node = nb_iterator_get_next(iter);
-			add_nodal_1degree_adj(graph, current_adj,
-					      extended_adj, new_adj,
-					      i, node);
+			add_nodal_1degree_adj(graph, extended_adj,
+					      current_adj, new_adj,
+					      i, node, membank);
 		}
 		nb_iterator_finish(iter);
 	}
@@ -171,32 +178,43 @@ static void add_1degree_adj(const nb_graph_t *graph,
 }
 
 static void add_nodal_1degree_adj(const nb_graph_t *graph,
+				  nb_container_t **extended_adj /* NULL */,
 				  nb_container_t **current_adj,
-				  nb_container_t **extended_adj,
 				  nb_container_t **new_adj,
-				  uint32_t i, const node_t *node)
+				  uint32_t i, const node_t *node,
+				  nb_membank_t *membank)
 {
 	uint32_t j = node->id;
 	double w = node->w;
 	for (uint32_t k = 0; k < graph->N_adj[j]; k++) {
-		if (node_is_not_connected(current_adj, extended_adj,
-					  new_adj, i, node)) {
-			node_t *new_node = nb_malloc(sizeof(node_t));
-			new_node->id = graph->adj[j][k];
-			new_node->w = w + get_weight(graph, j, k);
-			nb_container_insert(new_adj[i], new_node);
+		uint32_t id = graph->adj[j][k];
+		if (id != i) {
+			node_t compare_node;
+			compare_node.id = id;
+			if (node_is_not_connected(extended_adj, current_adj,
+						  new_adj, i, &compare_node)) {
+				node_t *new_node =
+					nb_membank_data_calloc(membank);
+				new_node->id = id;
+				new_node->w = w + get_weight(graph, j, k);
+				nb_container_insert(new_adj[i], new_node);
+			}
 		}
 	}
 }
 
-static bool node_is_not_connected(nb_container_t **current_adj,
-				  nb_container_t **extended_adj,
+static bool node_is_not_connected(nb_container_t **extended_adj /* NULL */,
+				  nb_container_t **current_adj,
 				  nb_container_t **new_adj,
 				  uint32_t i, const node_t *node)
 {
-	bool exist = nb_container_exist(current_adj[i], node);
-	if (!exist)
+	bool exist = false;
+	if (NULL != extended_adj)
 		exist = nb_container_exist(extended_adj[i], node);
+
+	if (!exist)
+		exist = nb_container_exist(current_adj[i], node);
+
 	if (!exist)
 		exist = nb_container_exist(new_adj[i], node);
 	return !exist;
@@ -213,8 +231,52 @@ static void move_adj(uint32_t N, nb_container_t **dest_adj,
 	}
 }
 
+
+static void extend_adj(const nb_graph_t *graph,
+		       nb_container_t **extended_adj,
+		       nb_container_type type,
+		       uint8_t N_degrees,
+		       nb_membank_t *membank)
+{
+	uint32_t N = graph->N;
+
+	uint32_t cnt_size = nb_container_get_memsize(type);
+	uint32_t memsize = 2 * N * (sizeof(void*) + cnt_size);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_container_t ** current_adj = (void*) memblock;
+	nb_container_t ** new_adj = (void*) (memblock + N * sizeof(void*));
+	char *mem = memblock + 2 * N * sizeof(void*);
+	for (uint32_t i = 0; i < N; i++) {
+		current_adj[i] = (void*) mem;
+		mem += cnt_size;
+		nb_container_init(current_adj[i], type);
+		nb_container_set_comparer(current_adj[i], node_comparer);
+
+		new_adj[i] = (void*) memblock;
+		memblock += cnt_size;
+		nb_container_init(new_adj[i], type);
+		nb_container_set_comparer(new_adj[i], node_comparer);
+	}
+
+	set_current_adj(graph, current_adj, membank);
+	for (uint32_t i = 0; i < N_degrees; i++) {
+		add_1degree_adj(graph, extended_adj, current_adj,
+				new_adj, membank);
+		move_adj(N, extended_adj, current_adj);
+		move_adj(N, current_adj, new_adj);
+	}
+	move_adj(N, extended_adj, current_adj);
+
+	for (uint32_t i = 0; i < N; i++) {
+		nb_container_finish(current_adj[i]);
+		nb_container_finish(new_adj[i]);
+	}
+	NB_SOFT_FREE(memsize, memblock);
+}
+
 static void get_extended_graph(nb_graph_t *graph,
-			       nb_container_t **extended_adj)
+			       nb_container_t **extended_adj,
+			       nb_membank_t *membank)
 {
 	realloc_memory(graph, extended_adj);
 
@@ -228,7 +290,7 @@ static void get_extended_graph(nb_graph_t *graph,
 			if (NULL != graph->wij)
 				graph->wij[i][id] = node->w;
 			id += 1;
-			free(node);
+			nb_membank_data_free(membank, node);
 		}
 	}
 }
