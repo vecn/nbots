@@ -6,7 +6,6 @@
  * @author Victor Eduardo Cardoso Nungaray
  * @n victorc@@cimat.mx
  * @n <a href="https://twitter.com/victore_cardoso"> @@victore_cardoso </a>
- * @date 10 August 2015
  *
  * @mainpage Graph's Bot
  * A graph operations for numerical analysis.

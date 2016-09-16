@@ -64,6 +64,7 @@ static void graph_clear(nb_graph_t *graph)
 		free(graph->wi);
 
 	if (NULL != graph->wij)
+		/* Includes graph->wij[i] in the same memblock */
 		free(graph->wij);
 }
 
@@ -80,12 +81,18 @@ vcn_graph_t* vcn_graph_create(void)
 
 vcn_graph_t* vcn_graph_get_subgraph(const vcn_graph_t *const graph,
 				    uint32_t N_nodes, uint32_t *nodes)
+/* DEPRECATED: Check memory allocation */
 {
 	vcn_graph_t *subgraph = calloc(1, sizeof(vcn_graph_t));
 
 	subgraph->N = N_nodes;
-	subgraph->N_adj = malloc(N_nodes * sizeof(*(subgraph->N_adj)));
-	subgraph->adj = calloc(N_nodes, sizeof(*(subgraph->adj)));
+	uint32_t memsize = N_nodes * 
+		(sizeof(*(subgraph->N_adj)) + sizeof(*(subgraph->adj)));
+	char *memblock = malloc(memsize);
+	subgraph->N_adj = (void*) memblock;
+	subgraph->adj = (void*) (memblock + N_nodes *
+				 sizeof(*(subgraph->N_adj)));
+	memset(subgraph->adj, 0, N_nodes * sizeof(*(subgraph->adj)));
 
 	if (NULL != graph->wi)
 		subgraph->wi = malloc(N_nodes * sizeof(*(subgraph->wi)));
