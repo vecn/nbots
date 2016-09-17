@@ -95,7 +95,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_TRIAN,
+	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
