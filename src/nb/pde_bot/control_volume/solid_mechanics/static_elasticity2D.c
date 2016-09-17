@@ -20,7 +20,7 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 4
+#define QUADRATURE_POINTS 2
 #define ALL_NEIGHBOURS true
 
 
@@ -70,6 +70,12 @@ static void get_Kf(const nb_partition_t *const part,
 		   const double D[4], uint16_t N_ngb,
 		   const uint32_t *ngb, uint8_t N_qp,
 		   double *Kf);
+static void get_Hf(const nb_partition_t *const part,
+		   uint32_t elem_id, uint16_t face_id,
+		   const double D[4], uint16_t N_ngb,
+		   const uint32_t *ngb, uint8_t N_qp,
+		   double *Hf);
+static void get_HTH(uint16_t N_ngb, const double *Hf, double *Kf);
 static void get_quadrature_points(const nb_partition_t *part,
 				  uint32_t elem_id, uint16_t face_id,
 				  double lf, uint8_t N_qp,
@@ -82,7 +88,6 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      uint16_t i, const double *grad_phi,
 				      double Kfi[4]);
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
-			uint32_t elem_id, uint32_t ngb_id,
 			uint16_t N_ngb, const uint32_t *ngb,
 			double factor);
 static int solver(const vcn_sparse_t *const A,
@@ -232,14 +237,12 @@ static void integrate_face(uint32_t elem_id, uint16_t face_id,
 	uint32_t ngb[16];
 	uint16_t N_ngb = get_neighbours(part, elem_id, face_id, ngb);
 	
-	uint32_t memsize = 4 * N_ngb * sizeof(double);
+	uint32_t memsize = POW2(2 * N_ngb) * sizeof(double);
 	double *Kf = NB_SOFT_MALLOC(memsize);
 	get_Kf(part, elem_id, face_id, D, N_ngb, ngb, QUADRATURE_POINTS, Kf);
 
 	double factor = params2D->thickness;
-
-	uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, face_id);
-	add_Kf_to_K(K, Kf, elem_id, ngb_id, N_ngb, ngb, factor);
+	add_Kf_to_K(K, Kf, N_ngb, ngb, factor);
 
 	NB_SOFT_FREE(memsize, Kf);
 }
@@ -305,19 +308,34 @@ static void get_Kf(const nb_partition_t *const part,
 		   const uint32_t *ngb, uint8_t N_qp,
 		   double *Kf)
 {
+	uint32_t memsize = (4 * N_ngb) * sizeof(double);
+	char *Hf = NB_SOFT_MALLOC(memsize);
+
+	get_Hf(part, elem_id, face_id, D, N_ngb, ngb, N_qp, Hf);
+
+	get_HTH(N_ngb, Hf, Kf);
+
+	NB_SOFT_FREE(memsize, Hf);
+}
+
+static void get_Hf(const nb_partition_t *const part,
+		   uint32_t elem_id, uint16_t face_id,
+		   const double D[4], uint16_t N_ngb,
+		   const uint32_t *ngb, uint8_t N_qp,
+		   double *Hf)
+{
 	uint32_t memsize = (3 * N_qp + 2 * N_ngb) * sizeof(double);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *wqp = (void*) memblock;
 	double *xqp = (void*) (memblock + N_qp * sizeof(double));
 	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
-
 	double nf[2];
 	double lf = nb_partition_elem_face_get_normal(part, elem_id,
 						      face_id, nf);
 
 	get_quadrature_points(part, elem_id, face_id, lf, N_qp, xqp, wqp);
 
-	memset(Kf, 0, 4 * N_ngb * sizeof(double));
+	memset(Hf, 0, 4 * N_ngb * sizeof(double));
 	for (uint8_t q = 0; q < N_qp; q++) {
 		interpolators_eval_grad(part, N_ngb, ngb, 
 					&(xqp[q*2]), grad_phi);
@@ -326,13 +344,27 @@ static void get_Kf(const nb_partition_t *const part,
 			double Kfi[4];
 			get_Kf_nodal_contribution(part, D, nf, i,
 						  grad_phi, Kfi);
-			Kf[i * 2] += wqp[q] * Kfi[0];
-			Kf[i*2+1] += wqp[q] * Kfi[1];
-			Kf[2 * N_ngb + i * 2] += wqp[q] * Kfi[2];
-			Kf[2 * N_ngb + i*2+1] += wqp[q] * Kfi[3];
+			Hf[i * 2] += wqp[q] * Kfi[0];
+			Hf[i*2+1] += wqp[q] * Kfi[1];
+			Hf[2 * N_ngb + i * 2] += wqp[q] * Kfi[2];
+			Hf[2 * N_ngb + i*2+1] += wqp[q] * Kfi[3];
 		}
 	}
 	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void get_HTH(uint16_t N_ngb, const double *Hf, double *Kf)
+{
+	for (uint16_t i = 0; i < 2 * N_ngb; i++) {
+		for (uint16_t j = 0; j < 2 * N_ngb; j++) {
+			double dot = 0;
+			for (uint8_t k = 0; k < 2; k++) {
+				dot += Hf[k * 2 * N_ngb + i] *
+					Hf[k * 2 * N_ngb + j];
+			}
+			Kf[i * 2 * N_ngb + j] = dot;
+		}
+	}
 }
 
 static void get_quadrature_points(const nb_partition_t *part,
@@ -384,34 +416,24 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 }
 
 static void add_Kf_to_K(vcn_sparse_t *K, const double *Kf,
-			uint32_t elem_id, uint32_t ngb_id,
 			uint16_t N_ngb, const uint32_t *ngb,
 			double factor)
 {
 	uint16_t size = 2 * N_ngb;
-	factor *= -1;
 
-	/* Add equations of element */
-	uint32_t i = elem_id;
-	for (uint32_t k = 0; k < N_ngb; k++) {
-		uint32_t j = ngb[k];
-		uint8_t c1 = k * 2;
-		uint8_t c2 = k * 2 + 1;
-		vcn_sparse_add(K, i * 2, j * 2, factor * Kf[c1]);
-		vcn_sparse_add(K, i * 2, j*2+1, factor * Kf[c2]);
-		vcn_sparse_add(K, i*2+1, j * 2, factor * Kf[size + c1]);
-		vcn_sparse_add(K, i*2+1, j*2+1, factor * Kf[size + c2]);
-	}
-	/* Add equations of neighbour */
-	i = ngb_id;
-	for (uint32_t k = 0; k < N_ngb; k++) {
-		uint32_t j = ngb[k];
-		uint8_t c1 = k * 2;
-		uint8_t c2 = k * 2 + 1;
-		vcn_sparse_add(K, i * 2, j * 2, -factor * Kf[c1]);
-		vcn_sparse_add(K, i * 2, j*2+1, -factor * Kf[c2]);
-		vcn_sparse_add(K, i*2+1, j * 2, -factor * Kf[size + c1]);
-		vcn_sparse_add(K, i*2+1, j*2+1, -factor * Kf[size + c2]);
+	for (uint32_t m = 0; m < N_ngb; m++) {
+		uint32_t i = ngb[m];
+		for (uint32_t n = 0; n < N_ngb; n++) {
+			uint32_t j = ngb[n];
+			vcn_sparse_add(K, i * 2, j * 2,
+				       factor * Kf[(2*m)*size + (2*n)]);
+			vcn_sparse_add(K, i * 2, j*2+1,
+				       factor * Kf[(2*m)*size + (2*n+1)]);
+			vcn_sparse_add(K, i*2+1, j * 2,
+				       factor * Kf[(2*m+1)*size + (2*n)]);
+			vcn_sparse_add(K, i*2+1, j*2+1,
+				       factor * Kf[(2*m+1)*size + (2*n+1)]);
+		}
 	}
 }
 
@@ -419,7 +441,9 @@ static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
-	int status = vcn_sparse_solve_using_LU(A, b, x, 1);
+	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
+							1e-8, NULL,
+							NULL, 1);
 	return status;
 }
 
