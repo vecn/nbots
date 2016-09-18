@@ -196,23 +196,23 @@ static void create_face_graph(nb_graph_t *fgraph, const nb_partition_t *part)
 	uint32_t memsize = N * (sizeof(*(fgraph->N_adj)) +
 				sizeof(*(fgraph->adj))) +
 		N_total_adj * sizeof(**(fgraph->adj));
-	char *memblock = nb_malloc(memsize);
+	char *memblock = malloc(memsize);
 	fgraph->N_adj = (void*) memblock;
 	fgraph->adj = (void*) (memblock + N * sizeof(*(fgraph->N_adj)));
 	
 	uint32_t id = 0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	memblock += N * sizeof(*(fgraph->N_adj));
+	memblock += N * (sizeof(*(fgraph->N_adj)) + sizeof(*(fgraph->adj)));
 	for (uint32_t i = 0; i < N_elems; i++) {
 		uint16_t N_adj = nb_partition_elem_get_N_adj(part, i);
 		for (uint32_t j = 0; j < N_adj; j++) {
 			uint32_t ngb_id = nb_partition_elem_get_ngb(part,
 								    i, j);
 			if (i < ngb_id) {
-				uint16_t N_adj = face_get_N_ngb(part, i, j);
-				fgraph->N_adj[id] = N_adj;
+				uint16_t N_ngb = face_get_N_ngb(part, i, j);
+				fgraph->N_adj[id] = N_ngb;
 				fgraph->adj[id] = (void*) memblock;
-				memblock += N_adj * sizeof(**(fgraph->adj));
+				memblock += N_ngb * sizeof(**(fgraph->adj));
 				face_get_neighbourhood(part, i, j,
 						       fgraph->adj[id]);
 				id += 1;
@@ -230,7 +230,7 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 		for (uint32_t j = 0; j < N_adj; j++) {
 			uint32_t ngb_id = nb_partition_elem_get_ngb(part,
 								    i, j);
-			if (i < ngb_id)
+			if (i < ngb_id)/* AQUI VOY: Process boundaries */
 				N += face_get_N_ngb(part, i, j);
 		}
 	}
@@ -352,28 +352,33 @@ static void assemble_face(uint16_t face_id,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D)
 {
-	double D[4];
-	nb_pde_get_constitutive_matrix(D, material, analysis2D);
-
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N = fgraph->N_adj[face_id];
 	uint32_t *adj = fgraph->adj[face_id];
-	uint32_t memsize = 4 * N * sizeof(double);
-	if (ENABLE_LEAST_SQUARES)
-		memsize += POW2(2 * N) * sizeof(double);
-	char* memblock = NB_SOFT_MALLOC(memsize);
-	double *Kf = (void*) memblock;
+	if (adj[1] < N_elems) {
+		double D[4];
+		nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
-	integrate_Kf(part, D, N, adj, QUADRATURE_POINTS, params2D, Kf);
+		uint32_t memsize = 4 * N * sizeof(double);
+		if (ENABLE_LEAST_SQUARES)
+			memsize += POW2(2 * N) * sizeof(double);
 
-	if (ENABLE_LEAST_SQUARES) {
-		double *KTK = (void*) (memblock + 4 * N * sizeof(double));
-		get_KTKf(N, Kf, KTK);
-		add_KTKf_to_K(N, adj, KTK, K);
-	} else {
-		add_Kf_to_K(N, adj, Kf, K);
+		char* memblock = NB_SOFT_MALLOC(memsize);
+		double *Kf = (void*) memblock;
+
+		integrate_Kf(part, D, N, adj, QUADRATURE_POINTS, params2D, Kf);
+
+		if (ENABLE_LEAST_SQUARES) {
+			double *KTK = (void*) 
+				(memblock + 4 * N * sizeof(double));
+			get_KTKf(N, Kf, KTK);
+			add_KTKf_to_K(N, adj, KTK, K);
+		} else {
+			add_Kf_to_K(N, adj, Kf, K);
+		}
+
+		NB_SOFT_FREE(memsize, memblock);
 	}
-
-	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void integrate_Kf(const nb_partition_t *const part,
@@ -387,12 +392,10 @@ static void integrate_Kf(const nb_partition_t *const part,
 	double *wqp = (void*) memblock;
 	double *xqp = (void*) (memblock + N_qp * sizeof(double));
 	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
-	printf(" -- FINDING BUG: 1 %p\n", adj);/* TEMPORAL AQUI VOY */
 
 	double nf[2];
 	uint16_t local_face_id = nb_partition_elem_ngb_get_face(part, adj[0],
 								adj[1]);
-	printf(" -- FINDING BUG: 2\n");/* TEMPORAL */
 	double lf = nb_partition_elem_face_get_normal(part, adj[0],
 						      local_face_id, nf);
 
