@@ -84,7 +84,7 @@ void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
 				     uint32_t **elem_adj);
 
 void nb_partition_load_graph(const nb_partition_t *part,
-			     vcn_graph_t *graph,
+			     nb_graph_t *graph,
 			     nb_partition_graph_type type);
 
 void nb_partition_load_from_mesh(nb_partition_t *part,

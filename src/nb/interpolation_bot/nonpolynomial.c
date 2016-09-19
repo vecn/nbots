@@ -111,12 +111,12 @@ static double get_ri(const double *ri, uint8_t i)
 
 static double func_phi(double x)
 {
-	return sqrt(x);
+	return x;
 }
 
 static double func_deriv_phi(double x)
 {
-	return 0.5 / sqrt(x);
+	return 1;
 }
 
 static void eval_gs(uint8_t N, const double *phis, double c, double *eval)

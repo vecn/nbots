@@ -20,22 +20,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "nb/graph_bot.h"
 
-  /**
-   * @brief LU decomposition.
-   */
-#define NB_SOLVER_LUD (1) 
-
-  /**
-   * @brief Cholesky decomposition.
-   */
-#define NB_SOLVER_CHK (2)
-
-  /**
-   * @brief Conjugate Gradient preconditioned with Jacobi
-   */
-#define NB_SOLVER_CGJ (3)
+typedef enum {
+	NB_SOLVER_LUD,
+	NB_SOLVER_CHK,
+	NB_SOLVER_CGJ
+} nb_solver_t;
 
 
 /**
@@ -50,7 +42,7 @@ typedef struct vcn_sparse_s vcn_sparse_t;
  * @param[in] vars_per_node Variables of the matrix per node in the graph.
  * @return Sparse matrix allocated or NULL if something goes wrong.
  */
-vcn_sparse_t* vcn_sparse_create(const vcn_graph_t *const graph,
+vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const graph,
 				const uint32_t *const perm,
 				uint32_t vars_per_node);
 
@@ -76,6 +68,8 @@ void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
 				double* out, uint32_t omp_parallel_threads);
   
+void nb_sparse_get_graph(const vcn_sparse_t* A, nb_graph_t *graph);
+
 /* Functions to explore sparse matrix */
 int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 			       const char* url, uint32_t size,
@@ -214,7 +208,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t *const A, int h,
 			    double tolerance,
 			    uint32_t omp_parallel_threads);
 int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
-			    int solver_type,
+			    nb_solver_t solver,
 			    int h, double mu,
 			    double **_eigenvecs,/* Out */
 			    double* _eigenvals, /* Out */

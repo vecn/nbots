@@ -14,6 +14,8 @@
 #include "nb/container_bot/array.h"
 #include "nb/eigen_bot/sparse.h"
 
+#include "sparse_struct.h"
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
@@ -32,13 +34,6 @@ static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
 					  int imin, int imax);
 static inline void matrix_r_solver(const double *const A, int n, 
 				   double *d, double *b);
-
-struct vcn_sparse_s {
-	double **rows_values;
-	uint32_t **rows_index;
-	uint32_t *rows_size;
-	uint32_t N;
-};
 
 static inline double get_norm(double* x, uint32_t N)
 {
@@ -72,7 +67,7 @@ static inline vcn_sparse_t* sparse_allocate(uint32_t N)
 	return A;
 }
 
-vcn_sparse_t* vcn_sparse_create(const vcn_graph_t *const restrict graph,
+vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const restrict graph,
 				const uint32_t *const restrict perm,
 				uint32_t vars_per_node)
 {
@@ -2195,7 +2190,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 }
 
 int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
-			    int solver_type,
+			    nb_solver_t solver,
 			    int h, double mu, 
 			    double **_eigenvecs,/* Out */ 
 			    double *_eigenvals, /* Out */
@@ -2229,10 +2224,10 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 	/* LU Decomposition in case of LU Solver */
 	vcn_sparse_t *L = NULL;
 	vcn_sparse_t *U = NULL;
-	if (solver_type == NB_SOLVER_CHK) {
+	if (NB_SOLVER_CHK == solver) {
 		vcn_sparse_alloc_LU(A, &L, &U);
 		vcn_sparse_decompose_Cholesky(A, L, U, omp_parallel_threads);
-	} else if (solver_type == NB_SOLVER_LUD) {
+	} else if (NB_SOLVER_LUD == solver) {
 		vcn_sparse_alloc_LU(A, &L, &U);
 		vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
 	}
@@ -2250,9 +2245,10 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 		double rnorm2_diff = 1;
 		while(rnorm2 > POW2(tolerance) && rnorm2_diff > POW2(tolerance)){
 			/* Step 1 */
-			if (solver_type == NB_SOLVER_CHK || solver_type == NB_SOLVER_LUD)
+			if (NB_SOLVER_CHK == solver ||
+			    NB_SOLVER_LUD == solver)
 				vcn_sparse_solve_LU(L, U, _eigenvecs[i], p);
-			else if (solver_type == NB_SOLVER_CGJ)
+			else if (NB_SOLVER_CGJ == solver)
 				vcn_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p, 
 								   vcn_sparse_get_size(A)*10, 1e-3, 
 								   NULL, NULL,
@@ -2310,7 +2306,7 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 			vcn_sparse_add(A_ptr_copy, c, c, mu);  /* A = M + mu*I */
     
 	/* Destroy LU decomposition */
-	if (solver_type == NB_SOLVER_CHK || solver_type == NB_SOLVER_LUD) {
+	if (NB_SOLVER_CHK == solver || NB_SOLVER_LUD == solver) {
 		vcn_sparse_destroy(U);
 		vcn_sparse_destroy(L);
 	}
@@ -2355,14 +2351,14 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	double normw2 = 1;
 	double delta_eigen = 1;
 
-	while(delta_eigen >= POW2(tolerance) &&
-	      normw2 >= tolerance && *it < A->N){
+	while (delta_eigen >= POW2(tolerance) &&
+	       normw2 >= tolerance && *it < A->N) {
 		/* Step 1 and 2 */
 		double ak = 0;
 #pragma omp parallel for reduction(+:ak) num_threads(omp_parallel_threads) private(i, j)
-		for(i=0; i<A->N; i++){
+		for (i = 0; i < A->N; i++) {
 			w[i] = 0;
-			for(j=0; j<A->rows_size[i]; j++)
+			for (j = 0; j < A->rows_size[i]; j++)
 				w[i] += A->rows_values[i][j]*v[A->rows_index[i][j]];
 			w[i] -= beta[*it]*v_prev[i];
 			ak += w[i]*v[i];
@@ -2371,19 +2367,19 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 		/* Step 3 and 4 */
 		*it = *it+1;
 		normw2 = 0;
-		for(i=0; i < A->N; i++){
+		for (i = 0; i < A->N; i++) {
 			w[i] -= ak*v[i];
 			normw2 += w[i]*w[i];
 		}
 		normw2 = sqrt(normw2);
 		beta[*it] = normw2;
 		/* Step 5 */
-		for(i=0; i < A->N; i++){
+		for (i = 0; i < A->N; i++) {
 			v_prev[i] = v[i];
 			v[i] = w[i]/beta[*it];
 		}
 		/* Step 6 and 7 */
-		if(*it > 1){
+		if (*it > 1) {
 			double delta_eig1 = *_eigenmax;
 			double delta_eigk = *_eigenmin;
 			vcn_sparse_eigen_givens(alpha, beta, 1, _eigenmax, tolerance, *it);
@@ -2391,9 +2387,9 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
       
 			delta_eigen = fabs(delta_eig1-*_eigenmax);
 			double tmp = fabs(delta_eigk-*_eigenmin);
-			if(tmp > delta_eigen)
+			if (tmp > delta_eigen)
 				delta_eigen = tmp;
-		}else{
+		} else {
 			*_eigenmax = ak;
 			*_eigenmin = ak;
 		}
@@ -2433,24 +2429,24 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 	int k = N;
 	double a = main_diag[0]-fabs(uplw_diag[1]);
 	double tmp = main_diag[k-1]-fabs(uplw_diag[k-1]);
-	if(tmp < a)
+	if (tmp < a)
 		a = tmp;
 	double b = main_diag[0]+fabs(uplw_diag[1]);
 	tmp = main_diag[k-1]+fabs(uplw_diag[k-1]);
-	if(tmp > b)
+	if (tmp > b)
 		b = tmp;
-	for(l=1; l<k-1; l++){
+	for (l=1; l<k-1; l++) {
 		tmp = main_diag[l]-
 			fabs(uplw_diag[l+1])-fabs(uplw_diag[l]);
-		if(tmp < a)
+		if (tmp < a)
 			a = tmp;
 		tmp = main_diag[l]+
 			fabs(uplw_diag[l+1])+fabs(uplw_diag[l]);
-		if(tmp > b)
+		if (tmp > b)
 			b = tmp;
 	}
 	/* Init iterations */
-	while(fabs(b-a) > (fabs(a)+fabs(b)) * tolerance){
+	while (fabs(b-a) > (fabs(a)+fabs(b)) * tolerance) {
 		/* Step 1 */
 		*_eigenvalue = (a+b)/2;
 		/* Step 2 */
@@ -2458,19 +2454,19 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 		double s = 0;
 		p[0] = 1;
 		p[1] = main_diag[0] - *_eigenvalue;
-		for(l=1; l<k; l++){
+		for (l = 1; l < k; l++) {
 			p[l+1] = (main_diag[l]-*_eigenvalue)*p[l]-
 				(uplw_diag[l])*(uplw_diag[l])*p[l-1];
 		}
-		for(l=1; l<k+1; l++){
-			if(p[l]*p[l-1] <= 0)
+		for (l=1; l<k+1; l++) {
+			if (p[l]*p[l-1] <= 0)
 				r++;
-			if(p[l] == 0)
+			if (p[l] == 0)
 				s++;
 		}
 		double gamma = r-s;
 		/* Step 3 */
-		if(gamma > k-i)
+		if (gamma > k-i)
 			b = *_eigenvalue;
 		else
 			a = *_eigenvalue;

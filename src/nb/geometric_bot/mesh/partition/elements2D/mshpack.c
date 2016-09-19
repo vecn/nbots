@@ -627,7 +627,7 @@ static void pack_optimize(const vcn_mesh_t *const mesh,
 	}
 
 	/* Allocate Hessian as a sparse matrix */
-	vcn_graph_t graph;
+	nb_graph_t graph;
 	graph.N = pack->N_elems;
 	graph.N_adj = pack->N_ngb;
 	graph.adj = pack->ngb;
@@ -753,7 +753,7 @@ static void pack_optimize(const vcn_mesh_t *const mesh,
 			}
 			vcn_sparse_destroy(Hk);
 			
-			vcn_graph_t graph;
+			nb_graph_t graph;
 			graph.N = pack->N_elems;
 			graph.N_adj = pack->N_ngb;
 			graph.adj = pack->ngb;

@@ -60,7 +60,7 @@ static uint16_t set_elem_by_nod_rounding_adj(nb_graph_t *graph,
 					     uint16_t cnt);
 
 void nb_partition_load_graph(const nb_partition_t *part,
-			     vcn_graph_t *graph,
+			     nb_graph_t *graph,
 			     nb_partition_graph_type type)
 {
 	switch (type) {

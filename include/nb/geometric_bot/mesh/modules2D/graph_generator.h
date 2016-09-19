@@ -8,7 +8,7 @@
  * @param[in] mesh Mesh representing the graph.
  * @return The graph generated from the vertices of the mesh.
  */
-vcn_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const mesh);
+nb_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const mesh);
 
 /**
  * @brief Build a graph from the triangular mesh. Each element of the mesh
@@ -17,6 +17,6 @@ vcn_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const mesh);
  * @param[in] mesh Mesh representing the graph.
  * @return The graph generated from the elements (triangles) of the mesh.
  */
-vcn_graph_t* vcn_mesh_create_elem_graph(const vcn_mesh_t *const mesh);
+nb_graph_t* vcn_mesh_create_elem_graph(const vcn_mesh_t *const mesh);
 
 #endif

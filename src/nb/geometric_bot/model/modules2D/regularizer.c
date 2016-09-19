@@ -23,9 +23,9 @@ int vcn_model_regularize(vcn_model_t* model, double lambda,
 	double* b = calloc(2 * model->N, sizeof(*b));
     
 	/* Allocate sparse matrix */
-	vcn_graph_t *graph = vcn_model_get_vtx_graph(model);
+	nb_graph_t *graph = vcn_model_get_vtx_graph(model);
 	vcn_sparse_t* A = vcn_sparse_create(graph, NULL, 2);
-	vcn_graph_destroy(graph);
+	nb_graph_destroy(graph);
 
 	/* Assembly system */
 	for (uint32_t i = 0; i < model->M; i++) {

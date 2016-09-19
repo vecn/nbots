@@ -281,9 +281,9 @@ uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename)
 	return 0;
 }
 
-vcn_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
+nb_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 {
-	vcn_graph_t *graph = vcn_graph_create();
+	nb_graph_t *graph = nb_graph_create();
   
 	graph->N_adj = calloc(model->N, sizeof(*(graph->N_adj)));
 	graph->adj = malloc(model->N * sizeof(*(graph->adj)));

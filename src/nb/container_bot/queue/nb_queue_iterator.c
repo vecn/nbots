@@ -109,6 +109,6 @@ const void* nb_queue_iter_get_next(void *iter_ptr)
 
 bool nb_queue_iter_has_more(const void *const iter_ptr)
 {
-	const iter_t *const restrict iter = iter_ptr;
+	const iter_t *iter = iter_ptr;
 	return (iter->start != iter->node) || iter->is_init;
 }

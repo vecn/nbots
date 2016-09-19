@@ -532,7 +532,7 @@ void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 		free(matches);
 
 		nb_graph_finish_edge_weights(graph);
-		vcn_graph_destroy(graph);
+		nb_graph_destroy(graph);
 	}
 }
 

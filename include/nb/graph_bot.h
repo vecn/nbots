@@ -10,6 +10,7 @@
 #define __NB_GRAPH_BOT_H__
 
 #include "nb/graph_bot/graph.h"
+#include "nb/graph_bot/labeling/amd.h"
 #include "nb/graph_bot/matching/greedy.h"
 
 #endif

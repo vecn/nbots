@@ -21,8 +21,7 @@
 #include "set_bconditions.h"
 
 #define QUADRATURE_POINTS 2
-#define ALL_NEIGHBOURS true
-#define ENABLE_LEAST_SQUARES false
+#define ENABLE_LEAST_SQUARES true
 
 
 #define POW2(a) ((a)*(a))
@@ -62,6 +61,7 @@ static void assemble_face(uint16_t face_id,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D);
+static bool face_enable_least_squares(uint32_t face_id);
 static void integrate_Kf(const nb_partition_t *const part,
 			 const double D[4], uint16_t N,
 			 const uint32_t *adj, uint8_t N_qp,
@@ -85,6 +85,9 @@ static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
+
+static void vector_permutation(uint32_t N, const double *v,
+			       const uint32_t *perm, double *vp);
 static void compute_strain(double *strain,
 			   const nb_partition_t *const part,
 			   double *disp,
@@ -103,7 +106,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain       /* Output */)
 {
 	int status = 0;
-	vcn_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
 	nb_graph_extend_adj(graph, 1);
@@ -151,10 +154,10 @@ static int assemble_system(vcn_sparse_t *K, double *F,
 			   nb_analysis2D_t analysis2D,
 			   nb_analysis2D_params *params2D)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	vcn_sparse_reset(K);
 	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
 
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++)
 		integrate_elem_force(part, material, enable_self_weight,
 				     gravity, i, F);
@@ -208,7 +211,14 @@ static void create_face_graph(nb_graph_t *fgraph, const nb_partition_t *part)
 		for (uint32_t j = 0; j < N_adj; j++) {
 			uint32_t ngb_id = nb_partition_elem_get_ngb(part,
 								    i, j);
-			if (i < ngb_id) {
+			if (N_elems <= ngb_id) {
+				uint16_t N_ngb = 1;
+				fgraph->N_adj[id] = N_ngb;
+				fgraph->adj[id] = (void*) memblock;
+				memblock += N_ngb * sizeof(**(fgraph->adj));
+				fgraph->adj[id][0] = i;
+				id += 1;
+			} else if (i < ngb_id) {
 				uint16_t N_ngb = face_get_N_ngb(part, i, j);
 				fgraph->N_adj[id] = N_ngb;
 				fgraph->adj[id] = (void*) memblock;
@@ -230,7 +240,9 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 		for (uint32_t j = 0; j < N_adj; j++) {
 			uint32_t ngb_id = nb_partition_elem_get_ngb(part,
 								    i, j);
-			if (i < ngb_id)/* AQUI VOY: Process boundaries */
+			if (N_elems <= ngb_id)
+				N += 1;
+			else if (i < ngb_id)
 				N += face_get_N_ngb(part, i, j);
 		}
 	}
@@ -241,7 +253,8 @@ static uint16_t face_get_N_ngb(const nb_partition_t *part,
 			       uint32_t elem_id, uint16_t face_id)
 {	
 	uint16_t N = 2;
-	if (ALL_NEIGHBOURS) {
+	bool enable_ls = face_enable_least_squares(face_id);
+	if (enable_ls) {
 		N += get_N_ngb_around_right_vtx(part, elem_id, face_id);
 		uint32_t ngb_id = 
 			nb_partition_elem_get_ngb(part, elem_id, face_id);
@@ -296,8 +309,8 @@ static void face_get_neighbourhood(const nb_partition_t *part,
 	ngb[0] = elem_id;
 	ngb[1] = nb_partition_elem_get_ngb(part, elem_id, face_id);
 	uint16_t id = 2;
-
-	if (ALL_NEIGHBOURS) {
+	bool enable_ls = face_enable_least_squares(face_id);
+	if (enable_ls) {
 		id = get_ngb_around_right_vtx(part, ngb, id, ngb[0], face_id);
 		uint16_t aux = nb_partition_elem_ngb_get_face(part, ngb[1],
 							      ngb[0]);
@@ -352,15 +365,16 @@ static void assemble_face(uint16_t face_id,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N = fgraph->N_adj[face_id];
-	uint32_t *adj = fgraph->adj[face_id];
-	if (adj[1] < N_elems) {
+	if (N > 1) {
 		double D[4];
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
+		uint32_t *adj = fgraph->adj[face_id];
 		uint32_t memsize = 4 * N * sizeof(double);
-		if (ENABLE_LEAST_SQUARES)
+
+		bool enable_ls = face_enable_least_squares(face_id);
+		if (enable_ls)
 			memsize += POW2(2 * N) * sizeof(double);
 
 		char* memblock = NB_SOFT_MALLOC(memsize);
@@ -368,7 +382,7 @@ static void assemble_face(uint16_t face_id,
 
 		integrate_Kf(part, D, N, adj, QUADRATURE_POINTS, params2D, Kf);
 
-		if (ENABLE_LEAST_SQUARES) {
+		if (enable_ls) {
 			double *KTK = (void*) 
 				(memblock + 4 * N * sizeof(double));
 			get_KTKf(N, Kf, KTK);
@@ -379,6 +393,11 @@ static void assemble_face(uint16_t face_id,
 
 		NB_SOFT_FREE(memsize, memblock);
 	}
+}
+
+static bool face_enable_least_squares(uint32_t face_id)
+{
+	return ENABLE_LEAST_SQUARES;
 }
 
 static void integrate_Kf(const nb_partition_t *const part,
@@ -489,15 +508,15 @@ static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
 	for (uint32_t m = 0; m < N; m++) {
 		uint32_t i = adj[m];
 		for (uint32_t n = 0; n < N; n++) {
-			uint32_t j = adj[m];
+			uint32_t j = adj[n];
 			vcn_sparse_add(K, i * 2, j * 2,
-				       KTK[(2 * m)*size + (2 * n)]);
+				       2 * KTK[(2 * m)*size + (2 * n)]);
 			vcn_sparse_add(K, i * 2, j*2+1,
-				       KTK[(2 * m)*size + (2*n+1)]);
+				       2 * KTK[(2 * m)*size + (2*n+1)]);
 			vcn_sparse_add(K, i*2+1, j * 2,
-				       KTK[(2*m+1)*size + (2 * n)]);
+				       2 * KTK[(2*m+1)*size + (2 * n)]);
 			vcn_sparse_add(K, i*2+1, j*2+1,
-				       KTK[(2*m+1)*size + (2*n+1)]);
+				       2 * KTK[(2*m+1)*size + (2*n+1)]);
 		}
 	}
 }
@@ -529,16 +548,43 @@ static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x)
 {
-	int status;
-	if (ENABLE_LEAST_SQUARES) {
-		uint32_t N = vcn_sparse_get_size(A);
-		status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
-							    1e-8, NULL,
-							    NULL, 1);
-	} else {
-		status = vcn_sparse_solve_using_LU(A, b, x, 1);
-	}
+	uint32_t N = vcn_sparse_get_size(A);
+	uint16_t grp_size = nb_graph_get_memsize();
+	uint32_t memsize = grp_size +
+		2 * N * (sizeof(uint32_t) + sizeof(double));
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *graph = (void*) memblock;
+	uint32_t *perm = (void*) (memblock + grp_size);
+	uint32_t *iperm = (void*) (memblock + grp_size +
+				   N * sizeof(uint32_t));
+	double *br = (void*) (memblock + grp_size +
+			      2 * N * sizeof(uint32_t));
+	double *xr = (void*) (memblock + grp_size +
+			      2 * N * sizeof(uint32_t) + N * sizeof(double));
+
+	nb_graph_init(graph);
+	nb_sparse_get_graph(A, graph);
+	nb_graph_labeling(graph, perm, iperm, NB_LABELING_AMD);
+
+	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
+	vector_permutation(N, b, perm, br);
+
+	int status = vcn_sparse_solve_Cholesky(Ar, br, xr, 1);
+	if (0 != status)
+		status = vcn_sparse_solve_using_LU(Ar, br, xr, 1);
+
+	vector_permutation(N, xr, iperm, x);
+	
+	nb_graph_finish(graph);
+	NB_SOFT_FREE(memsize, memblock);
 	return status;
+}
+
+static void vector_permutation(uint32_t N, const double *v,
+			       const uint32_t *perm, double *vp)
+{
+	for (uint32_t i = 0; i < N; i++)
+		vp[perm[i]] = v[i];
 }
 
 static void compute_strain(double *strain,
