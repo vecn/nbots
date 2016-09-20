@@ -73,8 +73,8 @@ int vcn_fem_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	pipeline_compute_strain(strain, part, displacement, elemtype,
-				analysis2D, material);
+	pipeline_compute_strain(strain, part, displacement, elemtype);
+
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	NB_SOFT_FREE(F_memsize, F);

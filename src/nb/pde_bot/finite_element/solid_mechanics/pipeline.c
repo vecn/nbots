@@ -41,9 +41,7 @@ static int integrate_elemental_system
 static int get_element_strain(uint32_t id, double *strain,
 			      const nb_partition_t *const part,
 			      double *displacement,
-			      const vcn_fem_elem_t *const elem,
-			      nb_analysis2D_t analysis2D,
-			      const nb_material_t *const material);
+			      const vcn_fem_elem_t *const elem);
 
 int pipeline_assemble_system
 		(vcn_sparse_t* K, double* M, double *F,
@@ -272,9 +270,7 @@ void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
 void pipeline_compute_strain(double *strain,
 			     const nb_partition_t *const part,
 			     double *displacement,
-			     const vcn_fem_elem_t *const elem,
-			     nb_analysis2D_t analysis2D,
-			     const nb_material_t *const material)
+			     const vcn_fem_elem_t *const elem)
 {
 	uint32_t N_elem = nb_partition_get_N_elems(part);
 
@@ -282,16 +278,13 @@ void pipeline_compute_strain(double *strain,
 	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
 
 	for (uint32_t i = 0; i < N_elem; i++)
-		get_element_strain(i, strain, part, displacement,
-				   elem, analysis2D, material);
+		get_element_strain(i, strain, part, displacement, elem);
 }
 
 static int get_element_strain(uint32_t id, double *strain,
 			      const nb_partition_t *const part,
 			      double *displacement,
-			      const vcn_fem_elem_t *const elem,
-			      nb_analysis2D_t analysis2D,
-			      const nb_material_t *const material)
+			      const vcn_fem_elem_t *const elem)
 {
 	int status = 1;
 

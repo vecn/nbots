@@ -37,9 +37,7 @@ void pipeline_set_boundary_conditions(const nb_partition_t *part,
 void pipeline_compute_strain(double *strain,
 			     const nb_partition_t *const part,
 			     double *displacement,
-			     const vcn_fem_elem_t *const elemtype,
-			     nb_analysis2D_t analysis2D,
-			     const nb_material_t *const material);
+			     const vcn_fem_elem_t *const elemtype);
 
 void pipeline_compute_main_stress(double *stress, 
 				  double *main_stress,
