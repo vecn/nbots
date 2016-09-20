@@ -11,6 +11,7 @@
 
 #include "nb/graph_bot/graph.h"
 #include "nb/graph_bot/labeling/amd.h"
+#include "nb/graph_bot/labeling/nested_dissection.h"
 #include "nb/graph_bot/matching/greedy.h"
 
 #endif

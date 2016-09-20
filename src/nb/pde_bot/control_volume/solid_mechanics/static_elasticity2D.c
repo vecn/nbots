@@ -564,7 +564,8 @@ static int solver(const vcn_sparse_t *const A,
 
 	nb_graph_init(graph);
 	nb_sparse_get_graph(A, graph);
-	nb_graph_labeling(graph, perm, iperm, NB_LABELING_AMD);
+	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
+	nb_graph_finish(graph);
 
 	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
 	vector_permutation(N, b, perm, br);
@@ -575,7 +576,6 @@ static int solver(const vcn_sparse_t *const A,
 
 	vector_permutation(N, xr, iperm, x);
 	
-	nb_graph_finish(graph);
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
 }
@@ -584,7 +584,7 @@ static void vector_permutation(uint32_t N, const double *v,
 			       const uint32_t *perm, double *vp)
 {
 	for (uint32_t i = 0; i < N; i++)
-		vp[perm[i]] = v[i];
+		vp[i] = v[perm[i]];
 }
 
 static void compute_strain(double *strain,

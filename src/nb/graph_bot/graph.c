@@ -104,6 +104,9 @@ void nb_graph_labeling(const nb_graph_t *const graph,
 	case NB_LABELING_AMD:
 		nb_graph_labeling_amd(graph, perm, iperm);
 		break;
+	case NB_LABELING_ND:
+		nb_graph_labeling_nd(graph, perm, iperm);
+		break;
 	default:
 		nb_graph_labeling_amd(graph, perm, iperm);
 	}

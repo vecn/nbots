@@ -10,15 +10,15 @@
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
-#include "tiny_libs/stb_image.h"
+#include "imported_libs/stb_image.h"
 
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tiny_libs/stb_image_write.h"
+#include "imported_libs/stb_image_write.h"
 
 #define STB_IMAGE_RESIZE_STATIC
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "tiny_libs/stb_image_resize.h"
+#include "imported_libs/stb_image_resize.h"
 
 #define _LUMA_R_WEIGHT 0.299
 #define _LUMA_G_WEIGHT 0.587

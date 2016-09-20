@@ -18,7 +18,8 @@
 
 typedef enum {
 	NB_LABELING_MMD,
-	NB_LABELING_AMD
+	NB_LABELING_AMD,
+	NB_LABELING_ND
 } nb_labeling_algorithm;
 
 typedef struct {
@@ -60,7 +61,7 @@ nb_graph_t* nb_graph_get_subgraph(const nb_graph_t *const graph,
 				    uint32_t N_nodes, uint32_t *nodes);
 
 void nb_graph_labeling(const nb_graph_t *const graph,
-		       uint32_t *perm, uint32_t* iperm /* Can be NULL */,
+		       uint32_t *perm, uint32_t* iperm,
 		       nb_labeling_algorithm alg);
 
 /**
