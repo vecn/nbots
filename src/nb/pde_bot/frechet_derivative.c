@@ -8,14 +8,14 @@
 
 #define POW2(a) ((a)*(a))
 
-static void calculate_G_and_sum_Ah(uint8_t N, uint8_t dim_x, uint8_t dim_f,
+static void calculate_G_and_sum_Ah(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 				   const double *x, const double *f,
 				   const double *ni, const double *fi,
 				   double *G, double *Ah_sum);
 static double get_normal(uint8_t dim_x, const double *ni,
-			 uint8_t id, const double *x, double *nij);
+			 uint32_t id, const double *x, double *nij);
 static void get_fij(uint8_t dim_f, const double *fi, const double *f,
-		    uint8_t i, double *fij);
+		    uint32_t i, double *fij);
 
 static void sum_G(uint8_t dim_x, const double *nij, double *G);
 static void sum_Ah(uint8_t dim_x, uint8_t dim_f,
@@ -24,7 +24,7 @@ static void sum_Ah(uint8_t dim_x, uint8_t dim_f,
 static void transpose_Df(double *Df, double *Df_aux,
 			 uint8_t dim_x, uint8_t dim_f);
 
-void nb_pde_get_frechet_derivative(uint8_t N, uint8_t dim_x, uint8_t dim_f,
+void nb_pde_get_frechet_derivative(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 				   const double *x, const double *f,
 				   const double *ni, const double *fi,
 				   double *Df)
@@ -54,7 +54,7 @@ void nb_pde_get_frechet_derivative(uint8_t N, uint8_t dim_x, uint8_t dim_f,
 	NB_SOFT_FREE(memsize, memblock);
 }
 
-static void calculate_G_and_sum_Ah(uint8_t N, uint8_t dim_x, uint8_t dim_f,
+static void calculate_G_and_sum_Ah(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 				   const double *x, const double *f,
 				   const double *ni, const double *fi,
 				   double *G, double *Ah_sum)
@@ -66,7 +66,7 @@ static void calculate_G_and_sum_Ah(uint8_t N, uint8_t dim_x, uint8_t dim_f,
 
 	memset(G, 0, POW2(dim_x) * sizeof(*G));
 	memset(Ah_sum, 0, dim_x * dim_f * sizeof(*Ah_sum));
-	for (uint8_t i = 0; i < N; i++) {
+	for (uint32_t i = 0; i < N; i++) {
 		double dist = get_normal(dim_x, ni, i, x, nij);
 		get_fij(dim_f, fi, f, i, fij);
 		sum_G(dim_x, nij, G);
@@ -76,7 +76,7 @@ static void calculate_G_and_sum_Ah(uint8_t N, uint8_t dim_x, uint8_t dim_f,
 }
 
 static double get_normal(uint8_t dim_x, const double *ni,
-			 uint8_t id, const double *x, double *nij)
+			 uint32_t id, const double *x, double *nij)
 {
 	double dist = 0;
 	for (uint8_t d = 0; d < dim_x; d++) {
@@ -90,7 +90,7 @@ static double get_normal(uint8_t dim_x, const double *ni,
 }
 
 static void get_fij(uint8_t dim_f, const double *fi, const double *f,
-		    uint8_t i, double *fij)
+		    uint32_t i, double *fij)
 {
 	for (uint8_t d = 0; d < dim_f; d++)
 		fij[d] = fi[i * dim_f + d] - f[d];

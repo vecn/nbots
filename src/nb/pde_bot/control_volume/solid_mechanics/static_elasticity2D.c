@@ -662,7 +662,7 @@ static void vector_permutation(uint32_t N, const double *v,
 		vp[i] = v[perm[i]];
 }
 
-#include "nb/pde_bot/frechet_derivative.h"
+#include "nb/pde_bot/frechet_derivative.h"/* TEMPORAL */
 static void compute_strain(double *strain,
 			   const nb_graph_t *face_elems_conn,
 			   const nb_graph_t *elem_faces_conn,
@@ -670,24 +670,27 @@ static void compute_strain(double *strain,
 			   double *disp, uint8_t N_qp)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
+	
+	nb_graph_t *graph = alloca(nb_graph_get_memsize());
+	nb_graph_init(graph);
+	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
+	nb_graph_extend_adj(graph, 13);
 
-	double x[2], u[2], xi[60], ui[60];
-	for (uint32_t i = 0; i < N_elems; i++) {
-		uint16_t N_adj = nb_partition_elem_get_N_adj(part, i);
-		uint16_t N = 0;
+	double x[2], u[2], xi[6000], ui[6000];
+	for (uint32_t i = 0; i < graph->N; i++) {
 		x[0] = nb_partition_elem_get_x(part, i);
 		x[1] = nb_partition_elem_get_y(part, i);
 		u[0] = disp[i * 2];
 		u[1] = disp[i*2+1];
+		uint16_t N = 0;
+		uint16_t N_adj = graph->N_adj[i];
 		for (uint16_t j = 0; j < N_adj; j++) {
-			uint32_t ngb = nb_partition_elem_get_ngb(part, i, j);
-			if (ngb < N_elems) {
-				xi[N * 2] = nb_partition_elem_get_x(part, ngb);
-				xi[N*2+1] = nb_partition_elem_get_y(part, ngb);
-				ui[N * 2] = disp[ngb * 2];
-				ui[N*2+1] = disp[ngb*2+1];
-				N += 1;
-			}
+			uint32_t ngb = graph->adj[i][j];
+			xi[N * 2] = nb_partition_elem_get_x(part, ngb);
+			xi[N*2+1] = nb_partition_elem_get_y(part, ngb);
+			ui[N * 2] = disp[ngb * 2];
+			ui[N*2+1] = disp[ngb*2+1];
+			N += 1;
 		}
 		double Du[4];
 		nb_pde_get_frechet_derivative(N, 2, 2, x, u, xi, ui, Du);
@@ -695,6 +698,7 @@ static void compute_strain(double *strain,
 		strain[i*3+1] = Du[3];
 		strain[i*3+2] = Du[1] + Du[2];
 	}
+	nb_graph_finish(graph);
 	return;/* AQUI VOY: Use all sourrounding 
 		  elements (interpolation partners) */
 
@@ -812,7 +816,6 @@ void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double D[4];
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-
 		stress[i * 3] = strain[i * 3] * D[0] +
 			strain[i*3+1] * D[1];
 		stress[i*3+1] = strain[i * 3] * D[1] +

@@ -56,7 +56,8 @@ static int simulate(const char *problem_data,
 static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx);
 
-static void results_init(results_t *results, uint32_t N_nodes, uint32_t N_elems);
+static void results_init(results_t *results, uint32_t N_nodes,
+			 uint32_t N_elems);
 static void results_finish(results_t *results);
 static int read_problem_data
 		(const char* filename,
@@ -78,8 +79,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -95,7 +96,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1500, NB_QUAD,
+	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
@@ -118,7 +119,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1001, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -127,7 +128,6 @@ static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
 	double *vm_stress = malloc(results->N_elems * sizeof(double));
-	double *nodal_values = malloc(results->N_nodes * sizeof(double));
 
 	nb_pde_compute_von_mises(results->N_elems, results->stress, vm_stress);
 
@@ -137,7 +137,6 @@ static void check_plate_with_hole(const void *part,
 	CU_ASSERT(avg_error < 9.7e-3);
 
 	free(vm_stress);
-	free(nodal_values);
 }
 
 static double get_error_avg_pwh(const void *part,
@@ -148,8 +147,7 @@ static double get_error_avg_pwh(const void *part,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double x = nb_partition_elem_get_x(part, i);
 		double y = nb_partition_elem_get_y(part, i);
-		double stress =
-			get_analytic_vm_stress_pwh(x, y);
+		double stress = get_analytic_vm_stress_pwh(x, y);
 		double error;
 		if (fabs(stress) > 1e-10)
 			error = fabs(1.0 - vm_stress[i] / stress);
@@ -246,6 +244,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 		vm_stress[i] = nb_pde_get_vm_stress(results->stress[i * 3],
 						    results->stress[i*3+1],
 						    results->stress[i*3+2]);
+		vm_stress[i] = results->strain[i*3];/* TEMPORAL */
 	}
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);

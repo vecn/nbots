@@ -130,7 +130,6 @@ static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
 	double *vm_stress = malloc(results->N_trg * sizeof(double));
-	double *nodal_values = malloc(results->N_vtx * sizeof(double));
 
 	nb_pde_compute_von_mises(results->N_trg, results->stress, vm_stress);
 
@@ -142,7 +141,6 @@ static void check_plate_with_hole(const void *part,
 	
 	vcn_fem_elem_destroy(elem);
 	free(vm_stress);
-	free(nodal_values);
 }
 
 static double get_error_avg_pwh(const void *part,

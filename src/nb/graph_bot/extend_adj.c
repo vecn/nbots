@@ -208,16 +208,16 @@ static bool node_is_not_connected(nb_container_t **extended_adj /* NULL */,
 				  nb_container_t **new_adj,
 				  uint32_t i, const node_t *node)
 {
-	bool exist = false;
+	void *exist = NULL;
 	if (NULL != extended_adj)
 		exist = nb_container_exist(extended_adj[i], node);
 
-	if (!exist)
+	if (NULL == exist)
 		exist = nb_container_exist(current_adj[i], node);
 
-	if (!exist)
+	if (NULL == exist)
 		exist = nb_container_exist(new_adj[i], node);
-	return !exist;
+	return (NULL == exist);
 }
 
 static void move_adj(uint32_t N, nb_container_t **dest_adj,
@@ -252,8 +252,8 @@ static void extend_adj(const nb_graph_t *graph,
 		nb_container_init(current_adj[i], type);
 		nb_container_set_comparer(current_adj[i], node_comparer);
 
-		new_adj[i] = (void*) memblock;
-		memblock += cnt_size;
+		new_adj[i] = (void*) mem;
+		mem += cnt_size;
 		nb_container_init(new_adj[i], type);
 		nb_container_set_comparer(new_adj[i], node_comparer);
 	}
