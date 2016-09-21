@@ -3,8 +3,6 @@
 
 #include "nb/pde_bot/gauss_legendre_quad.h"
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
 static void set_1_pnt(nb_glquadrature_t *glq);
 static void set_2_pnt(nb_glquadrature_t *glq);
 static void set_3_pnt(nb_glquadrature_t *glq);
@@ -18,7 +16,7 @@ static void set_10_pnt(nb_glquadrature_t *glq);
 
 void nb_glquadrature_load(nb_glquadrature_t *glq, uint8_t N_points)
 {  
-	glq->N = MIN(10, N_points);
+	glq->N = N_points;
 
 	switch (N_points) {
 	case 1:

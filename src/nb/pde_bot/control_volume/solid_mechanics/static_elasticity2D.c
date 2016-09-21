@@ -20,9 +20,9 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 2
+#define QUADRATURE_POINTS 3
 #define ENABLE_PAIR_WISE false
-#define ENABLE_LEAST_SQUARES true
+#define ENABLE_LEAST_SQUARES false
 
 
 #define POW2(a) ((a)*(a))
@@ -68,7 +68,6 @@ static void assemble_face(uint16_t face_id,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
 			  uint8_t N_qp);
-static bool face_enable_least_squares(uint32_t face_id);
 static void integrate_Kf(const nb_partition_t *const part,
 			 const double D[4], uint16_t N,
 			 const uint32_t *adj, uint8_t N_qp,
@@ -85,9 +84,9 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
 				      double Kfi[4]);
-static double get_KTKf(uint16_t N, const double *Kf, double *KTK);
 static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
-			  const double *KTK, vcn_sparse_t *K);
+			  const double *Kf, vcn_sparse_t *K);
+static double get_KTKf(uint16_t N, const double *Kf, double *KTK);
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
@@ -447,32 +446,18 @@ static void assemble_face(uint16_t face_id,
 
 		uint32_t *adj = face_elems_conn->adj[face_id];
 		uint32_t memsize = 4 * N * sizeof(double);
-
-		bool enable_ls = face_enable_least_squares(face_id);
-		if (enable_ls)
-			memsize += POW2(2 * N) * sizeof(double);
-
 		char* memblock = NB_SOFT_MALLOC(memsize);
 		double *Kf = (void*) memblock;
 
 		integrate_Kf(part, D, N, adj, N_qp, params2D, Kf);
 
-		if (enable_ls) {
-			double *KTK = (void*)
-				(memblock + 4 * N * sizeof(double));
-			get_KTKf(N, Kf, KTK);
-			add_KTKf_to_K(N, adj, KTK, K);
-		} else {
+		if (ENABLE_LEAST_SQUARES)
+			add_KTKf_to_K(N, adj, Kf, K);
+		else
 			add_Kf_to_K(N, adj, Kf, K);
-		}
 
 		NB_SOFT_FREE(memsize, memblock);
 	}
-}
-
-static bool face_enable_least_squares(uint32_t face_id)
-{
-	return ENABLE_LEAST_SQUARES;
 }
 
 static void integrate_Kf(const nb_partition_t *const part,
@@ -525,7 +510,7 @@ static void get_quadrature_points(const nb_partition_t *part,
 	nb_glquadrature_load(&glq, N_qp);
 
 	for (uint8_t q = 0; q < N_qp; q++) {
-		wqp[q] = 0.5 * glq.w[q] * lf;
+		wqp[q] = lf * (glq.w[q] / 2.0);
 		double w = (glq.x[q] + 1)/2.0;
 		nb_partition_elem_face_get_midpoint(part, elem_id, face_id,
 						    w, &(xqp[q*2]));
@@ -544,7 +529,7 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
 	}
 
-	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, NULL, x, 0, grad_phi);	
+	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, NULL, x, grad_phi);	
 
 	NB_SOFT_FREE(memsize, ni);
 }
@@ -562,23 +547,14 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
 }
 
-static double get_KTKf(uint16_t N, const double *Kf, double *KTK)
-{
-	for (uint16_t i = 0; i < 2 * N; i++) {
-		for (uint16_t j = 0; j < 2 * N; j++) {
-			double dot = 0;
-			for (uint8_t k = 0; k < 2; k++) {
-				dot += Kf[k * 2 * N + i] *
-					Kf[k * 2 * N + j];
-			}
-			KTK[i * 2 * N + j] = dot;
-		}
-	}
-}
-
 static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
-			  const double *KTK, vcn_sparse_t *K)
+			  const double *Kf, vcn_sparse_t *K)
 {
+	uint32_t memsize = POW2(2 * N) * sizeof(double);
+	char* memblock = NB_SOFT_MALLOC(memsize);
+	double *KTK = (void*) memblock;
+	get_KTKf(N, Kf, KTK);
+
 	uint16_t size = 2 * N;
 	for (uint32_t m = 0; m < N; m++) {
 		uint32_t i = adj[m];
@@ -592,6 +568,21 @@ static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
 				       2 * KTK[(2*m+1)*size + (2 * n)]);
 			vcn_sparse_add(K, i*2+1, j*2+1,
 				       2 * KTK[(2*m+1)*size + (2*n+1)]);
+		}
+	}
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static double get_KTKf(uint16_t N, const double *Kf, double *KTK)
+{
+	for (uint16_t i = 0; i < 2 * N; i++) {
+		for (uint16_t j = 0; j < 2 * N; j++) {
+			double dot = 0;
+			for (uint8_t k = 0; k < 2; k++) {
+				dot += Kf[k * 2 * N + i] *
+					Kf[k * 2 * N + j];
+			}
+			KTK[i * 2 * N + j] = dot;
 		}
 	}
 }
@@ -674,7 +665,7 @@ static void compute_strain(double *strain,
 	nb_graph_t *graph = alloca(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
-	nb_graph_extend_adj(graph, 13);
+	nb_graph_extend_adj(graph, 6);
 
 	double x[2], u[2], xi[6000], ui[6000];
 	for (uint32_t i = 0; i < graph->N; i++) {
@@ -789,7 +780,7 @@ static void get_elem_strain(uint32_t elem_id, const double *fstrain,
 	double x[2];
 	x[0] = nb_partition_elem_get_x(part, elem_id);
 	x[1] = nb_partition_elem_get_y(part, elem_id);
-	nb_nonpolynomial_eval(N, 2, xi, NULL, x, 0, phi);
+	nb_nonpolynomial_eval(N, 2, xi, NULL, x, phi);
 
 	memset(&(strain[elem_id * 3]), 0, 3 * sizeof(*strain));
 	for (uint16_t i = 0; i < N_adj; i++) {

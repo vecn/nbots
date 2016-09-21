@@ -119,7 +119,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 5000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -142,6 +142,7 @@ static void check_plate_with_hole(const void *part,
 static double get_error_avg_pwh(const void *part,
 				const double *vm_stress)
 {
+	FILE *fp = fopen("../../../stress.txt", "w"); /* TEMPORAL */
 	double avg = 0.0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
@@ -154,7 +155,10 @@ static double get_error_avg_pwh(const void *part,
 		else
 			error = fabs(vm_stress[i]);
 		avg += error;
+		fprintf(fp, "%e %e %e\n", vm_stress[i],/* TEMPORAL */
+			stress, error);                /* TEMPORAL */
 	}
+	fclose(fp);                 /* TEMPORAL */
 	return avg /= N_elems;
 }
 
@@ -244,7 +248,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 		vm_stress[i] = nb_pde_get_vm_stress(results->stress[i * 3],
 						    results->stress[i*3+1],
 						    results->stress[i*3+2]);
-		vm_stress[i] = results->strain[i*3];/* TEMPORAL */
+		//vm_stress[i] = results->strain[i*3];/* TEMPORAL */
 	}
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
