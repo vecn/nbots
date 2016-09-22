@@ -20,9 +20,9 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 3
+#define QUADRATURE_POINTS 2
 #define ENABLE_PAIR_WISE false
-#define ENABLE_LEAST_SQUARES false
+#define ENABLE_LEAST_SQUARES true
 
 
 #define POW2(a) ((a)*(a))

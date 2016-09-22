@@ -111,12 +111,12 @@ static double get_ri(const double *ri, uint32_t i)
 
 static double func_phi(double x)
 {
-	return POW2(x);
+	return x * log(x+1);
 }
 
 static double func_deriv_phi(double x)
 {
-	return 2 * x;
+	return log(x+1) + x/(x+1);
 }
 
 static void eval_Pis(uint32_t N, const double *phis, double *eval)

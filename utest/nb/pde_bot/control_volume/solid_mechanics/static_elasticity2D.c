@@ -35,8 +35,7 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const void *part,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *part,
-				const double *vm_stress);
-static double get_analytic_vm_stress_pwh(double x, double y);
+				const double *stress);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part,
 			     nb_bcond_t *bcond);
@@ -96,7 +95,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
@@ -119,7 +118,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 5000, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -127,20 +126,14 @@ static void test_plate_with_hole(void)
 static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
-	double *vm_stress = malloc(results->N_elems * sizeof(double));
-
-	nb_pde_compute_von_mises(results->N_elems, results->stress, vm_stress);
-
-	double avg_error = get_error_avg_pwh(part, vm_stress);
+	double avg_error = get_error_avg_pwh(part, results->stress);
 
 	printf("--- AVG ERROR: %e\n", avg_error); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
-
-	free(vm_stress);
 }
 
 static double get_error_avg_pwh(const void *part,
-				const double *vm_stress)
+				const double *stress)
 {
 	FILE *fp = fopen("../../../stress.txt", "w"); /* TEMPORAL */
 	double avg = 0.0;
@@ -148,25 +141,27 @@ static double get_error_avg_pwh(const void *part,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double x = nb_partition_elem_get_x(part, i);
 		double y = nb_partition_elem_get_y(part, i);
-		double stress = get_analytic_vm_stress_pwh(x, y);
-		double error;
-		if (fabs(stress) > 1e-10)
-			error = fabs(1.0 - vm_stress[i] / stress);
-		else
-			error = fabs(vm_stress[i]);
-		avg += error;
-		fprintf(fp, "%e %e %e\n", vm_stress[i],/* TEMPORAL */
-			stress, error);                /* TEMPORAL */
+		double analytic_stress[3];
+		get_analytic_stress_pwh(x, y, analytic_stress);
+		double error[3];
+		error[0] = fabs(1.0 - stress[i * 3] / analytic_stress[0]);
+		error[1] = fabs(1.0 - stress[i*3+1] / analytic_stress[1]);
+		error[2] = fabs(1.0 - stress[i*3+2] / analytic_stress[2]);
+		fprintf(fp, "%e %e %e\n", error[0],                 /* TEMPORAL */
+			error[1], error[2]);                        /* TEMPORAL */
+		double vm_stress =
+			nb_pde_get_vm_stress(stress[i * 3],
+					     stress[i*3+1],
+					     stress[i*3+2]);
+		double analytic_vm_stress =
+			nb_pde_get_vm_stress(analytic_stress[0],
+					     analytic_stress[1],
+					     analytic_stress[2]);
+		double vm_error = fabs(1.0 - vm_stress / analytic_vm_stress);
+		avg += vm_error;
 	}
 	fclose(fp);                 /* TEMPORAL */
 	return avg /= N_elems;
-}
-
-static double get_analytic_vm_stress_pwh(double x, double y)
-{
-	double stress[3];
-	get_analytic_stress_pwh(x, y, stress);
-	return nb_pde_get_vm_stress(stress[0], stress[1], stress[2]);
 }
 
 static void get_analytic_stress_pwh(double x, double y, double stress[3])
@@ -248,7 +243,6 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 		vm_stress[i] = nb_pde_get_vm_stress(results->stress[i * 3],
 						    results->stress[i*3+1],
 						    results->stress[i*3+2]);
-		//vm_stress[i] = results->strain[i*3];/* TEMPORAL */
 	}
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);

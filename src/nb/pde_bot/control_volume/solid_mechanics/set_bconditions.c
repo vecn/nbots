@@ -14,6 +14,8 @@
 
 #include "set_bconditions.h"
 
+#define POW2(a) ((a)*(a))
+
 static uint32_t **malloc_elem_adj(const nb_partition_t *part);
 static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj);
 static void check_elem_adj(const nb_partition_t *part,
@@ -225,6 +227,9 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 		double val[2];
 		val[0] = 0.5 * (val1[0] + val2[0]) * subsgm_length;
 		val[1] = 0.5 * (val1[1] + val2[1]) * subsgm_length;
+
+		val[0] = POW2(val[0]);
+		val[1] = POW2(val[1]);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};

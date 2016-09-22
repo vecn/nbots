@@ -36,12 +36,11 @@ static void check_plate_with_hole(const void *part,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *part,
 				const vcn_fem_elem_t* elem,
-				const double *vm_stress);
+				const double *stress);
 static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 				 const void *part,
 				 const vcn_fem_elem_t* elem,
 				 double gp[2]);
-static double get_analytic_vm_stress_pwh(double x, double y);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part,
 			     nb_bcond_t *bcond);
@@ -129,23 +128,18 @@ static void test_plate_with_hole(void)
 static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
-	double *vm_stress = malloc(results->N_trg * sizeof(double));
-
-	nb_pde_compute_von_mises(results->N_trg, results->stress, vm_stress);
-
 	vcn_fem_elem_t* elem = vcn_fem_elem_create(NB_TRG_LINEAR);
 
-	double avg_error = get_error_avg_pwh(part, elem, vm_stress);
+	double avg_error = get_error_avg_pwh(part, elem, results->stress);
 
 	CU_ASSERT(avg_error < 9.7e-3);
 	
 	vcn_fem_elem_destroy(elem);
-	free(vm_stress);
 }
 
 static double get_error_avg_pwh(const void *part,
 				const vcn_fem_elem_t* elem,
-				const double *vm_stress)
+				const double *stress)
 {
 	double avg = 0.0;
 	uint32_t N = 0;
@@ -156,14 +150,20 @@ static double get_error_avg_pwh(const void *part,
 		for (int8_t p = 0; p < N_gp; p++) {
 			double gp[2];
 			get_cartesian_gpoint(i, p, part, elem, gp);
-			double gp_stress =
-				get_analytic_vm_stress_pwh(gp[0], gp[1]);
-			double error;
-			if (fabs(gp_stress) > 1e-10)
-				error = fabs(1.0 - vm_stress[i * N_gp + p]/
-					     gp_stress);
-			else
-				error = fabs(vm_stress[i * N_gp + p]);
+			double analytic_stress[3];
+			get_analytic_stress_pwh(gp[0], gp[1], analytic_stress);
+			uint32_t id = i * N_gp + p;
+			double vm_stress =
+			  nb_pde_get_vm_stress(stress[id * 3],
+					       stress[id*3+1],
+					       stress[id*3+2]);
+			double analytic_vm_stress =
+			  nb_pde_get_vm_stress(analytic_stress[0],
+					       analytic_stress[1],
+					       analytic_stress[2]);
+
+			double error = fabs(1.0 - vm_stress /
+					    analytic_vm_stress);
 			avg += error;
 		}
 	}
@@ -184,13 +184,6 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 		gp[0] += Ni * nb_partition_node_get_x(part, vi);
 		gp[1] += Ni * nb_partition_node_get_y(part, vi);
 	}
-}
-
-static double get_analytic_vm_stress_pwh(double x, double y)
-{
-	double stress[3];
-	get_analytic_stress_pwh(x, y, stress);
-	return nb_pde_get_vm_stress(stress[0], stress[1], stress[2]);
 }
 
 static void get_analytic_stress_pwh(double x, double y, double stress[3])
