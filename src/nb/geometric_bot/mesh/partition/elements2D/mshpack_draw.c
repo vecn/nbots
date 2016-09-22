@@ -43,7 +43,7 @@ static void draw_disks(const nb_mshpack_t *mshpack,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double x = nb_mshpack_elem_get_x(mshpack, i);
 		double y = nb_mshpack_elem_get_y(mshpack, i);
-		double r = nb_mshpack_elem_get_radii(mshpack, i);
+		double r = nb_mshpack_elem_get_radius(mshpack, i);
 		nb_graphics_set_circle(g, x, y, r);
 		
 		if (fill_disks) {

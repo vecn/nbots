@@ -41,6 +41,8 @@ uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_get_radius(const nb_partition_t *part, uint32_t id);
+double nb_partition_elem_get_apotem(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_face_get_length(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id);
 void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
@@ -63,7 +65,6 @@ uint16_t nb_partition_elem_ngb_get_face(const nb_partition_t *part,
 uint32_t nb_partition_elem_get_N_adj(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_adj(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t adj_id);
-uint32_t nb_partition_elem_get_N_ngb(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_elem_get_ngb(const nb_partition_t *part,
 				   uint32_t elem_id, uint8_t ngb_id);
 bool nb_partition_elem_has_ngb(const nb_partition_t *part, uint32_t elem_id,

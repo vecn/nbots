@@ -458,6 +458,42 @@ double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
 	return 0.5 * area;
 }
 
+double nb_mshpoly_elem_get_radius(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly = msh;
+	double *x = &(poly->cen[id * 2]);
+	uint32_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
+	double max = 0;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t nid = nb_mshpoly_elem_get_adj(msh, id, i);
+		double *ni = &(poly->nod[nid * 2]);
+		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);	
+}
+
+double nb_mshpoly_elem_get_apotem(const void *msh, uint32_t id)
+{
+	const nb_mshpoly_t *poly = msh;
+	double *x = &(poly->cen[id * 2]);
+	uint32_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
+	double max = 0;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t id1 = nb_mshpoly_elem_get_adj(msh, id, i);
+		uint32_t id2 = nb_mshpoly_elem_get_adj(msh, id, (i+1)%N_adj);
+		double *n1 = &(poly->nod[id1 * 2]);
+		double *n2 = &(poly->nod[id2 * 2]);
+		double closest[2];
+		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);
+}
+
 double nb_mshpoly_elem_face_get_length(const void *msh, 
 				       uint32_t elem_id,
 				       uint16_t face_id)
@@ -534,12 +570,6 @@ uint32_t nb_mshpoly_elem_get_adj(const void *msh,
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->adj[elem_id][adj_id];
-}
-
-uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id)
-{
-	const nb_mshpoly_t *poly = msh;
-	return poly->N_adj[id];
 }
 
 uint32_t nb_mshpoly_elem_get_ngb(const void *msh,

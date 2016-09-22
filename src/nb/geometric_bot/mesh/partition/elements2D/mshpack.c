@@ -155,8 +155,20 @@ double nb_mshpack_elem_get_y(const void *msh, uint32_t id)
 
 double nb_mshpack_elem_get_area(const void *msh, uint32_t id)
 {
-	double r = nb_mshpack_elem_get_radii(msh, id);
+	double r = nb_mshpack_elem_get_radius(msh, id);
 	return NB_PI * POW2(r);
+}
+
+double nb_mshpack_elem_get_radius(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->radii[id];	
+}
+
+double nb_mshpack_elem_get_apotem(const void *msh, uint32_t id)
+{
+	const nb_mshpack_t *pack = msh;
+	return pack->radii[id] * 0.85; /* Approximating hexagonal cell */
 }
 
 double nb_mshpack_elem_face_get_length(const void *msh, 
@@ -164,8 +176,8 @@ double nb_mshpack_elem_face_get_length(const void *msh,
 				       uint16_t face_id)
 {
 	uint32_t nj = nb_mshpack_elem_get_ngb(msh, elem_id, face_id);
-	double ri = nb_mshpack_elem_get_radii(msh, elem_id);
-	double rj = nb_mshpack_elem_get_radii(msh, nj);
+	double ri = nb_mshpack_elem_get_radius(msh, elem_id);
+	double rj = nb_mshpack_elem_get_radius(msh, nj);
 
 	double Ri2 = POW2(ri);
 	double Rj2 = POW2(rj);
@@ -184,8 +196,8 @@ void nb_mshpack_elem_face_get_midpoint(const void *msh,
 				       double w, double midpoint[2])
 {
 	uint32_t nj = nb_mshpack_elem_get_ngb(msh, elem_id, face_id);
-	double ri = nb_mshpack_elem_get_radii(msh, elem_id);
-	double rj = nb_mshpack_elem_get_radii(msh, nj);
+	double ri = nb_mshpack_elem_get_radius(msh, elem_id);
+	double rj = nb_mshpack_elem_get_radius(msh, nj);
 
 	double Ri2 = POW2(ri);
 	double Rj2 = POW2(rj);
@@ -224,15 +236,10 @@ double nb_mshpack_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 	return dist;
 }
 
-double nb_mshpack_elem_get_radii(const void *msh, uint32_t id)
-{
-	const nb_mshpack_t *pack = msh;
-	return pack->radii[id];
-}
-
 uint32_t nb_mshpack_elem_get_N_adj(const void *msh, uint32_t id)
 {
-	return 0;
+	const nb_mshpack_t *pack = msh;
+	return pack->N_ngb[id];
 }
 
 uint32_t nb_mshpack_elem_get_adj(const void *msh,
@@ -240,12 +247,6 @@ uint32_t nb_mshpack_elem_get_adj(const void *msh,
 {
 	const nb_mshpack_t *pack = msh;
 	return pack->N_elems;
-}
-
-uint32_t nb_mshpack_elem_get_N_ngb(const void *msh, uint32_t id)
-{
-	const nb_mshpack_t *pack = msh;
-	return pack->N_ngb[id];
 }
 
 uint32_t nb_mshpack_elem_get_ngb(const void *msh,

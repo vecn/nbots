@@ -54,6 +54,8 @@ struct nb_partition_s {
 	double (*elem_get_x)(const void *msh, uint32_t id);
 	double (*elem_get_y)(const void *msh, uint32_t id);
 	double (*elem_get_area)(const void *msh, uint32_t id);
+	double (*elem_get_radius)(const void *msh, uint32_t id);
+	double (*elem_get_apotem)(const void *msh, uint32_t id);
 	double (*elem_face_get_length)(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
@@ -69,7 +71,6 @@ struct nb_partition_s {
 	uint32_t (*elem_get_N_adj)(const void *msh, uint32_t id);
 	uint32_t (*elem_get_adj)(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id);
-	uint32_t (*elem_get_N_ngb)(const void *msh, uint32_t id);
 	uint32_t (*elem_get_ngb)(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
 	bool (*elem_has_ngb)(const void *msh, uint32_t elem_id,

@@ -521,17 +521,20 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 				    const uint32_t *ngb, const double x[2],
 				    double *grad_phi)
 {	
-	uint32_t memsize = 2 * N_ngb * sizeof(double);
-	double *ni = NB_SOFT_MALLOC(memsize);
+	uint32_t memsize = 3 * N_ngb * sizeof(double);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double *ni = (void*) memblock;
+	double *ri = (void*) (memblock + 2 * N_ngb * sizeof(double));
 
 	for (uint32_t i = 0; i < N_ngb; i++) {
 		ni[i * 2] = nb_partition_elem_get_x(part, ngb[i]);
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
+		ri[i] = nb_partition_elem_get_apotem(part, ngb[i]);
 	}
 
-	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, NULL, x, grad_phi);	
+	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, ri, x, grad_phi);	
 
-	NB_SOFT_FREE(memsize, ni);
+	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void get_Kf_nodal_contribution(const nb_partition_t *part,

@@ -372,6 +372,46 @@ double nb_mshquad_elem_get_area(const void *msh, uint32_t id)
 	return area;
 }
 
+double nb_mshquad_elem_get_radius(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *quad = msh;
+	double x[2];
+	x[0] = nb_mshquad_elem_get_x(msh, id);
+	x[1] = nb_mshquad_elem_get_y(msh, id);
+	uint32_t N_adj = nb_mshquad_elem_get_N_adj(msh, id);
+	double max = 0;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t nid = nb_mshquad_elem_get_adj(msh, id, i);
+		double *ni = &(quad->nod[nid * 2]);
+		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);	
+}
+
+double nb_mshquad_elem_get_apotem(const void *msh, uint32_t id)
+{
+	const nb_mshquad_t *quad = msh;
+	double x[2];
+	x[0] = nb_mshquad_elem_get_x(msh, id);
+	x[1] = nb_mshquad_elem_get_y(msh, id);
+	uint32_t N_adj = nb_mshquad_elem_get_N_adj(msh, id);
+	double max = 0;
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t id1 = nb_mshquad_elem_get_adj(msh, id, i);
+		uint32_t id2 = nb_mshquad_elem_get_adj(msh, id, (i+1)%N_adj);
+		double *n1 = &(quad->nod[id1 * 2]);
+		double *n2 = &(quad->nod[id2 * 2]);
+		double closest[2];
+		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);
+}
+
 double nb_mshquad_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id)
@@ -462,16 +502,6 @@ uint32_t nb_mshquad_elem_get_adj(const void *msh, uint32_t elem_id,
 {
 	const nb_mshquad_t *mshquad = msh;
 	return mshquad->adj[elem_id * 4 + adj_id];
-}
-
-uint32_t nb_mshquad_elem_get_N_ngb(const void *msh, uint32_t id)
-{
-	uint32_t out;
-	if (nb_mshquad_elem_is_quad(msh, id))
-		out = 4;
-	else
-		out = 3;
-	return out;
 }
 
 uint32_t nb_mshquad_elem_get_ngb(const void *msh,

@@ -33,6 +33,8 @@ uint32_t nb_mshpoly_edge_get_2n(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_x(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_y(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_area(const void *msh, uint32_t id);
+double nb_mshpoly_elem_get_radius(const void *msh, uint32_t id);
+double nb_mshpoly_elem_get_apotem(const void *msh, uint32_t id);
 double nb_mshpoly_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
@@ -50,7 +52,6 @@ double nb_mshpoly_elem_ngb_get_normal(const void *msh,
 uint32_t nb_mshpoly_elem_get_N_adj(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_elem_get_adj(const void *msh,
 				 uint32_t elem_id, uint8_t adj_id);
-uint32_t nb_mshpoly_elem_get_N_ngb(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
 bool nb_mshpoly_elem_has_ngb(const void *msh, uint32_t elem_id,

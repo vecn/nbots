@@ -284,6 +284,45 @@ double nb_msh3trg_elem_get_area(const void *msh, uint32_t id)
 	return vcn_utils2D_get_trg_area(t1, t2, t3);
 }
 
+double nb_msh3trg_elem_get_radius(const void *msh, uint32_t id)
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	double x[2];
+	x[0] = nb_msh3trg_elem_get_x(msh, id);
+	x[1] = nb_msh3trg_elem_get_y(msh, id);
+	double max = 0;
+	for (uint8_t i = 0; i < 3; i++) {
+		uint32_t nid = nb_msh3trg_elem_get_adj(msh, id, i);
+		double *ni = &(msh3trg->nod[nid * 2]);
+		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);	
+}
+
+double nb_msh3trg_elem_get_apotem(const void *msh, uint32_t id)
+{
+	const nb_msh3trg_t *msh3trg = msh;
+	double x[2];
+	x[0] = nb_msh3trg_elem_get_x(msh, id);
+	x[1] = nb_msh3trg_elem_get_y(msh, id);
+	double max = 0;
+	for (uint16_t i = 0; i < 3; i++) {
+		uint32_t id1 = nb_msh3trg_elem_get_adj(msh, id, i);
+		uint32_t id2 = nb_msh3trg_elem_get_adj(msh, id, (i+1) % 3);
+		double *n1 = &(msh3trg->nod[id1 * 2]);
+		double *n2 = &(msh3trg->nod[id2 * 2]);
+		double closest[2];
+		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		if (dist2 > max)
+			max = dist2;
+	}
+	return sqrt(max);
+}
+
+
 double nb_msh3trg_elem_face_get_length(const void *msh, 
 				       uint32_t elem_id,
 				       uint16_t face_id)
@@ -357,11 +396,6 @@ uint32_t nb_msh3trg_elem_get_adj(const void *msh,
 {
 	const nb_msh3trg_t *msh3trg = msh;
 	return msh3trg->adj[elem_id * 3 + adj_id];
-}
-
-uint32_t nb_msh3trg_elem_get_N_ngb(const void *msh, uint32_t id)
-{
-	return 3;
 }
 uint32_t nb_msh3trg_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id)
