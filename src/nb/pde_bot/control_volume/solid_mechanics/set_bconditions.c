@@ -9,6 +9,9 @@
 #include "nb/memory_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot.h"
+#include "nb/pde_bot/material.h"
+#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
+#include "nb/pde_bot/common_solid_mechanics/formulas.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
@@ -27,27 +30,51 @@ static bool face_is_the_same(uint32_t n1, uint32_t n2,
 			     uint32_t s1, uint32_t s2);
 static void free_elem_adj(uint32_t **elem_adj);
 static void set_neumann_sgm(const nb_partition_t *part,
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D,
 			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
 static void set_neumann_sgm_function(const nb_partition_t *part,
+				     const nb_material_t *material,
+				     nb_analysis2D_t analysis2D,
 				     uint32_t **elem_adj,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor);
+static uint16_t get_face_id(const nb_partition_t *part, uint32_t elem_id,
+			    uint32_t v1, uint32_t v2);
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
+				       const nb_material_t *material,
+				       nb_analysis2D_t analysis2D,
 				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
-static void set_neumann(uint8_t N_dof, double* F, double factor,
-			double val[2], bool mask[2],
-			uint32_t elem_id);
+static void set_neumann(const nb_partition_t *part,
+			const nb_material_t *material,
+			nb_analysis2D_t analysis2D,
+			uint32_t elem_id, uint16_t face_id,
+			uint8_t N_dof, double* F, double factor,
+			double val[2], bool mask[2]);
+static void get_KTK_force(const nb_partition_t *part,
+			  const nb_material_t *material,
+			  nb_analysis2D_t analysis2D,
+			  uint32_t elem_id, uint16_t face_id,
+			  double val[2]);
+static void get_bc_strain(const nb_partition_t *part,
+			  uint32_t elem_id, const double D[4],
+			  const double nf[2], const double f[2],
+			  double strain[3]);
 static void set_neumann_vtx(const nb_partition_t *part,
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D,
 			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
 static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
+					   const nb_material_t *material,
+					   nb_analysis2D_t analysis2D,
 					   uint32_t **elem_adj,
 					   double* F, uint8_t N_dof,
 					   double factor, double val[2],
@@ -77,6 +104,8 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 
 
 void nb_cvfa_set_bconditions(const nb_partition_t *part,
+			     const nb_material_t *material,
+			     nb_analysis2D_t analysis2D,
 			     vcn_sparse_t* K, double* F,
 			     const nb_bcond_t *bcond,
 			     double factor)
@@ -88,8 +117,10 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 	uint32_t **elem_adj = malloc_elem_adj(part);
 	get_elem_adj(part, elem_adj);
 
-	set_neumann_sgm(part, elem_adj, F, bcond, factor);
-	set_neumann_vtx(part, elem_adj, F, bcond, factor);
+	set_neumann_sgm(part, material, analysis2D,
+			elem_adj, F, bcond, factor);
+	set_neumann_vtx(part, material, analysis2D,
+			elem_adj, F, bcond, factor);
 	set_dirichlet_sgm(part, elem_adj, bcond, factor, numeric_bcond);
 	set_dirichlet_vtx(part, elem_adj, bcond, factor, numeric_bcond);
 
@@ -173,6 +204,8 @@ static inline void free_elem_adj(uint32_t **elem_adj)
 }
 
 static void set_neumann_sgm(const nb_partition_t *part,
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D,
 			    uint32_t **elem_adj,  double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
@@ -187,16 +220,20 @@ static void set_neumann_sgm(const nb_partition_t *part,
 		nb_bcond_iter_go_next(iter);
 		
 		if (nb_bcond_iter_val_is_function(iter))
-			set_neumann_sgm_function(part, elem_adj, F,
-						 N_dof, iter, factor);
+			set_neumann_sgm_function(part, material, analysis2D,
+						 elem_adj, F, N_dof, iter,
+						 factor);
 		else
-			set_neumann_sgm_integrated(part, elem_adj, F,
-						   N_dof, iter, factor);
+			set_neumann_sgm_integrated(part, material, analysis2D,
+						   elem_adj, F, N_dof, iter,
+						   factor);
 	}
 	nb_bcond_iter_finish(iter);
 }
 
 static void set_neumann_sgm_function(const nb_partition_t *part,
+				     const nb_material_t *material,
+				     nb_analysis2D_t analysis2D,
 				     uint32_t **elem_adj,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
@@ -233,14 +270,35 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 		uint32_t elem_id = elem_adj[sgm_id][i];
 
-		set_neumann(N_dof, F, factor, val, mask, elem_id);
+		uint16_t face_id = get_face_id(part, elem_id, v1_id, v2_id);
+		set_neumann(part, material, analysis2D, elem_id, face_id,
+			    N_dof, F, factor, val, mask);
 
 		v1_id = v2_id;
 		memcpy(val1, val2, N_dof * sizeof(double));
 	}
 }
 
+static uint16_t get_face_id(const nb_partition_t *part, uint32_t elem_id,
+			    uint32_t v1, uint32_t v2)
+{
+	uint16_t face_id = 0;
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	for (uint16_t i = 0; i < N_adj; i++) {
+		uint32_t id1 = nb_partition_elem_get_adj(part, elem_id, i);
+		uint32_t id2 = nb_partition_elem_get_adj(part, elem_id,
+							(i + 1) % N_adj);
+		if ((v1 == id1 && v2 == id2) || (v1 == id2 && v2 == id1)) {
+			face_id = i;
+			break;
+		}			
+	}
+	return face_id;
+}
+
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
+				       const nb_material_t *material,
+				       nb_analysis2D_t analysis2D,
 				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
@@ -263,14 +321,24 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
-		set_neumann(N_dof, F, factor * w, val, mask, elem_id);
+
+		uint32_t v1 = nb_partition_insgm_get_node(part, model_id, i);
+		uint32_t v2 = nb_partition_insgm_get_node(part, model_id,
+							  i + 1);
+		uint16_t face_id = get_face_id(part, elem_id, v1, v2);
+		set_neumann(part, material, analysis2D, elem_id, face_id,
+			    N_dof, F, factor, val, mask);
 	}
 }
 
-static void set_neumann(uint8_t N_dof, double* F, double factor,
-			double val[2], bool mask[2],
-			uint32_t elem_id)
+static void set_neumann(const nb_partition_t *part,
+			const nb_material_t *material,
+			nb_analysis2D_t analysis2D,
+			uint32_t elem_id, uint16_t face_id,
+			uint8_t N_dof, double* F, double factor,
+			double val[2], bool mask[2])
 {
+	get_KTK_force(part, material, analysis2D, elem_id, face_id, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
 		if (mask[j]) {
 			uint32_t mtx_id = elem_id * N_dof + j;
@@ -279,7 +347,83 @@ static void set_neumann(uint8_t N_dof, double* F, double factor,
 	}
 }
 
+static void get_KTK_force(const nb_partition_t *part,
+			  const nb_material_t *material,
+			  nb_analysis2D_t analysis2D,
+			  uint32_t elem_id, uint16_t face_id,
+			  double val[2])
+{
+	double nf[2];
+	double lf = nb_partition_elem_face_get_normal(part, elem_id,
+						      face_id, nf);
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
+	double strain[3];
+	get_bc_strain(part, elem_id, D, nf, val, strain);
+	
+	double Du[4];
+	Du[0] = strain[0];
+	Du[1] = 0.5 * strain[2];
+	Du[2] = 0.5 * strain[2];
+	Du[3] = strain[1];
+
+	double Kf[4];
+	Kf[0] = nf[0] * D[0] * Du[0] + nf[1] * D[3] * Du[1];
+	Kf[1] = nf[0] * D[1] * Du[3] + nf[1] * D[3] * Du[2];
+	Kf[2] = nf[1] * D[1] * Du[0] + nf[0] * D[3] * Du[1];
+	Kf[3] = nf[1] * D[2] * Du[3] + nf[0] * D[3] * Du[2];
+
+	double KTK[4];
+	KTK[0] = Kf[0] * Kf[0] + Kf[1] * Kf[2];
+	KTK[1] = Kf[0] * Kf[1] + Kf[1] * Kf[3];
+	KTK[2] = Kf[2] * Kf[0] + Kf[3] * Kf[2];
+	KTK[3] = Kf[2] * Kf[1] + Kf[3] * Kf[3];
+
+	if (fabs(val[0] - (Kf[0] + Kf[1])) > 1e-6 || /* TEMPORAL */
+	    fabs(val[1] - (Kf[2] + Kf[3])) > 1e-6)   /* TEMPORAL */
+		printf("========== ");         /* TEMPORAL */
+	else                                  /* TEMPORAL */
+		printf("-- ");                /* TEMPORAL */
+	printf("FORCE %i->%i (%.2f, %.2f): (%.3e, %.3e) = (%.3e, %.3e)"\
+	       ":: (%.3e, %.3e)\n", /* TEMPORAL */
+	       elem_id, face_id, nf[0], nf[1], val[0], val[1], /* TEMPORAL */
+	       Kf[0] + Kf[1], Kf[2] + Kf[3],                      /* TEMPORAL */
+	       KTK[0] + KTK[1], KTK[2] + KTK[3]);                 /* TEMPORAL */
+
+	val[0] = KTK[0] + KTK[1];
+	val[1] = KTK[2] + KTK[3];
+}
+
+static void get_bc_strain(const nb_partition_t *part,
+			  uint32_t elem_id, const double D[4],
+			  const double nf[2], const double f[2],
+			  double strain[3])
+{
+	double A[9];
+	A[0] = nf[0] * D[0];
+	A[1] = nf[0] * D[1];
+	A[2] = nf[1] * D[3];
+
+	A[3] = nf[1] * D[1];
+	A[4] = nf[1] * D[2];
+	A[5] = nf[0] * D[3];
+
+	A[6] = 1;
+	A[7] = 1;
+	A[8] = 2;
+
+	vcn_matrix_3X3_inverse_destructive(A);
+
+	double fxy = 1;/* AQUI VOY */
+	strain[0] = A[0] * f[0] + A[1] * f[1] + A[2] * fxy;
+	strain[1] = A[3] * f[0] + A[4] * f[1] + A[5] * fxy;
+	strain[2] = A[6] * f[0] + A[7] * f[1] + A[8] * fxy;
+}
+
 static void set_neumann_vtx(const nb_partition_t *part,
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D,
 			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
@@ -307,11 +451,13 @@ static void set_neumann_vtx(const nb_partition_t *part,
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
 
-		set_neumann_subsgm_adj_to_node(part, elem_adj, F, N_dof,
+		set_neumann_subsgm_adj_to_node(part, material, analysis2D,
+					       elem_adj, F, N_dof,
 					       factor, val, mask,
 					       subsgm_id[0], subsgm_id[1]);
 
-		set_neumann_subsgm_adj_to_node(part, elem_adj, F, N_dof,
+		set_neumann_subsgm_adj_to_node(part, material, analysis2D,
+					       elem_adj, F, N_dof,
 					       factor, val, mask,
 					       subsgm_id[2], subsgm_id[3]);
 	}
@@ -319,6 +465,8 @@ static void set_neumann_vtx(const nb_partition_t *part,
 }
 
 static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
+					   const nb_material_t *material,
+					   nb_analysis2D_t analysis2D,
 					   uint32_t **elem_adj,
 					   double* F, uint8_t N_dof,
 					   double factor, double val[2],
@@ -327,10 +475,15 @@ static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
 {
 	double subsgm_length =
 		nb_partition_insgm_subsgm_get_length(part, sgm_id, subsgm_id);
-	uint32_t elem_id = elem_adj[sgm_id][subsgm_id];
 	double integral_factor = 0.5 * subsgm_length;
-	set_neumann(N_dof, F, factor * integral_factor,
-		    val, mask, elem_id);
+	uint32_t elem_id = elem_adj[sgm_id][subsgm_id];
+	uint32_t v1 = nb_partition_insgm_get_node(part, sgm_id,
+						  subsgm_id);
+	uint32_t v2 = nb_partition_insgm_get_node(part, sgm_id,
+						  subsgm_id + 1);
+	uint16_t face_id = get_face_id(part, elem_id, v1, v2);
+	set_neumann(part, material, analysis2D, elem_id, face_id,
+		    N_dof, F, factor * integral_factor, val, mask);
 }
 
 static void get_subsgm_adj_to_node(const nb_partition_t *part, uint32_t node_id,
