@@ -20,9 +20,9 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 2
+#define QUADRATURE_POINTS 3
 #define ENABLE_PAIR_WISE false
-#define ENABLE_LEAST_SQUARES true
+#define ENABLE_LEAST_SQUARES false
 
 
 #define POW2(a) ((a)*(a))
@@ -160,8 +160,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
-	nb_cvfa_set_bconditions(part, material, analysis2D,
-				K, F, bcond, 1.0);
+	nb_cvfa_set_bconditions(part, K, F, bcond, 1.0);
 
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
@@ -565,13 +564,13 @@ static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
 		for (uint32_t n = 0; n < N; n++) {
 			uint32_t j = adj[n];
 			vcn_sparse_add(K, i * 2, j * 2,
-				       2 * KTK[(2 * m)*size + (2 * n)]);
+				       KTK[(2 * m)*size + (2 * n)]);
 			vcn_sparse_add(K, i * 2, j*2+1,
-				       2 * KTK[(2 * m)*size + (2*n+1)]);
+				       KTK[(2 * m)*size + (2*n+1)]);
 			vcn_sparse_add(K, i*2+1, j * 2,
-				       2 * KTK[(2*m+1)*size + (2 * n)]);
+				       KTK[(2*m+1)*size + (2 * n)]);
 			vcn_sparse_add(K, i*2+1, j*2+1,
-				       2 * KTK[(2*m+1)*size + (2*n+1)]);
+				       KTK[(2*m+1)*size + (2*n+1)]);
 		}
 	}
 	NB_SOFT_FREE(memsize, memblock);
@@ -582,9 +581,13 @@ static double get_KTKf(uint16_t N, const double *Kf, double *KTK)
 	for (uint16_t i = 0; i < 2 * N; i++) {
 		for (uint16_t j = 0; j < 2 * N; j++) {
 			double dot = 0;
-			for (uint8_t k = 0; k < 2; k++) {
-				dot += Kf[k * 2 * N + i] *
-					Kf[k * 2 * N + j];
+			for (uint8_t k = 0; k < 4; k++) {
+				uint8_t l = k % 2;
+				/* Negative sign of the second pair of
+				   equations is ignored because it is 
+				   squared. */
+				dot += Kf[l * 2 * N + i] *
+					Kf[l * 2 * N + j];
 			}
 			KTK[i * 2 * N + j] = dot;
 		}

@@ -388,9 +388,9 @@ uint32_t vcn_utils2D_get_closest_vtx_not_ignored
 }
 
 void vcn_utils2D_get_closest_pnt_to_sgm(const double s1[2],
-				     const double s2[2],
-				     const double p[2],
-				     double closest_point[2])
+					const double s2[2],
+					const double p[2],
+					double closest_point[2])
 {
 	const double u =
 		((p[0]-s1[0])*(s2[0]-s1[0]) + (p[1]-s1[1])*(s2[1]-s1[1]))/

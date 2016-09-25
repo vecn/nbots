@@ -147,8 +147,8 @@ static double get_error_avg_pwh(const void *part,
 		error[0] = fabs(1.0 - stress[i * 3] / analytic_stress[0]);
 		error[1] = fabs(1.0 - stress[i*3+1] / analytic_stress[1]);
 		error[2] = fabs(1.0 - stress[i*3+2] / analytic_stress[2]);
-		fprintf(fp, "%e %e %e\n", error[0],                 /* TEMPORAL */
-			error[1], error[2]);                        /* TEMPORAL */
+		fprintf(fp, "%e %e %e\n", error[0],         /* TEMPORAL */
+			error[1], error[2]);                /* TEMPORAL */
 		double vm_stress =
 			nb_pde_get_vm_stress(stress[i * 3],
 					     stress[i*3+1],

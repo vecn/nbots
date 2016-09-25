@@ -6,8 +6,6 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
 void nb_cvfa_set_bconditions(const nb_partition_t *part,
-			     const nb_material_t *material,
-			     nb_analysis2D_t analysis2D,
 			     vcn_sparse_t* K, double* F, 
 			     const nb_bcond_t *const bcond,
 			     double factor);
