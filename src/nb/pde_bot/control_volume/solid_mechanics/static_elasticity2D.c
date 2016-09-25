@@ -20,23 +20,18 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 3
-#define ENABLE_PAIR_WISE false
+#define QUADRATURE_POINTS 2
+#define ENABLE_NEIGHBOURHOOD true
 #define ENABLE_LEAST_SQUARES false
-
 
 #define POW2(a) ((a)*(a))
 
-static int assemble_system(vcn_sparse_t *K, double *F,
-			   const nb_partition_t *const part,
-			   const nb_graph_t *face_elems_conn,
-			   const nb_material_t *material,
-			   bool enable_self_weight,
-			   double gravity[2],
-			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D,
-			   uint8_t N_qp);
-
+static uint32_t get_cvfa_memsize(uint32_t N_elems);
+static void distribute_cvfa_memory(char *memblock,
+				   uint32_t N_elems, double **F,
+				   nb_graph_t **face_elems_conn,
+				   nb_graph_t **elem_faces_conn);
+static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K);
 static void integrate_elem_force(const nb_partition_t *part,
 				 const nb_material_t *material,
 				 bool enable_self_weight,
@@ -60,8 +55,20 @@ static void face_get_neighbourhood(const nb_partition_t *part,
 static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 					 uint32_t *ngb, uint16_t current_id,
 					 uint32_t elem_id, uint16_t face_id);
+static void assemble_global_forces(double *F,
+				   const nb_partition_t *const part,
+				   const nb_material_t *material,
+				   bool enable_self_weight,
+				   double gravity[2]);
+static void assemble_global_stiffness(vcn_sparse_t *K,
+				      const nb_partition_t *const part,
+				      const nb_graph_t *face_elems_conn,
+				      const nb_material_t *material,
+				      nb_analysis2D_t analysis2D,
+				      nb_analysis2D_params *params2D,
+				      uint8_t N_qp);
 static void assemble_face(uint16_t face_id,
-			  vcn_sparse_t *K, double *F,
+			  vcn_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
@@ -84,6 +91,9 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
 				      double Kfi[4]);
+static void add_Kf_to_KTK(uint16_t N, uint32_t *adj,
+			  const double *Kf, vcn_sparse_t *K);
+static void get_KTK(uint16_t N, const double *Kf, double *KTK);
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
@@ -118,27 +128,18 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain       /* Output */)
 {
 	int status = 0;
-	uint8_t N_qp = QUADRATURE_POINTS;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	uint32_t graph_size = nb_graph_get_memsize();
-	uint32_t system_size = 2 * N_elems * sizeof(double);
-	uint32_t memsize = 3 * graph_size + system_size;
+	uint32_t memsize = get_cvfa_memsize(N_elems);
 	char *memblock = NB_SOFT_MALLOC(memsize);
+	double *F;
+	nb_graph_t *face_elems_conn, *elem_faces_conn;
+	distribute_cvfa_memory(memblock, N_elems, &F,
+			       &face_elems_conn, &elem_faces_conn);
 
-	double* F = (void*) memblock;
-	nb_graph_t *graph = (void*) (memblock + system_size);
-	nb_graph_t *face_elems_conn = (void*)
-		(memblock + graph_size + system_size);
-	nb_graph_t *elem_faces_conn = (void*)
-		(memblock + 2 * graph_size + system_size);
+	vcn_sparse_t *K;
+	init_global_matrix(part, &K);
 
-	nb_graph_init(graph);
-	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
-	nb_graph_extend_adj(graph, 1);
-	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
-	nb_graph_finish(graph);
-
-	memset(F, 0, system_size);
+	memset(F, 0, 2 * N_elems);
 
 	nb_graph_init(face_elems_conn);
 	load_face_elems_conn(face_elems_conn, part);
@@ -146,25 +147,21 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_graph_init(elem_faces_conn);
 	load_elem_faces_conn(elem_faces_conn, face_elems_conn, part);
 
-	int status_assemble = assemble_system(K, F, part, face_elems_conn,
-					      material, enable_self_weight,
-					      gravity, analysis2D, params2D,
-					      N_qp);
+	assemble_global_forces(F, part, material, enable_self_weight,
+			       gravity);
 
-
-	if (0 != status_assemble) {
-		status = 1;
-		goto CLEANUP_LINEAR_SYSTEM;
-	}
-
+	uint8_t N_qp = QUADRATURE_POINTS;
+	assemble_global_stiffness(K, part, face_elems_conn, material,
+				  analysis2D, params2D, N_qp);
+	
 	nb_cvfa_set_bconditions(part, K, F, bcond, 1.0);
 
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
-		status = 2;
+		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
-	
+
 	compute_strain(strain, face_elems_conn, elem_faces_conn,
 		       part, displacement, N_qp);
 
@@ -177,43 +174,50 @@ CLEANUP_LINEAR_SYSTEM:
 	return status;
 }
 
-static int assemble_system(vcn_sparse_t *K, double *F,
-			   const nb_partition_t *const part,
-			   const nb_graph_t *face_elems_conn,
-			   const nb_material_t *material,
-			   bool enable_self_weight,
-			   double gravity[2],
-			   nb_analysis2D_t analysis2D,
-			   nb_analysis2D_params *params2D,
-			   uint8_t N_qp)
+static uint32_t get_cvfa_memsize(uint32_t N_elems)
 {
-	vcn_sparse_reset(K);
-	memset(F, 0, vcn_sparse_get_size(K) * sizeof(*F));
-
-	uint32_t N_elems = nb_partition_get_N_elems(part);
-	for (uint32_t i = 0; i < N_elems; i++)
-		integrate_elem_force(part, material, enable_self_weight,
-				     gravity, i, F);
-
-	for (uint32_t i = 0; i < face_elems_conn->N; i++)
-		assemble_face(i, K, F, part, face_elems_conn, material,
-			      analysis2D, params2D, N_qp);
-
-	return 0;
+	uint32_t graph_size = nb_graph_get_memsize();
+	uint32_t system_size = 2 * N_elems * sizeof(double);
+	return 2 * graph_size + system_size;
 }
 
-static void integrate_elem_force(const nb_partition_t *part,
-				 const nb_material_t *material,
-				 bool enable_self_weight,
-				 double gravity[2],
-				 uint32_t elem_id,
-				 double *F)
+static void distribute_cvfa_memory(char *memblock,
+				   uint32_t N_elems, double **F,
+				   nb_graph_t **face_elems_conn,
+				   nb_graph_t **elem_faces_conn)
 {
-	if (enable_self_weight) {
-		double area = nb_partition_elem_get_area(part, elem_id);
-		double mass = area * nb_material_get_density(material);
-		F[elem_id * 2] += mass * gravity[0];
-		F[elem_id*2+1] += mass * gravity[1];
+	uint32_t graph_size = nb_graph_get_memsize();
+	uint32_t system_size = 2 * N_elems * sizeof(double);
+	*F = (void*) memblock;
+	*face_elems_conn = (void*) (memblock + system_size);
+	*elem_faces_conn = (void*) (memblock + graph_size + system_size);
+}
+
+static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K)
+{
+	uint32_t memsize = nb_graph_get_memsize();
+	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
+
+	nb_graph_init(graph);
+	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
+	nb_graph_extend_adj(graph, 1);
+	*K = vcn_sparse_create(graph, NULL, 2);
+	nb_graph_finish(graph);
+
+	NB_SOFT_FREE(memsize, graph);
+}
+
+static void assemble_global_forces(double *F,
+				   const nb_partition_t *const part,
+				   const nb_material_t *material,
+				   bool enable_self_weight,
+				   double gravity[2])
+{
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+	memset(F, 0, N_elems * 2 * sizeof(*F));
+	for (uint32_t i = 0; i < N_elems; i++) {
+		integrate_elem_force(part, material, enable_self_weight,
+				     gravity, i, F);
 	}
 }
 
@@ -325,7 +329,7 @@ static uint16_t face_get_N_ngb(const nb_partition_t *part,
 			       uint32_t elem_id, uint16_t face_id)
 {	
 	uint16_t N = 2;
-	if (!ENABLE_PAIR_WISE) {
+	if (ENABLE_NEIGHBOURHOOD) {
 		N += get_N_ngb_around_right_vtx(part, elem_id, face_id);
 		uint32_t ngb_id = 
 			nb_partition_elem_get_ngb(part, elem_id, face_id);
@@ -379,7 +383,7 @@ static void face_get_neighbourhood(const nb_partition_t *part,
 {
 	ngb[0] = elem_id;
 	ngb[1] = nb_partition_elem_get_ngb(part, elem_id, face_id);
-	if (!ENABLE_PAIR_WISE) {
+	if (ENABLE_NEIGHBOURHOOD) {
 		uint16_t id = 2;
 		id = get_ngb_around_right_vtx(part, ngb, id, ngb[0], face_id);
 		uint16_t aux = nb_partition_elem_ngb_get_face(part, ngb[1],
@@ -427,8 +431,40 @@ static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 	return current_id;
 }
 
+
+static void integrate_elem_force(const nb_partition_t *part,
+				 const nb_material_t *material,
+				 bool enable_self_weight,
+				 double gravity[2],
+				 uint32_t elem_id,
+				 double *F)
+{
+	if (enable_self_weight) {
+		double area = nb_partition_elem_get_area(part, elem_id);
+		double mass = area * nb_material_get_density(material);
+		F[elem_id * 2] += mass * gravity[0];
+		F[elem_id*2+1] += mass * gravity[1];
+	}
+}
+
+static void assemble_global_stiffness(vcn_sparse_t *K,
+				      const nb_partition_t *const part,
+				      const nb_graph_t *face_elems_conn,
+				      const nb_material_t *material,
+				      nb_analysis2D_t analysis2D,
+				      nb_analysis2D_params *params2D,
+				      uint8_t N_qp)
+{
+	vcn_sparse_reset(K);
+	for (uint32_t i = 0; i < face_elems_conn->N; i++) {
+		assemble_face(i, K, part, face_elems_conn,
+			      material, analysis2D, params2D,
+			      N_qp);
+	}
+}
+
 static void assemble_face(uint16_t face_id,
-			  vcn_sparse_t *K, double *F,
+			  vcn_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
@@ -448,7 +484,10 @@ static void assemble_face(uint16_t face_id,
 
 		integrate_Kf(part, D, N, adj, N_qp, params2D, Kf);
 
-		add_Kf_to_K(N, adj, Kf, K);
+		if (ENABLE_LEAST_SQUARES)
+			add_Kf_to_KTK(N, adj, Kf, K);
+		else
+			add_Kf_to_K(N, adj, Kf, K);
 
 		NB_SOFT_FREE(memsize, memblock);
 	}
@@ -542,6 +581,73 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 	Kfi[1] = nf[0] * D[1] * dphi_dy + nf[1] * D[3] * dphi_dx;
 	Kfi[2] = nf[1] * D[1] * dphi_dx + nf[0] * D[3] * dphi_dy;
 	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
+}
+
+static void add_Kf_to_KTK(uint16_t N, uint32_t *adj,
+			  const double *Kf, vcn_sparse_t *K)
+{
+	double KKT[16];
+	get_KTK(N, Kf, KKT);
+	
+	uint16_t size = 2 * N;
+	
+	for (uint8_t k = 0; k < 2; k++) {
+		uint32_t i = adj[k];
+		for (uint8_t l = 0; l < 2; l++) {
+			uint32_t j = adj[l];
+			vcn_sparse_add(K, i * 2, j * 2,
+				       KKT[(k * 2)*4+(l * 2)]);
+			vcn_sparse_add(K, i * 2, j*2+1,
+				       KKT[(k * 2)*4+(l*2+1)]);
+			vcn_sparse_add(K, i*2+1, j * 2,
+				       KKT[(k*2+1)*4+(l * 2)]);
+			vcn_sparse_add(K, i*2+1, j*2+1,
+				       KKT[(k*2+1)*4+(l*2+1)]);
+		}
+	}
+}
+
+static void get_KTK(uint16_t N, const double *Kf, double KKT[16])
+{
+	uint32_t size = 2 * N;
+	for (uint8_t i = 0; i < 4; i++) {
+		uint8_t id1 = i % 2;
+		int s1 = (i/2 == 0)?(1):(-1);
+		for (uint8_t j = 0; j < 4; j++) {
+			uint8_t id2 = j % 2;
+			int s2 = (j/2 == 0)?(1):(-1);
+
+			double dot = 0;
+			for (uint8_t k = 0; k < size; k++)
+				dot += s1 * Kf[id1 * size + k] *
+					s2 * Kf[id2 * size + k];
+			KKT[i*4+j] = dot;
+		}
+	}
+}
+
+static void add_Kf_to_KT(uint16_t N, uint32_t *adj,
+			  const double *Kf, vcn_sparse_t *K)
+{
+	uint16_t size = 2 * N;
+	
+	uint32_t i = adj[0];
+	for (uint32_t m = 0; m < N; m++) {
+		uint32_t j = adj[m];
+		vcn_sparse_add(K, j * 2, i * 2, -Kf[m * 2]);
+		vcn_sparse_add(K, j * 2, i*2+1, -Kf[m*2+1]);
+		vcn_sparse_add(K, j*2+1, i * 2, -Kf[size + m * 2]);
+		vcn_sparse_add(K, j*2+1, i*2+1, -Kf[size + m*2+1]);
+	}
+
+	i = adj[1];
+	for (uint32_t m = 0; m < N; m++) {
+		uint32_t j = adj[m];
+		vcn_sparse_add(K, j * 2, i * 2, Kf[m * 2]);
+		vcn_sparse_add(K, j * 2, i*2+1, Kf[m*2+1]);
+		vcn_sparse_add(K, j*2+1, i * 2, Kf[size + m * 2]);
+		vcn_sparse_add(K, j*2+1, i*2+1, Kf[size + m*2+1]);
+	}
 }
 
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
