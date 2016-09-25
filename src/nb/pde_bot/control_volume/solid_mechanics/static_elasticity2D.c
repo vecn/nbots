@@ -84,9 +84,6 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
 				      double Kfi[4]);
-static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
-			  const double *Kf, vcn_sparse_t *K);
-static double get_KTKf(uint16_t N, const double *Kf, double *KTK);
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
@@ -451,10 +448,7 @@ static void assemble_face(uint16_t face_id,
 
 		integrate_Kf(part, D, N, adj, N_qp, params2D, Kf);
 
-		if (ENABLE_LEAST_SQUARES)
-			add_KTKf_to_K(N, adj, Kf, K);
-		else
-			add_Kf_to_K(N, adj, Kf, K);
+		add_Kf_to_K(N, adj, Kf, K);
 
 		NB_SOFT_FREE(memsize, memblock);
 	}
@@ -548,50 +542,6 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 	Kfi[1] = nf[0] * D[1] * dphi_dy + nf[1] * D[3] * dphi_dx;
 	Kfi[2] = nf[1] * D[1] * dphi_dx + nf[0] * D[3] * dphi_dy;
 	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
-}
-
-static void add_KTKf_to_K(uint16_t N, uint32_t *adj,
-			  const double *Kf, vcn_sparse_t *K)
-{
-	uint32_t memsize = POW2(2 * N) * sizeof(double);
-	char* memblock = NB_SOFT_MALLOC(memsize);
-	double *KTK = (void*) memblock;
-	get_KTKf(N, Kf, KTK);
-
-	uint16_t size = 2 * N;
-	for (uint32_t m = 0; m < N; m++) {
-		uint32_t i = adj[m];
-		for (uint32_t n = 0; n < N; n++) {
-			uint32_t j = adj[n];
-			vcn_sparse_add(K, i * 2, j * 2,
-				       KTK[(2 * m)*size + (2 * n)]);
-			vcn_sparse_add(K, i * 2, j*2+1,
-				       KTK[(2 * m)*size + (2*n+1)]);
-			vcn_sparse_add(K, i*2+1, j * 2,
-				       KTK[(2*m+1)*size + (2 * n)]);
-			vcn_sparse_add(K, i*2+1, j*2+1,
-				       KTK[(2*m+1)*size + (2*n+1)]);
-		}
-	}
-	NB_SOFT_FREE(memsize, memblock);
-}
-
-static double get_KTKf(uint16_t N, const double *Kf, double *KTK)
-{
-	for (uint16_t i = 0; i < 2 * N; i++) {
-		for (uint16_t j = 0; j < 2 * N; j++) {
-			double dot = 0;
-			for (uint8_t k = 0; k < 4; k++) {
-				uint8_t l = k % 2;
-				/* Negative sign of the second pair of
-				   equations is ignored because it is 
-				   squared. */
-				dot += Kf[l * 2 * N + i] *
-					Kf[l * 2 * N + j];
-			}
-			KTK[i * 2 * N + j] = dot;
-		}
-	}
 }
 
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
