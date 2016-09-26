@@ -18,7 +18,6 @@
 #include "set_bconditions.h"
 
 #define POW2(a) ((a)*(a))
-#define MAX_MAGNITUDE(a,b) ((fabs(a)>fabs(b))?(a):(b))
 
 static uint32_t **malloc_elem_adj(const nb_partition_t *part);
 static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj);
@@ -51,6 +50,11 @@ static void get_differentials_from_normal_force(const double D[4],
 						const double nf[2],
 						const double f[2],
 						double diff[2]);
+static void get_best_balanced_diff_ratio(const double D[4],
+					 const double nf[2],
+					 const double f[2],
+					 double strain[3],
+					 double diff[2]);
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
@@ -264,7 +268,7 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 		double D[4];
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-		get_LS_force(D, nf, val);
+		//get_LS_force(D, nf, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
@@ -305,8 +309,8 @@ static void get_LS_force(const double D[4], const double nf[2],
 	Kf[2] = diff[0] * nf[1] * D[1] + diff[1] * nf[0] * D[3];
 	Kf[3] = diff[1] * nf[1] * D[2] + diff[0] * nf[0] * D[3];
 
-	double fx = -f[0];/* Original equation sign */
-	double fy = -f[1];
+	double fx = f[0];
+	double fy = f[1];
 	f[0] = Kf[0] * fx + Kf[2] * fy;
 	f[1] = Kf[1] * fx + Kf[3] * fy;
 }
@@ -335,7 +339,16 @@ static void get_differentials_from_normal_force(const double D[4],
 	s[1] = nf[0] * D[1] * lambda[0] + nf[1] * D[2] * lambda[1];
 	s[2] = nf[1] * D[3] * lambda[0] + nf[0] * D[3] * lambda[1];
 
-	double ineq = POW2(s[2]) - 4 * s[0] * s[1];
+	get_best_balanced_diff_ratio(D, nf, f, s, diff);
+}
+
+static void get_best_balanced_diff_ratio(const double D[4],
+					 const double nf[2],
+					 const double f[2],
+					 double strain[3],
+					 double diff[2])
+{
+	double ineq = POW2(strain[2]) - 4 * strain[0] * strain[1];
 	while (ineq < 0.0) {
 		double B[9];
 		B[0] = nf[0] * D[0];
@@ -344,36 +357,28 @@ static void get_differentials_from_normal_force(const double D[4],
 		B[3] = nf[1] * D[1];
 		B[4] = nf[1] * D[2];
 		B[5] = nf[0] * D[3];
-		B[6] = - 2 * s[1];
-		B[7] = - 2 * s[0];
-		B[8] = s[2];
+		B[6] = - 2 * strain[1];
+		B[7] = - 2 * strain[0];
+		B[8] = strain[2];
 
 		vcn_matrix_3X3_inverse_destructive(B);
 
-		s[0] = B[0] * f[0] + B[1] * f[0];
-		s[1] = B[3] * f[0] + B[4] * f[0];
-		s[2] = B[6] * f[0] + B[7] * f[0];
+		strain[0] = B[0] * f[0] + B[1] * f[0];
+		strain[1] = B[3] * f[0] + B[4] * f[0];
+		strain[2] = B[6] * f[0] + B[7] * f[0];
 
-		ineq = POW2(s[2]) - 4 * s[0] * s[1];
+		ineq = POW2(strain[2]) - 4 * strain[0] * strain[1];
 	}
 	double sq = sqrt(ineq);
-	double div = MAX_MAGNITUDE(s[2] - sq, s[2] + sq);
-	double c = div / (2 * s[1]);
+	double c1 = (strain[2] - sq) / (2 * strain[1]);
+	double c2 = (strain[2] + sq) / (2 * strain[1]);
 
-	diff[0] = div;/* AQUI VOY */
-	diff[1] = diff[0] / c;
+	double c = (POW2(1-1/c1) < POW2(1-1/c2))?c1:c2;
 
-	double u = s[0] / diff[0];
-	double v = s[1] / diff[1];
-	double sx = diff[0] * u;
-	double sy = diff[1] * v;
-	double sxy = diff[1] * u + diff[0] * v;
-	double e1 = (s[0] - sx)/s[0];
-	double e2 = (s[1] - sy)/s[1];
-	double e3 = (s[2] - sxy)/s[2];
-	if (fabs(e1) > 1e-8 || fabs(e2) > 1e-8 || fabs(e3) > 1e-8)/* TEMPORAL */
-		printf("-- STRAIN[%e, %e]: (%e, %e, %e)\n",/* TEMPORAL */
-		       ineq, c, e1, e2, e3);/* TEMPORAL */
+	double cx = POW2(nf[0]);
+	double cy = POW2(nf[1]);
+	diff[0] = cx + c * cy;
+	diff[1] = cx / c + cy;
 }
 
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
