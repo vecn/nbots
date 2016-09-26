@@ -20,9 +20,9 @@
 
 #include "set_bconditions.h"
 
-#define QUADRATURE_POINTS 2
+#define QUADRATURE_POINTS 3
 #define ENABLE_NEIGHBOURHOOD true
-#define ENABLE_LEAST_SQUARES false
+#define ENABLE_LEAST_SQUARES true
 
 #define POW2(a) ((a)*(a))
 
@@ -75,6 +75,13 @@ static void assemble_face(uint16_t face_id,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
 			  uint8_t N_qp);
+static void assemble_internal_face(uint16_t face_id,
+				   vcn_sparse_t *K,
+				   const nb_partition_t *const part,
+				   const nb_graph_t *face_elems_conn,
+				   const double D[4],
+				   nb_analysis2D_params *params2D,
+				   uint8_t N_qp);
 static void integrate_Kf(const nb_partition_t *const part,
 			 const double D[4], uint16_t N,
 			 const uint32_t *adj, uint8_t N_qp,
@@ -154,7 +161,8 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	assemble_global_stiffness(K, part, face_elems_conn, material,
 				  analysis2D, params2D, N_qp);
 	
-	nb_cvfa_set_bconditions(part, K, F, bcond, 1.0);
+	nb_cvfa_set_bconditions(part, material, analysis2D, 
+				K, F, bcond, 1.0);
 
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
@@ -472,25 +480,38 @@ static void assemble_face(uint16_t face_id,
 			  nb_analysis2D_params *params2D,
 			  uint8_t N_qp)
 {
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
 	uint16_t N = face_elems_conn->N_adj[face_id];
-	if (N > 1) {
-		double D[4];
-		nb_pde_get_constitutive_matrix(D, material, analysis2D);
+	if (N > 1)
+		assemble_internal_face(face_id, K, part, face_elems_conn,
+				       D, params2D, N_qp);
+}
 
-		uint32_t *adj = face_elems_conn->adj[face_id];
-		uint32_t memsize = 4 * N * sizeof(double);
-		char* memblock = NB_SOFT_MALLOC(memsize);
-		double *Kf = (void*) memblock;
+static void assemble_internal_face(uint16_t face_id,
+				   vcn_sparse_t *K,
+				   const nb_partition_t *const part,
+				   const nb_graph_t *face_elems_conn,
+				   const double D[4],
+				   nb_analysis2D_params *params2D,
+				   uint8_t N_qp)
+{
+	uint16_t N = face_elems_conn->N_adj[face_id];
+	uint32_t *adj = face_elems_conn->adj[face_id];
 
-		integrate_Kf(part, D, N, adj, N_qp, params2D, Kf);
+	uint32_t memsize = 4 * N * sizeof(double);
+	char* memblock = NB_SOFT_MALLOC(memsize);
+	double *Kf = (void*) memblock;
 
-		if (ENABLE_LEAST_SQUARES)
-			add_Kf_to_KTK(N, adj, Kf, K);
-		else
-			add_Kf_to_K(N, adj, Kf, K);
+	integrate_Kf(part, D, N, adj, N_qp, params2D, Kf);
 
-		NB_SOFT_FREE(memsize, memblock);
-	}
+	if (ENABLE_LEAST_SQUARES)
+		add_Kf_to_KTK(N, adj, Kf, K);
+	else
+		add_Kf_to_K(N, adj, Kf, K);
+
+	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void integrate_Kf(const nb_partition_t *const part,
@@ -586,75 +607,51 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 static void add_Kf_to_KTK(uint16_t N, uint32_t *adj,
 			  const double *Kf, vcn_sparse_t *K)
 {
-	double KKT[16];
-	get_KTK(N, Kf, KKT);
+	uint32_t memsize = POW2(2 * N) * sizeof(double);
+	double *KTK = NB_SOFT_MALLOC(memsize);
+	get_KTK(N, Kf, KTK);
 	
 	uint16_t size = 2 * N;
-	
-	for (uint8_t k = 0; k < 2; k++) {
-		uint32_t i = adj[k];
-		for (uint8_t l = 0; l < 2; l++) {
-			uint32_t j = adj[l];
+	for (uint32_t m = 0; m < N; m++) {
+		uint32_t i = adj[m];
+		for (uint32_t n = 0; n < N; n++) {
+			uint32_t j = adj[n];
 			vcn_sparse_add(K, i * 2, j * 2,
-				       KKT[(k * 2)*4+(l * 2)]);
+				       KTK[(2 * m)*size + (2 * n)]);
 			vcn_sparse_add(K, i * 2, j*2+1,
-				       KKT[(k * 2)*4+(l*2+1)]);
+				       KTK[(2 * m)*size + (2*n+1)]);
 			vcn_sparse_add(K, i*2+1, j * 2,
-				       KKT[(k*2+1)*4+(l * 2)]);
+				       KTK[(2*m+1)*size + (2 * n)]);
 			vcn_sparse_add(K, i*2+1, j*2+1,
-				       KKT[(k*2+1)*4+(l*2+1)]);
+				       KTK[(2*m+1)*size + (2*n+1)]);
 		}
 	}
+	NB_SOFT_FREE(memsize, KTK);
 }
 
-static void get_KTK(uint16_t N, const double *Kf, double KKT[16])
-{
-	uint32_t size = 2 * N;
-	for (uint8_t i = 0; i < 4; i++) {
-		uint8_t id1 = i % 2;
-		int s1 = (i/2 == 0)?(1):(-1);
-		for (uint8_t j = 0; j < 4; j++) {
-			uint8_t id2 = j % 2;
-			int s2 = (j/2 == 0)?(1):(-1);
-
-			double dot = 0;
-			for (uint8_t k = 0; k < size; k++)
-				dot += s1 * Kf[id1 * size + k] *
-					s2 * Kf[id2 * size + k];
-			KKT[i*4+j] = dot;
-		}
-	}
-}
-
-static void add_Kf_to_KT(uint16_t N, uint32_t *adj,
-			  const double *Kf, vcn_sparse_t *K)
+static void get_KTK(uint16_t N, const double *Kf, double *KTK)
 {
 	uint16_t size = 2 * N;
-	
-	uint32_t i = adj[0];
-	for (uint32_t m = 0; m < N; m++) {
-		uint32_t j = adj[m];
-		vcn_sparse_add(K, j * 2, i * 2, -Kf[m * 2]);
-		vcn_sparse_add(K, j * 2, i*2+1, -Kf[m*2+1]);
-		vcn_sparse_add(K, j*2+1, i * 2, -Kf[size + m * 2]);
-		vcn_sparse_add(K, j*2+1, i*2+1, -Kf[size + m*2+1]);
-	}
-
-	i = adj[1];
-	for (uint32_t m = 0; m < N; m++) {
-		uint32_t j = adj[m];
-		vcn_sparse_add(K, j * 2, i * 2, Kf[m * 2]);
-		vcn_sparse_add(K, j * 2, i*2+1, Kf[m*2+1]);
-		vcn_sparse_add(K, j*2+1, i * 2, Kf[size + m * 2]);
-		vcn_sparse_add(K, j*2+1, i*2+1, Kf[size + m*2+1]);
+	for (uint16_t i = 0; i < size; i++) {
+		for (uint16_t j = 0; j < size; j++) {
+			double dot = 0;
+			for (uint8_t k = 0; k < 4; k++) {
+				uint8_t l = k % 2;
+				/* Negative sign of the second pair of
+				   equations is ignored because it is 
+				   squared. */
+				dot += Kf[l * size + i] *
+					Kf[l * size + j];
+			}
+			KTK[i * 2 * N + j] = dot;
+		}
 	}
 }
 
 static void add_Kf_to_K(uint16_t N, uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K)
 {
-	uint16_t size = 2 * N;
-	
+	uint16_t size = 2 * N;	
 	uint32_t i = adj[0];
 	for (uint32_t m = 0; m < N; m++) {
 		uint32_t j = adj[m];
@@ -699,8 +696,10 @@ static int solver(const vcn_sparse_t *const A,
 	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
 	vector_permutation(N, b, perm, br);
 
-	int status = vcn_sparse_solve_Cholesky(Ar, br, xr, 1);
-	if (0 != status)
+	int status;
+	if (ENABLE_LEAST_SQUARES)
+		status = vcn_sparse_solve_Cholesky(Ar, br, xr, 1);
+	else
 		status = vcn_sparse_solve_using_LU(Ar, br, xr, 1);
 
 	vector_permutation(N, xr, iperm, x);
