@@ -30,20 +30,19 @@ double nb_mshpoly_node_get_x(const void *msh, uint32_t id);
 double nb_mshpoly_node_get_y(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_edge_get_1n(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_edge_get_2n(const void *msh, uint32_t id);
+void nb_mshpoly_edge_get_midpoint(const void *msh,
+				  uint32_t face_id, double w,
+				  double midpoint[2]);
 double nb_mshpoly_elem_get_x(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_y(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_area(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_radius(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_apotem(const void *msh, uint32_t id);
+uint32_t nb_mshpoly_elem_find_edge(const void *msh, uint32_t id,
+				   uint16_t local_face_id);
 double nb_mshpoly_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id);
-void nb_mshpoly_elem_face_get_midpoint(const void *msh,
-				       uint32_t elem_id, uint16_t face_id,
-				       double w, double midpoint[2]);
-void nb_mshpoly_elem_face_get_midpoint(const void *msh,
-				       uint32_t elem_id, uint16_t face_id,
-				       double w, double midpoint[2]);
 double nb_mshpoly_elem_face_get_normal(const void *msh, uint32_t elem_id,
 				       uint16_t face_id, double normal[2]);
 double nb_mshpoly_elem_ngb_get_normal(const void *msh,

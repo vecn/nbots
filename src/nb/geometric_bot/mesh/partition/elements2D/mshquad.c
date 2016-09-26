@@ -309,6 +309,22 @@ uint32_t nb_mshquad_edge_get_2n(const void *msh, uint32_t id)
 	return mshquad->edg[id*2+1];
 }
 
+void nb_mshquad_edge_get_midpoint(const void *msh,
+				  uint32_t face_id,
+				  double w, double midpoint[2])
+{
+	const nb_mshquad_t *mshquad = msh;
+
+	uint32_t v1 = nb_mshquad_edge_get_1n(msh, face_id);
+	uint32_t v2 = nb_mshquad_edge_get_2n(msh, face_id);
+
+	double *s1 = &(mshquad->nod[v1 * 2]);
+	double *s2 = &(mshquad->nod[v2 * 2]);
+
+	midpoint[0] = (1 - w) * s1[0] + w * s2[0];
+	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
+}
+
 double nb_mshquad_elem_get_x(const void *msh, uint32_t id)
 {
 	uint32_t idx = nb_mshquad_elem_get_adj(msh, id, 0);
@@ -412,6 +428,31 @@ double nb_mshquad_elem_get_apotem(const void *msh, uint32_t id)
 	return sqrt(max);
 }
 
+uint32_t nb_mshquad_elem_find_edge(const void *msh, uint32_t id,
+				   uint16_t local_face_id)
+{
+	const nb_mshquad_t *quad = msh;
+	uint16_t N_adj = nb_mshquad_elem_get_N_adj(msh, id);
+
+	uint16_t l1 = local_face_id;
+	uint16_t l2 = (local_face_id + 1) % N_adj;
+
+	uint32_t n1 = quad->adj[id*4+l1];
+	uint32_t n2 = quad->adj[id*4+l2];
+
+	uint32_t N_edges = quad->N_edg;
+	uint32_t edge_id = N_edges;
+	for (uint32_t i = 0; i < N_edges; i++) {
+		uint32_t v1 = quad->edg[i * 2];
+		uint32_t v2 = quad->edg[i*2+1];
+		if ((n1 == v1 && n2 == v2) || (n1 == v2 && n2 == v1)) {
+			edge_id = i;
+			break;
+		}
+	}
+	return edge_id;
+}
+
 double nb_mshquad_elem_face_get_length(const void *msh,
 				       uint32_t elem_id,
 				       uint16_t face_id)
@@ -427,24 +468,6 @@ double nb_mshquad_elem_face_get_length(const void *msh,
 	double *n2 = &(mshquad->nod[v2 * 2]);
 
 	return vcn_utils2D_get_dist(n1, n2);	
-}
-
-void nb_mshquad_elem_face_get_midpoint(const void *msh,
-				       uint32_t elem_id, uint16_t face_id,
-				       double w, double midpoint[2])
-{
-	const nb_mshquad_t *mshquad = msh;
-
-	uint16_t N_adj = nb_mshquad_elem_get_N_adj(msh, elem_id);
-	uint32_t v1 = nb_mshquad_elem_get_adj(msh, elem_id, face_id);
-	uint32_t v2 = nb_mshquad_elem_get_adj(msh, elem_id,
-					      (face_id + 1) % N_adj);
-
-	double *s1 = &(mshquad->nod[v1 * 2]);
-	double *s2 = &(mshquad->nod[v2 * 2]);
-
-	midpoint[0] = (1 - w) * s1[0] + w * s2[0];
-	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
 }
 
 double nb_mshquad_elem_face_get_normal(const void *msh, uint32_t elem_id,

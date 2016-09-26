@@ -141,6 +141,30 @@ uint32_t nb_mshpack_edge_get_2n(const void *msh, uint32_t id)
 	return pack->N_elems;
 }
 
+void nb_mshpack_edge_get_midpoint(const void *msh,
+				  uint32_t face_id,
+				  double w, double midpoint[2])
+{
+	uint32_t elem_i = 0;/* TEMPORAL */
+	uint32_t elem_j = 0;/* TEMPORAL */
+	/*
+	double ri = nb_mshpack_elem_get_radius(msh, elem_i);
+	double rj = nb_mshpack_elem_get_radius(msh, elem_j);
+
+	double Ri2 = POW2(ri);
+	double Rj2 = POW2(rj);
+	double Qij2 = POW2(Ri2 - Rj2);
+
+	const nb_mshpack_t *pack = msh;
+	double *c1 = &(pack->cen[elem_id * 2]);
+	double *c2 = &(pack->cen[nj * 2]);
+	double dij2 = vcn_utils2D_get_dist2(c1, c2);
+
+	midpoint[0] = c1[0] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[0] - c1[0]);
+	midpoint[1] = c1[1] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[1] - c1[1]);
+	*/
+}
+
 double nb_mshpack_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
@@ -171,6 +195,12 @@ double nb_mshpack_elem_get_apotem(const void *msh, uint32_t id)
 	return pack->radii[id] * 0.85; /* Approximating hexagonal cell */
 }
 
+uint32_t nb_mshpack_elem_find_edge(const void *msh, uint32_t id,
+				   uint16_t local_face_id)
+{
+	return 0; /* PENDING */
+}
+
 double nb_mshpack_elem_face_get_length(const void *msh, 
 				       uint32_t elem_id,
 				       uint16_t face_id)
@@ -189,27 +219,6 @@ double nb_mshpack_elem_face_get_length(const void *msh,
 	double dij2 = vcn_utils2D_get_dist2(c1, c2);
 
 	return sqrt(2 * (Ri2 + Rj2) - dij2 - Qij2 / dij2);
-}
-
-void nb_mshpack_elem_face_get_midpoint(const void *msh,
-				       uint32_t elem_id, uint16_t face_id,
-				       double w, double midpoint[2])
-{
-	uint32_t nj = nb_mshpack_elem_get_ngb(msh, elem_id, face_id);
-	double ri = nb_mshpack_elem_get_radius(msh, elem_id);
-	double rj = nb_mshpack_elem_get_radius(msh, nj);
-
-	double Ri2 = POW2(ri);
-	double Rj2 = POW2(rj);
-	double Qij2 = POW2(Ri2 - Rj2);
-
-	const nb_mshpack_t *pack = msh;
-	double *c1 = &(pack->cen[elem_id * 2]);
-	double *c2 = &(pack->cen[nj * 2]);
-	double dij2 = vcn_utils2D_get_dist2(c1, c2);
-
-	midpoint[0] = c1[0] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[0] - c1[0]);
-	midpoint[1] = c1[1] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[1] - c1[1]);
 }
 
 double nb_mshpack_elem_face_get_normal(const void *msh, uint32_t elem_id,

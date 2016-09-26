@@ -37,17 +37,19 @@ double nb_partition_node_get_y(const nb_partition_t *part, uint32_t id);
 
 uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id);
 uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id);
+void nb_partition_edge_get_midpoint(const nb_partition_t *part,
+				    uint32_t face_id, double w,
+				    double midpoint[2]);
 
 double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_radius(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_apotem(const nb_partition_t *part, uint32_t id);
+uint32_t nb_partition_elem_find_edge(const nb_partition_t *part, uint32_t id,
+				     uint16_t local_face_id);
 double nb_partition_elem_face_get_length(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id);
-void nb_partition_elem_face_get_midpoint(const nb_partition_t *part,
-					 uint32_t elem_id, uint16_t face_id,
-					 double w, double midpoint[2]);
 double nb_partition_elem_face_get_normal(const nb_partition_t *part,
 					 uint32_t elem_id, uint16_t face_id,
 					 double normal[2]);
@@ -83,7 +85,6 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 					    uint32_t subsgm_id);
 void nb_partition_insgm_get_elem_adj(const nb_partition_t *part,
 				     uint32_t **elem_adj);
-
 void nb_partition_load_graph(const nb_partition_t *part,
 			     nb_graph_t *graph,
 			     nb_partition_graph_type type);
