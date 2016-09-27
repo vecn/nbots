@@ -313,16 +313,31 @@ void nb_mshquad_edge_get_midpoint(const void *msh,
 				  uint32_t face_id,
 				  double w, double midpoint[2])
 {
-	const nb_mshquad_t *mshquad = msh;
+	const nb_mshquad_t *quad = msh;
 
-	uint32_t v1 = nb_mshquad_edge_get_1n(msh, face_id);
-	uint32_t v2 = nb_mshquad_edge_get_2n(msh, face_id);
+	uint32_t n1 =  quad->edg[face_id * 2];
+	uint32_t n2 =  quad->edg[face_id*2+1];
 
-	double *s1 = &(mshquad->nod[v1 * 2]);
-	double *s2 = &(mshquad->nod[v2 * 2]);
+	double *s1 = &(quad->nod[n1 * 2]);
+	double *s2 = &(quad->nod[n2 * 2]);
 
 	midpoint[0] = (1 - w) * s1[0] + w * s2[0];
 	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
+}
+
+double nb_mshquad_edge_get_normal(const void *msh, uint32_t face_id,
+				  double normal[2])
+{
+
+	const nb_mshquad_t *quad = msh;
+	uint32_t n1 =  quad->edg[face_id * 2];
+	uint32_t n2 =  quad->edg[face_id*2+1];
+	double *s1 = &(quad->nod[n1 * 2]);
+	double *s2 = &(quad->nod[n2 * 2]);
+	double length = vcn_utils2D_get_dist(s1, s2);
+	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[1] = -(s2[0] - s1[0]) / length;
+	return length;
 }
 
 double nb_mshquad_elem_get_x(const void *msh, uint32_t id)

@@ -51,15 +51,17 @@ struct nb_partition_s {
 	double (*node_get_y)(const void *msh, uint32_t id);
 	uint32_t (*edge_get_1n)(const void *msh, uint32_t id);
 	uint32_t (*edge_get_2n)(const void *msh, uint32_t id);
-	void (*edge_get_midpoint)(const nb_partition_t *part,
+	void (*edge_get_midpoint)(const void *msh,
 				  uint32_t face_id, double w,
 				  double midpoint[2]);
+	double (*edge_get_normal)(const void *msh, uint32_t face_id,
+				  double normal[2]);
 	double (*elem_get_x)(const void *msh, uint32_t id);
 	double (*elem_get_y)(const void *msh, uint32_t id);
 	double (*elem_get_area)(const void *msh, uint32_t id);
 	double (*elem_get_radius)(const void *msh, uint32_t id);
 	double (*elem_get_apotem)(const void *msh, uint32_t id);
-	uint32_t (*elem_find_edge)(const nb_partition_t *part, uint32_t id,
+	uint32_t (*elem_find_edge)(const void *msh, uint32_t id,
 				   uint16_t local_face_id);
 	double (*elem_face_get_length)(const void *msh,
 				       uint32_t elem_id,

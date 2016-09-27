@@ -250,12 +250,27 @@ void nb_msh3trg_edge_get_midpoint(const void *msh,
 				  double midpoint[2])
 {
 	const nb_msh3trg_t *msh3trg = msh;
-	uint32_t n1 = nb_msh3trg_edge_get_1n(msh, face_id);
-	uint32_t n2 = nb_msh3trg_edge_get_2n(msh, face_id);
+	uint32_t n1 =  msh3trg->edg[face_id * 2];
+	uint32_t n2 =  msh3trg->edg[face_id*2+1];
 	double *s1 = &(msh3trg->nod[n1 * 2]);
 	double *s2 = &(msh3trg->nod[n2 * 2]);
 	midpoint[0] = (1 - w) * s1[0] + w * s2[0];
 	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
+}
+
+double nb_msh3trg_edge_get_normal(const void *msh, uint32_t face_id,
+				  double normal[2])
+{
+
+	const nb_msh3trg_t *msh3trg = msh;
+	uint32_t n1 =  msh3trg->edg[face_id * 2];
+	uint32_t n2 =  msh3trg->edg[face_id*2+1];
+	double *s1 = &(msh3trg->nod[n1 * 2]);
+	double *s2 = &(msh3trg->nod[n2 * 2]);
+	double length = vcn_utils2D_get_dist(s1, s2);
+	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[1] = -(s2[0] - s1[0]) / length;
+	return length;
 }
 
 double nb_msh3trg_elem_get_x(const void *msh, uint32_t id)

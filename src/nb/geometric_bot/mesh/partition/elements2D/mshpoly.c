@@ -442,6 +442,21 @@ void nb_mshpoly_edge_get_midpoint(const void *msh,
 	midpoint[1] = (1 - w) * s1[1] + w * s2[1];
 }
 
+double nb_mshpoly_edge_get_normal(const void *msh, uint32_t face_id,
+				  double normal[2])
+{
+
+	const nb_mshpoly_t *poly = msh;
+	uint32_t n1 =  poly->edg[face_id * 2];
+	uint32_t n2 =  poly->edg[face_id*2+1];
+	double *s1 = &(poly->nod[n1 * 2]);
+	double *s2 = &(poly->nod[n2 * 2]);
+	double length = vcn_utils2D_get_dist(s1, s2);
+	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[1] = -(s2[0] - s1[0]) / length;
+	return length;
+}
+
 double nb_mshpoly_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
@@ -558,7 +573,7 @@ double nb_mshpoly_elem_face_get_normal(const void *msh, uint32_t elem_id,
 	double *s1 = &(mshpoly->nod[n1 * 2]);
 	double *s2 = &(mshpoly->nod[n2 * 2]);
 	double length = vcn_utils2D_get_dist(s1, s2);
-	normal[0] =  (s2[1] - s1[1]) / length;
+	normal[0] = (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
 }

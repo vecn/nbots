@@ -8,6 +8,7 @@
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
@@ -16,6 +17,8 @@
 #define INPUTS_DIR "../../../../utest/nb/pde_bot/static_elasticity2D_inputs"
 
 #define POW2(a) ((a)*(a))
+#define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
+#define MIN(a,b) (((a)<(b))?(a):(b))
 
 typedef struct {
 	uint32_t N_faces;
@@ -24,6 +27,7 @@ typedef struct {
 	double *disp;
 	double *strain;
 	double *stress;
+	char *boundary_mask;
 } results_t;
 
 static int suite_init(void);
@@ -36,8 +40,11 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const void *part,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *part, const double *stress,
+				const char *boundary_mask,
 				uint8_t N_qp);
-
+static double get_face_error_avg_pwh(const void *part, const double *stress,
+				     const double *mid_qp, uint8_t N_qp,
+				     uint32_t face_id);
 static void get_quadrature_mids(uint8_t N_qp, double *mid_qp);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part, nb_bcond_t *bcond);
@@ -119,7 +126,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000, 3, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 5100, 3, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -128,6 +135,7 @@ static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
 	double avg_error = get_error_avg_pwh(part, results->stress,
+					     results->boundary_mask,
 					     results->N_qp);
 
 	printf("--- AVG ERROR: %e\n", avg_error); /* TEMPORAL */
@@ -136,51 +144,99 @@ static void check_plate_with_hole(const void *part,
 
 static double get_error_avg_pwh(const void *part,
 				const double *stress,
+				const char *boundary_mask,
 				uint8_t N_qp)
 {
 	FILE *fp = fopen("../../../stress.txt", "w"); /* TEMPORAL */
+	fprintf(fp, "# Ex Ey Exy Enx Eny Etx Ety " \
+		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St|" \
+		"Ax Ay Axy Anx Any Atx Aty |An| |At|\n");	      /* TEMPORAL */
+	fclose(fp);                                   /* TEMPORAL */
 	double avg = 0.0;
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	double *mid_qp = alloca(N_qp * sizeof(double));
 	get_quadrature_mids(N_qp, mid_qp);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		for (uint8_t q = 0; q < N_qp; q++) {
-			uint32_t id = i * N_qp + q;
-			double xqp[2];
-			nb_partition_edge_get_midpoint(part, i,
-						       mid_qp[q], xqp);
-
-			double analytic_stress[3];
-			get_analytic_stress_pwh(xqp[0], xqp[1],
-						analytic_stress);
-
-			double error[3];
-			error[0] = fabs(1.0 - stress[id * 3] /
-					analytic_stress[0]);
-			error[1] = fabs(1.0 - stress[id*3+1] /
-					analytic_stress[1]);
-			error[2] = fabs(1.0 - stress[id*3+2] /
-					analytic_stress[2]);
-			fprintf(fp, "%e %e %e %e %e %e %e %e %e\n", error[0], /**/
-				error[1], error[2], stress[id*3],/* TEMPORAL */
-				stress[id*3+1], stress[id*3+2],   /* TEMPORAL */
-				analytic_stress[0], analytic_stress[1],
-				analytic_stress[2]);            /* TEMPORAL */
-			double vm_stress = 
-				nb_pde_get_vm_stress(stress[id * 3],
-						     stress[i*3+1],
-						     stress[i*3+2]);
-			double analytic_vm_stress =
-				nb_pde_get_vm_stress(analytic_stress[0],
-						     analytic_stress[1],
-						     analytic_stress[2]);
-			double vm_error = fabs(1.0 - vm_stress /
-					       analytic_vm_stress);
-			avg += vm_error;
-		}
+		if (!(boundary_mask[i]))
+			avg += get_face_error_avg_pwh(part, stress,
+						      mid_qp, N_qp, i);
 	}
-	fclose(fp);                 /* TEMPORAL */
 	return avg /= N_faces * N_qp;
+}
+
+static double get_face_error_avg_pwh(const void *part, const double *stress,
+				     const double *mid_qp, uint8_t N_qp,
+				     uint32_t face_id)
+{
+	FILE *fp = fopen("../../../stress.txt", "a"); /* TEMPORAL */
+	double nf[2];                                   /* TEMPORAL */
+	nb_partition_edge_get_normal(part, face_id, nf);/* TEMPORAL */
+	double vm_error = 0;
+	for (uint8_t q = 0; q < N_qp; q++) {
+		uint32_t id = face_id * N_qp + q;
+		double xqp[2];
+		nb_partition_edge_get_midpoint(part, face_id,
+					       mid_qp[q], xqp);
+
+		double analytic_stress[3];
+		get_analytic_stress_pwh(xqp[0], xqp[1],
+					analytic_stress);
+
+		double error[9];                               /* TEMPORAL */
+		error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+				CHECK_ZERO(analytic_stress[0]));         /**/
+		error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+				CHECK_ZERO(analytic_stress[1]));         /**/
+		error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+				CHECK_ZERO(analytic_stress[2]));         /**/
+		double Sn[2];                                  /* TEMPORAL */
+		Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
+		Sn[1] = 0.5*stress[id*3+2]*nf[0] + stress[id*3+1]*nf[1]; /**/
+		double St[2];                                  /* TEMPORAL */		
+		St[0] = stress[id * 3]*nf[1] - 0.5*stress[id*3+2]*nf[0]; /**/
+		St[1] = 0.5*stress[id*3+2]*nf[1] - stress[id*3+1]*nf[0]; /**/
+		double mSn = sqrt(POW2(Sn[0]) + POW2(Sn[1]));
+		double mSt = sqrt(POW2(St[0]) + POW2(St[1]));
+		double An[2];                                  /* TEMPORAL */
+		An[0] = analytic_stress[0]*nf[0] +
+			0.5 * analytic_stress[2]*nf[1]; /**/
+		An[1] = 0.5 * analytic_stress[2]*nf[0] +
+			analytic_stress[1]*nf[1]; /**/
+		double At[2];                                  /* TEMPORAL */		
+		At[0] = analytic_stress[0]*nf[1] -
+			0.5 * analytic_stress[2]*nf[0]; /**/
+		At[1] = 0.5 * analytic_stress[2]*nf[1] -
+			analytic_stress[1]*nf[0]; /**/
+		double mAn = sqrt(POW2(An[0]) + POW2(An[1]));
+		double mAt = sqrt(POW2(At[0]) + POW2(At[1]));
+		error[3] = fabs((An[0] - Sn[0]) / CHECK_ZERO(An[0]));    /**/
+		error[4] = fabs((An[1] - Sn[1]) / CHECK_ZERO(An[1]));    /**/
+		error[5] = fabs((At[0] - St[0]) / CHECK_ZERO(At[0]));    /**/
+		error[6] = fabs((At[1] - St[1]) / CHECK_ZERO(At[1]));    /**/
+		error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));
+		error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));
+		fprintf(fp, "%e %e %e %e %e %e %e %e %e \t" \
+			"%e %e %e %e %e %e %e %e %e \t" \
+			"%e %e %e %e %e %e %e %e %e \n", /**/
+			error[0], error[1], error[2], error[3], error[4],/**/
+			error[5], error[6], error[7], error[8],/* TEMPORAL */
+			stress[id*3], stress[id*3+1], stress[id*3+2],    /**/
+			Sn[0], Sn[1], St[0], St[1], mSn, mSt,            /**/
+			analytic_stress[0], analytic_stress[1],/* TEMPORAL */
+			analytic_stress[2],                    /* TEMPORAL */
+			An[0], An[1], At[0], At[1], mAn, mAt); /* TEMPORAL */
+		double vm_stress = 
+			nb_pde_get_vm_stress(stress[id * 3],
+					     stress[id*3+1],
+					     stress[id*3+2]);
+		double analytic_vm_stress =
+			nb_pde_get_vm_stress(analytic_stress[0],
+					     analytic_stress[1],
+					     analytic_stress[2]);
+		vm_error += fabs(1.0 - vm_stress / analytic_vm_stress);
+	}
+	fclose(fp);                                   /* TEMPORAL */
+	return vm_error;
 }
 
 static void get_quadrature_mids(uint8_t N_qp, double *mid_qp)
@@ -228,7 +284,7 @@ static void pwh_DC_SGM_cond(const double *x, double t, double *out)
 	double stress[3];
 	get_analytic_stress_pwh(x[0], x[1], stress);
 	out[0] = stress[0];
-	out[1] = stress[2];	
+	out[1] = stress[2];
 }
 
 static void pwh_BC_SGM_cond(const double *x, double t, double *out)
@@ -242,53 +298,155 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 static void TEMPORAL1(nb_partition_t *part, results_t *results)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	double *total_disp = malloc(N_elems * sizeof(*total_disp));
-
-	for (uint32_t i = 0; i < N_elems; i++) {
-		total_disp[i] = sqrt(POW2(results->disp[i*2]) +
-				     POW2(results->disp[i*2+1]));
-	}
+	double *disp = malloc(N_elems * sizeof(*disp));
 
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_partition_extrapolate_elems_to_nodes(part, 1, total_disp,
-						disp_nodes);
 	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
 
-	nb_partition_export_draw(part, "../../../CVFA.png", 1000, 800,
+	for (uint32_t i = 0; i < N_elems; i++)
+		disp[i] = results->disp[i*2];
+
+	nb_partition_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
+	nb_partition_export_draw(part, "../../../CVFA_dx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
-	free(total_disp);
+
+	for (uint32_t i = 0; i < N_elems; i++)
+		disp[i] = results->disp[i*2+1];
+
+	nb_partition_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
+	nb_partition_export_draw(part, "../../../CVFA_dy.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 disp_nodes, true);/* TEMPORAL */
+
+	free(disp);
 	free(disp_nodes);
 }
 
-static void TEMPORAL2(nb_partition_t *part, results_t *results)
+static void TEMPORAL2(nb_partition_t *part, results_t *results, uint8_t N_qp)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
-	double *vm_stress = malloc(N_elems * sizeof(*vm_stress));
+	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double *stress = (void*) memblock;
+	double *vm_stress = (void*) (memblock + N_nodes* 3 * sizeof(double));
+	uint8_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
 
-	for (uint32_t i = 0; i < N_elems; i++) {
-		vm_stress[i] = nb_pde_get_vm_stress(results->stress[i * 3],
-						    results->stress[i*3+1],
-						    results->stress[i*3+2]);
+	memset(stress, 0, 3 * N_nodes * sizeof(*stress));
+	memset(counter, 0, N_nodes * sizeof(*counter));
+	uint32_t N_faces = nb_partition_get_N_edges(part);
+	for (uint32_t i = 0; i < N_faces; i++) {
+		uint32_t v1 = nb_partition_edge_get_1n(part, i);
+		uint32_t v2 = nb_partition_edge_get_2n(part, i);
+		if (!(results->boundary_mask[i])) {
+			uint32_t v1 = nb_partition_edge_get_1n(part, i);
+			uint32_t v2 = nb_partition_edge_get_2n(part, i);
+			uint32_t id1 = i * N_qp;
+			uint32_t id2 = i * N_qp + N_qp - 1;
+
+			stress[v1 * 3] += results->stress[id1 * 3];
+			stress[v1*3+1] += results->stress[id1*3+1];
+			stress[v1*3+2] += results->stress[id1*3+2];
+			counter[v1] += 1;
+
+			stress[v2 * 3] += results->stress[id2 * 3];
+			stress[v2*3+1] += results->stress[id2*3+1];
+			stress[v2*3+2] += results->stress[id2*3+2];
+			counter[v2] += 1;
+		} else {
+			uint32_t id = nb_partition_edge_get_1n(part, i);
+			double x = nb_partition_node_get_x(part, id);
+			double y = nb_partition_node_get_y(part, id);
+			double s[3];
+			get_analytic_stress_pwh(x, y, s);
+			stress[id * 3] += s[0];
+			stress[id*3+1] += s[1];
+			stress[id*3+2] += s[2];
+			counter[id] += 1;
+			
+			id = nb_partition_edge_get_2n(part, i);
+			x = nb_partition_node_get_x(part, id);
+			y = nb_partition_node_get_y(part, id);
+			stress[id * 3] += s[0];
+			stress[id*3+1] += s[1];
+			stress[id*3+2] += s[2];
+			counter[id] += 1;
+		}
+	}
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		stress[i * 3] /= counter[i];
+		stress[i*3+1] /= counter[i];
+		stress[i*3+2] /= counter[i];
 	}
 
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
-	double *vm_nodes = malloc(N_nodes * sizeof(*vm_nodes));
+	/*
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		vm_stress[i] = nb_pde_get_vm_stress(stress[i * 3],
+						    stress[i*3+1],
+						    stress[i*3+2]);
+	}
+	*/
 
-	nb_partition_extrapolate_elems_to_nodes(part, 1, vm_stress,
-						vm_nodes);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		double x = nb_partition_node_get_x(part, i);
+		double y = nb_partition_node_get_y(part, i);
+		double s[3];
+		get_analytic_stress_pwh(x, y, s);
+		vm_stress[i] = MIN(1,fabs((s[0]-stress[i*3])/CHECK_ZERO(s[0])));
+	}
 
-	nb_partition_export_draw(part, "../../../CVFA_stress_elems.png",
-				 1000, 800,
-				 NB_ELEMENT, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
-	nb_partition_export_draw(part, "../../../CVFA_stress.png", 1000, 800,
+	nb_partition_export_draw(part, "../../../CVFA_xErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
-				 vm_nodes, true);/* TEMPORAL */
-	free(vm_stress);
-	free(vm_nodes);
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		double x = nb_partition_node_get_x(part, i);
+		double y = nb_partition_node_get_y(part, i);
+		double s[3];
+		get_analytic_stress_pwh(x, y, s);
+		vm_stress[i] = MIN(1,fabs((s[1]-stress[i*3+1])/CHECK_ZERO(s[1])));
+	}
+
+	nb_partition_export_draw(part, "../../../CVFA_yErr.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		double x = nb_partition_node_get_x(part, i);
+		double y = nb_partition_node_get_y(part, i);
+		double s[3];
+		get_analytic_stress_pwh(x, y, s);
+		vm_stress[i] = MIN(1,fabs((s[2]-stress[i*3+2])/CHECK_ZERO(s[2])));
+	}
+
+	nb_partition_export_draw(part, "../../../CVFA_xyErr.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++)
+		vm_stress[i] = stress[i*3];
+
+	nb_partition_export_draw(part, "../../../CVFA_Sxx.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++)
+		vm_stress[i] = stress[i*3+1];
+
+	nb_partition_export_draw(part, "../../../CVFA_Syy.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++)
+		vm_stress[i] = stress[i*3+2];
+
+	nb_partition_export_draw(part, "../../../CVFA_Sxy.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
@@ -310,7 +468,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	check_results(part, &results);
 
 	TEMPORAL1(part, &results);
-	TEMPORAL2(part, &results);
+	TEMPORAL2(part, &results, N_qp);
 
 	nb_partition_finish(part);
 	results_finish(&results);
@@ -356,7 +514,8 @@ static int simulate(const char *problem_data,
 						   analysis2D,
 						   &params2D, N_qp,
 						   results->disp,
-						   results->strain);
+						   results->strain,
+						   results->boundary_mask);
 
 	if (0 != status_cvfa) {
 		show_cvfa_error_msg(status_cvfa);
@@ -397,8 +556,9 @@ static void results_init(results_t *results, uint32_t N_faces,
 			 uint32_t N_elems, uint8_t N_qp)
 {
 	uint32_t size_disp = N_elems * 2 * sizeof(*(results->disp));
-	uint32_t size_strain = N_elems * N_qp * 3 * sizeof(*(results->strain));
-	uint32_t total_size = size_disp + 2 * size_strain;
+	uint32_t size_strain = N_faces * N_qp * 3 * sizeof(*(results->strain));
+	uint32_t size_mask = N_faces * sizeof(*(results->boundary_mask));
+	uint32_t total_size = size_disp + 2 * size_strain + size_mask;
 	char *memblock = malloc(total_size);
 
 	results->N_faces = N_faces;
@@ -407,6 +567,8 @@ static void results_init(results_t *results, uint32_t N_faces,
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);
+	results->boundary_mask = (void*)(memblock + size_disp +
+					 2 * size_strain);
 }
 
 static inline void results_finish(results_t *results)

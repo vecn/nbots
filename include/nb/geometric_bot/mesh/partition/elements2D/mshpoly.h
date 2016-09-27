@@ -33,6 +33,8 @@ uint32_t nb_mshpoly_edge_get_2n(const void *msh, uint32_t id);
 void nb_mshpoly_edge_get_midpoint(const void *msh,
 				  uint32_t face_id, double w,
 				  double midpoint[2]);
+double nb_mshpoly_edge_get_normal(const void *msh, uint32_t face_id,
+				  double normal[2]);
 double nb_mshpoly_elem_get_x(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_y(const void *msh, uint32_t id);
 double nb_mshpoly_elem_get_area(const void *msh, uint32_t id);

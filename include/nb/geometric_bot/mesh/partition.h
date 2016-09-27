@@ -40,6 +40,8 @@ uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id);
 void nb_partition_edge_get_midpoint(const nb_partition_t *part,
 				    uint32_t face_id, double w,
 				    double midpoint[2]);
+double nb_partition_edge_get_normal(const nb_partition_t *part,
+				    uint32_t face_id, double normal[2]);
 
 double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);

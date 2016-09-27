@@ -123,6 +123,7 @@ static void set_msh3trg_main_interface(nb_partition_t *part)
 	part->edge_get_1n = nb_msh3trg_edge_get_1n;
 	part->edge_get_2n = nb_msh3trg_edge_get_2n;
 	part->edge_get_midpoint = nb_msh3trg_edge_get_midpoint;
+	part->edge_get_normal = nb_msh3trg_edge_get_normal;
 	part->elem_get_x = nb_msh3trg_elem_get_x;
 	part->elem_get_y = nb_msh3trg_elem_get_y;
 	part->elem_get_area = nb_msh3trg_elem_get_area;
@@ -183,6 +184,7 @@ static void set_mshquad_main_interface(nb_partition_t *part)
 	part->edge_get_1n = nb_mshquad_edge_get_1n;
 	part->edge_get_2n = nb_mshquad_edge_get_2n;
 	part->edge_get_midpoint = nb_mshquad_edge_get_midpoint;
+	part->edge_get_normal = nb_mshquad_edge_get_normal;
 	part->elem_get_x = nb_mshquad_elem_get_x;
 	part->elem_get_y = nb_mshquad_elem_get_y;
 	part->elem_get_area = nb_mshquad_elem_get_area;
@@ -243,6 +245,7 @@ static void set_mshpoly_main_interface(nb_partition_t *part)
 	part->edge_get_1n = nb_mshpoly_edge_get_1n;
 	part->edge_get_2n = nb_mshpoly_edge_get_2n;
 	part->edge_get_midpoint = nb_mshpoly_edge_get_midpoint;
+	part->edge_get_normal = nb_mshpoly_edge_get_normal;
 	part->elem_get_x = nb_mshpoly_elem_get_x;
 	part->elem_get_y = nb_mshpoly_elem_get_y;
 	part->elem_get_area = nb_mshpoly_elem_get_area;
@@ -303,6 +306,7 @@ static void set_mshpack_main_interface(nb_partition_t *part)
 	part->edge_get_1n = nb_mshpack_edge_get_1n;
 	part->edge_get_2n = nb_mshpack_edge_get_2n;
 	part->edge_get_midpoint = nb_mshpack_edge_get_midpoint;
+	part->edge_get_normal = nb_mshpack_edge_get_normal;
 	part->elem_get_x = nb_mshpack_elem_get_x;
 	part->elem_get_y = nb_mshpack_elem_get_y;
 	part->elem_get_area = nb_mshpack_elem_get_area;
@@ -419,6 +423,29 @@ double nb_partition_node_get_y(const nb_partition_t *part, uint32_t id)
 	return part->node_get_y(part->msh, id);
 }
 
+uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id)
+{
+	return part->edge_get_1n(part->msh, id);
+}
+
+uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id)
+{
+	return part->edge_get_2n(part->msh, id);
+}
+
+void nb_partition_edge_get_midpoint(const nb_partition_t *part,
+				    uint32_t face_id, double w,
+				    double midpoint[2])
+{
+	part->edge_get_midpoint(part->msh, face_id, w, midpoint);
+}
+
+double nb_partition_edge_get_normal(const nb_partition_t *part,
+				    uint32_t face_id, double normal[2])
+{
+	return part->edge_get_normal(part->msh, face_id, normal);
+}
+
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id)
 {
 	return part->elem_get_area(part->msh, id);
@@ -509,23 +536,6 @@ uint16_t nb_partition_elem_ngb_get_face(const nb_partition_t *part,
 		}
 	}
 	return face_id;
-}
-
-uint32_t nb_partition_edge_get_1n(const nb_partition_t *part, uint32_t id)
-{
-	return part->edge_get_1n(part->msh, id);
-}
-
-uint32_t nb_partition_edge_get_2n(const nb_partition_t *part, uint32_t id)
-{
-	return part->edge_get_2n(part->msh, id);
-}
-
-void nb_partition_edge_get_midpoint(const nb_partition_t *part,
-				    uint32_t face_id, double w,
-				    double midpoint[2])
-{
-	part->edge_get_midpoint(part->msh, face_id, w, midpoint);
 }
 
 double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id)

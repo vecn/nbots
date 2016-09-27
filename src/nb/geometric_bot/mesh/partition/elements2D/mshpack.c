@@ -165,6 +165,12 @@ void nb_mshpack_edge_get_midpoint(const void *msh,
 	*/
 }
 
+double nb_mshpack_edge_get_normal(const void *msh, uint32_t face_id,
+				  double normal[2])
+{
+	return 0; /* TEMPORAL */
+}
+
 double nb_mshpack_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
