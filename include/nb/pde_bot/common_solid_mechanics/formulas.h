@@ -6,6 +6,9 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 
+void nb_pde_get_lame_params(double lame[2], 
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D);
 void nb_pde_get_constitutive_matrix(double D[4], 
 				    const nb_material_t *material,
 				    nb_analysis2D_t analysis2D);

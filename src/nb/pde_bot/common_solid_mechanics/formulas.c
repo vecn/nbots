@@ -10,6 +10,26 @@
 static void set_plane_stress(double D[4], double E, double v);
 static void set_plane_strain(double D[4], double E, double v);
 
+void nb_pde_get_lame_params(double lame[2], 
+			    const nb_material_t *material,
+			    nb_analysis2D_t analysis2D)
+{
+	double E = nb_material_get_elasticity_module(material);
+	double v = nb_material_get_poisson_module(material);
+
+	switch (analysis2D) {
+	case NB_PLANE_STRESS:
+		c = v;
+	case NB_PLANE_STRAIN:
+		c = 2 * v;
+	default:
+		c = v;
+	}
+
+	lame[0] = 0.5 * E / (1 + v);             /* Mu */
+	lame[1] = (v * E) / ((1 + v) * (1 - c)); /* lambda */
+}
+
 void nb_pde_get_constitutive_matrix(double D[4], 
 				    const nb_material_t *material,
 				    nb_analysis2D_t analysis2D)
