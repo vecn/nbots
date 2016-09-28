@@ -1030,7 +1030,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+		msh_vtx_t* vtx = (void*) vcn_bins2D_iter_get_next(biter);
 		uint32_t id = mvtx_get_id(vtx);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t ielem = vinfo->vtx_map[id];
