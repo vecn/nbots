@@ -20,7 +20,7 @@ static void func_grad_z(uint8_t dim, const double *xi,
 			double ri, const double *x,
 			double *grad);
 static double func_phi(double x);
-static double func_dphi(double x);
+static double func_deriv_phi(double x);
 static void eval_Pis(uint32_t N, const double *phis, double *eval);
 static double get_Pi(uint32_t N, const double *phis, uint32_t i);
 static double get_k(uint32_t N, const double *Pis);

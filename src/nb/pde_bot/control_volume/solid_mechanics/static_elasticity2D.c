@@ -531,7 +531,7 @@ static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
 	double *ni = (void*) memblock;
 	double *ri = (void*) (memblock + 2 * N_ngb * sizeof(double));
 
-	for (uint32_t i = 0; i < N_ngb; i++) {
+	for (uint16_t i = 0; i < N_ngb; i++) {
 		ni[i * 2] = nb_partition_elem_get_x(part, ngb[i]);
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
 		ri[i] = nb_partition_elem_get_apotem(part, ngb[i]);

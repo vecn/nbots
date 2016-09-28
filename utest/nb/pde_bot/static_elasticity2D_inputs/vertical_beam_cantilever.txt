@@ -1,0 +1,61 @@
+#################################################
+# Victor Eduardo Cardoso Nungaray		#
+# 2010-2016					#
+# Description: Beam fixed on both sides		#
+#################################################
+
+
+#-------------- Geometry definition ------------#
+# Number of vertices				#
+ 4						#
+# Vertices coordinates                          #
+  0.0 0.0					#
+  1.0 0.0					#
+  1.0 6.0					#
+  0.0 6.0					#
+# Number of segments				#
+ 4						#
+# Segments (Vertices pairs IDs)			#
+ 0 1						#
+ 1 2						#
+ 2 3						#
+ 3 0						#
+# Number of holes				#
+ 0						#
+#-----------------------------------------------#
+
+#-------------- Boundary conditions ------------#
+# Num displacement conditions over vertices:    #
+ 3						#
+# Displacement conditions definition            #
+  0 1 1 0 0                                     #
+  1 0 1 0	      				#
+  2 1 0 0.1                                     #
+# Num of load conditions over vertices:		#
+ 0						#
+# Num of displacement conditions over lines:    #
+ 0                                              #
+# Num of load conditions over lines:            #
+ 0                                              #
+#-----------------------------------------------#
+
+#-------------- Material properties ------------#
+# Poisson module				#
+ 0.29						#
+# Elasticity module				#
+ 2e11	                                        #
+# Fracture energy (J/m^2 -> kg/s^2)             #
+ 113                                            #
+# Compression limit stress                      #
+ 2.4e4                                          #
+# Traction limit stress                         #
+ 2.4e3                                          #
+#-----------------------------------------------#
+
+#---------------- Analysis ---------------------#
+#--- Does the analysis uses plane stress?-------#
+# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+ 0						#
+# Analysis params (Thickness axis of rev)       #
+ 0.1	                                        #
+#-----------------------------------------------#
