@@ -42,19 +42,6 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor);
-static uint16_t get_face_id(const nb_partition_t *part, uint32_t elem_id,
-			    uint32_t v1, uint32_t v2);
-static void get_LS_force(const double D[4], const double nf[2],
-			 double f[2]);
-static void get_differentials_from_normal_force(const double D[4],
-						const double nf[2],
-						const double f[2],
-						double diff[2]);
-static void get_best_balanced_diff_ratio(const double D[4],
-					 const double nf[2],
-					 const double f[2],
-					 double strain[3],
-					 double diff[2]);
 static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       uint32_t **elem_adj,
 				       double* F, uint8_t N_dof,
@@ -245,8 +232,8 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 
 	uint32_t N = nb_partition_insgm_get_N_subsgm(part, sgm_id);
 	for (uint32_t i = 0; i < N; i++) {
-		//double subsgm_length =
-		//	nb_partition_insgm_subsgm_get_length(part, sgm_id, i);
+		double subsgm_length =
+			nb_partition_insgm_subsgm_get_length(part, sgm_id, i);
 		
 		uint32_t v2_id = nb_partition_insgm_get_node(part, sgm_id,
 							     i + 1);
@@ -254,131 +241,22 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 		x[1] = nb_partition_node_get_y(part, v2_id);
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val2);
 
-		uint32_t elem_id = elem_adj[sgm_id][i];
-		uint16_t face_id = get_face_id(part, elem_id,
-					       v1_id, v2_id);
-		double nf[2];
-		double subsgm_length =
-			nb_partition_elem_face_get_normal(part, elem_id,
-							  face_id, nf);
-
 		double val[2];
 		val[0] = 0.5 * (val1[0] + val2[0]) * subsgm_length;
 		val[1] = 0.5 * (val1[1] + val2[1]) * subsgm_length;
 
 		double D[4];
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-		//get_LS_force(D, nf, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
 
+		uint32_t elem_id = elem_adj[sgm_id][i];
 		set_neumann(part, elem_id, N_dof, F, factor, val, mask);
 
 		v1_id = v2_id;
 		memcpy(val1, val2, N_dof * sizeof(*val1));
 	}
-}
-
-static uint16_t get_face_id(const nb_partition_t *part, uint32_t elem_id,
-			    uint32_t v1, uint32_t v2)
-{
-	uint16_t face_id = 0;
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t id1 = nb_partition_elem_get_adj(part, elem_id, i);
-		uint32_t id2 = nb_partition_elem_get_adj(part, elem_id,
-							 (i + 1) % N_adj);
-		if ((v1 == id1 && v2 == id2) || (v1 == id2 && v2 == id1)) {
-			face_id = i;
-			break;
-		}			
-	}
-	return face_id;
-}
-
-static void get_LS_force(const double D[4], const double nf[2],
-			 double f[2])
-{
-	double diff[2];
-	get_differentials_from_normal_force(D, nf, f, diff);
-
-	double Kf[4];
-	Kf[0] = diff[0] * nf[0] * D[0] + diff[1] * nf[1] * D[3];
-	Kf[1] = diff[1] * nf[0] * D[1] + diff[0] * nf[1] * D[3];
-	Kf[2] = diff[0] * nf[1] * D[1] + diff[1] * nf[0] * D[3];
-	Kf[3] = diff[1] * nf[1] * D[2] + diff[0] * nf[0] * D[3];
-
-	double fx = f[0];
-	double fy = f[1];
-	f[0] = Kf[0] * fx + Kf[2] * fy;
-	f[1] = Kf[1] * fx + Kf[3] * fy;
-}
-
-static void get_differentials_from_normal_force(const double D[4],
-						const double nf[2],
-						const double f[2],
-						double diff[2])
-/* Least Squares to solve (NT D) S = f */
-{
-	double A[4];
-	double nxny = nf[0] * nf[1];
-	A[0] = POW2(nf[0] * D[0]) + POW2(nf[0] * D[1]) + POW2(nf[1] * D[3]);
-	A[1] = (nxny*D[0]) * D[1] + (nxny*D[1]) * D[2] + (nxny*D[3]) * D[3];
-	A[2] = A[1];
-	A[3] = POW2(nf[1] * D[1]) + POW2(nf[1] * D[2]) + POW2(nf[0] * D[3]);
-
-	vcn_matrix_2X2_inverse_destructive(A);
-
-	double lambda[2]; /* Lagrange multipliers */
-	lambda[0] = A[0] * f[0] + A[1] * f[1];
-	lambda[1] = A[2] * f[0] + A[3] * f[1];
-
-	double s[3]; /* Strain */
-	s[0] = nf[0] * D[0] * lambda[0] + nf[1] * D[1] * lambda[1];
-	s[1] = nf[0] * D[1] * lambda[0] + nf[1] * D[2] * lambda[1];
-	s[2] = nf[1] * D[3] * lambda[0] + nf[0] * D[3] * lambda[1];
-
-	get_best_balanced_diff_ratio(D, nf, f, s, diff);
-}
-
-static void get_best_balanced_diff_ratio(const double D[4],
-					 const double nf[2],
-					 const double f[2],
-					 double strain[3],
-					 double diff[2])
-{
-	double ineq = POW2(strain[2]) - 4 * strain[0] * strain[1];
-	while (ineq < 0.0) {
-		double B[9];
-		B[0] = nf[0] * D[0];
-		B[1] = nf[0] * D[1];
-		B[2] = nf[1] * D[3];
-		B[3] = nf[1] * D[1];
-		B[4] = nf[1] * D[2];
-		B[5] = nf[0] * D[3];
-		B[6] = - 2 * strain[1];
-		B[7] = - 2 * strain[0];
-		B[8] = strain[2];
-
-		vcn_matrix_3X3_inverse_destructive(B);
-
-		strain[0] = B[0] * f[0] + B[1] * f[0];
-		strain[1] = B[3] * f[0] + B[4] * f[0];
-		strain[2] = B[6] * f[0] + B[7] * f[0];
-
-		ineq = POW2(strain[2]) - 4 * strain[0] * strain[1];
-	}
-	double sq = sqrt(ineq);
-	double c1 = (strain[2] - sq) / (2 * strain[1]);
-	double c2 = (strain[2] + sq) / (2 * strain[1]);
-
-	double c = (POW2(1-1/c1) < POW2(1-1/c2))?c1:c2;
-
-	double cx = POW2(nf[0]);
-	double cy = POW2(nf[1]);
-	diff[0] = cx + c * cy;
-	diff[1] = cx / c + cy;
 }
 
 static void set_neumann_sgm_integrated(const nb_partition_t *part,

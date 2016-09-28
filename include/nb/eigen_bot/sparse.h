@@ -59,7 +59,8 @@ bool vcn_sparse_is_non_zero(const vcn_sparse_t *const A, uint32_t i, uint32_t j)
 uint32_t vcn_sparse_memory_used(const vcn_sparse_t *const A);
 void vcn_sparse_add(vcn_sparse_t *A, uint32_t i, uint32_t j, double value);
 void vcn_sparse_scale(vcn_sparse_t *A, double factor);
-void vcn_sparse_transpose(vcn_sparse_t *A, vcn_sparse_t *_At);
+void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At);
+void vcn_sparse_transpose(vcn_sparse_t *A);
 uint32_t vcn_sparse_get_size(const vcn_sparse_t *const A);
 uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A);
 

@@ -17,6 +17,7 @@ void nb_pde_get_lame_params(double lame[2],
 	double E = nb_material_get_elasticity_module(material);
 	double v = nb_material_get_poisson_module(material);
 
+	double c;
 	switch (analysis2D) {
 	case NB_PLANE_STRESS:
 		c = v;

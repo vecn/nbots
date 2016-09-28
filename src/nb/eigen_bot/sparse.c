@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot/array.h"
 #include "nb/eigen_bot/sparse.h"
 
@@ -331,18 +332,36 @@ double* vcn_sparse_create_vector_permutation
 	return br;
 }
 
-void vcn_sparse_transpose(vcn_sparse_t *A, vcn_sparse_t *_At)
+void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
 /* _At must be allocated and initialized */
 {
-	uint32_t *jcount = calloc(A->N,sizeof(*jcount));
-	for (int i = 0; i < A->N; i++) {
-		for (int q = 0; q < A->rows_size[i]; q++) {
+	uint32_t memsize = A->N * sizeof(uint32_t);
+	uint32_t *jcount = NB_SOFT_MALLOC(memsize);
+	memset(jcount, 0, memsize);
+	for (uint32_t i = 0; i < A->N; i++) {
+		for (uint32_t q = 0; q < A->rows_size[i]; q++) {
 			uint32_t j = A->rows_index[i][q];
-			_At->rows_index[j][jcount[j]] = i;
-			_At->rows_values[j][jcount[j]++] = A->rows_values[i][q];
+			uint32_t jc = jcount[j];
+			_At->rows_index[j][jc] = i;
+			_At->rows_values[j][jc] = A->rows_values[i][q];
+			jcount[j] = jc + 1;
 		}
 	}
-	free(jcount);
+	NS_SOFT_FREE(jcount);
+}
+
+void vcn_sparse_transpose(vcn_sparse_t *A)
+{
+	for (uint32_t i = 0; i < A->N; i++) {
+		for (uint32_t q = 0; A->rows_index[i][q] < i; q++) {
+			uint32_t j = A->rows_index[i][q];
+			uint32_t jc = sparse_bsearch_row(A, j, i, 0,
+							 A->rows_size[j]-1);
+			double aux = A->rows_values[i][q];
+			A->rows_values[i][q] = A->rows_values[j][jc];
+			A->rows_values[j][jc] = aux;
+		}
+	}
 }
 
 uint32_t vcn_sparse_get_size(const vcn_sparse_t *const A)
@@ -987,7 +1006,7 @@ int vcn_sparse_solve_CG_precond_fsai
 		free(delta);
 	}
 	/* Store G transposed */
-	vcn_sparse_transpose(G,Gt);
+	vcn_sparse_get_transpose(G,Gt);
 
 	/* Free memory */
 	free(D);
@@ -1138,7 +1157,8 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	for (uint32_t j = 0; j < A->N; j++) { 
 		sc_set* lj = NULL;
 		uint32_t lj_size = 1;
-		uint32_t _i = sparse_bsearch_row(A,j,j, 0, A->rows_size[j]-1);
+		uint32_t _i = sparse_bsearch_row(A, j, j, 0,
+						 A->rows_size[j]-1);
 
 		/* lj <- aj ************************************************/
 		sc_set *iterator_lj;                                     /**/

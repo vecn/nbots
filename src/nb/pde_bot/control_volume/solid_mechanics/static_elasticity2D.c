@@ -93,14 +93,12 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
 				      double Kfi[4]);
-static void add_Kf_to_KTK(uint16_t N, const uint32_t *adj,
-			  const double *Kf, vcn_sparse_t *K);
-static void get_KTK(uint16_t N, const double *Kf, double *KTK);
 static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
 		  const double *const b, double* x);
-
+static void get_permutation(const vcn_sparse_t *const A,
+			    uint32_t *perm, uint32_t *iperm);
 static void vector_permutation(uint32_t N, const double *v,
 			       const uint32_t *perm, double *vp);
 static void compute_strain(double *strain, char *boundary_mask,
@@ -461,10 +459,7 @@ static void assemble_internal_face(uint32_t face_id,
 
 	integrate_Kf(part, D, face_id, N, adj, N_qp, params2D, Kf);
 
-	if (ENABLE_LEAST_SQUARES)
-		add_Kf_to_KTK(N, adj, Kf, K);
-	else
-		add_Kf_to_K(N, adj, Kf, K);
+	add_Kf_to_K(N, adj, Kf, K);
 
 	NB_SOFT_FREE(memsize, memblock);
 }
@@ -555,50 +550,6 @@ static void get_Kf_nodal_contribution(const nb_partition_t *part,
 	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
 }
 
-static void add_Kf_to_KTK(uint16_t N, const uint32_t *adj,
-			  const double *Kf, vcn_sparse_t *K)
-{
-	uint32_t memsize = POW2(2 * N) * sizeof(double);
-	double *KTK = NB_SOFT_MALLOC(memsize);
-	get_KTK(N, Kf, KTK);
-	
-	uint16_t size = 2 * N;
-	for (uint32_t m = 0; m < N; m++) {
-		uint32_t i = adj[m];
-		for (uint32_t n = 0; n < N; n++) {
-			uint32_t j = adj[n];
-			vcn_sparse_add(K, i * 2, j * 2,
-				       KTK[(2 * m)*size + (2 * n)]);
-			vcn_sparse_add(K, i * 2, j*2+1,
-				       KTK[(2 * m)*size + (2*n+1)]);
-			vcn_sparse_add(K, i*2+1, j * 2,
-				       KTK[(2*m+1)*size + (2 * n)]);
-			vcn_sparse_add(K, i*2+1, j*2+1,
-				       KTK[(2*m+1)*size + (2*n+1)]);
-		}
-	}
-	NB_SOFT_FREE(memsize, KTK);
-}
-
-static void get_KTK(uint16_t N, const double *Kf, double *KTK)
-{
-	uint16_t size = 2 * N;
-	for (uint16_t i = 0; i < size; i++) {
-		for (uint16_t j = 0; j < size; j++) {
-			double dot = 0;
-			for (uint8_t k = 0; k < 4; k++) {
-				uint8_t l = k % 2;
-				/* Negative sign of the second pair of
-				   equations is ignored because it is 
-				   squared. */
-				dot += Kf[l * size + i] *
-					Kf[l * size + j];
-			}
-			KTK[i * 2 * N + j] = dot;
-		}
-	}
-}
-
 static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K)
 {
@@ -619,41 +570,100 @@ static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
 	}
 }
 
-static int solver(const vcn_sparse_t *const A,
-		  const double *const b, double* x)
+static int xxx_solver(const vcn_sparse_t *const A,
+		      const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
-	uint16_t grp_size = nb_graph_get_memsize();
-	uint32_t memsize = grp_size +
-		2 * N * (sizeof(uint32_t) + sizeof(double));
+	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
 	char *memblock = NB_SOFT_MALLOC(memsize);
-	nb_graph_t *graph = (void*) memblock;
-	uint32_t *perm = (void*) (memblock + grp_size);
-	uint32_t *iperm = (void*) (memblock + grp_size +
-				   N * sizeof(uint32_t));
-	double *br = (void*) (memblock + grp_size +
-			      2 * N * sizeof(uint32_t));
-	double *xr = (void*) (memblock + grp_size +
-			      2 * N * sizeof(uint32_t) + N * sizeof(double));
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
+	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+			      N * sizeof(double));
 
-	nb_graph_init(graph);
-	nb_sparse_get_graph(A, graph);
-	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
-	nb_graph_finish(graph);
+	get_permutation(A, perm, iperm);
 
 	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
 	vector_permutation(N, b, perm, br);
 
-	int status;
-	if (ENABLE_LEAST_SQUARES)
-		status = vcn_sparse_solve_Cholesky(Ar, br, xr, 1);
-	else
-		status = vcn_sparse_solve_using_LU(Ar, br, xr, 1);
+	int status = vcn_sparse_solve_using_LU(Ar, br, xr, 1);
 
 	vector_permutation(N, xr, iperm, x);
 	
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
+}
+
+static int solver(const vcn_sparse_t *const A,
+		  const double *const b, double* x)
+{
+	uint32_t N = vcn_sparse_get_size(A);
+	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
+	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+			      N * sizeof(double));
+
+	get_permutation(A, perm, iperm);
+
+	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
+	vector_permutation(N, b, perm, br);
+
+	int status = solve_overdetermined(Ar, br, x);
+
+	vector_permutation(N, xr, iperm, x);
+	
+	vcn_sparse_destroy(Ar);
+	NB_SOFT_FREE(memsize, memblock);
+	return status;
+}
+
+static int solve_overdetermined(vcn_sparse_t *A, const double *b, double* x)
+{
+	uint32_t N = vcn_sparse_get_size(A);
+	uint32_t memsize = 2 * N * sizeof(double);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double *aux1 = (void*) memblock;
+	double *aux2 = (void*) (memblock + N * sizeof(double));
+
+	vcn_sparse_t *L = NULL; 
+	vcn_sparse_t *U = NULL;
+	vcn_sparse_alloc_LU(A, &L, &U);           /* A = L U */
+ 
+	vcn_sparse_transpose(A);
+	vcn_sparse_t *UT = NULL;
+	vcn_sparse_t *LT = NULL;
+	vcn_sparse_alloc_LU(A, &UT, &LT);         /* AT = UT LT */
+
+	vcn_sparse_multiply_vector(A, b, aux1, 1);/* AT b */
+	/* AQUI VOY */
+
+	vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
+
+	vcn_sparse_solve_LU(L, U, b, x);
+
+	vcn_sparse_destroy(L);
+	vcn_sparse_destroy(U);
+	vcn_sparse_destroy(UT);
+	vcn_sparse_destroy(LT);
+	NB_SOFT_FREE(memsize, memblock);
+	return 0;
+}
+
+static void get_permutation(const vcn_sparse_t *const A,
+			    uint32_t *perm, uint32_t *iperm)
+{
+	uint16_t memsize = nb_graph_get_memsize();
+	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
+	nb_graph_init(graph);
+	nb_sparse_get_graph(A, graph);
+	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
+	nb_graph_finish(graph);
+
+	NB_SOFT_FREE(memsize, graph);
 }
 
 static void vector_permutation(uint32_t N, const double *v,
