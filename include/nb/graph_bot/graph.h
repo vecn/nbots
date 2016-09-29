@@ -32,6 +32,7 @@ typedef struct {
 
 uint32_t nb_graph_get_memsize(void);
 void nb_graph_init(nb_graph_t *graph);
+void nb_graph_copy(void *graph, const void *graph_src);
 void nb_graph_finish(nb_graph_t *graph);
 void nb_graph_clear(nb_graph_t *graph);
 
@@ -49,6 +50,9 @@ void nb_graph_finish_vtx_weights(nb_graph_t *graph);
 void nb_graph_finish_edge_weights(nb_graph_t *graph);
 
 void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees);
+
+uint32_t nb_graph_find_N_intersected_adj(const nb_graph_t *graph,
+					uint32_t id1, uint32_t id2);
 
 /**
  * @brief Get a subgraph from the graph.

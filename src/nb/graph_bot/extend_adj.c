@@ -55,6 +55,9 @@ static uint32_t get_N_total_adj(uint32_t N,
 
 void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees)
 {
+	if (0 == N_degrees)
+		goto EXIT;
+
 	uint32_t N = graph->N;
 	nb_container_type type = NB_SORTED;
 
@@ -85,6 +88,8 @@ void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees)
 	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(extended_adj[i]);
 	NB_SOFT_FREE(memsize, memblock);
+EXIT:
+	return;
 }
 
 static int8_t node_comparer(const void *n1, const void *n2)

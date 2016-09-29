@@ -23,29 +23,52 @@
 /* DEFINE RBF FOR INTERPOLATOR: x * log(x+1) */
 /* DEFINE QUADRATURE POINTS 3 */
 
+#define NGB_LAYERS 0 /* Negative: Pair-wise */
+
 #define POW2(a) ((a)*(a))
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems);
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
-				   nb_graph_t **face_elems_conn);
-static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K);
-static void load_face_elems_conn(nb_graph_t *face_elems_conn,
-				 const nb_partition_t *part);
-static uint32_t get_N_total_face_adj(const nb_partition_t *part);
-static char *set_elemental_faces(nb_graph_t *face_elems_conn,
-				 const nb_partition_t *part, char *memblock,
-				 uint32_t elem_id);
-static char *set_internal_face(nb_graph_t *face_elems_conn,
-			       const nb_partition_t *part, 
-			       char *memblock, uint32_t face_id,
+				   nb_graph_t **face_elems_conn,
+				   nb_graph_t **ngb_graph);
+static void load_neighbourhood_graph(const nb_partition_t *part,
+				     nb_graph_t *ngb_graph);
+static void init_global_matrix(const nb_graph_t *ngb_graph,
+			       vcn_sparse_t **K);
+static void load_face_elems_conn(const nb_partition_t *part,
+				 const nb_graph_t *ngb_graph,
+				 nb_graph_t *face_elems_conn);
+static uint32_t get_N_total_face_adj(const nb_partition_t *part,
+				     const nb_graph_t *ngb_graph);
+static uint16_t face_get_N_ngb(const nb_partition_t *part,
+			       const nb_graph_t *ngb_graph,
 			       uint32_t elem_id1, uint32_t elem_id2);
 static uint16_t get_N_ngb_around_right_vtx(const nb_partition_t *part,
 					   uint32_t elem_id1,
 					   uint32_t elem_id2);
+static char *set_elemental_faces(nb_graph_t *face_elems_conn,
+				 const nb_partition_t *part,
+				 const nb_graph_t *ngb_graph,
+				 char *memblock, uint32_t elem_id);
+static char *set_boundary_face(nb_graph_t *face_elems_conn,
+			       const nb_partition_t *part, 
+			       char *memblock, uint32_t face_id,
+			       uint32_t elem_id);
+static char *set_internal_face(nb_graph_t *face_elems_conn,
+			       const nb_partition_t *part,
+			       const nb_graph_t *ngb_graph,
+			       char *memblock, uint32_t face_id,
+			       uint32_t elem_id1, uint32_t elem_id2);
+static void set_pairwise_ngb(uint32_t *adj, uint32_t elem_id1,
+			     uint32_t elem_id2);
+static void set_local_ngb(uint32_t *adj, const nb_partition_t *part,
+			  uint32_t elem_id1, uint32_t elem_id2);
 static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 					 uint32_t *ngb, uint16_t current_id,
 					 uint32_t elem_id1, uint32_t elem_id2);
+static void set_extended_ngb(uint32_t *adj, const nb_graph_t *ngb_graph,
+			     uint32_t elem_id1, uint32_t elem_id2);
 static void assemble_global_forces(double *F,
 				   const nb_partition_t *const part,
 				   const nb_material_t *material,
@@ -64,8 +87,7 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D,
 				      uint8_t N_qp);
-static void assemble_face(uint32_t face_id,
-			  vcn_sparse_t *K,
+static void assemble_face(uint32_t face_id, vcn_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
@@ -128,8 +150,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
-			 bool enable_self_weight,
-			 double gravity[2],
+			 bool enable_self_weight, double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 uint8_t N_quadrature_points,
@@ -143,13 +164,19 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *F;
 	nb_graph_t *face_elems_conn;
-	distribute_cvfa_memory(memblock, N_elems, &F, &face_elems_conn);
+	nb_graph_t *ngb_graph;
+	distribute_cvfa_memory(memblock, N_elems, &F,
+			       &face_elems_conn, &ngb_graph);
+
+	nb_graph_init(ngb_graph);
+	load_neighbourhood_graph(part, ngb_graph);
 
 	vcn_sparse_t *K;
-	init_global_matrix(part, &K);
+	init_global_matrix(ngb_graph, &K);
 
 	nb_graph_init(face_elems_conn);
-	load_face_elems_conn(face_elems_conn, part);
+	load_face_elems_conn(part, ngb_graph, face_elems_conn);
+	nb_graph_finish(ngb_graph);
 
 	assemble_global_forces(F, part, material, enable_self_weight,
 			       gravity);
@@ -182,37 +209,54 @@ static uint32_t get_cvfa_memsize(uint32_t N_elems)
 {
 	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
-	return graph_size + system_size;
+	return 2 * graph_size + system_size;
 }
 
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
-				   nb_graph_t **face_elems_conn)
+				   nb_graph_t **face_elems_conn,
+				   nb_graph_t **ngb_graph)
 {
 	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
 	*F = (void*) memblock;
 	*face_elems_conn = (void*) (memblock + system_size);
+	*ngb_graph = (void*) (memblock + system_size + graph_size);
 }
 
-static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K)
+static void load_neighbourhood_graph(const nb_partition_t *part,
+				     nb_graph_t *ngb_graph)
+{
+	if (0 > NGB_LAYERS) {
+		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_EDGES);
+	} else if (0 == NGB_LAYERS) {
+		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_NODES);
+	} else {
+		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_NODES);
+		nb_graph_extend_adj(ngb_graph, NGB_LAYERS - 1);
+	}
+}
+
+static void init_global_matrix(const nb_graph_t *ngb_graph,
+			       vcn_sparse_t **K)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
+	nb_graph_copy(graph, ngb_graph);
+	nb_graph_extend_adj(graph, 1);
 
-	nb_graph_init(graph);
-	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_NODES);
 	*K = vcn_sparse_create(graph, NULL, 2);
-	nb_graph_finish(graph);
 
+	nb_graph_finish(graph);
 	NB_SOFT_FREE(memsize, graph);
 }
 
-static void load_face_elems_conn(nb_graph_t *face_elems_conn,
-				 const nb_partition_t *part)
+static void load_face_elems_conn(const nb_partition_t *part,
+				 const nb_graph_t *ngb_graph,
+				 nb_graph_t *face_elems_conn)
 {
 	uint32_t N = nb_partition_get_N_edges(part);
-	uint32_t N_total_adj = get_N_total_face_adj(part);
+	uint32_t N_total_adj = get_N_total_face_adj(part, ngb_graph);
 	face_elems_conn->N = N;
 	uint32_t memsize = N * (sizeof(*(face_elems_conn->N_adj)) +
 				sizeof(*(face_elems_conn->adj))) +
@@ -226,60 +270,13 @@ static void load_face_elems_conn(nb_graph_t *face_elems_conn,
 	memblock += N * (sizeof(*(face_elems_conn->N_adj)) +
 			 sizeof(*(face_elems_conn->adj)));
 
-	for (uint32_t i = 0; i < N_elems; i++)
+	for (uint32_t i = 0; i < N_elems; i++)		
 		memblock = set_elemental_faces(face_elems_conn, part,
-					       memblock, i);
+					       ngb_graph, memblock, i);
 }
 
-static char *set_elemental_faces(nb_graph_t *face_elems_conn,
-				 const nb_partition_t *part, 
-				 char *memblock, uint32_t elem_id)
-{
-	uint16_t N_elems = nb_partition_get_N_elems(part);
-	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	for (uint32_t j = 0; j < N_adj; j++) {
-		uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, j);
-		if (N_elems <= ngb_id) {
-			uint32_t face_id = 
-				nb_partition_elem_find_edge(part, elem_id, j);
-			face_elems_conn->N_adj[face_id] = 1;
-			face_elems_conn->adj[face_id] = (void*) memblock;
-			memblock += sizeof(**(face_elems_conn->adj));
-			face_elems_conn->adj[face_id][0] = elem_id;
-		} else if (elem_id < ngb_id) {
-			uint32_t face_id =
-				nb_partition_elem_find_edge(part, elem_id, j);
-			memblock = set_internal_face(face_elems_conn, part,
-						     memblock, face_id,
-						     elem_id, ngb_id);
-		}
-	}
-	return memblock;
-}
-
-static char *set_internal_face(nb_graph_t *face_elems_conn,
-			       const nb_partition_t *part,
-			       char *memblock, uint32_t face_id,
-			       uint32_t elem_id1, uint32_t elem_id2)
-{
-	uint16_t N_ngb = 2 +
-		get_N_ngb_around_right_vtx(part, elem_id1, elem_id2) +
-		get_N_ngb_around_right_vtx(part, elem_id2, elem_id1);
-
-	face_elems_conn->N_adj[face_id] = N_ngb;
-	face_elems_conn->adj[face_id] = (void*) memblock;
-	memblock += N_ngb * sizeof(**(face_elems_conn->adj));
-	face_elems_conn->adj[face_id][0] = elem_id1;
-	face_elems_conn->adj[face_id][1] = elem_id2;
-
-	uint32_t *adj = face_elems_conn->adj[face_id];
-	uint16_t id = get_ngb_around_right_vtx(part, adj, 2,
-					       elem_id1, elem_id2);
-	get_ngb_around_right_vtx(part, adj, id, elem_id2, elem_id1);
-	return memblock;
-}
-
-static uint32_t get_N_total_face_adj(const nb_partition_t *part)
+static uint32_t get_N_total_face_adj(const nb_partition_t *part,
+				     const nb_graph_t *ngb_graph)
 {
 	uint32_t N = 0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
@@ -290,14 +287,30 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 								    i, j);
 			if (N_elems <= ngb_id)
 				N += 1;
-			else if (i < ngb_id) {
-				N += (get_N_ngb_around_right_vtx(part,
-								 i, ngb_id) +
-				      get_N_ngb_around_right_vtx(part,
-								 ngb_id, i) +
-				      2);
-			}
+			else if (i < ngb_id)
+				N += face_get_N_ngb(part, ngb_graph,
+						    i, ngb_id);
 		}
+	}
+	return N;
+}
+
+static uint16_t face_get_N_ngb(const nb_partition_t *part,
+			       const nb_graph_t *ngb_graph,
+			       uint32_t elem_id1, uint32_t elem_id2)
+{
+	uint16_t N;
+	if (0 > NGB_LAYERS) {
+		N = 2;
+	} else if (0 == NGB_LAYERS) {
+		N = 2 + get_N_ngb_around_right_vtx(part, elem_id1, elem_id2) +
+			get_N_ngb_around_right_vtx(part, elem_id2, elem_id1);
+	} else {
+		uint16_t N_repeated =
+			nb_graph_find_N_intersected_adj(ngb_graph, elem_id1,
+							elem_id2);
+		N = ngb_graph->N_adj[elem_id1] +
+			ngb_graph->N_adj[elem_id2] - N_repeated;
 	}
 	return N;
 }
@@ -337,6 +350,86 @@ static uint16_t get_N_ngb_around_right_vtx(const nb_partition_t *part,
 	return N;
 }
 
+static char *set_elemental_faces(nb_graph_t *face_elems_conn,
+				 const nb_partition_t *part,
+				 const nb_graph_t *ngb_graph,
+				 char *memblock, uint32_t elem_id)
+{
+	uint16_t N_elems = nb_partition_get_N_elems(part);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
+	for (uint32_t j = 0; j < N_adj; j++) {
+		uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, j);
+		if (N_elems <= ngb_id) {
+			uint32_t face_id = 
+				nb_partition_elem_find_edge(part, elem_id, j);
+			set_boundary_face(face_elems_conn, part,
+					  memblock, face_id, elem_id);
+		} else if (elem_id < ngb_id) {
+			uint32_t face_id =
+				nb_partition_elem_find_edge(part, elem_id, j);
+			memblock = set_internal_face(face_elems_conn, part,
+						     ngb_graph, memblock,
+						     face_id, elem_id, ngb_id);
+		}
+	}
+	return memblock;
+}
+
+static char *set_boundary_face(nb_graph_t *face_elems_conn,
+			       const nb_partition_t *part, 
+			       char *memblock, uint32_t face_id,
+			       uint32_t elem_id)
+{
+	face_elems_conn->N_adj[face_id] = 1;
+	face_elems_conn->adj[face_id] = (void*) memblock;
+	memblock += sizeof(**(face_elems_conn->adj));
+	face_elems_conn->adj[face_id][0] = elem_id;
+	return memblock;
+}
+
+static char *set_internal_face(nb_graph_t *face_elems_conn,
+			       const nb_partition_t *part,
+			       const nb_graph_t *ngb_graph,
+			       char *memblock, uint32_t face_id,
+			       uint32_t elem_id1, uint32_t elem_id2)
+{
+       	uint16_t N_ngb = face_get_N_ngb(part, ngb_graph, elem_id1, elem_id2);
+	face_elems_conn->N_adj[face_id] = N_ngb;
+	face_elems_conn->adj[face_id] = (void*) memblock;
+	memblock += N_ngb * sizeof(**(face_elems_conn->adj));
+
+	if (0 > NGB_LAYERS)
+		set_pairwise_ngb(face_elems_conn->adj[face_id],
+				 elem_id1, elem_id2);
+	else if (0 == NGB_LAYERS)
+		set_local_ngb(face_elems_conn->adj[face_id],
+			      part, elem_id1, elem_id2);
+	else
+		set_extended_ngb(face_elems_conn->adj[face_id],
+				 ngb_graph, elem_id1, elem_id2);
+
+	return memblock;
+
+}
+
+static void set_pairwise_ngb(uint32_t *adj, uint32_t elem_id1,
+			     uint32_t elem_id2)
+{
+	adj[0] = elem_id1;
+	adj[1] = elem_id2;
+}
+
+static void set_local_ngb(uint32_t *adj, const nb_partition_t *part,
+			  uint32_t elem_id1, uint32_t elem_id2)
+{
+	adj[0] = elem_id1;
+	adj[1] = elem_id2;
+
+	uint16_t id = get_ngb_around_right_vtx(part, adj, 2,
+					       elem_id1, elem_id2);
+	get_ngb_around_right_vtx(part, adj, id, elem_id2, elem_id1);
+}
+
 static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 					 uint32_t *ngb, uint16_t current_id,
 					 uint32_t elem_id1, uint32_t elem_id2)
@@ -370,6 +463,35 @@ static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 		}
 	}
 	return current_id;
+}
+
+static void set_extended_ngb(uint32_t *adj, const nb_graph_t *ngb_graph,
+			     uint32_t elem_id1, uint32_t elem_id2)
+{
+	adj[0] = elem_id1;
+	adj[1] = elem_id2;
+	uint16_t id = 2;
+	for (uint16_t i = 0; i < ngb_graph->N_adj[elem_id1]; i++) {
+		uint32_t ngb = ngb_graph->adj[elem_id1][i];
+		if (ngb != elem_id2) {
+			adj[id] = ngb;
+			id += 1;
+		}
+	}
+	for (uint16_t i = 0; i < ngb_graph->N_adj[elem_id2]; i++) {
+		uint32_t ngb = ngb_graph->adj[elem_id2][i];
+		bool included = false;
+		for (uint16_t j = 0; j < id; j++) {	
+			if (adj[j] == ngb) {
+				included = true;
+				break;
+			}
+		}
+		if (!included) {
+			adj[id] = ngb;
+			id += 1;
+		}
+	}
 }
 
 static void assemble_global_forces(double *F,
@@ -412,14 +534,12 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 	vcn_sparse_reset(K);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		assemble_face(i, K, part, face_elems_conn,
-			      material, analysis2D, params2D,
-			      N_qp);
+		assemble_face(i, K, part, face_elems_conn, material,
+			      analysis2D, params2D, N_qp);
 	}
 }
 
-static void assemble_face(uint32_t face_id,
-			  vcn_sparse_t *K,
+static void assemble_face(uint32_t face_id, vcn_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
