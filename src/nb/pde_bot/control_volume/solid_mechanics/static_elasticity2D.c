@@ -23,7 +23,6 @@
 /* DEFINE RBF FOR INTERPOLATOR: x * log(x+1) */
 /* DEFINE QUADRATURE POINTS 3 */
 #define ENABLE_NEIGHBOURHOOD true
-#define ENABLE_LEAST_SQUARES false
 
 #define POW2(a) ((a)*(a))
 
@@ -570,8 +569,8 @@ static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
 	}
 }
 
-static int xxx_solver(const vcn_sparse_t *const A,
-		      const double *const b, double* x)
+static int solver(const vcn_sparse_t *const A,
+		  const double *const b, double* x)
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
@@ -591,66 +590,9 @@ static int xxx_solver(const vcn_sparse_t *const A,
 
 	vector_permutation(N, xr, iperm, x);
 	
-	NB_SOFT_FREE(memsize, memblock);
-	return status;
-}
-
-static int solver(const vcn_sparse_t *const A,
-		  const double *const b, double* x)
-{
-	uint32_t N = vcn_sparse_get_size(A);
-	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	uint32_t *perm = (void*) memblock;
-	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
-	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
-	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
-			      N * sizeof(double));
-
-	get_permutation(A, perm, iperm);
-
-	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
-	vector_permutation(N, b, perm, br);
-
-	int status = solve_overdetermined(Ar, br, x);
-
-	vector_permutation(N, xr, iperm, x);
-	
 	vcn_sparse_destroy(Ar);
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
-}
-
-static int solve_overdetermined(vcn_sparse_t *A, const double *b, double* x)
-{
-	uint32_t N = vcn_sparse_get_size(A);
-	uint32_t memsize = 2 * N * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	double *aux1 = (void*) memblock;
-	double *aux2 = (void*) (memblock + N * sizeof(double));
-
-	vcn_sparse_t *L = NULL; 
-	vcn_sparse_t *U = NULL;
-	vcn_sparse_alloc_LU(A, &L, &U);           /* A = L U */
- 
-	vcn_sparse_transpose(A);
-	vcn_sparse_t *UT = NULL;
-	vcn_sparse_t *LT = NULL;
-	vcn_sparse_alloc_LU(A, &UT, &LT);         /* AT = UT LT */
-
-	vcn_sparse_multiply_vector(A, b, aux1, 1);/* AT b */
-	/* AQUI VOY */
-
-	vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
-
-	vcn_sparse_solve_LU(L, U, b, x);
-
-	vcn_sparse_destroy(L);
-	vcn_sparse_destroy(U);
-	vcn_sparse_destroy(UT);
-	vcn_sparse_destroy(LT);
-	NB_SOFT_FREE(memsize, memblock);
-	return 0;
 }
 
 static void get_permutation(const vcn_sparse_t *const A,

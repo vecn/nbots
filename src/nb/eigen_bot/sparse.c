@@ -347,7 +347,7 @@ void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
 			jcount[j] = jc + 1;
 		}
 	}
-	NS_SOFT_FREE(jcount);
+	NB_SOFT_FREE(memsize, jcount);
 }
 
 void vcn_sparse_transpose(vcn_sparse_t *A)
