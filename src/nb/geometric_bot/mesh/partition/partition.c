@@ -446,6 +446,14 @@ double nb_partition_edge_get_normal(const nb_partition_t *part,
 	return part->edge_get_normal(part->msh, face_id, normal);
 }
 
+double nb_partition_edge_get_length(const nb_partition_t *part,
+				    uint32_t face_id)
+{
+	double nf[2];
+	double length = part->edge_get_normal(part->msh, face_id, nf);
+	return length;
+}
+
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id)
 {
 	return part->elem_get_area(part->msh, id);

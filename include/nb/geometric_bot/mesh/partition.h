@@ -42,7 +42,8 @@ void nb_partition_edge_get_midpoint(const nb_partition_t *part,
 				    double midpoint[2]);
 double nb_partition_edge_get_normal(const nb_partition_t *part,
 				    uint32_t face_id, double normal[2]);
-
+double nb_partition_edge_get_length(const nb_partition_t *part,
+				    uint32_t face_id);
 double nb_partition_elem_get_x(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_y(const nb_partition_t *part, uint32_t id);
 double nb_partition_elem_get_area(const nb_partition_t *part, uint32_t id);
