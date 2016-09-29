@@ -19,7 +19,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 uint8_t N_quadrature_points,
-			 uint8_t N_subfaces,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */);
@@ -28,7 +27,6 @@ void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
 					const nb_material_t *const material,
 					nb_analysis2D_t analysis2D,
 					uint8_t N_quadrature_points,
-					uint8_t N_subfaces,
 					const double* strain,
 					double* stress /* Output */);
 
