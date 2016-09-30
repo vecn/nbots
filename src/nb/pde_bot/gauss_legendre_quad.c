@@ -72,12 +72,12 @@ static void set_2_pnt(nb_glquadrature_t *glq)
 
 static void set_3_pnt(nb_glquadrature_t *glq)
 {
-	double w[3] = {0.8888888888888888,
-		       0.5555555555555556,
+	double w[3] = {0.5555555555555556,
+		       0.8888888888888888,
 		       0.5555555555555556};
 	memcpy(glq->w, w, 3 * sizeof(*(glq->w)));
 
-	double x[3] = {0.0, -0.7745966692414834, 0.7745966692414834};
+	double x[3] = {-0.7745966692414834, 0.0, 0.7745966692414834};
 	memcpy(glq->x, x, 3 * sizeof(*(glq->x)));
 }
 

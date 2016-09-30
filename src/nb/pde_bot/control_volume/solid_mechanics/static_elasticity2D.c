@@ -107,9 +107,10 @@ static void integrate_Kf(const nb_partition_t *const part, const double D[4],
 static void get_quadrature_points(const nb_partition_t *part, uint32_t face_id,
 				  double lf, uint8_t N_qp, double *xqp,
 				  double *wqp);
-static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
-				    const uint32_t *ngb, const double x[2],
-				    double *grad_phi);
+static void interpolators_eval_grad(const nb_partition_t *part,
+				    uint32_t face_id, double nf[2],
+				    uint8_t N_ngb, const uint32_t *ngb,
+				    const double x[2], double *grad_phi);
 static void get_Kf_nodal_contribution(const nb_partition_t *part,
 				      const double D[4], const double nf[2],
 				      uint16_t i, const double *grad_phi,
@@ -128,23 +129,24 @@ static void compute_strain(double *strain, char *boundary_mask,
 			   const nb_bcond_t *const bcond,
 			   const double *disp, uint8_t N_qp);
 static void get_face_strain(uint32_t face_id,
-			       const nb_graph_t *face_elems_conn,
-			       const nb_partition_t *const part,
-			       const nb_bcond_t *const bcond,
-			       const double *disp, uint8_t N_qp,
-			       double length, double *strain,
-			       char *boundary_mask);
+			    const nb_graph_t *face_elems_conn,
+			    const nb_partition_t *const part,
+			    const nb_bcond_t *const bcond,
+			    const double *disp, uint8_t N_qp,
+			    double *strain,
+			    char *boundary_mask);
 static void get_internal_face_strain(uint32_t face_id,
-					const nb_graph_t *face_elems_conn,
-					const nb_partition_t *const part,
-					const double *disp, uint8_t N_qp,
-					double length, double *strain);
+				     const nb_graph_t *face_elems_conn,
+				     const nb_partition_t *const part,
+				     const double *disp, uint8_t N_qp,
+				     double length, double nf[2],
+				     double *strain);
 static void get_boundary_face_strain(uint32_t face_id,
-					const nb_graph_t *face_elems_conn,
-					const nb_partition_t *const part,
-					const nb_bcond_t *const bcond,
-					const double *disp, uint8_t N_qp,
-					double length, double *strain);
+				     const nb_graph_t *face_elems_conn,
+				     const nb_partition_t *const part,
+				     const nb_bcond_t *const bcond,
+				     const double *disp, uint8_t N_qp,
+				     double length, double *strain);
 
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
@@ -598,7 +600,7 @@ static void integrate_Kf(const nb_partition_t *const part, const double D[4],
 
 	memset(Kf, 0, 4 * N * sizeof(double));
 	for (uint8_t q = 0; q < N_qp; q++) {
-		interpolators_eval_grad(part, N, adj, 
+		interpolators_eval_grad(part, face_id, nf, N, adj, 
 					&(xqp[q*2]), grad_phi);
 		double factor = wqp[q] * params2D->thickness;
 		for (uint16_t i = 0; i < N; i++) {
@@ -630,20 +632,26 @@ static void get_quadrature_points(const nb_partition_t *part, uint32_t face_id,
 	}
 }
 
-static void interpolators_eval_grad(const nb_partition_t *part, uint8_t N_ngb,
-				    const uint32_t *ngb, const double x[2],
-				    double *grad_phi)
-{	
+static void interpolators_eval_grad(const nb_partition_t *part,
+				    uint32_t face_id, double nf[2],
+				    uint8_t N_ngb, const uint32_t *ngb,
+				    const double x[2], double *grad_phi)
+{
 	uint32_t memsize = 3 * N_ngb * sizeof(double);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *ni = (void*) memblock;
 	double *ri = (void*) (memblock + 2 * N_ngb * sizeof(double));
 
+	double r0 = nb_partition_elem_get_radius(part, ngb[0]);
+	double r1 = nb_partition_elem_get_radius(part, ngb[1]);
+	double r = vcn_math_harmonic_avg(r0, r1);
 	for (uint16_t i = 0; i < N_ngb; i++) {
 		ni[i * 2] = nb_partition_elem_get_x(part, ngb[i]);
 		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
-		ri[i] = nb_partition_elem_get_apotem(part, ngb[i]);
+		ri[i] = r;
 	}
+	ri[0] /= sqrt(2);
+	ri[1] /= sqrt(2);
 
 	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, ri, x, grad_phi);	
 
@@ -738,9 +746,8 @@ static void compute_strain(double *strain, char *boundary_mask,
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 
  	for (uint32_t i = 0; i < N_faces; i++) {
-		double lf = nb_partition_edge_get_length(part, i);
 		get_face_strain(i, face_elems_conn, part, bcond,
-				disp, N_qp, lf, strain, boundary_mask);
+				disp, N_qp, strain, boundary_mask);
 	}
 }
 
@@ -749,18 +756,21 @@ static void get_face_strain(uint32_t face_id,
 			    const nb_partition_t *const part,
 			    const nb_bcond_t *const bcond,
 			    const double *disp, uint8_t N_qp,
-			    double length, double *strain,
+			    double *strain,
 			    char *boundary_mask)
 {
 	uint16_t N = face_elems_conn->N_adj[face_id];
+	double nf[2];
+	double lf = nb_partition_edge_get_normal(part, face_id, nf);
+
 	if (N > 1) {
 		boundary_mask[face_id] = 0;
 		get_internal_face_strain(face_id, face_elems_conn, part,
-					 disp, N_qp, length, strain);
+					 disp, N_qp, lf, nf, strain);
 	} else {
 		boundary_mask[face_id] = 1;
 		get_boundary_face_strain(face_id, face_elems_conn, part,
-					 bcond, disp, N_qp, length, strain);
+					 bcond, disp, N_qp, lf, strain);
 	}
 }
 
@@ -768,7 +778,8 @@ static void get_internal_face_strain(uint32_t face_id,
 				     const nb_graph_t *face_elems_conn,
 				     const nb_partition_t *const part,
 				     const double *disp, uint8_t N_qp,
-				     double length, double *strain)
+				     double length, double nf[2],
+				     double *strain)
 {
 	uint16_t N = face_elems_conn->N_adj[face_id];
 	uint32_t *adj = face_elems_conn->adj[face_id];
@@ -781,7 +792,7 @@ static void get_internal_face_strain(uint32_t face_id,
 	get_quadrature_points(part, face_id, length, N_qp, xqp, wqp);
 
 	for (uint8_t q = 0; q < N_qp; q++) {
-		interpolators_eval_grad(part, N, adj,
+		interpolators_eval_grad(part, face_id, nf, N, adj,
 					&(xqp[q*2]), grad_phi);
 		uint32_t id = face_id * N_qp + q;
 		memset(&(strain[id*3]), 0, 3 * sizeof(*strain));

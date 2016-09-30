@@ -102,7 +102,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, 3, NB_QUAD,
+	run_test("%s/beam_cantilever.txt", 1000, 3, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
