@@ -703,9 +703,6 @@ static int solver(const vcn_sparse_t *const A,
 	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 			      N * sizeof(double));
 
-	double usym = vcn_sparse_get_usym(A);/* TEMPORAL */
-	printf("-- K usym: %e\n", usym);     /* TEMPORAL */
-
 	get_permutation(A, perm, iperm);
 
 	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
