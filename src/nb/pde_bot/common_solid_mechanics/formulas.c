@@ -69,13 +69,11 @@ double nb_pde_get_vm_stress(double sxx, double syy, double sxy)
 	return sqrt(POW2(sxx) + POW2(syy) - sxx * syy + 3.0 * POW2(sxy));
 }
 
-void nb_pde_compute_von_mises(uint32_t N,
-			      double *stress,
-			      double *von_mises /* Output */)
+void nb_pde_get_main_stress(double sxx, double syy, double sxy,
+			    double main_stress[2])
 {
-	for (uint32_t i = 0; i < N; i++) {
-		von_mises[i] = nb_pde_get_vm_stress(stress[i * 3],
-						    stress[i*3+1],
-						    stress[i*3+2]);
-	}
+	double avg = (sxx + syy) / 2.0;
+	double R = sqrt(POW2(avg) + POW2(sxy));
+	main_stress[0] = avg + R;
+	main_stress[1] = avg - R;
 }

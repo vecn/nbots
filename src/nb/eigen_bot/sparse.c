@@ -378,6 +378,22 @@ uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A)
 	return nnz;
 }
 
+double vcn_sparse_get_usym(const vcn_sparse_t *const A)
+{
+	double sum = 0;
+	for (uint32_t i = 0; i < A->N; i++) {
+		for (uint32_t j = 0; A->rows_index[i][j] < i; j++) {
+			double Aij = A->rows_values[i][j];
+			uint32_t k = A->rows_index[i][j];
+			uint32_t l = sparse_bsearch_row(A, k, i, 0,
+							A->rows_size[k]-1);
+			double Aji = A->rows_values[k][l];
+			sum += POW2(Aij - Aji); 
+		}
+	}
+	return sqrt(sum);
+}
+
 void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads)
 {

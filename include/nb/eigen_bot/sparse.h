@@ -63,6 +63,7 @@ void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At);
 void vcn_sparse_transpose(vcn_sparse_t *A);
 uint32_t vcn_sparse_get_size(const vcn_sparse_t *const A);
 uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A);
+double vcn_sparse_get_usym(const vcn_sparse_t *const A);
 
 void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads);
