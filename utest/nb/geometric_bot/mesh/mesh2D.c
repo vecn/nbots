@@ -93,12 +93,12 @@ static void test_generate_from_model_angle_constraint(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Triangle.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	bool trg_ok = (39 == vcn_mesh_get_N_trg(mesh));
-	bool edg_ok = (79 == vcn_mesh_get_N_edg(mesh));
-	vcn_mesh_destroy(mesh);
+	bool trg_ok = (39 == nb_mesh_get_N_trg(mesh));
+	bool edg_ok = (79 == nb_mesh_get_N_edg(mesh));
+	nb_mesh_destroy(mesh);
 	CU_ASSERT(trg_ok);
 	CU_ASSERT(edg_ok);
 }
@@ -106,15 +106,15 @@ static void test_generate_from_model_angle_constraint(void)
 static void test_generate_from_model_length_constraint(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(20, 0, 0, 100);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 1.0);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
 	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
@@ -123,15 +123,15 @@ static void test_generate_from_model_length_constraint(void)
 static void test_generate_from_model_huge_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e13, 0, 0, 100);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  1e12);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
 	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
@@ -140,15 +140,15 @@ static void test_generate_from_model_huge_scale(void)
 static void test_generate_from_model_tiny_scale(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(2e-13, 0, 0, 100);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 1e-14);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6300 < N_trg && 6700 > N_trg);
 	CU_ASSERT(9800 < N_edge && 10200 > N_edge);
@@ -159,15 +159,15 @@ static void test_generate_from_model_simple_square(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.5);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(2000 < N_trg && 2100 > N_trg);
 	CU_ASSERT(3050 < N_edge && 3200 > N_edge);
@@ -178,18 +178,18 @@ static void test_generate_from_model_subsgm_constraint(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Square.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.5);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
 					  0.05);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(6600 < N_trg && 7000 > N_trg);
 	CU_ASSERT(10500 < N_edge && 11250 > N_edge);
@@ -200,15 +200,15 @@ static void test_generate_from_model_small_local_feature(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Rectangle.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 5.0);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(8750 < N_trg && 8950 > N_trg);
 	CU_ASSERT(13300 < N_edge && 13600 > N_edge);
@@ -219,15 +219,15 @@ static void test_generate_from_model_small_localf_v2(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Rectangle_with_two_nodges.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 2.0);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(5050 < N_trg && 5250 > N_trg);
 	CU_ASSERT(7700 < N_edge && 8100 > N_edge);
@@ -238,15 +238,15 @@ static void test_generate_from_model_subsgm_const_v2(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Medieval_Ax.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
 					 0.5);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(9100 < N_trg && 9700 > N_trg);
 	CU_ASSERT(14500 < N_edge && 15750 > N_edge);
@@ -257,15 +257,15 @@ static void test_generate_from_model_holes(void)
 	char input_name[256];
 	sprintf(input_name, "%s/CIMAT_Logo.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
 					  0.3);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(11000 < N_trg && 11600 > N_trg);
 	CU_ASSERT(17700 < N_edge && 18500 > N_edge);
@@ -276,15 +276,15 @@ static void test_generate_from_model_small_angles(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Spokes.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 10);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(7000 < N_trg && 7200 > N_trg);
 	CU_ASSERT(10650 < N_edge && 10950 > N_edge);
@@ -295,12 +295,12 @@ static void test_generate_from_model_quasi_linear(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Short_cantilever.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(800 < N_trg && 900 > N_trg);
 	CU_ASSERT(1400 < N_edge && 1500 > N_edge);
@@ -311,21 +311,21 @@ static void test_generate_from_model_trg_constraint(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_size_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_TRG,
 				     3000);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  8);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH,
 					  5);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(2950 < N_trg && 3050 > N_trg);
 	CU_ASSERT(4600 < N_edge && 4700 > N_edge);
@@ -341,17 +341,17 @@ static void test_generate_from_difference(void)
 
 	vcn_model_get_difference(model, model1, model2);
 	
-	vcn_mesh_t *mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t *mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
 	vcn_model_finish(model);
 
-	CU_ASSERT(18 == vcn_mesh_get_N_vtx(mesh));
-	CU_ASSERT(34 == vcn_mesh_get_N_edg(mesh));
-	CU_ASSERT(16 == vcn_mesh_get_N_trg(mesh));
+	CU_ASSERT(18 == nb_mesh_get_N_vtx(mesh));
+	CU_ASSERT(34 == nb_mesh_get_N_edg(mesh));
+	CU_ASSERT(16 == nb_mesh_get_N_trg(mesh));
 
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 }
 
 static void test_is_vtx_inside(void)
@@ -359,10 +359,10 @@ static void test_is_vtx_inside(void)
 	char input_name[256];
 	sprintf(input_name, "%s/Zacatecas.psl", INPUTS_DIR);
 	vcn_model_t *model = vcn_model_load(input_name);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_unset_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_unset_geometric_constraint(mesh,
 					    NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	double box[4];
 	vcn_model_get_enveloping_box(model, box);
 	vcn_model_destroy(model);
@@ -374,13 +374,13 @@ static void test_is_vtx_inside(void)
 			double vtx[2];
 			vtx[0] = box[0] + i * xstep;
 			vtx[1] = box[1] + j * ystep;
-			if (vcn_mesh_is_vtx_inside(mesh, vtx))
-				vcn_mesh_insert_vtx(mesh, vtx);
+			if (nb_mesh_is_vtx_inside(mesh, vtx))
+				nb_mesh_insert_vtx(mesh, vtx);
 		}
 	}
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(2300 < N_trg && 2400 > N_trg);
 	CU_ASSERT(3550 < N_edge && 3650 > N_edge);
@@ -391,13 +391,13 @@ static void test_set_density(void)
 	vcn_model_t* model =
 		vcn_model_create_rectangle(-2 * NB_MATH_PI, -2 * NB_MATH_PI,
 					   2 * NB_MATH_PI, 2 * NB_MATH_PI);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_density(mesh, density_func, NULL);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_density(mesh, density_func, NULL);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(9000 < N_trg && 9200 > N_trg);
 	CU_ASSERT(13620 < N_edge && 13900 > N_edge);

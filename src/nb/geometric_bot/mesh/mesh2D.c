@@ -31,20 +31,20 @@
 #define EDG_CONTAINER NB_HASH
 #define TRG_CONTAINER NB_HASH
 
-static void set_memory(vcn_mesh_t *mesh);
-static void init_tasks(vcn_mesh_t *mesh);
-static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh);
-static void clear_input_data(vcn_mesh_t *mesh);
-static void null_task(const vcn_mesh_t *const mesh);
-static inline void set_angle_constraint(vcn_mesh_t *mesh, double angle);
-static void delete_triangles_by_wave(vcn_mesh_t *const mesh, msh_trg_t* trg,
+static void set_memory(nb_mesh_t *mesh);
+static void init_tasks(nb_mesh_t *mesh);
+static void copy_tasks(nb_mesh_t *copy, const nb_mesh_t *const mesh);
+static void clear_input_data(nb_mesh_t *mesh);
+static void null_task(const nb_mesh_t *const mesh);
+static inline void set_angle_constraint(nb_mesh_t *mesh, double angle);
+static void delete_triangles_by_wave(nb_mesh_t *const mesh, msh_trg_t* trg,
 				     nb_container_t *trg_deleted);
-static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
+static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted);
-static void remove_concavities_triangles(vcn_mesh_t* mesh);
-static void remove_holes_triangles(vcn_mesh_t* mesh,
+static void remove_concavities_triangles(nb_mesh_t* mesh);
+static void remove_holes_triangles(nb_mesh_t* mesh,
 				   const vcn_model_t *const model);
-static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh);
+static bool size_constraints_allow_refine(const nb_mesh_t *const mesh);
 
 /* Compare functions */
 static int compare_sgmA_isSmallerThan_sgmB(const void *const sgmA, 
@@ -67,9 +67,9 @@ static int compare_sgm_by_dist_and_by_vtx_pointer
 static uint32_t hash_key_vtx(const void *const  vertex);
 static uint32_t hash_key_trg(const void *const  triangle);
 
-uint32_t vcn_mesh_get_memsize(void)
+uint32_t nb_mesh_get_memsize(void)
 {
-	uint32_t mesh_size = sizeof(vcn_mesh_t);
+	uint32_t mesh_size = sizeof(nb_mesh_t);
 	uint32_t bins_size = vcn_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
@@ -78,7 +78,7 @@ uint32_t vcn_mesh_get_memsize(void)
 		trg_container_size + 3 * membank_size;
 }
 
-void vcn_mesh_init(vcn_mesh_t *mesh)
+void nb_mesh_init(nb_mesh_t *mesh)
 {
 	set_memory(mesh);
 
@@ -91,16 +91,16 @@ void vcn_mesh_init(vcn_mesh_t *mesh)
 	mesh->refiner_type = NB_MESH_REFINE_RUPPERT;
 }
 
-static void set_memory(vcn_mesh_t *mesh)
+static void set_memory(nb_mesh_t *mesh)
 {
 	char *memblock = (void*)mesh;
-	uint32_t mesh_size = sizeof(vcn_mesh_t);
+	uint32_t mesh_size = sizeof(nb_mesh_t);
 	uint32_t bins_size = vcn_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
 
-	memset(mesh, 0, vcn_mesh_get_memsize());
+	memset(mesh, 0, nb_mesh_get_memsize());
 
 	mesh->ug_vtx = (void*) (memblock + mesh_size);
 	vcn_bins2D_init(mesh->ug_vtx, 1.0);
@@ -130,7 +130,7 @@ static void set_memory(vcn_mesh_t *mesh)
 	nb_membank_init(mesh->edg_membank, sizeof(msh_edge_t));
 }
 
-void vcn_mesh_finish(vcn_mesh_t *mesh)
+void nb_mesh_finish(nb_mesh_t *mesh)
 {
 	clear_input_data(mesh);
 	vcn_bins2D_finish(mesh->ug_vtx);
@@ -141,27 +141,27 @@ void vcn_mesh_finish(vcn_mesh_t *mesh)
 	nb_membank_finish(mesh->edg_membank);
 }
 
-vcn_mesh_t* vcn_mesh_create(void)
+nb_mesh_t* nb_mesh_create(void)
 {
-	uint32_t memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t *mesh = malloc(memsize);
-	vcn_mesh_init(mesh);
+	uint32_t memsize = nb_mesh_get_memsize();
+	nb_mesh_t *mesh = malloc(memsize);
+	nb_mesh_init(mesh);
 	return mesh;
 }
 
-static void init_tasks(vcn_mesh_t *mesh)
+static void init_tasks(nb_mesh_t *mesh)
 {
 	mesh->do_after_insert_trg = null_task;
 	mesh->do_after_insert_vtx = null_task;
 }
 
-static void copy_tasks(vcn_mesh_t *copy, const vcn_mesh_t *const mesh)
+static void copy_tasks(nb_mesh_t *copy, const nb_mesh_t *const mesh)
 {
 	copy->do_after_insert_trg = mesh->do_after_insert_trg;
 	copy->do_after_insert_vtx = mesh->do_after_insert_vtx;
 }
 
-void vcn_mesh_clear(vcn_mesh_t *mesh)
+void nb_mesh_clear(nb_mesh_t *mesh)
 {
 	clear_input_data(mesh);
 	vcn_bins2D_clear(mesh->ug_vtx);
@@ -173,7 +173,7 @@ void vcn_mesh_clear(vcn_mesh_t *mesh)
 	nb_membank_clear(mesh->edg_membank);
 }
 
-static void clear_input_data(vcn_mesh_t *mesh)
+static void clear_input_data(nb_mesh_t *mesh)
 {
 	free(mesh->input_vtx);
 	mesh->input_vtx = NULL;
@@ -192,19 +192,19 @@ static void clear_input_data(vcn_mesh_t *mesh)
 	}
 }
 
-void vcn_mesh_destroy(vcn_mesh_t* mesh)
+void nb_mesh_destroy(nb_mesh_t* mesh)
 {
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 	free(mesh);
 }
 
-static void null_task(const vcn_mesh_t *const mesh)
+static void null_task(const nb_mesh_t *const mesh)
 {
 	; /* NULL statement */
 }
 
-void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
-		       void (*task)(const vcn_mesh_t *const))
+void nb_mesh_set_task(nb_mesh_t *mesh, int type,
+		       void (*task)(const nb_mesh_t *const))
 {
 	switch (type) {
 	case NB_MESH_TASK_AFTER_INSERT_TRG:
@@ -216,7 +216,7 @@ void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
 	}
 }
 
-void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type, 
+void nb_mesh_set_size_constraint(nb_mesh_t *mesh, int type, 
 				 uint32_t value)
 {
 	switch (type) {
@@ -229,7 +229,7 @@ void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
 	}
 }
 
-void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type)
+void nb_mesh_unset_size_constraint(nb_mesh_t *mesh, int type)
 {
 	switch (type) {
 	case NB_MESH_SIZE_CONSTRAINT_MAX_VTX:
@@ -241,7 +241,7 @@ void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type)
 	}
 }
 
-uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
+uint32_t nb_mesh_get_size_constraint(const nb_mesh_t *mesh, int type)
 {
 	uint32_t val;
 	switch (type) {
@@ -257,7 +257,7 @@ uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type)
 	return val;
 }
 
-void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type, 
+void nb_mesh_set_geometric_constraint(nb_mesh_t *mesh, int type, 
 				       double value)
 {
 	switch (type) {
@@ -273,7 +273,7 @@ void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
 	}
 }
 
-void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
+void nb_mesh_unset_geometric_constraint(nb_mesh_t *mesh, int type)
 {
 	switch (type) {
 	case NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE:
@@ -288,7 +288,7 @@ void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type)
 	}
 }
 
-static void set_angle_constraint(vcn_mesh_t *mesh, double angle)
+static void set_angle_constraint(nb_mesh_t *mesh, double angle)
 {
 	if (NB_GEOMETRIC_TOL < angle)
 		mesh->cr2se_ratio = 1.0 / (2.0 * sin(angle));
@@ -296,7 +296,7 @@ static void set_angle_constraint(vcn_mesh_t *mesh, double angle)
 		mesh->cr2se_ratio = 1e6;
 }
 
-double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
+double nb_mesh_get_geometric_constraint(const nb_mesh_t *mesh, int type)
 {
 	double val;
 	switch (type) {
@@ -315,7 +315,7 @@ double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh, int type)
 	return val;
 }
 
-inline void vcn_mesh_set_density(vcn_mesh_t* mesh,
+inline void nb_mesh_set_density(nb_mesh_t* mesh,
 				 double (*density)(const double x[2],
 						   const void *data),
 				 const void *density_data)
@@ -324,13 +324,13 @@ inline void vcn_mesh_set_density(vcn_mesh_t* mesh,
 	mesh->density_data = density_data;
 }
 
-inline void vcn_mesh_unset_density(vcn_mesh_t* mesh)
+inline void nb_mesh_unset_density(nb_mesh_t* mesh)
 {
 	mesh->density = NULL;
 	mesh->density_data = NULL;
 }
 
-inline void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type)
+inline void nb_mesh_set_refiner(nb_mesh_t *mesh, int type)
 {
 	if (type >= 0 && type < NB_MESH_REFINE_DEFAULT)
 		mesh->refiner_type = type;
@@ -338,17 +338,17 @@ inline void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type)
 		mesh->refiner_type = NB_MESH_REFINE_DEFAULT;
 }
 
-inline int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh)
+inline int nb_mesh_get_refiner(const nb_mesh_t *const mesh)
 {
 	return mesh->refiner_type;
 }
 
-inline bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh)
+inline bool nb_mesh_is_empty(const nb_mesh_t *const mesh)
 {
 	return nb_container_is_empty(mesh->ht_trg);
 }
 
-bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
+bool nb_mesh_is_vtx_inside(const nb_mesh_t *const restrict mesh,
 			    const double *const restrict vtx)
 {
 	msh_vtx_t v; 
@@ -358,7 +358,7 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const restrict mesh,
 	return (NULL != enveloping_trg);
 }
 
-void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices)
+void nb_mesh_get_vertices(nb_mesh_t* mesh, double* vertices)
 {
 	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
@@ -373,22 +373,22 @@ void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices)
 	vcn_bins2D_iter_finish(iter);
 }
 
-inline uint32_t vcn_mesh_get_N_vtx(const vcn_mesh_t *const mesh)
+inline uint32_t nb_mesh_get_N_vtx(const nb_mesh_t *const mesh)
 {
 	return vcn_bins2D_get_length(mesh->ug_vtx);
 }
 
-inline uint32_t vcn_mesh_get_N_trg(const vcn_mesh_t *const mesh)
+inline uint32_t nb_mesh_get_N_trg(const nb_mesh_t *const mesh)
 {
 	return nb_container_get_length(mesh->ht_trg);
 }
 
-inline uint32_t vcn_mesh_get_N_edg(const vcn_mesh_t *const mesh)
+inline uint32_t nb_mesh_get_N_edg(const nb_mesh_t *const mesh)
 {
 	return nb_container_get_length(mesh->ht_edge);
 }
 
-double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
+double nb_mesh_get_area(const nb_mesh_t *const mesh)
 {
 	double area = 0.0;
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
@@ -405,7 +405,7 @@ double vcn_mesh_get_area(const vcn_mesh_t *const mesh)
 }
 
 static void delete_triangles_by_wave
-                   (vcn_mesh_t *const restrict mesh, msh_trg_t* trg,
+                   (nb_mesh_t *const restrict mesh, msh_trg_t* trg,
 		    nb_container_t *trg_deleted)
 {
 	bool s1_is_not_boundary = !medge_is_subsgm(trg->s1);
@@ -422,7 +422,7 @@ static void delete_triangles_by_wave
 	mtrg_free(mesh, trg);
 }
 
-static void advance_deletion_wave(vcn_mesh_t *mesh, msh_trg_t *nb_trg,
+static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted)
 {
 	if (NULL != nb_trg) {
@@ -545,7 +545,7 @@ static inline uint32_t hash_key_trg(const void *const restrict triangle)
 		 (int)(trg->v3->x[1] * 83492791));
 }
 
-static void remove_concavities_triangles(vcn_mesh_t* mesh)
+static void remove_concavities_triangles(nb_mesh_t* mesh)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
 	bool stop = false;
@@ -575,7 +575,7 @@ static void remove_concavities_triangles(vcn_mesh_t* mesh)
 	}
 }
 
-static void remove_holes_triangles(vcn_mesh_t* mesh,
+static void remove_holes_triangles(nb_mesh_t* mesh,
 				   const vcn_model_t *const model)
 {
 	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
@@ -612,7 +612,7 @@ static void remove_holes_triangles(vcn_mesh_t* mesh,
 	}
 }
 
-void vcn_mesh_refine(vcn_mesh_t *restrict mesh)
+void nb_mesh_refine(nb_mesh_t *restrict mesh)
 {
 	switch (mesh->refiner_type) {
 	case NB_MESH_REFINE_RUPPERT:
@@ -626,7 +626,7 @@ void vcn_mesh_refine(vcn_mesh_t *restrict mesh)
 	}
 }
 
-bool vcn_mesh_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
+bool nb_mesh_insert_vtx(nb_mesh_t *restrict mesh, const double vertex[2])
 {
 	bool inserted;
 	switch (mesh->refiner_type) {
@@ -643,10 +643,10 @@ bool vcn_mesh_insert_vtx(vcn_mesh_t *restrict mesh, const double vertex[2])
 	return inserted;
 }
 
-vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
+nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 {
-	uint32_t memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t *clone = malloc(memsize);
+	uint32_t memsize = nb_mesh_get_memsize();
+	nb_mesh_t *clone = malloc(memsize);
 	set_memory(clone);
 
 	clone->scale = mesh->scale;
@@ -820,25 +820,25 @@ vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh)
 	return clone;
 }
 
-void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
-				  const vcn_model_t *const model)
+void nb_mesh_generate_from_model(nb_mesh_t *mesh,
+				 const vcn_model_t *const model)
 {
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
 	if (size_constraints_allow_refine(mesh))
-		vcn_mesh_refine(mesh);
+		nb_mesh_refine(mesh);
 }
 
-void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
-				      const vcn_model_t *const  model)
+void nb_mesh_get_simplest_from_model(nb_mesh_t *mesh,
+				     const vcn_model_t *const  model)
 {
-	vcn_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
+	nb_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
 					  model->M, model->edge);
 	remove_holes_triangles(mesh, model);
 	remove_concavities_triangles(mesh);
 }
 
-static bool size_constraints_allow_refine(const vcn_mesh_t *const mesh)
+static bool size_constraints_allow_refine(const nb_mesh_t *const mesh)
 {
 	bool refine = false;
 	if (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||

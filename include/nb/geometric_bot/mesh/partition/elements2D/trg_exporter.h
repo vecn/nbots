@@ -55,7 +55,7 @@ typedef struct {
 	void (*stop_input_sgm_table_access)(void*);
 } nb_trg_exporter_interface_t;
 
-void vcn_mesh_export(const vcn_mesh_t *const mesh,
+void nb_mesh_export(const nb_mesh_t *const mesh,
 		     nb_trg_exporter_interface_t *exp);
 
 

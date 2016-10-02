@@ -61,7 +61,7 @@ uint32_t nb_msh3trg_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
-void nb_msh3trg_load_from_mesh(void *msh3trg, vcn_mesh_t *mesh);
+void nb_msh3trg_load_from_mesh(void *msh3trg, nb_mesh_t *mesh);
 
 /**
  * @brief Disable the elements sharing single point connections.

@@ -7,6 +7,6 @@
  *
  * @param[in] mesh Mesh to be processed.
  */
-void vcn_mesh_duplicate_one_point_connections(vcn_mesh_t* mesh);
+void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh);
 
 #endif

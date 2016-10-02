@@ -253,39 +253,39 @@ bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
-	bool is_unclosed = vcn_mesh_is_empty(mesh);
+	bool is_unclosed = nb_mesh_is_empty(mesh);
 
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 
 	return is_unclosed;
 }
 
 bool vcn_model_is_continuum(const vcn_model_t *model)
 {
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
-	bool is_continuum = vcn_mesh_is_continuum(mesh);
+	bool is_continuum = nb_mesh_is_continuum(mesh);
 
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 
 	return is_continuum;	
 }
 
 uint16_t vcn_model_get_N_subareas(const vcn_model_t *model)
 {
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
-	uint16_t N_subareas = vcn_mesh_get_N_subareas(mesh);
+	uint16_t N_subareas = nb_mesh_get_N_subareas(mesh);
 
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 
 	return N_subareas;
 

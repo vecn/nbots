@@ -31,18 +31,18 @@ static int suite_clean(void)
 static void test_load_from_mesh(void)
 {
 	vcn_model_t *model = vcn_model_create_polygon(1, 0, 0, 6);
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_geometric_constraint(mesh,
 					 NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					 0.1);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 	
 	uint32_t size = nb_mshquad_get_memsize();
 	nb_mshquad_t *quad = alloca(size);
 	nb_mshquad_init(quad);
 	nb_mshquad_load_from_mesh(quad, mesh);
-	vcn_mesh_destroy(mesh);
+	nb_mesh_destroy(mesh);
 	
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	uint32_t N_elems = nb_mshquad_get_N_elems(quad);

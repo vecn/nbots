@@ -41,11 +41,11 @@ static void hash_trg_remove(hash_trg_t *const htrg,
 			    msh_trg_t *const trg);
 static void hash_trg_destroy(hash_trg_t *const htrg);
 
-static void reallocate_bins(vcn_mesh_t *const restrict mesh);
-static bool check_max_vtx(const vcn_mesh_t *const mesh);
-static bool check_max_trg(const vcn_mesh_t *const mesh);
+static void reallocate_bins(nb_mesh_t *const restrict mesh);
+static bool check_max_vtx(const nb_mesh_t *const mesh);
+static bool check_max_trg(const nb_mesh_t *const mesh);
 static bool is_encroached(const msh_edge_t *const sgm);
-static msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
+static msh_vtx_t* get_midpoint(nb_mesh_t *mesh,
 			       const msh_edge_t *const sgm);
 static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v);
 static void get_encroached_triangles
@@ -57,7 +57,7 @@ static void check_encroached_neighbours(const msh_trg_t *trg,
 					nb_container_t *unencroached_trg,
 					nb_container_t *processing_trg);
 static void remove_encroached_triangles
-             (vcn_mesh_t *const mesh,
+             (nb_mesh_t *const mesh,
 	      msh_trg_t *const first_trg_to_check,
 	      const msh_vtx_t *const v,
 	      /* v_orfans_reference: NULL to take an arbitrary reference */
@@ -75,13 +75,13 @@ static msh_vtx_t* retrg_fan_get_next_trg
 			   const msh_vtx_t *const v2);
 
 static void retriangulate_fan
-                             (vcn_mesh_t *const mesh,
+                             (nb_mesh_t *const mesh,
 			      const msh_vtx_t *const v_pivot,
 			      const msh_vtx_t *const v_start,
 			      nb_container_t *orfan_vtx,
 			      /* l_new_trg: NULL if not required */
 			      nb_container_t *const l_new_trg);
-static void insert_vertex(vcn_mesh_t *mesh,
+static void insert_vertex(nb_mesh_t *mesh,
 			  msh_trg_t *const trg_containing_cc,
 			  const msh_vtx_t *const cc,
 			  /* big_trg: NULL if not required */
@@ -91,7 +91,7 @@ static void insert_vertex(vcn_mesh_t *mesh,
 			  /* l_new_trg: NULL if not required */
 			  nb_container_t *const l_new_trg);
 
-static void insert_midpoint(vcn_mesh_t *const mesh,
+static void insert_midpoint(nb_mesh_t *const mesh,
 			    msh_edge_t *const sgm,
 			    const msh_vtx_t *const v,
 			    /* big_trg: NULL if not required */
@@ -102,13 +102,13 @@ static void insert_midpoint(vcn_mesh_t *const mesh,
 			    /* l_new_trg: NULL if not required */
 			    nb_container_t *const l_new_trg);
 
-static void split_encroached_segments(vcn_mesh_t *const mesh,
+static void split_encroached_segments(nb_mesh_t *const mesh,
 				      nb_container_t *const encroached_sgm,
 				      nb_container_t *const big_trg,
 				      hash_trg_t *const poor_quality_trg);
 						   
 static void verify_new_encroachments
-                             (vcn_mesh_t *const mesh,
+                             (nb_mesh_t *const mesh,
 			      const msh_vtx_t *const  v,
 			      nb_container_t *const l_new_trg,
 			      nb_container_t *const encroached_sgm,
@@ -116,25 +116,25 @@ static void verify_new_encroachments
 			      hash_trg_t *const poor_quality_trg);
 
 static void initialize_encroached_sgm
-                          (vcn_mesh_t *const mesh,
+                          (nb_mesh_t *const mesh,
 			   nb_container_t *const encroached_sgm);
 
-static void check_trg(msh_trg_t *const trg, vcn_mesh_t *const mesh,
+static void check_trg(msh_trg_t *const trg, nb_mesh_t *const mesh,
 			   nb_container_t *const big_trg,
 			   hash_trg_t *const poor_quality_trg);
 
 static void initialize_big_and_poor_quality_trg
-                          (vcn_mesh_t *const mesh,
+                          (nb_mesh_t *const mesh,
 			   nb_container_t *const big_trg,
 			   hash_trg_t *const poor_quality_trg);
 
 static msh_trg_t* get_trg_containing_circumcenter
-                          (const vcn_mesh_t *const mesh,
+                          (const nb_mesh_t *const mesh,
 			   const msh_trg_t *const trg,
 			   const msh_vtx_t *const cc);
 
 static void get_sgm_encroached_by_vertex
-                          (const vcn_mesh_t *const mesh,
+                          (const nb_mesh_t *const mesh,
 			   const msh_trg_t *const trg_containing_vtx,
 			   const msh_vtx_t *const vtx,
 			   nb_container_t *encroached_sgm);
@@ -147,30 +147,30 @@ static void get_subsgm_cluster(const msh_edge_t *const sgm,
 			       double* smallest_angle,
 			       nb_container_t* cluster);
 
-static void delete_bad_trg(vcn_mesh_t *mesh,
+static void delete_bad_trg(nb_mesh_t *mesh,
 			   nb_container_t *encroached_sgm,
 			   nb_container_t *big_trg,
 			   hash_trg_t *poor_quality_trg);
 
-static bool has_edge_length_constrained(const vcn_mesh_t *const mesh);
-static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
+static bool has_edge_length_constrained(const nb_mesh_t *const mesh);
+static bool edge_violates_constrain(const nb_mesh_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
 				    double *big_ratio);
-static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
+static bool edge_greater_than_density(const nb_mesh_t *const restrict mesh,
 				      const msh_edge_t *const restrict sgm,
 				      double *big_ratio);
-static double calculate_lh(const vcn_mesh_t *const restrict mesh,
+static double calculate_lh(const nb_mesh_t *const restrict mesh,
 			   const msh_edge_t *const restrict sgm,
 			   double dist, int N_trapezoids);
-static double calculate_h(const vcn_mesh_t *const restrict mesh,
+static double calculate_h(const nb_mesh_t *const restrict mesh,
 			  const msh_edge_t *const restrict sgm,
 			  double t);
-static bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
+static bool mtrg_is_too_big(const nb_mesh_t *const restrict mesh,
 			    const msh_trg_t *const restrict trg,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
-void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
+void vcn_ruppert_refine(nb_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
 	nb_container_t *encroached_sgm =
@@ -191,7 +191,7 @@ void vcn_ruppert_refine(vcn_mesh_t *restrict mesh)
 	/* Calculate max circumradius to shortest edge ratio allowed */
 	if (mesh_get_min_angle(mesh) > NB_MESH_MAX_ANGLE) {
 		if (0 == mesh->max_vtx) {
-			printf("WARNING in vcn_mesh_refine(): ");
+			printf("WARNING in nb_mesh_refine(): ");
 			printf("Setting max_vtx = 1000000 to");
 			printf("warranty finish.\n");
 			/* Set a max because there aren't guarantees to finish */
@@ -262,7 +262,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 	return out;
 }
 
-bool vcn_ruppert_insert_vtx(vcn_mesh_t *mesh, const double vertex[2])
+bool vcn_ruppert_insert_vtx(nb_mesh_t *mesh, const double vertex[2])
 {
 	msh_vtx_t* new_vtx = mvtx_create(mesh);
 
@@ -298,7 +298,7 @@ void nb_ruppert_insert_verified_subsgm_midpoint(nb_mesh_t *restrict mesh,
 
 }
 
-static void delete_bad_trg(vcn_mesh_t *mesh,
+static void delete_bad_trg(nb_mesh_t *mesh,
 			   nb_container_t *encroached_sgm,
 			   nb_container_t *big_trg,
 			   hash_trg_t *poor_quality_trg)
@@ -386,7 +386,7 @@ static void delete_bad_trg(vcn_mesh_t *mesh,
 	}
 }
 
-static void reallocate_bins(vcn_mesh_t *const restrict mesh)
+static void reallocate_bins(nb_mesh_t *const restrict mesh)
 {
 	double avg_points_x_bin = 
 		vcn_bins2D_get_length(mesh->ug_vtx) / 
@@ -464,7 +464,7 @@ static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
 	free(htrg);
 }
 
-static inline bool check_max_vtx(const vcn_mesh_t *const restrict mesh)
+static inline bool check_max_vtx(const nb_mesh_t *const restrict mesh)
 {
 	bool allow = true;
 	if (0 < mesh->max_vtx)
@@ -472,7 +472,7 @@ static inline bool check_max_vtx(const vcn_mesh_t *const restrict mesh)
 	return allow;
 }
 
-static inline bool check_max_trg(const vcn_mesh_t *const restrict mesh)
+static inline bool check_max_trg(const nb_mesh_t *const restrict mesh)
 {
 	
 	bool allow = true;
@@ -505,7 +505,7 @@ static inline bool is_encroached
 	return is_encroached;
 }
 
-static inline msh_vtx_t* get_midpoint(vcn_mesh_t *mesh,
+static inline msh_vtx_t* get_midpoint(nb_mesh_t *mesh,
 				      const msh_edge_t *const restrict sgm)
 {
 	/* Calculate the new vertex (using concentric shells) */
@@ -606,7 +606,7 @@ static void check_encroached_neighbours(const msh_trg_t *trg,
 }
 
 static void remove_encroached_triangles
-             (vcn_mesh_t *const restrict mesh,
+             (nb_mesh_t *const restrict mesh,
 	      msh_trg_t *const restrict first_trg_to_check,
 	      const msh_vtx_t *const restrict v,
 	      /* v_orfans_reference: NULL to take an arbitrary reference */
@@ -680,7 +680,7 @@ static inline msh_vtx_t* retrg_fan_get_next_trg
 	}
 }
 
-static inline void retriangulate_fan(vcn_mesh_t *const mesh,
+static inline void retriangulate_fan(nb_mesh_t *const mesh,
 				     const msh_vtx_t *const v_pivot,
 				     const msh_vtx_t *const v_start,
 				     nb_container_t *orfan_vtx,
@@ -730,7 +730,7 @@ static inline void retriangulate_fan(vcn_mesh_t *const mesh,
 }
 
 static void verify_new_encroachments
-                             (vcn_mesh_t *const restrict mesh,
+                             (nb_mesh_t *const restrict mesh,
 			      const msh_vtx_t *const restrict v,
 			      nb_container_t *const restrict l_new_trg,
 			      /* Could be NULL if not required */
@@ -758,7 +758,7 @@ static void verify_new_encroachments
 	}
 }
 
-void insert_vertex(vcn_mesh_t *mesh,
+void insert_vertex(nb_mesh_t *mesh,
 		   msh_trg_t *const restrict trg_containing_cc,
 		   const msh_vtx_t *const restrict cc,
 		   /* big_trg: NULL if not required */
@@ -786,7 +786,7 @@ void insert_vertex(vcn_mesh_t *mesh,
 	mesh->do_after_insert_vtx(mesh);
 }
 
-static void insert_midpoint(vcn_mesh_t *const mesh,
+static void insert_midpoint(nb_mesh_t *const mesh,
 			    msh_edge_t *const sgm,
 			    const msh_vtx_t *const v,
 			    /* big_trg: NULL if not required */
@@ -860,7 +860,7 @@ static void insert_midpoint(vcn_mesh_t *const mesh,
 }
 
 static void split_encroached_segments
-                             (vcn_mesh_t *const mesh,
+                             (nb_mesh_t *const mesh,
 			      nb_container_t *const restrict encroached_sgm,
 			      nb_container_t *const restrict big_trg,
 			      hash_trg_t *const restrict poor_quality_trg)
@@ -895,7 +895,7 @@ static void split_encroached_segments
 }
 
 static inline void initialize_encroached_sgm
-                          (vcn_mesh_t *const restrict mesh,
+                          (nb_mesh_t *const restrict mesh,
 			   nb_container_t *const restrict encroached_sgm)
 {
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -909,7 +909,7 @@ static inline void initialize_encroached_sgm
 }
 
 static inline void check_trg(msh_trg_t *const restrict trg,
-			     vcn_mesh_t *const restrict mesh,
+			     nb_mesh_t *const restrict mesh,
 			     nb_container_t *const restrict big_trg,
 			     hash_trg_t *const restrict poor_quality_trg)
 {
@@ -932,7 +932,7 @@ static inline void check_trg(msh_trg_t *const restrict trg,
 }
 
 static void initialize_big_and_poor_quality_trg
-                          (vcn_mesh_t *const restrict mesh,
+                          (nb_mesh_t *const restrict mesh,
 			   nb_container_t *const restrict big_trg,
 			   hash_trg_t *const restrict poor_quality_trg)
 {
@@ -949,7 +949,7 @@ static void initialize_big_and_poor_quality_trg
 }
 
 static inline msh_trg_t* get_trg_containing_circumcenter
-                          (const vcn_mesh_t *const restrict mesh,
+                          (const nb_mesh_t *const restrict mesh,
 			   const msh_trg_t *const restrict trg,
 			   const msh_vtx_t *const restrict cc)
 {
@@ -998,7 +998,7 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 }
 
 static void get_sgm_encroached_by_vertex
-                          (const vcn_mesh_t *const restrict mesh,
+                          (const nb_mesh_t *const restrict mesh,
 			   const msh_trg_t *const restrict trg_containing_vtx,
 			   const msh_vtx_t *const restrict vtx,
 			   nb_container_t *encroached_sgm)
@@ -1182,13 +1182,13 @@ static void get_subsgm_cluster(const msh_edge_t *const sgm,
 		*smallest_angle = 0.0;
 }
 
-static inline bool has_edge_length_constrained(const vcn_mesh_t *const mesh)
+static inline bool has_edge_length_constrained(const nb_mesh_t *const mesh)
 {
 	return mesh->max_edge_length * mesh->scale > NB_GEOMETRIC_TOL ||
 		mesh->max_subsgm_length * mesh->scale > NB_GEOMETRIC_TOL;
 }
 
-static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
+static bool edge_violates_constrain(const nb_mesh_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
 				    double *big_ratio)
 {
@@ -1207,7 +1207,7 @@ static bool edge_violates_constrain(const vcn_mesh_t *const restrict mesh,
 	return violates_constrain;
 }
 
-static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
+static bool edge_greater_than_density(const nb_mesh_t *const restrict mesh,
 				      const msh_edge_t *const restrict sgm,
 				      double *big_ratio)
 /* Calculate adimensional length:
@@ -1243,7 +1243,7 @@ static bool edge_greater_than_density(const vcn_mesh_t *const restrict mesh,
 	return is_greater;
 }
 
-static double calculate_lh(const vcn_mesh_t *const restrict mesh,
+static double calculate_lh(const nb_mesh_t *const restrict mesh,
 			   const msh_edge_t *const restrict sgm,
 			   double dist, int N_trapezoids)
  /*    For convenience, we estimate using the trapezoidal rule
@@ -1272,7 +1272,7 @@ static double calculate_lh(const vcn_mesh_t *const restrict mesh,
 	return 2 * dist / (integral * width + NB_GEOMETRIC_TOL);
 }
 
-static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
+static inline double calculate_h(const nb_mesh_t *const restrict mesh,
 				 const msh_edge_t *const restrict sgm,
 				 double t)
 {
@@ -1285,7 +1285,7 @@ static inline double calculate_h(const vcn_mesh_t *const restrict mesh,
 	return 1.0 / (density + NB_GEOMETRIC_TOL);
 }
 
-static inline bool mtrg_is_too_big(const vcn_mesh_t *const restrict mesh,
+static inline bool mtrg_is_too_big(const nb_mesh_t *const restrict mesh,
 				   const msh_trg_t *const restrict trg,
 				   /* big_ratio could be NULL if not required */
 				   double *big_ratio)

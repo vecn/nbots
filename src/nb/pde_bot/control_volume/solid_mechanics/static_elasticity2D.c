@@ -20,36 +20,58 @@
 
 #include "set_bconditions.h"
 
-/* DEFINE RBF FOR INTERPOLATOR: x * log(x+1) */
-/* DEFINE QUADRATURE POINTS 3 */
-
-#define NGB_LAYERS 0 /* Negative: Pair-wise */
+typedef struct {
+	uint8_t N_int;
+	double length;
+	double xp[4];
+	uint32_t trg[3];
+} subface_t;
 
 #define POW2(a) ((a)*(a))
+
+#define LOAD_TRG_INFO(msh, id)						\
+	do {								\
+		tid1 = nb_msh3trg_elem_get_adj((msh), (id), 0);		\
+		tid2 = nb_msh3trg_elem_get_adj((msh), (id), 1);		\
+		tid3 = nb_msh3trg_elem_get_adj((msh), (id), 2);		\
+									\
+		t1[0] = nb_msh3trg_node_get_x((msh), tid1);		\
+		t1[1] = nb_msh3trg_node_get_y((msh), tid1);		\
+									\
+		t2[0] = nb_msh3trg_node_get_x((msh), tid2);		\
+		t2[1] = nb_msh3trg_node_get_y((msh), tid2);		\
+									\
+		t3[0] = nb_msh3trg_node_get_x((msh), tid3);		\
+		t3[1] = nb_msh3trg_node_get_y((msh), tid3);		\
+	} while(0)
+
+#define LOAD_FACE_INFO(prt, id)						\
+	do {								\
+		uint32_t id1 = nb_partition_edge_get_1n((prt), (id));	\
+		uint32_t id2 = nb_partition_edge_get_2n((prt), (id));	\
+									\
+		s1[0] = nb_partition_node_get_x((prt), id1);		\
+		s1[1] = nb_partition_node_get_y((prt), id1);		\
+									\
+		s2[0] = nb_partition_node_get_x((prt), id2);		\
+		s2[1] = nb_partition_node_get_y((prt), id2);		\
+	} while(0)
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems);
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
-				   nb_graph_t **face_elems_conn,
-				   nb_graph_t **ngb_graph);
-static void load_neighbourhood_graph(const nb_partition_t *part,
-				     nb_graph_t *ngb_graph);
-static void init_global_matrix(const nb_graph_t *ngb_graph,
-			       vcn_sparse_t **K);
+				   nb_graph_t **face_elems_conn);
+static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K);
 static void load_face_elems_conn(const nb_partition_t *part,
-				 const nb_graph_t *ngb_graph,
 				 nb_graph_t *face_elems_conn);
-static uint32_t get_N_total_face_adj(const nb_partition_t *part,
-				     const nb_graph_t *ngb_graph);
+static uint32_t get_N_total_face_adj(const nb_partition_t *part);
 static uint16_t face_get_N_ngb(const nb_partition_t *part,
-			       const nb_graph_t *ngb_graph,
 			       uint32_t elem_id1, uint32_t elem_id2);
 static uint16_t get_N_ngb_around_right_vtx(const nb_partition_t *part,
 					   uint32_t elem_id1,
 					   uint32_t elem_id2);
 static char *set_elemental_faces(nb_graph_t *face_elems_conn,
 				 const nb_partition_t *part,
-				 const nb_graph_t *ngb_graph,
 				 char *memblock, uint32_t elem_id);
 static char *set_boundary_face(nb_graph_t *face_elems_conn,
 			       const nb_partition_t *part, 
@@ -57,18 +79,13 @@ static char *set_boundary_face(nb_graph_t *face_elems_conn,
 			       uint32_t elem_id);
 static char *set_internal_face(nb_graph_t *face_elems_conn,
 			       const nb_partition_t *part,
-			       const nb_graph_t *ngb_graph,
 			       char *memblock, uint32_t face_id,
 			       uint32_t elem_id1, uint32_t elem_id2);
-static void set_pairwise_ngb(uint32_t *adj, uint32_t elem_id1,
-			     uint32_t elem_id2);
 static void set_local_ngb(uint32_t *adj, const nb_partition_t *part,
 			  uint32_t elem_id1, uint32_t elem_id2);
 static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 					 uint32_t *ngb, uint16_t current_id,
 					 uint32_t elem_id1, uint32_t elem_id2);
-static void set_extended_ngb(uint32_t *adj, const nb_graph_t *ngb_graph,
-			     uint32_t elem_id1, uint32_t elem_id2);
 static void assemble_global_forces(double *F,
 				   const nb_partition_t *const part,
 				   const nb_material_t *material,
@@ -85,36 +102,70 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 				      const nb_graph_t *face_elems_conn,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      uint8_t N_qp);
+				      nb_analysis2D_params *params2D);
 static void assemble_face(uint32_t face_id, vcn_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
-			  nb_analysis2D_params *params2D,
-			  uint8_t N_qp);
+			  nb_analysis2D_params *params2D);
+static void face_get_normal(const nb_partition_t *const part,
+			    const nb_graph_t *face_elems_conn,
+			    uint32_t face_id, double nf[2]);
+static uint8_t add_subface_if_intersected(const nb_partition_t *part,
+					  uint32_t face_id,
+					  const nb_msh3trg_t *msh3,
+					  const uint32_t *input_msh3_id,
+					  uint32_t trg_id,
+					  subface_t *subfaces,
+					  uint16_t subface_id);
+static void add_face_pairwise(const nb_partition_t *part, uint32_t face_id,
+			      subface_t *subfaces, uint16_t subface_id);
+static void add_subface_pairwise(const nb_partition_t *part, uint32_t face_id,
+				 subface_t *subfaces, uint16_t subface_id);
+
+static void get_face_vtx_outside_msh3(subface_t *subfaces, uint16_t N_sf,
+				      const double s1[2], const double s2[2],
+				      double alone[2]);
+static double get_face_closest_intersection_to_msh3(subface_t *subfaces,
+						    uint16_t N_sf,
+						    const double alone[2],
+						    double p[2]);
 static void assemble_internal_face(uint32_t face_id, vcn_sparse_t *K,
 				   const nb_partition_t *const part,
 				   const nb_graph_t *face_elems_conn,
-				   const double D[4],
-				   nb_analysis2D_params *params2D,
-				   uint8_t N_qp);
-static void integrate_Kf(const nb_partition_t *const part, const double D[4],
-			 uint32_t face_id, uint16_t N,  const uint32_t *adj,
-			 uint8_t N_qp, nb_analysis2D_params *params2D,
-			 double *Kf);
-static void get_quadrature_points(const nb_partition_t *part, uint32_t face_id,
-				  double lf, uint8_t N_qp, double *xqp,
-				  double *wqp);
-static void interpolators_eval_grad(const nb_partition_t *part,
-				    uint32_t face_id, double nf[2],
-				    uint8_t N_ngb, const uint32_t *ngb,
-				    const double x[2], double *grad_phi);
-static void get_Kf_nodal_contribution(const nb_partition_t *part,
-				      const double D[4], const double nf[2],
-				      uint16_t i, const double *grad_phi,
-				      double Kfi[4]);
+				   const double D[4], const double nf[2],
+				   nb_analysis2D_params *params2D);
+static void integrate_Kf(const nb_partition_t *const part, uint32_t face_id,
+			 const double D[4], const double nf[2],
+			 uint16_t N,  const uint32_t *adj,
+			 nb_analysis2D_params *params2D, double *Kf);
+static uint16_t load_subfaces(subface_t *subfaces,
+			      const nb_partition_t *const part,
+			      uint16_t N, const uint32_t *adj,
+			      uint32_t face_id);
+static void load_msh3trg(const nb_partition_t *const part,
+			 uint16_t N, const uint32_t *adj,
+			 nb_msh3trg_t *msh3);
+static void load_msh3trg_input_vtx_permutation(const nb_msh3trg_t *msh3,
+					       uint32_t *id);
+static bool face_intersects_trg(const nb_partition_t *part, uint32_t face_id,
+				nb_msh3trg_t *msh3, uint32_t trg_id);
+static void integrate_subface_in_trg(const nb_partition_t *const part,
+				     uint32_t face_id, const double D[4],
+				     const double nf[2], uint16_t N,
+				     const uint32_t *adj,
+				     nb_analysis2D_params *params2D,
+				     const subface_t *subface, double *Kf);
+static void get_normalized_point(const double x1[2], const double x2[2],
+				 const double x3[3], const double xq[2],
+				 double psi[2]);
+static void integrate_subface_pairwise(const nb_partition_t *const part,
+				       uint32_t face_id, const double D[4],
+				       const double nf[2], uint16_t N,
+				       const uint32_t *adj,
+				       nb_analysis2D_params *params2D,
+				       const subface_t *subface, double *Kf);
 static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
 			const double *Kf, vcn_sparse_t *K);
 static int solver(const vcn_sparse_t *const A,
@@ -127,25 +178,25 @@ static void compute_strain(double *strain, char *boundary_mask,
 			   const nb_graph_t *face_elems_conn,
 			   const nb_partition_t *const part,
 			   const nb_bcond_t *const bcond,
-			   const double *disp, uint8_t N_qp);
+			   const double *disp);
 static void get_face_strain(uint32_t face_id,
 			    const nb_graph_t *face_elems_conn,
 			    const nb_partition_t *const part,
 			    const nb_bcond_t *const bcond,
-			    const double *disp, uint8_t N_qp,
+			    const double *disp,
 			    double *strain,
 			    char *boundary_mask);
 static void get_internal_face_strain(uint32_t face_id,
 				     const nb_graph_t *face_elems_conn,
 				     const nb_partition_t *const part,
-				     const double *disp, uint8_t N_qp,
+				     const double *disp,
 				     double length, double nf[2],
 				     double *strain);
 static void get_boundary_face_strain(uint32_t face_id,
 				     const nb_graph_t *face_elems_conn,
 				     const nb_partition_t *const part,
 				     const nb_bcond_t *const bcond,
-				     const double *disp, uint8_t N_qp,
+				     const double *disp,
 				     double length, double *strain);
 
 int nb_cvfa_compute_2D_Solid_Mechanics
@@ -155,7 +206,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 bool enable_self_weight, double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
-			 uint8_t N_quadrature_points,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */)
@@ -166,26 +216,19 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *F;
 	nb_graph_t *face_elems_conn;
-	nb_graph_t *ngb_graph;
-	distribute_cvfa_memory(memblock, N_elems, &F,
-			       &face_elems_conn, &ngb_graph);
-
-	nb_graph_init(ngb_graph);
-	load_neighbourhood_graph(part, ngb_graph);
+	distribute_cvfa_memory(memblock, N_elems, &F, &face_elems_conn);
 
 	vcn_sparse_t *K;
-	init_global_matrix(ngb_graph, &K);
+	init_global_matrix(part, &K);
 
 	nb_graph_init(face_elems_conn);
-	load_face_elems_conn(part, ngb_graph, face_elems_conn);
-	nb_graph_finish(ngb_graph);
+	load_face_elems_conn(part, face_elems_conn);
 
 	assemble_global_forces(F, part, material, enable_self_weight,
 			       gravity);
 
 	assemble_global_stiffness(K, part, face_elems_conn, material,
-				  analysis2D, params2D,
-				  N_quadrature_points);
+				  analysis2D, params2D);
 	
 	nb_cvfa_set_bconditions(part, material, analysis2D, 
 				K, F, bcond, 1.0);
@@ -197,7 +240,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	}
 
 	compute_strain(strain, boundary_mask, face_elems_conn, part,
-		       bcond, displacement, N_quadrature_points);
+		       bcond, displacement);
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
@@ -211,41 +254,25 @@ static uint32_t get_cvfa_memsize(uint32_t N_elems)
 {
 	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
-	return 2 * graph_size + system_size;
+	return graph_size + system_size;
 }
 
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
-				   nb_graph_t **face_elems_conn,
-				   nb_graph_t **ngb_graph)
+				   nb_graph_t **face_elems_conn)
 {
-	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
 	*F = (void*) memblock;
 	*face_elems_conn = (void*) (memblock + system_size);
-	*ngb_graph = (void*) (memblock + system_size + graph_size);
 }
 
-static void load_neighbourhood_graph(const nb_partition_t *part,
-				     nb_graph_t *ngb_graph)
-{
-	if (0 > NGB_LAYERS) {
-		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_EDGES);
-	} else if (0 == NGB_LAYERS) {
-		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_NODES);
-	} else {
-		nb_partition_load_graph(part, ngb_graph, NB_ELEMS_LINKED_BY_NODES);
-		nb_graph_extend_adj(ngb_graph, NGB_LAYERS - 1);
-	}
-}
-
-static void init_global_matrix(const nb_graph_t *ngb_graph,
-			       vcn_sparse_t **K)
+static void init_global_matrix(const nb_partition_t *part, vcn_sparse_t **K)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
-	nb_graph_copy(graph, ngb_graph);
-	nb_graph_extend_adj(graph, 1);
+
+	nb_graph_init(graph);
+	nb_partition_load_graph(part, graph, NB_ELEMS_LINKED_BY_EDGES);
 
 	*K = vcn_sparse_create(graph, NULL, 2);
 
@@ -254,11 +281,10 @@ static void init_global_matrix(const nb_graph_t *ngb_graph,
 }
 
 static void load_face_elems_conn(const nb_partition_t *part,
-				 const nb_graph_t *ngb_graph,
 				 nb_graph_t *face_elems_conn)
 {
 	uint32_t N = nb_partition_get_N_edges(part);
-	uint32_t N_total_adj = get_N_total_face_adj(part, ngb_graph);
+	uint32_t N_total_adj = get_N_total_face_adj(part);
 	face_elems_conn->N = N;
 	uint32_t memsize = N * (sizeof(*(face_elems_conn->N_adj)) +
 				sizeof(*(face_elems_conn->adj))) +
@@ -274,11 +300,10 @@ static void load_face_elems_conn(const nb_partition_t *part,
 
 	for (uint32_t i = 0; i < N_elems; i++)		
 		memblock = set_elemental_faces(face_elems_conn, part,
-					       ngb_graph, memblock, i);
+					       memblock, i);
 }
 
-static uint32_t get_N_total_face_adj(const nb_partition_t *part,
-				     const nb_graph_t *ngb_graph)
+static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 {
 	uint32_t N = 0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
@@ -290,30 +315,17 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part,
 			if (N_elems <= ngb_id)
 				N += 1;
 			else if (i < ngb_id)
-				N += face_get_N_ngb(part, ngb_graph,
-						    i, ngb_id);
+				N += face_get_N_ngb(part, i, ngb_id);
 		}
 	}
 	return N;
 }
 
 static uint16_t face_get_N_ngb(const nb_partition_t *part,
-			       const nb_graph_t *ngb_graph,
 			       uint32_t elem_id1, uint32_t elem_id2)
 {
-	uint16_t N;
-	if (0 > NGB_LAYERS) {
-		N = 2;
-	} else if (0 == NGB_LAYERS) {
-		N = 2 + get_N_ngb_around_right_vtx(part, elem_id1, elem_id2) +
-			get_N_ngb_around_right_vtx(part, elem_id2, elem_id1);
-	} else {
-		uint16_t N_repeated =
-			nb_graph_find_N_intersected_adj(ngb_graph, elem_id1,
-							elem_id2);
-		N = ngb_graph->N_adj[elem_id1] +
-			ngb_graph->N_adj[elem_id2] - N_repeated;
-	}
+	uint16_t N = 2 + get_N_ngb_around_right_vtx(part, elem_id1, elem_id2) +
+		get_N_ngb_around_right_vtx(part, elem_id2, elem_id1);
 	return N;
 }
 
@@ -354,7 +366,6 @@ static uint16_t get_N_ngb_around_right_vtx(const nb_partition_t *part,
 
 static char *set_elemental_faces(nb_graph_t *face_elems_conn,
 				 const nb_partition_t *part,
-				 const nb_graph_t *ngb_graph,
 				 char *memblock, uint32_t elem_id)
 {
 	uint16_t N_elems = nb_partition_get_N_elems(part);
@@ -370,8 +381,8 @@ static char *set_elemental_faces(nb_graph_t *face_elems_conn,
 			uint32_t face_id =
 				nb_partition_elem_find_edge(part, elem_id, j);
 			memblock = set_internal_face(face_elems_conn, part,
-						     ngb_graph, memblock,
-						     face_id, elem_id, ngb_id);
+						     memblock, face_id,
+						     elem_id, ngb_id);
 		}
 	}
 	return memblock;
@@ -391,34 +402,19 @@ static char *set_boundary_face(nb_graph_t *face_elems_conn,
 
 static char *set_internal_face(nb_graph_t *face_elems_conn,
 			       const nb_partition_t *part,
-			       const nb_graph_t *ngb_graph,
 			       char *memblock, uint32_t face_id,
 			       uint32_t elem_id1, uint32_t elem_id2)
 {
-       	uint16_t N_ngb = face_get_N_ngb(part, ngb_graph, elem_id1, elem_id2);
+       	uint16_t N_ngb = face_get_N_ngb(part, elem_id1, elem_id2);
 	face_elems_conn->N_adj[face_id] = N_ngb;
 	face_elems_conn->adj[face_id] = (void*) memblock;
 	memblock += N_ngb * sizeof(**(face_elems_conn->adj));
 
-	if (0 > NGB_LAYERS)
-		set_pairwise_ngb(face_elems_conn->adj[face_id],
-				 elem_id1, elem_id2);
-	else if (0 == NGB_LAYERS)
-		set_local_ngb(face_elems_conn->adj[face_id],
-			      part, elem_id1, elem_id2);
-	else
-		set_extended_ngb(face_elems_conn->adj[face_id],
-				 ngb_graph, elem_id1, elem_id2);
+	set_local_ngb(face_elems_conn->adj[face_id],
+		      part, elem_id1, elem_id2);
 
 	return memblock;
 
-}
-
-static void set_pairwise_ngb(uint32_t *adj, uint32_t elem_id1,
-			     uint32_t elem_id2)
-{
-	adj[0] = elem_id1;
-	adj[1] = elem_id2;
 }
 
 static void set_local_ngb(uint32_t *adj, const nb_partition_t *part,
@@ -467,35 +463,6 @@ static uint16_t get_ngb_around_right_vtx(const nb_partition_t *part,
 	return current_id;
 }
 
-static void set_extended_ngb(uint32_t *adj, const nb_graph_t *ngb_graph,
-			     uint32_t elem_id1, uint32_t elem_id2)
-{
-	adj[0] = elem_id1;
-	adj[1] = elem_id2;
-	uint16_t id = 2;
-	for (uint16_t i = 0; i < ngb_graph->N_adj[elem_id1]; i++) {
-		uint32_t ngb = ngb_graph->adj[elem_id1][i];
-		if (ngb != elem_id2) {
-			adj[id] = ngb;
-			id += 1;
-		}
-	}
-	for (uint16_t i = 0; i < ngb_graph->N_adj[elem_id2]; i++) {
-		uint32_t ngb = ngb_graph->adj[elem_id2][i];
-		bool included = false;
-		for (uint16_t j = 0; j < id; j++) {	
-			if (adj[j] == ngb) {
-				included = true;
-				break;
-			}
-		}
-		if (!included) {
-			adj[id] = ngb;
-			id += 1;
-		}
-	}
-}
-
 static void assemble_global_forces(double *F,
 				   const nb_partition_t *const part,
 				   const nb_material_t *material,
@@ -530,14 +497,13 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 				      const nb_graph_t *face_elems_conn,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      uint8_t N_qp)
+				      nb_analysis2D_params *params2D)
 {
 	vcn_sparse_reset(K);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	for (uint32_t i = 0; i < N_faces; i++) {
 		assemble_face(i, K, part, face_elems_conn, material,
-			      analysis2D, params2D, N_qp);
+			      analysis2D, params2D);
 	}
 }
 
@@ -546,24 +512,43 @@ static void assemble_face(uint32_t face_id, vcn_sparse_t *K,
 			  const nb_graph_t *face_elems_conn,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
-			  nb_analysis2D_params *params2D,
-			  uint8_t N_qp)
+			  nb_analysis2D_params *params2D)
 {
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
+	double nf[2];
+	face_get_normal(part, face_elems_conn, face_id, nf);
+
 	uint16_t N = face_elems_conn->N_adj[face_id];
 	if (1 < N)
 		assemble_internal_face(face_id, K, part, face_elems_conn,
-				       D, params2D, N_qp);
+				       D, nf, params2D);
+}
+
+static void face_get_normal(const nb_partition_t *const part,
+			    const nb_graph_t *face_elems_conn,
+			    uint32_t face_id, double nf[2])
+{
+	nb_partition_edge_get_normal(part, face_id, nf);
+
+	uint32_t elem1 = face_elems_conn->adj[face_id][0];
+	uint32_t elem2 = face_elems_conn->adj[face_id][1];
+	uint16_t local_fid =
+		nb_partition_elem_ngb_get_face(part, elem1, elem2);
+	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem1);
+	uint32_t v1 = nb_partition_elem_get_adj(part, elem1, local_fid);
+	if (v1 != nb_partition_edge_get_1n(part, face_id)) {
+		nf[0] *= -1;
+		nf[1] *= -1;
+	}
 }
 
 static void assemble_internal_face(uint32_t face_id, vcn_sparse_t *K,
 				   const nb_partition_t *const part,
 				   const nb_graph_t *face_elems_conn,
-				   const double D[4],
-				   nb_analysis2D_params *params2D,
-				   uint8_t N_qp)
+				   const double D[4], const double nf[2],
+				   nb_analysis2D_params *params2D)
 {
 	uint16_t N = face_elems_conn->N_adj[face_id];
 	uint32_t *adj = face_elems_conn->adj[face_id];
@@ -572,103 +557,293 @@ static void assemble_internal_face(uint32_t face_id, vcn_sparse_t *K,
 	char* memblock = NB_SOFT_MALLOC(memsize);
 	double *Kf = (void*) memblock;
 
-	integrate_Kf(part, D, face_id, N, adj, N_qp, params2D, Kf);
+	integrate_Kf(part, face_id, D, nf, N, adj, params2D, Kf);
 
 	add_Kf_to_K(N, adj, Kf, K);
 
 	NB_SOFT_FREE(memsize, memblock);
 }
 
-static void integrate_Kf(const nb_partition_t *const part, const double D[4],
-			 uint32_t face_id, uint16_t N,  const uint32_t *adj,
-			 uint8_t N_qp, nb_analysis2D_params *params2D,
-			 double *Kf)
+static void integrate_Kf(const nb_partition_t *const part, uint32_t face_id,
+			 const double D[4], const double nf[2],
+			 uint16_t N,  const uint32_t *adj,
+			 nb_analysis2D_params *params2D, double *Kf)
 {
-	uint32_t memsize = (3 * N_qp + 2 * N) * sizeof(double);
+	uint32_t sf_size = N * sizeof(subface_t);
+	uint32_t memsize = sf_size;
 	char *memblock = NB_SOFT_MALLOC(memsize);
-	double *wqp = (void*) memblock;
-	double *xqp = (void*) (memblock + N_qp * sizeof(double));
-	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
+	subface_t *subfaces = (void*) memblock;
 
-	double nf[2];
-	uint16_t local_face_id = nb_partition_elem_ngb_get_face(part, adj[0],
-								adj[1]);
-	double lf = nb_partition_elem_face_get_normal(part, adj[0],
-						      local_face_id, nf);
-
-	get_quadrature_points(part, face_id, lf, N_qp, xqp, wqp);
-
+	uint16_t N_sf = load_subfaces(subfaces, part, N, adj, face_id);
+	
 	memset(Kf, 0, 4 * N * sizeof(double));
-	for (uint8_t q = 0; q < N_qp; q++) {
-		interpolators_eval_grad(part, face_id, nf, N, adj, 
-					&(xqp[q*2]), grad_phi);
-		double factor = wqp[q] * params2D->thickness;
-		for (uint16_t i = 0; i < N; i++) {
-			double Kfi[4];
-			get_Kf_nodal_contribution(part, D, nf, i,
-						  grad_phi, Kfi);
-			Kf[i * 2] += factor * Kfi[0];
-			Kf[i*2+1] += factor * Kfi[1];
-			Kf[2 * N + i * 2] += factor * Kfi[2];
-			Kf[2 * N + i*2+1] += factor * Kfi[3];
+	for (uint16_t i = 0; i < N_sf; i++) {
+		if (0 < subfaces->N_int)
+			integrate_subface_in_trg(part, face_id, D, nf, N, adj,
+						 params2D, &(subfaces[i]), Kf);
+		else
+			integrate_subface_pairwise(part, face_id, D,
+						   nf, N, adj, params2D,
+						   &(subfaces[i]), Kf);
+	}
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static uint16_t load_subfaces(subface_t *subfaces,
+			      const nb_partition_t *const part,
+			      uint16_t N, const uint32_t *adj,
+			      uint32_t face_id)
+{
+	uint32_t msh3_size = nb_msh3trg_get_memsize();
+	uint32_t memsize = msh3_size + N * sizeof(uint32_t);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_msh3trg_t *msh3 = (void*) memblock;
+	uint32_t *id = (void*) (memblock + msh3_size);
+
+	nb_msh3trg_init(msh3);
+	load_msh3trg(part, N, adj, msh3);
+	load_msh3trg_input_vtx_permutation(msh3, id);
+	
+	uint16_t N_trg = nb_msh3trg_get_N_elems(msh3);
+	uint16_t N_sf = 0;
+	uint8_t end_trg = 0;
+	for (uint16_t i = 0; i < N_trg; i++) {
+		uint8_t N_int = add_subface_if_intersected(part, face_id,
+							   msh3, id, i,
+							   subfaces, N_sf);
+		if (0 < N_int)
+			N_sf += 1;
+		
+		if (1 == N_int)
+			end_trg += 1;
+			
+	}
+
+	if (end_trg < 1) {
+		add_face_pairwise(part, face_id, subfaces, N_sf);
+		N_sf += 1;
+	} else if (end_trg < 2) {
+		add_subface_pairwise(part, face_id, subfaces, N_sf);
+		N_sf += 1;
+	}
+
+	nb_msh3trg_finish(msh3);
+	NB_SOFT_FREE(memsize, memblock);
+	return N_sf;
+}
+
+static void load_msh3trg(const nb_partition_t *const part,
+			 uint16_t N, const uint32_t *adj,
+			 nb_msh3trg_t *msh3)
+{
+	uint32_t mesh_size = nb_mesh_get_memsize();
+	uint16_t vtx_size = 2 * N * sizeof(double);
+	uint32_t memsize = mesh_size + vtx_size;
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_mesh_t *mesh = (void*) memblock;
+	double *vtx = (void*) (memblock + mesh_size);
+	
+	for (uint16_t i = 0; i < N; i++) {
+		vtx[i * 2] = nb_partition_elem_get_x(part, adj[i]);
+		vtx[i*2+1] = nb_partition_elem_get_y(part, adj[i]);
+	}
+
+	nb_mesh_init(mesh);
+	nb_mesh_get_delaunay(mesh, N, vtx);
+	nb_msh3trg_load_from_mesh(msh3, mesh);
+	nb_mesh_finish(mesh);
+
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void load_msh3trg_input_vtx_permutation(const nb_msh3trg_t *msh3,
+					       uint32_t *id)
+{
+	uint16_t N = nb_msh3trg_get_N_invtx(msh3);
+	for (uint16_t i = 0; i < N; i++) {
+		uint32_t nid = nb_msh3trg_get_invtx(msh3, i);
+		id[nid] = i;
+	}
+}
+
+static uint8_t add_subface_if_intersected(const nb_partition_t *part,
+					  uint32_t face_id,
+					  const nb_msh3trg_t *msh3,
+					  const uint32_t *input_msh3_id,
+					  uint32_t trg_id,
+					  subface_t *subfaces,
+					  uint16_t subface_id)
+{
+	uint32_t tid1, tid2, tid3;
+	double t1[2], t2[2], t3[3];
+	LOAD_TRG_INFO(msh3, trg_id);
+
+	double s1[2], s2[2];
+	LOAD_FACE_INFO(part, face_id);
+
+	uint8_t N_int = 0;
+	double xp[4], p[2];
+	memset(xp, 0, 4 * sizeof(*xp));
+
+	if (vcn_utils2D_are_sgm_intersected(s1, s2, t1, t2, p)) {
+		xp[N_int] = p[0];
+		xp[N_int] = p[1];
+		N_int += 1;
+	}
+
+	if (vcn_utils2D_are_sgm_intersected(s1, s2, t2, t3, p)) {
+		xp[N_int] = p[0];
+		xp[N_int] = p[1];
+		N_int += 1;
+	}
+	
+	if (2 > N_int) {
+		if (vcn_utils2D_are_sgm_intersected(s1, s2, t3, t1, p)) {
+			xp[N_int] = p[0];
+			xp[N_int] = p[1];
+			N_int += 1;
 		}
 	}
-	NB_SOFT_FREE(memsize, memblock);
+
+	if (1 == N_int) {
+		if (vcn_utils2D_pnt_lies_in_trg(t1, t2, t3, s1)) {
+			xp[0] = s1[0];
+			xp[1] = s1[1];
+		} else {
+			xp[0] = s2[0];
+			xp[1] = s2[1];			
+		}
+	}
+	
+	if (0 < N_int) {
+		double length = vcn_utils2D_get_dist(&(xp[0]), &(xp[2]));
+		subfaces[subface_id].N_int = N_int;
+		subfaces[subface_id].length = length;
+		memcpy(subfaces[subface_id].xp, xp, 4 * sizeof(*xp));
+		subfaces[subface_id].trg[0] = input_msh3_id[tid1];
+		subfaces[subface_id].trg[1] = input_msh3_id[tid2];
+		subfaces[subface_id].trg[2] = input_msh3_id[tid3];
+	}
+	
+	return N_int;
 }
 
-static void get_quadrature_points(const nb_partition_t *part, uint32_t face_id,
-				  double lf, uint8_t N_qp, double *xqp,
-				  double *wqp)
+static void add_face_pairwise(const nb_partition_t *part, uint32_t face_id,
+			      subface_t *subfaces, uint16_t subface_id)
 {
-	nb_glquadrature_t glq;
-	glq.x = alloca(N_qp * sizeof(*(glq.x)));
-	glq.w = alloca(N_qp * sizeof(*(glq.w)));
-	nb_glquadrature_load(&glq, N_qp);
+	double s1[2], s2[2];
+	LOAD_FACE_INFO(part, face_id);
 
-	for (uint8_t q = 0; q < N_qp; q++) {
-		wqp[q] = lf * (glq.w[q] / 2.0);
-		double w = (glq.x[q] + 1)/2.0;
-		nb_partition_edge_get_midpoint(part, face_id, w, &(xqp[q*2]));
+	subfaces[subface_id].N_int = 0;
+	double length = nb_partition_edge_get_length(part, face_id);
+	subfaces[subface_id].length = length;
+	memcpy(subfaces[subface_id].xp, s1, 2 * sizeof(*s1));
+	memcpy(&(subfaces[subface_id].xp[2]), s2, 2 * sizeof(*s2));
+	subfaces[subface_id].trg[0] = 0;
+	subfaces[subface_id].trg[1] = 1;
+}
+
+static void add_subface_pairwise(const nb_partition_t *part, uint32_t face_id,
+				 subface_t *subfaces, uint16_t subface_id)
+{
+	double s1[2], s2[2];
+	LOAD_FACE_INFO(part, face_id);
+
+	double alone[2];
+	get_face_vtx_outside_msh3(subfaces, subface_id, s1, s2, alone);
+	double p[2];
+	double length =
+		get_face_closest_intersection_to_msh3(subfaces, subface_id,
+						      alone, p);
+	subfaces[subface_id].N_int = 0;
+	subfaces[subface_id].length = length;
+	memcpy(subfaces[subface_id].xp, p, 2 * sizeof(*p));
+	memcpy(&(subfaces[subface_id].xp[2]), alone, 2 * sizeof(*alone));
+	subfaces[subface_id].trg[0] = 0;
+	subfaces[subface_id].trg[1] = 1;
+}
+
+static void get_face_vtx_outside_msh3(subface_t *subfaces, uint16_t N_sf,
+				      const double s1[2], const double s2[2],
+				      double alone[2])
+{
+	for (uint16_t i = 0; i < N_sf; i++) {
+		if (1 == subfaces[i].N_int) {
+			double e1 = fabs(s1[0] - subfaces[i].xp[2]);
+			double e2 = fabs(s1[1] - subfaces[i].xp[3]);
+			if (e1 < 1e-20 && e2 < 1e-20)
+				memcpy(alone, s2, 2 * sizeof(*s2));
+			else
+				memcpy(alone, s1, 2 * sizeof(*s1));
+			break;
+		}
 	}
 }
 
-static void interpolators_eval_grad(const nb_partition_t *part,
-				    uint32_t face_id, double nf[2],
-				    uint8_t N_ngb, const uint32_t *ngb,
-				    const double x[2], double *grad_phi)
+static double get_face_closest_intersection_to_msh3(subface_t *subfaces,
+						    uint16_t N_sf,
+						    const double alone[2],
+						    double p[2])
+/* PENDING: SLOW FUNCTION (CALCULATE DIST AND DUPLICATE CHECKS) */
 {
-	uint32_t memsize = 3 * N_ngb * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	double *ni = (void*) memblock;
-	double *ri = (void*) (memblock + 2 * N_ngb * sizeof(double));
-
-	double r0 = nb_partition_elem_get_radius(part, ngb[0]);
-	double r1 = nb_partition_elem_get_radius(part, ngb[1]);
-	double r = vcn_math_harmonic_avg(r0, r1);
-	for (uint16_t i = 0; i < N_ngb; i++) {
-		ni[i * 2] = nb_partition_elem_get_x(part, ngb[i]);
-		ni[i*2+1] = nb_partition_elem_get_y(part, ngb[i]);
-		ri[i] = r;
+	double min = 1e30;
+	for (uint16_t i = 0; i < N_sf; i++) {
+		if (2 == subfaces[i].N_int) {
+			double d = vcn_utils2D_get_dist(alone, subfaces[i].xp);
+			if (d < min) {
+				min = d;
+				memcpy(p, subfaces[i].xp, 2 * sizeof(*p));
+			}
+			d = vcn_utils2D_get_dist(alone, &(subfaces[i].xp[2]));
+			if (d < min) {
+				min = d;
+				memcpy(p, &(subfaces[i].xp[2]), 2 * sizeof(*p));
+			}
+		}
 	}
-	ri[0] /= sqrt(2);
-	ri[1] /= sqrt(2);
-
-	nb_nonpolynomial_eval_grad(N_ngb, 2, ni, ri, x, grad_phi);	
-
-	NB_SOFT_FREE(memsize, memblock);
+	return min;
 }
 
-static void get_Kf_nodal_contribution(const nb_partition_t *part,
-				      const double D[4], const double nf[2],
-				      uint16_t i, const double *grad_phi,
-				      double Kfi[4])
+
+static void integrate_subface_in_trg(const nb_partition_t *const part,
+				     uint32_t face_id, const double D[4],
+				     const double nf[2], uint16_t N,
+				     const uint32_t *adj,
+				     nb_analysis2D_params *params2D,
+				     const subface_t *subface, double *Kf)
 {
-	double dphi_dx = grad_phi[i * 2];
-	double dphi_dy = grad_phi[i*2+1];
-	Kfi[0] = nf[0] * D[0] * dphi_dx + nf[1] * D[3] * dphi_dy;
-	Kfi[1] = nf[0] * D[1] * dphi_dy + nf[1] * D[3] * dphi_dx;
-	Kfi[2] = nf[1] * D[1] * dphi_dx + nf[0] * D[3] * dphi_dy;
-	Kfi[3] = nf[1] * D[2] * dphi_dy + nf[0] * D[3] * dphi_dx;
+	get_normalized_point();
+	/* AQUI VOY */
+}
+
+static void get_normalized_point(const double x1[2], const double x2[2],
+				 const double x3[3], const double xq[2],
+				 double psi[2])
+{
+	double A[4];
+	A[0] = x2[0] - x1[0];
+	A[1] = x3[0] - x1[0];
+	A[2] = y2[0] - y1[0];
+	A[3] = y3[0] - y1[0];
+	
+	double b[2];
+	b[0] = xq[0] - x1[0];
+	b[1] = xq[1] - x1[1];
+
+	vcn_matrix2X2_inverse_destructive(A);
+
+	psi[0] = A[0] * b[0] + A[1] * b[1];
+	psi[1] = A[2] * b[0] + A[3] * b[1];
+}
+
+static void integrate_subface_pairwise(const nb_partition_t *const part,
+				       uint32_t face_id, const double D[4],
+				       const double nf[2], uint16_t N,
+				       const uint32_t *adj,
+				       nb_analysis2D_params *params2D,
+				       const subface_t *subface, double *Kf)
+{
+	/* AQUI */
 }
 
 static void add_Kf_to_K(uint16_t N, const uint32_t *adj,
@@ -744,13 +919,13 @@ static void compute_strain(double *strain, char *boundary_mask,
 			   const nb_graph_t *face_elems_conn,
 			   const nb_partition_t *const part,
 			   const nb_bcond_t *const bcond,
-			   const double *disp, uint8_t N_qp)
+			   const double *disp)
 {
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 
  	for (uint32_t i = 0; i < N_faces; i++) {
 		get_face_strain(i, face_elems_conn, part, bcond,
-				disp, N_qp, strain, boundary_mask);
+				disp, strain, boundary_mask);
 	}
 }
 
@@ -758,7 +933,7 @@ static void get_face_strain(uint32_t face_id,
 			    const nb_graph_t *face_elems_conn,
 			    const nb_partition_t *const part,
 			    const nb_bcond_t *const bcond,
-			    const double *disp, uint8_t N_qp,
+			    const double *disp,
 			    double *strain,
 			    char *boundary_mask)
 {
@@ -769,65 +944,38 @@ static void get_face_strain(uint32_t face_id,
 	if (N > 1) {
 		boundary_mask[face_id] = 0;
 		get_internal_face_strain(face_id, face_elems_conn, part,
-					 disp, N_qp, lf, nf, strain);
+					 disp, lf, nf, strain);
 	} else {
 		boundary_mask[face_id] = 1;
 		get_boundary_face_strain(face_id, face_elems_conn, part,
-					 bcond, disp, N_qp, lf, strain);
+					 bcond, disp, lf, strain);
 	}
 }
 
 static void get_internal_face_strain(uint32_t face_id,
 				     const nb_graph_t *face_elems_conn,
 				     const nb_partition_t *const part,
-				     const double *disp, uint8_t N_qp,
+				     const double *disp,
 				     double length, double nf[2],
 				     double *strain)
 {
-	uint16_t N = face_elems_conn->N_adj[face_id];
-	uint32_t *adj = face_elems_conn->adj[face_id];
-	uint32_t memsize = (3 * N_qp + 2 * N) * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	double *wqp = (void*) memblock;
-	double *xqp = (void*) (memblock + N_qp * sizeof(double));
-	double *grad_phi = (void*) (memblock + 3 * N_qp * sizeof(double));
-
-	get_quadrature_points(part, face_id, length, N_qp, xqp, wqp);
-
-	for (uint8_t q = 0; q < N_qp; q++) {
-		interpolators_eval_grad(part, face_id, nf, N, adj,
-					&(xqp[q*2]), grad_phi);
-		uint32_t id = face_id * N_qp + q;
-		memset(&(strain[id*3]), 0, 3 * sizeof(*strain));
-		for (uint16_t i = 0; i < N; i++) {
-			uint32_t elem_id = adj[i];
-			double u = disp[elem_id * 2];
-			double v = disp[elem_id*2+1];
-			double dphi_dx = grad_phi[i * 2];
-			double dphi_dy = grad_phi[i*2+1];
-			strain[id * 3] += dphi_dx * u;
-			strain[id*3+1] += dphi_dy * v;
-			strain[id*3+2] += dphi_dy * u + dphi_dx * v;
-		}
-	}
-	NB_SOFT_FREE(memsize, memblock);
+	/* AQUI  NO_COMPILES*/;
 }
 
 static void get_boundary_face_strain(uint32_t face_id,
 				     const nb_graph_t *face_elems_conn,
 				     const nb_partition_t *const part,
 				     const nb_bcond_t *const bcond,
-				     const double *disp, uint8_t N_qp,
+				     const double *disp,
 				     double length,
 				     double *strain)
 {
-	memset(&(strain[face_id * N_qp * 3]), 0, 3 * N_qp * sizeof(*strain));
+	memset(&(strain[face_id * 3]), 0, 3 * sizeof(*strain));
 }
 
 void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
 					const nb_material_t *const material,
 					nb_analysis2D_t analysis2D,
-					uint8_t N_quadrature_points,
 					const double* strain,
 					double* stress /* Output */)
 {
@@ -836,13 +984,10 @@ void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
 		double D[4];
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
 		
-		for (uint8_t q = 0; q < N_quadrature_points; q++) {
-			uint32_t id = i * N_quadrature_points + q;
-			stress[id * 3] = strain[id * 3] * D[0] +
-				strain[id*3+1] * D[1];
-			stress[id*3+1] = strain[id * 3] * D[1] +
-				strain[id*3+1] * D[2];
-			stress[id*3+2] = strain[id*3+2] * D[3];
-		}
+		stress[i * 3] = (strain[i * 3] * D[0] +
+				 strain[i*3+1] * D[1]);
+		stress[i*3+1] = (strain[i * 3] * D[1] +
+				 strain[i*3+1] * D[2]);
+		stress[i*3+2] = strain[i*3+2] * D[3];
 	}
 }

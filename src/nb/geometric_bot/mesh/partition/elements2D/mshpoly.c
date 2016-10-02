@@ -149,7 +149,7 @@ static void set_nod_x_sgm(nb_mshpoly_t *poly,
 			  const nb_mesh_t *const mesh);
 static void set_sgm_nodes(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshpoly_t *poly,
 			      const vinfo_t *const vinfo,
@@ -675,7 +675,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 
 void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 {
-	if (vcn_mesh_get_N_trg(mesh) > 0) {
+	if (nb_mesh_get_N_trg(mesh) > 0) {
 		split_exterior_trg(mesh);
 
 		mesh_enumerate_vtx(mesh);
@@ -684,7 +684,7 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 		vinfo_t vinfo;
 		init_voronoi_info(&vinfo, mesh);
 
-		uint32_t Nt = vcn_mesh_get_N_trg(mesh);
+		uint32_t Nt = nb_mesh_get_N_trg(mesh);
 		uint32_t *trg_cc_map = malloc(Nt * sizeof(uint32_t));
 		init_trg_cc_map(trg_cc_map, Nt);
 
@@ -705,8 +705,8 @@ static void init_voronoi_info(vinfo_t *vinfo,
 			      const nb_mesh_t *const mesh)
 {
 	memset(vinfo, 0,  sizeof(*vinfo));
-	uint32_t Nv = vcn_mesh_get_N_vtx(mesh);
-	uint32_t Nt = vcn_mesh_get_N_trg(mesh);
+	uint32_t Nv = nb_mesh_get_N_vtx(mesh);
+	uint32_t Nt = nb_mesh_get_N_trg(mesh);
 	uint32_t size1 = Nv * sizeof(uint32_t);
 	uint32_t size2 = Nt * sizeof(uint32_t);
 	char *memblock = malloc(2 * size1 + size2);
@@ -730,9 +730,9 @@ static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 			       uint32_t *trg_cc_map,
 			       const nb_mesh_t *const mesh)
 {
-	vgraph->N = vcn_mesh_get_N_vtx(mesh);
+	vgraph->N = nb_mesh_get_N_vtx(mesh);
 	
-	uint32_t N_edg = vcn_mesh_get_N_edg(mesh);
+	uint32_t N_edg = nb_mesh_get_N_edg(mesh);
 
 	uint32_t size1 = vgraph->N * sizeof(*(vgraph->N_adj));
 	uint32_t size2 = vgraph->N * sizeof(*(vgraph->adj));
@@ -855,7 +855,7 @@ static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 
 		bool cc = adj_is_cocircular(edge);
 		update_cc_map(edge, cc, trg_cc_map,
-			      vcn_mesh_get_N_trg(mesh));
+			      nb_mesh_get_N_trg(mesh));
 		insert_edg_as_adj(vgraph, edge, cc);
 		counting_edg_in_vinfo(vinfo, vgraph, edge, cc);
 	}
@@ -1297,7 +1297,7 @@ static void set_nod_x_sgm(nb_mshpoly_t *poly,
 
 static void set_sgm_nodes(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];

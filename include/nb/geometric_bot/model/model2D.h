@@ -95,7 +95,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model);
  * @n<b>WARNING:</b> A mesh is built internally, making this function
  * expensive, if you are going to test several vertices for the same
  * model please build a mesh using VCN_DENSITY_CDT and use the function
- * vcn_mesh_is_vtx_inside().
+ * nb_mesh_is_vtx_inside().
  * @param[in] model Geometry of the domain.
  * @param[in] vtx Vertex which is checked to be inside the domain.
  * @return <b>true</b> if the vertes lies inside the geometry

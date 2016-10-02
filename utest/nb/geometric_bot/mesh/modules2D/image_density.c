@@ -57,18 +57,18 @@ static void test_set_img_density_jpg_eye(void)
 		vcn_model_create_rectangle(0.0, 0.0,
 					   vcn_image_get_width(img),
 					   vcn_image_get_height(img));
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_img_density(mesh, img, 0.0);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_img_density(mesh, img, 0.0);
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	vcn_mesh_clear_img_density(mesh);
+	nb_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(3600 < N_trg && 3900 > N_trg);
 	CU_ASSERT(5500 < N_edge && 5800 > N_edge);
@@ -84,15 +84,15 @@ static void test_set_img_density_jpg_gnome(void)
 		vcn_model_create_rectangle(0.0, 0.0,
 					   vcn_image_get_width(img),
 					   vcn_image_get_height(img));
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_img_density(mesh, img, 0.0);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_img_density(mesh, img, 0.0);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	vcn_mesh_clear_img_density(mesh);
+	nb_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(12000 < N_trg && 12900 > N_trg);
 	CU_ASSERT(18000 < N_edge && 19500 > N_edge);
@@ -108,18 +108,18 @@ static void test_set_img_density_png_jolie(void)
 		vcn_model_create_rectangle(0.0, 0.0,
 					   vcn_image_get_width(img),
 					   vcn_image_get_height(img));
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_img_density(mesh, img, 0.0);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_img_density(mesh, img, 0.0);
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	vcn_mesh_clear_img_density(mesh);
+	nb_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(11300 < N_trg && 11900 > N_trg);
 	CU_ASSERT(17100 < N_edge && 17900 > N_edge);
@@ -135,17 +135,17 @@ static void test_set_img_density_jpg_hand(void)
 		vcn_model_create_rectangle(0.0, 0.0,
 					   vcn_image_get_width(img),
 					   vcn_image_get_height(img));
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_img_density(mesh, img, 0.0);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_img_density(mesh, img, 0.0);
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	vcn_mesh_clear_img_density(mesh);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	nb_mesh_clear_img_density(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(13200 < N_trg && 13700 > N_trg);
 	CU_ASSERT(20000 < N_edge && 21000 > N_edge);
@@ -161,21 +161,21 @@ static void test_set_img_density_jpg_size_const(void)
 		vcn_model_create_rectangle(0.0, 0.0,
 					   vcn_image_get_width(img),
 					   vcn_image_get_height(img));
-	vcn_mesh_t* mesh = vcn_mesh_create();
-	vcn_mesh_set_img_density(mesh, img, 0.0);
-	vcn_mesh_set_size_constraint(mesh,
+	nb_mesh_t* mesh = nb_mesh_create();
+	nb_mesh_set_img_density(mesh, img, 0.0);
+	nb_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     3000);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
-	vcn_mesh_clear_img_density(mesh);
+	nb_mesh_clear_img_density(mesh);
 	vcn_image_destroy(img);
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
-	uint32_t N_edge = vcn_mesh_get_N_edg(mesh);
-	vcn_mesh_destroy(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
+	nb_mesh_destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(5800 < N_trg && 6000 > N_trg);
 	CU_ASSERT(8800 < N_edge && 10001 > N_edge);

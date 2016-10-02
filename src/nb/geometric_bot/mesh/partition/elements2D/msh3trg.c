@@ -488,7 +488,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 	return is_inside;
 }
 
-void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
+void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, nb_mesh_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
@@ -500,7 +500,7 @@ void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
 
 	set_msh3trg_exporter_interface(&exp);
 
-	vcn_mesh_export(mesh, &exp);
+	nb_mesh_export(mesh, &exp);
 }
 
 static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp)
@@ -910,15 +910,15 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	NB_SOFT_FREE(idx_memsize, vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 	
 	/* Get holes and destroy mesh */
 	uint32_t N_centroids;
 	double* centroids =
-		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
-	vcn_mesh_finish(mesh);
+		nb_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
+	nb_mesh_finish(mesh);
 
 	uint32_t N_holes = 0;
 	double *holes = NULL;

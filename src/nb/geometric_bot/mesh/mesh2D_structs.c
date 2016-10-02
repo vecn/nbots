@@ -15,7 +15,7 @@
 
 #include "mesh2D_structs.h"
 
-static bool mesh_remove_edge(vcn_mesh_t *mesh,
+static bool mesh_remove_edge(nb_mesh_t *mesh,
 			     const msh_vtx_t *const v1,
 			     const msh_vtx_t *const v2);
 
@@ -24,7 +24,7 @@ uint8_t mvtx_get_memsize(void)
 	return sizeof(msh_vtx_t) + sizeof(vtx_attr_t);
 }
 
-msh_vtx_t *mvtx_create(vcn_mesh_t *mesh)
+msh_vtx_t *mvtx_create(nb_mesh_t *mesh)
 {
 	char *memblock = nb_membank_data_calloc(mesh->vtx_membank);
 	msh_vtx_t* vtx = (void*) memblock;
@@ -32,7 +32,7 @@ msh_vtx_t *mvtx_create(vcn_mesh_t *mesh)
 	return vtx;
 }
 
-msh_vtx_t *mvtx_clone(vcn_mesh_t *mesh, msh_vtx_t *vtx)
+msh_vtx_t *mvtx_clone(nb_mesh_t *mesh, msh_vtx_t *vtx)
 {
 	msh_vtx_t *clone = mvtx_create(mesh);
 	memcpy(clone->x, vtx->x, 2 * sizeof(*(vtx->x)));
@@ -44,7 +44,7 @@ msh_vtx_t *mvtx_clone(vcn_mesh_t *mesh, msh_vtx_t *vtx)
 	return clone;
 }
 
-void mvtx_destroy(vcn_mesh_t *mesh, void *vtx)
+void mvtx_destroy(nb_mesh_t *mesh, void *vtx)
 {
 	nb_membank_data_free(mesh->vtx_membank, vtx);
 }
@@ -85,12 +85,12 @@ bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
 	return (location == attr->loc);
 }
 
-msh_edge_t *medge_calloc(vcn_mesh_t *mesh)
+msh_edge_t *medge_calloc(nb_mesh_t *mesh)
 {
 	return nb_membank_data_calloc(mesh->edg_membank);
 }
 
-void medge_free(vcn_mesh_t *mesh, msh_edge_t *edge)
+void medge_free(nb_mesh_t *mesh, msh_edge_t *edge)
 {
 	nb_membank_data_free(mesh->edg_membank, edge);
 }
@@ -406,12 +406,12 @@ inline msh_trg_t* medge_get_opposite_triangle
 	return NULL;
 }
 
-msh_trg_t *mtrg_calloc(vcn_mesh_t *mesh)
+msh_trg_t *mtrg_calloc(nb_mesh_t *mesh)
 {
 	return nb_membank_data_calloc(mesh->trg_membank);
 }
 
-void mtrg_free(vcn_mesh_t *mesh, msh_trg_t *trg)
+void mtrg_free(nb_mesh_t *mesh, msh_trg_t *trg)
 {
 	nb_membank_data_free(mesh->trg_membank, trg);
 }
@@ -781,7 +781,7 @@ void medge_flip_without_dealloc(msh_edge_t* shared_sgm)
 	}
 }
 
-inline msh_edge_t* mesh_insert_edge(vcn_mesh_t *mesh,
+inline msh_edge_t* mesh_insert_edge(nb_mesh_t *mesh,
 				    const msh_vtx_t *const v1, 
 				    const msh_vtx_t *const v2)
 {
@@ -813,7 +813,7 @@ inline msh_edge_t* mesh_exist_edge(nb_container_t *const restrict ht_edge,
 	return sgm;
 }
 
-void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
+void mesh_add_triangle(nb_mesh_t *const mesh, msh_trg_t *const trg)
 {
 	/* Insert new triangle into the mesh */
 	nb_container_insert(mesh->ht_trg, trg);
@@ -852,7 +852,7 @@ void mesh_add_triangle(vcn_mesh_t *const mesh, msh_trg_t *const trg)
 	medge_connect_triangles(sgm);
 }
 
-void mesh_substract_triangle(vcn_mesh_t *restrict mesh, 
+void mesh_substract_triangle(nb_mesh_t *restrict mesh, 
 			     msh_trg_t *restrict trg)
 {
 	/* Remove from hash table */
@@ -896,7 +896,7 @@ void mesh_substract_triangle(vcn_mesh_t *restrict mesh,
 	mtrg_disconnect(trg);
 }
 
-static bool mesh_remove_edge(vcn_mesh_t *mesh,
+static bool mesh_remove_edge(nb_mesh_t *mesh,
 			     const msh_vtx_t *const restrict v1, 
 			     const msh_vtx_t *const restrict v2)
 {
@@ -934,12 +934,12 @@ inline int8_t compare_edge(const void *const edge1_ptr,
 	  0:1;
 }
 
-double mesh_get_min_angle(const vcn_mesh_t *const mesh)
+double mesh_get_min_angle(const nb_mesh_t *const mesh)
 {
 	return asin(1.0/(2.0 * mesh->cr2se_ratio));
 }
 
-msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
+msh_trg_t* mesh_locate_vtx(const nb_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
 	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
@@ -960,7 +960,7 @@ msh_trg_t* mesh_locate_vtx(const vcn_mesh_t *const restrict mesh,
 	return enveloping_trg;
 }
 
-inline void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
+inline void mesh_get_extern_scale_and_disp(const nb_mesh_t *const mesh,
 					   const double internal[2],
 					   double external[2])
 {
@@ -968,7 +968,7 @@ inline void mesh_get_extern_scale_and_disp(const vcn_mesh_t *const mesh,
 	external[1] = internal[1] / mesh->scale + mesh->ydisp;
 }
 
-void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
+void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 {
 	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
@@ -982,7 +982,7 @@ void mesh_enumerate_vtx(vcn_mesh_t * restrict mesh)
 	vcn_bins2D_iter_finish(iter);
 }
 
-void mesh_enumerate_trg(vcn_mesh_t *mesh)
+void mesh_enumerate_trg(nb_mesh_t *mesh)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t* trg_iter = alloca(iter_size);

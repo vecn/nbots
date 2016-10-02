@@ -7,7 +7,7 @@
 
 #include "../mesh2D_structs.h"
 
-nb_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const restrict mesh)
+nb_graph_t* nb_mesh_create_vtx_graph(const nb_mesh_t *const restrict mesh)
 {
 	nb_graph_t* graph = calloc(1, sizeof(*graph));
 
@@ -44,7 +44,7 @@ nb_graph_t* vcn_mesh_create_vtx_graph(const vcn_mesh_t *const restrict mesh)
 	return graph;
 }
 
-nb_graph_t* vcn_mesh_create_elem_graph(const vcn_mesh_t *const restrict mesh)
+nb_graph_t* nb_mesh_create_elem_graph(const nb_mesh_t *const restrict mesh)
 {
 	nb_graph_t* graph = calloc(1, sizeof(*graph));
 	graph->N = nb_container_get_length(mesh->ht_trg);

@@ -85,7 +85,7 @@ static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
@@ -584,10 +584,10 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 {
-	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		mesh_enumerate_vtx((vcn_mesh_t*)mesh);
-		mesh_enumerate_trg((vcn_mesh_t*)mesh);
-		nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
+	if (nb_mesh_get_N_trg(mesh) > 0) {
+		mesh_enumerate_vtx((nb_mesh_t*)mesh);
+		mesh_enumerate_trg((nb_mesh_t*)mesh);
+		nb_graph_t *graph = nb_mesh_create_elem_graph(mesh);
 		nb_graph_init_edge_weights(graph);
 
 		set_quad_quality_as_weights(mesh, graph);
@@ -745,8 +745,8 @@ static void set_mshquad(nb_mshquad_t *quad,
 	match_data *data = alloca(sizeof(match_data));
 	get_match_data(graph, matches, data);
 	
-	quad->N_nod = vcn_mesh_get_N_vtx(mesh);
-	quad->N_edg = vcn_mesh_get_N_edg(mesh) - data->N_matchs;
+	quad->N_nod = nb_mesh_get_N_vtx(mesh);
+	quad->N_edg = nb_mesh_get_N_edg(mesh) - data->N_matchs;
 	quad->N_elems = data->N_matchs + data->N_unmatched_trg;
 	quad->N_vtx = mesh->N_input_vtx;
 	quad->N_sgm = mesh->N_input_sgm;
@@ -811,7 +811,7 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(uint32_t);
 	uint32_t *new_elem_id = NB_SOFT_MALLOC(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
@@ -1021,7 +1021,7 @@ static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 }
 
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];

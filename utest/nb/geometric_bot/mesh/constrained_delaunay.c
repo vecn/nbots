@@ -44,7 +44,7 @@ static void input_set_sgm(input_t *input, uint32_t id,
 			  uint32_t v1, uint32_t v2);
 static void input_alloc(input_t *input);
 static void input_clear(input_t *input);
-static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input);
+static bool all_trg_are_cdelaunay(nb_mesh_t *mesh, input_t *input);
 static bool is_not_constrained(const double v1[2], const double v2[2],
 			       const double v3[2], const double p[2],
 			       const input_t *const input);
@@ -129,18 +129,18 @@ static bool check_get_cdelaunay_twist_polygon(uint32_t N_sides)
 {
 	input_t input;
 	set_twist_polygon(&input, N_sides, 20);
-	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+	nb_mesh_t *mesh = nb_mesh_create();
+	nb_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
 					  input.N_sgm, input.segments);
 	int N_expected_trg = 3 * N_sides +
 		get_expected_trg_of_polygon(N_sides, 0);
 	int N_expected_edges = 5 * N_sides +
 		get_expected_edg_of_polygon(N_sides, 0);
-	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edges == vcn_mesh_get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edges == nb_mesh_get_N_edg(mesh));
 	bool all_cdelaunay = all_trg_are_cdelaunay(mesh, &input);
 	input_clear(&input);
-	vcn_mesh_destroy(mesh);
+	nb_mesh_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_cdelaunay;
 }
 
@@ -243,19 +243,19 @@ static bool check_get_cdelaunay_strips(int N)
 {
 	input_t input;
 	set_strips(&input, N, 10);
-	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+	nb_mesh_t *mesh = nb_mesh_create();
+	nb_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
 					  input.N_sgm, input.segments);
 	int N_boundary_trg = 0;
 	if (N > 1)
 		N_boundary_trg = (2*N - 3) / 2;
 	int N_expected_trg = 2 * (N - 1) + N_boundary_trg;
 	int N_expected_edges = 3 * (N - 1) + N + N_boundary_trg;
-	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edges == vcn_mesh_get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edges == nb_mesh_get_N_edg(mesh));
 	bool all_cdelaunay = all_trg_are_cdelaunay(mesh, &input);
 	input_clear(&input);
-	vcn_mesh_destroy(mesh);
+	nb_mesh_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_cdelaunay;
 }
 
@@ -300,7 +300,7 @@ static void input_clear(input_t *input)
 		free(input->segments);
 }
 
-static bool all_trg_are_cdelaunay(vcn_mesh_t *mesh, input_t *input)
+static bool all_trg_are_cdelaunay(nb_mesh_t *mesh, input_t *input)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = alloca(memsize);
@@ -390,16 +390,16 @@ static bool check_get_cdelaunay_centipede(int N_pairs)
 {
 	input_t input;
 	set_centipede(&input, N_pairs);
-	vcn_mesh_t *mesh = vcn_mesh_create();
-	vcn_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
+	nb_mesh_t *mesh = nb_mesh_create();
+	nb_mesh_get_constrained_delaunay(mesh, input.N_vtx, input.vertices,
 					  input.N_sgm, input.segments);
 	int N_expected_trg = 2 * N_pairs;
 	int N_expected_edges = 4 * N_pairs + 1;
-	bool N_trg_is_ok = (N_expected_trg == vcn_mesh_get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edges == vcn_mesh_get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edges == nb_mesh_get_N_edg(mesh));
 	bool all_cdelaunay = all_trg_are_cdelaunay(mesh, &input);
 	input_clear(&input);
-	vcn_mesh_destroy(mesh);
+	nb_mesh_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_cdelaunay;
 }
 

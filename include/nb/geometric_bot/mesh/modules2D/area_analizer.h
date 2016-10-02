@@ -18,7 +18,7 @@
  * @param[out] N_centroids Stores the number of enveloped areas.
  * @return Return the array with the locations of the centroids concatenated.
  */  
-double* vcn_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
+double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
 					   uint32_t* N_centroids);
 
 /**
@@ -29,7 +29,7 @@ double* vcn_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
  * @param[out] N_centroids Stores the number of enveloped areas.
  * @return Return the array with the locations of the centroids concatenated.
  */
-double* vcn_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
+double* nb_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
 						  uint32_t* N_centroids);
 
 
@@ -40,7 +40,7 @@ double* vcn_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
  * Stores the total area of deleted triangles.
  * @return Area of the non-deleted mesh.
  */
-double vcn_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
+double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 				      double* area_removed);
 
 /**
@@ -53,17 +53,17 @@ double vcn_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
  * Stores the total area of deleted triangles.
  * @return Area of the non-deleted mesh.
  */
-double vcn_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
+double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 					    double* area_removed);
 
 /**
  * @brief Delete those input segments without adjacent triangles, which could arise
  * if the PSLG is not well defined or if one of the following functions has been used:
- * vcn_mesh_clear_enveloped_areas() or vcn_mesh_keep_biggest_isolated_area().
+ * nb_mesh_clear_enveloped_areas() or nb_mesh_keep_biggest_isolated_area().
  * @param[in] mesh Mesh to be processed.
  * @return Number of subsegments deleted.
  */
-uint32_t vcn_mesh_delete_isolated_segments(nb_mesh_t *const mesh);
+uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const mesh);
 
   
 /**
@@ -71,23 +71,23 @@ uint32_t vcn_mesh_delete_isolated_segments(nb_mesh_t *const mesh);
  * @param[in] mesh Mesh to be processed.
  * @return Number of subsegments deleted.
  */
-uint32_t vcn_mesh_delete_internal_input_segments(nb_mesh_t *const mesh);
+uint32_t nb_mesh_delete_internal_input_segments(nb_mesh_t *const mesh);
 
 /**
  * @brief Delete those input vertices disconnected from the mesh, which could arise
  * if the PSLG is not well defined or if the function
- * vcn_mesh_delete_isolated_segments() has been used.
+ * nb_mesh_delete_isolated_segments() has been used.
  * @param[in] mesh Mesh to be processed.
  * @return Number of vertices deleted.
  */
-uint32_t vcn_mesh_delete_isolated_vertices(nb_mesh_t* mesh);
+uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh);
 
-bool vcn_mesh_is_continuum(const nb_mesh_t *mesh);
+bool nb_mesh_is_continuum(const nb_mesh_t *mesh);
 
-uint16_t vcn_mesh_get_N_subareas(const nb_mesh_t *mesh);
+uint16_t nb_mesh_get_N_subareas(const nb_mesh_t *mesh);
 
 uint16_t nb_mesh_get_subareas(const nb_mesh_t *mesh, uint16_t *area_id);
 
-uint16_t vcn_mesh_get_N_continuum_areas(const nb_mesh_t *mesh);
+uint16_t nb_mesh_get_N_continuum_areas(const nb_mesh_t *mesh);
 
 #endif
