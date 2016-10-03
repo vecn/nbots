@@ -120,16 +120,16 @@ static uint8_t add_subface_if_intersected(const nb_partition_t *part,
 					  uint16_t subface_id);
 static void add_face_pairwise(const nb_partition_t *part, uint32_t face_id,
 			      subface_t *subfaces, uint16_t subface_id);
-static void add_subface_pairwise(const nb_partition_t *part, uint32_t face_id,
+static void add_subface_in_closest_trg(const nb_partition_t *part, uint32_t face_id,
 				 subface_t *subfaces, uint16_t subface_id);
 
 static void get_face_vtx_outside_msh3(subface_t *subfaces, uint16_t N_sf,
 				      const double s1[2], const double s2[2],
 				      double alone[2]);
-static double get_face_closest_intersection_to_msh3(subface_t *subfaces,
-						    uint16_t N_sf,
-						    const double alone[2],
-						    double p[2]);
+static uint16_t get_face_closest_intersection_to_msh3(subface_t *subfaces,
+						      uint16_t N_sf,
+						      const double alone[2],
+						      double p[2]);
 static void assemble_internal_face(uint32_t face_id, vcn_sparse_t *K,
 				   const nb_partition_t *const part,
 				   const nb_graph_t *face_elems_conn,
@@ -659,7 +659,7 @@ static uint16_t load_subfaces(subface_t *subfaces,
 		add_face_pairwise(part, face_id, subfaces, N_sf);
 		N_sf += 1;
 	} else if (end_trg < 2) {
-		add_subface_pairwise(part, face_id, subfaces, N_sf);
+		add_subface_in_closest_trg(part, face_id, subfaces, N_sf);
 		N_sf += 1;
 	}
 
@@ -773,7 +773,7 @@ static void add_face_pairwise(const nb_partition_t *part, uint32_t face_id,
 	subfaces[subface_id].trg[1] = 1;
 }
 
-static void add_subface_pairwise(const nb_partition_t *part, uint32_t face_id,
+static void add_subface_in_closest_trg(const nb_partition_t *part, uint32_t face_id,
 				 subface_t *subfaces, uint16_t subface_id)
 {
 	double s1[2], s2[2];
@@ -783,13 +783,15 @@ static void add_subface_pairwise(const nb_partition_t *part, uint32_t face_id,
 	get_face_vtx_outside_msh3(subfaces, subface_id, s1, s2, alone);
 
 	double p[2];
-	get_face_closest_intersection_to_msh3(subfaces, subface_id,
-					      alone, p);
-	subfaces[subface_id].N_int = 0;
+	uint16_t closest_id =
+		get_face_closest_intersection_to_msh3(subfaces, subface_id,
+						      alone, p);
+	subfaces[subface_id].N_int = 1;
 	memcpy(subfaces[subface_id].xp, p, 2 * sizeof(*p));
 	memcpy(&(subfaces[subface_id].xp[2]), alone, 2 * sizeof(*alone));
-	subfaces[subface_id].trg[0] = 0;
-	subfaces[subface_id].trg[1] = 1;
+	subfaces[subface_id].trg[0] = subfaces[closest_id].trg[0];
+	subfaces[subface_id].trg[1] = subfaces[closest_id].trg[1];
+	subfaces[subface_id].trg[2] = subfaces[closest_id].trg[2];
 }
 
 static void get_face_vtx_outside_msh3(subface_t *subfaces, uint16_t N_sf,
@@ -812,26 +814,29 @@ static void get_face_vtx_outside_msh3(subface_t *subfaces, uint16_t N_sf,
 		memcpy(alone, s2, 2 * sizeof(*s2));
 }
 
-static double get_face_closest_intersection_to_msh3(subface_t *subfaces,
-						    uint16_t N_sf,
-						    const double alone[2],
-						    double p[2])
+static uint16_t get_face_closest_intersection_to_msh3(subface_t *subfaces,
+						      uint16_t N_sf,
+						      const double alone[2],
+						      double p[2])
 /* PENDING: SLOW FUNCTION (CALCULATE DIST AND DUPLICATE CHECKS) */
 {
+	uint16_t sf_id = N_sf;
 	double min = 1e30;
 	for (uint16_t i = 0; i < N_sf; i++) {
 		double d = vcn_utils2D_get_dist(alone, subfaces[i].xp);
 		if (d < min) {
 			min = d;
 			memcpy(p, subfaces[i].xp, 2 * sizeof(*p));
+			sf_id = i;
 		}
 		d = vcn_utils2D_get_dist(alone, &(subfaces[i].xp[2]));
 		if (d < min) {
 			min = d;
 			memcpy(p, &(subfaces[i].xp[2]), 2 * sizeof(*p));
+			sf_id = i;
 		}
 	}
-	return min;
+	return sf_id;
 }
 
 
@@ -1164,19 +1169,21 @@ static void subface_sum_strain_in_trg(const nb_partition_t *const part,
 	subface_get_triangle_points(subface, part, adj, t1, t2, t3);
 
 	double iJ[4];
-	subface_get_inverse_jacobian(t1, t2, t3, iJ);
+	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double lf = vcn_utils2D_get_dist(subface->xp, &(subface->xp[2]));
+	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
+
+	double factor = lfn * detJ;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
 		double grad[2];
 		subface_get_grad(iJ, grad_xi, grad);
 		uint32_t id = adj[subface->trg[i]];
-		strain[face_id * 3] += lf * (grad[0] * disp[id * 2]);
-		strain[face_id*3+1] += lf * (grad[1] * disp[id*2+1]);
-		strain[face_id*3+2] += lf * (grad[1] * disp[id * 2] +
-					     grad[0] * disp[id*2+1]);
+		strain[face_id * 3] += factor * (grad[0] * disp[id * 2]);
+		strain[face_id*3+1] += factor * (grad[1] * disp[id*2+1]);
+		strain[face_id*3+2] += factor * (grad[1] * disp[id * 2] +
+						 grad[0] * disp[id*2+1]);
 	}
 }
 

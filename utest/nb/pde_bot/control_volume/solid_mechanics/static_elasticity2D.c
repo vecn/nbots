@@ -121,7 +121,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 5100, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 5100, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -305,7 +305,7 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.005);
+	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
