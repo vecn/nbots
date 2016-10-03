@@ -320,6 +320,7 @@ static void load_face_elems_conn(const nb_partition_t *part,
 				sizeof(*(face_elems_conn->adj))) +
 		N_total_adj * sizeof(**(face_elems_conn->adj));
 	char *memblock = malloc(memsize);
+
 	face_elems_conn->N_adj = (void*) memblock;
 	face_elems_conn->adj = (void*)
 		(memblock + N * sizeof(*(face_elems_conn->N_adj)));
@@ -340,8 +341,8 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 	for (uint32_t i = 0; i < N_elems; i++) {
 		uint16_t N_adj = nb_partition_elem_get_N_adj(part, i);
 		for (uint32_t j = 0; j < N_adj; j++) {
-			uint32_t ngb_id = nb_partition_elem_get_ngb(part,
-								    i, j);
+			uint32_t ngb_id = 
+				nb_partition_elem_get_ngb(part, i, j);
 			if (N_elems <= ngb_id)
 				N += 1;
 			else if (i < ngb_id)
@@ -399,15 +400,15 @@ static char *set_elemental_faces(nb_graph_t *face_elems_conn,
 				 const nb_partition_t *part,
 				 char *memblock, uint32_t elem_id)
 {
-	uint16_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	for (uint32_t j = 0; j < N_adj; j++) {
 		uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id, j);
 		if (N_elems <= ngb_id) {
 			uint32_t face_id = 
 				nb_partition_elem_find_edge(part, elem_id, j);
-			set_boundary_face(face_elems_conn, part,
-					  memblock, face_id, elem_id);
+			memblock = set_boundary_face(face_elems_conn, part,
+						     memblock, face_id, elem_id);
 		} else if (elem_id < ngb_id) {
 			uint32_t face_id =
 				nb_partition_elem_find_edge(part, elem_id, j);
@@ -563,8 +564,12 @@ static void face_get_normal(const nb_partition_t *const part,
 {
 	nb_partition_edge_get_normal(part, face_id, nf);
 
+	uint16_t N = face_elems_conn->N_adj[face_id];
+	uint32_t N_elems = nb_partition_get_N_elems(part);
+
 	uint32_t elem1 = face_elems_conn->adj[face_id][0];
-	uint32_t elem2 = face_elems_conn->adj[face_id][1];
+	uint32_t elem2 = (1 < N)?(face_elems_conn->adj[face_id][1]):(N_elems);
+
 	uint16_t local_fid =
 		nb_partition_elem_ngb_get_face(part, elem1, elem2);
 	uint32_t v1 = nb_partition_elem_get_adj(part, elem1, local_fid);

@@ -108,6 +108,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 	set_numeric_bconditions(K, F, part, numeric_bcond);
 
 	free_elem_adj(elem_adj);
+	nb_bcond_finish(numeric_bcond);
 	NB_SOFT_FREE(bcond_size, numeric_bcond);
 }
 
