@@ -990,14 +990,6 @@ static void integrate_subface_pairwise(const nb_partition_t *const part,
 			subface_get_grad_pairwise(c2, c1, grad);
 		double Kfi[4];
 		subface_get_nodal_contribution(D, nf, grad, Kfi);
-		if(Kfi[0]!=Kfi[0])
-			printf("-- Kf0: %g %i\n", Kfi[0], face_id);/* T */
-		if(Kfi[1]!=Kfi[1])
-			printf("-- Kf1: %g %i\n", Kfi[1], face_id);/* T */
-		if(Kfi[2]!=Kfi[2])
-			printf("-- Kf2: %g %i\n", Kfi[2], face_id);/* T */
-		if(Kfi[3]!=Kfi[3])
-			printf("-- Kf3: %g %i\n", Kfi[3], face_id);/* T */
 		Kf[i * 2] += factor * Kfi[0];
 		Kf[i*2+1] += factor * Kfi[1];
 		Kf[2 * N + i * 2] += factor * Kfi[2];
@@ -1008,8 +1000,18 @@ static void integrate_subface_pairwise(const nb_partition_t *const part,
 static void subface_get_grad_pairwise(const double c1[2], const double c2[2],
 				      double grad[2])
 {
-	grad[0] = 0.5 /(c1[0] - c2[0]);
-	grad[1] = 0.5 /(c1[1] - c2[1]);
+	double xdiff = c1[0] - c2[0];
+	double ydiff = c1[1] - c2[1];
+	if (fabs(xdiff) < 1e-16) {
+		grad[0] = 0;
+		grad[1] = 1 / ydiff;
+	} else if (fabs(ydiff) < 1e-16) {
+		grad[0] = 1 / xdiff;
+		grad[1] = 0;
+	} else {
+		grad[0] = 0.5 / xdiff;
+		grad[1] = 0.5 / ydiff;
+	}
 }
 
 static void add_Kf_to_K(uint16_t N, const uint32_t *adj,

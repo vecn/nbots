@@ -305,7 +305,7 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
+	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.005);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
