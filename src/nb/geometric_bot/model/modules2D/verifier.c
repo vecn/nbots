@@ -159,7 +159,7 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 			uint32_t v4 = GET_2_EDGE_VTX(model, j);
 
 			nb_intersect_t status = 
-				vcn_utils2D_are_sgm_intersected
+				vcn_utils2D_get_sgm_intersection
 						(GET_PVTX(model, v1),
 						 GET_PVTX(model, v2),
 						 GET_PVTX(model, v3),

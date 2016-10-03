@@ -246,7 +246,7 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 		nb_pde_get_vm_stress(analytic_stress[0],
 				     analytic_stress[1],
 				     analytic_stress[2]);
-	double vm_error += fabs(1.0 - vm_stress / analytic_vm_stress);
+	double vm_error = fabs(1.0 - vm_stress / analytic_vm_stress);
 	fclose(fp);                                   /* TEMPORAL */
 	return vm_error;
 }

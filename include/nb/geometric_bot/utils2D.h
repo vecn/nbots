@@ -100,13 +100,16 @@ void vcn_utils2D_get_closest_pnt_to_sgm(const double s1[2],
 					const double s2[2],
 					const double p[2],
 					double closest_point[2]);
-nb_intersect_t vcn_utils2D_are_sgm_intersected(const double a1[2],
-					       const double a2[2],
-					       const double b1[2],
-					       const double b2[2],
-					       /* Output NULL if not required */
-					       double intersection[2]);
-
+nb_intersect_t vcn_utils2D_get_sgm_intersection(const double a1[2],
+						const double a2[2],
+						const double b1[2],
+						const double b2[2],
+						/* Output NULL if not required */
+						double intersection[2]);
+bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
+				     const double b1[2], const double b2[2],
+				     /* Output NULL if not required */
+				     double intersection[2]);
 bool vcn_utils2D_sgm_intersects_trg(const double t1[2],
 				    const double t2[2],
 				    const double t3[2],

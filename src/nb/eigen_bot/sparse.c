@@ -1590,14 +1590,14 @@ void vcn_sparse_backward_solve(const vcn_sparse_t *const U,
 	}
 }
 
-void vcn_matrix_2X2_inverse(const double *const A,
-			    double* A_inv)
+double vcn_matrix_2X2_inverse(const double *const A, double* A_inv)
 {
 	double det = (A[0] * A[3] - A[1] * A[2]);
 	A_inv[0] = A[3] / det;
 	A_inv[1] = -A[1] / det;
 	A_inv[2] = -A[2] / det;
 	A_inv[3] = A[0] / det;
+	return det;
 }
 
 void vcn_matrix_2X2_eigen(const double *const A,
@@ -1652,11 +1652,13 @@ void vcn_matrix_2X2_eigen(const double *const A,
 	P[1] /= normalizer;
 	P[3] /= normalizer;
 }
-double vcn_matrix_2X2_det(double *A){
+double vcn_matrix_2X2_det(double *A)
+{
 	return A[0] * A[3] - A[1] * A[2];
 }
 
-double vcn_matrix_3X3_det(double *A){
+double vcn_matrix_3X3_det(double *A)
+{
 	return 
 		A[0] * A[4] * A[8] + 
 		A[3] * A[7] * A[2] +
@@ -1666,16 +1668,19 @@ double vcn_matrix_3X3_det(double *A){
 		A[8] * A[1] * A[3];
 }
 
-void vcn_matrix_2X2_inverse_destructive(double *A){
+double vcn_matrix_2X2_inverse_destructive(double *A)
+{
 	double det = A[0] * A[3] - A[1] * A[2];
 	double tmp = A[0];
 	A[0] = A[3]/det;
 	A[3] = tmp/det;
 	A[1] = -A[1]/det;
 	A[2] = -A[2]/det;
+	return det;
 }
 
-void vcn_matrix_3X3_inverse_destructive(double *A){
+double vcn_matrix_3X3_inverse_destructive(double *A)
+{
 	double det = vcn_matrix_3X3_det(A);
 	double a11, a12, a13, a21, a22, a23, a31, a32, a33;
 	a11 = A[0];
@@ -1696,6 +1701,7 @@ void vcn_matrix_3X3_inverse_destructive(double *A){
 	A[6] = (a32*a21-a31*a22)/det;
 	A[7] = -(a32*a11*a31*a12)/det;
 	A[8] = (a22*a11-a21*a12)/det;
+	return det;
 }
 
 int vcn_matrix_cholesky_decomposition(const double *const A,

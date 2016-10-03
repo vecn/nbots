@@ -626,11 +626,11 @@ static ipack_t* get_intersection_pack(const edge_t *sgm1,
 				      const edge_t *sgm2)
 {
 	double intersection[2];
-	nb_intersect_t status = vcn_utils2D_are_sgm_intersected(sgm1->v1->x,
-								sgm1->v2->x,
-								sgm2->v1->x,
-								sgm2->v2->x,
-								intersection);
+	nb_intersect_t status = vcn_utils2D_get_sgm_intersection(sgm1->v1->x,
+								 sgm1->v2->x,
+								 sgm2->v1->x,
+								 sgm2->v2->x,
+								 intersection);
 	ipack_t *ipack = NULL;
 	if (is_true_intersection(sgm1, sgm2, status)) {
 		ipack = ipack_create();
