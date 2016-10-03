@@ -81,8 +81,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -98,7 +98,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_TRIAN,
 		 check_beam_cantilever, NULL);
 }
 
@@ -462,8 +462,8 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 
 	check_results(part, &results);
 
-	TEMPORAL1(part, &results);
 	TEMPORAL2(part, &results);
+	TEMPORAL1(part, &results);
 
 	nb_partition_finish(part);
 	results_finish(&results);

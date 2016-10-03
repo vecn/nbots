@@ -355,6 +355,7 @@ static uint32_t get_N_total_face_adj(const nb_partition_t *part)
 static uint16_t face_get_N_ngb(const nb_partition_t *part,
 			       uint32_t elem_id1, uint32_t elem_id2)
 {
+	/* AQUI VOY  Add elems adjacent to edge's vtx adjacent edges*/
 	uint16_t N = 2 +
 		get_N_ngb_around_right_vtx(part, elem_id1, elem_id2) +
 		get_N_ngb_around_right_vtx(part, elem_id2, elem_id1);
