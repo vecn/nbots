@@ -98,7 +98,12 @@ static void clone_container_elements(nb_container_t *cnt,
 
 inline void nb_bcond_finish(void *bcond_ptr)
 {
+	nb_bcond_t *bcond = bcond_ptr;
 	nb_bcond_clear(bcond_ptr);
+	nb_container_finish(bcond->dirichlet_vtx);
+	nb_container_finish(bcond->neumann_vtx);
+	nb_container_finish(bcond->dirichlet_sgm);
+	nb_container_finish(bcond->neumann_sgm);
 }
 
 inline void* nb_bcond_create(uint8_t N_dof)
