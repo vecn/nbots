@@ -141,6 +141,7 @@ static void set_msh3trg_main_interface(nb_partition_t *part)
 	part->insgm_get_N_nodes = nb_msh3trg_insgm_get_N_nodes;
 	part->insgm_get_node = nb_msh3trg_insgm_get_node;
 	part->load_from_mesh = nb_msh3trg_load_from_mesh;
+	part->set_nodal_permutation = nb_msh3trg_set_nodal_permutation;
 	part->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	part->is_vtx_inside = nb_msh3trg_is_vtx_inside;
 	part->build_model = nb_msh3trg_build_model;
@@ -202,6 +203,7 @@ static void set_mshquad_main_interface(nb_partition_t *part)
 	part->insgm_get_N_nodes = nb_mshquad_insgm_get_N_nodes;
 	part->insgm_get_node = nb_mshquad_insgm_get_node;
 	part->load_from_mesh = nb_mshquad_load_from_mesh;
+	part->set_nodal_permutation = nb_mshquad_set_nodal_permutation;
 	part->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	part->is_vtx_inside = nb_mshquad_is_vtx_inside;
 	part->build_model = nb_mshquad_build_model;
@@ -263,6 +265,7 @@ static void set_mshpoly_main_interface(nb_partition_t *part)
 	part->insgm_get_N_nodes = nb_mshpoly_insgm_get_N_nodes;
 	part->insgm_get_node = nb_mshpoly_insgm_get_node;
 	part->load_from_mesh = nb_mshpoly_load_from_mesh;
+	part->set_nodal_permutation = nb_mshpoly_set_nodal_permutation;
 	part->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpoly_is_vtx_inside;
 	part->build_model = nb_mshpoly_build_model;
@@ -324,6 +327,7 @@ static void set_mshpack_main_interface(nb_partition_t *part)
 	part->insgm_get_N_nodes = nb_mshpack_insgm_get_N_nodes;
 	part->insgm_get_node = nb_mshpack_insgm_get_node;
 	part->load_from_mesh = nb_mshpack_load_from_mesh;
+	part->set_nodal_permutation = nb_mshpack_set_nodal_permutation;
 	part->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	part->is_vtx_inside = nb_mshpack_is_vtx_inside;
 	part->build_model = nb_mshpack_build_model;
@@ -633,6 +637,12 @@ void nb_partition_load_from_mesh(nb_partition_t *part,
 				 nb_mesh_t *mesh)
 {
 	part->load_from_mesh(part->msh, mesh);
+}
+
+void nb_partition_set_nodal_permutation(nb_partition_t *part,
+					const uint32_t *perm)
+{
+	part->set_nodal_permutation(part->msh, perm);
 }
 
 void nb_partition_get_enveloping_box(const nb_partition_t *part,
