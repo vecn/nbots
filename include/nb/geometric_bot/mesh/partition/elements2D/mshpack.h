@@ -58,6 +58,7 @@ uint32_t nb_mshpack_insgm_get_node(const void *msh, uint32_t sgm_id,
 void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 					    double ov_factor);
 void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh);
+void nb_mshpack_set_nodal_permutation(void *msh, const uint32_t *perm);
 void nb_mshpack_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshpack_is_vtx_inside(const void *msh, double x, double y);
 void nb_mshpack_build_model(const void *msh, nb_model_t *model);

@@ -707,72 +707,6 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 	}
 }
 
-void nb_mshpoly_set_nodal_permutation(void *msh, const uint32_t *perm)
-{
-	set_nodal_perm_to_nodes(msh, perm);
-	set_nodal_perm_to_edges(msh, perm);
-	set_nodal_perm_to_elems(msh, perm);
-	set_nodal_perm_to_invtx(msh, perm);
-	set_nodal_perm_to_insgm(msh, perm);
-}
-
-static void set_nodal_perm_to_nodes(nb_mshpoly_t *poly, const uint32_t *perm)
-{
-	uint32_t N = poly->N_nod;
-	
-	uint32_t memsize = N * 2 * sizeof(*(poly->nod));
-	double *nodes = NB_SOFT_MALLOC(memsize);
-
-	memcpy(nodes, poly->nod, memsize);
-
-	for (uint32_t i = 0; i < N; i++) {
-		uint32_t id = perm[i];
-		memcpy(&(poly->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
-	}
-
-	NB_SOFT_FREE(memsize, nodes);
-}
-
-static void set_nodal_perm_to_edges(nb_mshpoly_t *poly, const uint32_t *perm)
-{
-	uint32_t N = poly->N_edg;
-	for (uint32_t i = 0; i < 2 * N; i++) {
-		uint32_t id = poly->edg[i];
-		poly->edg[i] = perm[id];
-	}
-}
-
-static void set_nodal_perm_to_elems(nb_mshpoly_t *poly, const uint32_t *perm)
-{
-	uint32_t N = poly->N_elems;
-	for (uint32_t i = 0; i < N; i++) {
-		for (uint16_t j = 0; j < poly->N_adj[i]; j++) {
-			uint32_t id = poly->ngb[i][j];
-			poly->ngb[i][j] = perm[id];
-		}
-	}
-}
-
-static void set_nodal_perm_to_invtx(nb_mshpoly_t *poly, const uint32_t *perm)
-{
-	uint32_t N = poly->N_vtx;
-	for (uint32_t i = 0; i < N; i++) {
-		uint32_t id = poly->vtx[i];
-		poly->vtx[i] = perm[id];
-	}
-}
-
-static void set_nodal_perm_to_insgm(nb_mshpoly_t *poly, const uint32_t *perm)
-{
-	uint32_t N = poly->N_sgm;
-	for (uint32_t i = 0; i < N; i++) {
-		for (uint16_t j = 0; j < poly->N_nod_x_sgm[i]; j++) {
-			uint32_t id = poly->nod_x_sgm[i][j];
-			poly->nod_x_sgm[i][j] = perm[id];
-		}
-	}
-}
-
 static void init_voronoi_info(vinfo_t *vinfo,
 			      const nb_mesh_t *const mesh)
 {
@@ -1487,6 +1421,71 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 		}
 	}
 
+}
+void nb_mshpoly_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	set_nodal_perm_to_nodes(msh, perm);
+	set_nodal_perm_to_edges(msh, perm);
+	set_nodal_perm_to_elems(msh, perm);
+	set_nodal_perm_to_invtx(msh, perm);
+	set_nodal_perm_to_insgm(msh, perm);
+}
+
+static void set_nodal_perm_to_nodes(nb_mshpoly_t *poly, const uint32_t *perm)
+{
+	uint32_t N = poly->N_nod;
+	
+	uint32_t memsize = N * 2 * sizeof(*(poly->nod));
+	double *nodes = NB_SOFT_MALLOC(memsize);
+
+	memcpy(nodes, poly->nod, memsize);
+
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = perm[i];
+		memcpy(&(poly->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
+	}
+
+	NB_SOFT_FREE(memsize, nodes);
+}
+
+static void set_nodal_perm_to_edges(nb_mshpoly_t *poly, const uint32_t *perm)
+{
+	uint32_t N = poly->N_edg;
+	for (uint32_t i = 0; i < 2 * N; i++) {
+		uint32_t id = poly->edg[i];
+		poly->edg[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_elems(nb_mshpoly_t *poly, const uint32_t *perm)
+{
+	uint32_t N = poly->N_elems;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < poly->N_adj[i]; j++) {
+			uint32_t id = poly->adj[i][j];
+			poly->adj[i][j] = perm[id];
+		}
+	}
+}
+
+static void set_nodal_perm_to_invtx(nb_mshpoly_t *poly, const uint32_t *perm)
+{
+	uint32_t N = poly->N_vtx;
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = poly->vtx[i];
+		poly->vtx[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_insgm(nb_mshpoly_t *poly, const uint32_t *perm)
+{
+	uint32_t N = poly->N_sgm;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < poly->N_nod_x_sgm[i]; j++) {
+			uint32_t id = poly->nod_x_sgm[i][j];
+			poly->nod_x_sgm[i][j] = perm[id];
+		}
+	}
 }
 
 void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,

@@ -816,6 +816,11 @@ void nb_mshpack_load_from_mesh(void *msh, nb_mesh_t *mesh)
 	nb_mshpack_load_from_mesh_with_overlap(msh, mesh, 0.0);
 }
 
+void nb_mshpack_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	; /* Do nothing */
+}
+
 void nb_mshpack_get_enveloping_box(const void *msh, double box[4])
 {
 	const nb_mshpack_t *mshpack = msh;

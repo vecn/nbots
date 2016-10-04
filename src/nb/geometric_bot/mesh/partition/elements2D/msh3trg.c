@@ -54,6 +54,11 @@ static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_start_access(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 				      uint32_t ivtx, uint32_t vtx_id);
+static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_edges(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_elems(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_invtx(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_insgm(nb_msh3trg_t *msh3trg, const uint32_t *perm);
 static uint32_t itrg_get_right_triangle
                          (const nb_msh3trg_t *const delaunay, 
 			  const bool *const enabled_elements,
@@ -693,6 +698,72 @@ static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t isgm = GET_ISGM_FROM_STRUCT(exp_structure);
 	msh3trg->nod_x_sgm[isgm][ivtx] = vtx_id;
+}
+
+void nb_msh3trg_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	set_nodal_perm_to_nodes(msh, perm);
+	set_nodal_perm_to_edges(msh, perm);
+	set_nodal_perm_to_elems(msh, perm);
+	set_nodal_perm_to_invtx(msh, perm);
+	set_nodal_perm_to_insgm(msh, perm);
+}
+
+static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_nod;
+	
+	uint32_t memsize = N * 2 * sizeof(*(msh3trg->nod));
+	double *nodes = NB_SOFT_MALLOC(memsize);
+
+	memcpy(nodes, msh3trg->nod, memsize);
+
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = perm[i];
+		memcpy(&(msh3trg->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
+	}
+
+	NB_SOFT_FREE(memsize, nodes);
+}
+
+static void set_nodal_perm_to_edges(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_edg;
+	for (uint32_t i = 0; i < 2 * N; i++) {
+		uint32_t id = msh3trg->edg[i];
+		msh3trg->edg[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_elems(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_elems;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < 3; j++) {
+			uint32_t id = msh3trg->adj[i*3+j];
+			msh3trg->adj[i*3+j] = perm[id];
+		}
+	}
+}
+
+static void set_nodal_perm_to_invtx(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_vtx;
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = msh3trg->vtx[i];
+		msh3trg->vtx[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_insgm(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_sgm;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < msh3trg->N_nod_x_sgm[i]; j++) {
+			uint32_t id = msh3trg->nod_x_sgm[i][j];
+			msh3trg->nod_x_sgm[i][j] = perm[id];
+		}
+	}
 }
 
 void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,

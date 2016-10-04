@@ -29,6 +29,7 @@
 #include "nb/geometric_bot/model/modules2D/simplifier.h"
 #include "nb/geometric_bot/model/modules2D/clipper.h"
 #include "nb/geometric_bot/mesh/dewall.h"
+#include "nb/geometric_bot/mesh/alpha_shape.h"
 #include "nb/geometric_bot/mesh/constrained_delaunay.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/image_density.h"

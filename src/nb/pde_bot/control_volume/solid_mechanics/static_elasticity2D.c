@@ -58,33 +58,37 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_partition_init(intmsh , INTEGRATOR_TYPE);
 	load_integration_mesh(part, intmsh);
 
-	vcn_sparse_t *K;
-	init_global_matrix(intmsh, &K);
+	//vcn_sparse_t *K;
+	//init_global_matrix(intmsh, &K);
 
-	nb_graph_init(face_elems_conn);
-	load_face_elems_conn(part, face_elems_conn);
+	//nb_graph_init(face_elems_conn);
+	//load_face_elems_conn(part, face_elems_conn);
+	nb_partition_export_draw(part, "../../../AA_PART.png", 1000, 800,
+				 NB_NODE, NB_NULL, NULL, true);/* TEMPORAL */
+	nb_partition_export_draw(intmsh, "../../../AA_INTMSH.png", 1000, 800,
+				 NB_NODE, NB_NULL, NULL, true);/* TEMPORAL */
 
-	assemble_global_forces(F, part, material, enable_self_weight,
-			       gravity);
+	//assemble_global_forces(F, part, material, enable_self_weight,
+	//		       gravity);
 
-	assemble_global_stiffness(K, part, face_elems_conn, material,
-				  analysis2D, params2D);
+	//assemble_global_stiffness(K, part, face_elems_conn, material,
+	//			  analysis2D, params2D);
 	
-	nb_cvfa_set_bconditions(part, material, analysis2D, 
-				K, F, bcond, 1.0);
+	//nb_cvfa_set_bconditions(part, material, analysis2D, K, F, bcond, 1.0);
 
-	int solver_status = solver(K, F, displacement);
+	/*int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
+	*/
 
-	compute_strain(strain, boundary_mask, face_elems_conn, part,
-		       bcond, displacement);
+	//compute_strain(strain, boundary_mask, face_elems_conn, part,
+	//	       bcond, displacement);
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
-	vcn_sparse_destroy(K);
+	//vcn_sparse_destroy(K);
 	nb_partition_finish(intmsh);
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
@@ -126,20 +130,18 @@ static void load_integration_mesh(const nb_partition_t *part,
 	}	
 
 	nb_mesh_init(mesh);
-	nb_mesh_get_delaunay(mesh, N_elems, vtx);
-	nb_mesh_delete_frontera();/* TEMPORAL */
+	nb_mesh_get_smallest_ns_alpha_complex(mesh, N_elems, vtx, 0.7);
 	nb_partition_load_from_mesh(intmsh, mesh);
 	nb_mesh_finish(mesh);
 
 	for (uint32_t i = 0; i < N_elems; i++) {
-		uint32_t id = nb_partition_get_invtx(part, i);
+		uint32_t id = nb_partition_get_invtx(intmsh, i);
 		perm[id] = i;
 	}
 
 	nb_partition_set_nodal_permutation(intmsh, perm);
 
 	NB_SOFT_FREE(memsize, memblock);
-	
 }
 
 static void init_global_matrix(const nb_partition_t *intmsh, vcn_sparse_t **K)

@@ -58,6 +58,11 @@ static void set_mshquad(nb_mshquad_t *quad,
 static void get_match_data(const nb_graph_t *const graph,
 			   const uint32_t *const matches,
 			   match_data *data);
+static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_elems(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_invtx(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm);
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
@@ -1080,6 +1085,73 @@ static void get_match_data(const nb_graph_t *const graph,
 			data->N_unmatched_trg += 1;
 	}
 	data->N_matchs /= 2; /* Double counting */
+}
+
+void nb_mshquad_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	set_nodal_perm_to_nodes(msh, perm);
+	set_nodal_perm_to_edges(msh, perm);
+	set_nodal_perm_to_elems(msh, perm);
+	set_nodal_perm_to_invtx(msh, perm);
+	set_nodal_perm_to_insgm(msh, perm);
+}
+
+static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_nod;
+	
+	uint32_t memsize = N * 2 * sizeof(*(quad->nod));
+	double *nodes = NB_SOFT_MALLOC(memsize);
+
+	memcpy(nodes, quad->nod, memsize);
+
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = perm[i];
+		memcpy(&(quad->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
+	}
+
+	NB_SOFT_FREE(memsize, nodes);
+}
+
+static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_edg;
+	for (uint32_t i = 0; i < 2 * N; i++) {
+		uint32_t id = quad->edg[i];
+		quad->edg[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_elems(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_elems;
+	for (uint32_t i = 0; i < N; i++) {
+		uint16_t N_adj = nb_mshquad_elem_get_N_adj(quad, i);
+		for (uint16_t j = 0; j < N_adj; j++) {
+			uint32_t id = quad->adj[i*4+j];
+			quad->adj[i*4+j] = perm[id];
+		}
+	}
+}
+
+static void set_nodal_perm_to_invtx(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_vtx;
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = quad->vtx[i];
+		quad->vtx[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_sgm;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < quad->N_nod_x_sgm[i]; j++) {
+			uint32_t id = quad->nod_x_sgm[i][j];
+			quad->nod_x_sgm[i][j] = perm[id];
+		}
+	}
 }
 
 void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])
