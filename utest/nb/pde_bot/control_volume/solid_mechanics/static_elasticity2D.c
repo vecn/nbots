@@ -299,6 +299,9 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 
 static void TEMPORAL1(nb_partition_t *part, results_t *results)
 {
+	nb_cvfa_draw_integration_mesh(part, "../../../CVFA_alpha_x.png",/*T*/
+				      1000, 800);              /* TEMPORAL */
+
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	double *disp = malloc(N_elems * sizeof(*disp));
 

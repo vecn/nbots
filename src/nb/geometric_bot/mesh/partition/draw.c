@@ -313,3 +313,65 @@ static void get_min_max(const nb_partition_t *part,
 			*max = values[i];
 	}
 }
+
+void nb_partition_draw_wires(const nb_partition_t *part,
+			     nb_graphics_context_t *g)
+{
+	part->graphics.draw_wires(part->msh, g);
+}
+
+void nb_partition_draw_boundaries(const nb_partition_t *part,
+				  nb_graphics_context_t *g)
+{
+	part->graphics.draw_boundaries(part->msh, g);
+}
+
+void nb_partition_fill_elems(const nb_partition_t *part,
+			     nb_graphics_context_t *g)
+{
+	part->graphics.fill_elems(part->msh, g);
+}
+
+void nb_partition_fill_elems_field_on_nodes(const nb_partition_t *part,
+					    nb_graphics_context_t *g,
+					    const double *normalized_field,
+					    nb_graphics_palette_preset palette)
+{
+	part->graphics.fill_elems_field_on_nodes(part->msh, g,
+						 normalized_field,
+						 palette);
+}
+
+void nb_partition_fill_elems_field_on_elems(const nb_partition_t *part,
+					    nb_graphics_context_t *g,
+					    const double *normalized_field,
+					    nb_graphics_palette_preset palette)
+{
+	part->graphics.fill_elems_field_on_elems(part->msh, g,
+						 normalized_field,
+						 palette);
+}
+
+void nb_partition_fill_elems_classes(const nb_partition_t *part,
+				     nb_graphics_context_t *g,
+				     const uint8_t *class, uint8_t N_colors,
+				     const nb_graphics_color_t *colors)
+{
+	part->graphics.fill_elems_classes(part->msh, g, class,
+					  N_colors, colors);
+}
+
+void nb_partition_fill_nodes(const nb_partition_t *part,
+			     nb_graphics_context_t *g)
+{
+	part->graphics.fill_nodes(part->msh, g);
+}
+
+void nb_partition_fill_nodes_classes(const nb_partition_t *part,
+				     nb_graphics_context_t *g,
+				     const uint8_t *class, uint8_t N_colors,
+				     const nb_graphics_color_t *colors)
+{
+	part->graphics.fill_nodes_classes(part->msh, g, class,
+					  N_colors, colors);
+}
