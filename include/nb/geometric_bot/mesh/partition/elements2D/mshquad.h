@@ -62,6 +62,7 @@ uint32_t nb_mshquad_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh);
+void nb_mshquad_set_nodal_permutation(void *msh, const uint32_t *perm);
 void nb_mshquad_get_enveloping_box(const void *msh, double box[4]);
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y);
 void nb_mshquad_build_model(const void *msh, nb_model_t *model);

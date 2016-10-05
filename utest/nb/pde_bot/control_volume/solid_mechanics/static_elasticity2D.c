@@ -23,7 +23,6 @@
 typedef struct {
 	uint32_t N_faces;
 	uint32_t N_elems;
-	uint8_t N_qp;
 	double *disp;
 	double *strain;
 	double *stress;
@@ -40,30 +39,27 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const void *part,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *part, const double *stress,
-				const char *boundary_mask, uint8_t N_qp);
+				const char *boundary_mask);
 static double get_face_error_avg_pwh(const void *part, const double *stress,
-				     const double *mid_qp, uint8_t N_qp,
 				     uint32_t face_id);
-static void get_quadrature_mids(uint8_t N_qp, double *mid_qp);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part, nb_bcond_t *bcond);
 static void pwh_DC_SGM_cond(const double *x, double t, double *out);
 static void pwh_BC_SGM_cond(const double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
-		     uint8_t N_qp, nb_partition_type part_type,
+		     nb_partition_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */);
-static int simulate(const char *problem_data,
-		    nb_partition_t *part, results_t *results,
-		    uint32_t N_vtx, uint8_t N_qp,
+static int simulate(const char *problem_data, nb_partition_t *part,
+		    results_t *results, uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
 static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx);
 static void results_init(results_t *results, uint32_t N_faces,
-			 uint32_t N_elems, uint8_t N_qp);
+			 uint32_t N_elems);
 static void results_finish(results_t *results);
 static int read_problem_data
 		(const char* filename,
@@ -102,7 +98,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, 3, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
@@ -125,7 +121,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 5100, 3, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -134,8 +130,7 @@ static void check_plate_with_hole(const void *part,
 				  const results_t *results)
 {
 	double avg_error = get_error_avg_pwh(part, results->stress,
-					     results->boundary_mask,
-					     results->N_qp);
+					     results->boundary_mask);
 
 	printf("-- AVG ERROR: %e\n", avg_error); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
@@ -143,8 +138,7 @@ static void check_plate_with_hole(const void *part,
 
 static double get_error_avg_pwh(const void *part,
 				const double *stress,
-				const char *boundary_mask,
-				uint8_t N_qp)
+				const char *boundary_mask)
 {
 	FILE *fp = fopen("../../../stress.txt", "w"); /* TEMPORAL */
 	fprintf(fp,
@@ -154,127 +148,107 @@ static double get_error_avg_pwh(const void *part,
 	fclose(fp);                                   /* TEMPORAL */
 	double avg = 0.0;
 	uint32_t N_faces = nb_partition_get_N_edges(part);
-	double *mid_qp = alloca(N_qp * sizeof(double));
-	get_quadrature_mids(N_qp, mid_qp);
 	for (uint32_t i = 0; i < N_faces; i++) {
 		if (!(boundary_mask[i]))
-			avg += get_face_error_avg_pwh(part, stress, mid_qp,
-						      N_qp, i);
+			avg += get_face_error_avg_pwh(part, stress, i);
 	}
-	return avg /= N_faces * N_qp;
+	return avg /= N_faces;
 }
 
 static double get_face_error_avg_pwh(const void *part, const double *stress,
-				     const double *mid_qp, uint8_t N_qp,
 				     uint32_t face_id)
 {
 	FILE *fp = fopen("../../../stress.txt", "a"); /* TEMPORAL */
 	double nf[2];                                   /* TEMPORAL */
 	nb_partition_edge_get_normal(part, face_id, nf);/* TEMPORAL */
-	double vm_error = 0;
-	for (uint8_t q = 0; q < N_qp; q++) {
-		uint32_t id = face_id * N_qp + q;
-		double xqp[2];
-		nb_partition_edge_get_midpoint(part, face_id, mid_qp[q], xqp);
+	
+	double xf[2];
+	nb_partition_edge_get_midpoint(part, face_id, 0.5, xf);
 
-		double analytic_stress[3];
-		get_analytic_stress_pwh(xqp[0], xqp[1], analytic_stress);
+	double analytic_stress[3];
+	get_analytic_stress_pwh(xf[0], xf[1], analytic_stress);
 
-		double error[15];                              /* TEMPORAL */
-		error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
-				CHECK_ZERO(analytic_stress[0]));         /**/
-		error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
-				CHECK_ZERO(analytic_stress[1]));         /**/
-		error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
-				CHECK_ZERO(analytic_stress[2]));         /**/
-		double Sn[2];                                  /* TEMPORAL */
-		Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
-		Sn[1] = 0.5*stress[id*3+2]*nf[0] + stress[id*3+1]*nf[1]; /**/
-		double St[2];                                  /* TEMPORAL */
-		St[0] = stress[id * 3]*nf[1] - 0.5*stress[id*3+2]*nf[0]; /**/
-		St[1] = 0.5*stress[id*3+2]*nf[1] - stress[id*3+1]*nf[0]; /**/
-		double mSn = sqrt(POW2(Sn[0]) + POW2(Sn[1]));  /* TEMPORAL */
-		double mSt = sqrt(POW2(St[0]) + POW2(St[1]));  /* TEMPORAL */
-		double Snn = Sn[0] * nf[0] + Sn[1] * nf[1];    /* TEMPORAL */
-		double Snt = Sn[0] * nf[1] - Sn[1] * nf[0];    /* TEMPORAL */
-		double Stn = St[0] * nf[0] + St[1] * nf[1];    /* TEMPORAL */
-		double Stt = St[0] * nf[1] - St[1] * nf[0];    /* TEMPORAL */
-		double main_s[2];
-		nb_pde_get_main_stress(stress[id*3], stress[id*3+1],
-				       stress[id*3+2], main_s);
+	uint32_t id = face_id;                         /* TEMPORAL */
+	double error[15];                              /* TEMPORAL */
+	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+			CHECK_ZERO(analytic_stress[0]));         /**/
+	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+			CHECK_ZERO(analytic_stress[1]));         /**/
+	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+			CHECK_ZERO(analytic_stress[2]));         /**/
+	double Sn[2];                                  /* TEMPORAL */
+	Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
+	Sn[1] = 0.5*stress[id*3+2]*nf[0] + stress[id*3+1]*nf[1]; /**/
+	double St[2];                                  /* TEMPORAL */
+	St[0] = stress[id * 3]*nf[1] - 0.5*stress[id*3+2]*nf[0]; /**/
+	St[1] = 0.5*stress[id*3+2]*nf[1] - stress[id*3+1]*nf[0]; /**/
+	double mSn = sqrt(POW2(Sn[0]) + POW2(Sn[1]));  /* TEMPORAL */
+	double mSt = sqrt(POW2(St[0]) + POW2(St[1]));  /* TEMPORAL */
+	double Snn = Sn[0] * nf[0] + Sn[1] * nf[1];    /* TEMPORAL */
+	double Snt = Sn[0] * nf[1] - Sn[1] * nf[0];    /* TEMPORAL */
+	double Stn = St[0] * nf[0] + St[1] * nf[1];    /* TEMPORAL */
+	double Stt = St[0] * nf[1] - St[1] * nf[0];    /* TEMPORAL */
+	double main_s[2];
+	nb_pde_get_main_stress(stress[id*3], stress[id*3+1],
+			       stress[id*3+2], main_s);
 
-		double An[2];                                  /* TEMPORAL */
-		An[0] = analytic_stress[0]*nf[0] +
-			0.5 * analytic_stress[2]*nf[1]; /**/
-		An[1] = 0.5 * analytic_stress[2]*nf[0] +
-			analytic_stress[1]*nf[1]; /**/
-		double At[2];                                  /* TEMPORAL */
-		At[0] = analytic_stress[0]*nf[1] -
-			0.5 * analytic_stress[2]*nf[0]; /**/
-		At[1] = 0.5 * analytic_stress[2]*nf[1] -
-			analytic_stress[1]*nf[0]; /**/
-		double mAn = sqrt(POW2(An[0]) + POW2(An[1]));
-		double mAt = sqrt(POW2(At[0]) + POW2(At[1]));
-		double Ann = An[0] * nf[0] + An[1] * nf[1];    /* TEMPORAL */
-		double Ant = An[0] * nf[1] - An[1] * nf[0];    /* TEMPORAL */
-		double Atn = At[0] * nf[0] + At[1] * nf[1];    /* TEMPORAL */
-		double Att = At[0] * nf[1] - At[1] * nf[0];    /* TEMPORAL */
-		double main_a[2];
-		nb_pde_get_main_stress(analytic_stress[0],
-				       analytic_stress[1],
-				       analytic_stress[2], main_a);
-		error[3] = fabs((An[0] - Sn[0]) / CHECK_ZERO(An[0]));    /**/
-		error[4] = fabs((An[1] - Sn[1]) / CHECK_ZERO(An[1]));    /**/
-		error[5] = fabs((At[0] - St[0]) / CHECK_ZERO(At[0]));    /**/
-		error[6] = fabs((At[1] - St[1]) / CHECK_ZERO(At[1]));    /**/
-		error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));
-		error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));
-		error[9] = fabs((Ann - Snn)/CHECK_ZERO(Ann));
-		error[10] = fabs((Ant - Snt)/CHECK_ZERO(Ant));
-		error[11] = fabs((Atn - Stn)/CHECK_ZERO(Atn));
-		error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));
-		error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));
-		error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));
-		fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
-			"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
-			"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n", /**/
-			error[0], error[1], error[2], error[3], error[4],/**/
-			error[5], error[6], error[7], error[8],/* TEMPORAL */
-			error[9], error[10], error[11], error[12],
-			error[13], error[14],
-			stress[id*3], stress[id*3+1], stress[id*3+2],    /**/
-			Sn[0], Sn[1], St[0], St[1], mSn, mSt, Snn, Snt,
-			Stn, Stt, main_s[0], main_s[1],/**/
-			analytic_stress[0], analytic_stress[1],/* TEMPORAL */
-			analytic_stress[2],                    /* TEMPORAL */
-			An[0], An[1], At[0], At[1], mAn, mAt, Ann, Ant,
-			Atn, Att, main_a[0], main_a[1]); /**/
-		double vm_stress = 
-			nb_pde_get_vm_stress(stress[id * 3],
-					     stress[id*3+1],
-					     stress[id*3+2]);
-		double analytic_vm_stress =
-			nb_pde_get_vm_stress(analytic_stress[0],
-					     analytic_stress[1],
-					     analytic_stress[2]);
-		vm_error += fabs(1.0 - vm_stress / analytic_vm_stress);
-	}
+	double An[2];                                  /* TEMPORAL */
+	An[0] = analytic_stress[0]*nf[0] +
+		0.5 * analytic_stress[2]*nf[1]; /**/
+	An[1] = 0.5 * analytic_stress[2]*nf[0] +
+		analytic_stress[1]*nf[1]; /**/
+	double At[2];                                  /* TEMPORAL */
+	At[0] = analytic_stress[0]*nf[1] -
+		0.5 * analytic_stress[2]*nf[0]; /**/
+	At[1] = 0.5 * analytic_stress[2]*nf[1] -
+		analytic_stress[1]*nf[0]; /**/
+	double mAn = sqrt(POW2(An[0]) + POW2(An[1]));
+	double mAt = sqrt(POW2(At[0]) + POW2(At[1]));
+	double Ann = An[0] * nf[0] + An[1] * nf[1];    /* TEMPORAL */
+	double Ant = An[0] * nf[1] - An[1] * nf[0];    /* TEMPORAL */
+	double Atn = At[0] * nf[0] + At[1] * nf[1];    /* TEMPORAL */
+	double Att = At[0] * nf[1] - At[1] * nf[0];    /* TEMPORAL */
+	double main_a[2];
+	nb_pde_get_main_stress(analytic_stress[0],
+			       analytic_stress[1],
+			       analytic_stress[2], main_a);
+	error[3] = fabs((An[0] - Sn[0]) / CHECK_ZERO(An[0]));    /**/
+	error[4] = fabs((An[1] - Sn[1]) / CHECK_ZERO(An[1]));    /**/
+	error[5] = fabs((At[0] - St[0]) / CHECK_ZERO(At[0]));    /**/
+	error[6] = fabs((At[1] - St[1]) / CHECK_ZERO(At[1]));    /**/
+	error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));
+	error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));
+	error[9] = fabs((Ann - Snn)/CHECK_ZERO(Ann));
+	error[10] = fabs((Ant - Snt)/CHECK_ZERO(Ant));
+	error[11] = fabs((Atn - Stn)/CHECK_ZERO(Atn));
+	error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));
+	error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));
+	error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));
+	fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
+		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
+		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n", /**/
+		error[0], error[1], error[2], error[3], error[4],/**/
+		error[5], error[6], error[7], error[8],/* TEMPORAL */
+		error[9], error[10], error[11], error[12],
+		error[13], error[14],
+		stress[id*3], stress[id*3+1], stress[id*3+2],    /**/
+		Sn[0], Sn[1], St[0], St[1], mSn, mSt, Snn, Snt,
+		Stn, Stt, main_s[0], main_s[1],/**/
+		analytic_stress[0], analytic_stress[1],/* TEMPORAL */
+		analytic_stress[2],                    /* TEMPORAL */
+		An[0], An[1], At[0], At[1], mAn, mAt, Ann, Ant,
+		Atn, Att, main_a[0], main_a[1]); /**/
+	double vm_stress = 
+		nb_pde_get_vm_stress(stress[face_id * 3],
+				     stress[face_id*3+1],
+				     stress[face_id*3+2]);
+	double analytic_vm_stress =
+		nb_pde_get_vm_stress(analytic_stress[0],
+				     analytic_stress[1],
+				     analytic_stress[2]);
+	double vm_error = fabs(1.0 - vm_stress / analytic_vm_stress);
 	fclose(fp);                                   /* TEMPORAL */
 	return vm_error;
-}
-
-static void get_quadrature_mids(uint8_t N_qp, double *mid_qp)
-{
-	nb_glquadrature_t glq;
-	uint32_t memsize = N_qp * (sizeof(*(glq.x)) + sizeof(*(glq.w)));
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	glq.x = (void*) memblock;
-	glq.w = (void*) (memblock + N_qp * sizeof(*(glq.w)));
-	nb_glquadrature_load(&glq, N_qp);
-	for (uint8_t q = 0; q < N_qp; q++)
-		mid_qp[q] = (glq.x[q] + 1)/2.0;
-
-	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void get_analytic_stress_pwh(double x, double y, double stress[3])
@@ -325,6 +299,9 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 
 static void TEMPORAL1(nb_partition_t *part, results_t *results)
 {
+	nb_cvfa_draw_integration_mesh(part, "../../../CVFA_alpha_x.png",/*T*/
+				      1000, 800);              /* TEMPORAL */
+
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	double *disp = malloc(N_elems * sizeof(*disp));
 
@@ -353,8 +330,7 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 	free(disp_nodes);
 }
 
-static void TEMPORAL2(nb_partition_t *part, results_t *results,
-		      uint8_t N_qp)
+static void TEMPORAL2(nb_partition_t *part, results_t *results)
 {
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
@@ -370,17 +346,14 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results,
 		uint32_t v1 = nb_partition_edge_get_1n(part, i);
 		uint32_t v2 = nb_partition_edge_get_2n(part, i);
 		if (!(results->boundary_mask[i])) {
-			uint32_t id1 = i * N_qp;
-			uint32_t id2 = i * N_qp + (N_qp - 1);
-
-			stress[v1 * 3] += results->stress[id1 * 3];
-			stress[v1*3+1] += results->stress[id1*3+1];
-			stress[v1*3+2] += results->stress[id1*3+2];
+			stress[v1 * 3] += results->stress[i * 3];
+			stress[v1*3+1] += results->stress[i*3+1];
+			stress[v1*3+2] += results->stress[i*3+2];
 			counter[v1] += 1;
 
-			stress[v2 * 3] += results->stress[id2 * 3];
-			stress[v2*3+1] += results->stress[id2*3+1];
-			stress[v2*3+2] += results->stress[id2*3+2];
+			stress[v2 * 3] += results->stress[i * 3];
+			stress[v2*3+1] += results->stress[i*3+1];
+			stress[v2*3+2] += results->stress[i*3+2];
 			counter[v2] += 1;
 		} else {
 			double x = nb_partition_node_get_x(part, v1);
@@ -475,7 +448,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results,
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
-		     uint8_t N_qp, nb_partition_type part_type,
+		     nb_partition_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
@@ -486,22 +459,21 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	nb_partition_init(part, part_type);
 
 	int status = simulate(problem_data, part, &results,
-			      N_vtx, N_qp, modify_bcond);
+			      N_vtx, modify_bcond);
 	
 	CU_ASSERT(0 == status);
 
 	check_results(part, &results);
 
+	TEMPORAL2(part, &results);
 	TEMPORAL1(part, &results);
-	TEMPORAL2(part, &results, N_qp);
 
 	nb_partition_finish(part);
 	results_finish(&results);
 }
 
-static int simulate(const char *problem_data,
-		    nb_partition_t *part, results_t *results,
-		    uint32_t N_vtx, uint8_t N_qp,
+static int simulate(const char *problem_data, nb_partition_t *part,
+		    results_t *results, uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					 nb_bcond_t*)/* Can be NULL */)
 {
@@ -531,13 +503,13 @@ static int simulate(const char *problem_data,
 
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	uint32_t N_elems = nb_partition_get_N_elems(part);
-	results_init(results, N_faces, N_elems, N_qp);
+	results_init(results, N_faces, N_elems);
 
 	int status_cvfa =
 		nb_cvfa_compute_2D_Solid_Mechanics(part, material, bcond,
 						   false, NULL,
 						   analysis2D,
-						   &params2D, N_qp,
+						   &params2D,
 						   results->disp,
 						   results->strain,
 						   results->boundary_mask);
@@ -548,7 +520,7 @@ static int simulate(const char *problem_data,
 	}
 
 	nb_cvfa_compute_stress_from_strain(part,  material, analysis2D,
-					   N_qp, results->strain,
+					   results->strain,
 					   results->stress);
 
 	status = 0;
@@ -563,33 +535,32 @@ CLEANUP:
 static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
-	uint32_t mesh_memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t* mesh = alloca(mesh_memsize);
-	vcn_mesh_init(mesh);
-	vcn_mesh_set_size_constraint(mesh,
+	uint32_t mesh_memsize = nb_mesh_get_memsize();
+	nb_mesh_t* mesh = alloca(mesh_memsize);
+	nb_mesh_init(mesh);
+	nb_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     N_vtx);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 
 	nb_partition_load_from_mesh(part, mesh);
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 }
 
 static void results_init(results_t *results, uint32_t N_faces,
-			 uint32_t N_elems, uint8_t N_qp)
+			 uint32_t N_elems)
 {
 	uint32_t size_disp = N_elems * 2 * sizeof(*(results->disp));
-	uint32_t size_strain = N_faces * N_qp * 3 * sizeof(*(results->strain));
+	uint32_t size_strain = N_faces * 3 * sizeof(*(results->strain));
 	uint32_t size_mask = N_faces * sizeof(*(results->boundary_mask));
 	uint32_t total_size = size_disp + 2 * size_strain + size_mask;
 	char *memblock = malloc(total_size);
 
 	results->N_faces = N_faces;
 	results->N_elems = N_elems;
-	results->N_qp = N_qp;
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);

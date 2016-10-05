@@ -319,14 +319,14 @@ nb_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
 
 void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 {
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
 	uint32_t N_holes;
 	double* holes =
-		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
-	vcn_mesh_finish(mesh);
+		nb_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
+	nb_mesh_finish(mesh);
 	
 	if (0 < model->H)
 		free(model->holes);
@@ -337,12 +337,12 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 			     const double *const vtx)
 {
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 
-	bool is_inside = vcn_mesh_is_vtx_inside(mesh, vtx);
-	vcn_mesh_finish(mesh);
+	bool is_inside = nb_mesh_is_vtx_inside(mesh, vtx);
+	nb_mesh_finish(mesh);
 	return is_inside;
 }
 
@@ -478,11 +478,11 @@ double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
 
 double vcn_model_get_area(const vcn_model_t *const model)
 {
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
-	double area = vcn_mesh_get_area(mesh);
-	vcn_mesh_finish(mesh);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
+	double area = nb_mesh_get_area(mesh);
+	nb_mesh_finish(mesh);
 	return area;
 }
 

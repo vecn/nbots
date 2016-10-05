@@ -94,6 +94,8 @@ void nb_partition_load_graph(const nb_partition_t *part,
 
 void nb_partition_load_from_mesh(nb_partition_t *part,
 				 nb_mesh_t *mesh);
+void nb_partition_set_nodal_permutation(nb_partition_t *part,
+					const uint32_t *perm);
 void nb_partition_get_enveloping_box(const nb_partition_t *part,
 				     double box[4]);
 bool nb_partition_is_vtx_inside(const nb_partition_t *part,

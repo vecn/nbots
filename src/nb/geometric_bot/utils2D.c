@@ -405,7 +405,7 @@ void vcn_utils2D_get_closest_pnt_to_sgm(const double s1[2],
 	}
 }
 
-nb_intersect_t vcn_utils2D_are_sgm_intersected
+nb_intersect_t vcn_utils2D_get_sgm_intersection
 				(const double a1[2], const double a2[2],
 				 const double b1[2], const double b2[2],
 				 /* Output NULL if not required */
@@ -469,28 +469,36 @@ EXIT:
 	return status;
 }
 
-inline bool vcn_utils2D_sgm_intersects_trg(const double t1[2],
-					   const double t2[2],
-					   const double t3[2],
-					   const double s1[2],
-					   const double s2[2])
+bool vcn_utils2D_are_sgm_intersected(const double a1[2], const double a2[2],
+				     const double b1[2], const double b2[2],
+				     /* Output NULL if not required */
+				     double intersection[2])
 {
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(t1, t2, s1, s2, NULL);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
+	return (status == NB_INTERSECTED);
+}
+
+bool vcn_utils2D_sgm_intersects_trg(const double t1[2], const double t2[2],
+				    const double t3[2], const double s1[2],
+				    const double s2[2])
+{
+	nb_intersect_t status =
+		vcn_utils2D_get_sgm_intersection(t1, t2, s1, s2, NULL);
 	if (NB_INTERSECTED != status) {
-		status = vcn_utils2D_are_sgm_intersected(t2, t3, s1, s2, NULL);
+		status = vcn_utils2D_get_sgm_intersection(t2, t3, s1, s2, NULL);
 		if (NB_INTERSECTED != status) {
-			status = vcn_utils2D_are_sgm_intersected(t3, t1, 
-								 s1, s2, NULL);
+			status = vcn_utils2D_get_sgm_intersection(t3, t1, 
+								  s1, s2, NULL);
 		}
 	}
 	return (NB_INTERSECTED == status);
 }
 
-inline bool vcn_utils2D_sgm_intersects_circle(const double circumcenter[2],
-					      double radius,
-					      const double s1[2],
-					      const double s2[2])
+bool vcn_utils2D_sgm_intersects_circle(const double circumcenter[2],
+				       double radius, const double s1[2],
+				       const double s2[2])
 {
 	double p[2];
 	vcn_utils2D_get_closest_pnt_to_sgm(s1, s2, circumcenter, p);
@@ -498,8 +506,7 @@ inline bool vcn_utils2D_sgm_intersects_circle(const double circumcenter[2],
 		NB_GEOMETRIC_TOL);
 }
 
-bool vcn_utils2D_pnt_lies_on_sgm(const double s1[2],
-				 const double s2[2],
+bool vcn_utils2D_pnt_lies_on_sgm(const double s1[2], const double s2[2],
 				 const double p[2])
 {  
 	if (fabs(s1[0] - s2[0]) > NB_GEOMETRIC_TOL &&
@@ -547,20 +554,18 @@ bool vcn_utils2D_pnt_lies_in_trg(const double t1[2],
 		edge3 > -NB_GEOMETRIC_TOL);
 }
 
-inline bool vcn_utils2D_pnt_lies_in_diametral_circle
-					(const double s1[2],
-					 const double s2[2],
-					 const double p[2])
+bool vcn_utils2D_pnt_lies_in_diametral_circle(const double s1[2],
+					      const double s2[2],
+					      const double p[2])
 {
 	return NB_GEOMETRIC_TOL >
 		(s1[0] - p[0]) * (s2[0] - p[0]) +
 		(s1[1] - p[1]) * (s2[1] - p[1]);
 }
 
-inline bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle
-					(const double s1[2],
-					 const double s2[2],
-					 const double p[2])
+bool vcn_utils2D_pnt_lies_strictly_in_diametral_circle(const double s1[2],
+						       const double s2[2],
+						       const double p[2])
 {
 	return -NB_GEOMETRIC_TOL >
 		(s1[0] - p[0]) * (s2[0] - p[0]) +

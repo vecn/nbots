@@ -58,6 +58,11 @@ static void set_mshquad(nb_mshquad_t *quad,
 static void get_match_data(const nb_graph_t *const graph,
 			   const uint32_t *const matches,
 			   match_data *data);
+static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_elems(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_invtx(nb_mshquad_t *quad, const uint32_t *perm);
+static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm);
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches);
@@ -85,7 +90,7 @@ static void set_vtx(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh);
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
@@ -584,10 +589,10 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 {
-	if (vcn_mesh_get_N_trg(mesh) > 0) {
-		mesh_enumerate_vtx((vcn_mesh_t*)mesh);
-		mesh_enumerate_trg((vcn_mesh_t*)mesh);
-		nb_graph_t *graph = vcn_mesh_create_elem_graph(mesh);
+	if (nb_mesh_get_N_trg(mesh) > 0) {
+		mesh_enumerate_vtx((nb_mesh_t*)mesh);
+		mesh_enumerate_trg((nb_mesh_t*)mesh);
+		nb_graph_t *graph = nb_mesh_create_elem_graph(mesh);
 		nb_graph_init_edge_weights(graph);
 
 		set_quad_quality_as_weights(mesh, graph);
@@ -745,8 +750,8 @@ static void set_mshquad(nb_mshquad_t *quad,
 	match_data *data = alloca(sizeof(match_data));
 	get_match_data(graph, matches, data);
 	
-	quad->N_nod = vcn_mesh_get_N_vtx(mesh);
-	quad->N_edg = vcn_mesh_get_N_edg(mesh) - data->N_matchs;
+	quad->N_nod = nb_mesh_get_N_vtx(mesh);
+	quad->N_edg = nb_mesh_get_N_edg(mesh) - data->N_matchs;
 	quad->N_elems = data->N_matchs + data->N_unmatched_trg;
 	quad->N_vtx = mesh->N_input_vtx;
 	quad->N_sgm = mesh->N_input_sgm;
@@ -811,7 +816,7 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
-	uint32_t N_trg = vcn_mesh_get_N_trg(mesh);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(uint32_t);
 	uint32_t *new_elem_id = NB_SOFT_MALLOC(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
@@ -1021,7 +1026,7 @@ static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 }
 
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const vcn_mesh_t *const mesh,
+			  const nb_mesh_t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
@@ -1080,6 +1085,73 @@ static void get_match_data(const nb_graph_t *const graph,
 			data->N_unmatched_trg += 1;
 	}
 	data->N_matchs /= 2; /* Double counting */
+}
+
+void nb_mshquad_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	set_nodal_perm_to_nodes(msh, perm);
+	set_nodal_perm_to_edges(msh, perm);
+	set_nodal_perm_to_elems(msh, perm);
+	set_nodal_perm_to_invtx(msh, perm);
+	set_nodal_perm_to_insgm(msh, perm);
+}
+
+static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_nod;
+	
+	uint32_t memsize = N * 2 * sizeof(*(quad->nod));
+	double *nodes = NB_SOFT_MALLOC(memsize);
+
+	memcpy(nodes, quad->nod, memsize);
+
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = perm[i];
+		memcpy(&(quad->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
+	}
+
+	NB_SOFT_FREE(memsize, nodes);
+}
+
+static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_edg;
+	for (uint32_t i = 0; i < 2 * N; i++) {
+		uint32_t id = quad->edg[i];
+		quad->edg[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_elems(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_elems;
+	for (uint32_t i = 0; i < N; i++) {
+		uint16_t N_adj = nb_mshquad_elem_get_N_adj(quad, i);
+		for (uint16_t j = 0; j < N_adj; j++) {
+			uint32_t id = quad->adj[i*4+j];
+			quad->adj[i*4+j] = perm[id];
+		}
+	}
+}
+
+static void set_nodal_perm_to_invtx(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_vtx;
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = quad->vtx[i];
+		quad->vtx[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm)
+{
+	uint32_t N = quad->N_sgm;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < quad->N_nod_x_sgm[i]; j++) {
+			uint32_t id = quad->nod_x_sgm[i][j];
+			quad->nod_x_sgm[i][j] = perm[id];
+		}
+	}
 }
 
 void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])

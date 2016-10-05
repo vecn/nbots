@@ -40,102 +40,20 @@ enum {
  * @brief Write-only mesh structure used to create and modify meshes.
  * This mesh is based on a Delaunay triangulation.
  */
-typedef struct vcn_mesh_s nb_mesh_t;
-typedef nb_mesh_t vcn_mesh_t; /* DEPRECATED */
+typedef struct nb_mesh_s nb_mesh_t;
+typedef nb_mesh_t nb_mesh_t; /* DEPRECATED */
 
-uint32_t vcn_mesh_get_memsize(void);
-void vcn_mesh_init(vcn_mesh_t *mesh);
-void vcn_mesh_finish(vcn_mesh_t *mesh);
+uint32_t nb_mesh_get_memsize(void);
+void nb_mesh_init(nb_mesh_t *mesh);
+void nb_mesh_finish(nb_mesh_t *mesh);
 
-vcn_mesh_t* vcn_mesh_create(void);
-void vcn_mesh_clear(vcn_mesh_t* mesh);
-void vcn_mesh_destroy(vcn_mesh_t* mesh);
-void vcn_mesh_set_task(vcn_mesh_t *mesh, int type,
-		       void (*task)(const vcn_mesh_t *const));
-void vcn_mesh_set_size_constraint(vcn_mesh_t *mesh, int type,
-				  uint32_t value);
-void vcn_mesh_unset_size_constraint(vcn_mesh_t *mesh, int type);
-uint32_t vcn_mesh_get_size_constraint(const vcn_mesh_t *mesh, int type);
-void vcn_mesh_set_geometric_constraint(vcn_mesh_t *mesh, int type,
-				       double value);
-void vcn_mesh_unset_geometric_constraint(vcn_mesh_t *mesh, int type);
-double vcn_mesh_get_geometric_constraint(const vcn_mesh_t *mesh,
-					int type);
-void vcn_mesh_set_density(vcn_mesh_t* mesh,
-			  double (*density)(const double x[2],
-					    const void *data),
-			  const void *density_data);
-void vcn_mesh_unset_density(vcn_mesh_t* mesh);
-void vcn_mesh_set_refiner(vcn_mesh_t *mesh, int type);
-int vcn_mesh_get_refiner(const vcn_mesh_t *const mesh);
-bool vcn_mesh_is_empty(const vcn_mesh_t *const mesh);
+nb_mesh_t* nb_mesh_create(void);
+void nb_mesh_clear(nb_mesh_t* mesh);
+void nb_mesh_destroy(nb_mesh_t* mesh);
+void nb_mesh_set_task(nb_mesh_t *mesh, int type,
+		       void (*task)(const nb_mesh_t *const));
 
 /**
- * @brief Create an identical copy of the mesh.
- * @param[in] mesh Mesh to be cloned.
- * @return Cloned mesh if success, NULL if something goes wrong.
- */
-vcn_mesh_t* vcn_mesh_clone(const vcn_mesh_t* const mesh);
-  
-/**
- * @brief Creates a mesh from a Planar Straight Line Graph (PSLG, encoded
- * in the model) as exposed by Schewchuck:
- *    + Calculates the Constrainted Delauany Triangulation from the PSLG.
- *    + Remove triangles from holes and concavities.
- *    + Delaunay Refinement (Circumcenter insertion of poor-quaility
- *      triangles). The internal routine is mesh_refine(), which
- *      is size optimal for a given minimum angle (please read the description
- *      of this routine).
- *
- * @see J. R. Shewchuk.
- * <b> Reprint of: Delaunay refinement algorithms for triangular mesh
- * generation.</b> Computational Geometry 47 (2014), pages 741-778.
- * @see G. L. Miller, S. E. Pav and N. J. Walkington.
- * <b> When and why Ruppert's algorithm works.</b> 2003
- *
- * @param[in, out] mesh Structure to store the mesh.
- * @param[in] model Structure which contains the PSLG to be triangulated;
- * the model also contains the location of the points inside the holes,
- * at least one point for each hole.
- */
-void vcn_mesh_generate_from_model(vcn_mesh_t *mesh,
-				  const vcn_model_t *const model);
-
-void vcn_mesh_get_simplest_from_model(vcn_mesh_t *mesh,
-				      const vcn_model_t *const  model);
-
-/**
- * @brief Check if the vertex lies inside the mesh.
- * @param[in] mesh Discretization of the domain.
- * @param[in] vtx Vertex which is checked to be inside the domain.
- * @return <b>true</b> if the vertes lies inside the mesh 
- * (<b>false</b> if the vertex lies outside the mesh).
- */
-bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
-			    const double *const vtx);
-
-/**
- * @brief Produces a refined Delaunay triangulation. The algorithm have
- * the folowing properties:
- * + The minimal angle in the output is greater or equal to 26.45
- * degrees if the minimum input angle is greater than 36.53 degrees,
- * otherwise it produces the least quantity of poor-quality triangles.
- * + Termination is proven.
- * + Size optimality is proven.
- * + Good grading guarantees.
- *
- * @see J. Ruppert.
- * <b> A Delaunay Refinement Algorithm for Quality 2-Dimensional
- * Mesh Generation.</b> Journal of Algorithms 18 (1995), pages 548-585.
- * @see J. R. Shewchuk.
- * <b> Reprint of: Delaunay refinement algorithms for triangular mesh
- * generation.</b> Computational Geometry 47 (2014), pages 741-778.
- * @see G. L. Miller, S. E. Pav and N. J. Walkington.
- * <b> When and why Ruppert's algorithm works.</b> 2003
- *
- * @param[in] mesh The triangulation which is going to be refined, it
- * is assumed to be a Constrainted Delaunay Triangulation.
- *
  * @param[in] max_vtx Maximum number of vertices, which should be 
  * superior to the number of input vertices. Set zero for an undefined
  * maximum number of vertices (keeping guarantees).
@@ -148,12 +66,24 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * The use of a max number of triangles could truncates the Delaunay 
  * refinment process if it runs-out of triangles.
  * Use this feature only if it is strictly necessary.
- *
+ */
+void nb_mesh_set_size_constraint(nb_mesh_t *mesh, int type,
+				  uint32_t value);
+void nb_mesh_unset_size_constraint(nb_mesh_t *mesh, int type);
+uint32_t nb_mesh_get_size_constraint(const nb_mesh_t *mesh, int type);
+
+/**
  * @param[in] min_angle Minimum angle allowed in the triangulation (in 
  * radians).
  * This angle must be in the range of 0 and <b>NB_MESH_MAX_ANGLE</b>,
  * which corresponds to 26.45 degrees (0.4616 radians approx).
- *
+ */
+void nb_mesh_set_geometric_constraint(nb_mesh_t *mesh, int type,
+				       double value);
+void nb_mesh_unset_geometric_constraint(nb_mesh_t *mesh, int type);
+double nb_mesh_get_geometric_constraint(const nb_mesh_t *mesh,
+					int type);
+/**
  * @param[in] density Function to control the density of the triangulation,
  * which must be greater than zero for all points.
  * @n
@@ -186,12 +116,87 @@ bool vcn_mesh_is_vtx_inside(const vcn_mesh_t *const mesh,
  * to the density function without alterations.
  * Set NULL if not required.
  */
-void vcn_mesh_refine(vcn_mesh_t *mesh);
-bool vcn_mesh_insert_vtx(vcn_mesh_t *mesh, const double vertex[2]);
-void vcn_mesh_get_vertices(vcn_mesh_t* mesh, double* vertices);
-uint32_t vcn_mesh_get_N_vtx(const vcn_mesh_t *const mesh);
-uint32_t vcn_mesh_get_N_trg(const vcn_mesh_t *const mesh);
-uint32_t vcn_mesh_get_N_edg(const vcn_mesh_t *const mesh);
-double vcn_mesh_get_area(const vcn_mesh_t *const mesh);
+void nb_mesh_set_density(nb_mesh_t* mesh,
+			  double (*density)(const double x[2],
+					    const void *data),
+			  const void *density_data);
+void nb_mesh_unset_density(nb_mesh_t* mesh);
+void nb_mesh_set_refiner(nb_mesh_t *mesh, int type);
+int nb_mesh_get_refiner(const nb_mesh_t *const mesh);
+bool nb_mesh_is_empty(const nb_mesh_t *const mesh);
+
+/**
+ * @brief Create an identical copy of the mesh.
+ * @param[in] mesh Mesh to be cloned.
+ * @return Cloned mesh if success, NULL if something goes wrong.
+ */
+nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh);
+  
+/**
+ * @brief Creates a mesh from a Planar Straight Line Graph (PSLG, encoded
+ * in the model) as exposed by Schewchuck:
+ *    + Calculates the Constrainted Delauany Triangulation from the PSLG.
+ *    + Remove triangles from holes and concavities.
+ *    + Delaunay Refinement (Circumcenter insertion of poor-quaility
+ *      triangles). The internal routine is mesh_refine(), which
+ *      is size optimal for a given minimum angle (please read the description
+ *      of this routine).
+ *
+ * @see J. R. Shewchuk.
+ * <b> Reprint of: Delaunay refinement algorithms for triangular mesh
+ * generation.</b> Computational Geometry 47 (2014), pages 741-778.
+ * @see G. L. Miller, S. E. Pav and N. J. Walkington.
+ * <b> When and why Ruppert's algorithm works.</b> 2003
+ *
+ * @param[in, out] mesh Structure to store the mesh.
+ * @param[in] model Structure which contains the PSLG to be triangulated;
+ * the model also contains the location of the points inside the holes,
+ * at least one point for each hole.
+ */
+void nb_mesh_generate_from_model(nb_mesh_t *mesh,
+				  const vcn_model_t *const model);
+
+void nb_mesh_get_simplest_from_model(nb_mesh_t *mesh,
+				      const vcn_model_t *const  model);
+
+/**
+ * @brief Check if the vertex lies inside the mesh.
+ * @param[in] mesh Discretization of the domain.
+ * @param[in] vtx Vertex which is checked to be inside the domain.
+ * @return <b>true</b> if the vertes lies inside the mesh 
+ * (<b>false</b> if the vertex lies outside the mesh).
+ */
+bool nb_mesh_is_vtx_inside(const nb_mesh_t *const mesh,
+			    const double *const vtx);
+
+/**
+ * @brief Produces a refined Delaunay triangulation. The algorithm have
+ * the folowing properties:
+ * + The minimal angle in the output is greater or equal to 26.45
+ * degrees if the minimum input angle is greater than 36.53 degrees,
+ * otherwise it produces the least quantity of poor-quality triangles.
+ * + Termination is proven.
+ * + Size optimality is proven.
+ * + Good grading guarantees.
+ *
+ * @see J. Ruppert.
+ * <b> A Delaunay Refinement Algorithm for Quality 2-Dimensional
+ * Mesh Generation.</b> Journal of Algorithms 18 (1995), pages 548-585.
+ * @see J. R. Shewchuk.
+ * <b> Reprint of: Delaunay refinement algorithms for triangular mesh
+ * generation.</b> Computational Geometry 47 (2014), pages 741-778.
+ * @see G. L. Miller, S. E. Pav and N. J. Walkington.
+ * <b> When and why Ruppert's algorithm works.</b> 2003
+ *
+ * @param[in] mesh The triangulation which is going to be refined, it
+ * is assumed to be a Constrainted Delaunay Triangulation.
+ */
+void nb_mesh_refine(nb_mesh_t *mesh);
+bool nb_mesh_insert_vtx(nb_mesh_t *mesh, const double vertex[2]);
+void nb_mesh_get_vertices(nb_mesh_t* mesh, double* vertices);
+uint32_t nb_mesh_get_N_vtx(const nb_mesh_t *const mesh);
+uint32_t nb_mesh_get_N_trg(const nb_mesh_t *const mesh);
+uint32_t nb_mesh_get_N_edg(const nb_mesh_t *const mesh);
+double nb_mesh_get_area(const nb_mesh_t *const mesh);
 
 #endif

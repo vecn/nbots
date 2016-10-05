@@ -10,7 +10,7 @@
  * @param[in] N_vertices Number of vertices.
  * @param[in] vertices Concatenated coordinates of the vertices.
  */
-void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
-			   const double *const vertices);
+void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
+			  const double *const vertices);
 
 #endif

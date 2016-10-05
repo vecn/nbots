@@ -49,17 +49,17 @@ static void test_load_from_mesh(void)
 	model->edge = edge;
 	model->holes = NULL;
 	
-	uint32_t mesh_memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t* mesh = alloca(mesh_memsize);
-	vcn_mesh_init(mesh);
-	vcn_mesh_generate_from_model(mesh, model);
+	uint32_t mesh_memsize = nb_mesh_get_memsize();
+	nb_mesh_t* mesh = alloca(mesh_memsize);
+	nb_mesh_init(mesh);
+	nb_mesh_generate_from_model(mesh, model);
 
 	uint32_t msh_memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = alloca(msh_memsize);
 	nb_msh3trg_init(msh3trg);
 	nb_msh3trg_load_from_mesh(msh3trg, mesh);
 
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 	
 	CU_ASSERT(9 == nb_msh3trg_get_N_nodes(msh3trg));
 	CU_ASSERT(15 == nb_msh3trg_get_N_edges(msh3trg));

@@ -230,8 +230,7 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 			     uint32_t N);
 
 /* Full matrix solvers */
-void vcn_matrix_2X2_inverse(const double *const A,
-			    double* A_inv);
+double vcn_matrix_2X2_inverse(const double *const A, double* A_inv);
   
 void vcn_matrix_2X2_eigen(const double *const A,
 			  /* Return: A decomposed into P Lambda P' */
@@ -242,9 +241,9 @@ double vcn_matrix_2X2_det(double *A);
 
 double vcn_matrix_3X3_det(double *A);
 
-void vcn_matrix_2X2_inverse_destructive(double *A);
+double vcn_matrix_2X2_inverse_destructive(double *A);
 
-void vcn_matrix_3X3_inverse_destructive(double *A);
+double vcn_matrix_3X3_inverse_destructive(double *A);
 
 int vcn_matrix_cholesky_decomposition
 (const double *const A,

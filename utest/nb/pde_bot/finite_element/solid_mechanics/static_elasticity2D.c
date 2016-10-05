@@ -318,19 +318,19 @@ CLEANUP_INPUT:
 static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
-	uint32_t mesh_memsize = vcn_mesh_get_memsize();
-	vcn_mesh_t* mesh = alloca(mesh_memsize);
-	vcn_mesh_init(mesh);
-	vcn_mesh_set_size_constraint(mesh,
+	uint32_t mesh_memsize = nb_mesh_get_memsize();
+	nb_mesh_t* mesh = alloca(mesh_memsize);
+	nb_mesh_init(mesh);
+	nb_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     N_vtx);
-	vcn_mesh_set_geometric_constraint(mesh,
+	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
-	vcn_mesh_generate_from_model(mesh, model);
+	nb_mesh_generate_from_model(mesh, model);
 
 	nb_partition_load_from_mesh(part, mesh);
-	vcn_mesh_finish(mesh);
+	nb_mesh_finish(mesh);
 }
 
 static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)

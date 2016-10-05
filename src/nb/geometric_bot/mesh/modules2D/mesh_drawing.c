@@ -94,7 +94,7 @@ static void draw_input_segments(void *const g,
 static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 		      const void *const mesh_ptr)
 {
-	if (0 < vcn_mesh_get_N_vtx(mesh_ptr)) {
+	if (0 < nb_mesh_get_N_vtx(mesh_ptr)) {
 		const nb_mesh_t *const mesh = mesh_ptr;
 		double box[4];
 		vcn_utils2D_get_enveloping_box(mesh->N_input_vtx,
@@ -126,14 +126,14 @@ static inline double msh_vtx_get_y(const void *const vtx_ptr)
 	return (*vtx)->x[1];
 }
 
-void vcn_mesh_draw(const vcn_mesh_t *const mesh,
+void nb_mesh_draw(const nb_mesh_t *const mesh,
 		   const char* filename,
 		   int width, int height)
 {
 	nb_graphics_export(filename, width, height, draw_mesh, mesh);
 }
 
-void vcn_dewall_draw(const vcn_mesh_t *const mesh,
+void vcn_dewall_draw(const nb_mesh_t *const mesh,
 		     const char* filename, int width, int height,
 		     uint8_t axe, double alpha, uint32_t N,
 		     void *vtx_array)

@@ -54,6 +54,11 @@ static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_start_access(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 				      uint32_t ivtx, uint32_t vtx_id);
+static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_edges(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_elems(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_invtx(nb_msh3trg_t *msh3trg, const uint32_t *perm);
+static void set_nodal_perm_to_insgm(nb_msh3trg_t *msh3trg, const uint32_t *perm);
 static uint32_t itrg_get_right_triangle
                          (const nb_msh3trg_t *const delaunay, 
 			  const bool *const enabled_elements,
@@ -488,7 +493,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 	return is_inside;
 }
 
-void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
+void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, nb_mesh_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
@@ -500,7 +505,7 @@ void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, vcn_mesh_t *mesh)
 
 	set_msh3trg_exporter_interface(&exp);
 
-	vcn_mesh_export(mesh, &exp);
+	nb_mesh_export(mesh, &exp);
 }
 
 static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp)
@@ -693,6 +698,72 @@ static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t isgm = GET_ISGM_FROM_STRUCT(exp_structure);
 	msh3trg->nod_x_sgm[isgm][ivtx] = vtx_id;
+}
+
+void nb_msh3trg_set_nodal_permutation(void *msh, const uint32_t *perm)
+{
+	set_nodal_perm_to_nodes(msh, perm);
+	set_nodal_perm_to_edges(msh, perm);
+	set_nodal_perm_to_elems(msh, perm);
+	set_nodal_perm_to_invtx(msh, perm);
+	set_nodal_perm_to_insgm(msh, perm);
+}
+
+static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_nod;
+	
+	uint32_t memsize = N * 2 * sizeof(*(msh3trg->nod));
+	double *nodes = NB_SOFT_MALLOC(memsize);
+
+	memcpy(nodes, msh3trg->nod, memsize);
+
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = perm[i];
+		memcpy(&(msh3trg->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
+	}
+
+	NB_SOFT_FREE(memsize, nodes);
+}
+
+static void set_nodal_perm_to_edges(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_edg;
+	for (uint32_t i = 0; i < 2 * N; i++) {
+		uint32_t id = msh3trg->edg[i];
+		msh3trg->edg[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_elems(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_elems;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < 3; j++) {
+			uint32_t id = msh3trg->adj[i*3+j];
+			msh3trg->adj[i*3+j] = perm[id];
+		}
+	}
+}
+
+static void set_nodal_perm_to_invtx(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_vtx;
+	for (uint32_t i = 0; i < N; i++) {
+		uint32_t id = msh3trg->vtx[i];
+		msh3trg->vtx[i] = perm[id];
+	}
+}
+
+static void set_nodal_perm_to_insgm(nb_msh3trg_t *msh3trg, const uint32_t *perm)
+{
+	uint32_t N = msh3trg->N_sgm;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint16_t j = 0; j < msh3trg->N_nod_x_sgm[i]; j++) {
+			uint32_t id = msh3trg->nod_x_sgm[i][j];
+			msh3trg->nod_x_sgm[i][j] = perm[id];
+		}
+	}
 }
 
 void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
@@ -910,15 +981,15 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	NB_SOFT_FREE(idx_memsize, vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
-	vcn_mesh_t* mesh = alloca(vcn_mesh_get_memsize());
-	vcn_mesh_init(mesh);
-	vcn_mesh_get_simplest_from_model(mesh, model);
+	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_init(mesh);
+	nb_mesh_get_simplest_from_model(mesh, model);
 	
 	/* Get holes and destroy mesh */
 	uint32_t N_centroids;
 	double* centroids =
-		vcn_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
-	vcn_mesh_finish(mesh);
+		nb_mesh_get_centroids_of_enveloped_areas(mesh, &N_centroids);
+	nb_mesh_finish(mesh);
 
 	uint32_t N_holes = 0;
 	double *holes = NULL;

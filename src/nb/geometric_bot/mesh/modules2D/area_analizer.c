@@ -107,7 +107,7 @@ static int8_t subarea_compare_size(const void *subarea1_ptr,
 	return out;
 }
 
-double* vcn_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
+double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -275,7 +275,7 @@ static int8_t compare_area1_isGreaterThan_area2
 		return 0;
 }
 
-double* vcn_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
+double* nb_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
 						  uint32_t* N_centroids)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -344,7 +344,7 @@ static bool area_is_enclosed(const nb_container_t *area_trg)
 	return out;
 }
 
-double vcn_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
+double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 				     double* area_removed)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -410,7 +410,7 @@ double vcn_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 	return ret_val;
 }
 
-double vcn_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
+double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 					    double* area_removed)
 {
 	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
@@ -475,7 +475,7 @@ double vcn_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 	return ret_val;
 }
 
-uint32_t vcn_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
+uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
 {
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -498,7 +498,7 @@ uint32_t vcn_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
 	return removed;
 }
 
-uint32_t vcn_mesh_delete_internal_input_segments(nb_mesh_t *const restrict mesh)
+uint32_t nb_mesh_delete_internal_input_segments(nb_mesh_t *const restrict mesh)
 {
 	uint32_t removed = 0;
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -518,7 +518,7 @@ uint32_t vcn_mesh_delete_internal_input_segments(nb_mesh_t *const restrict mesh)
 	return removed;
 }
 
-uint32_t vcn_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
+uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
 {
 	nb_container_t* useful_vtx =
 		alloca(nb_container_get_memsize(NB_SORTED));
@@ -593,13 +593,13 @@ EXIT:
 	return;
 }
 
-bool vcn_mesh_is_continuum(const nb_mesh_t *mesh)
+bool nb_mesh_is_continuum(const nb_mesh_t *mesh)
 {
-	uint16_t N = vcn_mesh_get_N_continuum_areas(mesh);
+	uint16_t N = nb_mesh_get_N_continuum_areas(mesh);
 	return (N == 1);
 }
 
-inline uint16_t vcn_mesh_get_N_subareas(const nb_mesh_t *mesh)
+inline uint16_t nb_mesh_get_N_subareas(const nb_mesh_t *mesh)
 {
 	return get_N_areas(mesh, true);
 }
@@ -686,7 +686,7 @@ static void set_id_to_trg_in_area(const nb_mesh_t *mesh,
 
 }
 
-inline uint16_t vcn_mesh_get_N_continuum_areas(const nb_mesh_t *mesh)
+inline uint16_t nb_mesh_get_N_continuum_areas(const nb_mesh_t *mesh)
 {
 	return get_N_areas(mesh, false);
 }

@@ -500,8 +500,8 @@ static void test_are_sgm_intersected_true(void)
 	double b2[2] = {0, 1};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(fabs(intersection[0] - 0.5) < TOLERANCE);
 	CU_ASSERT(fabs(intersection[1] - 0.5) < TOLERANCE);
 	CU_ASSERT(NB_INTERSECTED == status);
@@ -515,8 +515,8 @@ static void test_are_sgm_intersected_parallel(void)
 	double b2[2] = {1, 1};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(NB_PARALLEL == status);
 }
 
@@ -528,8 +528,8 @@ static void test_are_sgm_intersected_strictly_false(void)
 	double b2[2] = {1, 2};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(NB_NOT_INTERSECTED == status);
 }
 
@@ -541,8 +541,8 @@ static void test_are_sgm_intersected_a1(void)
 	double b2[2] = {1, -1};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(fabs(intersection[0] - a1[0]) < TOLERANCE);
 	CU_ASSERT(fabs(intersection[1] - a1[1]) < TOLERANCE);
 	CU_ASSERT(NB_INTERSECT_ON_A1 == status);
@@ -556,8 +556,8 @@ static void test_are_sgm_intersected_a2(void)
 	double b2[2] = {1, -1};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(fabs(intersection[0] - a2[0]) < TOLERANCE);
 	CU_ASSERT(fabs(intersection[1] - a2[1]) < TOLERANCE);
 	CU_ASSERT(NB_INTERSECT_ON_A2 == status);
@@ -571,8 +571,8 @@ static void test_are_sgm_intersected_b1(void)
 	double b2[2] = {1, 1};
 	double intersection[2];
 	nb_intersect_t status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(fabs(intersection[0] - b1[0]) < TOLERANCE);
 	CU_ASSERT(fabs(intersection[1] - b1[1]) < TOLERANCE);
 	CU_ASSERT(NB_INTERSECT_ON_B1 == status);
@@ -585,9 +585,9 @@ static void test_are_sgm_intersected_b2(void)
 	double b1[2] = {1, 1};
 	double b2[2] = {0, 0};
 	double intersection[2];
-	int status =
-		vcn_utils2D_are_sgm_intersected(a1, a2, b1, b2,
-						intersection);
+	nb_intersect_t status =
+		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2,
+						 intersection);
 	CU_ASSERT(fabs(intersection[0] - b2[0]) < TOLERANCE);
 	CU_ASSERT(fabs(intersection[1] - b2[1]) < TOLERANCE);
 	CU_ASSERT(NB_INTERSECT_ON_B2 == status);

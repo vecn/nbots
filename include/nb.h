@@ -1,11 +1,3 @@
-/**
- * @file nb.h
- * @brief Numerical Bots
- * @author Victor Eduardo Cardoso Nungaray
- * @n victorc@@cimat.mx
- * @n @@victore_cardoso
- */
-
 #ifndef __NB_BOTS_H__
 #define __NB_BOTS_H__
 

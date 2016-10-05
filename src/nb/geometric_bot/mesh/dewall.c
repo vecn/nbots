@@ -35,7 +35,7 @@ typedef struct {
 } search_vtx_t;
 
 static  void mesh_init_disp_and_scale
-                            (vcn_mesh_t *const mesh,
+                            (nb_mesh_t *const mesh,
 			     uint32_t N_vertices,
 			     const double *const vertices);
 static int8_t compare_using_axe(const void *const v1_ptr,
@@ -82,18 +82,18 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const vcn_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
 					 const msh_vtx_t *const  v2);
-static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx);
-static msh_trg_t* create_trg(vcn_mesh_t *mesh,
+static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx);
+static msh_trg_t* create_trg(nb_mesh_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
 static void update_AFL(nb_container_t *AFL,
 		       const msh_edge_t *const edge);
 static uint32_t dewall_recursion
-                       (vcn_mesh_t* mesh, uint32_t N,
+                       (nb_mesh_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			nb_container_t* AFL);
-static uint32_t triangulate_wall(vcn_mesh_t *mesh,
+static uint32_t triangulate_wall(nb_mesh_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
@@ -125,16 +125,16 @@ static bool not_space_for_alpha(msh_vtx_t **vertices, uint32_t i, int8_t axe);
 static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 			    msh_vtx_t **vertices, int8_t axe,
 			    double alpha, uint32_t N_half);
-static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
+static bool set_first_trg_into_AFL(nb_mesh_t *mesh,
 				   search_vtx_t *search_vtx,
 				   nb_container_t *AFL);
 static void clear_search_vtx(search_vtx_t *search_vtx);
-static uint32_t dewall(vcn_mesh_t* mesh);
+static uint32_t dewall(nb_mesh_t* mesh);
 
-void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
-			   const double *const vertices)
+void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
+			  const double *const vertices)
 {
-	vcn_mesh_clear(mesh);
+	nb_mesh_clear(mesh);
 	if (0 < N_vertices) {
 		mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 		mesh->N_input_vtx = N_vertices;
@@ -156,7 +156,7 @@ void vcn_mesh_get_delaunay(vcn_mesh_t *mesh, uint32_t N_vertices,
 }
 
 static inline void mesh_init_disp_and_scale
-                            (vcn_mesh_t *const restrict mesh,
+                            (nb_mesh_t *const restrict mesh,
 			     uint32_t N_vertices,
 			     const double *const restrict vertices)
 {
@@ -290,7 +290,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 	while (nb_iterator_has_more(iter)) {
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		bool intersected =
-			NB_INTERSECTED == vcn_utils2D_are_sgm_intersected
+			NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
 							(v1->x, v3->x,
 							 edge->v1->x,
 							 edge->v2->x,
@@ -300,7 +300,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 			break;
 		} else {
 			intersected = (NB_INTERSECTED == 
-				       vcn_utils2D_are_sgm_intersected
+				       vcn_utils2D_get_sgm_intersection
 				       			(v2->x, v3->x,
 							 edge->v1->x,
 							 edge->v2->x,
@@ -392,7 +392,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 	return v3;
 }
 
-static msh_trg_t* create_1st_trg(vcn_mesh_t *mesh, search_vtx_t* search_vtx)
+static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx)
 {
 	msh_vtx_t *v1 = get_1st_vtx(search_vtx);
 	msh_vtx_t *v2 = get_2nd_vtx(search_vtx, v1);
@@ -425,7 +425,7 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 	return search_vtx->vtx_array[search_vtx->N_half];
 }
 
-static msh_trg_t* create_trg(vcn_mesh_t *mesh,
+static msh_trg_t* create_trg(nb_mesh_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge)
 {
@@ -463,7 +463,7 @@ static inline void update_AFL(nb_container_t *AFL,
 }
 
 static uint32_t dewall_recursion
-                       (vcn_mesh_t* mesh, uint32_t N,
+                       (nb_mesh_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			nb_container_t* AFL)
@@ -692,7 +692,7 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 	}
 }
 
-static bool set_first_trg_into_AFL(vcn_mesh_t *mesh,
+static bool set_first_trg_into_AFL(nb_mesh_t *mesh,
 				   search_vtx_t *search_vtx,
 				   nb_container_t *AFL)
 {
@@ -717,7 +717,7 @@ static void clear_search_vtx(search_vtx_t *search_vtx)
 		vcn_bins2D_destroy(search_vtx->bins);
 }
 
-static uint32_t triangulate_wall(vcn_mesh_t *mesh,
+static uint32_t triangulate_wall(nb_mesh_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
@@ -756,7 +756,7 @@ static void update_AFLs(const msh_trg_t *const trg,
 
 }
 
-static uint32_t dewall(vcn_mesh_t* mesh)
+static uint32_t dewall(nb_mesh_t* mesh)
 {
 	uint32_t memsize = mesh->N_input_vtx * sizeof(msh_vtx_t*);
 	msh_vtx_t **vertices =  NB_SOFT_MALLOC(memsize);

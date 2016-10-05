@@ -5,13 +5,11 @@
 #include <stdbool.h>
 #include "nb/geometric_bot/mesh/partition.h"
 
-void vcn_mesh_draw(const vcn_mesh_t *const mesh,
-		   const char* filename,
+void nb_mesh_draw(const nb_mesh_t *mesh, const char* filename,
 		   int width, int height);
 
-void vcn_dewall_draw(const vcn_mesh_t *const restrict mesh,
-		     const char* filename, int width, int height,
-		     uint8_t axe, double alpha, uint32_t N,
-		     void *vtx_array);
+void vcn_dewall_draw(const nb_mesh_t *mesh, const char* filename,
+		     int width, int height, uint8_t axe, double alpha,
+		     uint32_t N, void *vtx_array);
 
 #endif
