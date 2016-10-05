@@ -255,11 +255,11 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_cvfa_init_integration_mesh(intmsh);
 	nb_cvfa_load_integration_mesh(part, intmsh);
 	
-	vcn_sparse_t *K;
-	init_global_matrix(intmsh, &K);
-
 	nb_graph_init(face_elems_conn);
 	load_face_elems_conn(part, face_elems_conn);
+
+	vcn_sparse_t *K;
+	init_global_matrix(intmsh, &K);
 
 	assemble_global_forces(F, part, material, enable_self_weight,
 			       gravity);
