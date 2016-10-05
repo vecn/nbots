@@ -684,7 +684,7 @@ static void load_msh3trg(const nb_partition_t *const part, uint16_t N,
 	}
 
 	nb_mesh_init(mesh);
-	nb_mesh_get_delaunay(mesh, N, vtx);
+	nb_mesh_get_smallest_ns_alpha_complex(mesh, N, vtx, 0.5);
 	nb_msh3trg_load_from_mesh(msh3, mesh);
 	nb_mesh_finish(mesh);
 
