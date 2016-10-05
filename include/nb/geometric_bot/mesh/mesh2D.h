@@ -41,7 +41,6 @@ enum {
  * This mesh is based on a Delaunay triangulation.
  */
 typedef struct nb_mesh_s nb_mesh_t;
-typedef nb_mesh_t nb_mesh_t; /* DEPRECATED */
 
 uint32_t nb_mesh_get_memsize(void);
 void nb_mesh_init(nb_mesh_t *mesh);

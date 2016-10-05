@@ -6,6 +6,8 @@
 
 #include "nb/graphics_bot.h"
 
+#include "nb/geometric_bot/model/model3D.h"
+
 typedef struct {
 	void (*draw_wires)(const void *msh,
 			   nb_graphics_context_t *g);
@@ -36,6 +38,7 @@ typedef struct {
 struct nb_partition_s {
 	void *msh;
 	nb_partition_type type;
+
 	void (*init)(void *msh);
 	void (*finish)(void *msh);
 	void (*copy)(void *msh, const void *mshsrc);
