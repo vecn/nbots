@@ -54,3 +54,18 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 
 	NB_SOFT_FREE(memsize, memblock);
 }
+
+void nb_cvfa_correlate_partition_and_integration_mesh
+					(const nb_partition_t *part,
+					 const nb_partition_t *intmsh,
+					 nb_graph_t *trg_x_vol)
+{
+	uint32_t memsize = nb_graph_get_memsize();
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *trg_x_vtx = (void*) memblock;
+	nb_graph_init(trg_x_vtx);
+	nb_partition_load_graph(part, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
+	/* AQUI VOY */
+	nb_graph_finish(trg_x_vtx);
+	NB_SOFT_FREE(memsize, memblock);
+}

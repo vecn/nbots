@@ -60,8 +60,9 @@ typedef struct {
 static uint32_t get_cvfa_memsize(uint32_t N_elems);
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
+				   nb_partition_t **intmsh,
 				   nb_graph_t **face_elems_conn,
-				   nb_partition_t **intmsh);
+				   nb_graph_t **trg_x_vol);
 static void init_global_matrix(const nb_partition_t *intmsh, vcn_sparse_t **K);
 static void load_face_elems_conn(const nb_partition_t *part,
 				 nb_graph_t *face_elems_conn);
@@ -247,13 +248,18 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	uint32_t memsize = get_cvfa_memsize(N_elems);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *F;
-	nb_graph_t *face_elems_conn;
 	nb_partition_t *intmsh;
-	distribute_cvfa_memory(memblock, N_elems, &F, &face_elems_conn,
-			       &intmsh);
+	nb_graph_t *trg_x_vol;
+	nb_graph_t *face_elems_conn;
+	distribute_cvfa_memory(memblock, N_elems, &F, &intmsh,
+			       &trg_x_vol, &face_elems_conn);
 
 	nb_cvfa_init_integration_mesh(intmsh);
 	nb_cvfa_load_integration_mesh(part, intmsh);
+
+	nb_graph_init(trg_x_vol);
+	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
+							 trg_x_vol);
 	
 	nb_graph_init(face_elems_conn);
 	load_face_elems_conn(part, face_elems_conn);
@@ -283,6 +289,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	nb_graph_finish(face_elems_conn);
+	nb_graph_finish(trg_x_vol);
 	nb_partition_finish(intmsh);
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
@@ -290,22 +297,26 @@ CLEANUP_LINEAR_SYSTEM:
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems)
 {
-	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
-	return graph_size + system_size + intmsh_size;
+	uint32_t graph_size = nb_graph_get_memsize();
+	return 2 * graph_size + system_size + intmsh_size;
 }
 
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
+				   nb_partition_t **intmsh,
 				   nb_graph_t **face_elems_conn,
-				   nb_partition_t **intmsh)
+				   nb_graph_t **trg_x_vol)
 {
 	uint32_t system_size = 2 * N_elems * sizeof(double);
+	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
 	*F = (void*) memblock;
-	*face_elems_conn = (void*) (memblock + system_size);
-	*intmsh = (void*) (memblock + system_size + graph_size);
+	*intmsh = (void*) (memblock + system_size);
+	*trg_x_vol = (void*) (memblock + system_size + intmsh_size);
+	*face_elems_conn = (void*) (memblock + system_size + intmsh_size +
+				    graph_size);
 }
 
 static void init_global_matrix(const nb_partition_t *intmsh, vcn_sparse_t **K)
