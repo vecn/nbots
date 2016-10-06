@@ -148,7 +148,7 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 	uint32_t mask_size = GET_MASK_SIZE(N_max);
 	uint32_t size = block_size + buffer_size + mask_size;
 
-	char *memory = nb_calloc(size);
+	char *memory = nb_allocate_zero_mem(size);
 
 	block_t *block = (void*) memory;
 	block->N_max = N_max;
@@ -234,7 +234,7 @@ void nb_membank_finish(nb_membank_t *membank)
 	block_t *block = membank->block;
 	while (NULL != block) {
 		block_t *next = block->next;
-		nb_free(block);
+		nb_free_mem(block);
 		block = next;
 	}
 }
