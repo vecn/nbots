@@ -142,7 +142,7 @@ static void set_current_adj(const nb_graph_t *graph,
 	for (uint32_t i = 0; i < N; i++) {
 		nb_container_t *cnt = current_adj[i];
 		for (uint16_t j = 0; j < graph->N_adj[i]; j++) {
-			node_t *node = nb_membank_data_calloc(membank);
+			node_t *node = nb_membank_allocate_mem(membank);
 			node->id = graph->adj[i][j];
 			node->w = get_weight(graph, i, j);
 			nb_container_insert(cnt, node);
@@ -199,7 +199,7 @@ static void add_nodal_1degree_adj(const nb_graph_t *graph,
 			if (node_is_not_connected(extended_adj, current_adj,
 						  new_adj, i, &compare_node)) {
 				node_t *new_node =
-					nb_membank_data_calloc(membank);
+					nb_membank_allocate_mem(membank);
 				new_node->id = id;
 				new_node->w = w + get_weight(graph, j, k);
 				nb_container_insert(new_adj[i], new_node);
@@ -295,7 +295,7 @@ static void get_extended_graph(nb_graph_t *graph,
 			if (NULL != graph->wij)
 				graph->wij[i][id] = node->w;
 			id += 1;
-			nb_membank_data_free(membank, node);
+			nb_membank_free_mem(membank, node);
 		}
 	}
 }

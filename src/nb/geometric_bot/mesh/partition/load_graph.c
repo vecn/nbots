@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/partition/info.h"
@@ -112,7 +113,7 @@ static void nodal_graph_allocate_adj(nb_graph_t *graph,
 	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
 	uint32_t memsize_adj = 2 * N_edges * sizeof(**(graph->adj)) +
 		graph->N * sizeof(*(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + memsize_N_adj);
 }
@@ -174,7 +175,7 @@ static void elemental_graph_allocate_adj(nb_graph_t *graph,
 	uint32_t N_adj = get_N_elemental_adj(part);
 	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
 		N_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + memsize_N_adj);	
 }
@@ -243,7 +244,7 @@ static void nod_by_elem_graph_allocate_adj(nb_graph_t *graph,
 	uint32_t N_adj = nod_by_elem_get_N_adj(part);
 	uint32_t memsize_adj = N_adj * sizeof(**(graph->adj)) +
 		graph->N * sizeof(*(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + memsize_N_adj);
 }
@@ -343,7 +344,7 @@ static void elem_by_nod_graph_allocate_adj(nb_graph_t *graph,
 	uint32_t N_adj = elem_by_nod_get_N_adj(part);
 	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
 		N_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + memsize_N_adj);	
 }
@@ -495,7 +496,7 @@ static void elem_to_nod_graph_allocate_adj(nb_graph_t *graph,
 	uint32_t N_adj = elem_to_nod_get_N_adj(part);
 	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
 		N_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize_N_adj + memsize_adj);
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + memsize_N_adj);	
 }

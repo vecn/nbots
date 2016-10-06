@@ -5,11 +5,30 @@
 #include <stdbool.h>
 
 #include "nb/memory_bot.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot.h"
 
 #include "integration_mesh.h"
 
 #define INTEGRATOR_TYPE NB_TRIAN
+
+static void trg_x_vol_allocate_adj(nb_graph_t *trg_x_vol,
+				   const nb_partition_t *part,
+				   const nb_partition_t *intmsh,
+				   const nb_graph_t *trg_x_vtx);
+static uint32_t trg_x_vol_get_N_adj(nb_graph_t *trg_x_vol,
+				    const nb_partition_t *part,
+				    const nb_partition_t *intmsh,
+				    const nb_graph_t *trg_x_vtx);
+static void trg_x_vol_count_adj(nb_graph_t *trg_x_vol,
+				const nb_partition_t *part,
+				const nb_partition_t *intmsh,
+				const nb_graph_t *trg_x_vtx);
+static void trg_x_vol_assign_mem_adj(nb_graph_t *trg_x_vol);
+static void trg_x_vol_set_adj(nb_graph_t *trg_x_vol,
+				const nb_partition_t *part,
+				const nb_partition_t *intmsh,
+				const nb_graph_t *trg_x_vtx);
 
 uint32_t nb_cvfa_get_integration_mesh_memsize(void)
 {
@@ -65,7 +84,73 @@ void nb_cvfa_correlate_partition_and_integration_mesh
 	nb_graph_t *trg_x_vtx = (void*) memblock;
 	nb_graph_init(trg_x_vtx);
 	nb_partition_load_graph(part, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
-	/* AQUI VOY */
+	
+	trg_x_vol->N = nb_partition_get_N_elems(part);
+	trg_x_vol_allocate_adj(trg_x_vol, part, intmsh, trg_x_vtx);
+	trg_x_vol_count_adj(trg_x_vol, part, intmsh, trg_x_vtx);
+	trg_x_vol_assign_mem_adj(trg_x_vol);
+	trg_x_vol_set_adj(trg_x_vol, part, intmsh, trg_x_vtx);
+
 	nb_graph_finish(trg_x_vtx);
 	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void trg_x_vol_allocate_adj(nb_graph_t *trg_x_vol,
+				   const nb_partition_t *part,
+				   const nb_partition_t *intmsh,
+				   const nb_graph_t *trg_x_vtx)
+{
+	uint32_t memsize_N_adj = trg_x_vol->N * sizeof(*(trg_x_vol->N_adj));
+	uint32_t N_adj = trg_x_vol_get_N_adj(trg_x_vol, part, intmsh,
+					     trg_x_vtx);
+	uint32_t memsize_adj = trg_x_vol->N * sizeof(*(trg_x_vol->adj)) +
+		N_adj * sizeof(**(trg_x_vol->adj));
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
+	trg_x_vol->N_adj = (void*) memblock;
+	trg_x_vol->adj = (void*) (memblock + memsize_N_adj);
+}
+
+static uint32_t trg_x_vol_get_N_adj(nb_graph_t *trg_x_vol,
+				    const nb_partition_t *part,
+				    const nb_partition_t *intmsh,
+				    const nb_graph_t *trg_x_vtx)
+{
+	nb_container_type type = NB_SORTED;
+	uint32_t cnt_size = nb_container_get_memsize(type);
+	uint32_t memsize = 2 * cnt_size + nb_membank_get_memsize();
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_container_t *in = (void*) memblock;
+	nb_container_t *out = (void*) (memblock + cnt_size);
+	nb_membank_t *membank = (void*) (memblock + 2 * cnt_size);
+	nb_container_init(in, type);
+	nb_container_init(out, type);
+	nb_membank_init(membank, sizeof(uint32_t));
+
+	/* AQUI VOY */
+
+
+	nb_container_finish(in);
+	nb_container_finish(out);
+	nb_membank_finish(membank);
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void trg_x_vol_count_adj(nb_graph_t *trg_x_vol,
+				const nb_partition_t *part,
+				const nb_partition_t *intmsh,
+				const nb_graph_t *trg_x_vtx)
+{
+	;
+}
+static void trg_x_vol_assign_mem_adj(nb_graph_t *trg_x_vol)
+{
+	;
+}
+
+static void trg_x_vol_set_adj(nb_graph_t *trg_x_vol,
+				const nb_partition_t *part,
+				const nb_partition_t *intmsh,
+				const nb_graph_t *trg_x_vtx)
+{
+	;
 }

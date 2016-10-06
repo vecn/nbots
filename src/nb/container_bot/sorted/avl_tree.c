@@ -48,12 +48,12 @@ uint32_t tree_get_memsize(void)
 
 tree_t* tree_create(nb_membank_t *membank)
 {
-	return nb_membank_data_calloc(membank);
+	return nb_membank_allocate_mem(membank);
 }
 
 void tree_destroy(nb_membank_t *membank, tree_t* tree)
 {
-	nb_membank_data_free(membank, tree);
+	nb_membank_free_mem(membank, tree);
 }
 
 void tree_destroy_values_recursively(tree_t* tree, void (*destroy)(void*))

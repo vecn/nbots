@@ -12,12 +12,12 @@ uint32_t stack_node_get_memsize(void)
 
 stack_node_t* stack_node_create(nb_membank_t *membank)
 {
-  	return nb_membank_data_calloc(membank);
+  	return nb_membank_allocate_mem(membank);
 }
 
 void stack_node_destroy(nb_membank_t *membank, stack_node_t *node)
 {
-	nb_membank_data_free(membank, node);
+	nb_membank_free_mem(membank, node);
 }
 
 stack_node_t* stack_node_clone(nb_membank_t *membank,

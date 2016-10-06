@@ -187,7 +187,7 @@ static void realloc_rows(hash_t *hash,
 		if (NULL != rows[i]) {
 			reinsert_list(hash, rows[i], key, compare);
 			nb_queue_finish(rows[i], NULL);
-			nb_membank_data_free(hash->membank, rows[i]);
+			nb_membank_free_mem(hash->membank, rows[i]);
 		}
 	}
 	free(rows);
@@ -209,7 +209,7 @@ static void insert(hash_t *hash, const void *const val,
 {
 	uint32_t vkey = hash_key(val, hash->size, key);
 	if (NULL == hash->rows[vkey]) {
-		void *queue = nb_membank_data_calloc(hash->membank);
+		void *queue = nb_membank_allocate_mem(hash->membank);
 		nb_queue_init(queue);
 		hash->rows[vkey] = queue;
 	}
@@ -230,7 +230,7 @@ static inline void merge_rows(hash_t *merge, hash_t *hash,
 		if (NULL != hash->rows[i]) {
 			reinsert_list(merge, hash->rows[i], key, compare);
 			nb_queue_finish(hash->rows[i], NULL);
-			nb_membank_data_free(hash->membank, hash->rows[i]);
+			nb_membank_free_mem(hash->membank, hash->rows[i]);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -274,7 +274,7 @@ void* hash_delete_first(void *hash_ptr,
 		hash->length -= 1;
 		if (nb_queue_is_empty(hash->rows[i])) {
 			nb_queue_finish(hash->rows[i], NULL);
-			nb_membank_data_free(hash->membank, hash->rows[i]);
+			nb_membank_free_mem(hash->membank, hash->rows[i]);
 			hash->rows[i] = NULL;
 		}
 	}
@@ -311,7 +311,7 @@ void* hash_delete(void *hash_ptr, const void *const val,
 				hash->length -= 1;
 			if(nb_queue_is_empty(hash->rows[i])){
 				nb_queue_finish(hash->rows[i], NULL);
-				nb_membank_data_free(hash->membank,
+				nb_membank_free_mem(hash->membank,
 						     hash->rows[i]);
 				hash->rows[i] = NULL;
 			}

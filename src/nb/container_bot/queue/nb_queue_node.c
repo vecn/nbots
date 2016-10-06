@@ -11,13 +11,13 @@ uint32_t nb_queue_node_get_memsize(void)
 
 nb_queue_node_t* nb_queue_node_create(nb_membank_t *membank)
 {
-  	return nb_membank_data_calloc(membank);
+  	return nb_membank_allocate_mem(membank);
 }
 
 void nb_queue_node_destroy(nb_membank_t *membank,
 			   nb_queue_node_t *node)
 {
-	nb_membank_data_free(membank, node);
+	nb_membank_free_mem(membank, node);
 }
 
 nb_queue_node_t *nb_queue_node_clone(nb_membank_t *membank,

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <signal.h>
 
-#include "nb/memory_bot/nb_malloc.h"
+#include "nb/memory_bot/allocate_mem.h"
 #include "nb/memory_bot/membank.h"
 
 #define DEFAULT_N_MAX 1024
@@ -79,7 +79,7 @@ void nb_membank_init(nb_membank_t *membank, uint16_t type_size)
 	membank->N_max = DEFAULT_N_MAX;
 }
 
-void *nb_membank_data_calloc(nb_membank_t *membank)
+void *nb_membank_allocate_mem(nb_membank_t *membank)
 {
 	block_t *block;
 	if (NULL == membank->block) {
@@ -159,7 +159,7 @@ static block_t *block_create(uint16_t type_size, uint16_t N_max)
 }
 
 
-void nb_membank_data_free(nb_membank_t *membank, void *obj)
+void nb_membank_free_mem(nb_membank_t *membank, void *obj)
 {
 	block_t *block = membank->block;
 	while (NULL != block) {
