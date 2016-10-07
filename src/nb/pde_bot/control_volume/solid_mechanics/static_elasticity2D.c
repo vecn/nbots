@@ -22,9 +22,16 @@
 #include "set_bconditions.h"
 
 typedef struct {
+	double nf[2];
+	/* AQUI VOY */
+	uint8_t N_sf;	
+	subface_t *subfaces;
+}
+
+typedef struct {
 	uint8_t N_int;
-	double xp[4];
-	uint32_t trg[3];
+	double x1[2], x2[2];
+	uint32_t trg;
 } subface_t;
 
 #define POW2(a) ((a)*(a))
@@ -262,11 +269,11 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
 							 trg_x_vol);
 	
-	nb_graph_init(face_elems_conn);
-	load_face_elems_conn(part, face_elems_conn);
-
 	vcn_sparse_t *K;
 	init_global_matrix(&K, trg_x_vol, intmsh);
+
+	nb_graph_init(face_elems_conn);
+	load_face_elems_conn(part, face_elems_conn);
 
 	assemble_global_forces(F, part, material, enable_self_weight,
 			       gravity);
@@ -288,8 +295,8 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
-	vcn_sparse_destroy(K);
 	nb_graph_finish(face_elems_conn);
+	vcn_sparse_destroy(K);
 	nb_graph_finish(trg_x_vol);
 	nb_partition_finish(intmsh);
 	NB_SOFT_FREE(memsize, memblock);
