@@ -57,7 +57,7 @@ static void allocate_and_copy_graph(nb_graph_t *graph,
 	uint32_t memsize = N * (sizeof(*(graph->N_adj)) +
 				sizeof(*(graph->adj))) +
 		N_total_adj * sizeof(**(graph->adj));
-	char *memblock = nb_malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	memset(memblock, 0, memsize);
 
 	graph->N_adj = (void*) memblock;

@@ -21,13 +21,22 @@
 #include "../integration_mesh.h"
 #include "set_bconditions.h"
 
+#define POW2(a) ((a)*(a))
+
+typedef struct subface_s subface_t;
+
 typedef struct {
+	double nf[2];
+	uint32_t elems[2];
+	uint8_t N_sf;	
+	subface_t *subfaces;
+} face_t;
+
+struct subface_s {
 	uint8_t N_int;
 	double xp[4];
 	uint32_t trg[3];
-} subface_t;
-
-#define POW2(a) ((a)*(a))
+};
 
 #define LOAD_TRG_INFO(msh, id)						\
 	do {								\
@@ -60,9 +69,11 @@ typedef struct {
 static uint32_t get_cvfa_memsize(uint32_t N_elems);
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
+				   nb_partition_t **intmsh,
 				   nb_graph_t **face_elems_conn,
-				   nb_partition_t **intmsh);
-static void init_global_matrix(const nb_partition_t *intmsh, vcn_sparse_t **K);
+				   nb_graph_t **trg_x_vol);
+static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
+			       const nb_partition_t *intmsh);
 static void load_face_elems_conn(const nb_partition_t *part,
 				 nb_graph_t *face_elems_conn);
 static uint32_t get_N_total_face_adj(const nb_partition_t *part);
@@ -247,19 +258,24 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	uint32_t memsize = get_cvfa_memsize(N_elems);
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	double *F;
-	nb_graph_t *face_elems_conn;
 	nb_partition_t *intmsh;
-	distribute_cvfa_memory(memblock, N_elems, &F, &face_elems_conn,
-			       &intmsh);
+	nb_graph_t *trg_x_vol;
+	nb_graph_t *face_elems_conn;
+	distribute_cvfa_memory(memblock, N_elems, &F, &intmsh,
+			       &trg_x_vol, &face_elems_conn);
 
 	nb_cvfa_init_integration_mesh(intmsh);
 	nb_cvfa_load_integration_mesh(part, intmsh);
+
+	nb_graph_init(trg_x_vol);
+	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
+							 trg_x_vol);
 	
+	vcn_sparse_t *K;
+	init_global_matrix(&K, trg_x_vol, intmsh);
+
 	nb_graph_init(face_elems_conn);
 	load_face_elems_conn(part, face_elems_conn);
-
-	vcn_sparse_t *K;
-	init_global_matrix(intmsh, &K);
 
 	assemble_global_forces(F, part, material, enable_self_weight,
 			       gravity);
@@ -281,8 +297,9 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
-	vcn_sparse_destroy(K);
 	nb_graph_finish(face_elems_conn);
+	vcn_sparse_destroy(K);
+	nb_graph_finish(trg_x_vol);
 	nb_partition_finish(intmsh);
 	NB_SOFT_FREE(memsize, memblock);
 	return status;
@@ -290,32 +307,36 @@ CLEANUP_LINEAR_SYSTEM:
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems)
 {
-	uint32_t graph_size = nb_graph_get_memsize();
 	uint32_t system_size = 2 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
-	return graph_size + system_size + intmsh_size;
+	uint32_t graph_size = nb_graph_get_memsize();
+	return 2 * graph_size + system_size + intmsh_size;
 }
 
 static void distribute_cvfa_memory(char *memblock,
 				   uint32_t N_elems, double **F,
+				   nb_partition_t **intmsh,
 				   nb_graph_t **face_elems_conn,
-				   nb_partition_t **intmsh)
+				   nb_graph_t **trg_x_vol)
 {
 	uint32_t system_size = 2 * N_elems * sizeof(double);
+	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
 	*F = (void*) memblock;
-	*face_elems_conn = (void*) (memblock + system_size);
-	*intmsh = (void*) (memblock + system_size + graph_size);
+	*intmsh = (void*) (memblock + system_size);
+	*trg_x_vol = (void*) (memblock + system_size + intmsh_size);
+	*face_elems_conn = (void*) (memblock + system_size + intmsh_size +
+				    graph_size);
 }
 
-static void init_global_matrix(const nb_partition_t *intmsh, vcn_sparse_t **K)
+static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
+			       const nb_partition_t *intmsh)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
 
 	nb_graph_init(graph);
-	nb_partition_load_graph(intmsh, graph, NB_NODES_LINKED_BY_ELEMS);
-	nb_graph_extend_adj(graph, 3);
+	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
 
 	*K = vcn_sparse_create(graph, NULL, 2);
 

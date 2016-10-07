@@ -101,7 +101,7 @@ void* nb_queue_create(void)
 static inline void* calloc_queue(void)
 {
 	uint32_t size = nb_queue_get_memsize();
-  	return nb_calloc(size);
+  	return nb_allocate_zero_mem(size);
 }
 
 void* nb_queue_clone(const void *const queue_ptr,

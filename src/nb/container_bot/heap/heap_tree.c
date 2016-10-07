@@ -30,7 +30,7 @@ uint32_t htree_get_memsize(void)
 
 htree_t* htree_create(nb_membank_t *membank)
 {
-	return nb_membank_data_calloc(membank);
+	return nb_membank_allocate_mem(membank);
 }
 
 
@@ -90,7 +90,7 @@ static void set_right_tree(htree_t *tree, htree_t *branch)
 
 void htree_destroy(nb_membank_t *membank, htree_t* tree)
 {
-	nb_membank_data_free(membank, tree);
+	nb_membank_free_mem(membank, tree);
 }
 
 void htree_destroy_values_recursively(htree_t *tree, void (*destroy)(void*))

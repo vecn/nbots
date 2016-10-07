@@ -26,7 +26,7 @@ uint8_t mvtx_get_memsize(void)
 
 msh_vtx_t *mvtx_create(nb_mesh_t *mesh)
 {
-	char *memblock = nb_membank_data_calloc(mesh->vtx_membank);
+	char *memblock = nb_membank_allocate_mem(mesh->vtx_membank);
 	msh_vtx_t* vtx = (void*) memblock;
 	vtx->attr = (void*)(memblock + sizeof(msh_vtx_t));
 	return vtx;
@@ -46,7 +46,7 @@ msh_vtx_t *mvtx_clone(nb_mesh_t *mesh, msh_vtx_t *vtx)
 
 void mvtx_destroy(nb_mesh_t *mesh, void *vtx)
 {
-	nb_membank_data_free(mesh->vtx_membank, vtx);
+	nb_membank_free_mem(mesh->vtx_membank, vtx);
 }
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id)
@@ -87,12 +87,12 @@ bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
 
 msh_edge_t *medge_calloc(nb_mesh_t *mesh)
 {
-	return nb_membank_data_calloc(mesh->edg_membank);
+	return nb_membank_allocate_mem(mesh->edg_membank);
 }
 
 void medge_free(nb_mesh_t *mesh, msh_edge_t *edge)
 {
-	nb_membank_data_free(mesh->edg_membank, edge);
+	nb_membank_free_mem(mesh->edg_membank, edge);
 }
 
 bool medge_is_boundary(const msh_edge_t *const edge)
@@ -408,12 +408,12 @@ inline msh_trg_t* medge_get_opposite_triangle
 
 msh_trg_t *mtrg_calloc(nb_mesh_t *mesh)
 {
-	return nb_membank_data_calloc(mesh->trg_membank);
+	return nb_membank_allocate_mem(mesh->trg_membank);
 }
 
 void mtrg_free(nb_mesh_t *mesh, msh_trg_t *trg)
 {
-	nb_membank_data_free(mesh->trg_membank, trg);
+	nb_membank_free_mem(mesh->trg_membank, trg);
 }
 
 bool mtrg_has_an_input_vertex(const msh_trg_t *const trg)
