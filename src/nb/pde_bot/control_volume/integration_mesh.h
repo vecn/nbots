@@ -18,4 +18,8 @@ void nb_cvfa_correlate_partition_and_integration_mesh
 					 const nb_partition_t *intmsh,
 					 nb_graph_t *trg_x_vol);
 
+void nb_cvfa_get_adj_graph(const nb_partition_t *intmsh,
+			   const nb_graph_t *trg_x_vol,
+			   nb_graph_t *graph);
+
 #endif

@@ -51,6 +51,19 @@ static void trg_x_vol_set_adj(nb_graph_t *trg_x_vol,
 static void finish_containers_trg_x_vol(uint32_t N,
 					nb_container_t **all_trg_x_vol,
 					nb_membank_t *membank);
+static void adj_graph_allocate_adj(nb_graph_t *graph,
+				   const nb_graph_t *trg_x_vol,
+				   const nb_partition_t *intmsh);
+static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
+				    const nb_partition_t *intmsh);
+static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
+				     const nb_partition_t *intmsh,
+				     uint32_t vol_id,
+				     nb_membank_t *membank,
+				     nb_container_t *list);
+static void adj_graph_set_adj(nb_graph_t *graph,
+			      const nb_graph_t *trg_x_vol,
+			      const nb_partition_t *intmsh);
 
 uint32_t nb_cvfa_get_integration_mesh_memsize(void)
 {
@@ -356,4 +369,131 @@ static void finish_containers_trg_x_vol(uint32_t N,
 		nb_container_t *trg_adj = all_trg_x_vol[i];
 		nb_container_finish(trg_adj);
 	}
+}
+
+void nb_cvfa_get_adj_graph(const nb_partition_t *intmsh,
+			   const nb_graph_t *trg_x_vol,
+			   nb_graph_t *graph)
+{
+	graph->N = trg_x_vol->N;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	adj_graph_allocate_adj(graph, trg_x_vol, intmsh);
+	adj_graph_set_adj(graph, trg_x_vol, intmsh);
+}
+
+static void adj_graph_allocate_adj(nb_graph_t *graph,
+				   const nb_graph_t *trg_x_vol,
+				   const nb_partition_t *intmsh)
+{
+	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
+	uint32_t N_adj = adj_graph_get_N_adj(trg_x_vol, intmsh);
+	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
+		N_adj * sizeof(**(graph->adj));
+	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + memsize_N_adj);	
+}
+
+static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
+				    const nb_partition_t *intmsh)
+{
+	uint32_t bank_size = nb_membank_get_memsize();
+	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_membank_t *membank = (void*) memblock;
+	nb_container_t *list = (void*) (memblock + bank_size);
+
+	nb_membank_init(membank, sizeof(uint32_t));
+
+	nb_container_init(list, NB_QUEUE);
+	nb_container_set_comparer(list, compare_ids);
+
+	uint32_t N = 0;
+	for (uint32_t i = 0; i < trg_x_vol->N; i++) {
+		adj_graph_get_list_x_vol(trg_x_vol, intmsh, i, membank, list);
+
+		N += nb_container_get_length(list);
+
+		while (nb_container_is_not_empty(list)) {
+			uint32_t *id = nb_container_delete_first(list);
+			nb_membank_free_mem(membank, id);
+		}
+	}
+	
+	nb_container_finish(list);
+	nb_membank_finish(membank);
+	NB_SOFT_FREE(memsize, memblock);
+
+	return N;
+}
+
+static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
+				     const nb_partition_t *intmsh,
+				     uint32_t vol_id, nb_membank_t *bank,
+				     nb_container_t *list)
+{
+	uint32_t N_vol_adj = trg_x_vol->N_adj[vol_id];
+	for (uint32_t i = 0; i < N_vol_adj; i++) {
+		uint32_t id = trg_x_vol->adj[vol_id][i];
+		uint16_t N_adj = nb_partition_elem_get_N_adj(intmsh, id);
+		for (uint16_t j = 0; j < N_adj; j++) {
+			uint32_t nid = nb_partition_elem_get_adj(intmsh,
+								 id, j);
+			if (vol_id != nid) {
+				if (NULL == nb_container_exist(list, &nid)) {
+					uint32_t *aux =
+						nb_membank_allocate_mem(bank);
+					*aux = nid;
+					nb_container_insert(list, aux);
+				}
+			}
+		}
+	}
+}
+
+static void adj_graph_set_adj(nb_graph_t *graph,
+			      const nb_graph_t *trg_x_vol,
+			      const nb_partition_t *intmsh)
+{
+	uint32_t bank_size = nb_membank_get_memsize();
+	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_membank_t *membank = (void*) memblock;
+	nb_container_t *list = (void*) (memblock + bank_size);
+
+	nb_membank_init(membank, sizeof(uint32_t));
+
+	nb_container_init(list, NB_QUEUE);
+	nb_container_set_comparer(list, compare_ids);
+
+
+	uint32_t mem_used = graph->N * sizeof(*(graph->N_adj)) +
+		graph->N * sizeof(*(graph->adj));
+	char *block = (char*) graph->N_adj + mem_used;
+
+	for (uint32_t i = 0; i < trg_x_vol->N; i++) {
+		adj_graph_get_list_x_vol(trg_x_vol, intmsh, i,
+					  membank, list);
+
+		uint32_t N_adj = nb_container_get_length(list);
+		graph->N_adj[i] = N_adj;
+
+		graph->adj[i] = (void*) block;
+		block += N_adj * sizeof(**(graph->adj));
+
+		uint16_t j = 0;
+		while (nb_container_is_not_empty(list)) {
+			uint32_t *id = nb_container_delete_first(list);
+
+			graph->adj[i][j] = *id;
+			j += 1;
+
+			nb_membank_free_mem(membank, id);
+		}
+	}
+	
+	nb_container_finish(list);
+	nb_membank_finish(membank);
+	NB_SOFT_FREE(memsize, memblock);
 }
