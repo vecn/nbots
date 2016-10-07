@@ -137,7 +137,7 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 	nb_graph_t *trg_x_vtx = (void*) memblock;
 
 	nb_graph_init(trg_x_vtx);
-	nb_partition_load_graph(part, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
+	nb_partition_load_graph(intmsh, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
 
 	uint32_t N = 0;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
@@ -149,9 +149,7 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 		all_trg_x_vol[i] = trg_adj;
 		nb_container_init(trg_adj, cnt_type);
 
-		printf(" -- FINDING BUG 1 %i\n", i);/* TEMPORAL AQUI VOY */
 		vol_get_adj(part, intmsh, trg_x_vtx, membank, i, trg_adj);
-		printf(" -- FINDING BUG 3\n");/* TEMPORAL */
 
 		block += cnt_size;
 	}
@@ -168,25 +166,27 @@ static void vol_get_adj(const nb_partition_t *part,
 			uint32_t vol_id,
 			nb_container_t *trg_adj)
 {
-	uint32_t cnt_size = nb_container_get_memsize(NB_SORTED);
-	uint32_t active_size = nb_container_get_memsize(NB_QUEUE);
+	nb_container_type cnt_type = NB_SORTED;
+	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
+	uint32_t active_size = nb_container_get_memsize(cnt_type);
 	uint32_t memsize = cnt_size + active_size;
 	char *memblock = NB_SOFT_MALLOC(memsize);
 	nb_container_t *out = (void*) memblock;
 	nb_container_t *active = (void*) (memblock + cnt_size);
 
-	nb_container_init(out, NB_SORTED);
-	nb_container_init(active, NB_QUEUE);
+	nb_container_init(out, cnt_type);
+	nb_container_init(active, cnt_type);
 
 	nb_container_set_comparer(trg_adj, compare_ids);
 	nb_container_set_comparer(out, compare_ids);
+	nb_container_set_comparer(active, compare_ids);
 
 	uint32_t *id = nb_membank_allocate_mem(membank);
 	*id = trg_x_vtx->adj[vol_id][0];
 	nb_container_insert(active, id);
 	
 	while (nb_container_is_not_empty(active)) {
-		uint32_t *id = nb_container_delete_first(active);
+		id = nb_container_delete_first(active);
 		bool intersection = vol_intersects_trg(part, intmsh,
 						       vol_id, *id);
 		if (intersection) {
@@ -199,7 +199,7 @@ static void vol_get_adj(const nb_partition_t *part,
 	}
 
 	while (nb_container_is_not_empty(out)) {
-		uint32_t *id = nb_container_delete_first(out);
+		id = nb_container_delete_first(out);
 		nb_membank_free_mem(membank, id);
 	}
 
@@ -221,7 +221,6 @@ static int8_t compare_ids(const void *ptr1, const void *ptr2)
 	else
 		out = 0;
 	return out;
-		
 }
 
 static bool vol_intersects_trg(const nb_partition_t *part,
@@ -288,9 +287,12 @@ static void insert_in_active_if_dont_exists(nb_container_t *active,
 {
 	if (NULL == nb_container_exist(trg_adj, &ngb)) {
 		if (NULL == nb_container_exist(out, &ngb)) {
-			uint32_t *id = nb_membank_allocate_mem(membank);
-			*id = ngb;
-			nb_container_insert(active, id);
+			if (NULL == nb_container_exist(active, &ngb)) {
+				uint32_t *id = 
+					nb_membank_allocate_mem(membank);
+				*id = ngb;
+				nb_container_insert(active, id);
+			}
 		}
 	}
 }

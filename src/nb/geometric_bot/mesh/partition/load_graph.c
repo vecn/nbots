@@ -88,6 +88,7 @@ void nb_partition_load_graph(const nb_partition_t *part,
 		break;
 	case NB_ELEMS_CONNECTED_TO_NODES:
 		load_graph_elems_connected_to_nodes(part, graph);
+		break;
 	default:
 		graph->N = 0;
 		break;

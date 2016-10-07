@@ -16,13 +16,23 @@ Compilation
 -----------
 Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat for Windows) if gradle is not installed in your system.
 
-Developer contributions
+Developers and contributions
 -----------------------
 - Victor E. Cardoso (victorc@cimat.mx)
-     > Library arch and core functionality, such as 2D meshes, alpha-shapes,
-       linear algebra solvers, containers, finite element assemblers,
-       graph labeling routines and graphics functions.
+     > Library arch, 2D meshes, alpha-shapes, containers,
+       finite element assemblers, linear algebra routines,
+       graph labeling routines, spectral bissection,
+       and graphics functions (rasterizers).
      > Bots integration and Unit tests.
+- Miguel Vargas Felix (miguelvargas@cimat.mx)
+     > Parallel sparse solvers and structures.
+     > Domain segmentation routines.
+- Jorge Lopez (jorge.lopez@cimat.mx)
+     > 3D tetrahedral mesher based on octree.
+- Dora Elisa Alvarado (dora.alvarado@cimat.mx)
+     > Image processing routines and filters.
+- Miguel Angel Ochoa (miguel.ochoa@cimat.mx)
+     > SIMP Topology optimization method.
 - Sean T. Barrett (https://github.com/nothings/stb)
      > Pixmap exporters to JPG and PNG.
     
