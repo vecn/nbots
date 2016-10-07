@@ -6,15 +6,27 @@
 #include <assert.h>
 #include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/image_bot/image.h"
+
+#define STBI_MALLOC(sz)           nb_allocate_mem(sz)
+#define STBI_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
+#define STBI_FREE(p)              nb_free_mem(p)
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include "imported_libs/stb_image.h"
 
+#define STBIW_MALLOC(sz)           nb_allocate_mem(sz)
+#define STBIW_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
+#define STBIW_FREE(p)              nb_free_mem(p)
+
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "imported_libs/stb_image_write.h"
+
+#define STBIR_MALLOC(sz, c)         nb_allocate_mem(sz)
+#define STBIR_FREE(p, c)            nb_free_mem(p)
 
 #define STB_IMAGE_RESIZE_STATIC
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -87,7 +99,7 @@ void vcn_image_clear(vcn_image_t *img)
 inline vcn_image_t* vcn_image_create(void)
 {
 	uint32_t memsize = vcn_image_get_memsize();
-	return calloc(1, memsize);
+	return nb_allocate_zero_mem(memsize);
 }
 
 void vcn_image_destroy(vcn_image_t *img)
@@ -104,7 +116,7 @@ void vcn_image_init_white(vcn_image_t *img,
 	img->height = height;
 	img->comp_x_pixel;
 	uint32_t memsize = width * height * comp_x_pixel;
-	img->pixels = calloc(memsize, 1);
+	img->pixels = nb_allocate_zero_mem(memsize);
 }
 
 void vcn_image_read(vcn_image_t *img, const char* filename)
@@ -261,7 +273,7 @@ void vcn_image_resize(const vcn_image_t *input_img,
 	output_img->height = out_height;
 	output_img->comp_x_pixel = input_img->comp_x_pixel;
 	uint32_t memsize = input_img->comp_x_pixel * out_width * out_height;
-	output_img->pixels = malloc(memsize);
+	output_img->pixels = nb_allocate_mem(memsize);
 
 	int stride_in_bytes = input_img->width * input_img->comp_x_pixel;
 	int output_stride_in_bytes = out_width * input_img->comp_x_pixel;

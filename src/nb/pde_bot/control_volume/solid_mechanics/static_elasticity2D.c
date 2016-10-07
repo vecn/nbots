@@ -21,20 +21,22 @@
 #include "../integration_mesh.h"
 #include "set_bconditions.h"
 
+#define POW2(a) ((a)*(a))
+
+typedef struct subface_s subface_t;
+
 typedef struct {
 	double nf[2];
-	/* AQUI VOY */
+	uint32_t elems[2];
 	uint8_t N_sf;	
 	subface_t *subfaces;
-}
+} face_t;
 
-typedef struct {
+struct subface_s {
 	uint8_t N_int;
-	double x1[2], x2[2];
-	uint32_t trg;
-} subface_t;
-
-#define POW2(a) ((a)*(a))
+	double xp[4];
+	uint32_t trg[3];
+};
 
 #define LOAD_TRG_INFO(msh, id)						\
 	do {								\

@@ -15,7 +15,7 @@
 
 void *nb_allocate_mem(uint64_t size);
 void *nb_allocate_zero_mem(uint64_t size);
-void *nb_reallocte_mem(void *mem, uint64_t new_size);
+void *nb_reallocate_mem(void *mem, uint64_t new_size);
 void nb_free_mem(void *mem);
 
 #endif

@@ -14,7 +14,7 @@ void *nb_allocate_zero_mem(uint64_t size)
 	return calloc(size, 1);
 }
 
-void *nb_reallocte_mem(void *mem, uint64_t new_size)
+void *nb_reallocate_mem(void *mem, uint64_t new_size)
 {
 	return realloc(mem, new_size);
 }
