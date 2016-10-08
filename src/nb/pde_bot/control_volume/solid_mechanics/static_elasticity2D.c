@@ -61,13 +61,12 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 			  const nb_graph_t *trg_x_vol);
 static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  const nb_partition_t *intmsh,
-					  const nb_graph_t *trg_x_vol,
+					  const uint32_t *trg_adj,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces);
 static void add_subface_in_closest_trg(nb_membank_t *membank,
 				       const nb_partition_t *intmsh,
-				       const nb_graph_t *trg_x_vol,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces);
 
@@ -201,6 +200,87 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const double *disp, double *strain);
 static void finish_faces(uint32_t N_faces, face_t **faces);
 
+
+static void TEMPORAL_draw(nb_graphics_context_t *g, int width, int height,
+			  const void *data_ptr)
+{
+	const nb_partition_t *part = data_ptr;
+
+	uint32_t memsize = nb_cvfa_get_integration_mesh_memsize();
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_partition_t *intmsh = (void*) memblock;
+
+	nb_cvfa_init_integration_mesh(intmsh);
+	nb_cvfa_load_integration_mesh(part, intmsh);
+
+	if (!nb_graphics_is_camera_enabled(g)) {
+		double box[4];
+		nb_partition_get_enveloping_box(part, box);
+
+		nb_graphics_enable_camera(g);
+		nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
+		nb_graphics_cam_fit_box(cam, box, width, height);
+	}
+
+	nb_graphics_set_source(g, NB_LIGHT_BLUE);
+	nb_partition_fill_elems(part, g);
+
+	nb_graphics_set_source(g, NB_DARK_GRAY);
+	nb_graphics_set_line_width(g, 1.0);
+	nb_partition_draw_wires(part, g);
+
+	nb_graphics_set_source(g, NB_BLUE);
+	nb_graphics_set_line_width(g, 0.5);
+	nb_partition_draw_wires(intmsh, g);
+
+
+	uint32_t N_faces = nb_partition_get_N_edges(part);
+	nb_graph_t *trg_x_vol = malloc(nb_graph_get_memsize());
+	nb_graph_init(trg_x_vol);
+	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
+							 trg_x_vol);
+
+	face_t **faces = malloc(N_faces * (sizeof(void*) + sizeof(face_t)));
+	char *block = (char*)faces + N_faces * sizeof(void*);
+	for (int i = 0; i < N_faces; i++) {
+		faces[i] = (void*)block;
+		block += sizeof(face_t);
+	}
+	load_faces(part, intmsh, trg_x_vol, faces);
+
+	int pi = 590;
+	nb_graphics_set_source(g, NB_RED);
+	nb_graphics_set_line_width(g, 2.0);
+	nb_graphics_move_to(g, faces[pi]->x1[0], faces[pi]->x1[1]);
+	nb_graphics_line_to(g, faces[pi]->x2[0], faces[pi]->x2[1]);
+	nb_graphics_stroke(g);
+	nb_graphics_set_line_width(g, 1.0);
+	for (int i = 0; i < faces[pi]->N_sf; i++) {
+		double x1[2], x2[3], x3[2];
+		load_triangle_points(intmsh, faces[pi]->subfaces[i]->trg_id,
+				     x1, x2, x3);
+		nb_graphics_move_to(g, x1[0], x1[1]);
+		nb_graphics_line_to(g, x2[0], x2[1]);
+		nb_graphics_line_to(g, x3[0], x3[1]);
+		nb_graphics_close_path(g);
+		nb_graphics_set_source_rgba(g, 0, 255, 100, 150);
+		nb_graphics_fill_preserve(g);
+		nb_graphics_set_source_rgb(g, 0, 100, 255);
+		nb_graphics_stroke(g);
+	}
+
+	free(faces);
+	nb_graph_finish(trg_x_vol);
+
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+void TEMPORAL(const nb_partition_t *const part,
+	      const char *filename, int w, int h)
+{
+	nb_graphics_export(filename, w, h, TEMPORAL_draw, part);
+}
+
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
 			 const nb_material_t *const material,
@@ -212,6 +292,8 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
+	TEMPORAL(part, "../../../AAA.png", 1000, 800);exit(1);
+
 	int status;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
@@ -230,7 +312,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
 							 trg_x_vol);
-	
+
 	vcn_sparse_t *K;
 	init_global_matrix(&K, trg_x_vol, intmsh);
 
@@ -377,7 +459,7 @@ static void define_face_elems(const nb_partition_t *part,
 static void load_subfaces(face_t **faces, uint32_t face_id,
 			  const nb_partition_t *const intmsh,
 			  const nb_graph_t *trg_x_vol)
-{	
+{
 	nb_container_type cnt_type = NB_QUEUE;
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size +
@@ -390,11 +472,14 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	nb_membank_init(membank, sizeof(subface_t));
 	nb_container_init(subfaces, cnt_type);
 
-	uint16_t N_trg = trg_x_vol->N_adj[face_id];
+	uint32_t elem_id = faces[face_id]->elems[0];
+	uint16_t N_trg = trg_x_vol->N_adj[elem_id];
+	uint32_t *trg_adj = trg_x_vol->adj[elem_id];
+
 	uint8_t end_trg = 0;
 	for (uint16_t i = 0; i < N_trg; i++) {
 		uint8_t N_int = add_subface_if_intersected(membank,
-							   intmsh, trg_x_vol,
+							   intmsh, trg_adj,
 							   faces, i, face_id,
 							   subfaces);
 		
@@ -404,8 +489,8 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	}
 
 	if (end_trg == 1)
-		add_subface_in_closest_trg(membank, intmsh, trg_x_vol,
-					   faces, face_id, subfaces);
+		add_subface_in_closest_trg(membank, intmsh, faces,
+					   face_id, subfaces);
 
 	set_subfaces(membank, faces[face_id], subfaces);
 
@@ -416,13 +501,13 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 
 static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  const nb_partition_t *intmsh,
-					  const nb_graph_t *trg_x_vol,
+					  const uint32_t *trg_adj,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces)
 {
 	face_t *face = faces[face_id];
-	uint32_t trg_id = trg_x_vol->adj[face_id][elem_trg_id];
+	uint32_t trg_id = trg_adj[elem_trg_id];
 
 	double t1[2], t2[2], t3[2];
 	load_triangle_points(intmsh, trg_id, t1, t2, t3);
@@ -475,7 +560,6 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 
 static void add_subface_in_closest_trg(nb_membank_t *membank,
 				       const nb_partition_t *intmsh,
-				       const nb_graph_t *trg_x_vol,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces)
 {
