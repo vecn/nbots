@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -589,24 +590,34 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 {
-	if (nb_mesh_get_N_trg(mesh) > 0) {
-		mesh_enumerate_vtx((nb_mesh_t*)mesh);
-		mesh_enumerate_trg((nb_mesh_t*)mesh);
-		nb_graph_t *graph = nb_mesh_create_elem_graph(mesh);
-		nb_graph_init_edge_weights(graph);
+	if (0 == nb_mesh_get_N_trg(mesh))
+		goto EXIT;
 
-		set_quad_quality_as_weights(mesh, graph);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t grp_size = nb_graph_get_memsize();
+	uint32_t memsize = grp_size + N_trg * sizeof(uint32_t);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *graph = (void*) memblock;
+	uint32_t *matches = (void*) (memblock + grp_size);;
 
-		uint32_t *matches = malloc(graph->N * sizeof(*matches));
-		nb_graph_matching_greedy(graph, matches);
+	nb_graph_init(graph);
+
+	mesh_enumerate_vtx((nb_mesh_t*)mesh);
+	mesh_enumerate_trg((nb_mesh_t*)mesh);
+
+	nb_mesh_load_elem_graph(mesh, graph);
+	nb_graph_init_edge_weights(graph);
+
+	set_quad_quality_as_weights(mesh, graph);
+	nb_graph_matching_greedy(graph, matches);
 	
-		set_mshquad(mshquad, graph, mesh, matches);
+	set_mshquad(mshquad, graph, mesh, matches);
 
-		free(matches);
-
-		nb_graph_finish_edge_weights(graph);
-		nb_graph_destroy(graph);
-	}
+	nb_graph_finish_edge_weights(graph);
+	nb_graph_finish(graph);
+	NB_SOFT_FREE(memsize, memblock);
+EXIT:
+	return;
 }
 
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
@@ -618,7 +629,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		uint32_t id = trg->id;
 
 		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
@@ -627,7 +638,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 			graph->wij[id][i] = get_quality(trg, trg_adj);
 		}
 	}
-	nb_iterator_finish(iter);	
+	nb_iterator_finish(iter);
 }
 
 static double get_quality(const msh_trg_t *trg1,

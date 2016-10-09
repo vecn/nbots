@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/eigen_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 
@@ -16,18 +17,62 @@
 #define GET_1_EDGE_VTX(model, i) ((model)->edge[(i) * 2])
 #define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 
+static void init_matrix(const nb_model_t *model, vcn_sparse_t **A);
+static void assemble_system(const nb_model_t *model, vcn_sparse_t *A,
+			    double *b, double lambda);
+
 int vcn_model_regularize(vcn_model_t* model, double lambda,
 			 uint32_t N_fixed_vertices,
-			 uint32_t* fixed_vertices){
-	/* Allocate auxiliar structures */
-	double* b = calloc(2 * model->N, sizeof(*b));
+			 uint32_t* fixed_vertices)
+{
+	uint32_t memsize = 2 * model->N * sizeof(double);
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	double* b = (void*) memblock;
+	memset(b, 0, 2 * model->N  * sizeof(*b));
     
-	/* Allocate sparse matrix */
-	nb_graph_t *graph = vcn_model_get_vtx_graph(model);
-	vcn_sparse_t* A = vcn_sparse_create(graph, NULL, 2);
-	nb_graph_destroy(graph);
+	vcn_sparse_t *A;
+	init_matrix(model, &A);
 
-	/* Assembly system */
+	assemble_system(model, A, b, lambda);
+
+	/* Set fixed vertices */
+	for (uint32_t i = 0; i < N_fixed_vertices; i++) {
+		uint32_t idx = fixed_vertices[i] * 2;
+		uint32_t idy = fixed_vertices[i]*2+1;
+		vcn_sparse_set_Dirichlet_condition(A, b, idx,
+						   model->vertex[idx]);
+		vcn_sparse_set_Dirichlet_condition(A, b, idy,
+						   model->vertex[idy]);
+	}
+
+	int solver_status = 
+		vcn_sparse_solve_CG_precond_Jacobi(A, b, model->vertex, 
+						   vcn_sparse_get_size(A),
+						   1e-12, NULL, NULL, 1);
+
+	vcn_sparse_destroy(A);
+	NB_SOFT_FREE(memsize, memblock);
+
+	return solver_status;
+}
+
+static void init_matrix(const nb_model_t *model, vcn_sparse_t **A)
+{
+	uint32_t memsize = nb_graph_get_memsize();
+	char *memblock = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *graph = (void*) memblock;
+	nb_graph_init(graph);
+	
+	vcn_model_load_vtx_graph(model, graph);
+	*A = vcn_sparse_create(graph, NULL, 2);
+
+	nb_graph_finish(graph);
+	NB_SOFT_FREE(memsize, memblock);
+}
+
+static void assemble_system(const nb_model_t *model, vcn_sparse_t *A,
+			    double *b, double lambda)
+{
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id_xi = GET_1_EDGE_VTX(model, i) * 2;
 		uint32_t id_yi = GET_1_EDGE_VTX(model, i) * 2+1;
@@ -59,27 +104,4 @@ int vcn_model_regularize(vcn_model_t* model, double lambda,
 		b[id_xj] += (1.0 - lambda) * model->vertex[id_xj];
 		b[id_yj] += (1.0 - lambda) * model->vertex[id_yj];
 	}
-
-	/* Set fixed vertices */
-	for (uint32_t i = 0; i < N_fixed_vertices; i++) {
-		uint32_t idx = fixed_vertices[i] * 2;
-		uint32_t idy = fixed_vertices[i]*2+1;
-		vcn_sparse_set_Dirichlet_condition(A, b, idx, model->vertex[idx]);
-		vcn_sparse_set_Dirichlet_condition(A, b, idy, model->vertex[idy]);
-	}
-
-	/* Solve system */
-	uint32_t niter;
-	double tol;
-	int solver_status = 
-		vcn_sparse_solve_CG_precond_Jacobi(A, b, model->vertex, 
-						   vcn_sparse_get_size(A),
-						   1e-12, &niter, &tol, 1);
-
-	/* Free memory */
-	vcn_sparse_destroy(A);
-	free(b);
-
-	/* Return status of solver */
-	return solver_status;
 }

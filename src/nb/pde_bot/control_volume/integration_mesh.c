@@ -92,7 +92,7 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 	for (uint32_t i = 0; i < N_elems; i++) {
 		vtx[i * 2] = nb_partition_elem_get_x(part, i);
 		vtx[i*2+1] = nb_partition_elem_get_y(part, i);
-	}	
+	}
 
 	nb_mesh_init(mesh);
 	nb_mesh_get_smallest_ns_alpha_complex(mesh, N_elems, vtx, 0.666);

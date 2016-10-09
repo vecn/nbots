@@ -80,8 +80,8 @@ vcn_model_t* vcn_model_create_circle(double radius,
  */
 uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename);
 
-nb_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const model);
-
+void vcn_model_load_vtx_graph(const vcn_model_t *const model,
+			      nb_graph_t *graph);
 
 /**
  * @brief Mark as holes all the enveloped areas in the model.

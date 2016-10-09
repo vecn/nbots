@@ -824,7 +824,7 @@ static void add_Kf_to_K(face_t *face, const nb_partition_t *intmsh,
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 	uint32_t trg_id = face->subfaces[subface_id]->trg_id;
-	for (uint32_t m = 0; m < 3; m++) {
+	for (uint8_t m = 0; m < 3; m++) {
 		uint32_t k = nb_partition_elem_get_adj(intmsh, trg_id, m);
 		vcn_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
 		vcn_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
