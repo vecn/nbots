@@ -24,6 +24,8 @@
 
 #define POW2(a) ((a)*(a))
 
+#define ENABLE_PAIRWISE
+
 typedef struct subface_s subface_t;
 
 typedef struct {
@@ -55,7 +57,7 @@ static void load_faces(const nb_partition_t *part,
 static void get_face_elems(const nb_partition_t *part, face_t **faces);
 static void define_face_elems(const nb_partition_t *part,
 			      face_t **faces, uint32_t elem_id,
-			      uint32_t local_face_id);
+			      uint16_t local_face_id);
 static void load_subfaces(face_t **faces, uint32_t face_id,
 			  const nb_partition_t *const intmsh,
 			  const nb_graph_t *trg_x_vol);
@@ -73,7 +75,7 @@ static void add_subface_in_closest_trg(nb_membank_t *membank,
 static void get_face_vtx_outside_intmsh(const nb_container_t *subfaces,
 					const face_t *face,
 					double alone[2]);
-static uint16_t get_face_closest_intersection_to_intmsh
+static uint32_t get_face_closest_intersection_to_intmsh
 					(const nb_container_t *subfaces,
 					 const double alone[2],
 					 double p[2]);
@@ -344,7 +346,7 @@ static void get_face_elems(const nb_partition_t *part, face_t **faces)
 
 static void define_face_elems(const nb_partition_t *part,
 			      face_t **faces, uint32_t elem_id,
-			      uint32_t local_face_id)
+			      uint16_t local_face_id)
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint32_t ngb_id = nb_partition_elem_get_ngb(part, elem_id,
@@ -526,13 +528,13 @@ static void get_face_vtx_outside_intmsh(const nb_container_t *subfaces,
 		memcpy(alone, face->x2, 2 * sizeof(*alone));
 }
 
-static uint16_t get_face_closest_intersection_to_intmsh
+static uint32_t get_face_closest_intersection_to_intmsh
 					(const nb_container_t *subfaces,
 					 const double alone[2],
 					 double p[2])
 /* PENDING: SLOW FUNCTION (CALCULATE DIST AND DUPLICATE CHECKS) */
 {
-	uint16_t sf_id = 9999;
+	uint32_t sf_id = 9999;
 	double min = 1e30;
 	nb_iterator_t * iter = alloca(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
@@ -658,7 +660,12 @@ static void assemble_internal_face(vcn_sparse_t *K,
 				   face_t *face, const double D[4],
 				   nb_analysis2D_params *params2D)
 {
-	if (0 && 0 < face->N_sf)/* TEMPORAL */
+	bool use_submesh = true;
+#ifdef ENABLE_PAIRWISE
+	use_submesh = false;
+#endif
+
+	if (0 < face->N_sf && use_submesh)
 		integrate_subfaces(K, part, intmsh, face, D, params2D);
 	else
 		integrate_pairwise(K, part, face, D, params2D);
@@ -669,18 +676,14 @@ static void integrate_subfaces(vcn_sparse_t *K,
 			       const nb_partition_t *intmsh,
 			       face_t *face, const double D[4],
 			       nb_analysis2D_params *params2D)
-{
-	uint32_t memsize = 12 * sizeof(double); /* (N = 3) * 4 */
-	char* memblock = NB_SOFT_MALLOC(memsize);
-	double *Kf = (void*) memblock;
-	
+{	
+	double Kf[12];
 	uint16_t N_sf = face->N_sf;
 	for (uint16_t i = 0; i < N_sf; i++) {
 		integrate_Kf(part, intmsh, face, i, D, params2D, Kf);
 		add_Kf_to_K(face, intmsh, i, Kf, K);
 	}
 
-	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void integrate_Kf(const nb_partition_t *const part,
@@ -688,27 +691,25 @@ static void integrate_Kf(const nb_partition_t *const part,
 			 uint16_t subface_id, const double D[4],
 			 nb_analysis2D_params *params2D, double *Kf)
 {
-	memset(Kf, 0, 12 * sizeof(double));
+	subface_t *subface = face->subfaces[subface_id];
+
 	double t1[2], t2[2], t3[2];
-	load_triangle_points(intmsh, face->subfaces[subface_id]->trg_id,
-			     t1, t2, t3);
+	load_triangle_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double iJ[4];
 	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	subface_t *subface = face->subfaces[subface_id];
 	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
 
-	double *nf = face->nf;
-
 	double factor = lfn * detJ * params2D->thickness;
+	memset(Kf, 0, 12 * sizeof(*Kf));
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
 		double grad[2];
 		subface_get_grad(iJ, grad_xi, grad);
 		double Kfi[4];
-		subface_get_nodal_contribution(D, nf, grad, Kfi);
+		subface_get_nodal_contribution(D, face->nf, grad, Kfi);
 		Kf[i * 2] += factor * Kfi[0];
 		Kf[i*2+1] += factor * Kfi[1];
 		Kf[6 + i * 2] += factor * Kfi[2];
@@ -842,14 +843,9 @@ static void integrate_pairwise(vcn_sparse_t *K,
 			       face_t *face, const double D[4],
 			       nb_analysis2D_params *params2D)
 {
-	uint32_t memsize = 8 * sizeof(double); /* (N = 2) * 4 */
-	char* memblock = NB_SOFT_MALLOC(memsize);
-	double *Kf = (void*) memblock;
-
+	double Kf[8];
 	integrate_Kf_pairwise(part, face, D, params2D, Kf);
 	add_Kf_to_K_pairwise(face, Kf, K);
-
-	NB_SOFT_FREE(memsize, memblock);
 }
 
 static void integrate_Kf_pairwise(const nb_partition_t *const part,
@@ -862,10 +858,9 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 	c2[0] = nb_partition_elem_get_x(part, face->elems[1]);
 	c2[1] = nb_partition_elem_get_y(part, face->elems[1]);
 
-	double *nf = face->nf;
-
 	double lf = vcn_utils2D_get_dist(face->x1, face->x2);
 	double factor = lf * params2D->thickness;
+	memset(Kf, 0, 8 * sizeof(*Kf));
 	for (uint8_t i = 0; i < 2; i++) {
 		double grad[2];
 		if (0 == i)
@@ -873,7 +868,7 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 		else
 			face_get_grad_pairwise(c2, c1, grad);
 		double Kfi[4];
-		subface_get_nodal_contribution(D, nf, grad, Kfi);
+		subface_get_nodal_contribution(D, face->nf, grad, Kfi);
 		Kf[i * 2] += factor * Kfi[0];
 		Kf[i*2+1] += factor * Kfi[1];
 		Kf[4 + i * 2] += factor * Kfi[2];
@@ -886,16 +881,14 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 {
 	double xdiff = c1[0] - c2[0];
 	double ydiff = c1[1] - c2[1];
-	if (fabs(xdiff) < 1e-16) {
-		grad[0] = 0;
-		grad[1] = 1 / ydiff;
-	} else if (fabs(ydiff) < 1e-16) {
-		grad[0] = 1 / xdiff;
-		grad[1] = 0;
-	} else {
-		grad[0] = 0.5 / xdiff;
-		grad[1] = 0.5 / ydiff;
-	}
+	double dist = vcn_utils2D_get_dist(c1, c2);
+	double nc[2];
+	nc[0] = -xdiff / dist;
+	nc[1] = -ydiff / dist;
+	double denom = xdiff * nc[0] + ydiff * nc[1];
+
+	grad[0] = nc[0] / denom;
+	grad[1] = nc[1] / denom;
 }
 
 static void add_Kf_to_K_pairwise(face_t *face, const double *Kf,
@@ -903,7 +896,7 @@ static void add_Kf_to_K_pairwise(face_t *face, const double *Kf,
 {
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
-	for (uint32_t m = 0; m < 2; m++) {
+	for (uint8_t m = 0; m < 2; m++) {
 		uint32_t k = face->elems[m];
 		vcn_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
 		vcn_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
