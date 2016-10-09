@@ -528,8 +528,8 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 		bool mask = nb_bcond_iter_get_mask(iter, j);
 		if (mask) {
 			uint32_t mtx_id = elem_id * N_dof + j;
-			vcn_sparse_set_identity_row(K, mtx_id);
-			F[mtx_id] = val[j];
+			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
+							   val[j]);
 		}
 	}
 }

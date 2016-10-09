@@ -200,105 +200,6 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const double *disp, double *strain);
 static void finish_faces(uint32_t N_faces, face_t **faces);
 
-
-static void TEMPORAL_draw(nb_graphics_context_t *g, int width, int height,
-			  const void *data_ptr)
-{
-	const nb_partition_t *part = data_ptr;
-
-	uint32_t memsize = nb_cvfa_get_integration_mesh_memsize();
-	char *memblock = NB_SOFT_MALLOC(memsize);
-	nb_partition_t *intmsh = (void*) memblock;
-
-	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(part, intmsh);
-
-	if (!nb_graphics_is_camera_enabled(g)) {
-		double box[4];
-		nb_partition_get_enveloping_box(part, box);
-
-		nb_graphics_enable_camera(g);
-		nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
-		nb_graphics_cam_fit_box(cam, box, width, height);
-	}
-
-	nb_graphics_set_source(g, NB_LIGHT_BLUE);
-	nb_partition_fill_elems(part, g);
-
-	nb_graphics_set_source(g, NB_DARK_GRAY);
-	nb_graphics_set_line_width(g, 1.0);
-	nb_partition_draw_wires(part, g);
-
-	nb_graphics_set_source(g, NB_BLUE);
-	nb_graphics_set_line_width(g, 0.5);
-	nb_partition_draw_wires(intmsh, g);
-
-
-	uint32_t N_faces = nb_partition_get_N_edges(part);
-	nb_graph_t *trg_x_vol = malloc(nb_graph_get_memsize());
-	nb_graph_init(trg_x_vol);
-	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
-							 trg_x_vol);
-
-	face_t **faces = malloc(N_faces * (sizeof(void*) + sizeof(face_t)));
-	char *block = (char*)faces + N_faces * sizeof(void*);
-	for (int i = 0; i < N_faces; i++) {
-		faces[i] = (void*)block;
-		block += sizeof(face_t);
-	}
-	load_faces(part, intmsh, trg_x_vol, faces);
-
-	int pi = 590;
-	nb_graphics_set_source(g, NB_RED);
-	nb_graphics_set_line_width(g, 2.0);
-	nb_graphics_move_to(g, faces[pi]->x1[0], faces[pi]->x1[1]);
-	nb_graphics_line_to(g, faces[pi]->x2[0], faces[pi]->x2[1]);
-	nb_graphics_stroke(g);
-	nb_graphics_set_line_width(g, 1.0);
-	for (int i = 0; i < faces[pi]->N_sf; i++) {
-		double x1[2], x2[3], x3[2];
-		load_triangle_points(intmsh, faces[pi]->subfaces[i]->trg_id,
-				     x1, x2, x3);
-		nb_graphics_move_to(g, x1[0], x1[1]);
-		nb_graphics_line_to(g, x2[0], x2[1]);
-		nb_graphics_line_to(g, x3[0], x3[1]);
-		nb_graphics_close_path(g);
-		nb_graphics_set_source_rgba(g, 0, 255, 100, 150);
-		nb_graphics_fill_preserve(g);
-		nb_graphics_set_source_rgb(g, 0, 100, 255);
-		nb_graphics_stroke(g);
-	}
-
-	double t1[2], t2[3], t3[2];
-	load_triangle_points(part, 573, t1, t2, t3);
-	nb_graphics_move_to(g, t1[0], t1[1]);
-	nb_graphics_line_to(g, t2[0], t2[1]);
-	nb_graphics_line_to(g, t3[0], t3[1]);
-	nb_graphics_close_path(g);
-	nb_graphics_set_source_rgba(g, 0, 100, 255, 200);
-	nb_graphics_fill(g);
-
-	load_triangle_points(part, 788, t1, t2, t3);
-	nb_graphics_move_to(g, t1[0], t1[1]);
-	nb_graphics_line_to(g, t2[0], t2[1]);
-	nb_graphics_line_to(g, t3[0], t3[1]);
-	nb_graphics_close_path(g);
-	nb_graphics_set_source_rgba(g, 0, 255, 100, 200);
-	nb_graphics_fill(g);
-
-	free(faces);
-	nb_graph_finish(trg_x_vol);
-
-	NB_SOFT_FREE(memsize, memblock);
-	/* 573 - 788 */
-}
-
-void TEMPORAL(const nb_partition_t *const part,
-	      const char *filename, int w, int h)
-{
-	nb_graphics_export(filename, w, h, TEMPORAL_draw, part);
-}
-
 int nb_cvfa_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
 			 const nb_material_t *const material,
@@ -310,8 +211,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
-	TEMPORAL(part, "../../../AAA.png", 1000, 800);/* TEMPORAL */
-
 	int status;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
@@ -403,6 +302,7 @@ static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
 
 	nb_graph_init(graph);
 	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
+	nb_graph_force_symmetry(graph);
 
 	*K = vcn_sparse_create(graph, NULL, 2);
 
@@ -453,9 +353,9 @@ static void define_face_elems(const nb_partition_t *part,
 		uint32_t face_id = 
 			nb_partition_elem_find_edge(part, elem_id,
 						    local_face_id);
-		faces[face_id]->elems[0] = 1;
+		faces[face_id]->elems[0] = elem_id;
 		faces[face_id]->elems[1] = N_elems;
-	} else if (ngb_id < elem_id) {
+	} else if (elem_id < ngb_id) {
 		uint32_t face_id = 
 			nb_partition_elem_find_edge(part, elem_id,
 						    local_face_id);
@@ -758,7 +658,7 @@ static void assemble_internal_face(vcn_sparse_t *K,
 				   face_t *face, const double D[4],
 				   nb_analysis2D_params *params2D)
 {
-	if (0 < face->N_sf)
+	if (0 && 0 < face->N_sf)/* TEMPORAL */
 		integrate_subfaces(K, part, intmsh, face, D, params2D);
 	else
 		integrate_pairwise(K, part, face, D, params2D);
