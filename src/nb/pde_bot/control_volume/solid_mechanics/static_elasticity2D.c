@@ -269,10 +269,28 @@ static void TEMPORAL_draw(nb_graphics_context_t *g, int width, int height,
 		nb_graphics_stroke(g);
 	}
 
+	double t1[2], t2[3], t3[2];
+	load_triangle_points(part, 573, t1, t2, t3);
+	nb_graphics_move_to(g, t1[0], t1[1]);
+	nb_graphics_line_to(g, t2[0], t2[1]);
+	nb_graphics_line_to(g, t3[0], t3[1]);
+	nb_graphics_close_path(g);
+	nb_graphics_set_source_rgba(g, 0, 100, 255, 200);
+	nb_graphics_fill(g);
+
+	load_triangle_points(part, 788, t1, t2, t3);
+	nb_graphics_move_to(g, t1[0], t1[1]);
+	nb_graphics_line_to(g, t2[0], t2[1]);
+	nb_graphics_line_to(g, t3[0], t3[1]);
+	nb_graphics_close_path(g);
+	nb_graphics_set_source_rgba(g, 0, 255, 100, 200);
+	nb_graphics_fill(g);
+
 	free(faces);
 	nb_graph_finish(trg_x_vol);
 
 	NB_SOFT_FREE(memsize, memblock);
+	/* 573 - 788 */
 }
 
 void TEMPORAL(const nb_partition_t *const part,
@@ -292,7 +310,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
-	TEMPORAL(part, "../../../AAA.png", 1000, 800);exit(1);
+	TEMPORAL(part, "../../../AAA.png", 1000, 800);/* TEMPORAL */
 
 	int status;
 	uint32_t N_elems = nb_partition_get_N_elems(part);
