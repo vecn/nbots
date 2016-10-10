@@ -28,29 +28,29 @@
 static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp);
 static void null_statement(void *param){ ; }
 static void msh3trg_set_N_vtx(void *exp_structure, uint32_t N);
-static void msh3trg_malloc_vtx(void *exp_structure);
+static void msh3trg_allocate_vtx(void *exp_structure);
 static void msh3trg_set_vtx(void *exp_structure, uint32_t i,
 			    double x, double y);
 static void msh3trg_set_N_edg(void *exp_structure, uint32_t N);
-static void msh3trg_malloc_edg(void *exp_structure);
+static void msh3trg_allocate_edg(void *exp_structure);
 static void msh3trg_set_edg(void *exp_structure, uint32_t i,
 			    uint32_t v1, uint32_t v2);
 static void msh3trg_set_N_trg(void *exp_structure, uint32_t N);
-static void msh3trg_malloc_trg(void *exp_structure, bool include_neighbours);
+static void msh3trg_allocate_trg(void *exp_structure, bool include_neighbours);
 static void msh3trg_set_trg(void *exp_structure, uint32_t i,
 			    uint32_t v1, uint32_t v2, uint32_t v3);
 static void msh3trg_set_trg_neighbours(void *exp_structure,
 				       uint32_t i, uint32_t t1,
 				       uint32_t t2, uint32_t t3);
 static void msh3trg_set_N_input_vtx(void *exp_structure, uint32_t N);
-static void msh3trg_malloc_input_vtx(void *exp_structure);
+static void msh3trg_allocate_input_vtx(void *exp_structure);
 static void msh3trg_set_input_vtx(void *exp_structure, uint32_t i,
 				  uint32_t vtx_id);
 static void msh3trg_set_N_input_sgm(void *exp_structure, uint32_t N);
-static void msh3trg_malloc_input_sgm_table(void *exp_structure);
+static void msh3trg_allocate_input_sgm_table(void *exp_structure);
 static void msh3trg_input_sgm_set_N_vtx(void *exp_structure, uint32_t i,
 					uint32_t N);
-static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i);
+static void msh3trg_input_sgm_allocate_vtx(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_start_access(void *exp_structure, uint32_t i);
 static void msh3trg_input_sgm_set_vtx(void *exp_structure,
 				      uint32_t ivtx, uint32_t vtx_id);
@@ -169,23 +169,23 @@ void nb_msh3trg_clear(void* msh3trg_ptr)
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 
 	if (msh3trg->N_nod > 0) 
-		free(msh3trg->nod);
+		nb_free_mem(msh3trg->nod);
 	if (msh3trg->N_edg > 0)
-		free(msh3trg->edg);
+		nb_free_mem(msh3trg->edg);
 	if (msh3trg->N_elems > 0) {
-		free(msh3trg->adj);
+		nb_free_mem(msh3trg->adj);
 		if (NULL != msh3trg->ngb)
-			free(msh3trg->ngb);
+			nb_free_mem(msh3trg->ngb);
 	}
 	if (msh3trg->N_vtx > 0)
-		free(msh3trg->vtx);
+		nb_free_mem(msh3trg->vtx);
 	if (msh3trg->N_sgm > 0) {
 		for (uint32_t i = 0; i < msh3trg->N_sgm; i++) {
 			if (0 < msh3trg->N_nod_x_sgm[i])
-				free(msh3trg->nod_x_sgm[i]);
+				nb_free_mem(msh3trg->nod_x_sgm[i]);
 		}
-		free(msh3trg->N_nod_x_sgm);
-		free(msh3trg->nod_x_sgm);
+		nb_free_mem(msh3trg->N_nod_x_sgm);
+		nb_free_mem(msh3trg->nod_x_sgm);
 	}
 	memset(msh3trg, 0, sizeof(*msh3trg));
 }
@@ -193,7 +193,7 @@ void nb_msh3trg_clear(void* msh3trg_ptr)
 void nb_msh3trg_destroy(void* msh3trg)
 {
 	nb_msh3trg_finish(msh3trg);
-	free(msh3trg);
+	nb_free_mem(msh3trg);
 }
 
 uint32_t nb_msh3trg_get_N_invtx(const void *msh)
@@ -511,19 +511,19 @@ void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, nb_mesh_t *mesh)
 static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp)
 {
 	exp->set_N_vtx = msh3trg_set_N_vtx;
-	exp->malloc_vtx = msh3trg_malloc_vtx;
+	exp->allocate_vtx = msh3trg_allocate_vtx;
 	exp->start_vtx_access = null_statement;
 	exp->set_vtx = msh3trg_set_vtx;
 	exp->stop_vtx_access = null_statement;
 
 	exp->set_N_edg = msh3trg_set_N_edg;
-	exp->malloc_edg = msh3trg_malloc_edg;
+	exp->allocate_edg = msh3trg_allocate_edg;
 	exp->start_edg_access = null_statement;
 	exp->set_edg = msh3trg_set_edg;
 	exp->stop_edg_access = null_statement;
 
 	exp->set_N_trg = msh3trg_set_N_trg;
-	exp->malloc_trg = msh3trg_malloc_trg;
+	exp->allocate_trg = msh3trg_allocate_trg;
 	exp->start_trg_access = null_statement;
 	exp->set_trg = msh3trg_set_trg;
 	exp->stop_trg_access = null_statement;
@@ -532,16 +532,16 @@ static void set_msh3trg_exporter_interface(nb_trg_exporter_interface_t *exp)
 	exp->stop_trg_neighbours_access = null_statement;
 
 	exp->set_N_input_vtx = msh3trg_set_N_input_vtx;
-	exp->malloc_input_vtx = msh3trg_malloc_input_vtx;
+	exp->allocate_input_vtx = msh3trg_allocate_input_vtx;
 	exp->start_input_vtx_access = null_statement;
 	exp->set_input_vtx = msh3trg_set_input_vtx;
 	exp->stop_input_vtx_access = null_statement;
 
 	exp->set_N_input_sgm = msh3trg_set_N_input_sgm;
-	exp->malloc_input_sgm_table = msh3trg_malloc_input_sgm_table;
+	exp->allocate_input_sgm_table = msh3trg_allocate_input_sgm_table;
 	exp->start_input_sgm_table_access = null_statement;
 	exp->input_sgm_set_N_vtx = msh3trg_input_sgm_set_N_vtx;
-	exp->input_sgm_malloc_vtx = msh3trg_input_sgm_malloc_vtx;
+	exp->input_sgm_allocate_vtx = msh3trg_input_sgm_allocate_vtx;
 	exp->input_sgm_start_access = msh3trg_input_sgm_start_access;
 	exp->input_sgm_set_vtx = msh3trg_input_sgm_set_vtx;
 	exp->input_sgm_stop_access = null_statement;
@@ -554,7 +554,7 @@ static void msh3trg_set_N_vtx(void *exp_structure, uint32_t N)
 	msh3trg->N_nod = N;
 }
 
-static void msh3trg_malloc_vtx(void *exp_structure)
+static void msh3trg_allocate_vtx(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 
@@ -577,7 +577,7 @@ static void msh3trg_set_N_edg(void *exp_structure, uint32_t N)
 	msh3trg->N_edg = N;
 }
 
-static void msh3trg_malloc_edg(void *exp_structure)
+static void msh3trg_allocate_edg(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = 2 * msh3trg->N_edg * sizeof(*(msh3trg->edg));
@@ -598,7 +598,7 @@ static void msh3trg_set_N_trg(void *exp_structure, uint32_t N)
 	msh3trg->N_elems = N;
 }
 
-static void msh3trg_malloc_trg(void *exp_structure, bool include_neighbours)
+static void msh3trg_allocate_trg(void *exp_structure, bool include_neighbours)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t vtx_memsize = 3 * msh3trg->N_elems *
@@ -638,7 +638,7 @@ static void msh3trg_set_N_input_vtx(void *exp_structure, uint32_t N)
 	msh3trg->N_vtx = N;
 }
 
-static void msh3trg_malloc_input_vtx(void *exp_structure)
+static void msh3trg_allocate_input_vtx(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = msh3trg->N_vtx *
@@ -659,7 +659,7 @@ static void msh3trg_set_N_input_sgm(void *exp_structure, uint32_t N)
 	msh3trg->N_sgm = N;
 }
 
-static void msh3trg_malloc_input_sgm_table(void *exp_structure)
+static void msh3trg_allocate_input_sgm_table(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t sgm_memsize = msh3trg->N_sgm *
@@ -677,7 +677,7 @@ static void msh3trg_input_sgm_set_N_vtx(void *exp_structure, uint32_t i,
 	msh3trg->N_nod_x_sgm[i] = N;
 }
 
-static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i)
+static void msh3trg_input_sgm_allocate_vtx(void *exp_structure, uint32_t i)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = msh3trg->N_nod_x_sgm[i] *
@@ -841,9 +841,9 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
   
 	/* Free memory */
 	for (uint32_t i = 0; i < msh3trg->N_nod; i++)
-		free(trg_x_vtx[i]);
-	free(trg_x_vtx);
-	free(N_trg_x_vtx);
+		nb_free_mem(trg_x_vtx[i]);
+	nb_free_mem(trg_x_vtx);
+	nb_free_mem(N_trg_x_vtx);
 }
 
 static uint32_t itrg_get_right_triangle(const nb_msh3trg_t *const delaunay, 
@@ -1024,7 +1024,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 		}
 
 		nb_soft_free_mem(N_centroids, mask_centroids);
-		free(centroids);
+		nb_free_mem(centroids);
 	}
 	
 	/* Build model with holes */

@@ -167,7 +167,7 @@ void nb_mesh_clear(nb_mesh_t *mesh)
 
 static void clear_input_data(nb_mesh_t *mesh)
 {
-	free(mesh->input_vtx);
+	nb_free_mem(mesh->input_vtx);
 	mesh->input_vtx = NULL;
 	mesh->N_input_vtx = 0;
 	if (mesh->N_input_sgm > 0) {
@@ -179,7 +179,7 @@ static void clear_input_data(nb_mesh_t *mesh)
 				medge_destroy_subsgm_attribute(to_free);
 			}
 		}
-		free(mesh->input_sgm);
+		nb_free_mem(mesh->input_sgm);
 		mesh->N_input_sgm = 0;
 	}
 }
@@ -187,7 +187,7 @@ static void clear_input_data(nb_mesh_t *mesh)
 void nb_mesh_destroy(nb_mesh_t* mesh)
 {
 	nb_mesh_finish(mesh);
-	free(mesh);
+	nb_free_mem(mesh);
 }
 
 static void null_task(const nb_mesh_t *const mesh)
@@ -411,7 +411,7 @@ static void delete_triangles_by_wave
 		advance_deletion_wave(mesh, trg->t2, trg_deleted);
 	if (s3_is_not_boundary)
 		advance_deletion_wave(mesh, trg->t3, trg_deleted);
-	mtrg_free(mesh, trg);
+	mtrg_nb_free_mem(mesh, trg);
 }
 
 static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
@@ -706,7 +706,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		/* Clone the triangle */
-		msh_trg_t* trg_clone = mtrg_calloc(clone);
+		msh_trg_t* trg_clone = mtrg_allocate_zero_mem(clone);
 		trg_clone->id = trg->id;
 		trg_clone->feature = trg->feature;
 		trg_clone->status = trg->status;
@@ -722,7 +722,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	while (nb_iterator_has_more(sgm_iter)) {
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		/* Clone the segment */
-		msh_edge_t* sgm_clone = medge_calloc(clone);
+		msh_edge_t* sgm_clone = medge_allocate_zero_mem(clone);
 
 		/* Set an index to the original */
 		void** attr = nb_allocate_mem(2 * sizeof(*attr));
@@ -803,8 +803,8 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		void** attr = sgm->attr;
 		sgm->attr = attr[1];
-		free(attr[0]);
-		free(attr);
+		nb_free_mem(attr[0]);
+		nb_free_mem(attr);
 	}
 	nb_iterator_finish(sgm_iter);
 

@@ -384,7 +384,7 @@ void nb_partition_clear(nb_partition_t* part)
 void nb_partition_destroy(nb_partition_t* part)
 {
 	nb_partition_finish(part);
-	free(part);
+	nb_free_mem(part);
 }
 
 nb_partition_type nb_partition_get_type(const nb_partition_t *part)

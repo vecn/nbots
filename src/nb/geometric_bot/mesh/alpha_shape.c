@@ -64,7 +64,7 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	while(nb_container_is_not_empty(to_delete)) {
 		msh_trg_t *trg = nb_container_delete_first(to_delete);
 		mesh_substract_triangle(mesh, trg);
-		mtrg_free(mesh, trg);
+		mtrg_nb_free_mem(mesh, trg);
 	}
 	nb_container_finish(to_delete);
 

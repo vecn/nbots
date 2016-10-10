@@ -408,7 +408,7 @@ static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx)
 
 	msh_trg_t *trg;
 	if (NULL != v3) {
-		trg = mtrg_calloc(mesh);
+		trg = mtrg_allocate_zero_mem(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -445,7 +445,7 @@ static msh_trg_t* create_trg(nb_mesh_t *mesh,
 
 	msh_trg_t *trg = NULL;
 	if(NULL != v3) {
-		trg = mtrg_calloc(mesh);
+		trg = mtrg_allocate_zero_mem(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;

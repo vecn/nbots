@@ -39,7 +39,7 @@ static inline void* nb_allocate_mem_vtx(void)
 inline void vtx_destroy(void *vtx_ptr)
 {
 	vtx_finish(vtx_ptr);
-	free(vtx_ptr);
+	nb_free_mem(vtx_ptr);
 }
 
 

@@ -79,7 +79,7 @@ static void subarea_destroy(void *subarea_ptr)
 {
 	subarea_t *subarea = subarea_ptr;
 	nb_container_finish(subarea->trgs);
-	free(subarea);
+	nb_free_mem(subarea);
 }
 
 static void subarea_clear(void *subarea_ptr)
@@ -376,28 +376,28 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 		void** obj = nb_container_delete_first(areas);
 		if(NULL != area_removed)
 			area_removed[0] += ((double*)obj[0])[0];
-		free(obj[0]);
+		nb_free_mem(obj[0]);
 		nb_container_t* area_trg = obj[1];
 		while (nb_container_is_not_empty(area_trg)) {
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			mtrg_free(mesh, trg);
+			mtrg_nb_free_mem(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
-		free(obj);
+		nb_free_mem(obj);
 	}
 
 	void** main_obj = nb_container_delete_first(areas);
 	double ret_val = ((double*)main_obj[0])[0];
-	free(main_obj[0]);
+	nb_free_mem(main_obj[0]);
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
 		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
-	free(main_obj);
+	nb_free_mem(main_obj);
 	/* Free memory */
 	nb_container_finish(areas);
   
@@ -442,28 +442,28 @@ double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 		void** obj = nb_container_delete_first(areas);
 		if (NULL != area_removed) 
 			area_removed[0] += ((double*)obj[0])[0];
-		free(obj[0]);
+		nb_free_mem(obj[0]);
 		nb_container_t* area_trg = (nb_container_t*)obj[1];
 		while (nb_container_is_not_empty(area_trg)) {
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			mtrg_free(mesh, trg);
+			mtrg_nb_free_mem(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
-		free(obj);
+		nb_free_mem(obj);
 	}
 	/* Keep biggest area */
 	void** main_obj = nb_container_delete_first(areas);
 	double ret_val = ((double*)main_obj[0])[0];
-	free(main_obj[0]);
+	nb_free_mem(main_obj[0]);
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
 		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
-	free(main_obj);
+	nb_free_mem(main_obj);
 	nb_container_finish(areas);
 
 	/* Rescale value */
@@ -489,7 +489,7 @@ uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
 					nb_container_delete(mesh->ht_edge,
 							    to_free);
 					medge_destroy_subsgm_attribute(to_free);
-					medge_free(mesh, to_free);
+					medge_nb_free_mem(mesh, to_free);
 					removed += 1;
 				}
 			}

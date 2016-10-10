@@ -487,8 +487,8 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 
 	if (data->scale > 0.0 && data->scale < 1.0) {
 		for (uint32_t k = 0; k < data->k_part; k++)
-			free(pcenter[k]);
-		free(pcenter);
+			nb_free_mem(pcenter[k]);
+		nb_free_mem(pcenter);
 	}
 
 	/* Draw input segments */

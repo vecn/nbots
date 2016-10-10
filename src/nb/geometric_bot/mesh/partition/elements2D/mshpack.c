@@ -69,14 +69,14 @@ void nb_mshpack_finish(void *msh)
 static void clear_pack(nb_mshpack_t* pack)
 {
 	if (pack->N_elems > 0) {
-		free(pack->cen);
-		free(pack->radii);
+		nb_free_mem(pack->cen);
+		nb_free_mem(pack->radii);
 	}
 	if (NULL != pack->ngb) {
 		for (uint32_t i=0; i < pack->N_elems; i++)
-			free(pack->ngb[i]);
-		free(pack->N_ngb);
-		free(pack->ngb);
+			nb_free_mem(pack->ngb[i]);
+		nb_free_mem(pack->N_ngb);
+		nb_free_mem(pack->ngb);
 		pack->ngb = NULL;
 		pack->N_ngb = NULL;
 	}
@@ -364,7 +364,7 @@ void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 		/* Free memory */
 		nb_container_set_destroyer(segments, free);
 		nb_container_destroy(segments);
-		free(Xk);
+		nb_free_mem(Xk);
 	}
 }
 
@@ -478,7 +478,7 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 		ngb_matrix_next_idx[idx2] += 1;
 	}
 	nb_iterator_destroy(sgm_iter);
-	free(ngb_matrix_next_idx);
+	nb_free_mem(ngb_matrix_next_idx);
 }
 
 static bool vtx_is_forming_input(const msh_vtx_t *const vtx)
@@ -749,7 +749,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 
 			/* Reallocate adjacencies and insert new inner/inner segments */
 			for (uint32_t i = 0; i < pack->N_elems; i++) {
-				free(pack->ngb[i]);
+				nb_free_mem(pack->ngb[i]);
 				pack->N_ngb[i] = nb_container_get_length(new_ngb[i]);
 				pack->ngb[i] = nb_allocate_mem(pack->N_ngb[i] * sizeof(*(pack->ngb[i])));
 				uint32_t j = 0;
@@ -764,7 +764,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 						nb_container_insert(segments, sgm_struct);
 					}
 					pack->ngb[i][j++] = id[0];
-					free(id);
+					nb_free_mem(id);
 				}
 				nb_container_destroy(new_ngb[i]);
 			}
@@ -781,14 +781,14 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 				nb_container_destroy(new_ngb[i]);
 			}
 		}
-		free(new_ngb);
+		nb_free_mem(new_ngb);
 	}
 
 	/* Free memory */
 	vcn_sparse_destroy(Hk);
-	free(hk);
-	free(Bk);
-	free(Xb);
+	nb_free_mem(hk);
+	nb_free_mem(Bk);
+	nb_free_mem(Xb);
 }
 
 static void pack_update_disks(const nb_mesh_t *const mesh,

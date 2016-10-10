@@ -460,7 +460,7 @@ static inline void hash_trg_destroy(hash_trg_t* restrict htrg)
 {
 	for (uint32_t i = 0; i < 64; i++)
 		nb_container_destroy(htrg->avl[i]);
-	free(htrg);
+	nb_free_mem(htrg);
 }
 
 static inline bool check_max_vtx(const nb_mesh_t *const restrict mesh)
@@ -640,7 +640,7 @@ static void remove_encroached_triangles
 		if (NULL != big_trg)
 			nb_container_delete(big_trg, trg);
 
-		mtrg_free(mesh, trg);
+		mtrg_nb_free_mem(mesh, trg);
 	}
 	nb_container_finish(encroached_trg);
 }
@@ -708,7 +708,7 @@ static inline void retriangulate_fan(nb_mesh_t *const mesh,
 					       v_pivot, vtx);
 
 		/* Create triangle */
-		msh_trg_t *trg = mtrg_calloc(mesh);
+		msh_trg_t *trg = mtrg_allocate_zero_mem(mesh);
 		trg->v1 = (msh_vtx_t*) v_pivot;
 		trg->v2 = vtx;
 		trg->v3 = v3;
@@ -799,12 +799,12 @@ static void insert_midpoint(nb_mesh_t *const mesh,
 	vcn_bins2D_insert(mesh->ug_vtx, v);
 
 	/* Split the subsegment */  
-	subsgm[0] = medge_calloc(mesh);
+	subsgm[0] = medge_allocate_zero_mem(mesh);
 	subsgm[0]->v1 = sgm->v1;
 	subsgm[0]->v2 = (msh_vtx_t*) v;
 	nb_container_insert(mesh->ht_edge, subsgm[0]);
 	
-	subsgm[1] = medge_calloc(mesh);
+	subsgm[1] = medge_allocate_zero_mem(mesh);
 	subsgm[1]->v1 = (msh_vtx_t*) v;
 	subsgm[1]->v2 = sgm->v2;
 	nb_container_insert(mesh->ht_edge, subsgm[1]);
@@ -855,7 +855,7 @@ static void insert_midpoint(nb_mesh_t *const mesh,
 	/* Free splitted segment */
 	nb_container_delete(mesh->ht_edge, sgm);
 	medge_destroy_subsgm_attribute(sgm);
-	medge_free(mesh, sgm);
+	medge_nb_free_mem(mesh, sgm);
 }
 
 static void split_encroached_segments

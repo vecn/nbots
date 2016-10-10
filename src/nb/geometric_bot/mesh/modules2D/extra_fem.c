@@ -117,7 +117,7 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 		void** attr = vtx->attr;
 		nb_container_destroy(attr[0]);
 		vtx->attr = attr[1];
-		free(attr);
+		nb_free_mem(attr);
 	}
 	vcn_bins2D_iter_finish(iter);
 

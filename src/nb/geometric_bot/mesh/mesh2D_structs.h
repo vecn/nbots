@@ -134,8 +134,8 @@ bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
 bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin);
 bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location);
 
-msh_edge_t *medge_calloc(nb_mesh_t *mesh);
-void medge_free(nb_mesh_t *mesh, msh_edge_t *edge);
+msh_edge_t *medge_allocate_zero_mem(nb_mesh_t *mesh);
+void medge_nb_free_mem(nb_mesh_t *mesh, msh_edge_t *edge);
 bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
 void medge_set_as_subsgm(msh_edge_t *const sgm,
@@ -180,8 +180,8 @@ msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 
-msh_trg_t *mtrg_calloc(nb_mesh_t *mesh);
-void mtrg_free(nb_mesh_t *mesh, msh_trg_t *trg);
+msh_trg_t *mtrg_allocate_zero_mem(nb_mesh_t *mesh);
+void mtrg_nb_free_mem(nb_mesh_t *mesh, msh_trg_t *trg);
 
 bool mtrg_has_an_input_vertex(const msh_trg_t *trg);
 bool mtrg_has_an_input_sgm(const msh_trg_t *trg);

@@ -248,15 +248,15 @@ void* nb_mshquad_clone(const void *const mshquad_ptr)
 void nb_mshquad_destroy(void *mshquad_ptr)
 {
 	nb_mshquad_finish(mshquad_ptr);
-	free(mshquad_ptr);
+	nb_free_mem(mshquad_ptr);
 }
 
 void nb_mshquad_clear(void *mshquad_ptr)
 {
 	nb_mshquad_t *quad = mshquad_ptr;
 	if (NULL != quad->nod) {
-		free(quad->nod_x_sgm[0]);
-		free(quad->nod);		
+		nb_free_mem(quad->nod_x_sgm[0]);
+		nb_free_mem(quad->nod);		
 	}
 	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	
 }

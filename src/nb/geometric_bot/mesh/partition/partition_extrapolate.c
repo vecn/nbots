@@ -50,7 +50,7 @@ void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
 
 	solve_system(part, N_comp, M, F, nodal_values);
 
-	free(memblock);
+	nb_free_mem(memblock);
 }
 
 static void assemble_system(const nb_partition_t *part,

@@ -388,7 +388,7 @@ static void set_holes(const vcn_model_t *model1,
 		nb_soft_free_mem(N_centroids, mask_centroids);
 	}
 	if (0 < N_centroids)
-		free(centroids);
+		nb_free_mem(centroids);
 }
 
 static uint32_t mask_true_centroids(const vcn_model_t *model1,
@@ -444,7 +444,7 @@ static void* ipack_create(void)
 
 static void ipack_destroy(void *ipack_ptr)
 {
-	free(ipack_ptr);
+	nb_free_mem(ipack_ptr);
 }
 
 static int8_t ipack_comparer(const void *ipack1_ptr,
@@ -1249,7 +1249,7 @@ static void set_intersection_holes(vcn_model_t *model,
 		set_new_holes_to_model(N_new_holes, N_centroids,
 				       centroids, mask_centroids, model);
 		nb_soft_free_mem(N_centroids, mask_centroids);
-		free(centroids);
+		nb_free_mem(centroids);
 	}
 }
 
@@ -1308,7 +1308,7 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 		if (0 < model->H) {
 			memcpy(new_holes, model->holes,
 			       2 * model->H * sizeof(*new_holes));
-			free(model->holes);
+			nb_free_mem(model->holes);
 		}
 
 		uint32_t i = model->H;
@@ -1371,7 +1371,7 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 	}
 	if (0 == N_vtx) {
 		model->N = 0;
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 		model->vertex = NULL;
 	} else if (N_vtx < model->N) {
 		double* vertices = nb_allocate_zero_mem(N_vtx * 2 *
@@ -1388,7 +1388,7 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 			model->edge[i] = perm[model->edge[i]];
 		}
 		model->N = N_vtx;
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 		model->vertex = vertices;
 	}
 	nb_soft_free_mem(mask_size, mask);
@@ -1432,7 +1432,7 @@ static void set_difference_holes(vcn_model_t *model,
 		set_new_holes_to_model(N_new_holes, N_centroids,
 				       centroids, mask_centroids, model);
 		nb_soft_free_mem(N_centroids, mask_centroids);
-		free(centroids);
+		nb_free_mem(centroids);
 	}
 }
 
@@ -1491,7 +1491,7 @@ static void set_substraction_holes(vcn_model_t *model,
 		set_new_holes_to_model(N_new_holes, N_centroids,
 				       centroids, mask_centroids, model);
 
-		free(centroids);
+		nb_free_mem(centroids);
 		nb_soft_free_mem(N_centroids, mask_centroids);
 	}
 }

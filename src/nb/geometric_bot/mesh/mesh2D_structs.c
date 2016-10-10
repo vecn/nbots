@@ -84,12 +84,12 @@ bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
 	return (location == attr->loc);
 }
 
-msh_edge_t *medge_calloc(nb_mesh_t *mesh)
+msh_edge_t *medge_allocate_zero_mem(nb_mesh_t *mesh)
 {
 	return nb_membank_allocate_mem(mesh->edg_membank);
 }
 
-void medge_free(nb_mesh_t *mesh, msh_edge_t *edge)
+void medge_nb_free_mem(nb_mesh_t *mesh, msh_edge_t *edge)
 {
 	nb_membank_free_mem(mesh->edg_membank, edge);
 }
@@ -217,8 +217,8 @@ inline void* medge_subsgm_get_attribute(const msh_edge_t* const sgm)
 void medge_destroy_subsgm_attribute(msh_edge_t *const restrict sgm)
 {
 	void* attr = ((input_sgm_attr_t*)((attr_t*)sgm->attr)->data)->attr;
-	free(((attr_t*)sgm->attr)->data);
-	free(sgm->attr);
+	nb_free_mem(((attr_t*)sgm->attr)->data);
+	nb_free_mem(sgm->attr);
 	sgm->attr = attr;
 }
 
@@ -292,8 +292,8 @@ void medge_destroy_length_attribute(msh_edge_t *const sgm)
 	else
 		sgm->attr = NULL;
 
-	free(attr->data);
-	free(attr);
+	nb_free_mem(attr->data);
+	nb_free_mem(attr);
 }
 
 bool medge_has_a_triangle_to_the_left
@@ -405,12 +405,12 @@ inline msh_trg_t* medge_get_opposite_triangle
 	return NULL;
 }
 
-msh_trg_t *mtrg_calloc(nb_mesh_t *mesh)
+msh_trg_t *mtrg_allocate_zero_mem(nb_mesh_t *mesh)
 {
 	return nb_membank_allocate_mem(mesh->trg_membank);
 }
 
-void mtrg_free(nb_mesh_t *mesh, msh_trg_t *trg)
+void mtrg_nb_free_mem(nb_mesh_t *mesh, msh_trg_t *trg)
 {
 	nb_membank_free_mem(mesh->trg_membank, trg);
 }
@@ -784,7 +784,7 @@ inline msh_edge_t* mesh_insert_edge(nb_mesh_t *mesh,
 				    const msh_vtx_t *const v1, 
 				    const msh_vtx_t *const v2)
 {
-	msh_edge_t *edge = medge_calloc(mesh);
+	msh_edge_t *edge = medge_allocate_zero_mem(mesh);
   
 	edge->v1 = (msh_vtx_t*)v1;
 	edge->v2 = (msh_vtx_t*)v2;
@@ -908,7 +908,7 @@ static bool mesh_remove_edge(nb_mesh_t *mesh,
 	msh_edge_t* edge = nb_container_exist(mesh->ht_edge, &key_edge);
 	if (NULL != edge) {
 		nb_container_delete(mesh->ht_edge, edge);
-		medge_free(mesh, edge);
+		medge_nb_free_mem(mesh, edge);
 		return true;
 	}
 	return false;

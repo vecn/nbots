@@ -53,7 +53,7 @@ static inline void bound_max_density(img_density_data_t *data,
 void nb_mesh_clear_img_density(nb_mesh_t *mesh)
 {
 	if (NULL != mesh->density_data) {
-		free((void*)mesh->density_data);	
+		nb_free_mem((void*)mesh->density_data);	
 		mesh->density_data = NULL;
 	}
 	mesh->density = NULL;

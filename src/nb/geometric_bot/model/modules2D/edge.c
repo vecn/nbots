@@ -27,7 +27,7 @@ edge_t* edge_clone(const edge_t *const edge)
 
 inline void edge_destroy(void *edge)
 {
-	free(edge);
+	nb_free_mem(edge);
 }
 
 inline void edge_set_length(edge_t *edge)

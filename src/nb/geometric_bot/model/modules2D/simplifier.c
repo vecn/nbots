@@ -69,7 +69,7 @@ nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 		if (0 == mask_wired[i])
 			build_wire(model, wires, mask_wired, i);
 	}
-	free(mask_wired);
+	nb_free_mem(mask_wired);
 	return wires;
 }
 
@@ -244,7 +244,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 					       N_remaining * 2 * sizeof(uint32_t));
 					memcpy(&(model->edge[i*2]), remaining_sgm,
 					       N_remaining * 2 * sizeof(uint32_t));
-					free(remaining_sgm);
+					nb_free_mem(remaining_sgm);
 				}
 				model->M -= 1;
 			} else {
@@ -279,7 +279,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 					       N_remaining * 2 * sizeof(uint32_t));
 					memcpy(&(model->edge[i*2]), remaining_sgm,
 					       N_remaining * 2 * sizeof(uint32_t));
-					free(remaining_sgm);
+					nb_free_mem(remaining_sgm);
 				}
 				model->M -= 1;
 			} else {
@@ -293,7 +293,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 		uint32_t* segments = nb_allocate_mem(model->M * 2 * sizeof(*segments));
 
 		memcpy(segments, model->edge, model->M * 2 * sizeof(uint32_t));
-		free(model->edge);
+		nb_free_mem(model->edge);
 		model->edge = segments;
 
 		uint32_t* perm_vtx = nb_allocate_zero_mem(model->N *
@@ -308,7 +308,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 			perm_vtx[i] = vtx_counter;
 			vtx_counter += 1;
 		}
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 		model->vertex = vertices;
 		model->N = N_vtx;
 
@@ -318,11 +318,11 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 		}
 		for (uint32_t i = 0; i < N_fixed_vertices; i++)
 			fixed_vertices[i] = perm_vtx[fixed_vertices[i]];
-		free(perm_vtx);
+		nb_free_mem(perm_vtx);
 
 		/* Free memory */
-		free(mask_fixed_vertices);
-		free(mask_vtx_removed);
+		nb_free_mem(mask_fixed_vertices);
+		nb_free_mem(mask_vtx_removed);
 	}
 }
 
@@ -384,15 +384,15 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 		}
 		nb_container_destroy(wire);
 	}
-	free(perm_vtx);
-	free(mask_vtx);
+	nb_free_mem(perm_vtx);
+	nb_free_mem(mask_vtx);
 
 	model->N = N_vtx;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = vertices;
 
 	model->M = N_sgm;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = segments;
 
 	/* Free memory */
@@ -509,7 +509,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 
 	bool collapsed = false;
 	if (will_be_removed && !is_fixed) {
-		free(edge_next);
+		nb_free_mem(edge_next);
 		edge[0] = v1;
 		edge[1] = v2;
 		collapsed = true;
@@ -552,8 +552,8 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 		uint32_t sv2 = model->edge[i*2+1];
 		if((sv1 == v1 && sv2 == v2) ||
 		   (sv1 == v2 && sv2 == v1)){
-			free(mask_vtx_to_remove);
-			free(mask_sgm_to_remove);
+			nb_free_mem(mask_vtx_to_remove);
+			nb_free_mem(mask_sgm_to_remove);
 			return;
 		}
 		if (mask_vtx_to_remove[sv1] ||
@@ -596,13 +596,13 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	/* Update data in the model */
 	model->N = model->N - N_vtx_to_remove;
 	model->M = model->M - N_sgm_to_remove + 1;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = vertices;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = edges;
 
 	/* Free memory */
-	free(perm_vtx);
-	free(mask_vtx_to_remove);
-	free(mask_sgm_to_remove);
+	nb_free_mem(perm_vtx);
+	nb_free_mem(mask_vtx_to_remove);
+	nb_free_mem(mask_sgm_to_remove);
 }

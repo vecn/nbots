@@ -69,7 +69,7 @@ static void export_vertices(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_vtx = vcn_bins2D_get_length(mesh->ug_vtx);
 	exp->set_N_vtx(exp->structure, N_vtx);
-	exp->malloc_vtx(exp->structure);
+	exp->allocate_vtx(exp->structure);
 
 	exp->start_vtx_access(exp->structure);
 
@@ -93,7 +93,7 @@ static void export_edges(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_edg = nb_container_get_length(mesh->ht_edge);
 	exp->set_N_edg(exp->structure, N_edg);
-	exp->malloc_edg(exp->structure);
+	exp->allocate_edg(exp->structure);
 
 	exp->start_edg_access(exp->structure);
 
@@ -119,7 +119,7 @@ static void export_and_enumerate_trg(nb_mesh_t *mesh,
 	uint32_t N_trg = nb_container_get_length(mesh->ht_trg);
 	exp->set_N_trg(exp->structure, N_trg);
 	bool include_neighbours = (NULL != exp->set_trg_neighbours);
-	exp->malloc_trg(exp->structure, include_neighbours);
+	exp->allocate_trg(exp->structure, include_neighbours);
 
 	exp->start_trg_access(exp->structure);
 
@@ -175,7 +175,7 @@ static void export_input_vtx(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_vtx = mesh->N_input_vtx;
 	exp->set_N_input_vtx(exp->structure, N_vtx);
-	exp->malloc_input_vtx(exp->structure);
+	exp->allocate_input_vtx(exp->structure);
 
 	exp->start_input_vtx_access(exp->structure);
 	for (uint32_t i = 0; i < N_vtx; i++) {
@@ -194,7 +194,7 @@ static void export_input_sgm(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_sgm = mesh->N_input_sgm;
 	exp->set_N_input_sgm(exp->structure, N_sgm);
-	exp->malloc_input_sgm_table(exp->structure);
+	exp->allocate_input_sgm_table(exp->structure);
 
 	exp->start_input_sgm_table_access(exp->structure);
 	set_input_sgm_table(mesh, exp);
@@ -222,7 +222,7 @@ static void set_input_sgm_table(const nb_mesh_t *const restrict mesh,
 		}
 		if (0 < counter) {
 			exp->input_sgm_set_N_vtx(exp->structure, i, counter + 1);
-			exp->input_sgm_malloc_vtx(exp->structure, i);
+			exp->input_sgm_allocate_vtx(exp->structure, i);
 		} else {
 			exp->input_sgm_set_N_vtx(exp->structure, i, 0);
 		}

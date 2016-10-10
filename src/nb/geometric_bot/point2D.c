@@ -11,7 +11,7 @@ inline vcn_point2D_t* vcn_point2D_create(void)
 
 inline void vcn_point2D_destroy(void *point_ptr)
 {
-	free(point_ptr);
+	nb_free_mem(point_ptr);
 }
 
 inline int8_t vcn_point2D_compare(const void *const p1_ptr,

@@ -138,7 +138,7 @@ static inline void bin_destroy(void *bin_ptr)
 {
 	bin2D_t* bin = bin_ptr;
 	nb_container_destroy(bin->points);
-	free(bin);
+	nb_free_mem(bin);
 }
 
 uint32_t vcn_bins2D_get_memsize(void)
@@ -181,7 +181,7 @@ static inline bool null_filter(const vcn_point2D_t *const p_ref,
 void vcn_bins2D_destroy(vcn_bins2D_t* bins2D)
 {
 	vcn_bins2D_finish(bins2D);
-	free(bins2D);
+	nb_free_mem(bins2D);
 }
 
 void vcn_bins2D_clear(vcn_bins2D_t* bins2D)

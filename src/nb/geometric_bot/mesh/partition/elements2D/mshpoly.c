@@ -366,16 +366,16 @@ void* nb_mshpoly_clone(const void *const mshpoly_ptr)
 void nb_mshpoly_destroy(void *mshpoly_ptr)
 {
 	nb_mshpoly_finish(mshpoly_ptr);
-	free(mshpoly_ptr);
+	nb_free_mem(mshpoly_ptr);
 }
 
 void nb_mshpoly_clear(void *mshpoly_ptr)
 {
 	nb_mshpoly_t *poly = mshpoly_ptr;
 	if (NULL != poly->nod) {
-		free(poly->adj[0]);
-		free(poly->nod_x_sgm[0]);
-		free(poly->nod);		
+		nb_free_mem(poly->adj[0]);
+		nb_free_mem(poly->nod_x_sgm[0]);
+		nb_free_mem(poly->nod);		
 	}
 	memset(mshpoly_ptr, 0, nb_mshpoly_get_memsize());
 }
@@ -698,7 +698,7 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 		init_voronoi_graph(&vgraph, &vinfo, trg_cc_map, mesh);
 
 		create_mapping(&vinfo, &vgraph, mesh, trg_cc_map);
-		free(trg_cc_map);
+		nb_free_mem(trg_cc_map);
 
 		set_voronoi(mshpoly, &vgraph, &vinfo, mesh);
 
@@ -981,12 +981,12 @@ static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 
 static void finish_voronoi_info(vinfo_t *vinfo)
 {
-	free(vinfo->vtx_map);
+	nb_free_mem(vinfo->vtx_map);
 }
 
 static void finish_voronoi_graph(vgraph_t *vgraph)
 {
-	free(vgraph->N_adj);
+	nb_free_mem(vgraph->N_adj);
 }
 
 static void set_voronoi(nb_mshpoly_t *poly,

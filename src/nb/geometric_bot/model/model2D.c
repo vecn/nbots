@@ -90,24 +90,24 @@ void* vcn_model_clone(const void *model_ptr)
 void vcn_model_destroy(void *model_ptr)
 {
 	vcn_model_finish(model_ptr);
-	free(model_ptr);
+	nb_free_mem(model_ptr);
 }
 
 void vcn_model_clear(void *model_ptr)
 {
 	vcn_model_t *model = model_ptr;
 	if (0 < model->N)
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 	model->N = 0;
 	model->vertex = NULL;
 	
 	if (0 < model->M)
-		free(model->edge);
+		nb_free_mem(model->edge);
 	model->M = 0;
 	model->edge = NULL;
 	
 	if (0 < model->H)
-		free(model->holes);
+		nb_free_mem(model->holes);
 	model->H = 0;
 	model->holes = NULL;
 }
@@ -376,7 +376,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 	nb_mesh_finish(mesh);
 	
 	if (0 < model->H)
-		free(model->holes);
+		nb_free_mem(model->holes);
 	model->H = N_holes;
 	model->holes = holes;
 }
