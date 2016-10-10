@@ -18,7 +18,7 @@ static void copy_containers(nb_bcond_t *bcond,
 static void clone_container_elements(nb_container_t *cnt,
 				     const nb_container_t *const cnt_src,
 				     uint8_t N_dof);
-static void* malloc_bcond(void);
+static void* allocate_bcond(void);
 
 
 uint16_t nb_bcond_get_memsize(uint8_t N_dof)
@@ -108,21 +108,21 @@ inline void nb_bcond_finish(void *bcond_ptr)
 
 inline void* nb_bcond_create(uint8_t N_dof)
 {
-	void *bcond = malloc_bcond();
+	void *bcond = allocate_bcond();
 	nb_bcond_init(bcond, N_dof);
 	return bcond;
 }
 
-static void* malloc_bcond(void)
+static void* allocate_bcond(void)
 {
 	uint16_t size = sizeof(nb_bcond_t);
 	uint16_t size_cnt = nb_container_get_memsize(CONTAINER_ID);
-	return malloc(size + 4 * size_cnt);
+	return nb_allocate_mem(size + 4 * size_cnt);
 }
 
 void* nb_bcond_clone(const void *const bcond)
 {
-	void *bcond_clone = malloc_bcond();
+	void *bcond_clone = allocate_bcond();
 	nb_bcond_copy(bcond_clone, bcond);
 	return bcond_clone;
 }
@@ -131,7 +131,7 @@ void* nb_bcond_clone(const void *const bcond)
 void nb_bcond_destroy(void *bcond)
 {
 	nb_bcond_finish(bcond);
-	free(bcond);
+	nb_free_mem(bcond);
 }
 
 void nb_bcond_clear(void *bcond_ptr)

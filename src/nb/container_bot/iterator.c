@@ -1,22 +1,16 @@
-/******************************************************************************
- *   Iterator                                                                 *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "nb/memory_bot.h"
+#include "nb/container_bot/container.h"
+#include "nb/container_bot/iterator.h"
 
 #include "queue/nb_queue_binding.h"
 #include "stack/binding.h"
 #include "sorted/binding.h"
 #include "heap/binding.h"
 #include "hash/binding.h"
-
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
 
 #include "container_struct.h"
 #include "iterator_struct.h"
@@ -36,7 +30,7 @@ static const void* null_get_next(void *iter);
 static bool null_has_more(const void *const iter);
 static void null_set_dst(void *iter, const void *dst);
 static void copy_handlers(nb_iterator_t *iter, const nb_iterator_t *src_iter);
-static void* malloc_iterator(void);
+static void* allocate_iterator(void);
 
 uint16_t nb_iterator_get_memsize(void)
 {
@@ -164,20 +158,20 @@ inline void nb_iterator_finish(void* iter_ptr)
 
 inline void* nb_iterator_create(void)
 {
-	void *iterator = malloc_iterator();
+	void *iterator = allocate_iterator();
 	nb_iterator_init(iterator);
 	return iterator;
 }
 
-static inline void* malloc_iterator(void)
+static inline void* allocate_iterator(void)
 {
 	uint16_t size = nb_iterator_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 inline void* nb_iterator_clone(const void *iter_ptr)
 {
-	void *iterator = malloc_iterator();
+	void *iterator = allocate_iterator();
 	nb_iterator_copy(iterator, iter_ptr);
 	return iterator;
 }
@@ -185,7 +179,7 @@ inline void* nb_iterator_clone(const void *iter_ptr)
 inline void nb_iterator_destroy(void *iter_ptr)
 {
 	nb_iterator_finish(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 inline void nb_iterator_clear(void* iter_ptr)

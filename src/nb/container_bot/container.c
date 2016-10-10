@@ -1,23 +1,17 @@
-/******************************************************************************
- *   Generic Container                                                        *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+
+#include "nb/memory_bot.h"
+#include "nb/container_bot/container.h"
+#include "nb/container_bot/iterator.h"
 
 #include "queue/nb_queue_binding.h"
 #include "stack/binding.h"
 #include "sorted/binding.h"
 #include "heap/binding.h"
 #include "hash/binding.h"
-
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
 
 #include "container_struct.h"
 
@@ -30,7 +24,7 @@ static void set_functions(nb_container_t *container,
 			  nb_container_type type);
 static void copy_val_operators(nb_container_t *dest,
 			       const nb_container_t *const src);
-static void *malloc_container(nb_container_type type);
+static void *allocate_container(nb_container_type type);
 
 static bool is_the_same_dst(const nb_container_t *const c1,
 			    const nb_container_t *const c2);
@@ -176,21 +170,21 @@ inline void nb_container_finish(void* container_ptr)
 
 inline void* nb_container_create(nb_container_type type)
 {
-	void *container = malloc_container(type);
+	void *container = allocate_container(type);
 	nb_container_init(container, type);
 	return container;
 }
 
-static inline void *malloc_container(nb_container_type type)
+static inline void *allocate_container(nb_container_type type)
 {
 	uint16_t size = nb_container_get_memsize(type);
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 inline void* nb_container_clone(const void *container_ptr)
 {
 	nb_container_type type = nb_container_get_type(container_ptr);
-	void *container = malloc_container(type);
+	void *container = allocate_container(type);
 	nb_container_copy(container, container_ptr);
 	return container;
 }
@@ -198,7 +192,7 @@ inline void* nb_container_clone(const void *container_ptr)
 inline void nb_container_destroy(void *container_ptr)
 {
 	nb_container_finish(container_ptr);
-	free(container_ptr);
+	nb_free_mem(container_ptr);
 }
 
 inline void nb_container_clear(void* container_ptr)
@@ -238,7 +232,7 @@ static void insert_2clear_into_main(nb_container_t *main,
 void** nb_container_cast_to_array(nb_container_t *container)
 {
   	uint32_t N = container->b.get_length(container->cnt);
-	void **array = malloc(N * sizeof(*array));
+	void **array = nb_allocate_mem(N * sizeof(*array));
 
 	N = 0;
 	while (container->b.is_not_empty(container->cnt)) {

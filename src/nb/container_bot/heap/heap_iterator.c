@@ -1,12 +1,7 @@
-/******************************************************************************
- *   Heap iterator                                                            *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <string.h>
+
+#include "nb/memory_bot.h"
 
 #include "heap_tree.h"
 #include "heap_struct.h"
@@ -19,7 +14,7 @@ typedef struct {
 	htree_t *current;
 } iter_t;
 
-static void* malloc_heap_iter(void);
+static void* allocate_heap_iter(void);
 static void go_up_while_down_is_visited(iter_t *iter);
 static bool its_possible_going_down(const iter_t *const iter);
 static void go_down_if_not_visited(iter_t *iter);
@@ -54,20 +49,20 @@ inline void heap_iter_finish(void *iter_ptr)
 
 inline void* heap_iter_create(void)
 {
-	void *heap_iter = malloc_heap_iter();
+	void *heap_iter = allocate_heap_iter();
 	heap_iter_init(heap_iter);
 	return heap_iter;
 }
 
-static inline void* malloc_heap_iter(void)
+static inline void* allocate_heap_iter(void)
 {
 	uint16_t size = heap_iter_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 inline void* heap_iter_clone(const void *const iter_ptr)
 {
-	void *heap_iter = malloc_heap_iter();
+	void *heap_iter = allocate_heap_iter();
 	heap_iter_copy(heap_iter, iter_ptr);
 	return heap_iter;
 }
@@ -75,7 +70,7 @@ inline void* heap_iter_clone(const void *const iter_ptr)
 inline void heap_iter_destroy(void *iter_ptr)
 {
 	heap_iter_finish(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 inline void heap_iter_clear(void *iter_ptr)

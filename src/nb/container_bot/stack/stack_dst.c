@@ -1,8 +1,5 @@
 /******************************************************************************
  *   List DST: Circular Linked List                                           *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
  ******************************************************************************/
 
 #include <stdlib.h>
@@ -16,7 +13,7 @@
 
 static bool is_not_empty(const nb_stack_t *const list);
 static stack_node_t* get_first(const nb_stack_t *const list);
-static void* malloc_stack(void);
+static void* allocate_stack(void);
 static void destroy_values(nb_stack_t *stack, void (*destroy)(void*));
 static void insert_stack_node_as_starting(nb_stack_t *list,
 					  const void *const val);
@@ -92,21 +89,21 @@ void stack_finish(void *stack_ptr, void (*destroy)(void*))
 
 void* stack_create(void)
 {
-	void *stack = malloc_stack();
+	void *stack = allocate_stack();
 	stack_init(stack);
 	return stack;
 }
 
-static inline void* malloc_stack(void)
+static inline void* allocate_stack(void)
 {
 	uint16_t size = stack_get_memsize();
-  	return malloc(size);
+  	return nb_allocate_mem(size);
 }
 
 void* stack_clone(const void *const stack_ptr,
 		  void* (*clone)(const void*))
 {
-	void *stack = malloc_stack();
+	void *stack = allocate_stack();
 	stack_copy(stack, stack_ptr, clone);
 	return stack;
 }
@@ -114,7 +111,7 @@ void* stack_clone(const void *const stack_ptr,
 void stack_destroy(void *stack_ptr, void (*destroy)(void*))
 {
 	stack_finish(stack_ptr, destroy);
-	free(stack_ptr);
+	nb_free_mem(stack_ptr);
 }
 
 void stack_clear(void *stack_ptr, void (*destroy)(void*))

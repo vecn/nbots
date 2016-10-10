@@ -77,12 +77,11 @@ static double get_clfd(const nb_partition_t *part, uint32_t id_elem);
 
 vcn_fem_implicit_t* vcn_fem_implicit_create(void)
 {
-	return (vcn_fem_implicit_t*)
-		calloc(1, sizeof(vcn_fem_implicit_t));
+	return nb_allocate_zero_mem(sizeof(vcn_fem_implicit_t));
 }
 
 void vcn_fem_implicit_destroy(vcn_fem_implicit_t* isparams){
-	free(isparams);
+	nb_free_mem(isparams);
 }
 
 void vcn_fem_implicit_set_N_steps(vcn_fem_implicit_t* isparams,
@@ -266,10 +265,10 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
 	/*******************************************************************/
-	double* displacement = calloc(2 * N_nod, sizeof(double));
-	double* strain = calloc(3 * N_elem * N_gp, sizeof(double));
-	double* damage = calloc(N_elem * N_gp, sizeof(double));
-	double* r_dmg = malloc(N_gp * N_elem * sizeof(double));
+	double* displacement = nb_allocate_zero_mem(2 * N_nod, sizeof(double));
+	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp, sizeof(double));
+	double* damage = nb_allocate_zero_mem(N_elem * N_gp, sizeof(double));
+	double* r_dmg = nb_allocate_mem(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
 	for (uint32_t i = 0; i < N_gp * N_elem; i++)
@@ -279,7 +278,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/****************** > Allocate system ******************************/
 	/*******************************************************************/
 	/* Allocate global Stiffness Matrices */
-	nb_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	vcn_sparse_t* K = vcn_sparse_create(graph, NULL, 2);
@@ -291,13 +290,13 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 
   
 	/* Allocate force vectors and displacement increment */
-	double* F = calloc(N_system_size, sizeof(double));
-	double* P = calloc(N_system_size, sizeof(double));
-	double* residual = calloc(N_system_size, sizeof(double));
-	double* du = calloc(N_system_size, sizeof(double));
+	double* F = nb_allocate_zero_mem(N_system_size, sizeof(double));
+	double* P = nb_allocate_zero_mem(N_system_size, sizeof(double));
+	double* residual = nb_allocate_zero_mem(N_system_size, sizeof(double));
+	double* du = nb_allocate_zero_mem(N_system_size, sizeof(double));
 
 	/* Allocate damage parameter 'r' */
-	double* r_dmg_prev = malloc(N_gp * N_elem * sizeof(double));
+	double* r_dmg_prev = nb_allocate_mem(N_gp * N_elem * sizeof(double));
   
 	/*******************************************************************/
 	/******************* > Start simulation of N steps *****************/
@@ -452,9 +451,9 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/*****************************************************************/
 	/******************** > Free memory ******************************/
 	/*****************************************************************/
-	free(displacement);
-	free(strain);
-	free(damage);
+	nb_free_mem(displacement);
+	nb_free_mem(strain);
+	nb_free_mem(damage);
 
 	vcn_sparse_destroy(K);
 	if(enable_Cholesky_solver){
@@ -462,13 +461,13 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 		vcn_sparse_destroy(U);
 	}
 
-	free(F);
-	free(du);
-	free(residual);
-	free(P); 
+	nb_free_mem(F);
+	nb_free_mem(du);
+	nb_free_mem(residual);
+	nb_free_mem(P); 
   
-	free(r_dmg_prev);
-	free(r_dmg);
+	nb_free_mem(r_dmg_prev);
+	nb_free_mem(r_dmg);
 }
 
 static void DMG_pipeline_assemble_system
@@ -493,12 +492,11 @@ static void DMG_pipeline_assemble_system
 
 	/* Allocate elemental Stiffness Matrix and Force Vector */
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
-	double* Ke = (double*)malloc(4 * POW2(N_nodes) * sizeof(double));
+	double* Ke = nb_allocate_mem(4 * POW2(N_nodes) * sizeof(double));
 	double* Me = NULL;
 	if(M != NULL)
-		Me = (double*)malloc(2 * N_nodes * sizeof(double));
-	double* Fe = (double*)
-		malloc(2 * N_nodes * sizeof(double));
+		Me = nb_allocate_mem(2 * N_nodes * sizeof(double));
+	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(double));
 
 	/* Assembly global system */
 	uint32_t N_negative_jacobians = 0;
@@ -512,8 +510,8 @@ static void DMG_pipeline_assemble_system
 		}
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
-		double* dNi_dx = malloc(N_nodes * sizeof(double));
-		double* dNi_dy = malloc(N_nodes * sizeof(double));
+		double* dNi_dx = nb_allocate_mem(N_nodes * sizeof(double));
+		double* dNi_dy = nb_allocate_mem(N_nodes * sizeof(double));
 
 		/* Compute constitutive matrix */
 		double fx = 0.0;
@@ -559,15 +557,15 @@ static void DMG_pipeline_assemble_system
 		pipeline_add_to_global_system(elem, k, part, Ke, Me, Fe,
 					      K, M, F);
 
-		free(dNi_dx);
-		free(dNi_dy);
+		nb_free_mem(dNi_dx);
+		nb_free_mem(dNi_dy);
 	}
  EXIT:
 	/* Free elemental stiffness matrix and force vector */
-	free(Ke);
+	nb_free_mem(Ke);
 	if (M != NULL) 
-		free(Me);
-	free(Fe);
+		nb_free_mem(Me);
+	nb_free_mem(Fe);
 }
 
 static void DMG_pipeline_compute_strain
@@ -591,8 +589,8 @@ static void DMG_pipeline_compute_strain
 	/* Iterate over elements to compute strain, stress and damage at nodes */
 	for (uint32_t k = 0 ; k < N_elems; k++) {
 		uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
-		double* dNi_dx = malloc(N_nodes * sizeof(double));
-		double* dNi_dy = malloc(N_nodes * sizeof(double));
+		double* dNi_dx = nb_allocate_mem(N_nodes * sizeof(double));
+		double* dNi_dy = nb_allocate_mem(N_nodes * sizeof(double));
 
 		/* Integrate domain */
 		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
@@ -625,8 +623,8 @@ static void DMG_pipeline_compute_strain
 							     analysis2D);
 			}
 		}
-		free(dNi_dx);
-		free(dNi_dy);
+		nb_free_mem(dNi_dx);
+		nb_free_mem(dNi_dy);
 	}
 EXIT:
 	return;

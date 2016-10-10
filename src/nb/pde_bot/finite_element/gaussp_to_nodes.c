@@ -58,8 +58,8 @@ int vcn_fem_interpolate_from_gpoints_to_nodes
 {
 	int status = 1;
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	double* M = calloc(N_nod, sizeof(*M));
-	double* b = calloc(N_comp * N_nod, sizeof(*b));
+	double* M = nb_allocate_zero_mem(N_nod * sizeof(*M));
+	double* b = nb_allocate_zero_mem(N_comp * N_nod * sizeof(*b));
 	status = assemble_system(part, elem, N_comp,
 				 gp_values, M, b);
 
@@ -70,8 +70,8 @@ int vcn_fem_interpolate_from_gpoints_to_nodes
 
 	status = 0;
 CLEANUP:
-	free(M);
-	free(b);
+	nb_free_mem(M);
+	nb_free_mem(b);
 	return status;
 }
 
@@ -217,7 +217,8 @@ void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
 	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
 
 	/* Interpolate strain to nodes */
-	double* nodal_values = calloc(N_comp * N_nod, sizeof(double));
+	double* nodal_values = nb_allocate_zero_mem(N_comp * N_nod *
+						    sizeof(double));
 	vcn_fem_interpolate_from_gpoints_to_nodes(part, elem,
 						  N_comp, gp_values,
 						  nodal_values);
@@ -232,7 +233,7 @@ void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
 	}
 
 	/* Free memory */
-	free(nodal_values);
+	nb_free_mem(nodal_values);
 }
 
 static double get_gp_error(uint32_t id_elem, int id_gp,

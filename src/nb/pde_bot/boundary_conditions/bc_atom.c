@@ -5,7 +5,7 @@
 #include "bc_atom.h"
 
 static void init_data_ptr(void *bc_ptr, uint8_t N_dof);
-static void* malloc_bc_atom(uint8_t N_dof);
+static void* allocate_bc_atom(uint8_t N_dof);
 
 uint16_t bc_atom_get_memsize(uint8_t N_dof)
 {
@@ -51,20 +51,20 @@ void bc_atom_finish(void *bc_ptr)
 
 void* bc_atom_create(uint8_t N_dof)
 {
-	void *bc = malloc_bc_atom(N_dof);
+	void *bc = allocate_bc_atom(N_dof);
 	bc_atom_init(bc, N_dof);
 	return bc;
 }
 
-static inline void* malloc_bc_atom(uint8_t N_dof)
+static inline void* allocate_bc_atom(uint8_t N_dof)
 {
 	uint16_t size = bc_atom_get_memsize(N_dof);
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* bc_atom_clone(const void *bc_ptr, uint8_t N_dof)
 {
-	void *bc = malloc_bc_atom(N_dof);
+	void *bc = allocate_bc_atom(N_dof);
 	bc_atom_copy(bc, bc_ptr, N_dof);
 	return bc;	
 }
@@ -72,7 +72,7 @@ void* bc_atom_clone(const void *bc_ptr, uint8_t N_dof)
 void bc_atom_destroy(void *bc_ptr)
 {
 	bc_atom_finish(bc_ptr);
-	free(bc_ptr);
+	nb_free_mem(bc_ptr);
 }
 
 void bc_atom_clear(void *bc_ptr, uint8_t N_dof)

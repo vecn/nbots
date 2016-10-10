@@ -18,7 +18,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static uint32_t **malloc_elem_adj(const nb_partition_t *part);
+static uint32_t **allocate_elem_adj(const nb_partition_t *part);
 static void get_elem_adj(const nb_partition_t *part, uint32_t **elem_adj);
 static void check_elem_adj(const nb_partition_t *part,
 			   uint32_t **elem_adj, uint32_t elem_id);
@@ -95,7 +95,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
 
-	uint32_t **elem_adj = malloc_elem_adj(part);
+	uint32_t **elem_adj = allocate_elem_adj(part);
 	get_elem_adj(part, elem_adj);
 
 	set_neumann_sgm(part, material, analysis2D,
@@ -111,7 +111,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 	nb_soft_free_mem(bcond_size, numeric_bcond);
 }
 
-static uint32_t **malloc_elem_adj(const nb_partition_t *part)
+static uint32_t **allocate_elem_adj(const nb_partition_t *part)
 {
 	uint32_t N_insgm = nb_partition_get_N_insgm(part);
 	uint32_t memsize = N_insgm * sizeof(uint32_t*);
@@ -120,7 +120,7 @@ static uint32_t **malloc_elem_adj(const nb_partition_t *part)
 		memsize += N_subsgm * sizeof(uint32_t);
 	}
 
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 
 	uint32_t **elem_adj = (void*) memblock;
 	memblock += N_insgm * sizeof(uint32_t*);
@@ -181,7 +181,7 @@ static inline bool face_is_the_same(uint32_t n1, uint32_t n2,
 
 static inline void free_elem_adj(uint32_t **elem_adj)
 {
-	free(elem_adj);
+	nb_free_mem(elem_adj);
 }
 
 static void set_neumann_sgm(const nb_partition_t *part,

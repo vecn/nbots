@@ -102,11 +102,11 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	}
 
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
-	double* Ke = malloc(4 * POW2(N_nodes) * sizeof(*Ke));
+	double* Ke = nb_allocate_mem(4 * POW2(N_nodes) * sizeof(*Ke));
 	double* Me = NULL;
 	if(M != NULL)
-		Me = malloc(2 * N_nodes * sizeof(*Me));
-	double* Fe = malloc(2 * N_nodes * sizeof(*Fe));
+		Me = nb_allocate_mem(2 * N_nodes * sizeof(*Me));
+	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(*Fe));
 	
 	int status = integrate_elemental_system(elem, id, D, density,
 						gravity, part, params2D,
@@ -118,10 +118,10 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 	pipeline_add_to_global_system(elem, id, part, Ke, Me, Fe, K, M, F);
 
 CLEANUP:
-	free(Ke);
+	nb_free_mem(Ke);
 	if (NULL != M) 
-		free(Me);
-	free(Fe);
+		nb_free_mem(Me);
+	nb_free_mem(Fe);
 	return status;
 }
 
