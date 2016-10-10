@@ -14,7 +14,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot/array.h"
-#include "nb/eigen_bot/sparse.h"
+#include "nb/solver_bot/sparse.h"
 
 #include "sparse_struct.h"
 

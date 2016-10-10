@@ -1,7 +1,7 @@
 #ifndef __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 #define __NB_PDE_BOT_FINITE_ELEMENT_SOLID_MECHANICS_PIPELINE_H__
 
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"

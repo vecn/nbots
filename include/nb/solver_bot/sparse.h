@@ -1,22 +1,5 @@
-/******************************************************************************
- *   Sparse Bot: Linear Algebra for sparse and symmetric matrices.            *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
-/**
- * @file sparse_bot.h
- * @brief The sparse bot is a set of solvers for symmetric and sparse matrices.
- * There are fast matrix computations.
- * @author Victor Eduardo Cardoso Nungaray
- * @n victorc@@cimat.mx
- * @n <a href="https://twitter.com/victore_cardoso"> @@victore_cardoso </a>
- * @date 10 August 2015
- */
-
-#ifndef __NB_EIGEN_BOT_SPARSE_H__
-#define __NB_EIGEN_BOT_SPARSE_H__
+#ifndef __NB_SOLVER_BOT_SPARSE_H__
+#define __NB_SOLVER_BOT_SPARSE_H__
 
 #include <stdbool.h>
 #include <stdint.h>

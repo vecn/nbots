@@ -8,7 +8,7 @@
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"

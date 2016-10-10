@@ -11,7 +11,7 @@
 #include "nb/cfreader_cat.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/image_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/graphics_bot.h"

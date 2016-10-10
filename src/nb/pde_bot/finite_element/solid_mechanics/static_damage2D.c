@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"

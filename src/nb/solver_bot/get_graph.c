@@ -2,7 +2,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
-#include "nb/eigen_bot/sparse.h"
+#include "nb/solver_bot/sparse.h"
 
 #include "sparse_struct.h"
 

@@ -9,7 +9,7 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/interpolation_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/pde_bot/material.h"

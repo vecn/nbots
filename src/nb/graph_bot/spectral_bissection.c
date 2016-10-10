@@ -6,7 +6,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/graph_bot/graph.h"
 
 static int8_t compare_sb(const void *const A, const void *const B,
