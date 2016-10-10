@@ -6,6 +6,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -63,7 +64,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 {
 	nb_container_t* wires = nb_container_create(NB_QUEUE);
-	char* mask_wired = calloc(model->M, 1);
+	char* mask_wired = nb_allocate_zero_mem(model->M);
 	for (uint32_t i = 0; i < model->M; i++) {
 		if (0 == mask_wired[i])
 			build_wire(model, wires, mask_wired, i);
@@ -191,12 +192,12 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 	double tol2 = POW2(tolerance);
 	while (true) {
 		/* Mark fixed vertices */
-		char* mask_fixed_vertices = calloc(model->N, 1);
+		char* mask_fixed_vertices = nb_allocate_zero_mem(model->N);
 		for (uint32_t i = 0; i < N_fixed_vertices; i++)
 			mask_fixed_vertices[fixed_vertices[i]] = 1;
     
 		/* Allocate masks for removed vertices */
-		char* mask_vtx_removed = calloc(model->N, 1);
+		char* mask_vtx_removed = nb_allocate_zero_mem(model->N);
 
 		/* Remove segments */
 		uint32_t N_removed = 0;
@@ -295,7 +296,8 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 		free(model->edge);
 		model->edge = segments;
 
-		uint32_t* perm_vtx = calloc(model->N, sizeof(*perm_vtx));
+		uint32_t* perm_vtx = nb_allocate_zero_mem(model->N *
+							  sizeof(*perm_vtx));
 		uint32_t vtx_counter = 0;
 		for (uint32_t i = 0; i < model->N; i++) {
 			if (mask_vtx_removed[i])
@@ -337,8 +339,8 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	/* Count surviving vertices and segments */
 	uint32_t N_sgm = 0;
 	uint32_t N_vtx = 0;
-	char* mask_vtx = calloc(model->N, 1);
-	uint32_t* perm_vtx = calloc(model->N, sizeof(uint32_t));
+	char* mask_vtx = nb_allocate_zero_mem(model->N);
+	uint32_t* perm_vtx = nb_allocate_zero_mem(model->N * sizeof(uint32_t));
 	nb_iterator_t *iter = nb_iterator_create();
 	nb_iterator_set_container(iter, wires);
 	while (nb_iterator_has_more(iter)) {
@@ -521,7 +523,7 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	uint32_t v1 = model->N;
 	uint32_t v2 = model->N;
 	uint32_t N_vtx_to_remove = 0;
-	char* mask_vtx_to_remove = calloc(model->N, 1);
+	char* mask_vtx_to_remove = nb_allocate_zero_mem(model->N);
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (v1 == model->N) {
 			if (vcn_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
@@ -544,7 +546,7 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	}
 
 	uint32_t N_sgm_to_remove = 0;
-	char* mask_sgm_to_remove = calloc(model->M, 1);
+	char* mask_sgm_to_remove = nb_allocate_zero_mem(model->M);
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t sv1 = model->edge[i * 2];
 		uint32_t sv2 = model->edge[i*2+1];

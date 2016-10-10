@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graphics_bot.h"
 
@@ -311,7 +312,7 @@ static void calculate_partition_centers
 	for (uint32_t k = 0; k < kpart; k++)
 		memset(pcenter[k], 0, 2 * sizeof(double));
 
-	uint32_t* ksize = calloc(kpart, sizeof(*ksize));
+	uint32_t* ksize = nb_allocate_zero_mem(kpart * sizeof(*ksize));
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double xc = 0.0;
@@ -426,7 +427,9 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 	if (data->scale > 0.0 && data->scale < 1.0) {
 		pcenter = nb_allocate_mem(data->k_part * sizeof(*pcenter));
 		for (uint32_t k = 0; k < data->k_part; k++)
-			pcenter[k] = calloc(2, sizeof(*(pcenter[k])));
+			pcenter[k] =
+				nb_allocate_zero_mem(2 *
+						     sizeof(*(pcenter[k])));
 		calculate_partition_centers(msh3trg, data->part,
 					    data->k_part, pcenter);
 	}

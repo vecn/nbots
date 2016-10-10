@@ -131,7 +131,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 		       msh3trg->N_sgm *
 		       sizeof(*(msh3trg->N_nod_x_sgm)));
 		msh3trg->nod_x_sgm =
-			calloc(msh3trg->N_sgm,
+			nb_allocate_zero_mem(msh3trg->N_sgm *
 			       sizeof(*(msh3trg->nod_x_sgm)));
 		for (uint32_t i = 0; i < msh3trg->N_sgm; i++) {
 			uint32_t N_vtx = msh3trg->N_nod_x_sgm[i];
@@ -771,12 +771,13 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
 	/* Allocate lists to store triangles per vertex */
-	uint32_t *N_trg_x_vtx = calloc(msh3trg->N_nod, 
-				       sizeof(*N_trg_x_vtx));
+	uint32_t *N_trg_x_vtx = nb_allocate_zero_mem(msh3trg->N_nod *
+						     sizeof(*N_trg_x_vtx));
 	uint32_t **trg_x_vtx = nb_allocate_mem(msh3trg->N_nod *
-				      sizeof(*trg_x_vtx));
+					       sizeof(*trg_x_vtx));
 	for (uint32_t i = 0; i < msh3trg->N_nod; i++)
-		trg_x_vtx[i] = calloc(10, sizeof(*(trg_x_vtx[i])));
+		trg_x_vtx[i] = nb_allocate_zero_mem(10 *
+						    sizeof(*(trg_x_vtx[i])));
       
 	/* Iterate over triangles to found relations */
 	for (uint32_t i = 0; i < msh3trg->N_elems; i++) {

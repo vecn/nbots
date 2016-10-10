@@ -3,11 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/memory_bot.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -112,10 +111,10 @@ void medge_set_as_subsgm(msh_edge_t *const restrict sgm,
 			 const msh_edge_t *const restrict prev,
 			 const msh_edge_t *const restrict next)
 {
-	attr_t *const restrict sgm_attr = calloc(1, sizeof(attr_t));
+	attr_t *const restrict sgm_attr = nb_allocate_zero_mem(sizeof(attr_t));
 	sgm_attr->id = 1;
 	input_sgm_attr_t *const restrict  attr = 
-		calloc(1, sizeof(input_sgm_attr_t));
+		nb_allocate_zero_mem(sizeof(input_sgm_attr_t));
 	attr->idx = idx;
 	attr->prev = (msh_edge_t*)prev;
 	attr->next = (msh_edge_t*)next;
@@ -225,7 +224,7 @@ void medge_destroy_subsgm_attribute(msh_edge_t *const restrict sgm)
 
 void medge_set_length(msh_edge_t *const sgm)
 {
-	attr_t* attr = calloc(1, sizeof(attr_t));
+	attr_t* attr = nb_allocate_zero_mem(sizeof(attr_t));
 	attr->id = 2;
 	double* length = nb_allocate_mem(sizeof(*length));
 	*length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);

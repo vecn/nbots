@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
@@ -138,8 +137,9 @@ void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
 	if (0 < N_vertices) {
 		mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 		mesh->N_input_vtx = N_vertices;
-		mesh->input_vtx = calloc(mesh->N_input_vtx,
-					 sizeof(*(mesh->input_vtx)));
+		mesh->input_vtx =
+		  nb_allocate_zero_mem(mesh->N_input_vtx *
+				       sizeof(*(mesh->input_vtx)));
 
 		for (uint32_t i = 0; i < N_vertices; i++) {
 			msh_vtx_t* vtx = mvtx_create(mesh);

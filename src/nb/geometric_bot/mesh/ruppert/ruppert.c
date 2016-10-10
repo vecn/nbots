@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -407,7 +406,7 @@ static void reallocate_bins(nb_mesh_t *const restrict mesh)
 }
 static inline hash_trg_t* hash_trg_create(void)
 {
-	hash_trg_t* htrg = calloc(1, sizeof(hash_trg_t));
+	hash_trg_t* htrg = nb_allocate_zero_mem(sizeof(hash_trg_t));
 	for (uint32_t i = 0; i < 64; i++) {
 		htrg->avl[i] = nb_container_create(NB_SORTED);
 		nb_container_set_comparer(htrg->avl[i], compare_trg_attr);

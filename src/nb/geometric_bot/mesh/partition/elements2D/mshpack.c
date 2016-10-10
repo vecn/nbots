@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/eigen_bot.h"
@@ -375,7 +375,7 @@ static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems)
 	pack->cen = nb_allocate_mem(2 * N_elems * sizeof(*(pack->cen)));
 	pack->radii = nb_allocate_mem(N_elems * sizeof(*(pack->radii)));
 
-	pack->N_ngb = calloc(N_elems, sizeof(*(pack->N_ngb)));
+	pack->N_ngb = nb_allocate_zero_mem(N_elems * sizeof(*(pack->N_ngb)));
 	pack->ngb = nb_allocate_mem(N_elems * sizeof(*(pack->ngb)));
 }
 
@@ -460,7 +460,8 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 				       sizeof(*(pack->ngb[i])));
 
 	uint32_t* ngb_matrix_next_idx = 
-		calloc(pack->N_elems, sizeof(*ngb_matrix_next_idx));
+		nb_allocate_zero_mem(pack->N_elems *
+				     sizeof(*ngb_matrix_next_idx));
 
 	nb_iterator_t* sgm_iter = nb_iterator_create();
 	nb_iterator_set_container(sgm_iter, segments);
@@ -604,7 +605,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 {
 	double gamma = 1 - 0.3 * overlapping_factor;
 	/* Allocate Optimization vectors */
-	double* hk = calloc(3 * pack->N_elems,  sizeof(*hk));
+	double* hk = nb_allocate_zero_mem(3 * pack->N_elems * sizeof(*hk));
 	double* Bk = nb_allocate_mem(3 * pack->N_elems * sizeof(*Bk));
 	/* Allocate boundaries positions */
 	uint32_t N_input_vtx = vcn_bins2D_get_length(mesh->ug_vtx) - pack->N_elems;

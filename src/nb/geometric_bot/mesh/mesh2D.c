@@ -1,17 +1,9 @@
-/******************************************************************************
- *   Geometric Bot: Geometric tesselations for numerical analysis.            *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -669,11 +661,11 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 
 	/* Clone arrays to relate the mesh with the input */
 	clone->N_input_vtx = mesh->N_input_vtx;
-	clone->input_vtx = 
-		calloc(clone->N_input_vtx, sizeof(*(clone->input_vtx)));
+	clone->input_vtx = nb_allocate_zero_mem(clone->N_input_vtx *
+						sizeof(*(clone->input_vtx)));
 	clone->N_input_sgm = mesh->N_input_sgm;
-	clone->input_sgm =
-		calloc(clone->N_input_sgm, sizeof(*(clone->input_sgm)));
+	clone->input_sgm = nb_allocate_zero_mem(clone->N_input_sgm *
+						sizeof(*(clone->input_sgm)));
 
 	uint32_t N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
 	uint32_t vtx_memsize = N_vertices * sizeof(msh_vtx_t*);

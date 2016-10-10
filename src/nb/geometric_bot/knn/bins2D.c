@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/point2D.h"
@@ -217,7 +217,7 @@ void vcn_bins2D_insert(vcn_bins2D_t *const restrict bins2D,
 
 	bin2D_t* bin = nb_container_exist(bins2D->bins, &key_bin);
 	if (NULL == bin) {
-		bin = calloc(1, sizeof(bin2D_t));
+		bin = nb_allocate_zero_mem(sizeof(bin2D_t));
 		bin->x = key_bin.x;
 		bin->y = key_bin.y;
 		bin->points = nb_container_create(NB_QUEUE);

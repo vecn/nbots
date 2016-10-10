@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
@@ -440,7 +439,7 @@ static void rescale_model(vcn_model_t *model, const scaling_data *scaling)
 
 static void* ipack_create(void)
 {
-	return calloc(1, sizeof(ipack_t));
+	return nb_allocate_zero_mem(sizeof(ipack_t));
 }
 
 static void ipack_destroy(void *ipack_ptr)
@@ -1304,7 +1303,8 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 {
 	if (0 < N_new_holes) {
 		uint32_t total_holes = model->H + N_new_holes;
-		double* new_holes = calloc(2 * total_holes,  sizeof(*new_holes));
+		double* new_holes = nb_allocate_zero_mem(2 * total_holes *
+							 sizeof(*new_holes));
 		if (0 < model->H) {
 			memcpy(new_holes, model->holes,
 			       2 * model->H * sizeof(*new_holes));
@@ -1374,7 +1374,8 @@ static void delete_isolated_internal_vtx(vcn_model_t *model)
 		free(model->vertex);
 		model->vertex = NULL;
 	} else if (N_vtx < model->N) {
-		double* vertices = calloc(N_vtx * 2, sizeof(*vertices));
+		double* vertices = nb_allocate_zero_mem(N_vtx * 2 *
+							sizeof(*vertices));
 		for (uint32_t i = 0; i < model->N; i++) {
 			if (1 == mask[i]) {
 				memcpy(&(vertices[perm[i] * 2]),

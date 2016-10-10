@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/image_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
@@ -30,7 +31,7 @@ void nb_mesh_set_img_density(nb_mesh_t *mesh,
 			      const vcn_image_t *const img,
 			      double density_volume)
 {
-	img_density_data_t *data = calloc(1, sizeof(*data));
+	img_density_data_t *data = nb_allocate_zero_mem(sizeof(*data));
 	data->img = img;
 	bound_max_density(data, density_volume);
 	nb_mesh_set_density(mesh, img_density, data);

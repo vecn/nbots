@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
@@ -149,7 +148,8 @@ static double* get_centroids(const nb_mesh_t *mesh,
 	*N_centroids = nb_container_get_length(areas);
 	double *centroids = NULL;
 	if (0 < *N_centroids) {
-		centroids = calloc(*N_centroids * 2, sizeof(*centroids));
+		centroids = nb_allocate_zero_mem(*N_centroids * 2 *
+						 sizeof(*centroids));
 		uint32_t i = 0;
 		while (nb_container_is_not_empty(areas)) {
 			subarea_t *subarea = nb_container_delete_first(areas);

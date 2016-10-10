@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -76,7 +76,8 @@ static void set_constraints(nb_mesh_t *mesh,
 	if (0 < N_input_sgm) {
 		mesh->N_input_sgm = N_input_sgm;
 		mesh->input_sgm = 
-			calloc(N_input_sgm, sizeof(*(mesh->input_sgm)));
+			nb_allocate_zero_mem(N_input_sgm *
+					     sizeof(*(mesh->input_sgm)));
 		for (uint32_t i = 0; i < N_input_sgm; i++) {
 			msh_vtx_t* v1 = mesh->input_vtx[input_sgm[i * 2]];
 			msh_vtx_t* v2 = mesh->input_vtx[input_sgm[i*2+1]];
