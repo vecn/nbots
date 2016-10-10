@@ -3,8 +3,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "nb/math_bot.h"
 #include "nb/memory_bot.h"
-#include "nb/interpolation_bot.h"
 #include "nb/geometric_bot/mesh/partition.h"
 
 #include "partition_struct.h"

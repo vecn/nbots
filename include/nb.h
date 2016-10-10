@@ -1,12 +1,11 @@
 #ifndef __NB_BOTS_H__
 #define __NB_BOTS_H__
 
-#include "nb/exceptions.h"
-
 #include "nb/sysinfo.h"
+#include "nb/exceptions.h"
 #include "nb/memory_bot.h"
+
 #include "nb/math_bot.h"
-#include "nb/interpolation_bot.h"
 #include "nb/statistics_bot.h"
 #include "nb/cfreader_cat.h"
 #include "nb/container_bot.h"

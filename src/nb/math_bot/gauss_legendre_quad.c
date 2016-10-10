@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "nb/pde_bot/gauss_legendre_quad.h"
+#include "nb/math_bot/gauss_legendre_quad.h"
 
 static void set_1_pnt(nb_glquadrature_t *glq);
 static void set_2_pnt(nb_glquadrature_t *glq);

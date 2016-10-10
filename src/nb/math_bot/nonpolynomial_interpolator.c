@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
-#include "nb/interpolation_bot/nonpolynomial.h"
+#include "nb/math_bot/nonpolynomial_interpolator.h"
 
 #define POW2(a) ((a)*(a))
 #define MAX(a,b) (((a)>(b))?(a):(b))
