@@ -2,5 +2,7 @@
 #define __NB_SOLVER_BOT_H__
 
 #include "nb/solver_bot/sparse.h"
+#include "nb/solver_bot/matrix.h"
+#include "nb/solver_bot/matlab_v4.h"
 
 #endif
