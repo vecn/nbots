@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/geometric_bot.h"
 
@@ -297,13 +297,13 @@ static void input_clear(input_t *input)
 	if (0 < input->N_vtx)
 		free (input->vertices);
 	if (0 < input->N_sgm)
-		free(input->segments);
+		nb_free_mem(input->segments);
 }
 
 static bool all_trg_are_cdelaunay(nb_mesh_t *mesh, input_t *input)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
-	void *msh3trg = alloca(memsize);
+	void *msh3trg = nb_allocate_on_stack(memsize);
 	nb_msh3trg_init(msh3trg);
 	nb_msh3trg_load_from_mesh(msh3trg, mesh);
 

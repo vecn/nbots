@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
@@ -69,7 +68,7 @@ static void* subarea_create(void)
 {
 	uint16_t size = sizeof(subarea_t) +
 		nb_container_get_memsize(NB_QUEUE);
-	char *memblock = malloc(size);
+	char *memblock = nb_allocate_mem(size);
 	subarea_t *subarea = (void*) memblock;
 	subarea->trgs = (void*) (memblock + sizeof(subarea_t));
 	nb_container_init(subarea->trgs, NB_QUEUE);
@@ -80,7 +79,7 @@ static void subarea_destroy(void *subarea_ptr)
 {
 	subarea_t *subarea = subarea_ptr;
 	nb_container_finish(subarea->trgs);
-	free(subarea);
+	nb_free_mem(subarea);
 }
 
 static void subarea_clear(void *subarea_ptr)
@@ -110,7 +109,7 @@ static int8_t subarea_compare_size(const void *subarea1_ptr,
 double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
 					   uint32_t* N_centroids)
 {
-	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
 	nb_container_set_comparer(areas, subarea_compare_size);
 
@@ -126,7 +125,7 @@ double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
 static void group_trg_by_areas(const nb_mesh_t *const mesh,
 			       nb_container_t *areas)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -149,7 +148,8 @@ static double* get_centroids(const nb_mesh_t *mesh,
 	*N_centroids = nb_container_get_length(areas);
 	double *centroids = NULL;
 	if (0 < *N_centroids) {
-		centroids = calloc(*N_centroids * 2, sizeof(*centroids));
+		centroids = nb_allocate_zero_mem(*N_centroids * 2 *
+						 sizeof(*centroids));
 		uint32_t i = 0;
 		while (nb_container_is_not_empty(areas)) {
 			subarea_t *subarea = nb_container_delete_first(areas);
@@ -278,7 +278,7 @@ static int8_t compare_area1_isGreaterThan_area2
 double* nb_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
 						  uint32_t* N_centroids)
 {
-	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
 	nb_container_set_comparer(areas, subarea_compare_size);
 
@@ -301,7 +301,7 @@ static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 	double *out = NULL;
 	if (0 < *N_centroids) {
 		const uint32_t memsize = *N_centroids * 2 * sizeof(double);
-		double *centroids = NB_SOFT_MALLOC(memsize);
+		double *centroids = nb_soft_allocate_mem(memsize);
 
 		uint32_t i = 0;
 		while (nb_container_is_not_empty(areas)) {
@@ -318,10 +318,10 @@ static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 		*N_centroids = i;
 		if (0 < *N_centroids) {
 			uint32_t imemsize = i * 2 * sizeof(double);
-			out = malloc(imemsize);
+			out = nb_allocate_mem(imemsize);
 			memcpy(out, centroids, imemsize);
 		}
-		NB_SOFT_FREE(memsize, centroids);
+		nb_soft_free_mem(memsize, centroids);
 	}
 	return out;
 
@@ -329,7 +329,7 @@ static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 
 static bool area_is_enclosed(const nb_container_t *area_trg)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, area_trg);
 	bool out = true;
@@ -347,11 +347,11 @@ static bool area_is_enclosed(const nb_container_t *area_trg)
 double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 				     double* area_removed)
 {
-	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
 
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -359,9 +359,9 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg =
 				nb_container_create(NB_SORTED);
-			double* area = malloc(sizeof(*area));
+			double* area = nb_allocate_mem(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, true);
-			void** obj = malloc(2 * sizeof(*obj));
+			void** obj = nb_allocate_mem(2 * sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
 			nb_container_insert(areas, obj);
@@ -376,28 +376,28 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 		void** obj = nb_container_delete_first(areas);
 		if(NULL != area_removed)
 			area_removed[0] += ((double*)obj[0])[0];
-		free(obj[0]);
+		nb_free_mem(obj[0]);
 		nb_container_t* area_trg = obj[1];
 		while (nb_container_is_not_empty(area_trg)) {
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			mtrg_free(mesh, trg);
+			mtrg_nb_free_mem(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
-		free(obj);
+		nb_free_mem(obj);
 	}
 
 	void** main_obj = nb_container_delete_first(areas);
 	double ret_val = ((double*)main_obj[0])[0];
-	free(main_obj[0]);
+	nb_free_mem(main_obj[0]);
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
 		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
-	free(main_obj);
+	nb_free_mem(main_obj);
 	/* Free memory */
 	nb_container_finish(areas);
   
@@ -413,11 +413,11 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 					    double* area_removed)
 {
-	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
 
 	nb_container_set_comparer(areas, compare_area1_isGreaterThan_area2);
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -425,9 +425,9 @@ double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg =
 				nb_container_create(NB_SORTED);
-			double* area = malloc(sizeof(*area));
+			double* area = nb_allocate_mem(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, false);
-			void** obj = malloc(2*sizeof(*obj));
+			void** obj = nb_allocate_mem(2*sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
 			nb_container_insert(areas, obj);
@@ -442,28 +442,28 @@ double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 		void** obj = nb_container_delete_first(areas);
 		if (NULL != area_removed) 
 			area_removed[0] += ((double*)obj[0])[0];
-		free(obj[0]);
+		nb_free_mem(obj[0]);
 		nb_container_t* area_trg = (nb_container_t*)obj[1];
 		while (nb_container_is_not_empty(area_trg)) {
 			msh_trg_t* trg = nb_container_delete_first(area_trg);
 			nb_container_delete(mesh->ht_trg, trg);
 			mesh_substract_triangle(mesh, trg);
-			mtrg_free(mesh, trg);
+			mtrg_nb_free_mem(mesh, trg);
 		}
 		nb_container_destroy(area_trg);
-		free(obj);
+		nb_free_mem(obj);
 	}
 	/* Keep biggest area */
 	void** main_obj = nb_container_delete_first(areas);
 	double ret_val = ((double*)main_obj[0])[0];
-	free(main_obj[0]);
+	nb_free_mem(main_obj[0]);
 	nb_container_t* main_area = (nb_container_t*)main_obj[1];
 	while (nb_container_is_not_empty(main_area)) {
 		msh_trg_t* trg = nb_container_delete_first(main_area);
 		trg->status = CLEAN;
 	}
 	nb_container_destroy(main_area);
-	free(main_obj);
+	nb_free_mem(main_obj);
 	nb_container_finish(areas);
 
 	/* Rescale value */
@@ -489,7 +489,7 @@ uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const restrict mesh)
 					nb_container_delete(mesh->ht_edge,
 							    to_free);
 					medge_destroy_subsgm_attribute(to_free);
-					medge_free(mesh, to_free);
+					medge_nb_free_mem(mesh, to_free);
 					removed += 1;
 				}
 			}
@@ -521,7 +521,7 @@ uint32_t nb_mesh_delete_internal_input_segments(nb_mesh_t *const restrict mesh)
 uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
 {
 	nb_container_t* useful_vtx =
-		alloca(nb_container_get_memsize(NB_SORTED));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(useful_vtx, NB_SORTED);
 
 	get_useful_vtx(mesh, useful_vtx);	
@@ -535,7 +535,7 @@ uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
 
 static void get_useful_vtx(const nb_mesh_t *mesh, nb_container_t *useful_vtx)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -549,7 +549,7 @@ static void get_useful_vtx(const nb_mesh_t *mesh, nb_container_t *useful_vtx)
 
 static void delete_unused_vtx(nb_mesh_t *mesh, nb_container_t *useful_vtx)
 {
-	nb_container_t *unused_vtx = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *unused_vtx = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(unused_vtx, NB_QUEUE);
 
 	get_unused_vtx(mesh, useful_vtx, unused_vtx);
@@ -567,7 +567,7 @@ static void get_unused_vtx(const nb_mesh_t *mesh,
 			   const nb_container_t *useful_vtx,
 			   nb_container_t *unused_vtx)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -616,7 +616,7 @@ static uint16_t get_N_areas(const nb_mesh_t *mesh,
 static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
 					 bool block_with_input_sgm)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 
@@ -634,7 +634,7 @@ static uint16_t count_areas_by_infection(nb_mesh_t *mesh,
 
 static void uninfect(nb_mesh_t *mesh)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 
@@ -647,7 +647,7 @@ static void uninfect(nb_mesh_t *mesh)
 
 uint16_t nb_mesh_get_subareas(const nb_mesh_t *mesh, uint16_t *area_id)
 {	
-	nb_container_t* areas = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
 	nb_container_set_comparer(areas, subarea_compare_size);
 

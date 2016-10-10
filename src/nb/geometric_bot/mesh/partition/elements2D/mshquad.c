@@ -2,10 +2,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <alloca.h>
 #include <math.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -35,7 +35,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
 static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshquad_t* quad,
 			   const nb_mshquad_t *const src_quad);
-static void* malloc_quad(void);
+static void* nb_allocate_mem_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
 static double get_quality(const msh_trg_t *trg1,
@@ -142,7 +142,7 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 	uint32_t size = nod_size + edg_size + type_size + adj_size +
 		ngb_size + vtx_size + N_nod_x_sgm_size + nod_x_sgm_size;
 
-	char *memblock = malloc(size);
+	char *memblock = nb_allocate_mem(size);
 
 	quad->nod = (void*) memblock;
 	quad->edg = (void*) ((char*)(quad->nod) + nod_size);
@@ -200,7 +200,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
 
 static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
 {
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
 		quad->nod_x_sgm[i] = (void*) memblock;
 		memblock += quad->N_nod_x_sgm[i] *
@@ -225,21 +225,21 @@ void nb_mshquad_finish(void *mshquad_ptr)
 
 void* nb_mshquad_create(void)
 {
-	nb_mshquad_t *quad = malloc_quad();
+	nb_mshquad_t *quad = nb_allocate_mem_quad();
 	nb_mshquad_init(quad);
 	return quad;
 }
 
-static void* malloc_quad(void)
+static void* nb_allocate_mem_quad(void)
 {
 	uint32_t size = nb_mshquad_get_memsize();
-	nb_mshquad_t *quad = malloc(size);
+	nb_mshquad_t *quad = nb_allocate_mem(size);
 	return quad;
 }
 
 void* nb_mshquad_clone(const void *const mshquad_ptr)
 {
-	nb_mshquad_t *quad = malloc_quad();
+	nb_mshquad_t *quad = nb_allocate_mem_quad();
 	nb_mshquad_copy(quad, mshquad_ptr);
 	return quad;
 }
@@ -247,15 +247,15 @@ void* nb_mshquad_clone(const void *const mshquad_ptr)
 void nb_mshquad_destroy(void *mshquad_ptr)
 {
 	nb_mshquad_finish(mshquad_ptr);
-	free(mshquad_ptr);
+	nb_free_mem(mshquad_ptr);
 }
 
 void nb_mshquad_clear(void *mshquad_ptr)
 {
 	nb_mshquad_t *quad = mshquad_ptr;
 	if (NULL != quad->nod) {
-		free(quad->nod_x_sgm[0]);
-		free(quad->nod);		
+		nb_free_mem(quad->nod_x_sgm[0]);
+		nb_free_mem(quad->nod);		
 	}
 	memset(mshquad_ptr, 0, nb_mshquad_get_memsize());	
 }
@@ -589,36 +589,46 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 
 void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 {
-	if (nb_mesh_get_N_trg(mesh) > 0) {
-		mesh_enumerate_vtx((nb_mesh_t*)mesh);
-		mesh_enumerate_trg((nb_mesh_t*)mesh);
-		nb_graph_t *graph = nb_mesh_create_elem_graph(mesh);
-		nb_graph_init_edge_weights(graph);
+	if (0 == nb_mesh_get_N_trg(mesh))
+		goto EXIT;
 
-		set_quad_quality_as_weights(mesh, graph);
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t grp_size = nb_graph_get_memsize();
+	uint32_t memsize = grp_size + N_trg * sizeof(uint32_t);
+	char *memblock = nb_soft_allocate_mem(memsize);
+	nb_graph_t *graph = (void*) memblock;
+	uint32_t *matches = (void*) (memblock + grp_size);;
 
-		uint32_t *matches = malloc(graph->N * sizeof(*matches));
-		nb_graph_matching_greedy(graph, matches);
+	nb_graph_init(graph);
+
+	mesh_enumerate_vtx((nb_mesh_t*)mesh);
+	mesh_enumerate_trg((nb_mesh_t*)mesh);
+
+	nb_mesh_load_elem_graph(mesh, graph);
+	nb_graph_init_edge_weights(graph);
+
+	set_quad_quality_as_weights(mesh, graph);
+	nb_graph_matching_greedy(graph, matches);
 	
-		set_mshquad(mshquad, graph, mesh, matches);
+	set_mshquad(mshquad, graph, mesh, matches);
 
-		free(matches);
-
-		nb_graph_finish_edge_weights(graph);
-		nb_graph_destroy(graph);
-	}
+	nb_graph_finish_edge_weights(graph);
+	nb_graph_finish(graph);
+	nb_soft_free_mem(memsize, memblock);
+EXIT:
+	return;
 }
 
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		uint32_t id = trg->id;
 
 		for (uint32_t i = 0; i < graph->N_adj[id]; i++) {
@@ -627,7 +637,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 			graph->wij[id][i] = get_quality(trg, trg_adj);
 		}
 	}
-	nb_iterator_finish(iter);	
+	nb_iterator_finish(iter);
 }
 
 static double get_quality(const msh_trg_t *trg1,
@@ -747,7 +757,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 			const nb_mesh_t *const mesh,
 			const uint32_t *const matches)
 {
-	match_data *data = alloca(sizeof(match_data));
+	match_data *data = nb_allocate_on_stack(sizeof(match_data));
 	get_match_data(graph, matches, data);
 	
 	quad->N_nod = nb_mesh_get_N_vtx(mesh);
@@ -770,7 +780,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -786,7 +796,7 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
 	uint32_t i = 0;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -818,10 +828,10 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 {
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(uint32_t);
-	uint32_t *new_elem_id = NB_SOFT_MALLOC(memsize);
+	uint32_t *new_elem_id = nb_soft_allocate_mem(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
 	update_neighbors_ids(quad, new_elem_id);
-	NB_SOFT_FREE(memsize, new_elem_id);
+	nb_soft_free_mem(memsize, new_elem_id);
 }
 
 static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -829,7 +839,7 @@ static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		       uint32_t *new_elem_id)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	uint32_t elem_id = 0;
@@ -1101,7 +1111,7 @@ static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
 	uint32_t N = quad->N_nod;
 	
 	uint32_t memsize = N * 2 * sizeof(*(quad->nod));
-	double *nodes = NB_SOFT_MALLOC(memsize);
+	double *nodes = nb_soft_allocate_mem(memsize);
 
 	memcpy(nodes, quad->nod, memsize);
 
@@ -1110,7 +1120,7 @@ static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
 		memcpy(&(quad->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
 	}
 
-	NB_SOFT_FREE(memsize, nodes);
+	nb_soft_free_mem(memsize, nodes);
 }
 
 static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm)

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/image_bot/image.h"
@@ -333,7 +332,7 @@ static int get_format(const char *filename)
 
 static void image_write_default(const vcn_image_t *img, const char *filename)
 {
-	char *name = alloca(strlen(filename) + 4);
+	char *name = nb_allocate_on_stack(strlen(filename) + 4);
 	sprintf(name, "%s.png", filename);
 	vcn_image_write_png(img, name);
 }

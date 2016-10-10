@@ -4,12 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
@@ -17,19 +15,21 @@
 #include "nb/geometric_bot/model/model2D_struct.h"
 #include "nb/geometric_bot/model/model2D.h"
 
-#define GET_PVTX(model, i) (&((model)->vertex[(i)*2]))
-#define GET_1_EDGE_VTX(model, i) ((model)->edge[(i) * 2])
-#define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 #define MAX(a, b) (((a)>(b))?(a):(b))
 
-static inline void *malloc_model(void);
+static inline void *nb_allocate_mem_model(void);
+static void build_dynamic_graph(const nb_model_t *model,
+				nb_membank_t *membank,
+				nb_container_t **cnt_graph);
+static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
+			  nb_graph_t *graph);
 
-inline uint16_t vcn_model_get_memsize(void)
+uint16_t vcn_model_get_memsize(void)
 {
 	return sizeof(vcn_model_t);
 }
 
-inline void vcn_model_init(void *model_ptr)
+void vcn_model_init(void *model_ptr)
 {
 	memset(model_ptr, 0, vcn_model_get_memsize());
 }
@@ -42,71 +42,71 @@ void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
 	model->N = src_model->N;
 	if (0 < model->N) {
 		uint32_t size = 2 * model->N * sizeof(*(model->vertex));
-		model->vertex = malloc(size);
+		model->vertex = nb_allocate_mem(size);
 		memcpy(model->vertex, src_model->vertex, size);
 	}
 
 	model->M = src_model->M;
 	if (0 < model->M) {
 		uint32_t size = 2 * model->M * sizeof(*(model->edge));
-		model->edge = malloc(size);
+		model->edge = nb_allocate_mem(size);
 		memcpy(model->edge, src_model->edge, size);
 	}
 
 	model->H = src_model->H;
 	if (0 < model->H) {
 		uint32_t size = 2 * model->H * sizeof(*(model->holes));
-		model->holes = malloc(size);
+		model->holes = nb_allocate_mem(size);
 		memcpy(model->holes, src_model->holes, size);
 	}
 }
 
-inline void vcn_model_finish(void *model_ptr)
+void vcn_model_finish(void *model_ptr)
 {
 	vcn_model_clear(model_ptr);
 }
 
-inline void* vcn_model_create(void)
+void* vcn_model_create(void)
 {
-	vcn_model_t *model = malloc_model();
+	vcn_model_t *model = nb_allocate_mem_model();
 	vcn_model_init(model);
 	return model;
 }
 
-static inline void *malloc_model(void)
+static inline void *nb_allocate_mem_model(void)
 {
 	uint32_t size = vcn_model_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
-inline void* vcn_model_clone(const void *model_ptr)
+void* vcn_model_clone(const void *model_ptr)
 {
-	vcn_model_t *model = malloc_model();
+	vcn_model_t *model = nb_allocate_mem_model();
 	vcn_model_copy(model, model_ptr);
 	return model;
 }
 
-inline void vcn_model_destroy(void *model_ptr)
+void vcn_model_destroy(void *model_ptr)
 {
 	vcn_model_finish(model_ptr);
-	free(model_ptr);
+	nb_free_mem(model_ptr);
 }
 
 void vcn_model_clear(void *model_ptr)
 {
 	vcn_model_t *model = model_ptr;
 	if (0 < model->N)
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 	model->N = 0;
 	model->vertex = NULL;
 	
 	if (0 < model->M)
-		free(model->edge);
+		nb_free_mem(model->edge);
 	model->M = 0;
 	model->edge = NULL;
 	
 	if (0 < model->H)
-		free(model->holes);
+		nb_free_mem(model->holes);
 	model->H = 0;
 	model->holes = NULL;
 }
@@ -281,45 +281,91 @@ uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename)
 	return 0;
 }
 
-nb_graph_t* vcn_model_get_vtx_graph(const vcn_model_t *const restrict model)
+void vcn_model_load_vtx_graph(const vcn_model_t *const model,
+			      nb_graph_t *graph)
 {
-	nb_graph_t *graph = nb_graph_create();
-  
-	graph->N_adj = calloc(model->N, sizeof(*(graph->N_adj)));
-	graph->adj = malloc(model->N * sizeof(*(graph->adj)));
+	uint32_t N = model->N;
+	nb_container_type cnt_type = NB_SORTED;
+	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
+	uint32_t memsize = N * (sizeof(void*) + cnt_size) 
+		+ nb_membank_get_memsize();
+	char *memblock = nb_soft_allocate_mem(memsize);
 
-	/* Compute connectivity matrix */
-	for (uint32_t i = 0; i < model->M; i++) {
-		uint32_t id_vi = model->edge[i * 2];
-		uint32_t id_vj = model->edge[i*2+1];
-		/* Count the number of connections */
-		graph->N_adj[id_vi] += 1;
-		graph->N_adj[id_vj] += 1;
+	nb_container_t **cnt_graph = (void*) memblock;
+	for (uint32_t i = 0; i < N; i++) {
+		cnt_graph[i] = (void*) (memblock + N * sizeof(void*) +
+					i * cnt_size);
+		nb_container_init(cnt_graph, cnt_type);
 	}
-	for (uint32_t i = 0; i < model->N; i++)
-		graph->adj[i] = malloc(graph->N_adj[i] *
-				       sizeof(*(graph->adj[i])));
+	nb_membank_t *membank = (void*) (memblock + N * (sizeof(void*) +
+							 cnt_size));
+	nb_membank_init(membank, sizeof(uint32_t));
 
-	/* Fill connectivity matrix */
-	uint32_t rowc_memsize = model->N * sizeof(uint32_t);
-	uint32_t* row_counter = NB_SOFT_MALLOC(rowc_memsize);
-	memset(row_counter, 0, rowc_memsize);
+	build_dynamic_graph(model, membank, cnt_graph);
 
+	graph->N = N;
+	set_vtx_graph(cnt_graph, membank, graph);
+
+	for (uint32_t i = 0; i < N; i++)
+		nb_container_finish(cnt_graph);
+	nb_membank_finish(membank);
+	nb_soft_free_mem(memsize, memblock);
+}
+
+static void build_dynamic_graph(const nb_model_t *model,
+				nb_membank_t *membank,
+				nb_container_t **cnt_graph)
+{
 	for (uint32_t i = 0; i < model->M; i++) {
-		uint32_t id_vi = GET_1_EDGE_VTX(model, i);
-		uint32_t id_vj = GET_2_EDGE_VTX(model, i);
-		/* Fill matrix */
-		graph->adj[id_vi][row_counter[id_vi]++] = id_vj;
-		graph->adj[id_vj][row_counter[id_vj]++] = id_vi;
-	}
-	NB_SOFT_FREE(rowc_memsize, row_counter);
+		uint32_t id1 = model->edge[i * 2];
+		uint32_t id2 = model->edge[i*2+1];
 
-	return graph;
+		uint32_t *aux1 = nb_membank_allocate_mem(membank);
+		*aux1 = id1;
+		uint32_t *aux2 = nb_membank_allocate_mem(membank);
+		*aux2 = id2;
+
+		nb_container_insert(cnt_graph[id1], aux2);
+		nb_container_insert(cnt_graph[id2], aux1);
+	}
+}
+
+static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
+			       nb_graph_t *graph)
+{
+	uint32_t N_total_adj = 0;
+	for (uint32_t i = 0; i < graph->N; i++)
+		N_total_adj += nb_container_get_length(cnt_graph[i]);
+	uint32_t memsize = graph->N * (sizeof(*(graph->N_adj)) +
+				       sizeof(*(graph->adj))) +
+		N_total_adj * sizeof(**(graph->adj));
+
+	char *memblock = nb_allocate_mem(memsize);
+
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + sizeof(*(graph->N_adj)));
+
+	memblock += graph->N * (sizeof(*(graph->N_adj)) +
+				sizeof(*(graph->adj)));
+	for (uint32_t i = 0; i < graph->N; i++) {
+		uint32_t N_adj = nb_container_get_length(cnt_graph[i]);
+		graph->N_adj[i] = N_adj;
+		graph->adj[i] = (void*) memblock;
+		memblock += N_adj * sizeof(**(graph->adj));
+
+		uint32_t j = 0;
+		while (nb_container_is_not_empty(cnt_graph[i])) {
+			uint32_t *id = nb_container_delete_first(cnt_graph[i]);
+			graph->adj[i][j] = *id;
+			j += 1;
+			nb_membank_free_mem(membank, id);
+		}
+	}
 }
 
 void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -329,7 +375,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 	nb_mesh_finish(mesh);
 	
 	if (0 < model->H)
-		free(model->holes);
+		nb_free_mem(model->holes);
 	model->H = N_holes;
 	model->holes = holes;
 }
@@ -337,7 +383,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 			     const double *const vtx)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -365,7 +411,7 @@ double* vcn_model_get_holes(const vcn_model_t *const model,
 		holes = NULL;
 	} else {
 		N_holes[0] = model->H;
-		holes = malloc(model->H * 2 * sizeof(*holes));
+		holes = nb_allocate_mem(model->H * 2 * sizeof(*holes));
 		memcpy(holes, model->holes, model->H * 2 * sizeof(*holes));
 	}	
 	return holes;
@@ -380,7 +426,7 @@ double* vcn_model_get_vertices(const vcn_model_t *const model,
 		vertices = NULL;
 	} else {
 		N_vertices[0] = model->N;
-		vertices = malloc(2 * model->N * sizeof(*vertices));
+		vertices = nb_allocate_mem(2 * model->N * sizeof(*vertices));
 		memcpy(vertices, model->vertex, 2 * model->N * sizeof(*vertices));
 	}
 	return vertices;
@@ -402,7 +448,7 @@ double* vcn_model_get_vertex_coordinate(const vcn_model_t *const model, uint32_t
 {
 	double *vtx = NULL;
 	if (id < model->N) {
-		vtx = malloc(2 * sizeof(*vtx));
+		vtx = nb_allocate_mem(2 * sizeof(*vtx));
 		vtx[0] = model->vertex[id * 2];
 		vtx[1] = model->vertex[id*2+1];
 	}
@@ -444,7 +490,7 @@ double* vcn_model_get_edge_coordinates(const vcn_model_t *const model, uint32_t 
 		uint32_t id1 = model->edge[id * 2];
 		uint32_t id2 = model->edge[id*2+1];
 
-		sgm = malloc(4 * sizeof(*sgm));
+		sgm = nb_allocate_mem(4 * sizeof(*sgm));
 		sgm[0] = model->vertex[id1 * 2];
 		sgm[1] = model->vertex[id1*2+1];
 		sgm[2] = model->vertex[id2 * 2];
@@ -453,17 +499,17 @@ double* vcn_model_get_edge_coordinates(const vcn_model_t *const model, uint32_t 
 	return sgm;
 }
 
-inline uint32_t vcn_model_get_number_of_vertices(const vcn_model_t *const model)
+uint32_t vcn_model_get_number_of_vertices(const vcn_model_t *const model)
 {
 	return model->N;
 }
 
-inline uint32_t vcn_model_get_N_edges(const vcn_model_t *const model)
+uint32_t vcn_model_get_N_edges(const vcn_model_t *const model)
 {
 	return model->M;
 }
 
-inline uint32_t vcn_model_get_number_of_hole_seeds(const vcn_model_t *const model)
+uint32_t vcn_model_get_number_of_hole_seeds(const vcn_model_t *const model)
 {
 	return model->H;
 }
@@ -478,7 +524,7 @@ double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
 
 double vcn_model_get_area(const vcn_model_t *const model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 	double area = nb_mesh_get_area(mesh);

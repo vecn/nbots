@@ -162,8 +162,8 @@ static void test_cast_to_array(void)
 	nb_container_t *cnt = get_container(N);
 	void **array = nb_container_cast_to_array(cnt);
 	for (int i = 0; i < N; i++)
-		free(array[i]);
-	free(array);
+		nb_free_mem(array[i]);
+	nb_free_mem(array);
 	CU_ASSERT(true);
 }
 
@@ -175,7 +175,7 @@ static void test_copy_to_array(void)
 	nb_container_copy_to_array(cnt, array);
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(N == length);
 }
 
@@ -252,7 +252,7 @@ static void test_insert_array(void)
 	nb_container_insert_array(cnt, N, array);
 	uint32_t length = nb_container_get_length(cnt);
 	nb_container_destroy(cnt);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(N == length);
 }
 
@@ -272,7 +272,7 @@ static void test_delete_first(void)
 	nb_container_t *cnt = get_container(N);
 	int32_t *val = nb_container_delete_first(cnt);
 	bool is_ok = first_is_ok(val);
-	free(val);
+	nb_free_mem(val);
 	nb_container_destroy(cnt);
 	CU_ASSERT(is_ok);
 }

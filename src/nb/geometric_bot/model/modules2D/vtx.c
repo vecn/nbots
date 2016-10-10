@@ -6,7 +6,7 @@
 #include "nb/geometric_bot/utils2D.h"
 #include "vtx.h"
 
-static void* malloc_vtx(void);
+static void* nb_allocate_mem_vtx(void);
 
 inline uint16_t vtx_get_memsize(void)
 {
@@ -25,21 +25,21 @@ inline void vtx_finish(void *vtx_ptr)
 
 inline void* vtx_create(void)
 {
-	void *vtx = malloc_vtx();
+	void *vtx = nb_allocate_mem_vtx();
 	vtx_init(vtx);
 	return vtx;
 }
 
-static inline void* malloc_vtx(void)
+static inline void* nb_allocate_mem_vtx(void)
 {
 	uint16_t size = vtx_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 inline void vtx_destroy(void *vtx_ptr)
 {
 	vtx_finish(vtx_ptr);
-	free(vtx_ptr);
+	nb_free_mem(vtx_ptr);
 }
 
 

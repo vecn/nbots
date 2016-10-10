@@ -100,14 +100,16 @@ static void graph_clear(nb_graph_t *graph)
 {
 	if (NULL != graph->N_adj)
 		/* Includes graph->adj in the same memblock */
-		free(graph->N_adj);
+		nb_free_mem(graph->N_adj);
 
 	if (NULL != graph->wi)
-		free(graph->wi);
+		nb_free_mem(graph->wi);
 
 	if (NULL != graph->wij)
 		/* Includes graph->wij[i] in the same memblock */
-		free(graph->wij);
+		nb_free_mem(graph->wij);
+
+	memset(graph, 0, nb_graph_get_memsize());
 }
 
 void nb_graph_clear(nb_graph_t *graph)
@@ -116,26 +118,15 @@ void nb_graph_clear(nb_graph_t *graph)
 	memset(graph, 0, nb_graph_get_memsize());	
 }
 
-nb_graph_t* nb_graph_create(void)
-{
-	return calloc(1, sizeof(nb_graph_t));
-}
-
-void nb_graph_destroy(nb_graph_t *graph)
-{
-	nb_graph_finish(graph);
-	free(graph);
-}
-
 void nb_graph_init_vtx_weights(nb_graph_t *graph)
 {
-	graph->wi = calloc(graph->N, sizeof(*(graph->wi)));
+	graph->wi = nb_allocate_zero_mem(graph->N * sizeof(*(graph->wi)));
 }
 
 void nb_graph_init_edge_weights(nb_graph_t *graph)
 {
 	uint32_t memsize = get_wij_memsize(graph);
-	char *memblock = calloc(1, memsize);
+	char *memblock = nb_allocate_zero_mem( memsize);
 	graph->wij = (void*) memblock;
 	char *block =  memblock + graph->N * sizeof(*(graph->wij));
 	for (uint32_t i = 0; i < graph->N; i++) {
@@ -154,13 +145,13 @@ static uint32_t get_wij_memsize(nb_graph_t *graph)
 
 void nb_graph_finish_vtx_weights(nb_graph_t *graph)
 {
-	free(graph->wi);
+	nb_free_mem(graph->wi);
 	graph->wi = NULL;
 }
 
 void nb_graph_finish_edge_weights(nb_graph_t *graph)
 {
-	free(graph->wij);
+	nb_free_mem(graph->wij);
 	graph->wij = NULL;
 }
 

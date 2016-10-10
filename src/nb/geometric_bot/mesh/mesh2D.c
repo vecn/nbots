@@ -1,17 +1,9 @@
-/******************************************************************************
- *   Geometric Bot: Geometric tesselations for numerical analysis.            *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -144,7 +136,7 @@ void nb_mesh_finish(nb_mesh_t *mesh)
 nb_mesh_t* nb_mesh_create(void)
 {
 	uint32_t memsize = nb_mesh_get_memsize();
-	nb_mesh_t *mesh = malloc(memsize);
+	nb_mesh_t *mesh = nb_allocate_mem(memsize);
 	nb_mesh_init(mesh);
 	return mesh;
 }
@@ -175,7 +167,7 @@ void nb_mesh_clear(nb_mesh_t *mesh)
 
 static void clear_input_data(nb_mesh_t *mesh)
 {
-	free(mesh->input_vtx);
+	nb_free_mem(mesh->input_vtx);
 	mesh->input_vtx = NULL;
 	mesh->N_input_vtx = 0;
 	if (mesh->N_input_sgm > 0) {
@@ -187,7 +179,7 @@ static void clear_input_data(nb_mesh_t *mesh)
 				medge_destroy_subsgm_attribute(to_free);
 			}
 		}
-		free(mesh->input_sgm);
+		nb_free_mem(mesh->input_sgm);
 		mesh->N_input_sgm = 0;
 	}
 }
@@ -195,7 +187,7 @@ static void clear_input_data(nb_mesh_t *mesh)
 void nb_mesh_destroy(nb_mesh_t* mesh)
 {
 	nb_mesh_finish(mesh);
-	free(mesh);
+	nb_free_mem(mesh);
 }
 
 static void null_task(const nb_mesh_t *const mesh)
@@ -360,7 +352,7 @@ bool nb_mesh_is_vtx_inside(const nb_mesh_t *const restrict mesh,
 
 void nb_mesh_get_vertices(nb_mesh_t* mesh, double* vertices)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int i = 0;
@@ -391,7 +383,7 @@ inline uint32_t nb_mesh_get_N_edg(const nb_mesh_t *const mesh)
 double nb_mesh_get_area(const nb_mesh_t *const mesh)
 {
 	double area = 0.0;
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -419,7 +411,7 @@ static void delete_triangles_by_wave
 		advance_deletion_wave(mesh, trg->t2, trg_deleted);
 	if (s3_is_not_boundary)
 		advance_deletion_wave(mesh, trg->t3, trg_deleted);
-	mtrg_free(mesh, trg);
+	mtrg_nb_free_mem(mesh, trg);
 }
 
 static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
@@ -547,7 +539,7 @@ static inline uint32_t hash_key_trg(const void *const restrict triangle)
 
 static void remove_concavities_triangles(nb_mesh_t* mesh)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	bool stop = false;
 	while (!stop) {
 		msh_trg_t *trg = NULL;
@@ -565,7 +557,7 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 		nb_iterator_finish(iter);
 		if (NULL != trg) {
 			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
 			nb_container_finish(trg_deleted);
@@ -578,7 +570,7 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 static void remove_holes_triangles(nb_mesh_t* mesh,
 				   const vcn_model_t *const model)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < model->H; i++) {
 		double hole[2];
 		hole[0] = mesh->scale * (model->holes[i * 2] - mesh->xdisp);
@@ -602,7 +594,7 @@ static void remove_holes_triangles(nb_mesh_t* mesh,
 		if (NULL != trg) {
 			uint16_t container_size =
 				nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
 
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
@@ -646,7 +638,7 @@ bool nb_mesh_insert_vtx(nb_mesh_t *restrict mesh, const double vertex[2])
 nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 {
 	uint32_t memsize = nb_mesh_get_memsize();
-	nb_mesh_t *clone = malloc(memsize);
+	nb_mesh_t *clone = nb_allocate_mem(memsize);
 	set_memory(clone);
 
 	clone->scale = mesh->scale;
@@ -669,11 +661,11 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 
 	/* Clone arrays to relate the mesh with the input */
 	clone->N_input_vtx = mesh->N_input_vtx;
-	clone->input_vtx = 
-		calloc(clone->N_input_vtx, sizeof(*(clone->input_vtx)));
+	clone->input_vtx = nb_allocate_zero_mem(clone->N_input_vtx *
+						sizeof(*(clone->input_vtx)));
 	clone->N_input_sgm = mesh->N_input_sgm;
-	clone->input_sgm =
-		calloc(clone->N_input_sgm, sizeof(*(clone->input_sgm)));
+	clone->input_sgm = nb_allocate_zero_mem(clone->N_input_sgm *
+						sizeof(*(clone->input_sgm)));
 
 	uint32_t N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
 	uint32_t vtx_memsize = N_vertices * sizeof(msh_vtx_t*);
@@ -682,7 +674,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
 	uint32_t sgm_memsize = N_segments * sizeof(msh_edge_t*);
 	uint32_t total_memsize = vtx_memsize + trg_memsize + sgm_memsize;
-	char *memblock = NB_SOFT_MALLOC(total_memsize);
+	char *memblock = nb_soft_allocate_mem(total_memsize);
 	msh_vtx_t** vertices = (void*) memblock;
 	msh_trg_t** triangles = (void*)(memblock + vtx_memsize);
 	msh_edge_t** segments = (void*)(memblock + vtx_memsize + trg_memsize);
@@ -691,7 +683,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
-	vcn_bins2D_iter_t* giter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* giter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(giter);
 	vcn_bins2D_iter_set_bins(giter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(giter)) {
@@ -708,13 +700,13 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	 * and triangles */
 
 	id = 0;
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(trg_iter);
 		/* Clone the triangle */
-		msh_trg_t* trg_clone = mtrg_calloc(clone);
+		msh_trg_t* trg_clone = mtrg_allocate_zero_mem(clone);
 		trg_clone->id = trg->id;
 		trg_clone->feature = trg->feature;
 		trg_clone->status = trg->status;
@@ -724,17 +716,17 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	}
 
 	id = 0;
-	nb_iterator_t* sgm_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* sgm_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(sgm_iter);
 	nb_iterator_set_container(sgm_iter, mesh->ht_edge);
 	while (nb_iterator_has_more(sgm_iter)) {
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		/* Clone the segment */
-		msh_edge_t* sgm_clone = medge_calloc(clone);
+		msh_edge_t* sgm_clone = medge_allocate_zero_mem(clone);
 
 		/* Set an index to the original */
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *pid = malloc(sizeof(*pid));
+		void** attr = nb_allocate_mem(2 * sizeof(*attr));
+		uint32_t *pid = nb_allocate_mem(sizeof(*pid));
 		pid[0] = id++;
 		attr[0] = pid;
 		attr[1] = sgm->attr;
@@ -804,15 +796,15 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 			segments[((uint32_t*)((void**)mesh->input_sgm[i]->attr)[0])[0]];  
 
 	/* Free memory */
-	NB_SOFT_FREE(total_memsize, memblock);
+	nb_soft_free_mem(total_memsize, memblock);
 
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {
 		msh_edge_t* sgm = (msh_edge_t*) nb_iterator_get_next(sgm_iter);
 		void** attr = sgm->attr;
 		sgm->attr = attr[1];
-		free(attr[0]);
-		free(attr);
+		nb_free_mem(attr[0]);
+		nb_free_mem(attr);
 	}
 	nb_iterator_finish(sgm_iter);
 

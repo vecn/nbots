@@ -36,7 +36,7 @@ void vcn_bins2D_iter_finish(vcn_bins2D_iter_t *iter)
 
 vcn_bins2D_iter_t* vcn_bins2D_iter_create(void)
 {
-	vcn_bins2D_iter_t *iter = malloc(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t *iter = nb_allocate_mem(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	return iter;
 }
@@ -44,7 +44,7 @@ vcn_bins2D_iter_t* vcn_bins2D_iter_create(void)
 void vcn_bins2D_iter_destroy(vcn_bins2D_iter_t *iter)
 {
 	vcn_bins2D_iter_finish(iter);
-	free(iter);
+	nb_free_mem(iter);
 }
 
 inline void vcn_bins2D_iter_set_bins(vcn_bins2D_iter_t *iter,

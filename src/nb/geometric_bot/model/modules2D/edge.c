@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include "nb/memory_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "edge.h"
 
@@ -12,7 +13,7 @@ static int32_t geom_compare(const edge_t *edge1, const edge_t *edge2);
 
 inline edge_t* edge_create(void)
 {
-	return calloc(1, sizeof(edge_t));
+	return nb_allocate_zero_mem(sizeof(edge_t));
 }
 
 edge_t* edge_clone(const edge_t *const edge)
@@ -26,7 +27,7 @@ edge_t* edge_clone(const edge_t *const edge)
 
 inline void edge_destroy(void *edge)
 {
-	free(edge);
+	nb_free_mem(edge);
 }
 
 inline void edge_set_length(edge_t *edge)

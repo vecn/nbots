@@ -175,7 +175,7 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 {
 	uint32_t N = part->get_N_nodes(part->msh);
 	uint32_t memsize = N * sizeof(double);
-	double *normalized_values = NB_SOFT_MALLOC(memsize);
+	double *normalized_values = nb_soft_allocate_mem(memsize);
 
 	normalize_values(normalized_values, values, N);
 	
@@ -183,7 +183,7 @@ static void fill_elems_field_on_nodes(const nb_partition_t *part,
 						 normalized_values,
 						 PALETTE_FIELD);
 
-	NB_SOFT_FREE(memsize, normalized_values);
+	nb_soft_free_mem(memsize, normalized_values);
 }
 
 static void normalize_values(double *normalized_values,
@@ -207,7 +207,7 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 {
 	uint32_t N = part->get_N_elems(part->msh);
 	uint32_t memsize = N * sizeof(double);
-	double *normalized_values = NB_SOFT_MALLOC(memsize);
+	double *normalized_values = nb_soft_allocate_mem(memsize);
 
 	normalize_values(normalized_values, values, N);
 	
@@ -215,7 +215,7 @@ static void fill_elems_field_on_elems(const nb_partition_t *part,
 						 normalized_values,
 						 PALETTE_FIELD);
 
-	NB_SOFT_FREE(memsize, normalized_values);
+	nb_soft_free_mem(memsize, normalized_values);
 }
 
 static void fill_elems_classes(const nb_partition_t *part,

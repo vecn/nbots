@@ -1,87 +1,74 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
 
 #include "../mesh2D_structs.h"
 
-nb_graph_t* nb_mesh_create_vtx_graph(const nb_mesh_t *const restrict mesh)
-{
-	nb_graph_t* graph = calloc(1, sizeof(*graph));
+static void allocate_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph);
 
-	graph->N = vcn_bins2D_get_length(mesh->ug_vtx);
-	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
-	graph->adj = malloc(graph->N * sizeof(*(graph->adj)));
-	nb_iterator_t* iter = nb_iterator_create();
-	nb_iterator_set_container(iter, mesh->ht_edge);
-	while (nb_iterator_has_more(iter)) {
-		msh_edge_t* edge = (msh_edge_t*)nb_iterator_get_next(iter);
-		uint32_t idx1 = mvtx_get_id(edge->v1);
-		uint32_t idx2 = mvtx_get_id(edge->v2);
-		graph->N_adj[idx1] += 1;
-		graph->N_adj[idx2] += 1;
+void nb_mesh_load_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph)
+{
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	if (0 == N_trg) {
+		memset(graph, 0, nb_graph_get_memsize());
+		goto EXIT;
 	}
 
-	for (uint32_t i = 0; i < graph->N; i++)
-		graph->adj[i] = malloc(graph->N_adj[i] * sizeof(*(graph->adj[i])));
+	graph->N = N_trg;
+	graph->wi = NULL;
+	graph->wij = NULL;
+	allocate_elem_graph(mesh, graph);
 
-	uint32_t* adj_next_idx = calloc(graph->N, sizeof(*adj_next_idx));
-	nb_iterator_restart(iter);
-	while (nb_iterator_has_more(iter)) {
-		msh_edge_t* edge = (msh_edge_t*)nb_iterator_get_next(iter);
-		uint32_t idx1 = mvtx_get_id(edge->v1);
-		uint32_t idx2 = mvtx_get_id(edge->v2);
-		graph->adj[idx1][adj_next_idx[idx1]] = idx2;
-		graph->adj[idx2][adj_next_idx[idx2]] = idx1;
-		adj_next_idx[idx1] += 1;
-		adj_next_idx[idx2] += 1;
-	}
-	nb_iterator_destroy(iter);
-	free(adj_next_idx);
-
-	return graph;
-}
-
-nb_graph_t* nb_mesh_create_elem_graph(const nb_mesh_t *const restrict mesh)
-{
-	nb_graph_t* graph = calloc(1, sizeof(*graph));
-	graph->N = nb_container_get_length(mesh->ht_trg);
-	graph->N_adj = calloc(graph->N, sizeof(*(graph->N_adj)));
-	graph->adj = malloc(graph->N * sizeof(*(graph->adj)));
-	nb_iterator_t* iter = nb_iterator_create();
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
+		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		uint32_t id = trg->id;
-		if (NULL != trg->t1)
-			graph->N_adj[id] += 1;
-		if (NULL != trg->t2)
-			graph->N_adj[id] += 1;
-		if (NULL != trg->t3)
-			graph->N_adj[id] += 1;
-	}
-
-	nb_iterator_restart(iter);
-	while (nb_iterator_has_more(iter)) {
-		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(iter);
-		uint32_t id = trg->id;
-		graph->adj[id] = malloc(graph->N_adj[id] * sizeof(*(graph->adj[id])));
-		int cnt = 0;
+		uint32_t cnt = 0;
 		if (NULL != trg->t1) {
 			uint32_t id2 = trg->t1->id;
-			graph->adj[id][cnt++] = id2;
+			graph->adj[id][cnt] = id2;
+			cnt += 1;
 		}
 		if (NULL != trg->t2) {
 			uint32_t id2 = trg->t2->id;
-			graph->adj[id][cnt++] = id2;
+			graph->adj[id][cnt] = id2;
+			cnt += 1;
 		}
 		if (NULL != trg->t3){
 			uint32_t id2 = trg->t3->id;
-			graph->adj[id][cnt++] = id2;
+			graph->adj[id][cnt] = id2;
+			cnt += 1;
 		}
+		graph->N_adj[id] = cnt;
 	}
-	nb_iterator_destroy(iter);
-	return graph;
+	nb_iterator_finish(iter);
+EXIT:
+	return;
+}
+
+static void allocate_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph)
+{
+	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_total_adj = N_trg * 3;
+	uint32_t memsize = N_trg * (sizeof(*(graph->N_adj)) +
+				    sizeof(*(graph->adj))) +
+		N_total_adj * sizeof(**(graph->adj));
+
+	char *memblock = nb_allocate_mem(memsize);
+
+	graph->N_adj = (void*) memblock;
+	graph->adj = (void*) (memblock + N_trg * sizeof(*(graph->N_adj)));
+
+	memblock += N_trg * (sizeof(*(graph->N_adj)) +
+				sizeof(*(graph->adj)));
+	for (uint32_t i = 0; i < N_trg; i++) {
+		graph->adj[i] = (void*) memblock;
+		memblock += 3 * sizeof(**(graph->adj));
+	}
 }

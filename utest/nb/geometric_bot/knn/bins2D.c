@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -241,7 +241,7 @@ static void test_get_candidate_points_to_min_delaunay(void)
 	p2.x[0] = 1;
 	p2.x[1] = -1;
 
-	nb_container_t *cnt = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *cnt = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(cnt, NB_QUEUE);
 
 	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2, cnt);
@@ -264,7 +264,7 @@ static void test_get_points_inside_circle(void)
 	vcn_bins2D_t *bins = get_bins(N);
 	double center[2] = {0, 0};
 	double radius = 10.0;
-	nb_container_t *cnt = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *cnt = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(cnt, NB_QUEUE);
 
 	vcn_bins2D_get_points_inside_circle(bins, center, radius, cnt);

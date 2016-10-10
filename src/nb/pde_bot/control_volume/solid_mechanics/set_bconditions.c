@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/eigen_bot.h"
@@ -93,7 +92,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     double factor)
 {
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
-	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
+	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
 
 	uint32_t **elem_adj = malloc_elem_adj(part);
@@ -109,7 +108,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 
 	free_elem_adj(elem_adj);
 	nb_bcond_finish(numeric_bcond);
-	NB_SOFT_FREE(bcond_size, numeric_bcond);
+	nb_soft_free_mem(bcond_size, numeric_bcond);
 }
 
 static uint32_t **malloc_elem_adj(const nb_partition_t *part)
@@ -194,7 +193,7 @@ static void set_neumann_sgm(const nb_partition_t *part,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
 				     NB_BC_ON_SEGMENT);
@@ -226,10 +225,10 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 	double x[2];
 	x[0] = nb_partition_node_get_x(part, v1_id);
 	x[1] = nb_partition_node_get_y(part, v1_id);
-	double *val1 = alloca(N_dof * sizeof(double));
+	double *val1 = nb_allocate_on_stack(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val1);
 
-	double *val2 = alloca(N_dof * sizeof(double));
+	double *val2 = nb_allocate_on_stack(N_dof * sizeof(double));
 
 	uint32_t N = nb_partition_insgm_get_N_subsgm(part, sgm_id);
 	for (uint32_t i = 0; i < N; i++) {
@@ -278,7 +277,7 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 		uint32_t elem_id = elem_adj[model_id][i];
 
 		double x_dummy[2] = {0, 0};
-		double *val = alloca(N_dof * sizeof(double));
+		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x_dummy, 0, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
@@ -335,7 +334,7 @@ static void set_neumann_vtx(const nb_partition_t *part,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
 				     NB_BC_ON_POINT);
@@ -350,7 +349,7 @@ static void set_neumann_vtx(const nb_partition_t *part,
 		double x[2];
 		x[0] = nb_partition_node_get_x(part, node_id);
 		x[1] = nb_partition_node_get_y(part, node_id);
-		double *val = alloca(N_dof * sizeof(double));
+		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
@@ -423,7 +422,7 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
 				     NB_BC_ON_SEGMENT);
@@ -439,7 +438,7 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 			
 			double x[2] = {nb_partition_elem_get_x(part, elem_id),
 				       nb_partition_elem_get_y(part, elem_id)};
-			double *val = alloca(N_dof * sizeof(double));
+			double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 			nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 			val[0] *= factor;
 			val[1] *= factor;
@@ -459,7 +458,7 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
 				     NB_BC_ON_POINT);
@@ -475,7 +474,7 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 			
 		double x[2] = {nb_partition_node_get_x(part, node_id),
 			       nb_partition_node_get_y(part, node_id)};
-		double *val = alloca(N_dof * sizeof(double));
+		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 		val[0] *= factor;
 		val[1] *= factor;
@@ -498,7 +497,7 @@ static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = alloca(size);
+	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond,
 				     NB_DIRICHLET,
@@ -522,7 +521,7 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 	x[0] = nb_partition_elem_get_x(part, elem_id);
 	x[1] = nb_partition_elem_get_y(part, elem_id);
 
-	double *val = alloca(N_dof * sizeof(*val));
+	double *val = nb_allocate_on_stack(N_dof * sizeof(*val));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 	for (uint8_t j = 0; j < N_dof; j++) {
 		bool mask = nb_bcond_iter_get_mask(iter, j);

@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/geometric_bot.h"
 
@@ -336,12 +336,12 @@ static void test_generate_from_difference(void)
 	vcn_model_t *model1 = vcn_model_create_polygon(7, -5, 0, 8);
 	vcn_model_t *model2 = vcn_model_create_polygon(7, 5, 0, 8);
 
-	vcn_model_t *model = alloca(vcn_model_get_memsize());
+	vcn_model_t *model = nb_allocate_on_stack(vcn_model_get_memsize());
 	vcn_model_init(model);
 
 	vcn_model_get_difference(model, model1, model2);
 	
-	nb_mesh_t *mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t *mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 

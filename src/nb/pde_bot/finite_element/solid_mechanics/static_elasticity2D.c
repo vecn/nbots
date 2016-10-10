@@ -51,7 +51,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
 	uint32_t F_memsize = 2 * N_nod * sizeof(double);
-	double* F = NB_SOFT_MALLOC(F_memsize);
+	double* F = nb_soft_allocate_mem(F_memsize);
 	memset(F, 0, F_memsize);
 
 	int status_assemble =
@@ -77,7 +77,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 
 CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
-	NB_SOFT_FREE(F_memsize, F);
+	nb_soft_free_mem(F_memsize, F);
 	return status;
 }
 

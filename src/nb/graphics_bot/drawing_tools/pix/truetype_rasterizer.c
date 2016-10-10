@@ -2,8 +2,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <alloca.h>
 #include <stdbool.h>
+
+#include "nb/memory_bot.h"
 
 #define NB_GRAPHICS_PIX_LETTER_SPACING 0
 #define NB_GRAPHICS_PIX_LEADING 125
@@ -24,15 +25,15 @@
 		int type_len = strlen(type);				\
 		char *path = getenv("NB_FONTS_DIR");			\
 		if (NULL == path) {					\
-			file = alloca(type_len + 10);			\
+			file = nb_allocate_on_stack(type_len + 10);			\
 			sprintf(file, "/home/.fonts/%s.ttf", type);	\
 		} else {						\
 			int path_len = strlen(path);			\
 			if ('/' == path[path_len - 1]) {		\
-				file = alloca(path_len + type_len + 4);	\
+				file = nb_allocate_on_stack(path_len + type_len + 4);	\
 				sprintf(file, "%s%s.ttf", path, type);	\
 			} else {					\
-				file = alloca(path_len + type_len + 5);	\
+				file = nb_allocate_on_stack(path_len + type_len + 5);	\
 				sprintf(file, "%s/%s.ttf", path, type);	\
 			}						\
 		}							\
@@ -67,7 +68,7 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 {
 	char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
-		stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
+		stbtt_fontinfo *font = nb_allocate_on_stack(sizeof(stbtt_fontinfo));
 		int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock, 0);
 		stbtt_InitFont(font, ttf_memblock, font_idx);
 		get_size_truetype_font(font, string, size, w, h);
@@ -177,7 +178,7 @@ static void bake_truetype_font(const char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap)
 {
-	stbtt_fontinfo *font = alloca(sizeof(stbtt_fontinfo));
+	stbtt_fontinfo *font = nb_allocate_on_stack(sizeof(stbtt_fontinfo));
 	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);

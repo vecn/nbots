@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
@@ -98,7 +97,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
@@ -326,15 +325,15 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
 
-	free(disp);
-	free(disp_nodes);
+	nb_free_mem(disp);
+	nb_free_mem(disp_nodes);
 }
 
 static void TEMPORAL2(nb_partition_t *part, results_t *results)
 {
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double *stress = (void*) memblock;
 	double *vm_stress = (void*) (memblock + N_nodes* 3 * sizeof(double));
 	uint8_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
@@ -444,7 +443,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
@@ -455,7 +454,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	nb_partition_t *part = alloca(nb_partition_get_memsize(part_type));
+	nb_partition_t *part = nb_allocate_on_stack(nb_partition_get_memsize(part_type));
 	nb_partition_init(part, part_type);
 
 	int status = simulate(problem_data, part, &results,
@@ -478,10 +477,10 @@ static int simulate(const char *problem_data, nb_partition_t *part,
 					 nb_bcond_t*)/* Can be NULL */)
 {
 	int status = 1;
-	vcn_model_t* model = alloca(vcn_model_get_memsize());
+	vcn_model_t* model = nb_allocate_on_stack(vcn_model_get_memsize());
 	vcn_model_init(model);
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
-	nb_bcond_t *bcond = alloca(bcond_size);
+	nb_bcond_t *bcond = nb_allocate_on_stack(bcond_size);
 	nb_bcond_init(bcond, 2);
 	nb_material_t* material = nb_material_create();
 	nb_analysis2D_t analysis2D;
@@ -536,7 +535,7 @@ static void get_mesh(const vcn_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
 	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t* mesh = alloca(mesh_memsize);
+	nb_mesh_t* mesh = nb_allocate_on_stack(mesh_memsize);
 	nb_mesh_init(mesh);
 	nb_mesh_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
@@ -570,7 +569,7 @@ static void results_init(results_t *results, uint32_t N_faces,
 
 static inline void results_finish(results_t *results)
 {
-	free(results->disp);
+	nb_free_mem(results->disp);
 }
 
 static int read_problem_data
@@ -667,17 +666,17 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 
 CLEANUP_HOLES:
 	if (0 < model->H) {
-		free(model->holes);
+		nb_free_mem(model->holes);
 		model->H = 0;
 		model->holes = NULL;
 	}
 CLEANUP_SEGMENTS:
 	model->M = 0;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = 0;
 CLEANUP_VERTICES:
 	model->N = 0;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = NULL;
 EXIT:
 	return status;

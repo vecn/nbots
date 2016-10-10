@@ -36,19 +36,12 @@ void nb_graph_copy(void *graph, const void *graph_src);
 void nb_graph_finish(nb_graph_t *graph);
 void nb_graph_clear(nb_graph_t *graph);
 
-nb_graph_t* nb_graph_create(void);
-
-/**
- * @brief Destroy graph.
- * @param[in] graph Graph to be destroyed.
- */
-void nb_graph_destroy(nb_graph_t *graph);
-
 void nb_graph_init_vtx_weights(nb_graph_t *graph);
 void nb_graph_init_edge_weights(nb_graph_t *graph);
 void nb_graph_finish_vtx_weights(nb_graph_t *graph);
 void nb_graph_finish_edge_weights(nb_graph_t *graph);
 
+void nb_graph_force_symmetry(nb_graph_t *graph);
 void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees);
 
 uint32_t nb_graph_find_N_intersected_adj(const nb_graph_t *graph,

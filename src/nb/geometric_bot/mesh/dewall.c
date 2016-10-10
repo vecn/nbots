@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
@@ -138,8 +137,9 @@ void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
 	if (0 < N_vertices) {
 		mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 		mesh->N_input_vtx = N_vertices;
-		mesh->input_vtx = calloc(mesh->N_input_vtx,
-					 sizeof(*(mesh->input_vtx)));
+		mesh->input_vtx =
+		  nb_allocate_zero_mem(mesh->N_input_vtx *
+				       sizeof(*(mesh->input_vtx)));
 
 		for (uint32_t i = 0; i < N_vertices; i++) {
 			msh_vtx_t* vtx = mvtx_create(mesh);
@@ -284,7 +284,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 					 const nb_container_t *const edges)
 {
 	bool intersects = false;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
 	while (nb_iterator_has_more(iter)) {
@@ -376,7 +376,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const msh_vtx_t *const restrict v1,
 					 const msh_vtx_t *const restrict v2)
 {
-	nb_container_t* vertices = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t* vertices = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(vertices, NB_QUEUE);
 	
 	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
@@ -408,7 +408,7 @@ static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx)
 
 	msh_trg_t *trg;
 	if (NULL != v3) {
-		trg = mtrg_calloc(mesh);
+		trg = mtrg_allocate_zero_mem(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -445,7 +445,7 @@ static msh_trg_t* create_trg(nb_mesh_t *mesh,
 
 	msh_trg_t *trg = NULL;
 	if(NULL != v3) {
-		trg = mtrg_calloc(mesh);
+		trg = mtrg_allocate_zero_mem(mesh);
 		trg->v1 = v1;
 		trg->v2 = v2;
 		trg->v3 = v3;
@@ -508,15 +508,15 @@ static uint32_t dewall_recursion
 	}
 
 	/* Initialize Action face lists */
-	nb_container_t* AFL_alpha = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_alpha = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_alpha, NB_HASH);
 	nb_container_set_key_generator(AFL_alpha, hash_key_edge);
 
-	nb_container_t* AFL_1 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_1 = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_1, NB_HASH);
 	nb_container_set_key_generator(AFL_1, hash_key_edge);
 
-	nb_container_t* AFL_2 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_2 = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_2, NB_HASH);
 	nb_container_set_key_generator(AFL_2, hash_key_edge);
 
@@ -615,7 +615,7 @@ static void set_interval(interval_t *interval,
 			 int8_t axe)
 {
 	if (nb_container_is_not_empty(AFL)) {
-		nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+		nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, AFL);
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
@@ -759,16 +759,16 @@ static void update_AFLs(const msh_trg_t *const trg,
 static uint32_t dewall(nb_mesh_t* mesh)
 {
 	uint32_t memsize = mesh->N_input_vtx * sizeof(msh_vtx_t*);
-	msh_vtx_t **vertices =  NB_SOFT_MALLOC(memsize);
+	msh_vtx_t **vertices =  nb_soft_allocate_mem(memsize);
 	memcpy(vertices, mesh->input_vtx, memsize);
 
-	nb_container_t* AFL = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL, NB_HASH);
 
 	nb_container_set_key_generator(AFL, hash_key_edge);
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
 					  vertices, 0, AFL);
   	nb_container_finish(AFL);
-	NB_SOFT_FREE(memsize, vertices);
+	nb_soft_free_mem(memsize, vertices);
 	return N_trg;
 }

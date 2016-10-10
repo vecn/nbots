@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
@@ -85,7 +85,7 @@ static void clone_container_elements(nb_container_t *cnt,
 				     uint8_t N_dof)
 {
 	uint16_t size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(size);
+	nb_iterator_t *iter = nb_allocate_on_stack(size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, cnt_src);
 	while (nb_iterator_has_more(iter)) {

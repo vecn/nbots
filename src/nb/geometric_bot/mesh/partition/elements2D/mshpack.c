@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/eigen_bot.h"
@@ -69,14 +69,14 @@ void nb_mshpack_finish(void *msh)
 static void clear_pack(nb_mshpack_t* pack)
 {
 	if (pack->N_elems > 0) {
-		free(pack->cen);
-		free(pack->radii);
+		nb_free_mem(pack->cen);
+		nb_free_mem(pack->radii);
 	}
 	if (NULL != pack->ngb) {
 		for (uint32_t i=0; i < pack->N_elems; i++)
-			free(pack->ngb[i]);
-		free(pack->N_ngb);
-		free(pack->ngb);
+			nb_free_mem(pack->ngb[i]);
+		nb_free_mem(pack->N_ngb);
+		nb_free_mem(pack->ngb);
 		pack->ngb = NULL;
 		pack->N_ngb = NULL;
 	}
@@ -355,7 +355,7 @@ void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 
 		pack_assemble_adjacencies(mesh, pack, segments);
 
-		double* Xk = malloc(3 * pack->N_elems * sizeof(*Xk));
+		double* Xk = nb_allocate_mem(3 * pack->N_elems * sizeof(*Xk));
 		pack_optimize(mesh, pack, segments, Xk, ov_factor,
 			       iterations);
   
@@ -364,7 +364,7 @@ void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_mesh_t *mesh,
 		/* Free memory */
 		nb_container_set_destroyer(segments, free);
 		nb_container_destroy(segments);
-		free(Xk);
+		nb_free_mem(Xk);
 	}
 }
 
@@ -372,18 +372,18 @@ static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems)
 {
 	pack->N_elems = N_elems;
 
-	pack->cen = malloc(2 * N_elems * sizeof(*(pack->cen)));
-	pack->radii = malloc(N_elems * sizeof(*(pack->radii)));
+	pack->cen = nb_allocate_mem(2 * N_elems * sizeof(*(pack->cen)));
+	pack->radii = nb_allocate_mem(N_elems * sizeof(*(pack->radii)));
 
-	pack->N_ngb = calloc(N_elems, sizeof(*(pack->N_ngb)));
-	pack->ngb = malloc(N_elems * sizeof(*(pack->ngb)));
+	pack->N_ngb = nb_allocate_zero_mem(N_elems * sizeof(*(pack->N_ngb)));
+	pack->ngb = nb_allocate_mem(N_elems * sizeof(*(pack->ngb)));
 }
 
 static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_mesh_t *mesh)
 {
 	uint32_t N_steiner = 0;
 	uint32_t N_input = 0;
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -433,7 +433,7 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 				/* Does not consider the nodes on the boundary */
 				continue;
 
-			uint32_t* sgm_struct = malloc(3 * sizeof(*sgm_struct));
+			uint32_t* sgm_struct = nb_allocate_mem(3 * sizeof(*sgm_struct));
 			nb_container_insert(segments, sgm_struct);
 
 			uint32_t idx_vtx = mvtx_get_id(vtx);
@@ -442,7 +442,7 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 			/* Opposite vtx id (boundary/boundary segment) */
 			sgm_struct[2] = idx_vtx;
 		} else {
-			uint32_t* sgm_struct = malloc(3 * sizeof(*sgm_struct));
+			uint32_t* sgm_struct = nb_allocate_mem(3 * sizeof(*sgm_struct));
 			nb_container_insert(segments, sgm_struct);
 			
 			sgm_struct[0] = idx1;
@@ -456,11 +456,12 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 	nb_iterator_destroy(iter);
 
 	for (uint32_t i=0; i < pack->N_elems; i++)
-		pack->ngb[i] = malloc(pack->N_ngb[i] *
+		pack->ngb[i] = nb_allocate_mem(pack->N_ngb[i] *
 				       sizeof(*(pack->ngb[i])));
 
 	uint32_t* ngb_matrix_next_idx = 
-		calloc(pack->N_elems, sizeof(*ngb_matrix_next_idx));
+		nb_allocate_zero_mem(pack->N_elems *
+				     sizeof(*ngb_matrix_next_idx));
 
 	nb_iterator_t* sgm_iter = nb_iterator_create();
 	nb_iterator_set_container(sgm_iter, segments);
@@ -477,7 +478,7 @@ static void pack_assemble_adjacencies(const nb_mesh_t *const mesh,
 		ngb_matrix_next_idx[idx2] += 1;
 	}
 	nb_iterator_destroy(sgm_iter);
-	free(ngb_matrix_next_idx);
+	nb_free_mem(ngb_matrix_next_idx);
 }
 
 static bool vtx_is_forming_input(const msh_vtx_t *const vtx)
@@ -604,15 +605,15 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 {
 	double gamma = 1 - 0.3 * overlapping_factor;
 	/* Allocate Optimization vectors */
-	double* hk = calloc(3 * pack->N_elems,  sizeof(*hk));
-	double* Bk = malloc(3 * pack->N_elems * sizeof(*Bk));
+	double* hk = nb_allocate_zero_mem(3 * pack->N_elems * sizeof(*hk));
+	double* Bk = nb_allocate_mem(3 * pack->N_elems * sizeof(*Bk));
 	/* Allocate boundaries positions */
 	uint32_t N_input_vtx = vcn_bins2D_get_length(mesh->ug_vtx) - pack->N_elems;
-	double* Xb =  malloc(N_input_vtx * 2 * sizeof(*Xb));
+	double* Xb =  nb_allocate_mem(N_input_vtx * 2 * sizeof(*Xb));
   
 	/***************** Optimize position + radius ***********************/
 	/* Initialize solution */
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -697,7 +698,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 		}
 		printf("                                                 \r"); /* TEMP */
 		bool change_adjacencies = false;
-		nb_container_t** new_ngb = malloc(pack->N_elems * sizeof(*new_ngb));
+		nb_container_t** new_ngb = nb_allocate_mem(pack->N_elems * sizeof(*new_ngb));
 		for (uint32_t i = 0; i < pack->N_elems; i++) {
 			double gap_factor = 1.5;
 			new_ngb[i] = nb_container_create(NB_QUEUE);
@@ -707,7 +708,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 				uint32_t j_id = pack->ngb[i][j];
 				if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[j_id*3])) <
 				    POW2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
-					uint32_t* id = malloc(sizeof(*id));
+					uint32_t* id = nb_allocate_mem(sizeof(*id));
 					id[0] = j_id;
 					nb_container_insert(new_ngb[i], id);
 				} else {
@@ -725,7 +726,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 						continue;
 					if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
 					    POW2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
-						uint32_t* id = malloc(sizeof(*id));
+						uint32_t* id = nb_allocate_mem(sizeof(*id));
 						id[0] = k_id;
 						nb_container_insert(new_ngb[i], id);
 						change_adjacencies = true;
@@ -748,22 +749,22 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 
 			/* Reallocate adjacencies and insert new inner/inner segments */
 			for (uint32_t i = 0; i < pack->N_elems; i++) {
-				free(pack->ngb[i]);
+				nb_free_mem(pack->ngb[i]);
 				pack->N_ngb[i] = nb_container_get_length(new_ngb[i]);
-				pack->ngb[i] = malloc(pack->N_ngb[i] * sizeof(*(pack->ngb[i])));
+				pack->ngb[i] = nb_allocate_mem(pack->N_ngb[i] * sizeof(*(pack->ngb[i])));
 				uint32_t j = 0;
 				while (nb_container_is_not_empty(new_ngb[i])) {
 					uint32_t* id = nb_container_delete_first(new_ngb[i]);
 					if (id[0] > i) {
 						uint32_t* sgm_struct =
-							malloc(3 * sizeof(*sgm_struct));
+							nb_allocate_mem(3 * sizeof(*sgm_struct));
 						sgm_struct[0] = i;
 						sgm_struct[1] = id[0];
 						sgm_struct[2] = pack->N_elems;
 						nb_container_insert(segments, sgm_struct);
 					}
 					pack->ngb[i][j++] = id[0];
-					free(id);
+					nb_free_mem(id);
 				}
 				nb_container_destroy(new_ngb[i]);
 			}
@@ -780,14 +781,14 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 				nb_container_destroy(new_ngb[i]);
 			}
 		}
-		free(new_ngb);
+		nb_free_mem(new_ngb);
 	}
 
 	/* Free memory */
 	vcn_sparse_destroy(Hk);
-	free(hk);
-	free(Bk);
-	free(Xb);
+	nb_free_mem(hk);
+	nb_free_mem(Bk);
+	nb_free_mem(Xb);
 }
 
 static void pack_update_disks(const nb_mesh_t *const mesh,
@@ -795,7 +796,7 @@ static void pack_update_disks(const nb_mesh_t *const mesh,
 			       double *Xk)
 {
 
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {

@@ -39,7 +39,7 @@ void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
 {
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 
-	char *memblock = malloc((1 + N_comp) * N_nodes * sizeof(double));
+	char *memblock = nb_allocate_mem((1 + N_comp) * N_nodes * sizeof(double));
 
 	double *M = (void*) memblock;
 	double *F = (void*) (memblock + N_nodes * sizeof(double));
@@ -50,7 +50,7 @@ void nb_partition_extrapolate_elems_to_nodes(const nb_partition_t *part,
 
 	solve_system(part, N_comp, M, F, nodal_values);
 
-	free(memblock);
+	nb_free_mem(memblock);
 }
 
 static void assemble_system(const nb_partition_t *part,
@@ -68,7 +68,7 @@ static void assemble_elem(const nb_partition_t *part, const double *elem_values,
 {
 	uint16_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
 	uint16_t f_memsize = N_adj * sizeof(double);
-	double *f = NB_SOFT_MALLOC(f_memsize);
+	double *f = nb_soft_allocate_mem(f_memsize);
 
 	eval_shape_funcs(part, elem_id, f);
 
@@ -88,7 +88,7 @@ static void assemble_elem(const nb_partition_t *part, const double *elem_values,
 		}
 	}
 
-	NB_SOFT_FREE(f_memsize, f);
+	nb_soft_free_mem(f_memsize, f);
 }
 
 static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
@@ -101,7 +101,7 @@ static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 	x[1] = nb_partition_elem_get_y(part, elem_id);
 
 	uint32_t memsize = 2 * N * sizeof(double);
-	double *ni = NB_SOFT_MALLOC(memsize);
+	double *ni = nb_soft_allocate_mem(memsize);
 	for (uint16_t i = 0; i < N; i++) {
 		double node_id = nb_partition_elem_get_adj(part, elem_id, i);
 		ni[i * 2] = nb_partition_node_get_x(part, node_id);
@@ -110,7 +110,7 @@ static void eval_shape_funcs(const nb_partition_t *part, uint32_t elem_id,
 	
 	nb_nonpolynomial_eval(N, 2, ni, NULL, x, f);
 
-	NB_SOFT_FREE(memsize, ni);
+	nb_soft_free_mem(memsize, ni);
 }
 
 static void solve_system(const nb_partition_t *part, uint8_t N_comp, 
@@ -172,7 +172,7 @@ static void elem_get_interpolation(const nb_partition_t *part, uint32_t elem_id,
 	memset(out, 0, N_comp * sizeof(*out));
 	
 	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	double *f = alloca(N_adj * sizeof(*f));
+	double *f = nb_allocate_on_stack(N_adj * sizeof(*f));
 	eval_shape_funcs(part, elem_id, f);
 
 	for (uint32_t j = 0; j < N_adj; j++) {
@@ -211,7 +211,7 @@ static double distort_using_elem_field(nb_partition_t *part, double *disp,
 	}
 
 	uint32_t memsize = 2 * N_nodes * sizeof(double);
-	double *nodal_disp = NB_SOFT_MALLOC(memsize);
+	double *nodal_disp = nb_soft_allocate_mem(memsize);
 	nb_partition_extrapolate_elems_to_nodes(part, 2, disp, nodal_disp);
 	
 	for (uint32_t i = 0; i < N_nodes; i++) {
@@ -219,6 +219,6 @@ static double distort_using_elem_field(nb_partition_t *part, double *disp,
 		priv.node_move_y(part->msh, i, nodal_disp[i*2+1] * scale);
 	}
 
-	NB_SOFT_FREE(memsize, nodal_disp);
+	nb_soft_free_mem(memsize, nodal_disp);
 	return scale;
 }

@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/geometric_bot.h"
 
 static int suite_init(void);
@@ -39,7 +39,7 @@ static void test_load_from_mesh(void)
 	nb_mesh_generate_from_model(mesh, model);
 	vcn_model_destroy(model);
 
-	void *poly = alloca(nb_mshpoly_get_memsize());
+	void *poly = nb_allocate_on_stack(nb_mshpoly_get_memsize());
 	nb_mshpoly_init(poly);
 	nb_mshpoly_load_from_mesh(poly, mesh);
 	nb_mesh_destroy(mesh);

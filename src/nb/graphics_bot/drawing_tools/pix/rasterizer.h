@@ -1,11 +1,8 @@
 #ifndef __NB_GRAPHICS_BOT_DRAWING_TOOLS_PIX_RASTERIZER_H__
 #define __NB_GRAPHICS_BOT_DRAWING_TOOLS_PIX_RASTERIZER_H__
 
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
-#include <alloca.h>
 
 void nb_graphics_rasterizer_line(int x0, int y0, int x1, int y1,
 				 bool antialiasing,

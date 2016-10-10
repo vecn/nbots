@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <alloca.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/image_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
@@ -367,7 +367,7 @@ static void set_pen_stencil_w3(pixmask_t *pen_stencil, float thickness)
 
 static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness)
 {	
-	turtle_t *turtle_stencil = alloca(sizeof(turtle_t));
+	turtle_t *turtle_stencil = nb_allocate_on_stack(sizeof(turtle_t));
 	memset(turtle_stencil, 0, sizeof(turtle_t));
 	set_turtle_stencil(turtle_stencil, thickness);
 	
@@ -499,7 +499,7 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 {
 	
 	context_t *c = ctx;
-	pixmask_t *pixmask = alloca(sizeof(pixmask_t));
+	pixmask_t *pixmask = nb_allocate_on_stack(sizeof(pixmask_t));
 	pixmask_init(pixmask, c->turtle);
 	if (pixmask->xmin < (int32_t)c->img->width &&
 	    pixmask->ymin < (int32_t)c->img->height &&
@@ -1033,7 +1033,7 @@ void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 	nb_graphics_text_attr_t attr;
 	nb_graphics_pix_get_text_attr(c, str, &attr);
 
-	pixmask_t *mask = alloca(sizeof(pixmask_t));
+	pixmask_t *mask = nb_allocate_on_stack(sizeof(pixmask_t));
 	mask->xmin = x;
 	mask->ymin = y - attr.height;
 	mask->width = attr.width;

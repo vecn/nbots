@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <alloca.h>
 
 #include "../imported_libs/metis.h"
 
@@ -26,7 +25,7 @@ void nb_graph_labeling_nd(const nb_graph_t *graph,
 	uint32_t N_total_adj = get_N_total_adj(graph);
 
 	uint32_t memsize = (1 + 3 * N + N_total_adj) * sizeof(idx_t);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	idx_t *xadj = (void*) memblock;
 	idx_t *adj = (void*) (memblock + (1 + N) * sizeof(idx_t));
@@ -49,7 +48,7 @@ void nb_graph_labeling_nd(const nb_graph_t *graph,
 		iperm[i] = metis_iperm[i];
 	}
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static uint32_t get_N_total_adj(const nb_graph_t *graph)

@@ -2,10 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <alloca.h>
 
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/memory_bot.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
@@ -69,11 +68,11 @@ static void export_vertices(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_vtx = vcn_bins2D_get_length(mesh->ug_vtx);
 	exp->set_N_vtx(exp->structure, N_vtx);
-	exp->malloc_vtx(exp->structure);
+	exp->allocate_vtx(exp->structure);
 
 	exp->start_vtx_access(exp->structure);
 
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -93,12 +92,12 @@ static void export_edges(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_edg = nb_container_get_length(mesh->ht_edge);
 	exp->set_N_edg(exp->structure, N_edg);
-	exp->malloc_edg(exp->structure);
+	exp->allocate_edg(exp->structure);
 
 	exp->start_edg_access(exp->structure);
 
 	uint32_t i = 0;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -119,11 +118,11 @@ static void export_and_enumerate_trg(nb_mesh_t *mesh,
 	uint32_t N_trg = nb_container_get_length(mesh->ht_trg);
 	exp->set_N_trg(exp->structure, N_trg);
 	bool include_neighbours = (NULL != exp->set_trg_neighbours);
-	exp->malloc_trg(exp->structure, include_neighbours);
+	exp->allocate_trg(exp->structure, include_neighbours);
 
 	exp->start_trg_access(exp->structure);
 
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;
@@ -147,7 +146,7 @@ static void export_trg_neighbours(const nb_mesh_t *const restrict mesh,
 {
 	exp->start_trg_neighbours_access(exp->structure);
 
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
@@ -175,7 +174,7 @@ static void export_input_vtx(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_vtx = mesh->N_input_vtx;
 	exp->set_N_input_vtx(exp->structure, N_vtx);
-	exp->malloc_input_vtx(exp->structure);
+	exp->allocate_input_vtx(exp->structure);
 
 	exp->start_input_vtx_access(exp->structure);
 	for (uint32_t i = 0; i < N_vtx; i++) {
@@ -194,7 +193,7 @@ static void export_input_sgm(const nb_mesh_t *const restrict mesh,
 {
 	uint32_t N_sgm = mesh->N_input_sgm;
 	exp->set_N_input_sgm(exp->structure, N_sgm);
-	exp->malloc_input_sgm_table(exp->structure);
+	exp->allocate_input_sgm_table(exp->structure);
 
 	exp->start_input_sgm_table_access(exp->structure);
 	set_input_sgm_table(mesh, exp);
@@ -222,7 +221,7 @@ static void set_input_sgm_table(const nb_mesh_t *const restrict mesh,
 		}
 		if (0 < counter) {
 			exp->input_sgm_set_N_vtx(exp->structure, i, counter + 1);
-			exp->input_sgm_malloc_vtx(exp->structure, i);
+			exp->input_sgm_allocate_vtx(exp->structure, i);
 		} else {
 			exp->input_sgm_set_N_vtx(exp->structure, i, 0);
 		}

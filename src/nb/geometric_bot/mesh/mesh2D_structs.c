@@ -3,11 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/memory_bot.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -85,12 +84,12 @@ bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location)
 	return (location == attr->loc);
 }
 
-msh_edge_t *medge_calloc(nb_mesh_t *mesh)
+msh_edge_t *medge_allocate_zero_mem(nb_mesh_t *mesh)
 {
 	return nb_membank_allocate_mem(mesh->edg_membank);
 }
 
-void medge_free(nb_mesh_t *mesh, msh_edge_t *edge)
+void medge_nb_free_mem(nb_mesh_t *mesh, msh_edge_t *edge)
 {
 	nb_membank_free_mem(mesh->edg_membank, edge);
 }
@@ -112,10 +111,10 @@ void medge_set_as_subsgm(msh_edge_t *const restrict sgm,
 			 const msh_edge_t *const restrict prev,
 			 const msh_edge_t *const restrict next)
 {
-	attr_t *const restrict sgm_attr = calloc(1, sizeof(attr_t));
+	attr_t *const restrict sgm_attr = nb_allocate_zero_mem(sizeof(attr_t));
 	sgm_attr->id = 1;
 	input_sgm_attr_t *const restrict  attr = 
-		calloc(1, sizeof(input_sgm_attr_t));
+		nb_allocate_zero_mem(sizeof(input_sgm_attr_t));
 	attr->idx = idx;
 	attr->prev = (msh_edge_t*)prev;
 	attr->next = (msh_edge_t*)next;
@@ -218,16 +217,16 @@ inline void* medge_subsgm_get_attribute(const msh_edge_t* const sgm)
 void medge_destroy_subsgm_attribute(msh_edge_t *const restrict sgm)
 {
 	void* attr = ((input_sgm_attr_t*)((attr_t*)sgm->attr)->data)->attr;
-	free(((attr_t*)sgm->attr)->data);
-	free(sgm->attr);
+	nb_free_mem(((attr_t*)sgm->attr)->data);
+	nb_free_mem(sgm->attr);
 	sgm->attr = attr;
 }
 
 void medge_set_length(msh_edge_t *const sgm)
 {
-	attr_t* attr = calloc(1, sizeof(attr_t));
+	attr_t* attr = nb_allocate_zero_mem(sizeof(attr_t));
 	attr->id = 2;
-	double* length = malloc(sizeof(*length));
+	double* length = nb_allocate_mem(sizeof(*length));
 	*length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	attr->data = length;
 
@@ -293,8 +292,8 @@ void medge_destroy_length_attribute(msh_edge_t *const sgm)
 	else
 		sgm->attr = NULL;
 
-	free(attr->data);
-	free(attr);
+	nb_free_mem(attr->data);
+	nb_free_mem(attr);
 }
 
 bool medge_has_a_triangle_to_the_left
@@ -406,12 +405,12 @@ inline msh_trg_t* medge_get_opposite_triangle
 	return NULL;
 }
 
-msh_trg_t *mtrg_calloc(nb_mesh_t *mesh)
+msh_trg_t *mtrg_allocate_zero_mem(nb_mesh_t *mesh)
 {
 	return nb_membank_allocate_mem(mesh->trg_membank);
 }
 
-void mtrg_free(nb_mesh_t *mesh, msh_trg_t *trg)
+void mtrg_nb_free_mem(nb_mesh_t *mesh, msh_trg_t *trg)
 {
 	nb_membank_free_mem(mesh->trg_membank, trg);
 }
@@ -785,7 +784,7 @@ inline msh_edge_t* mesh_insert_edge(nb_mesh_t *mesh,
 				    const msh_vtx_t *const v1, 
 				    const msh_vtx_t *const v2)
 {
-	msh_edge_t *edge = medge_calloc(mesh);
+	msh_edge_t *edge = medge_allocate_zero_mem(mesh);
   
 	edge->v1 = (msh_vtx_t*)v1;
 	edge->v2 = (msh_vtx_t*)v2;
@@ -909,7 +908,7 @@ static bool mesh_remove_edge(nb_mesh_t *mesh,
 	msh_edge_t* edge = nb_container_exist(mesh->ht_edge, &key_edge);
 	if (NULL != edge) {
 		nb_container_delete(mesh->ht_edge, edge);
-		medge_free(mesh, edge);
+		medge_nb_free_mem(mesh, edge);
 		return true;
 	}
 	return false;
@@ -942,7 +941,7 @@ double mesh_get_min_angle(const nb_mesh_t *const mesh)
 msh_trg_t* mesh_locate_vtx(const nb_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	msh_trg_t *enveloping_trg = NULL;
@@ -970,7 +969,7 @@ inline void mesh_get_extern_scale_and_disp(const nb_mesh_t *const mesh,
 
 void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int id = 0;
@@ -985,7 +984,7 @@ void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 void mesh_enumerate_trg(nb_mesh_t *mesh)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t* trg_iter = alloca(iter_size);
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;

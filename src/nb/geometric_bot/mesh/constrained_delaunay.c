@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -76,7 +76,8 @@ static void set_constraints(nb_mesh_t *mesh,
 	if (0 < N_input_sgm) {
 		mesh->N_input_sgm = N_input_sgm;
 		mesh->input_sgm = 
-			calloc(N_input_sgm, sizeof(*(mesh->input_sgm)));
+			nb_allocate_zero_mem(N_input_sgm *
+					     sizeof(*(mesh->input_sgm)));
 		for (uint32_t i = 0; i < N_input_sgm; i++) {
 			msh_vtx_t* v1 = mesh->input_vtx[input_sgm[i * 2]];
 			msh_vtx_t* v2 = mesh->input_vtx[input_sgm[i*2+1]];
@@ -101,7 +102,7 @@ static void set_new_constraining_sgm(nb_mesh_t *mesh,
 				     uint32_t sgm_id)
 {
 	nb_container_t *vertices =
-		alloca(nb_container_get_memsize(NB_SORTED));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(vertices, NB_SORTED);
 	remove_trg_intersecting_sgm(mesh, v1, v2, vertices);
 
@@ -123,9 +124,9 @@ static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
 					nb_container_t *vertices)
 {
 	nb_container_t *intersected_trg =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(intersected_trg, NB_QUEUE);
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -145,7 +146,7 @@ static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
 		nb_container_insert(vertices, trg->v2);
 		nb_container_insert(vertices, trg->v3);
 		mesh_substract_triangle(mesh, trg);
-		mtrg_free(mesh, trg);
+		mtrg_nb_free_mem(mesh, trg);
 	}
 	nb_container_finish(intersected_trg);
 }
@@ -203,7 +204,7 @@ static msh_trg_t* create_trg_constrained
 	msh_vtx_t* restrict vtx_near = NULL;
 	bool vtx_found = false;
 	double min_circumradius = 0; /* Must be initialized with zero */
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
@@ -269,7 +270,7 @@ static msh_trg_t* create_trg_constrained
 	const msh_vtx_t *const restrict v3 = vtx_near;
 
 	/* Create and insert triangle */
-	msh_trg_t *new_trg = mtrg_calloc(mesh);
+	msh_trg_t *new_trg = mtrg_allocate_zero_mem(mesh);
 
 	new_trg->v1 = (msh_vtx_t*)v1; /* Casting from const to non-const pointer */
 	new_trg->v2 = (msh_vtx_t*)v2; /* in order to assign it to the new        */
@@ -299,7 +300,7 @@ static bool trg_is_constrained_exahustive_search
 /* List Naive Search */
 {
 	/* Check the Delaunay condition */
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
@@ -389,7 +390,7 @@ static bool trg_is_constrained(const nb_mesh_t *const restrict mesh,
 	vcn_utils2D_get_circumcenter(trg_v1->x, trg_v2->x, trg_v3->x,
 				     circumcenter);
 	nb_container_t *l_inside_vtx = 
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(l_inside_vtx, NB_QUEUE);
 
 	  vcn_bins2D_get_points_inside_circle(mesh->ug_vtx,
@@ -437,7 +438,7 @@ static bool are_intersecting_edges(const nb_mesh_t *const restrict mesh,
 				   const msh_vtx_t *const restrict v2)
 /* Exahustive search */
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 

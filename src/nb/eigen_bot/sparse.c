@@ -336,7 +336,7 @@ void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
 /* _At must be allocated and initialized */
 {
 	uint32_t memsize = A->N * sizeof(uint32_t);
-	uint32_t *jcount = NB_SOFT_MALLOC(memsize);
+	uint32_t *jcount = nb_soft_allocate_mem(memsize);
 	memset(jcount, 0, memsize);
 	for (uint32_t i = 0; i < A->N; i++) {
 		for (uint32_t q = 0; q < A->rows_size[i]; q++) {
@@ -347,7 +347,7 @@ void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
 			jcount[j] = jc + 1;
 		}
 	}
-	NB_SOFT_FREE(memsize, jcount);
+	nb_soft_free_mem(memsize, jcount);
 }
 
 void vcn_sparse_transpose(vcn_sparse_t *A)

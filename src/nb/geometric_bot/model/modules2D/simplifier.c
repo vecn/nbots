@@ -6,6 +6,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -63,12 +64,12 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 {
 	nb_container_t* wires = nb_container_create(NB_QUEUE);
-	char* mask_wired = calloc(model->M, 1);
+	char* mask_wired = nb_allocate_zero_mem(model->M);
 	for (uint32_t i = 0; i < model->M; i++) {
 		if (0 == mask_wired[i])
 			build_wire(model, wires, mask_wired, i);
 	}
-	free(mask_wired);
+	nb_free_mem(mask_wired);
 	return wires;
 }
 
@@ -78,7 +79,7 @@ static void build_wire(const vcn_model_t *const model,
 {
 	mask_wired[edge_id] = 1;
 	nb_container_t* new_wire = nb_container_create(NB_QUEUE);
-	uint32_t* edge = malloc(2 * sizeof(*edge));
+	uint32_t* edge = nb_allocate_mem(2 * sizeof(*edge));
 	edge[0] = GET_1_EDGE_VTX(model, edge_id);
 	edge[1] = GET_2_EDGE_VTX(model, edge_id);
 	nb_container_insert(new_wire, edge);
@@ -106,14 +107,14 @@ static bool link_to_wire(const vcn_model_t *const model,
 	bool linked = false;
 	if (is_at_start(model, edge_id, *vstart)) {
 		mask_wired[edge_id] = 1;
-		uint32_t *edge = malloc(2 * sizeof(*edge));
+		uint32_t *edge = nb_allocate_mem(2 * sizeof(*edge));
 		link_at_start(model, edge, edge_id, *vstart);
 		insert_at_start(wire, edge);
 		*vstart = update_end_point(model, edge_id, *vstart);
 		linked = true;
 	} else if (is_at_finish(model, edge_id, *vstart)) {
 		mask_wired[edge_id] = 1;
-		uint32_t *edge = malloc(2 * sizeof(*edge));
+		uint32_t *edge = nb_allocate_mem(2 * sizeof(*edge));
 		link_at_finish(model, edge, edge_id, *vfinish);
 		nb_container_insert(wire, edge);
 		*vfinish = update_end_point(model, edge_id, *vfinish);
@@ -191,12 +192,12 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 	double tol2 = POW2(tolerance);
 	while (true) {
 		/* Mark fixed vertices */
-		char* mask_fixed_vertices = calloc(model->N, 1);
+		char* mask_fixed_vertices = nb_allocate_zero_mem(model->N);
 		for (uint32_t i = 0; i < N_fixed_vertices; i++)
 			mask_fixed_vertices[fixed_vertices[i]] = 1;
     
 		/* Allocate masks for removed vertices */
-		char* mask_vtx_removed = calloc(model->N, 1);
+		char* mask_vtx_removed = nb_allocate_zero_mem(model->N);
 
 		/* Remove segments */
 		uint32_t N_removed = 0;
@@ -238,12 +239,12 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 				uint32_t N_remaining = model->M - i - 1;
 				if (N_remaining > 0) {
 					uint32_t* remaining_sgm =
-						malloc(N_remaining * 2 * sizeof(uint32_t));
+						nb_allocate_mem(N_remaining * 2 * sizeof(uint32_t));
 					memcpy(remaining_sgm, &(model->edge[(i+1)*2]),
 					       N_remaining * 2 * sizeof(uint32_t));
 					memcpy(&(model->edge[i*2]), remaining_sgm,
 					       N_remaining * 2 * sizeof(uint32_t));
-					free(remaining_sgm);
+					nb_free_mem(remaining_sgm);
 				}
 				model->M -= 1;
 			} else {
@@ -273,12 +274,12 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 				uint32_t N_remaining = model->M - i - 1;
 				if (N_remaining > 0) {
 					uint32_t* remaining_sgm =
-						malloc(N_remaining * 2 * sizeof(uint32_t));
+						nb_allocate_mem(N_remaining * 2 * sizeof(uint32_t));
 					memcpy(remaining_sgm, &(model->edge[(i+1)*2]),
 					       N_remaining * 2 * sizeof(uint32_t));
 					memcpy(&(model->edge[i*2]), remaining_sgm,
 					       N_remaining * 2 * sizeof(uint32_t));
-					free(remaining_sgm);
+					nb_free_mem(remaining_sgm);
 				}
 				model->M -= 1;
 			} else {
@@ -288,14 +289,15 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 
 		/* Allocate new arrays */
 		uint32_t N_vtx = model->N - N_removed;
-		double* vertices = malloc(N_vtx * 2 * sizeof(*vertices));
-		uint32_t* segments = malloc(model->M * 2 * sizeof(*segments));
+		double* vertices = nb_allocate_mem(N_vtx * 2 * sizeof(*vertices));
+		uint32_t* segments = nb_allocate_mem(model->M * 2 * sizeof(*segments));
 
 		memcpy(segments, model->edge, model->M * 2 * sizeof(uint32_t));
-		free(model->edge);
+		nb_free_mem(model->edge);
 		model->edge = segments;
 
-		uint32_t* perm_vtx = calloc(model->N, sizeof(*perm_vtx));
+		uint32_t* perm_vtx = nb_allocate_zero_mem(model->N *
+							  sizeof(*perm_vtx));
 		uint32_t vtx_counter = 0;
 		for (uint32_t i = 0; i < model->N; i++) {
 			if (mask_vtx_removed[i])
@@ -306,7 +308,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 			perm_vtx[i] = vtx_counter;
 			vtx_counter += 1;
 		}
-		free(model->vertex);
+		nb_free_mem(model->vertex);
 		model->vertex = vertices;
 		model->N = N_vtx;
 
@@ -316,11 +318,11 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 		}
 		for (uint32_t i = 0; i < N_fixed_vertices; i++)
 			fixed_vertices[i] = perm_vtx[fixed_vertices[i]];
-		free(perm_vtx);
+		nb_free_mem(perm_vtx);
 
 		/* Free memory */
-		free(mask_fixed_vertices);
-		free(mask_vtx_removed);
+		nb_free_mem(mask_fixed_vertices);
+		nb_free_mem(mask_vtx_removed);
 	}
 }
 
@@ -337,8 +339,8 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	/* Count surviving vertices and segments */
 	uint32_t N_sgm = 0;
 	uint32_t N_vtx = 0;
-	char* mask_vtx = calloc(model->N, 1);
-	uint32_t* perm_vtx = calloc(model->N, sizeof(uint32_t));
+	char* mask_vtx = nb_allocate_zero_mem(model->N);
+	uint32_t* perm_vtx = nb_allocate_zero_mem(model->N * sizeof(uint32_t));
 	nb_iterator_t *iter = nb_iterator_create();
 	nb_iterator_set_container(iter, wires);
 	while (nb_iterator_has_more(iter)) {
@@ -362,8 +364,8 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	nb_iterator_destroy(iter);
 
 	/* Set new vertices and edges */
-	double* vertices = malloc(2 * N_vtx * sizeof(*vertices));
-	uint32_t* segments = malloc(2 * N_sgm * sizeof(*segments));
+	double* vertices = nb_allocate_mem(2 * N_vtx * sizeof(*vertices));
+	uint32_t* segments = nb_allocate_mem(2 * N_sgm * sizeof(*segments));
 
 	uint32_t isgm = 0;
 	while (nb_container_is_not_empty(wires)) {
@@ -382,15 +384,15 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 		}
 		nb_container_destroy(wire);
 	}
-	free(perm_vtx);
-	free(mask_vtx);
+	nb_free_mem(perm_vtx);
+	nb_free_mem(mask_vtx);
 
 	model->N = N_vtx;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = vertices;
 
 	model->M = N_sgm;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = segments;
 
 	/* Free memory */
@@ -507,7 +509,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 
 	bool collapsed = false;
 	if (will_be_removed && !is_fixed) {
-		free(edge_next);
+		nb_free_mem(edge_next);
 		edge[0] = v1;
 		edge[1] = v2;
 		collapsed = true;
@@ -521,7 +523,7 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	uint32_t v1 = model->N;
 	uint32_t v2 = model->N;
 	uint32_t N_vtx_to_remove = 0;
-	char* mask_vtx_to_remove = calloc(model->N, 1);
+	char* mask_vtx_to_remove = nb_allocate_zero_mem(model->N);
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (v1 == model->N) {
 			if (vcn_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
@@ -544,14 +546,14 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	}
 
 	uint32_t N_sgm_to_remove = 0;
-	char* mask_sgm_to_remove = calloc(model->M, 1);
+	char* mask_sgm_to_remove = nb_allocate_zero_mem(model->M);
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t sv1 = model->edge[i * 2];
 		uint32_t sv2 = model->edge[i*2+1];
 		if((sv1 == v1 && sv2 == v2) ||
 		   (sv1 == v2 && sv2 == v1)){
-			free(mask_vtx_to_remove);
-			free(mask_sgm_to_remove);
+			nb_free_mem(mask_vtx_to_remove);
+			nb_free_mem(mask_sgm_to_remove);
 			return;
 		}
 		if (mask_vtx_to_remove[sv1] ||
@@ -562,13 +564,13 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	}
 	/* Allocate new arrays */
 	double* vertices = 
-		malloc((model->N - N_vtx_to_remove) * 2 * sizeof(*vertices));
+		nb_allocate_mem((model->N - N_vtx_to_remove) * 2 * sizeof(*vertices));
 	uint32_t* edges =
-		malloc((model->M - N_sgm_to_remove + 1) * 2 * sizeof(*edges));
+		nb_allocate_mem((model->M - N_sgm_to_remove + 1) * 2 * sizeof(*edges));
 
 	/* Fill new array with vertices */
 	uint32_t vtx_counter = 0;
-	uint32_t* perm_vtx = malloc(model->N * sizeof(*perm_vtx));
+	uint32_t* perm_vtx = nb_allocate_mem(model->N * sizeof(*perm_vtx));
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (mask_vtx_to_remove[i])
 			continue;
@@ -594,13 +596,13 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	/* Update data in the model */
 	model->N = model->N - N_vtx_to_remove;
 	model->M = model->M - N_sgm_to_remove + 1;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = vertices;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = edges;
 
 	/* Free memory */
-	free(perm_vtx);
-	free(mask_vtx_to_remove);
-	free(mask_sgm_to_remove);
+	nb_free_mem(perm_vtx);
+	nb_free_mem(mask_vtx_to_remove);
+	nb_free_mem(mask_sgm_to_remove);
 }

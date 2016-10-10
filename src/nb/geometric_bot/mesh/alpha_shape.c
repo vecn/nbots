@@ -42,7 +42,7 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	uint32_t iter_size = nb_iterator_get_memsize();
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t memsize = iter_size + cnt_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t *to_delete = (void*) memblock;
 	nb_iterator_t *iter = (void*) (memblock + cnt_size);
 
@@ -64,11 +64,11 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	while(nb_container_is_not_empty(to_delete)) {
 		msh_trg_t *trg = nb_container_delete_first(to_delete);
 		mesh_substract_triangle(mesh, trg);
-		mtrg_free(mesh, trg);
+		mtrg_nb_free_mem(mesh, trg);
 	}
 	nb_container_finish(to_delete);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 double nb_mesh_get_smallest_ns_alpha_complex(nb_mesh_t *mesh,
@@ -91,7 +91,7 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(double) +
 		N_vtx * sizeof(msh_trg_t*);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	double *max_t = (void*) memblock;
 	msh_trg_t **min_v = (void*) (memblock + N_trg * sizeof(double));
@@ -107,13 +107,13 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 	double r_minmax = vcn_utils2D_get_circumradius(t_minmax->v1->x,
 						       t_minmax->v2->x,
 						       t_minmax->v3->x);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 	return r_minmax;
 }
 
 static void get_max_length_x_trg(const nb_mesh_t *mesh, double *max_t)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -141,7 +141,7 @@ static void get_min_trg_x_vtx(const nb_mesh_t *mesh, const double *max_t,
 	uint32_t N_vtx = nb_mesh_get_N_vtx(mesh);
 	memset(min_v, 0, N_vtx * sizeof(*min_v));
 
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
