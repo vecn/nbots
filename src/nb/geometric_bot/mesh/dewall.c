@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
 	bool using_bins;
 	uint32_t N;
-	vcn_bins2D_t *bins;
+	nb_bins2D_t *bins;
 	msh_vtx_t** vtx_array;
 	int8_t axe;
 	double alpha;
@@ -45,10 +45,10 @@ static msh_vtx_t* get_2nd_vtx(search_vtx_t* search_vtx, msh_vtx_t* v1);
 static msh_vtx_t* get_2nd_vtx_exahustive_search(uint32_t N, 
 						msh_vtx_t** vertices,
 						msh_vtx_t* v1);
-static bool compare_2nd_vtx(const vcn_point2D_t *const p_ref,
-			    const vcn_point2D_t *const p,
+static bool compare_2nd_vtx(const nb_point2D_t *const p_ref,
+			    const nb_point2D_t *const p,
 			    const void *const data);
-static msh_vtx_t* get_2nd_vtx_using_bins(vcn_bins2D_t* bins, msh_vtx_t* v1,
+static msh_vtx_t* get_2nd_vtx_using_bins(nb_bins2D_t* bins, msh_vtx_t* v1,
 					 int8_t axe, double alpha);
 static double swap_vtx_if_minimize_delaunay_distance
                                       (const nb_container_t *const edges,
@@ -78,7 +78,7 @@ static double set_v3(const nb_container_t *const edges,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
 		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist);
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
-					 const vcn_bins2D_t *const bins,
+					 const nb_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
 					 const msh_vtx_t *const  v2);
 static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx);
@@ -149,7 +149,7 @@ void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
 				(vertices[i * 2] - mesh->xdisp);
 			vtx->x[1] = mesh->scale *
 				(vertices[i*2+1] - mesh->ydisp);
-			vcn_bins2D_insert(mesh->ug_vtx, vtx);
+			nb_bins2D_insert(mesh->ug_vtx, vtx);
 		}
 		dewall(mesh);
 	}
@@ -161,10 +161,10 @@ static inline void mesh_init_disp_and_scale
 			     const double *const restrict vertices)
 {
 	double box[4];
-	vcn_utils2D_get_enveloping_box(N_vertices, vertices,
+	nb_utils2D_get_enveloping_box(N_vertices, vertices,
 				       2 * sizeof(*vertices),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 
 	mesh->xdisp = (box[0] + box[2]) / 2.0;
@@ -207,10 +207,10 @@ static inline msh_vtx_t* get_2nd_vtx_exahustive_search
 						msh_vtx_t** vertices,
 						msh_vtx_t* v1)
 {
-	double min_dist = vcn_utils2D_get_dist2(v1->x, vertices[0]->x);
+	double min_dist = nb_utils2D_get_dist2(v1->x, vertices[0]->x);
 	uint32_t id =  0;
 	for (uint32_t i = 1; i < N; i++) {
-		double dist = vcn_utils2D_get_dist2(v1->x, vertices[i]->x);
+		double dist = nb_utils2D_get_dist2(v1->x, vertices[i]->x);
 		if (dist < min_dist) {
 			min_dist = dist;
 			id = i;
@@ -219,8 +219,8 @@ static inline msh_vtx_t* get_2nd_vtx_exahustive_search
 	return vertices[id];
 }
 
-static inline bool compare_2nd_vtx(const vcn_point2D_t *const restrict p_ref,
-				   const vcn_point2D_t *const restrict p,
+static inline bool compare_2nd_vtx(const nb_point2D_t *const restrict p_ref,
+				   const nb_point2D_t *const restrict p,
 				   const void *const restrict data)
 {
 	register double alpha = ((double*)data)[0];
@@ -229,7 +229,7 @@ static inline bool compare_2nd_vtx(const vcn_point2D_t *const restrict p_ref,
 
 }
 
-static inline msh_vtx_t* get_2nd_vtx_using_bins(vcn_bins2D_t* bins,
+static inline msh_vtx_t* get_2nd_vtx_using_bins(nb_bins2D_t* bins,
 						msh_vtx_t* v1, int8_t axe,
 						double alpha)
 {
@@ -239,9 +239,9 @@ static inline msh_vtx_t* get_2nd_vtx_using_bins(vcn_bins2D_t* bins,
 
 	msh_vtx_t* v2 = NULL;
 	double dist;
-	vcn_bins2D_set_filter(bins, compare_2nd_vtx);
-	vcn_bins2D_set_filter_data(bins, filter_data);
-	vcn_bins2D_get_knn(bins, v1, 1, &v2, &dist);
+	nb_bins2D_set_filter(bins, compare_2nd_vtx);
+	nb_bins2D_set_filter_data(bins, filter_data);
+	nb_bins2D_get_knn(bins, v1, 1, &v2, &dist);
 	return v2;
 }
 
@@ -290,7 +290,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 	while (nb_iterator_has_more(iter)) {
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		bool intersected =
-			NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+			NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 							(v1->x, v3->x,
 							 edge->v1->x,
 							 edge->v2->x,
@@ -300,7 +300,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 			break;
 		} else {
 			intersected = (NB_INTERSECTED == 
-				       vcn_utils2D_get_sgm_intersection
+				       nb_utils2D_get_sgm_intersection
 				       			(v2->x, v3->x,
 							 edge->v1->x,
 							 edge->v2->x,
@@ -340,7 +340,7 @@ static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edge
 	double min_dist = 0.0;
 	for (uint32_t i = 0; i < N; i++) {
 		if (vertices[i] != v1 && vertices[i] != v2) {
-			if (vcn_utils2D_is_in_half_side(v1->x, v2->x,
+			if (nb_utils2D_is_in_half_side(v1->x, v2->x,
 							vertices[i]->x))
 				min_dist = set_v3(edges, v1, v2, vertices[i],
 						  &v3, min_dist);
@@ -353,7 +353,7 @@ static double set_v3(const nb_container_t *const edges,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
 		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist)
 {
-	double dist = vcn_utils2D_get_delaunay_dist(v1->x, v2->x,
+	double dist = nb_utils2D_get_delaunay_dist(v1->x, v2->x,
 						    v3_candidate->x);
 	if (NULL == *v3) {
 		/* Initialize minimum distance */
@@ -372,14 +372,14 @@ static double set_v3(const nb_container_t *const edges,
 }
 
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
-					 const vcn_bins2D_t *const restrict bins,
+					 const nb_bins2D_t *const restrict bins,
 					 const msh_vtx_t *const restrict v1,
 					 const msh_vtx_t *const restrict v2)
 {
 	nb_container_t* vertices = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(vertices, NB_QUEUE);
 	
-	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
+	nb_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
 							vertices);
   
 	msh_vtx_t *v3 = NULL;
@@ -475,7 +475,7 @@ static uint32_t dewall_recursion
 	/* Ascending sorting of vertices depending on the axe divisor */
 	int8_t axe = deep_level % 2; /* 0:X, 1:Y */
 
-	vcn_qsort_wd(vertices, N, sizeof(*vertices),
+	nb_qsort_wd(vertices, N, sizeof(*vertices),
 		     compare_using_axe, &axe);
 	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
 	double alpha;
@@ -684,9 +684,9 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 	if (search_vtx->using_bins) {
 		double bins_size =
 		  (vertices[N-1]->x[axe] - vertices[0]->x[axe])/ sqrt(N);
-		search_vtx->bins = vcn_bins2D_create(bins_size);
+		search_vtx->bins = nb_bins2D_create(bins_size);
 		for (uint32_t i = 0; i < N; i++)
-			vcn_bins2D_insert(search_vtx->bins, vertices[i]);    
+			nb_bins2D_insert(search_vtx->bins, vertices[i]);    
 	} else {
 		search_vtx->bins = NULL;
 	}
@@ -714,7 +714,7 @@ static bool set_first_trg_into_AFL(nb_mesh_t *mesh,
 static void clear_search_vtx(search_vtx_t *search_vtx)
 {
 	if (search_vtx->using_bins)
-		vcn_bins2D_destroy(search_vtx->bins);
+		nb_bins2D_destroy(search_vtx->bins);
 }
 
 static uint32_t triangulate_wall(nb_mesh_t *mesh,

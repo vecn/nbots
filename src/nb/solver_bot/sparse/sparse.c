@@ -79,8 +79,8 @@ nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 				uint32_t icol = i * vars_per_node + k2;
 				A->rows_index[irow][graph->N_adj[i] * vars_per_node + k2] = icol ;
 			}
-			vcn_qsort(A->rows_index[irow], A->rows_size[irow], 
-				  sizeof(uint32_t), vcn_compare_uint32);
+			nb_qsort(A->rows_index[irow], A->rows_size[irow], 
+				  sizeof(uint32_t), nb_compare_uint32);
 		}
 	}
 	return A;

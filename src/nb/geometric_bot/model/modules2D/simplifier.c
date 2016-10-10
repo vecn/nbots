@@ -21,47 +21,47 @@
 #define MAX(a, b) (((a)>(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
-static void build_wire(const vcn_model_t *const model,
+static void build_wire(const nb_model_t *const model,
 		       nb_container_t *wires, char *mask_wired,
 		       uint32_t edge_id);
-static bool link_to_wire(const vcn_model_t *const model,
+static bool link_to_wire(const nb_model_t *const model,
 			 char *mask_wired, nb_container_t *wire,
 			 uint32_t edge_id, uint32_t *vstart,
 			 uint32_t *vfinish);
-static bool is_at_start(const vcn_model_t *const model,
+static bool is_at_start(const nb_model_t *const model,
 			uint32_t edge_id, uint32_t vstart);
-static bool is_at_finish(const vcn_model_t *const model,
+static bool is_at_finish(const nb_model_t *const model,
 			 uint32_t edge_id, uint32_t vfinish);
-static void link_at_start(const vcn_model_t *const model,
+static void link_at_start(const nb_model_t *const model,
 			  uint32_t *edge,
 			  uint32_t edge_id, uint32_t vstart);
 static void insert_at_start(nb_container_t *wire, const void *const val);
-static uint32_t update_end_point(const vcn_model_t *const model,
+static uint32_t update_end_point(const nb_model_t *const model,
 				 uint32_t edge_id, uint32_t end_point);
-static void link_at_finish(const vcn_model_t *const model,
+static void link_at_finish(const nb_model_t *const model,
 			   uint32_t *edge,
 			   uint32_t edge_id, uint32_t vfinish);
-static void remove_all_collinearities(const vcn_model_t *const model,
+static void remove_all_collinearities(const nb_model_t *const model,
 				      const nb_container_t *const wires,
 				      uint32_t N_fixed_vertices,
 				      uint32_t* fixed_vertices,
 				      double tolerance);
-static void remove_collinearities_of_wire(const vcn_model_t *const model,
+static void remove_collinearities_of_wire(const nb_model_t *const model,
 					  nb_container_t *wire,
 					  uint32_t N_fixed_vertices,
 					  uint32_t* fixed_vertices,
 					  double tolerance);
-static bool collapse_wire(const vcn_model_t *const model, nb_container_t* wire,
+static bool collapse_wire(const nb_model_t *const model, nb_container_t* wire,
 			  uint32_t N_fixed_vertices,
 			  uint32_t* fixed_vertices,
 			  double tolerance);
-static bool collapse_pair_of_edges(const vcn_model_t *const model,
+static bool collapse_pair_of_edges(const nb_model_t *const model,
 				   uint32_t *edge, uint32_t *edge_next,
 				   uint32_t N_fixed_vertices,
 				   uint32_t* fixed_vertices,
 				   double tolerance);
 
-nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
+nb_container_t* nb_model_generate_wires(const nb_model_t *const model)
 {
 	nb_container_t* wires = nb_container_create(NB_QUEUE);
 	char* mask_wired = nb_allocate_zero_mem(model->M);
@@ -73,7 +73,7 @@ nb_container_t* vcn_model_generate_wires(const vcn_model_t *const model)
 	return wires;
 }
 
-static void build_wire(const vcn_model_t *const model,
+static void build_wire(const nb_model_t *const model,
 		       nb_container_t *wires, char *mask_wired,
 		       uint32_t edge_id)
 {
@@ -99,7 +99,7 @@ static void build_wire(const vcn_model_t *const model,
 	nb_container_insert(wires, new_wire);
 }
 
-static bool link_to_wire(const vcn_model_t *const model,
+static bool link_to_wire(const nb_model_t *const model,
 			 char *mask_wired, nb_container_t *wire,
 			 uint32_t edge_id, uint32_t *vstart,
 			 uint32_t *vfinish)
@@ -123,21 +123,21 @@ static bool link_to_wire(const vcn_model_t *const model,
 	return linked;
 }
 
-static inline bool is_at_start(const vcn_model_t *const model,
+static inline bool is_at_start(const nb_model_t *const model,
 			       uint32_t edge_id, uint32_t vstart)
 {
 	return vstart == GET_1_EDGE_VTX(model, edge_id) ||
 		vstart == GET_2_EDGE_VTX(model, edge_id);
 }
 
-static inline bool is_at_finish(const vcn_model_t *const model,
+static inline bool is_at_finish(const nb_model_t *const model,
 				uint32_t edge_id, uint32_t vfinish)
 {
 	return vfinish == GET_1_EDGE_VTX(model, edge_id) ||
 		vfinish == GET_2_EDGE_VTX(model, edge_id);
 }
 
-static inline void link_at_start(const vcn_model_t *const model,
+static inline void link_at_start(const nb_model_t *const model,
 				 uint32_t *edge,
 				 uint32_t edge_id, uint32_t vstart)
 {	
@@ -158,7 +158,7 @@ static inline void insert_at_start(nb_container_t *wire,
 	assert(0 == status);
 }
 
-static inline uint32_t update_end_point(const vcn_model_t *const model,
+static inline uint32_t update_end_point(const nb_model_t *const model,
 					uint32_t edge_id, uint32_t end_point)
 {
 	uint32_t new_end_point;
@@ -170,7 +170,7 @@ static inline uint32_t update_end_point(const vcn_model_t *const model,
 
 }
 
-static inline void link_at_finish(const vcn_model_t *const model,
+static inline void link_at_finish(const nb_model_t *const model,
 				  uint32_t *edge,
 				  uint32_t edge_id, uint32_t vfinish)
 {
@@ -183,7 +183,7 @@ static inline void link_at_finish(const vcn_model_t *const model,
 	}
 }
 
-void vcn_model_collapse_small_segments(vcn_model_t* model,
+void nb_model_collapse_small_segments(nb_model_t* model,
 				       double tolerance,
 				       uint32_t N_fixed_vertices,
 				       uint32_t* fixed_vertices)
@@ -209,7 +209,7 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 				continue;
 			}
     
-			double dist2 = vcn_utils2D_get_dist2(&(model->vertex[v1*2]),
+			double dist2 = nb_utils2D_get_dist2(&(model->vertex[v1*2]),
 						    &(model->vertex[v2*2]));
 			if (dist2 < tol2) {
 				N_removed += 1;
@@ -327,11 +327,11 @@ void vcn_model_collapse_small_segments(vcn_model_t* model,
 }
 
 
-void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
+void nb_model_collapse_colinear_vertices(nb_model_t* model,
 					  uint32_t N_fixed_vertices,
 					  uint32_t* fixed_vertices,
 					  double tolerance){
-	nb_container_t* wires = vcn_model_generate_wires(model);
+	nb_container_t* wires = nb_model_generate_wires(model);
 
 	remove_all_collinearities(model, wires, N_fixed_vertices,
 				  fixed_vertices, tolerance);
@@ -399,7 +399,7 @@ void vcn_model_collapse_colinear_vertices(vcn_model_t* model,
 	nb_container_destroy(wires);
 }
 
-static void remove_all_collinearities(const vcn_model_t *const model,
+static void remove_all_collinearities(const nb_model_t *const model,
 				      const nb_container_t *const wires,
 				      uint32_t N_fixed_vertices,
 				      uint32_t* fixed_vertices,
@@ -416,7 +416,7 @@ static void remove_all_collinearities(const vcn_model_t *const model,
 	nb_iterator_destroy(iter);
 }
 
-static inline void remove_collinearities_of_wire(const vcn_model_t *const model,
+static inline void remove_collinearities_of_wire(const nb_model_t *const model,
 						 nb_container_t *wire,
 						 uint32_t N_fixed_vertices,
 						 uint32_t* fixed_vertices,
@@ -428,7 +428,7 @@ static inline void remove_collinearities_of_wire(const vcn_model_t *const model,
 				    fixed_vertices, tolerance);
 }
 
-static bool collapse_wire(const vcn_model_t *const model,
+static bool collapse_wire(const nb_model_t *const model,
 			  nb_container_t* wire,
 			  uint32_t N_fixed_vertices,
 			  uint32_t* fixed_vertices,
@@ -454,7 +454,7 @@ static bool collapse_wire(const vcn_model_t *const model,
 	return collapsed;
 }
 
-static bool collapse_pair_of_edges(const vcn_model_t *const model,
+static bool collapse_pair_of_edges(const nb_model_t *const model,
 				   uint32_t *edge, uint32_t *edge_next,
 				   uint32_t N_fixed_vertices,
 				   uint32_t* fixed_vertices,
@@ -482,7 +482,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 		v2 = edge_next[0];
 	}
 	bool will_be_removed = false;
-	if (vcn_utils2D_pnt_lies_on_sgm(&(model->vertex[v1*2]),
+	if (nb_utils2D_pnt_lies_on_sgm(&(model->vertex[v1*2]),
 						 &(model->vertex[v2*2]),
 						 &(model->vertex[v_middle*2])))
 		will_be_removed = true;
@@ -497,11 +497,11 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 
 	if (!will_be_removed && !is_fixed) {
 		double closest_point[2];
-		vcn_utils2D_get_closest_pnt_to_sgm(&(model->vertex[v1*2]),
+		nb_utils2D_get_closest_pnt_to_sgm(&(model->vertex[v1*2]),
 						   &(model->vertex[v2*2]),
 						   &(model->vertex[v_middle*2]),
 						   closest_point);
-		double dist_p2 = vcn_utils2D_get_dist2(&(model->vertex[v_middle*2]),
+		double dist_p2 = nb_utils2D_get_dist2(&(model->vertex[v_middle*2]),
 						       closest_point);
 		if (dist_p2 < tol2)
 			will_be_removed = true;
@@ -517,7 +517,7 @@ static bool collapse_pair_of_edges(const vcn_model_t *const model,
 	return collapsed;
 }
 
-void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
+void nb_model_unify_edge(nb_model_t* model, double* vtx1, double* vtx2)
 /* If the edge is not unified yet, it would have the last index */
 {
 	uint32_t v1 = model->N;
@@ -526,19 +526,19 @@ void vcn_model_unify_edge(vcn_model_t* model, double* vtx1, double* vtx2)
 	char* mask_vtx_to_remove = nb_allocate_zero_mem(model->N);
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (v1 == model->N) {
-			if (vcn_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
+			if (nb_utils2D_get_dist2(vtx1, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 				v1 = i;
 				continue;
 			}
 		}
 		if (v2 == model->N) {
-			if (vcn_utils2D_get_dist2(vtx2, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
+			if (nb_utils2D_get_dist2(vtx2, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 				v2 = i;
 				continue;
 			}
 		}
   
-		if (vcn_utils2D_pnt_lies_on_sgm(vtx1, vtx2,
+		if (nb_utils2D_pnt_lies_on_sgm(vtx1, vtx2,
 						&(model->vertex[i * 2]))) {
 			N_vtx_to_remove += 1;
 			mask_vtx_to_remove[i] = 1;

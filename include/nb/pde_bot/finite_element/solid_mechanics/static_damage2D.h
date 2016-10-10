@@ -10,30 +10,30 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
 
-typedef struct vcn_fem_implicit_s vcn_fem_implicit_t;
+typedef struct nb_fem_implicit_s nb_fem_implicit_t;
 
-vcn_fem_implicit_t* vcn_fem_implicit_create();
-void vcn_fem_implicit_destroy(vcn_fem_implicit_t* isparams);
+nb_fem_implicit_t* nb_fem_implicit_create();
+void nb_fem_implicit_destroy(nb_fem_implicit_t* isparams);
 
-void vcn_fem_implicit_set_N_steps(vcn_fem_implicit_t* isparams,
+void nb_fem_implicit_set_N_steps(nb_fem_implicit_t* isparams,
 				  uint32_t N_time_steps);
-void vcn_fem_implicit_set_N_max_iter(vcn_fem_implicit_t* isparams,
+void nb_fem_implicit_set_N_max_iter(nb_fem_implicit_t* isparams,
 				     uint32_t N_max_iter);
-void vcn_fem_implicit_set_N_max_iter_without_enhance
-(vcn_fem_implicit_t* isparams, uint32_t N_max_iter);
-void vcn_fem_implicit_set_residual_tolerance
-(vcn_fem_implicit_t* isparams, double penergy_tol);
+void nb_fem_implicit_set_N_max_iter_without_enhance
+(nb_fem_implicit_t* isparams, uint32_t N_max_iter);
+void nb_fem_implicit_set_residual_tolerance
+(nb_fem_implicit_t* isparams, double penergy_tol);
 
-uint32_t vcn_fem_implicit_get_N_steps(vcn_fem_implicit_t* isparams);
-uint32_t vcn_fem_implicit_get_N_max_iter(vcn_fem_implicit_t* isparams);
-uint32_t vcn_fem_implicit_get_N_max_iter_without_enhance
-(vcn_fem_implicit_t* isparams);
-double vcn_fem_implicit_get_residual_tolerance
-(vcn_fem_implicit_t* isparams);
+uint32_t nb_fem_implicit_get_N_steps(nb_fem_implicit_t* isparams);
+uint32_t nb_fem_implicit_get_N_max_iter(nb_fem_implicit_t* isparams);
+uint32_t nb_fem_implicit_get_N_max_iter_without_enhance
+(nb_fem_implicit_t* isparams);
+double nb_fem_implicit_get_residual_tolerance
+(nb_fem_implicit_t* isparams);
 
-void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
+void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 		(const nb_partition_t *const part,
-		 const vcn_fem_elem_t *const elemtype,
+		 const nb_fem_elem_t *const elemtype,
 		 const nb_material_t *const material,
 		 const nb_bcond_t *const bcond,
 		 bool enable_self_weight,
@@ -41,7 +41,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 		 bool enable_Cholesky_solver,
 		 nb_analysis2D_t analysis2D,
 		 nb_analysis2D_params *params2D,
-		 vcn_fem_implicit_t* params,
+		 nb_fem_implicit_t* params,
 		 const char* logfile);
 
 

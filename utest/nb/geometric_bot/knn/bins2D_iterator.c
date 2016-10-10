@@ -17,7 +17,7 @@ static void test_has_more(void);
 static void test_get_next(void);
 static void test_restart(void);
 
-static vcn_bins2D_t* get_bins(int N);
+static nb_bins2D_t* get_bins(int N);
 
 void cunit_nb_geometric_bot_bins2D_iterator(void)
 {
@@ -44,97 +44,97 @@ static int suite_clean(void)
 
 static void test_create(void)
 {
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
 	bool is_ok = false;
 	if (NULL != iter) {
 		is_ok = true;
-		vcn_bins2D_iter_destroy(iter);
+		nb_bins2D_iter_destroy(iter);
 	}
 	CU_ASSERT(is_ok);
 }
 
 static void test_destroy(void)
 {
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
-	vcn_bins2D_iter_destroy(iter);
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
+	nb_bins2D_iter_destroy(iter);
 	CU_ASSERT(true);
 }
 
 static void test_set_bins(void)
 {
 	int N = 100;
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
-	vcn_bins2D_t *bins = get_bins(N);
-	vcn_bins2D_iter_set_bins(iter, bins);
-	bool is_ok = vcn_bins2D_iter_has_more(iter);
-	vcn_bins2D_iter_destroy(iter);
-	vcn_bins2D_destroy(bins);
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
+	nb_bins2D_t *bins = get_bins(N);
+	nb_bins2D_iter_set_bins(iter, bins);
+	bool is_ok = nb_bins2D_iter_has_more(iter);
+	nb_bins2D_iter_destroy(iter);
+	nb_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
 }
 
 static void test_has_more(void)
 {
 	int N = 100;
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
-	vcn_bins2D_t *bins = get_bins(N);
-	vcn_bins2D_iter_set_bins(iter, bins);
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
+	nb_bins2D_t *bins = get_bins(N);
+	nb_bins2D_iter_set_bins(iter, bins);
 	int counter = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		vcn_bins2D_iter_get_next(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		nb_bins2D_iter_get_next(iter);
 		counter += 1;
 	}
-	vcn_bins2D_iter_destroy(iter);
-	vcn_bins2D_destroy(bins);
+	nb_bins2D_iter_destroy(iter);
+	nb_bins2D_destroy(bins);
 	CU_ASSERT(counter == N);
 }
 
 static void test_get_next(void)
 {
 	int N = 100;
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
-	vcn_bins2D_t *bins = get_bins(N);
-	vcn_bins2D_iter_set_bins(iter, bins);
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
+	nb_bins2D_t *bins = get_bins(N);
+	nb_bins2D_iter_set_bins(iter, bins);
 	bool is_ok = true;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const vcn_point2D_t *point = vcn_bins2D_iter_get_next(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const nb_point2D_t *point = nb_bins2D_iter_get_next(iter);
 		if (NULL == point) {
 			is_ok = false;
 			break;
 		}
 	}
-	vcn_bins2D_iter_destroy(iter);
-	vcn_bins2D_destroy(bins);
+	nb_bins2D_iter_destroy(iter);
+	nb_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
 }
 
 static void test_restart(void)
 {
 	int N = 100;
-	vcn_bins2D_iter_t *iter = vcn_bins2D_iter_create();
-	vcn_bins2D_t *bins = get_bins(N);
-	vcn_bins2D_iter_set_bins(iter, bins);
-	const vcn_point2D_t *first_point =
-		vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t *iter = nb_bins2D_iter_create();
+	nb_bins2D_t *bins = get_bins(N);
+	nb_bins2D_iter_set_bins(iter, bins);
+	const nb_point2D_t *first_point =
+		nb_bins2D_iter_get_next(iter);
 	bool is_ok = (NULL != first_point);
-	vcn_bins2D_iter_restart(iter);
-	const vcn_point2D_t *first_point_after_restart =
-		vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_restart(iter);
+	const nb_point2D_t *first_point_after_restart =
+		nb_bins2D_iter_get_next(iter);
 	is_ok = is_ok && (first_point_after_restart == first_point);
-	vcn_bins2D_iter_destroy(iter);
-	vcn_bins2D_destroy(bins);
+	nb_bins2D_iter_destroy(iter);
+	nb_bins2D_destroy(bins);
 	CU_ASSERT(is_ok);
 }
 
-static vcn_bins2D_t* get_bins(int N)
+static nb_bins2D_t* get_bins(int N)
 {
-	vcn_bins2D_t *bins = vcn_bins2D_create(1.0);
+	nb_bins2D_t *bins = nb_bins2D_create(1.0);
 	for (int i = 0; i < N; i++) {
-		vcn_point2D_t *point = vcn_point2D_create();
+		nb_point2D_t *point = nb_point2D_create();
 		double xsign = (0 == (i/2 + 1) % 2)?(1.0):(-1.0);
 		double ysign = (1 == (i/2) % 2)?(1.0):(-1.0);
 		point->x[0] = i * 0.5 * xsign;
 		point->x[1] = i * 0.5 * ysign;
-		vcn_bins2D_insert(bins, point);
+		nb_bins2D_insert(bins, point);
 	}
 	return bins;
 }

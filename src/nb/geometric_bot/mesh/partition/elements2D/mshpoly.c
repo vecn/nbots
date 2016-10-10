@@ -456,7 +456,7 @@ double nb_mshpoly_edge_get_normal(const void *msh, uint32_t face_id,
 	uint32_t n2 =  poly->edg[face_id*2+1];
 	double *s1 = &(poly->nod[n1 * 2]);
 	double *s2 = &(poly->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] =  (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -501,7 +501,7 @@ double nb_mshpoly_elem_get_radius(const void *msh, uint32_t id)
 	for (uint16_t i = 0; i < N_adj; i++) {
 		uint32_t nid = nb_mshpoly_elem_get_adj(msh, id, i);
 		double *ni = &(poly->nod[nid * 2]);
-		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		double dist2 = nb_utils2D_get_dist2(x, ni);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -520,8 +520,8 @@ double nb_mshpoly_elem_get_apotem(const void *msh, uint32_t id)
 		double *n1 = &(poly->nod[id1 * 2]);
 		double *n2 = &(poly->nod[id2 * 2]);
 		double closest[2];
-		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
-		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		nb_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = nb_utils2D_get_dist2(x, closest);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -564,7 +564,7 @@ double nb_mshpoly_elem_face_get_length(const void *msh,
 					      (face_id + 1) % N_adj);
 	double *s1 = &(mshpoly->nod[n1 * 2]);
 	double *s2 = &(mshpoly->nod[n2 * 2]);
-	return vcn_utils2D_get_dist(s1, s2);
+	return nb_utils2D_get_dist(s1, s2);
 }
 
 double nb_mshpoly_elem_face_get_normal(const void *msh, uint32_t elem_id,
@@ -577,7 +577,7 @@ double nb_mshpoly_elem_face_get_normal(const void *msh, uint32_t elem_id,
 					      (face_id + 1) % N_adj);
 	double *s1 = &(mshpoly->nod[n1 * 2]);
 	double *s2 = &(mshpoly->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] = (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -595,7 +595,7 @@ double nb_mshpoly_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 		double *id1 = &(mshpoly->cen[elem_id * 2]);
 		double *id2 = &(mshpoly->cen[nid * 2]);
 
-		dist = vcn_utils2D_get_dist(id1, id2);
+		dist = nb_utils2D_get_dist(id1, id2);
 		normal[0] = (id2[0] - id1[0]) / dist;
 		normal[1] = (id2[1] - id1[1]) / dist;
 	}
@@ -652,10 +652,10 @@ uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
 void nb_mshpoly_get_enveloping_box(const void *msh, double box[4])
 {
 	const nb_mshpoly_t *poly = msh;
-	vcn_utils2D_get_enveloping_box(poly->N_nod, poly->nod,
+	nb_utils2D_get_enveloping_box(poly->N_nod, poly->nod,
 				       2 * sizeof(*(poly->nod)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 }
 
@@ -761,11 +761,11 @@ static void create_mapping(vinfo_t *vinfo,
 	uint32_t ielem = 0;
 	uint32_t inode = 0;
 
-	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(biter);
-	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(biter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(biter);
+	nb_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(biter);
 		uint32_t id = mvtx_get_id(vtx);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			vinfo->N_vtx_in += 1;
@@ -777,7 +777,7 @@ static void create_mapping(vinfo_t *vinfo,
 			inode += 1;
 		}
 	}
-	vcn_bins2D_iter_finish(biter);
+	nb_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
@@ -1031,11 +1031,11 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vinfo_t *const vinfo,
 				    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(biter);
-	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(biter)) {
-		msh_vtx_t* vtx = (void*) vcn_bins2D_iter_get_next(biter);
+	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(biter);
+	nb_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(biter)) {
+		msh_vtx_t* vtx = (void*) nb_bins2D_iter_get_next(biter);
 		uint32_t id = mvtx_get_id(vtx);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t ielem = vinfo->vtx_map[id];
@@ -1046,7 +1046,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 			scale_vtx(&(poly->nod[inode * 2]), vtx->x, mesh);
 		}
 	}
-	vcn_bins2D_iter_finish(biter);
+	nb_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
 	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
@@ -1057,7 +1057,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 		uint32_t id = trg->id;
 		if (trg_is_interior(trg, vgraph)) {
 			double circumcenter[2];
-			vcn_utils2D_get_circumcenter(trg->v1->x,
+			nb_utils2D_get_circumcenter(trg->v1->x,
 						     trg->v2->x,
 						     trg->v3->x,
 						     circumcenter);
@@ -1154,18 +1154,18 @@ static void set_N_adj(nb_mshpoly_t *poly,
 		      const vinfo_t *const vinfo,
 		      const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(biter);
-	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(biter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(biter);
+	nb_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(biter);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t id = mvtx_get_id(vtx);
 			uint32_t elem_id = vinfo->vtx_map[id];
 			poly->N_adj[elem_id] = vgraph->N_adj[id];
 		}
 	}
-	vcn_bins2D_iter_finish(biter);
+	nb_bins2D_iter_finish(biter);
 }
 
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
@@ -1173,11 +1173,11 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vinfo_t *const vinfo,
 			    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(biter);
-	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(biter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(biter);
+	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(biter);
+	nb_bins2D_iter_set_bins(biter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(biter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(biter);
 		if (mvtx_is_type_location(vtx, INTERIOR)) {
 			uint32_t id = mvtx_get_id(vtx);
 			uint16_t id_adj = 0;
@@ -1190,7 +1190,7 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			poly->N_adj[elem_id] = id_adj;
 		}
 	}
-	vcn_bins2D_iter_finish(biter);
+	nb_bins2D_iter_finish(biter);
 }
 
 static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
@@ -1411,7 +1411,7 @@ static void delete_exterior_trg(nb_mesh_t *mesh,
 		msh_trg_t *trg = nb_container_delete_first(exterior_trg);
 		if (nb_container_exist(mesh->ht_trg, trg)) {
 			msh_vtx_t *cen = mvtx_create(mesh);
-			vcn_utils2D_trg_get_centroid(trg->v1->x,
+			nb_utils2D_trg_get_centroid(trg->v1->x,
 						     trg->v2->x,
 						     trg->v3->x,
 						     cen->x);

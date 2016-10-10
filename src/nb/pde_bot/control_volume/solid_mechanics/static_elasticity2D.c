@@ -433,20 +433,20 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	uint8_t N_int = 0;
 	double xp[4], p[2];
 
-	if (vcn_utils2D_are_sgm_intersected(face->x1, face->x2, t1, t2, p)) {
+	if (nb_utils2D_are_sgm_intersected(face->x1, face->x2, t1, t2, p)) {
 		xp[N_int * 2] = p[0];
 		xp[N_int*2+1] = p[1];
 		N_int += 1;
 	}
 
-	if (vcn_utils2D_are_sgm_intersected(face->x1, face->x2, t2, t3, p)) {
+	if (nb_utils2D_are_sgm_intersected(face->x1, face->x2, t2, t3, p)) {
 		xp[N_int * 2] = p[0];
 		xp[N_int*2+1] = p[1];
 		N_int += 1;
 	}
 	
 	if (2 > N_int) {
-		if (vcn_utils2D_are_sgm_intersected(face->x1, face->x2,
+		if (nb_utils2D_are_sgm_intersected(face->x1, face->x2,
 						    t3, t1, p)) {
 			xp[N_int * 2] = p[0];
 			xp[N_int*2+1] = p[1];
@@ -455,7 +455,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	}
 
 	if (1 == N_int) {
-		if (vcn_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x1)) {
+		if (nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x1)) {
 			xp[2] = face->x1[0];
 			xp[3] = face->x1[1];
 		} else {
@@ -539,13 +539,13 @@ static uint32_t get_face_closest_intersection_to_intmsh
 	nb_iterator_set_container(iter, subfaces);
 	while (nb_iterator_has_more(iter)) {
 		const subface_t *subface = nb_iterator_get_next(iter);
-		double d = vcn_utils2D_get_dist(alone, subface->x1);
+		double d = nb_utils2D_get_dist(alone, subface->x1);
 		if (d < min) {
 			min = d;
 			memcpy(p, subface->x1, 2 * sizeof(*p));
 			sf_id = subface->trg_id;
 		}
-		d = vcn_utils2D_get_dist(alone, subface->x2);
+		d = nb_utils2D_get_dist(alone, subface->x2);
 		if (d < min) {
 			min = d;
 			memcpy(p, subface->x2, 2 * sizeof(*p));
@@ -760,7 +760,7 @@ static double subface_get_normalized_length(const subface_t *subface,
 	double psi2[2];
 	get_normalized_point(t1, t2, t3, subface->x2, psi2);
 
-	return vcn_utils2D_get_dist(psi1, psi2);
+	return nb_utils2D_get_dist(psi1, psi2);
 }
 
 static void get_normalized_point(const double x1[2], const double x2[2],
@@ -856,7 +856,7 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 	c2[0] = nb_partition_elem_get_x(part, face->elems[1]);
 	c2[1] = nb_partition_elem_get_y(part, face->elems[1]);
 
-	double lf = vcn_utils2D_get_dist(face->x1, face->x2);
+	double lf = nb_utils2D_get_dist(face->x1, face->x2);
 	double factor = lf * params2D->thickness;
 	memset(Kf, 0, 8 * sizeof(*Kf));
 	for (uint8_t i = 0; i < 2; i++) {
@@ -879,7 +879,7 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 {
 	double xdiff = c1[0] - c2[0];
 	double ydiff = c1[1] - c2[1];
-	double dist = vcn_utils2D_get_dist(c1, c2);
+	double dist = nb_utils2D_get_dist(c1, c2);
 	double nc[2];
 	nc[0] = -xdiff / dist;
 	nc[1] = -ydiff / dist;
@@ -1017,7 +1017,7 @@ static void get_subfaces_strain(face_t **faces, uint32_t face_id,
 		subface_sum_strain_in_trg(part, intmsh, face_id,
 					  subface, disp, strain);
 	}
-	double length = vcn_utils2D_get_dist(face->x1, face->x2);
+	double length = nb_utils2D_get_dist(face->x1, face->x2);
 	strain[face_id * 3] /= length;
 	strain[face_id*3+1] /= length;
 	strain[face_id*3+2] /= length;
@@ -1064,7 +1064,7 @@ static void get_pairwise_strain(face_t **faces, uint32_t face_id,
 
 	double *nf = face->nf;
 
-	double lf = vcn_utils2D_get_dist(face->x1, face->x2);
+	double lf = nb_utils2D_get_dist(face->x1, face->x2);
 
 	for (uint8_t i = 0; i < 2; i++) {
 		double grad[2];

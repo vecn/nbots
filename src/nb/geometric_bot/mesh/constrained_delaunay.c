@@ -131,7 +131,7 @@ static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(iter);
-		if (vcn_utils2D_sgm_intersects_trg(trg->v1->x,
+		if (nb_utils2D_sgm_intersects_trg(trg->v1->x,
 						   trg->v2->x,
 						   trg->v3->x,
 						   v1->x, v2->x)) {
@@ -216,7 +216,7 @@ static msh_trg_t* create_trg_constrained
 			continue;
     
 		/* Check for positive area */
-		const double Sk = vcn_utils2D_orient(v1->x, v2->x, v3->x);
+		const double Sk = nb_utils2D_orient(v1->x, v2->x, v3->x);
 		if (Sk < NB_GEOMETRIC_TOL)
 			continue;
 
@@ -229,9 +229,9 @@ static msh_trg_t* create_trg_constrained
 			continue;
 
 		/* Compute distance between vertices */
-		const double L1 = vcn_utils2D_get_dist(v1->x, v2->x);
-		const double L2 = vcn_utils2D_get_dist(v3->x, v2->x);
-		const double L3 = vcn_utils2D_get_dist(v3->x, v1->x);
+		const double L1 = nb_utils2D_get_dist(v1->x, v2->x);
+		const double L2 = nb_utils2D_get_dist(v3->x, v2->x);
+		const double L3 = nb_utils2D_get_dist(v3->x, v1->x);
     
 		/* Compute circumradius and circumcenter*/
 		const double circumradius = (L1*L2*L3)/(2.0*Sk);
@@ -308,7 +308,7 @@ static bool trg_is_constrained_exahustive_search
 			nb_iterator_get_next(iter);
 		if (vtx == trg_v1 || vtx == trg_v2 || vtx == trg_v3)
 			continue;
-		if (vcn_utils2D_pnt_lies_strictly_in_circumcircle(trg_v1->x,
+		if (nb_utils2D_pnt_lies_strictly_in_circumcircle(trg_v1->x,
 								  trg_v2->x,
 								  trg_v3->x,
 								  vtx->x)) {
@@ -336,21 +336,21 @@ static bool vtx_is_constrained
 	for (uint32_t i=0; i < N_input_sgm; i++) {
 		msh_edge_t* sgm = input_sgm[i];
 		while (NULL != sgm) {
-			if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+			if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 			    				(trg_v1->x,
 							 encroaching_vtx->x,
 							 sgm->v1->x,
 							 sgm->v2->x,
 							 NULL))
 				return true;
-			if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+			if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 							(trg_v2->x,
 							 encroaching_vtx->x,
 							 sgm->v1->x,
 							 sgm->v2->x,
 							 NULL))
 				return true;
-			if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+			if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 			    				(trg_v3->x,
 							 encroaching_vtx->x,
 							 sgm->v1->x,
@@ -376,10 +376,10 @@ static bool trg_is_constrained(const nb_mesh_t *const restrict mesh,
 			 trg_v1, trg_v2, trg_v3, vertices);
 
 	const double circumradius =
-	  vcn_utils2D_get_circumradius(trg_v1->x, trg_v2->x, trg_v3->x);
+	  nb_utils2D_get_circumradius(trg_v1->x, trg_v2->x, trg_v3->x);
 	const int layer = 1 +
-		(int)(circumradius/vcn_bins2D_get_size_of_bins(mesh->ug_vtx));
-	if (POW2(2 * layer + 1) >=  vcn_bins2D_get_N_bins(mesh->ug_vtx))
+		(int)(circumradius/nb_bins2D_get_size_of_bins(mesh->ug_vtx));
+	if (POW2(2 * layer + 1) >=  nb_bins2D_get_N_bins(mesh->ug_vtx))
 		return trg_is_constrained_exahustive_search(mesh->input_sgm,
 							    mesh->N_input_sgm,
 							    trg_v1, trg_v2,
@@ -387,13 +387,13 @@ static bool trg_is_constrained(const nb_mesh_t *const restrict mesh,
 
 	/* Get vertices encroaching the circumcircle */
 	double circumcenter[2];
-	vcn_utils2D_get_circumcenter(trg_v1->x, trg_v2->x, trg_v3->x,
+	nb_utils2D_get_circumcenter(trg_v1->x, trg_v2->x, trg_v3->x,
 				     circumcenter);
 	nb_container_t *l_inside_vtx = 
 		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(l_inside_vtx, NB_QUEUE);
 
-	  vcn_bins2D_get_points_inside_circle(mesh->ug_vtx,
+	  nb_bins2D_get_points_inside_circle(mesh->ug_vtx,
 					      circumcenter,
 					      circumradius,
 					      l_inside_vtx);
@@ -449,7 +449,7 @@ static bool are_intersecting_edges(const nb_mesh_t *const restrict mesh,
 		if (v1 == edge->v1 || v1 == edge->v2 ||
 		    v2 == edge->v1 || v2 == edge->v2)
 			continue;
-		if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+		if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 		    				(edge->v1->x,
 						 edge->v2->x,
 						 v1->x,v2->x,

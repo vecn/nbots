@@ -7,24 +7,24 @@
 #include "nb/geometric_bot/model/model2D.h"
 #include "nb/graph_bot.h"
 
-void vcn_model_get_combination(vcn_model_t *model,
-			       const vcn_model_t *const model1,
-			       const vcn_model_t *const model2);
+void nb_model_get_combination(nb_model_t *model,
+			       const nb_model_t *const model1,
+			       const nb_model_t *const model2);
 
-void vcn_model_get_intersection(vcn_model_t *model,
-				const vcn_model_t *const model1,
-				const vcn_model_t *const model2);
+void nb_model_get_intersection(nb_model_t *model,
+				const nb_model_t *const model1,
+				const nb_model_t *const model2);
 
-void vcn_model_get_union(vcn_model_t *model,
-			 const vcn_model_t *const model1,
-			 const vcn_model_t *const model2);
+void nb_model_get_union(nb_model_t *model,
+			 const nb_model_t *const model1,
+			 const nb_model_t *const model2);
 
-void vcn_model_get_difference(vcn_model_t *model,
-			      const vcn_model_t *const model1,
-			      const vcn_model_t *const model2);
+void nb_model_get_difference(nb_model_t *model,
+			      const nb_model_t *const model1,
+			      const nb_model_t *const model2);
 
-void vcn_model_get_substraction(vcn_model_t *model,
-				const vcn_model_t *const model1,
-				const vcn_model_t *const model2);
+void nb_model_get_substraction(nb_model_t *model,
+				const nb_model_t *const model1,
+				const nb_model_t *const model2);
 
 #endif

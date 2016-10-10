@@ -22,7 +22,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
+static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
 			    const nb_partition_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
@@ -32,7 +32,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 			    double gravity[2],
 			    nb_sparse_t *K, double *M, double *F);
 static int integrate_elemental_system
-		       	(const vcn_fem_elem_t *elem, uint32_t id,
+		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
 			 const nb_partition_t *part,
 			 nb_analysis2D_params *params2D,
@@ -41,12 +41,12 @@ static int integrate_elemental_system
 static int get_element_strain(uint32_t id, double *strain,
 			      const nb_partition_t *const part,
 			      double *displacement,
-			      const vcn_fem_elem_t *const elem);
+			      const nb_fem_elem_t *const elem);
 
 int pipeline_assemble_system
 		(nb_sparse_t* K, double* M, double *F,
 		 const nb_partition_t *const part,
-		 const vcn_fem_elem_t *const elem,
+		 const nb_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
@@ -84,7 +84,7 @@ bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id)
 	return is_enabled;
 }
 
-static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
+static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
 			    const nb_partition_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
@@ -101,7 +101,7 @@ static int assemble_element(const vcn_fem_elem_t *elem, uint32_t id,
 		density = nb_material_get_density(material);
 	}
 
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	double* Ke = nb_allocate_mem(4 * POW2(N_nodes) * sizeof(*Ke));
 	double* Me = NULL;
 	if(M != NULL)
@@ -126,7 +126,7 @@ CLEANUP:
 }
 
 static int integrate_elemental_system
-		       	(const vcn_fem_elem_t *elem, uint32_t id,
+		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
 			 const nb_partition_t *part,
 			 nb_analysis2D_params *params2D,
@@ -142,7 +142,7 @@ static int integrate_elemental_system
 		fy = gravity[1] * density;
 	}
     
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	memset(Ke, 0, 4 * POW2(N_nodes) * sizeof(*Ke));
 	if(Me != NULL)
 		memset(Me, 0, 2 * N_nodes * sizeof(*Me));
@@ -154,7 +154,7 @@ static int integrate_elemental_system
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id, part, j, Jinv);
@@ -175,7 +175,7 @@ EXIT:
 	return status;
 }
 
-void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+void pipeline_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 			      double D[4], double density,
 			      double thickness, double detJ,
 			      double *dNi_dx, double *dNi_dy,
@@ -191,11 +191,11 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 	 * B  = [B1 B2...Bi... Bn]
 	 *
 	 */
-	double wp = vcn_fem_elem_weight_gp(elem, gp_id);
+	double wp = nb_fem_elem_weight_gp(elem, gp_id);
       
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		double Ni = vcn_fem_elem_Ni(elem, i, gp_id);
+		double Ni = nb_fem_elem_Ni(elem, i, gp_id);
 		for (uint32_t j = 0; j < N_nodes; j++) {
 			/*  Integrating elemental siffness matrix */
 			Ke[(i * 2)*(2 * N_nodes) + (j * 2)] += 
@@ -216,7 +216,7 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 				detJ * thickness * wp;
 
 			/*  Integrating elemental mass matrix */
-			double Nj = vcn_fem_elem_Ni(elem, j, gp_id);
+			double Nj = nb_fem_elem_Ni(elem, j, gp_id);
 			if (NULL != Me) {
 				/* OPPORTUNITY: Allocate one for each comp */
 				double integral = Ni * Nj * density * detJ *
@@ -233,12 +233,12 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 	}
 }
 
-void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
 				   const nb_partition_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   nb_sparse_t *K, double *M, double *F)
 {
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
 		for (uint32_t j = 0; j < N_nodes; j++) {
@@ -270,11 +270,11 @@ void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
 void pipeline_compute_strain(double *strain,
 			     const nb_partition_t *const part,
 			     double *displacement,
-			     const vcn_fem_elem_t *const elem)
+			     const nb_fem_elem_t *const elem)
 {
 	uint32_t N_elem = nb_partition_get_N_elems(part);
 
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
 
 	for (uint32_t i = 0; i < N_elem; i++)
@@ -284,19 +284,19 @@ void pipeline_compute_strain(double *strain,
 static int get_element_strain(uint32_t id, double *strain,
 			      const nb_partition_t *const part,
 			      double *displacement,
-			      const vcn_fem_elem_t *const elem)
+			      const nb_fem_elem_t *const elem)
 {
 	int status = 1;
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	uint32_t deriv_memsize = N_nodes * sizeof(double);
 	char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
 	/* Integrate domain */
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id, part, j, Jinv);
@@ -325,9 +325,9 @@ EXIT:
 void pipeline_compute_main_stress(double *stress, 
 				  double *main_stress,
 				  uint32_t N_elements,
-				  const vcn_fem_elem_t *const elem)
+				  const nb_fem_elem_t *const elem)
 {
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	for(uint32_t i=0; i < N_elements; i++){
 		for(uint32_t j=0; j < N_gp; j++){
 			uint32_t idx = i * N_gp + j;

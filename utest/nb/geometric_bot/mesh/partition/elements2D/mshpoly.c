@@ -31,13 +31,13 @@ static int suite_clean(void)
 
 static void test_load_from_mesh(void)
 {
-	vcn_model_t *model = vcn_model_create_polygon(1, 0, 0, 6);
+	nb_model_t *model = nb_model_create_polygon(1, 0, 0, 6);
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.05);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 
 	void *poly = nb_allocate_on_stack(nb_mshpoly_get_memsize());
 	nb_mshpoly_init(poly);

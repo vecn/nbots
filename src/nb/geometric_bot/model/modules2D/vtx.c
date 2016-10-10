@@ -79,6 +79,6 @@ int8_t vtx_compare(const void *const vtxA, const void *const vtxB)
 {
 	const vtx_t *const vA = vtxA;
 	const vtx_t *const vB = vtxB;
-	return (vcn_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL) ?
+	return (nb_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL) ?
 	  0:1;
 }

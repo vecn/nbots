@@ -15,7 +15,7 @@
 #define LINE_LENGTH 256
 #define TEMPORAL_TOKEN_LENGTH 10
 
-struct vcn_cfreader_s {
+struct nb_cfreader_s {
 	/* OPPORTUNITY: Support several tokens for comments, multiline comments,
 	 * open_close_string (of several chars, e.g. open/close string with << >>),
 	 * etc
@@ -29,13 +29,13 @@ struct vcn_cfreader_s {
 	uint32_t line_counter;
 };
 
-vcn_cfreader_t* vcn_cfreader_create(const char* filename,
+nb_cfreader_t* nb_cfreader_create(const char* filename,
 				    const char* line_comment_token)
 {
 	FILE *fp = fopen(filename, "r");
 	if (fp == NULL)
 		return NULL;
-	vcn_cfreader_t *cfreader = nb_allocate_mem(sizeof(*cfreader));
+	nb_cfreader_t *cfreader = nb_allocate_mem(sizeof(*cfreader));
 	sprintf(cfreader->line_comment_token, "%s", line_comment_token);
 	cfreader->open_string_token  = '\"';
 	cfreader->close_string_token = '\"';
@@ -46,7 +46,7 @@ vcn_cfreader_t* vcn_cfreader_create(const char* filename,
 	return cfreader;
 }
 
-char vcn_cfreader_next_line(vcn_cfreader_t* cfreader)
+char nb_cfreader_next_line(nb_cfreader_t* cfreader)
 {
 	while (fgets(cfreader->buffer, LINE_LENGTH, cfreader->fp) != NULL) {
 		cfreader->line_counter += 1;
@@ -72,10 +72,10 @@ char vcn_cfreader_next_line(vcn_cfreader_t* cfreader)
 	return 1;
 }
 
-char vcn_cfreader_read_int(vcn_cfreader_t* cfreader, int* val)
+char nb_cfreader_read_int(nb_cfreader_t* cfreader, int* val)
 {
 	if (strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 	/* Read value */
 	if (sscanf(cfreader->line, "%i", val) != 1)
 		return 1;
@@ -90,10 +90,10 @@ char vcn_cfreader_read_int(vcn_cfreader_t* cfreader, int* val)
 	return 0;
 }
 
-char vcn_cfreader_read_uint(vcn_cfreader_t *cfreader, unsigned int *val)
+char nb_cfreader_read_uint(nb_cfreader_t *cfreader, unsigned int *val)
 {
 	if (strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 	/* Read value */
 	if (sscanf(cfreader->line, "%u", val) != 1)
 		return 1;
@@ -108,10 +108,10 @@ char vcn_cfreader_read_uint(vcn_cfreader_t *cfreader, unsigned int *val)
 	return 0;
 }
 
-char vcn_cfreader_read_float(vcn_cfreader_t* cfreader, float* val)
+char nb_cfreader_read_float(nb_cfreader_t* cfreader, float* val)
 {
 	if (strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 	/* Read value */
 	if (sscanf(cfreader->line, "%f", val) != 1)
 		return 1;
@@ -125,10 +125,10 @@ char vcn_cfreader_read_float(vcn_cfreader_t* cfreader, float* val)
 		cfreader->line = &(cfreader->line[1]);
 	return 0;
 }
-char vcn_cfreader_read_double(vcn_cfreader_t* cfreader, double* val)
+char nb_cfreader_read_double(nb_cfreader_t* cfreader, double* val)
 {
 	if (strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 	/* Read value */
 	if (sscanf(cfreader->line, "%lf", val) != 1)
 		return 1;
@@ -143,10 +143,10 @@ char vcn_cfreader_read_double(vcn_cfreader_t* cfreader, double* val)
 	return 0;
 }
 
-char vcn_cfreader_read_bool(vcn_cfreader_t* cfreader, bool* val)
+char nb_cfreader_read_bool(nb_cfreader_t* cfreader, bool* val)
 {
 	if(strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 
 	char* ptr = cfreader->line;
 	uint32_t char_counter = 0;
@@ -192,10 +192,10 @@ char vcn_cfreader_read_bool(vcn_cfreader_t* cfreader, bool* val)
 	return 0;
 }
 
-char* vcn_cfreader_read_and_allocate_string(vcn_cfreader_t* cfreader)
+char* nb_cfreader_read_and_allocate_string(nb_cfreader_t* cfreader)
 {
 	if (strlen(cfreader->line) == 0)
-		vcn_cfreader_next_line(cfreader);
+		nb_cfreader_next_line(cfreader);
 	/* Allocate and read string */
 	bool throw_open_warning = false;
 	if (cfreader->line[0] != cfreader->open_string_token)
@@ -254,7 +254,7 @@ char* vcn_cfreader_read_and_allocate_string(vcn_cfreader_t* cfreader)
 	return string;
 }
 
-void vcn_cfreader_destroy(vcn_cfreader_t* cfreader)
+void nb_cfreader_destroy(nb_cfreader_t* cfreader)
 {
 	fclose(cfreader->fp);
 	nb_free_mem(cfreader);

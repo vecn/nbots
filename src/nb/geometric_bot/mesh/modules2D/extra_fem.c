@@ -14,12 +14,12 @@
 void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 {
 	/* Allocate lists to store triangles per vertex */
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
 
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) nb_bins2D_iter_get_next(iter);
 		void** attr = nb_allocate_mem(2 * sizeof(*attr));
 		nb_container_t* trg_x_vtx =
 			nb_container_create(NB_QUEUE);
@@ -45,9 +45,9 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(new_vertices, NB_QUEUE);
 
-	vcn_bins2D_iter_restart(iter);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_restart(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		nb_container_t* trg_x_vtx = ((void**)vtx->attr)[0];
 		if (2 > nb_container_get_length(trg_x_vtx))
 			continue;
@@ -111,19 +111,19 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 	}
 
 	/* Free memory */
-	vcn_bins2D_iter_restart(iter);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_restart(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) nb_bins2D_iter_get_next(iter);
 		void** attr = vtx->attr;
 		nb_container_destroy(attr[0]);
 		vtx->attr = attr[1];
 		nb_free_mem(attr);
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 
 	while (nb_container_is_not_empty(new_vertices)) {
 		msh_vtx_t* new_vtx = nb_container_delete_first(new_vertices);
-		vcn_bins2D_insert(mesh->ug_vtx, new_vtx);
+		nb_bins2D_insert(mesh->ug_vtx, new_vtx);
 	}
 
 	nb_container_finish(new_vertices);

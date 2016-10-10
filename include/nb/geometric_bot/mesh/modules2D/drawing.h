@@ -8,7 +8,7 @@
 void nb_mesh_draw(const nb_mesh_t *mesh, const char* filename,
 		   int width, int height);
 
-void vcn_dewall_draw(const nb_mesh_t *mesh, const char* filename,
+void nb_dewall_draw(const nb_mesh_t *mesh, const char* filename,
 		     int width, int height, uint8_t axe, double alpha,
 		     uint32_t N, void *vtx_array);
 

@@ -109,7 +109,7 @@ double nb_mesh_get_geometric_constraint(const nb_mesh_t *mesh,
  *   If some max value equals zero then it is not considered, hence you can
  *   constraint only the subsegments size.
  * + <b>NB_DENSITY_IMG</b>: The density is given by an image.
- *   <b>density_data</b> must be a pointer to <b>vcn_density_img_t</b>.
+ *   <b>density_data</b> must be a pointer to <b>nb_density_img_t</b>.
  *
  * @param[in] density_data Data used to estimate the density. It is given
  * to the density function without alterations.
@@ -153,10 +153,10 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh);
  * at least one point for each hole.
  */
 void nb_mesh_generate_from_model(nb_mesh_t *mesh,
-				  const vcn_model_t *const model);
+				  const nb_model_t *const model);
 
 void nb_mesh_get_simplest_from_model(nb_mesh_t *mesh,
-				      const vcn_model_t *const  model);
+				      const nb_model_t *const  model);
 
 /**
  * @brief Check if the vertex lies inside the mesh.

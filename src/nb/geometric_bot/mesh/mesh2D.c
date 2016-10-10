@@ -35,7 +35,7 @@ static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted);
 static void remove_concavities_triangles(nb_mesh_t* mesh);
 static void remove_holes_triangles(nb_mesh_t* mesh,
-				   const vcn_model_t *const model);
+				   const nb_model_t *const model);
 static bool size_constraints_allow_refine(const nb_mesh_t *const mesh);
 
 /* Compare functions */
@@ -62,7 +62,7 @@ static uint32_t hash_key_trg(const void *const  triangle);
 uint32_t nb_mesh_get_memsize(void)
 {
 	uint32_t mesh_size = sizeof(nb_mesh_t);
-	uint32_t bins_size = vcn_bins2D_get_memsize();
+	uint32_t bins_size = nb_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
@@ -87,7 +87,7 @@ static void set_memory(nb_mesh_t *mesh)
 {
 	char *memblock = (void*)mesh;
 	uint32_t mesh_size = sizeof(nb_mesh_t);
-	uint32_t bins_size = vcn_bins2D_get_memsize();
+	uint32_t bins_size = nb_bins2D_get_memsize();
 	uint32_t edg_container_size = nb_container_get_memsize(EDG_CONTAINER);
 	uint32_t trg_container_size = nb_container_get_memsize(TRG_CONTAINER);
 	uint32_t membank_size = nb_membank_get_memsize();
@@ -95,7 +95,7 @@ static void set_memory(nb_mesh_t *mesh)
 	memset(mesh, 0, nb_mesh_get_memsize());
 
 	mesh->ug_vtx = (void*) (memblock + mesh_size);
-	vcn_bins2D_init(mesh->ug_vtx, 1.0);
+	nb_bins2D_init(mesh->ug_vtx, 1.0);
 
 	mesh->ht_edge = (void*)(memblock + mesh_size + bins_size);
 	nb_container_init(mesh->ht_edge, EDG_CONTAINER);
@@ -125,7 +125,7 @@ static void set_memory(nb_mesh_t *mesh)
 void nb_mesh_finish(nb_mesh_t *mesh)
 {
 	clear_input_data(mesh);
-	vcn_bins2D_finish(mesh->ug_vtx);
+	nb_bins2D_finish(mesh->ug_vtx);
 	nb_container_finish(mesh->ht_trg);
 	nb_container_finish(mesh->ht_edge);
 	nb_membank_finish(mesh->vtx_membank);
@@ -156,7 +156,7 @@ static void copy_tasks(nb_mesh_t *copy, const nb_mesh_t *const mesh)
 void nb_mesh_clear(nb_mesh_t *mesh)
 {
 	clear_input_data(mesh);
-	vcn_bins2D_clear(mesh->ug_vtx);
+	nb_bins2D_clear(mesh->ug_vtx);
 	nb_container_clear(mesh->ht_trg);
 	nb_container_clear(mesh->ht_edge);
 
@@ -352,22 +352,22 @@ bool nb_mesh_is_vtx_inside(const nb_mesh_t *const restrict mesh,
 
 void nb_mesh_get_vertices(nb_mesh_t* mesh, double* vertices)
 {
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int i = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		mesh_get_extern_scale_and_disp(mesh, vtx->x,
 					       &(vertices[i * 2]));
 		i++;
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 }
 
 inline uint32_t nb_mesh_get_N_vtx(const nb_mesh_t *const mesh)
 {
-	return vcn_bins2D_get_length(mesh->ug_vtx);
+	return nb_bins2D_get_length(mesh->ug_vtx);
 }
 
 inline uint32_t nb_mesh_get_N_trg(const nb_mesh_t *const mesh)
@@ -388,12 +388,12 @@ double nb_mesh_get_area(const nb_mesh_t *const mesh)
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(iter);
-		area += vcn_utils2D_orient(trg->v1->x,
+		area += nb_utils2D_orient(trg->v1->x,
 					   trg->v2->x,
 					   trg->v3->x);
 	}
 	nb_iterator_finish(iter);
-	return (0.5 * area) / vcn_math_pow2(mesh->scale);
+	return (0.5 * area) / nb_math_pow2(mesh->scale);
 }
 
 static void delete_triangles_by_wave
@@ -502,7 +502,7 @@ static inline int compare_vtx(const void* const vtxA,
 {
 	msh_vtx_t* vA = (msh_vtx_t*) vtxA;
 	msh_vtx_t* vB = (msh_vtx_t*) vtxB;
-	if (vcn_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL)
+	if (nb_utils2D_get_dist2(vA->x, vB->x) < NB_GEOMETRIC_TOL)
 		return 0;
 	return 1;
 }
@@ -568,7 +568,7 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 }
 
 static void remove_holes_triangles(nb_mesh_t* mesh,
-				   const vcn_model_t *const model)
+				   const nb_model_t *const model)
 {
 	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < model->H; i++) {
@@ -581,7 +581,7 @@ static void remove_holes_triangles(nb_mesh_t* mesh,
 		nb_iterator_set_container(iter, mesh->ht_trg);
 		while (nb_iterator_has_more(iter)) {
 			msh_trg_t *t = (msh_trg_t*) nb_iterator_get_next(iter);
-			if (vcn_utils2D_pnt_lies_in_trg(t->v1->x,
+			if (nb_utils2D_pnt_lies_in_trg(t->v1->x,
 							t->v2->x,
 							t->v3->x,
 							hole)) {
@@ -608,13 +608,13 @@ void nb_mesh_refine(nb_mesh_t *restrict mesh)
 {
 	switch (mesh->refiner_type) {
 	case NB_MESH_REFINE_RUPPERT:
-		vcn_ruppert_refine(mesh);
+		nb_ruppert_refine(mesh);
 		break;
 	case NB_MESH_REFINE_CHEW:
 		printf("Chew refinement is not implemented yet\n");
 		break;
 	default:
-		vcn_ruppert_refine(mesh);
+		nb_ruppert_refine(mesh);
 	}
 }
 
@@ -623,14 +623,14 @@ bool nb_mesh_insert_vtx(nb_mesh_t *restrict mesh, const double vertex[2])
 	bool inserted;
 	switch (mesh->refiner_type) {
 	case NB_MESH_REFINE_RUPPERT:
-		inserted = vcn_ruppert_insert_vtx(mesh, vertex);
+		inserted = nb_ruppert_insert_vtx(mesh, vertex);
 		break;
 	case NB_MESH_REFINE_CHEW:
 		inserted = false;
 		printf("Chew refinement is not implemented yet\n");
 		break;
 	default:
-		inserted = vcn_ruppert_insert_vtx(mesh, vertex);
+		inserted = nb_ruppert_insert_vtx(mesh, vertex);
 	}
 	return inserted;
 }
@@ -667,7 +667,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	clone->input_sgm = nb_allocate_zero_mem(clone->N_input_sgm *
 						sizeof(*(clone->input_sgm)));
 
-	uint32_t N_vertices = vcn_bins2D_get_length(mesh->ug_vtx);
+	uint32_t N_vertices = nb_bins2D_get_length(mesh->ug_vtx);
 	uint32_t vtx_memsize = N_vertices * sizeof(msh_vtx_t*);
 	uint32_t N_triangles = nb_container_get_length(mesh->ht_trg);
 	uint32_t trg_memsize = N_triangles * sizeof(msh_trg_t*);
@@ -681,21 +681,21 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 
 	/* Clone grid of vertices */
 
-	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
+	double bins_size = nb_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
-	vcn_bins2D_iter_t* giter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(giter);
-	vcn_bins2D_iter_set_bins(giter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(giter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(giter);
+	nb_bins2D_iter_t* giter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(giter);
+	nb_bins2D_iter_set_bins(giter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(giter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) nb_bins2D_iter_get_next(giter);
 		/* Create the vertex clone */
 		msh_vtx_t* vtx_clone = mvtx_clone(clone, vtx);
 		mvtx_set_id(vtx_clone, id);
 		vertices[id] = vtx_clone;
-		vcn_bins2D_insert(clone->ug_vtx, vtx_clone);
+		nb_bins2D_insert(clone->ug_vtx, vtx_clone);
 		id += 1;
 	}
-	vcn_bins2D_iter_finish(giter);
+	nb_bins2D_iter_finish(giter);
 	/* Create a built-in hash table to relate original and cloned segments
 	 * and triangles */
 
@@ -813,7 +813,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 }
 
 void nb_mesh_generate_from_model(nb_mesh_t *mesh,
-				 const vcn_model_t *const model)
+				 const nb_model_t *const model)
 {
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -822,7 +822,7 @@ void nb_mesh_generate_from_model(nb_mesh_t *mesh,
 }
 
 void nb_mesh_get_simplest_from_model(nb_mesh_t *mesh,
-				     const vcn_model_t *const  model)
+				     const nb_model_t *const  model)
 {
 	nb_mesh_get_constrained_delaunay(mesh, model->N, model->vertex,
 					  model->M, model->edge);
@@ -833,7 +833,7 @@ void nb_mesh_get_simplest_from_model(nb_mesh_t *mesh,
 static bool size_constraints_allow_refine(const nb_mesh_t *const mesh)
 {
 	bool refine = false;
-	if (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||
+	if (nb_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx ||
 	    0 == mesh->max_vtx) {
 		if (nb_container_get_length(mesh->ht_trg) < mesh->max_trg ||
 		    0 == mesh->max_trg)

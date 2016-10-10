@@ -28,10 +28,10 @@ static uint32_t bin_hash_key(const void *const bin_ptr);
 static int8_t bin_compare(const void* restrict bin1_ptr,
 			  const void* restrict bin2_ptr);
 static void bin_destroy(void *bin_ptr);
-static bool null_filter(const vcn_point2D_t *const p_ref,
-			const vcn_point2D_t *const p,
+static bool null_filter(const nb_point2D_t *const p_ref,
+			const nb_point2D_t *const p,
 			const void *const data);
-static void destroy_points(vcn_bins2D_t* bins2D);
+static void destroy_points(nb_bins2D_t* bins2D);
 static bin2D_t* get_bin(const nb_container_t *const bins,
 			int xcell, int ycell);
 
@@ -52,59 +52,59 @@ static bool bin_is_inside_block(int xcell, int ycell, const int block[4]);
 
 static bool bin_is_outside_block(int xcell, int ycell, const int block[4]);
 
-static void knn_get_layer_bins(const vcn_bins2D_t *const bins2D, int layer,
-			       const vcn_point2D_t *const p,
+static void knn_get_layer_bins(const nb_bins2D_t *const bins2D, int layer,
+			       const nb_point2D_t *const p,
 			       nb_container_t *layer_bins);
 
 static void knn_scan_list(const nb_container_t *const points,
-			  const vcn_point2D_t *const p_ref,
-			  uint32_t k, vcn_point2D_t** knn,
+			  const nb_point2D_t *const p_ref,
+			  uint32_t k, nb_point2D_t** knn,
 			  uint32_t* m_nearest,
 			  double* knn_dist,
-			  bool (*filter)(const vcn_point2D_t *const p_ref,
-					 const vcn_point2D_t *const p,
+			  bool (*filter)(const nb_point2D_t *const p_ref,
+					 const nb_point2D_t *const p,
 					 const void *const data),
 			  const void* const filter_data);
-static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2);
+static bool half_side_have_points(const nb_bins2D_t* const bins2D,
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2);
 static int8_t bin_which_half_side(const bin2D_t* const bin,
 				  double bin_size,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2);
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2);
 static bool bin_have_points_in_half_side(const bin2D_t* const bin,
-					 const vcn_point2D_t *const p1,
-					 const vcn_point2D_t *const p2);
+					 const nb_point2D_t *const p1,
+					 const nb_point2D_t *const p2);
 static void delaunay_get_layer_bins
                      (nb_container_t* layer_bins,
-		      const vcn_bins2D_t *const bins2D,
-		      const vcn_point2D_t *const p1,
-		      const vcn_point2D_t *const p2,
+		      const nb_bins2D_t *const bins2D,
+		      const nb_point2D_t *const p1,
+		      const nb_point2D_t *const p2,
 		      const circle_t *const layer_circle,
 		      int layer);
 
 static void set_block_from_circle(int block[4],
-				  const vcn_bins2D_t *const bins2D,
+				  const nb_bins2D_t *const bins2D,
 				  const circle_t *const circle);
 static void delaunay_get_points(const nb_container_t *const points,
-				const vcn_point2D_t *const p1,
-				const vcn_point2D_t *const p2,
+				const nb_point2D_t *const p1,
+				const nb_point2D_t *const p2,
 				const circle_t *const circle,
 				nb_container_t *vertices,
 				nb_container_t* outside_vtx);
 static void delaunay_insert_if_is_candidate
 				(nb_container_t* vertices,
 				nb_container_t* outside_vtx,
-				 const vcn_point2D_t *const restrict p1,
-				 const vcn_point2D_t *const restrict p2,
+				 const nb_point2D_t *const restrict p1,
+				 const nb_point2D_t *const restrict p2,
 				 const circle_t *const circle,
-				 const vcn_point2D_t *const restrict p);
+				 const nb_point2D_t *const restrict p);
 static bool is_inside_circle(const circle_t *const circle,
-			     const vcn_point2D_t *const p);
+			     const nb_point2D_t *const p);
 static void set_circle_from_layer(circle_t *circle,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2,
-				  const vcn_bins2D_t *const bins2D,
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2,
+				  const nb_bins2D_t *const bins2D,
 				  int layer);
 static void delaunay_set_inside_points_of_prev_layer
 				(nb_container_t* vertices,
@@ -141,14 +141,14 @@ static inline void bin_destroy(void *bin_ptr)
 	nb_free_mem(bin);
 }
 
-uint32_t vcn_bins2D_get_memsize(void)
+uint32_t nb_bins2D_get_memsize(void)
 {
-	return sizeof(vcn_bins2D_t);
+	return sizeof(nb_bins2D_t);
 }
 
-void vcn_bins2D_init(vcn_bins2D_t *bins2D, double size_of_bins)
+void nb_bins2D_init(nb_bins2D_t *bins2D, double size_of_bins)
 {
-	memset(bins2D, 0, vcn_bins2D_get_memsize());
+	memset(bins2D, 0, nb_bins2D_get_memsize());
 	bins2D->size_of_bins = size_of_bins;
 	bins2D->bins = nb_container_create(NB_HASH);
 	nb_container_set_key_generator(bins2D->bins, bin_hash_key);
@@ -158,58 +158,58 @@ void vcn_bins2D_init(vcn_bins2D_t *bins2D, double size_of_bins)
 	bins2D->filter = null_filter;
 }
 
-void vcn_bins2D_finish(vcn_bins2D_t *bins2D)
+void nb_bins2D_finish(nb_bins2D_t *bins2D)
 {
 	destroy_points(bins2D);
 	nb_container_destroy(bins2D->bins);
 }
 
-vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
+nb_bins2D_t* nb_bins2D_create(double size_of_bins)
 {
-	vcn_bins2D_t* bins2D = nb_allocate_mem(vcn_bins2D_get_memsize());
-	vcn_bins2D_init(bins2D, size_of_bins);
+	nb_bins2D_t* bins2D = nb_allocate_mem(nb_bins2D_get_memsize());
+	nb_bins2D_init(bins2D, size_of_bins);
 	return bins2D;
 }
 
-static inline bool null_filter(const vcn_point2D_t *const p_ref,
-			       const vcn_point2D_t *const p,
+static inline bool null_filter(const nb_point2D_t *const p_ref,
+			       const nb_point2D_t *const p,
 			       const void *const data)
 {
 	return true;
 }
 
-void vcn_bins2D_destroy(vcn_bins2D_t* bins2D)
+void nb_bins2D_destroy(nb_bins2D_t* bins2D)
 {
-	vcn_bins2D_finish(bins2D);
+	nb_bins2D_finish(bins2D);
 	nb_free_mem(bins2D);
 }
 
-void vcn_bins2D_clear(vcn_bins2D_t* bins2D)
+void nb_bins2D_clear(nb_bins2D_t* bins2D)
 {
 	destroy_points(bins2D);
 	nb_container_clear(bins2D->bins);
 	bins2D->length = 0;
 }
 
-static void destroy_points(vcn_bins2D_t* bins2D)
+static void destroy_points(nb_bins2D_t* bins2D)
 {
 	if (NULL != bins2D->destroy) {
-		while (vcn_bins2D_is_not_empty(bins2D)) {
-			vcn_point2D_t* point = vcn_bins2D_delete_first(bins2D);
+		while (nb_bins2D_is_not_empty(bins2D)) {
+			nb_point2D_t* point = nb_bins2D_delete_first(bins2D);
 			bins2D->destroy(point);
 		}
 	}
 }
 
-void vcn_bins2D_set_destroyer(vcn_bins2D_t* bins2D,
+void nb_bins2D_set_destroyer(nb_bins2D_t* bins2D,
 			      void (*destroy)(void*))
 {
 	bins2D->destroy = destroy;
 
 }
 
-void vcn_bins2D_insert(vcn_bins2D_t *const restrict bins2D,
-		       const vcn_point2D_t *const restrict point)
+void nb_bins2D_insert(nb_bins2D_t *const restrict bins2D,
+		       const nb_point2D_t *const restrict point)
 {
 	bin2D_t key_bin;
 	key_bin.x = get_bin_coord(point->x[0], bins2D->size_of_bins);
@@ -221,21 +221,21 @@ void vcn_bins2D_insert(vcn_bins2D_t *const restrict bins2D,
 		bin->x = key_bin.x;
 		bin->y = key_bin.y;
 		bin->points = nb_container_create(NB_QUEUE);
-		nb_container_set_comparer(bin->points, vcn_point2D_compare);
+		nb_container_set_comparer(bin->points, nb_point2D_compare);
 		nb_container_insert(bins2D->bins, bin);
 	}
 	nb_container_insert(bin->points, point);
 	bins2D->length += 1;
 }
 
-vcn_point2D_t* vcn_bins2D_delete(vcn_bins2D_t* bins2D,
-				 const vcn_point2D_t *const point)
+nb_point2D_t* nb_bins2D_delete(nb_bins2D_t* bins2D,
+				 const nb_point2D_t *const point)
 {
 	bin2D_t key_bin;
 	key_bin.x = get_bin_coord(point->x[0], bins2D->size_of_bins);
 	key_bin.y = get_bin_coord(point->x[1], bins2D->size_of_bins);
 	bin2D_t *bin =  nb_container_exist(bins2D->bins, &key_bin);
-	vcn_point2D_t *deleted_point = NULL;
+	nb_point2D_t *deleted_point = NULL;
 	if (NULL != bin) {
 		deleted_point = nb_container_delete(bin->points, point);
 		if (deleted_point == point) {
@@ -249,9 +249,9 @@ vcn_point2D_t* vcn_bins2D_delete(vcn_bins2D_t* bins2D,
 	return deleted_point;
 }
 
-vcn_point2D_t* vcn_bins2D_delete_first(vcn_bins2D_t* bins2D)
+nb_point2D_t* nb_bins2D_delete_first(nb_bins2D_t* bins2D)
 {
-	vcn_point2D_t *point = NULL;
+	nb_point2D_t *point = NULL;
 	bin2D_t *bin = nb_container_get_first(bins2D->bins);
 	if (NULL != bin) {
 		point = nb_container_delete_first(bin->points);
@@ -372,9 +372,9 @@ static inline bool bin_is_outside_block(int xcell, int ycell,
 	return outside_xspan || outside_yspan;
 }
 
-static void knn_get_layer_bins(const vcn_bins2D_t *const restrict bins2D, 
+static void knn_get_layer_bins(const nb_bins2D_t *const restrict bins2D, 
 			       int layer,
-			       const vcn_point2D_t *const restrict p,
+			       const nb_point2D_t *const restrict p,
 			       nb_container_t *layer_bins)
 {
 	/* The zero-layer is conformed  by the bin containing the point of 
@@ -423,12 +423,12 @@ static void knn_get_layer_bins(const vcn_bins2D_t *const restrict bins2D,
 }
 
 static inline void knn_scan_list(const nb_container_t *const points,
-				 const vcn_point2D_t *const restrict p_ref,
-				 uint32_t k, vcn_point2D_t** knn,
+				 const nb_point2D_t *const restrict p_ref,
+				 uint32_t k, nb_point2D_t** knn,
 				 uint32_t* m_nearest,
 				 double* knn_dist,
-				 bool (*filter)(const vcn_point2D_t *const p_ref,
-						const vcn_point2D_t *const p,
+				 bool (*filter)(const nb_point2D_t *const p_ref,
+						const nb_point2D_t *const p,
 						const void *const data),
 				 const void* const restrict filter_data)
 {
@@ -438,8 +438,8 @@ static inline void knn_scan_list(const nb_container_t *const points,
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
 		/* Get next point */
-		vcn_point2D_t *restrict p =
-			(vcn_point2D_t*) nb_iterator_get_next(iter);
+		nb_point2D_t *restrict p =
+			(nb_point2D_t*) nb_iterator_get_next(iter);
 
 		/* Filter if the pointer is the same */
 		if (p_ref == p)
@@ -450,7 +450,7 @@ static inline void knn_scan_list(const nb_container_t *const points,
 			continue;
     
 		/* Calculate distance */
-		double dist_p = vcn_utils2D_get_dist(p_ref->x, p->x);
+		double dist_p = nb_utils2D_get_dist(p_ref->x, p->x);
 
 		for (uint32_t i = 0; i < m_nearest[0]; i++) {
 			/* Minimize distance inserting in ascending order */
@@ -459,7 +459,7 @@ static inline void knn_scan_list(const nb_container_t *const points,
 				double aux = dist_p;
 				dist_p = knn_dist[i];
 				knn_dist[i] = aux;
-				vcn_point2D_t* p_aux = p;
+				nb_point2D_t* p_aux = p;
 				p = knn[i];
 				knn[i] = p_aux;
 			}
@@ -474,9 +474,9 @@ static inline void knn_scan_list(const nb_container_t *const points,
 	nb_iterator_finish(iter);
 }
 
-uint32_t vcn_bins2D_get_knn(const vcn_bins2D_t *const restrict bins2D,
-			    const vcn_point2D_t *const restrict p,
-			    uint32_t k, vcn_point2D_t* knn[], double knn_dist[])
+uint32_t nb_bins2D_get_knn(const nb_bins2D_t *const restrict bins2D,
+			    const nb_point2D_t *const restrict p,
+			    uint32_t k, nb_point2D_t* knn[], double knn_dist[])
 /* Returns the m nearest neighbours available, with m <= k.
  * The output is sorted based on the dist(...) function.
  */
@@ -523,23 +523,23 @@ uint32_t vcn_bins2D_get_knn(const vcn_bins2D_t *const restrict bins2D,
 	return m_nearest;
 }
 
-void vcn_bins2D_set_filter(vcn_bins2D_t *bins2D, 
+void nb_bins2D_set_filter(nb_bins2D_t *bins2D, 
 			   bool (*filter)
-			   (const vcn_point2D_t *const p_ref,
-			    const vcn_point2D_t *const p,
+			   (const nb_point2D_t *const p_ref,
+			    const nb_point2D_t *const p,
 			    const void *const data))
 {
 	bins2D->filter = filter;
 }
 
-void vcn_bins2D_set_filter_data(vcn_bins2D_t *bins2D, const void *data)
+void nb_bins2D_set_filter_data(nb_bins2D_t *bins2D, const void *data)
 {
 	bins2D->filter_data = data;
 }
 
-static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2)
+static bool half_side_have_points(const nb_bins2D_t* const bins2D,
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2)
 {
 	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
@@ -568,8 +568,8 @@ static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
 
 static int8_t bin_which_half_side(const bin2D_t* const bin,
 				  double bin_size,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2)
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2)
 {
         double x1[2];
 	x1[0] = bin->x * bin_size;
@@ -583,10 +583,10 @@ static int8_t bin_which_half_side(const bin2D_t* const bin,
 	x4[0] = x1[0];
 	x4[1] = x1[1] + bin_size;
 
-	bool h1 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x1);
-	bool h2 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x2);
-	bool h3 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x3);
-	bool h4 = vcn_utils2D_is_in_half_side(p1->x, p2->x, x4);
+	bool h1 = nb_utils2D_is_in_half_side(p1->x, p2->x, x1);
+	bool h2 = nb_utils2D_is_in_half_side(p1->x, p2->x, x2);
+	bool h3 = nb_utils2D_is_in_half_side(p1->x, p2->x, x3);
+	bool h4 = nb_utils2D_is_in_half_side(p1->x, p2->x, x4);
 
 	int8_t half_side;
 	if (h1 && h2 && h3 && h4)
@@ -599,16 +599,16 @@ static int8_t bin_which_half_side(const bin2D_t* const bin,
 }
 
 static bool bin_have_points_in_half_side(const bin2D_t* const bin,
-					 const vcn_point2D_t *const p1,
-					 const vcn_point2D_t *const p2)
+					 const nb_point2D_t *const p1,
+					 const nb_point2D_t *const p2)
 {
 	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bin->points);
 	bool have_points = false;
 	while (nb_iterator_has_more(iter)) {
-		const vcn_point2D_t *p = nb_iterator_get_next(iter);
-		if (vcn_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
+		const nb_point2D_t *p = nb_iterator_get_next(iter);
+		if (nb_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
 			have_points = true;
 			break;
 		}
@@ -619,9 +619,9 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 
 static void delaunay_get_layer_bins
 			(nb_container_t* layer_bins,
-			 const vcn_bins2D_t *const bins2D,
-			 const vcn_point2D_t *const p1,
-			 const vcn_point2D_t *const p2,
+			 const nb_bins2D_t *const bins2D,
+			 const nb_point2D_t *const p1,
+			 const nb_point2D_t *const p2,
 			 const circle_t *const layer_circle,
 			 int layer)
 {
@@ -641,7 +641,7 @@ static void delaunay_get_layer_bins
 }
 
 static void set_block_from_circle(int block[4],
-				  const vcn_bins2D_t *const bins2D,
+				  const nb_bins2D_t *const bins2D,
 				  const circle_t *const circle)
 {
 	block[0] = get_bin_coord(circle->c[0] - circle->r, bins2D->size_of_bins);
@@ -652,8 +652,8 @@ static void set_block_from_circle(int block[4],
 }
 
 static void delaunay_get_points(const nb_container_t *const restrict points,
-				const vcn_point2D_t *const restrict p1,
-				const vcn_point2D_t *const restrict p2,
+				const nb_point2D_t *const restrict p1,
+				const nb_point2D_t *const restrict p2,
 				const circle_t *const circle,
 				nb_container_t* vertices,
 				nb_container_t* outside_vtx)
@@ -662,7 +662,7 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
-		const vcn_point2D_t* restrict p = nb_iterator_get_next(iter);
+		const nb_point2D_t* restrict p = nb_iterator_get_next(iter);
 		delaunay_insert_if_is_candidate(vertices, outside_vtx,
 						p1, p2, circle, p);
 	}
@@ -672,13 +672,13 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 static void delaunay_insert_if_is_candidate
 				(nb_container_t* vertices,
 				 nb_container_t* outside_vtx,
-				 const vcn_point2D_t *const restrict p1,
-				 const vcn_point2D_t *const restrict p2,
+				 const nb_point2D_t *const restrict p1,
+				 const nb_point2D_t *const restrict p2,
 				 const circle_t *const circle,
-				 const vcn_point2D_t *const restrict p)
+				 const nb_point2D_t *const restrict p)
 {
 	if (p1 != p && p2 != p) {
-		if (vcn_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
+		if (nb_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
 			if (is_inside_circle(circle, p))
 				nb_container_insert(vertices, p);
 			else
@@ -688,16 +688,16 @@ static void delaunay_insert_if_is_candidate
 }
 
 static inline bool is_inside_circle(const circle_t *const circle,
-				    const vcn_point2D_t *const p)
+				    const nb_point2D_t *const p)
 {
-	double dist2 = vcn_utils2D_get_dist2(circle->c, p->x);
+	double dist2 = nb_utils2D_get_dist2(circle->c, p->x);
 	return (POW2(circle->r) > dist2);
 }
 
-void vcn_bins2D_get_candidate_points_to_min_delaunay
-                   (const vcn_bins2D_t *const restrict bins2D,
-		    const vcn_point2D_t *const restrict p1, 
-		    const vcn_point2D_t *const restrict p2,
+void nb_bins2D_get_candidate_points_to_min_delaunay
+                   (const nb_bins2D_t *const restrict bins2D,
+		    const nb_point2D_t *const restrict p1, 
+		    const nb_point2D_t *const restrict p2,
 		    nb_container_t *vertices)
 {
 	/* Scan bins layer by layer. In the following example, the dots
@@ -743,9 +743,9 @@ void vcn_bins2D_get_candidate_points_to_min_delaunay
 }
 
 static void set_circle_from_layer(circle_t *circle,
-				  const vcn_point2D_t *const p1,
-				  const vcn_point2D_t *const p2,
-				  const vcn_bins2D_t *const bins2D,
+				  const nb_point2D_t *const p1,
+				  const nb_point2D_t *const p2,
+				  const nb_bins2D_t *const bins2D,
 				  int layer)
 {
 	double n[2];
@@ -773,7 +773,7 @@ static void delaunay_set_inside_points_of_prev_layer
 	nb_container_t *aux = nb_allocate_on_stack(nb_container_get_memsize(type));
 	nb_container_init(aux, type);
 	while (nb_container_is_not_empty(outside_vtx)) {
-		vcn_point2D_t *p = nb_container_delete_first(outside_vtx);
+		nb_point2D_t *p = nb_container_delete_first(outside_vtx);
 		if (is_inside_circle(circle, p))
 			nb_container_insert(vertices, p);
 		else
@@ -783,7 +783,7 @@ static void delaunay_set_inside_points_of_prev_layer
 	nb_container_finish(aux);
 }
 
-void vcn_bins2D_get_points_inside_circle(const vcn_bins2D_t *const bins2D,
+void nb_bins2D_get_points_inside_circle(const nb_bins2D_t *const bins2D,
 					 double center[2],
 					 double radius,
 					 nb_container_t *points_inside)
@@ -807,8 +807,8 @@ void vcn_bins2D_get_points_inside_circle(const vcn_bins2D_t *const bins2D,
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, points);
 		while (nb_iterator_has_more(iter)) {
-			const vcn_point2D_t *p = nb_iterator_get_next(iter);
-			double dist2 = vcn_utils2D_get_dist2(p->x, center);
+			const nb_point2D_t *p = nb_iterator_get_next(iter);
+			double dist2 = nb_utils2D_get_dist2(p->x, center);
 			if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2)
 				nb_container_insert(points_inside, p);
 		}
@@ -817,8 +817,8 @@ void vcn_bins2D_get_points_inside_circle(const vcn_bins2D_t *const bins2D,
 	nb_container_finish(bins_block);
 }
 
-bool vcn_bins2D_are_points_inside_circle
-                        (const vcn_bins2D_t *const bins2D,
+bool nb_bins2D_are_points_inside_circle
+                        (const nb_bins2D_t *const bins2D,
 			 double center[2], double radius)
 {
 	/* Get block */
@@ -838,8 +838,8 @@ bool vcn_bins2D_are_points_inside_circle
 			nb_iterator_init(iter);
 			nb_iterator_set_container(iter, points);
 			while (nb_iterator_has_more(iter)) {
-				const vcn_point2D_t *p = nb_iterator_get_next(iter);
-				double dist2 = vcn_utils2D_get_dist2(p->x, center);
+				const nb_point2D_t *p = nb_iterator_get_next(iter);
+				double dist2 = nb_utils2D_get_dist2(p->x, center);
 				if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2) {
 					nb_iterator_finish(iter);
 					return true;
@@ -851,22 +851,22 @@ bool vcn_bins2D_are_points_inside_circle
 	return false;
 }
 
-inline uint32_t vcn_bins2D_get_N_bins(const vcn_bins2D_t *const restrict bins2D)
+inline uint32_t nb_bins2D_get_N_bins(const nb_bins2D_t *const restrict bins2D)
 {
 	return nb_container_get_length(bins2D->bins);
 }
 
-inline bool vcn_bins2D_is_empty(const vcn_bins2D_t *const restrict bins2D)
+inline bool nb_bins2D_is_empty(const nb_bins2D_t *const restrict bins2D)
 {
 	return nb_container_is_empty(bins2D->bins);
 }
 
-inline bool vcn_bins2D_is_not_empty(const vcn_bins2D_t *const restrict bins2D)
+inline bool nb_bins2D_is_not_empty(const nb_bins2D_t *const restrict bins2D)
 {
 	return nb_container_is_not_empty(bins2D->bins);
 }
 
-uint32_t vcn_bins2D_get_min_points_x_bin(const vcn_bins2D_t *const bins2D)
+uint32_t nb_bins2D_get_min_points_x_bin(const nb_bins2D_t *const bins2D)
 {
 	uint32_t min = bins2D->length;
 	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
@@ -881,13 +881,13 @@ uint32_t vcn_bins2D_get_min_points_x_bin(const vcn_bins2D_t *const bins2D)
 	return min;
 }
 
-inline uint32_t vcn_bins2D_get_length(const vcn_bins2D_t *const restrict bins2D)
+inline uint32_t nb_bins2D_get_length(const nb_bins2D_t *const restrict bins2D)
 {
 	return bins2D->length;
 }
 
-inline double vcn_bins2D_get_size_of_bins
-				(const vcn_bins2D_t *const restrict bins2D)
+inline double nb_bins2D_get_size_of_bins
+				(const nb_bins2D_t *const restrict bins2D)
 {
 	return bins2D->size_of_bins;
 }

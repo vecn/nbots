@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "nb/geometric_bot.h"
 
-void vcn_model_draw(const vcn_model_t *const model,
+void nb_model_draw(const nb_model_t *const model,
 		    const char* filename,
 		    int width, int height);
 

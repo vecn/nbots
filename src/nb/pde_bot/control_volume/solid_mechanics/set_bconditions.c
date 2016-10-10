@@ -322,9 +322,9 @@ static double get_dist_elem_face(const nb_partition_t *part,
 	s2[1] = nb_partition_node_get_y(part, n2);
 
 	double cp[2];
-	vcn_utils2D_get_closest_pnt_to_sgm(s1, s2, c, cp);
+	nb_utils2D_get_closest_pnt_to_sgm(s1, s2, c, cp);
 
-	return vcn_utils2D_get_dist(c, cp);
+	return nb_utils2D_get_dist(c, cp);
 }
 
 static void set_neumann_vtx(const nb_partition_t *part,

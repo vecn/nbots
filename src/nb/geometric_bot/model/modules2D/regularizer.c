@@ -21,7 +21,7 @@ static void init_matrix(const nb_model_t *model, nb_sparse_t **A);
 static void assemble_system(const nb_model_t *model, nb_sparse_t *A,
 			    double *b, double lambda);
 
-int vcn_model_regularize(vcn_model_t* model, double lambda,
+int nb_model_regularize(nb_model_t* model, double lambda,
 			 uint32_t N_fixed_vertices,
 			 uint32_t* fixed_vertices)
 {
@@ -63,7 +63,7 @@ static void init_matrix(const nb_model_t *model, nb_sparse_t **A)
 	nb_graph_t *graph = (void*) memblock;
 	nb_graph_init(graph);
 	
-	vcn_model_load_vtx_graph(model, graph);
+	nb_model_load_vtx_graph(model, graph);
 	*A = nb_sparse_create(graph, NULL, 2);
 
 	nb_graph_finish(graph);

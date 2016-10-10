@@ -433,7 +433,7 @@ void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 					rv1[i] = c*rv1[i];
 					if(fabs(f)+anorm == anorm) break;
 					g = w[i];
-					h = vcn_math_hypo(f,g);
+					h = nb_math_hypo(f,g);
 					w[i] = h;
 					h = 1.0/h;
 					c = g*h;
@@ -465,7 +465,7 @@ void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 			g = rv1[nm];
 			h = rv1[k];
 			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-			g = vcn_math_hypo(f, 1.0);
+			g = nb_math_hypo(f, 1.0);
 			f = ((x-z)*(x+z) + 
 			     h*((y/(f + (f >= 0.0 ? fabs(g):-fabs(g))))-h))/x;
 			c = s = 1.0;
@@ -475,7 +475,7 @@ void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 				y = w[i];
 				h = s*g;
 				g = c*g;
-				z = vcn_math_hypo(f, h);
+				z = nb_math_hypo(f, h);
 				rv1[j] = z;
 				c = f/z;
 				s = h/z;
@@ -489,7 +489,7 @@ void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 					V[jj*n+j] = x*c+z*s;
 					V[jj*n+i] = z*c-x*s;
 				}
-				z = vcn_math_hypo(f, h);
+				z = nb_math_hypo(f, h);
 				w[j] = z;
 				if(z){
 					z = 1.0/z;

@@ -7,8 +7,8 @@
 
 #include "../mesh2D_structs.h"
 
-void vcn_ruppert_refine(nb_mesh_t *mesh);
-bool vcn_ruppert_insert_vtx(nb_mesh_t *restrict mesh,
+void nb_ruppert_refine(nb_mesh_t *mesh);
+bool nb_ruppert_insert_vtx(nb_mesh_t *restrict mesh,
 			    const double vertex[2]);
 void nb_ruppert_insert_verified_vtx(nb_mesh_t *restrict mesh,
 				    msh_trg_t *trg,

@@ -8,20 +8,20 @@
 #include "nb/pde_bot/finite_element/element.h"
 
 bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id);
-void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
+void pipeline_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 			      double D[4], double density,
 			      double thickness, double detJ,
 			      double *dNi_dx, double *dNi_dy,
 			      double fx, double fy,
 			      double *Ke, double *Me, double *Fe);
-void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
+void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
 				   const nb_partition_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   nb_sparse_t *K, double *M, double *F);
 int pipeline_assemble_system
 		(nb_sparse_t* K, double* M, double *F,
 		 const nb_partition_t *const part,
-		 const vcn_fem_elem_t *const elemtype,
+		 const nb_fem_elem_t *const elemtype,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
 		 double gravity[2],
@@ -37,11 +37,11 @@ void pipeline_set_boundary_conditions(const nb_partition_t *part,
 void pipeline_compute_strain(double *strain,
 			     const nb_partition_t *const part,
 			     double *displacement,
-			     const vcn_fem_elem_t *const elemtype);
+			     const nb_fem_elem_t *const elemtype);
 
 void pipeline_compute_main_stress(double *stress, 
 				  double *main_stress,
 				  uint32_t N_elements,
-				  const vcn_fem_elem_t *const elemtype);
+				  const nb_fem_elem_t *const elemtype);
 
 #endif

@@ -12,15 +12,15 @@
 
 #include <stdbool.h>
 
-typedef struct vcn_cfreader_s vcn_cfreader_t;
-vcn_cfreader_t* vcn_cfreader_create(const char* filename,
+typedef struct nb_cfreader_s nb_cfreader_t;
+nb_cfreader_t* nb_cfreader_create(const char* filename,
 				    const char* line_comment_token);
-char vcn_cfreader_read_int(vcn_cfreader_t *cfreader, int *val);
-char vcn_cfreader_read_uint(vcn_cfreader_t *cfreader, unsigned int *val);
-char vcn_cfreader_read_float(vcn_cfreader_t *cfreader, float *val);
-char vcn_cfreader_read_double(vcn_cfreader_t *cfreader, double *val);
-char vcn_cfreader_read_bool(vcn_cfreader_t *cfreader, bool *val);
-char* vcn_cfreader_read_and_allocate_string(vcn_cfreader_t *cfreader);
-void vcn_cfreader_destroy(vcn_cfreader_t *cfreader);
+char nb_cfreader_read_int(nb_cfreader_t *cfreader, int *val);
+char nb_cfreader_read_uint(nb_cfreader_t *cfreader, unsigned int *val);
+char nb_cfreader_read_float(nb_cfreader_t *cfreader, float *val);
+char nb_cfreader_read_double(nb_cfreader_t *cfreader, double *val);
+char nb_cfreader_read_bool(nb_cfreader_t *cfreader, bool *val);
+char* nb_cfreader_read_and_allocate_string(nb_cfreader_t *cfreader);
+void nb_cfreader_destroy(nb_cfreader_t *cfreader);
 
 #endif

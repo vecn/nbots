@@ -144,724 +144,724 @@ static void test_get_combination_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(16 == model->N);
 	CU_ASSERT(24 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(9 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(8 == model->N);
 	CU_ASSERT(8 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(16 == model->N);
 	CU_ASSERT(16 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(12 == model->N);
 	CU_ASSERT(12 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(4 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(12 == model->N);
 	CU_ASSERT(12 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(4 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_squares(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_squares_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_squares_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(16 == model->N);
 	CU_ASSERT(24 == model->M);
 	CU_ASSERT(1 == model->H);
 	CU_ASSERT(8 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_combination_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(36 == model->N);
 	CU_ASSERT(52 == model->M);
 	CU_ASSERT(4 == model->H);
 	CU_ASSERT(13 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(16 == model->N);
 	CU_ASSERT(16 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(4 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(36 == model->N);
 	CU_ASSERT(36 == model->M);
 	CU_ASSERT(4 == model->H);
 	CU_ASSERT(1 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(24 == model->N);
 	CU_ASSERT(24 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(4 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(28 == model->N);
 	CU_ASSERT(28 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(5 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_cross(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_cross_1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_cross_2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(36 == model->N);
 	CU_ASSERT(52 == model->M);
 	CU_ASSERT(8 == model->H);
 	CU_ASSERT(9 == N_areas);
 
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_combination_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(6 == model->N);
 	CU_ASSERT(8 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(3 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(3 == model->N);
 	CU_ASSERT(3 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(5 == model->N);
 	CU_ASSERT(5 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(3 == model->N);
 	CU_ASSERT(3 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(5 == model->N);
 	CU_ASSERT(5 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_c(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_F1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_E1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(6 == model->N);
 	CU_ASSERT(8 == model->M);
 	CU_ASSERT(1 == model->H);
 	CU_ASSERT(2 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_combination_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(11 == model->N);
 	CU_ASSERT(15 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(5 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(4 == model->N);
 	CU_ASSERT(4 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(11 == model->N);
 	CU_ASSERT(11 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(9 == model->N);
 	CU_ASSERT(11 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(3 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(4 == model->N);
 	CU_ASSERT(4 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_b(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_B1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_C1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(11 == model->N);
 	CU_ASSERT(15 == model->M);
 	CU_ASSERT(1 == model->H);
 	CU_ASSERT(4 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_combination_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(10 == model->N);
 	CU_ASSERT(7 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(4 == model->N);
 	CU_ASSERT(4 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(4 == model->N);
 	CU_ASSERT(4 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
 
 	CU_ASSERT(0 == model->N);
 	CU_ASSERT(0 == model->M);
 	CU_ASSERT(0 == model->H);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
 
 	CU_ASSERT(0 == model->N);
 	CU_ASSERT(0 == model->M);
 	CU_ASSERT(0 == model->H);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_g(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_G1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_G2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
 
 	CU_ASSERT(0 == model->N);
 	CU_ASSERT(0 == model->M);
 	CU_ASSERT(0 == model->H);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_combination_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_combination(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_combination(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(98 == model->N);
 	CU_ASSERT(122 == model->M);
 	CU_ASSERT(2 == model->H);
 	CU_ASSERT(24 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_intersection_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_intersection(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_intersection(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(84 == model->N);
 	CU_ASSERT(85 == model->M);
 	CU_ASSERT(2 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_union_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_union(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_union(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(54 == model->N);
 	CU_ASSERT(55 == model->M);
 	CU_ASSERT(2 == model->H);
 	CU_ASSERT(1 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionA_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(12 == model->N);
 	CU_ASSERT(12 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(4 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_substractionB_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_substraction(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_substraction(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(85 == model->N);
 	CU_ASSERT(92 == model->M);
 	CU_ASSERT(0 == model->H);
 	CU_ASSERT(19 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }
 
 static void test_get_difference_h(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/combining_H1.psl", INPUTS_DIR);
-	vcn_model_t *model1 = vcn_model_load(input_name);
+	nb_model_t *model1 = nb_model_load(input_name);
 	sprintf(input_name, "%s/combining_H2.psl", INPUTS_DIR);
-	vcn_model_t *model2 = vcn_model_load(input_name);
-	vcn_model_t *model = vcn_model_create();
-	vcn_model_get_difference(model, model1, model2);
-	vcn_model_destroy(model1);
-	vcn_model_destroy(model2);
-	uint16_t N_areas = vcn_model_get_N_subareas(model);
+	nb_model_t *model2 = nb_model_load(input_name);
+	nb_model_t *model = nb_model_create();
+	nb_model_get_difference(model, model1, model2);
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+	uint16_t N_areas = nb_model_get_N_subareas(model);
 
 	CU_ASSERT(88 == model->N);
 	CU_ASSERT(104 == model->M);
 	CU_ASSERT(1 == model->H);
 	CU_ASSERT(23 == N_areas);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 }

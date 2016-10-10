@@ -169,7 +169,7 @@ static bool mtrg_is_too_big(const nb_mesh_t *const restrict mesh,
 			    /* big_ratio could be NULL if not required */
 			    double *big_ratio);
 
-void vcn_ruppert_refine(nb_mesh_t *restrict mesh)
+void nb_ruppert_refine(nb_mesh_t *restrict mesh)
 {
 	/* Allocate data structures to allocate encroached elements */
 	nb_container_t *encroached_sgm =
@@ -219,9 +219,9 @@ static int8_t compare_edge_size(const void *const edge1_ptr,
 	const msh_edge_t *const edge1 = edge1_ptr;
 	const msh_edge_t *const edge2 = edge2_ptr;
 	uint32_t a1 = (uint32_t)
-		(vcn_utils2D_get_dist2(edge1->v1->x, edge1->v2->x) * 1e6);
+		(nb_utils2D_get_dist2(edge1->v1->x, edge1->v2->x) * 1e6);
 	uint32_t a2 = (uint32_t)
-		(vcn_utils2D_get_dist2(edge2->v1->x, edge2->v2->x) * 1e6);
+		(nb_utils2D_get_dist2(edge2->v1->x, edge2->v2->x) * 1e6);
 	int8_t out;
 	if (a1 > a2) {
 		out = -1;
@@ -261,7 +261,7 @@ static int8_t compare_trg_attr(const void *const trg1_ptr,
 	return out;
 }
 
-bool vcn_ruppert_insert_vtx(nb_mesh_t *mesh, const double vertex[2])
+bool nb_ruppert_insert_vtx(nb_mesh_t *mesh, const double vertex[2])
 {
 	msh_vtx_t* new_vtx = mvtx_create(mesh);
 
@@ -308,7 +308,7 @@ static void delete_bad_trg(nb_mesh_t *mesh,
 	       check_max_trg(mesh) && check_max_vtx(mesh)) {
 		/* Re-allocate hash tables if they are too small */
 		if (iter % 5000 == 0) {
-			if (vcn_bins2D_get_min_points_x_bin(mesh->ug_vtx) > 100)
+			if (nb_bins2D_get_min_points_x_bin(mesh->ug_vtx) > 100)
 				reallocate_bins(mesh);
 		}
 		iter ++;
@@ -321,7 +321,7 @@ static void delete_bad_trg(nb_mesh_t *mesh,
 
 		/* Get circumcenter */
 		msh_vtx_t *cc = mvtx_create(mesh);
-		vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
+		nb_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
 					     trg->v3->x, cc->x);
     
 		msh_trg_t *trg_containing_cc =
@@ -350,7 +350,7 @@ static void delete_bad_trg(nb_mesh_t *mesh,
 			mvtx_destroy(mesh, cc);
 
 			/* Process segments encroached by the circumcenter */
-			double d = vcn_utils2D_get_min_trg_edge(trg->v1->x,
+			double d = nb_utils2D_get_min_trg_edge(trg->v1->x,
 								trg->v2->x,
 								trg->v3->x);
 
@@ -388,20 +388,20 @@ static void delete_bad_trg(nb_mesh_t *mesh,
 static void reallocate_bins(nb_mesh_t *const restrict mesh)
 {
 	double avg_points_x_bin = 
-		vcn_bins2D_get_length(mesh->ug_vtx) / 
-		vcn_bins2D_get_N_bins(mesh->ug_vtx);
+		nb_bins2D_get_length(mesh->ug_vtx) / 
+		nb_bins2D_get_N_bins(mesh->ug_vtx);
 	double new_bin_size =
-		vcn_bins2D_get_size_of_bins(mesh->ug_vtx) /
+		nb_bins2D_get_size_of_bins(mesh->ug_vtx) /
 		sqrt(avg_points_x_bin);
   
-	vcn_bins2D_t *vertices = nb_allocate_on_stack(vcn_bins2D_get_memsize());
-	vcn_bins2D_init(vertices, new_bin_size);
+	nb_bins2D_t *vertices = nb_allocate_on_stack(nb_bins2D_get_memsize());
+	nb_bins2D_init(vertices, new_bin_size);
 
-	while (vcn_bins2D_is_not_empty(mesh->ug_vtx)) {
-		msh_vtx_t* vtx = vcn_bins2D_delete_first(mesh->ug_vtx);
-		vcn_bins2D_insert(vertices, vtx);
+	while (nb_bins2D_is_not_empty(mesh->ug_vtx)) {
+		msh_vtx_t* vtx = nb_bins2D_delete_first(mesh->ug_vtx);
+		nb_bins2D_insert(vertices, vtx);
 	}
-	vcn_bins2D_finish(mesh->ug_vtx);
+	nb_bins2D_finish(mesh->ug_vtx);
 	mesh->ug_vtx = vertices;
 }
 static inline hash_trg_t* hash_trg_create(void)
@@ -467,7 +467,7 @@ static inline bool check_max_vtx(const nb_mesh_t *const restrict mesh)
 {
 	bool allow = true;
 	if (0 < mesh->max_vtx)
-		allow = (vcn_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx);
+		allow = (nb_bins2D_get_length(mesh->ug_vtx) < mesh->max_vtx);
 	return allow;
 }
 
@@ -489,7 +489,7 @@ static inline bool is_encroached
 	if (NULL != sgm->t1) {
 		vtx = mtrg_get_opposite_vertex_guided(sgm->t1, sgm, true);
 		is_encroached = 
-			vcn_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
+			nb_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
 									sgm->v2->x,
 									vtx->x);
 	}
@@ -497,7 +497,7 @@ static inline bool is_encroached
 	if (!is_encroached && NULL != sgm->t2) {
 		vtx = mtrg_get_opposite_vertex_guided(sgm->t2, sgm, false);
 		is_encroached = 
-			vcn_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
+			nb_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
 									sgm->v2->x,
 									vtx->x);
 	}
@@ -532,8 +532,8 @@ static void concentric_shell(const msh_edge_t *const sgm, msh_vtx_t *v)
 		v2 = sgm->v1;
 	}
 	/* Use concentric shells */
-	double length = vcn_utils2D_get_dist(v->x, v1->x);
-	double k_real = vcn_math_log2(length / _NB_CC_SHELL_UNIT);
+	double length = nb_utils2D_get_dist(v->x, v1->x);
+	double k_real = nb_math_log2(length / _NB_CC_SHELL_UNIT);
 	int k_int = (int)((k_real > 0)?(k_real + 0.5):(k_real - 0.5));
 	/* factor = UNIT * 2^k / (2.0 * length) */
 	double factor = _NB_CC_SHELL_UNIT * pow(2.0, k_int - 1.0) / length;
@@ -559,7 +559,7 @@ static void get_encroached_triangles
 	while (nb_container_is_not_empty(processing_trg)) {
 		msh_trg_t *trg = nb_container_delete_first(processing_trg);
 		/* Check if it is encroached */
-		if (vcn_utils2D_pnt_lies_strictly_in_circumcircle(trg->v1->x,
+		if (nb_utils2D_pnt_lies_strictly_in_circumcircle(trg->v1->x,
 								  trg->v2->x,
 								  trg->v3->x,
 								  v->x)) {
@@ -738,7 +738,7 @@ static void verify_new_encroachments
 			      hash_trg_t *const restrict poor_quality_trg)
 {
 	bool (*inside)(const double[2], const double[2], const double [2]) =
-		vcn_utils2D_pnt_lies_strictly_in_diametral_circle;
+		nb_utils2D_pnt_lies_strictly_in_diametral_circle;
 
 	while (nb_container_is_not_empty(l_new_trg)) {
 		msh_trg_t* restrict trg = nb_container_delete_first(l_new_trg);
@@ -767,7 +767,7 @@ void insert_vertex(nb_mesh_t *mesh,
 		   /* l_new_trg: NULL if not required */
 		   nb_container_t *const restrict l_new_trg)
 {
-	vcn_bins2D_insert(mesh->ug_vtx, cc);
+	nb_bins2D_insert(mesh->ug_vtx, cc);
 
 	nb_container_t* orfan_vtx =
 		nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
@@ -796,7 +796,7 @@ static void insert_midpoint(nb_mesh_t *const mesh,
 			    /* l_new_trg: NULL if not required */
 			    nb_container_t *const l_new_trg)
 {
-	vcn_bins2D_insert(mesh->ug_vtx, v);
+	nb_bins2D_insert(mesh->ug_vtx, v);
 
 	/* Split the subsegment */  
 	subsgm[0] = medge_allocate_zero_mem(mesh);
@@ -919,7 +919,7 @@ static inline void check_trg(msh_trg_t *const restrict trg,
 	} else {
 		if (1e30 > mesh->cr2se_ratio) {
 			double cr2se_ratio =
-				vcn_utils2D_get_cr2se_ratio(trg->v1->x,
+				nb_utils2D_get_cr2se_ratio(trg->v1->x,
 							    trg->v2->x,
 							    trg->v3->x);
 			if (cr2se_ratio > mesh->cr2se_ratio) {
@@ -956,7 +956,7 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 	msh_trg_t *restrict prev2_trg = NULL;
 	msh_trg_t *restrict prev1_trg = NULL;
 	msh_trg_t *restrict trg_containing_cc = (msh_trg_t*) trg;
-	while (!vcn_utils2D_pnt_lies_in_trg(trg_containing_cc->v1->x,
+	while (!nb_utils2D_pnt_lies_in_trg(trg_containing_cc->v1->x,
 					    trg_containing_cc->v2->x,
 					    trg_containing_cc->v3->x,
 					    cc->x)) {
@@ -966,19 +966,19 @@ static inline msh_trg_t* get_trg_containing_circumcenter
 
 		/* Calculate centroid of the triangle */
 		double centroid[2];
-		vcn_utils2D_trg_get_centroid(trg_containing_cc->v1->x,
+		nb_utils2D_trg_get_centroid(trg_containing_cc->v1->x,
 					     trg_containing_cc->v2->x,
 					     trg_containing_cc->v3->x,
 					     centroid);
 
 		/* Move to the next triangle */
-		if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+		if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 		    				(centroid, cc->x,
 						 trg_containing_cc->v1->x,
 						 trg_containing_cc->v2->x,
 						 NULL))
 			trg_containing_cc = trg_containing_cc->t1;
-		else if (NB_INTERSECTED == vcn_utils2D_get_sgm_intersection
+		else if (NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 						(centroid, cc->x,
 						 trg_containing_cc->v2->x,
 						 trg_containing_cc->v3->x,
@@ -1031,7 +1031,7 @@ static void get_sgm_encroached_by_vertex
 	while (nb_container_is_not_empty(segments)) {
 		msh_edge_t *const restrict sgm = 
 			nb_container_delete_first(segments);
-		if (vcn_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
+		if (nb_utils2D_pnt_lies_strictly_in_diametral_circle(sgm->v1->x,
 								      sgm->v2->x,
 								      vtx->x))
 			nb_container_insert(encroached_sgm, sgm);
@@ -1045,8 +1045,8 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 				      double d)
 {
 	/* Check if the length is not a power of two */
-	double length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
-	double k_real = vcn_math_log2(length / _NB_CC_SHELL_UNIT);
+	double length = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	double k_real = nb_math_log2(length / _NB_CC_SHELL_UNIT);
 	int k_int = (int)((k_real > 0)?(k_real + 0.5):(k_real - 0.5));
 	double shell_length = _NB_CC_SHELL_UNIT * pow(2.0, k_int);
 	if (fabs(length - shell_length) > NB_GEOMETRIC_TOL)
@@ -1094,7 +1094,7 @@ static inline bool split_is_permitted(const msh_edge_t *const restrict sgm,
 
 		if (cluster_sgm == sgm) 
 			continue;
-		double length_aux = vcn_utils2D_get_dist(cluster_sgm->v1->x,
+		double length_aux = nb_utils2D_get_dist(cluster_sgm->v1->x,
 					     cluster_sgm->v2->x);
 		if (length - length_aux > NB_GEOMETRIC_TOL) {
 			nb_container_finish(cluster);
@@ -1192,7 +1192,7 @@ static bool edge_violates_constrain(const nb_mesh_t *const restrict mesh,
 				    double *big_ratio)
 {
 	bool violates_constrain = false;
-	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	double d = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	*big_ratio = d;
 	double edge_max = mesh->max_edge_length * mesh->scale;
 	if (edge_max > NB_GEOMETRIC_TOL && edge_max < d) {
@@ -1224,7 +1224,7 @@ static bool edge_greater_than_density(const nb_mesh_t *const restrict mesh,
  */
 {
 	bool is_greater;
-	double d = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	double d = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	if (NB_GEOMETRIC_TOL > d) {
 		/* Prevent of eternal running */
 		is_greater = false;  

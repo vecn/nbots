@@ -9,7 +9,7 @@ typedef struct {
 	nb_container_t* points;
 } bin2D_t;
 
-struct vcn_bins2D_s {
+struct nb_bins2D_s {
 	/* Structure to sort vertices
 	 *
 	 *              GRID (Spatial structure)
@@ -39,8 +39,8 @@ struct vcn_bins2D_s {
 	double size_of_bins;
 	uint32_t length;
 	nb_container_t* bins;
-	bool (*filter)(const vcn_point2D_t *const p_ref, 
-		       const vcn_point2D_t *const p,
+	bool (*filter)(const nb_point2D_t *const p_ref, 
+		       const nb_point2D_t *const p,
 		       const void *const data);
 	const void *filter_data;
 	void (*destroy)(void*);

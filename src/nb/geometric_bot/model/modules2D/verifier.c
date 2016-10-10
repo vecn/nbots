@@ -22,29 +22,29 @@
 #define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 #define MAX(a, b) (((a)>(b))?(a):(b))
 
-static bool vtx_is_out_of_bounds(const vcn_model_t *const model,
+static bool vtx_is_out_of_bounds(const nb_model_t *const model,
 				 uint32_t vtx_id,
 				 uint32_t ids_of_error[2]);
 
-int vcn_model_verify_consistence(const vcn_model_t *const model,
+int nb_model_verify_consistence(const nb_model_t *const model,
 				 uint32_t ids_causing_error[2])
 {
 	int error_code;
-	if (!vcn_model_have_vertices(model))
+	if (!nb_model_have_vertices(model))
 		error_code = 1;
-	else if (!vcn_model_have_edges(model))
+	else if (!nb_model_have_edges(model))
 		error_code = 2;
-	else if (vcn_model_have_repeated_vertices(model, ids_causing_error))
+	else if (nb_model_have_repeated_vertices(model, ids_causing_error))
 		error_code = 3;
-	else if (vcn_model_have_incoherent_edges(model, ids_causing_error))
+	else if (nb_model_have_incoherent_edges(model, ids_causing_error))
 		error_code = 4;
-	else if (vcn_model_have_repeated_edges(model, ids_causing_error))
+	else if (nb_model_have_repeated_edges(model, ids_causing_error))
 		error_code = 5;
-	else if (vcn_model_have_intersected_edges(model, ids_causing_error))
+	else if (nb_model_have_intersected_edges(model, ids_causing_error))
 		error_code = 6;
-	else if (vcn_model_have_vtx_intersecting_edges(model, ids_causing_error))
+	else if (nb_model_have_vtx_intersecting_edges(model, ids_causing_error))
 		error_code = 7;
-	else if (vcn_model_have_unclosed_boundary(model))
+	else if (nb_model_have_unclosed_boundary(model))
 		error_code = 8;
 	else
 		error_code = 0;
@@ -53,23 +53,23 @@ int vcn_model_verify_consistence(const vcn_model_t *const model,
 }
 
 
-inline bool vcn_model_have_vertices(const vcn_model_t *const model)
+inline bool nb_model_have_vertices(const nb_model_t *const model)
 {
 	return (0 <= model->N);
 }
 
-inline bool vcn_model_have_edges(const vcn_model_t *const model)
+inline bool nb_model_have_edges(const nb_model_t *const model)
 {
 	return (0 <= model->M);
 }
 
-bool vcn_model_have_repeated_vertices(const vcn_model_t *const model,
+bool nb_model_have_repeated_vertices(const nb_model_t *const model,
 				      uint32_t repeated_ids[2])
 {
 	bool have_rep_vtx = false;
 	for (uint32_t i = 0; i < model->N && !have_rep_vtx; i++) {
 		for(uint32_t j = i+1; j < model->N; j++) {
-			double dist = vcn_utils2D_get_dist2(GET_PVTX(model, i),
+			double dist = nb_utils2D_get_dist2(GET_PVTX(model, i),
 						   GET_PVTX(model, j));
 			if (dist < NB_GEOMETRIC_TOL) {
 				if (NULL != repeated_ids) {
@@ -84,7 +84,7 @@ bool vcn_model_have_repeated_vertices(const vcn_model_t *const model,
 	return have_rep_vtx;
 }
 
-bool vcn_model_have_incoherent_edges(const vcn_model_t *const model,
+bool nb_model_have_incoherent_edges(const nb_model_t *const model,
 				     uint32_t ids_edge_and_vtx[2])
 {
 	bool have_inc_edge = false;
@@ -105,7 +105,7 @@ bool vcn_model_have_incoherent_edges(const vcn_model_t *const model,
 	return have_inc_edge;
 }
 
-static bool vtx_is_out_of_bounds(const vcn_model_t *const model,
+static bool vtx_is_out_of_bounds(const nb_model_t *const model,
 				 uint32_t vtx_id,
 				 uint32_t ids_of_error[2])
 {
@@ -118,7 +118,7 @@ static bool vtx_is_out_of_bounds(const vcn_model_t *const model,
 	return out;
 }
 
-bool vcn_model_have_repeated_edges(const vcn_model_t *const model,
+bool nb_model_have_repeated_edges(const nb_model_t *const model,
 				   uint32_t repeated_ids[2])
 {
 	bool have_rep_sgm = false;
@@ -147,7 +147,7 @@ bool vcn_model_have_repeated_edges(const vcn_model_t *const model,
 	return have_rep_sgm;
 }
 
-bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
+bool nb_model_have_intersected_edges(const nb_model_t *const model,
 				      uint32_t intersected_ids[2])
 {
 	bool out = false;
@@ -159,7 +159,7 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 			uint32_t v4 = GET_2_EDGE_VTX(model, j);
 
 			nb_intersect_t status = 
-				vcn_utils2D_get_sgm_intersection
+				nb_utils2D_get_sgm_intersection
 						(GET_PVTX(model, v1),
 						 GET_PVTX(model, v2),
 						 GET_PVTX(model, v3),
@@ -171,25 +171,25 @@ bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
 			if (NB_INTERSECTED == status) {
 				are_intersecting = true;
 			} else if (NB_PARALLEL == status) {
-				double dist_1A_2A = vcn_utils2D_get_dist(GET_PVTX(model, v1),
+				double dist_1A_2A = nb_utils2D_get_dist(GET_PVTX(model, v1),
 							     GET_PVTX(model, v3));
-				double dist_1A_2B = vcn_utils2D_get_dist(GET_PVTX(model, v1),
+				double dist_1A_2B = nb_utils2D_get_dist(GET_PVTX(model, v1),
 							     GET_PVTX(model, v4));
-				double dist_1B_2A = vcn_utils2D_get_dist(GET_PVTX(model, v2),
+				double dist_1B_2A = nb_utils2D_get_dist(GET_PVTX(model, v2),
 							     GET_PVTX(model, v3));
-				double dist_1B_2B = vcn_utils2D_get_dist(GET_PVTX(model, v2),
+				double dist_1B_2B = nb_utils2D_get_dist(GET_PVTX(model, v2),
 							     GET_PVTX(model, v4));
 
 				/* Segments parallel or coincident */
-				double orient = vcn_utils2D_orient(GET_PVTX(model, v1),
+				double orient = nb_utils2D_orient(GET_PVTX(model, v1),
 								   GET_PVTX(model, v2),
 								   GET_PVTX(model, v3));
 				/* Check if them are parallel */
 				if (fabs(orient) < NB_GEOMETRIC_TOL) {
 					/* Collineal segments */
-					double length1 = vcn_utils2D_get_dist(GET_PVTX(model, v1),
+					double length1 = nb_utils2D_get_dist(GET_PVTX(model, v1),
 									      GET_PVTX(model, v2));
-					double length2 = vcn_utils2D_get_dist(GET_PVTX(model, v3),
+					double length2 = nb_utils2D_get_dist(GET_PVTX(model, v3),
 									      GET_PVTX(model, v4));
 					double max_dist = MAX(dist_1B_2A, dist_1B_2B);
 					max_dist = MAX(max_dist, dist_1A_2B);
@@ -215,7 +215,7 @@ EXIT:
 	return out;
 }
 
-bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
+bool nb_model_have_vtx_intersecting_edges(const nb_model_t *const model,
 					   uint32_t ids_edge_and_vtx[2])
 {
 	bool out = false;
@@ -250,7 +250,7 @@ bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 	return out;
 }
 
-bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
+bool nb_model_have_unclosed_boundary(const nb_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
@@ -264,7 +264,7 @@ bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 	return is_unclosed;
 }
 
-bool vcn_model_is_continuum(const vcn_model_t *model)
+bool nb_model_is_continuum(const nb_model_t *model)
 {
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
@@ -277,7 +277,7 @@ bool vcn_model_is_continuum(const vcn_model_t *model)
 	return is_continuum;	
 }
 
-uint16_t vcn_model_get_N_subareas(const vcn_model_t *model)
+uint16_t nb_model_get_N_subareas(const nb_model_t *model)
 {
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);

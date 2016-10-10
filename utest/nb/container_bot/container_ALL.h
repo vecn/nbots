@@ -397,7 +397,7 @@ static bool insert_N_int32(nb_container_t *cnt, int N)
 			*val = N_ITEMS;
 		} else {
 			*val = seed;
-			seed = vcn_statistics_lcg(seed);
+			seed = nb_statistics_lcg(seed);
 		}
 		insertion_ok = insertion_ok && nb_container_insert(cnt, val);
 	}

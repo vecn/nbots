@@ -67,7 +67,7 @@ static uint32_t* sb_partition(const nb_graph_t *const __restrict graph,
 	for (uint32_t i = 0; i < graph->N; i++)
 		p[i] = i;
 
-	vcn_qsort_wd(p, graph->N, sizeof(*p), compare_sb, eigen_vecs[0]);
+	nb_qsort_wd(p, graph->N, sizeof(*p), compare_sb, eigen_vecs[0]);
 
 	nb_free_mem(eigen_vals);
 	nb_free_mem(eigen_vecs[0]);

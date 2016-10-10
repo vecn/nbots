@@ -13,26 +13,26 @@
 #define POW2(a) ((a)*(a))
 
 static int assemble_system(const nb_partition_t *const part, 
-			   const vcn_fem_elem_t *const elem,
+			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
 			   double *M, double *b);
 
 static int integrate_elemental_system
-		       	(const vcn_fem_elem_t *elem,
+		       	(const nb_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
 			 const nb_partition_t *part,
 			 double *Me, double *be);
 
-static void sum_gauss_point(const vcn_fem_elem_t *elem,
+static void sum_gauss_point(const nb_fem_elem_t *elem,
 			    uint32_t N_comp, const double *gp_values,
 			    uint32_t elem_id, int gp_id,
 			    double detJ,
 			    double *dNi_dx, double *dNi_dy,
 			    double *Me, double *be);
 
-static void add_to_global_system(const vcn_fem_elem_t *elem, 
+static void add_to_global_system(const nb_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
 				 const nb_partition_t *part,
 				 double *Me, double *be,
@@ -44,14 +44,14 @@ static void solve_system(const double *M, const double *b,
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
 			   const nb_partition_t *part,
-			   const vcn_fem_elem_t *const elem,
+			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
 			   double* nodal_values);
 
-int vcn_fem_interpolate_from_gpoints_to_nodes
+int nb_fem_interpolate_from_gpoints_to_nodes
 		(const nb_partition_t *const part, 
-		 const vcn_fem_elem_t *const elem,
+		 const nb_fem_elem_t *const elem,
 		 uint32_t N_comp,
 		 const double* gp_values,
 		 double* nodal_values /* Output */)
@@ -76,7 +76,7 @@ CLEANUP:
 }
 
 static int assemble_system(const nb_partition_t *const part, 
-			   const vcn_fem_elem_t *const elem,
+			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
 			   double *M, double *b)
@@ -85,7 +85,7 @@ static int assemble_system(const nb_partition_t *const part,
 
 	uint32_t N_elem = nb_partition_get_N_elems(part);;
 
-	uint8_t N_nodes_x_elem = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes_x_elem = nb_fem_elem_get_N_nodes(elem);
 	
 	uint16_t nodes_size = N_nodes_x_elem * sizeof(double);
 	uint32_t memsize = (1 + N_comp) * nodes_size;
@@ -111,7 +111,7 @@ EXIT:
 }
 
 static int integrate_elemental_system
-		       	(const vcn_fem_elem_t *elem,
+		       	(const nb_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
 			 const nb_partition_t *part,
@@ -119,7 +119,7 @@ static int integrate_elemental_system
 {
 	int status = 1;
 
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	memset(Me, 0, N_nodes * sizeof(*Me));
 	memset(be, 0, N_comp * N_nodes * sizeof(*be));
 
@@ -129,7 +129,7 @@ static int integrate_elemental_system
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id,
@@ -149,24 +149,24 @@ EXIT:
 	return status;
 }
 
-static void sum_gauss_point(const vcn_fem_elem_t *elem,
+static void sum_gauss_point(const nb_fem_elem_t *elem,
 			    uint32_t N_comp, const double *gp_values,
 			    uint32_t elem_id, int gp_id,
 			    double detJ,
 			    double *dNi_dx, double *dNi_dy,
 			    double *Me, double *be)
 {
-	double wp = vcn_fem_elem_weight_gp(elem, gp_id);
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	double wp = nb_fem_elem_weight_gp(elem, gp_id);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint8_t i = 0; i < N_nodes; i++) {
-		double Ni = vcn_fem_elem_Ni(elem, i, gp_id);
+		double Ni = nb_fem_elem_Ni(elem, i, gp_id);
 		for (uint32_t j = 0; j < N_nodes; j++) {
-			double Nj = vcn_fem_elem_Ni(elem, j, gp_id);
+			double Nj = nb_fem_elem_Ni(elem, j, gp_id);
 			double integral = Ni * Nj * detJ * wp;
 			Me[i] += integral;
 		}
 
-		uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+		uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 		uint32_t global_gp = elem_id * N_gp + gp_id;
 		double integral = Ni * detJ * wp;
 		for (int c = 0; c < N_comp; c++) {
@@ -176,13 +176,13 @@ static void sum_gauss_point(const vcn_fem_elem_t *elem,
 	}
 }
 
-static void add_to_global_system(const vcn_fem_elem_t *elem, 
+static void add_to_global_system(const nb_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
 				 const nb_partition_t *part,
 				 double *Me, double *be,
 				 double *M, double *b)
 {
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
 		M[v1] += Me[i];
@@ -204,8 +204,8 @@ static void solve_system(const double *M, const double *b,
 	}
 }
 
-void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
-				  const vcn_fem_elem_t *const elem,
+void nb_fem_get_error_on_gpoints(const nb_partition_t *const part,
+				  const nb_fem_elem_t *const elem,
 				  uint32_t N_comp,
 				  double* gp_values,
 				  double* gp_error)
@@ -213,13 +213,13 @@ void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
 	uint32_t N_elem = nb_partition_get_N_elems(part);
 
-	uint32_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint32_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
 
 	/* Interpolate strain to nodes */
 	double* nodal_values = nb_allocate_zero_mem(N_comp * N_nod *
 						    sizeof(double));
-	vcn_fem_interpolate_from_gpoints_to_nodes(part, elem,
+	nb_fem_interpolate_from_gpoints_to_nodes(part, elem,
 						  N_comp, gp_values,
 						  nodal_values);
 
@@ -238,7 +238,7 @@ void vcn_fem_get_error_on_gpoints(const nb_partition_t *const part,
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
 			   const nb_partition_t *part,
-			   const vcn_fem_elem_t *const elem,
+			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
 			   double* nodal_values)
@@ -246,15 +246,15 @@ static double get_gp_error(uint32_t id_elem, int id_gp,
 	double *value_gp = nb_allocate_on_stack(N_comp * sizeof(*value_gp));
 	memset(value_gp, 0, N_comp * sizeof(*value_gp));
 
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t vid = nb_partition_elem_get_adj(part, id_elem,
 							 N_nodes + i);
-		double Ni = vcn_fem_elem_Ni(elem, i, id_gp);
+		double Ni = nb_fem_elem_Ni(elem, i, id_gp);
 		for (int c = 0; c < N_comp; c++)
 			value_gp[c] += Ni * nodal_values[vid * N_comp + c];
 	}
-	uint8_t N_gp = vcn_fem_elem_get_N_gpoints(elem);
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	uint32_t idx = id_elem * N_gp + id_gp;
 	double sum = 0.0;
 	for (int c = 0; c < N_comp; c++) {

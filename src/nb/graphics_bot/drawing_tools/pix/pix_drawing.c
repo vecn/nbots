@@ -72,7 +72,7 @@ typedef struct {
 } pixmask_t;
 
 typedef struct {
-	vcn_image_t *img;
+	nb_image_t *img;
 	turtle_t *turtle;
 	pixmask_t *pen_stencil;
 	float line_width;
@@ -130,7 +130,7 @@ static bool pixmask_pixel_is_not_empty(int x, int y, const void *pixmask);
 static void pixmask_blend_image(const pixmask_t *pixmask,
 			      const source_t *source,
 			      uint8_t intensity,
-			      vcn_image_t *img);
+			      nb_image_t *img);
 static void pixmask_finish(pixmask_t *pixmask);
 static void rasterize_turtle(const turtle_t *turtle,
 			     bool antialiased,
@@ -154,7 +154,7 @@ static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
 void* nb_graphics_pix_create_context(int width, int height)
 {
 	uint32_t ctx_size = sizeof(context_t);
-	uint32_t img_size = sizeof(vcn_image_t);
+	uint32_t img_size = sizeof(nb_image_t);
 	uint32_t pix_size = 4 * width * height;
 	uint32_t trt_size = sizeof(turtle_t);
 	uint16_t rp_size = sizeof(pixmask_t);
@@ -166,7 +166,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	context_t *ctx = (void*) memblock;
 
 	ctx->img = (void*) (memblock + ctx_size);
-	vcn_image_init(ctx->img);
+	nb_image_init(ctx->img);
 	ctx->img->width = width;
 	ctx->img->height = height;
 	ctx->img->comp_x_pixel = 4;
@@ -212,7 +212,7 @@ static void turtle_clear(turtle_t *turtle)
 void nb_graphics_pix_export_context(const void *ctx, const char *filename)
 {
 	const context_t *c = ctx;
-	vcn_image_write(c->img, filename);
+	nb_image_write(c->img, filename);
 }
 
 void nb_graphics_pix_move_to(void *ctx, float x, float y)
@@ -701,7 +701,7 @@ static bool pixmask_pixel_is_not_empty(int x, int y, const void *pixmask)
 static void pixmask_blend_image(const pixmask_t *pixmask,
 				const source_t *source,
 				uint8_t intensity,
-				vcn_image_t *img)
+				nb_image_t *img)
 {
 	uint8_t pix[4];
 	int x0 = MAX(0, pixmask->xmin);
@@ -717,7 +717,7 @@ static void pixmask_blend_image(const pixmask_t *pixmask,
 				source_get_color(source, x, y, pix);
 				if (I < 1.0)
 					pix[3] = (int)(pix[3] * I + 0.5);
-				vcn_image_blend_pixel_rgba(img, y, x, pix);
+				nb_image_blend_pixel_rgba(img, y, x, pix);
 			}
 		}
 	}
@@ -827,7 +827,7 @@ static void set_line_pixel(int x, int y, uint8_t i, void* context)
 		float I = w * (pix[3]/255.0f) * (i/255.0f);
 		pix[3] = (int)(255.0f * I + 0.5);
 		if (pix[3] > 0)
-			vcn_image_blend_pixel_rgba(c->img, y, x, pix);
+			nb_image_blend_pixel_rgba(c->img, y, x, pix);
 	}
 }
 
@@ -869,7 +869,7 @@ static void set_pixel(int x, int y, uint8_t i, void* context)
 		source_get_color(c->source, x, y, pix);
 		pix[3] = (uint8_t)(255.0f * (pix[3]/255.0f) * (i/255.0f) + 0.5);
 		if (pix[3] > 0)
-			vcn_image_blend_pixel_rgba(c->img, y, x, pix);
+			nb_image_blend_pixel_rgba(c->img, y, x, pix);
 	}
 }
 
