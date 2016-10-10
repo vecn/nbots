@@ -297,7 +297,7 @@ static void input_clear(input_t *input)
 	if (0 < input->N_vtx)
 		free (input->vertices);
 	if (0 < input->N_sgm)
-		free(input->segments);
+		nb_free_mem(input->segments);
 }
 
 static bool all_trg_are_cdelaunay(nb_mesh_t *mesh, input_t *input)

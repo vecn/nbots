@@ -57,7 +57,7 @@ static void test_get_size(void)
 	uint32_t size = 0;
 	if (0 == status) {
 		size = *size_ptr;
-		free(size_ptr);
+		nb_free_mem(size_ptr);
 	}
 	nb_container_destroy(cnt);
 	CU_ASSERT(0 < size);
@@ -79,7 +79,7 @@ static void test_get_N_collisions(void)
 	uint32_t N_collisions = 0;
 	if (0 == status) {
 		N_collisions = *N_collisions_ptr;
-		free(N_collisions_ptr);
+		nb_free_mem(N_collisions_ptr);
 	}
 	CU_ASSERT(3 == N_collisions);
 }
@@ -114,7 +114,7 @@ static void test_exist_if_not_with_collision(void)
 	int8_t status;
 	uint32_t *size = nb_container_do(cnt, "get_size", NULL, &status);
 	int32_t to_find = *size + N_ITEMS; /* Not exist and key collides */
-	free(size);
+	nb_free_mem(size);
 	int32_t *val = nb_container_exist(cnt, &to_find);
 	bool is_ok = (NULL == val);
 	nb_container_destroy(cnt);

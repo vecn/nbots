@@ -349,7 +349,7 @@ static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)
 
 static inline void results_finish(results_t *results)
 {
-	free(results->disp);
+	nb_free_mem(results->disp);
 }
 
 static int read_problem_data
@@ -446,17 +446,17 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 
 CLEANUP_HOLES:
 	if (0 < model->H) {
-		free(model->holes);
+		nb_free_mem(model->holes);
 		model->H = 0;
 		model->holes = NULL;
 	}
 CLEANUP_SEGMENTS:
 	model->M = 0;
-	free(model->edge);
+	nb_free_mem(model->edge);
 	model->edge = 0;
 CLEANUP_VERTICES:
 	model->N = 0;
-	free(model->vertex);
+	nb_free_mem(model->vertex);
 	model->vertex = NULL;
 EXIT:
 	return status;

@@ -221,7 +221,7 @@ static void test_get_delaunay_grid(void)
 	double *vertices = get_grid(N, N, 10.0);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N * N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_squares = POW2(N - 1);
 	bool N_trg_is_ok = (2 * N_squares == nb_mesh_get_N_trg(mesh));
 	int N_expected_edges = 2 * (N - 1) * N + N_squares;
@@ -239,7 +239,7 @@ static void test_get_delaunay_hexagonal_grid(void)
 	double *vertices = get_hexagonal_grid(N, N, 10.0);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N * N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_boundary_trg = 0;
 	if (N > 1)
 		N_boundary_trg = (2*N - 3) / 2;
@@ -311,7 +311,7 @@ static void test_get_delaunay_collinear(void)
 	double *vertices = get_collinear(N);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	bool N_trg_is_ok = (0 == nb_mesh_get_N_trg(mesh));
 	bool N_edg_is_ok = (0 == nb_mesh_get_N_edg(mesh));
 	nb_mesh_destroy(mesh);
@@ -325,7 +325,7 @@ static void test_get_delaunay_quasi_collinear(void)
 	double *vertices = get_quasi_collinear(N);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
 	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
@@ -344,7 +344,7 @@ static void test_get_delaunay_square(void)
 	double *vertices = get_square(N_interior, 10.0);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
 	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
@@ -364,7 +364,7 @@ static void test_get_delaunay_1000_cloud(void)
 	double *vertices = read_vertices(input_name, &N);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_expected_trg = 1981;
 	int N_expected_edg = 2980;
 	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
@@ -424,7 +424,7 @@ static bool check_get_delaunay_polygon(int N, int N_centers)
 	double *vertices = get_polygon(N, N_centers, 10);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N + N_centers, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, N_centers);
 	int N_expected_edg = get_expected_edg_of_polygon(N, N_centers);
 	bool N_trg_is_ok = (N_expected_trg == nb_mesh_get_N_trg(mesh));
@@ -510,7 +510,7 @@ static bool check_get_delaunay_rings(int N_rings, int N_sides,
 	double *vertices = get_rings(N_rings, N_sides, N_centers, 10);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_expected_trg =
 		get_expected_trg_of_polygonal_rings(N_rings, N_sides,
 						    N_centers);
@@ -604,7 +604,7 @@ static bool check_get_delaunay_spiral(int Ns, int Np)
 	double *vertices = get_spiral(Ns, Np);
 	nb_mesh_t *mesh = nb_mesh_create();
 	nb_mesh_get_delaunay(mesh, N, vertices);
-	free(vertices);
+	nb_free_mem(vertices);
 	int N_min_trg = (Ns * Np + 1);
 	int N_min_edges = 2 * N_min_trg;
 	bool N_trg_is_ok = (N_min_trg <= nb_mesh_get_N_trg(mesh));
@@ -706,7 +706,7 @@ static double* read_vertices(const char* filename, int* N_vertices)
 					if (2 != fscanf(fp, "%lf %lf",
 							&(vertices[i * 2]),
 							&(vertices[i*2+1]))) {
-						free(vertices);
+						nb_free_mem(vertices);
 						vertices = NULL;
 						*N_vertices = 0;
 						break;

@@ -40,7 +40,7 @@ static void test_delete_last(void)
 	int8_t status;
 	int32_t *val = nb_container_do(cnt, "delete_last", NULL, &status);
 	bool is_ok = ((N - 1) == *val);
-	free(val);
+	nb_free_mem(val);
 	bool length_ok = ((N - 1) == nb_container_get_length(cnt));
 	nb_container_destroy(cnt);
 	CU_ASSERT(is_ok);

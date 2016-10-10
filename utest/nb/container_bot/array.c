@@ -238,7 +238,7 @@ static void test_qsort(void)
 			break;
 		}
 	}
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(are_sorted);
 }
 
@@ -259,7 +259,7 @@ static void test_qsort_with_data(void)
 			break;
 		}
 	}
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(are_sorted);
 }
 
@@ -290,7 +290,7 @@ static void test_array_get_min(void)
 	uint32_t imin = vcn_array_get_min_id(array, N, sizeof(*array),
 					     vcn_compare_int8);
 	bool success = (1 == array[imin]);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
@@ -306,7 +306,7 @@ static void test_array_get_min_with_data(void)
 	uint32_t imin = vcn_array_get_min_id_wd(array, N, sizeof(*array),
 						compare_fnc, &data);
 	bool success = fabsf(data.f(1.0f) - data.f(array[imin])) < 1e-5;
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
@@ -320,7 +320,7 @@ static void test_array_get_max(void)
 	uint32_t imax = vcn_array_get_max_id(array, N, sizeof(*array),
 					     vcn_compare_int8);
 	bool success = (N == array[imax]);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
@@ -336,7 +336,7 @@ static void test_array_get_max_with_data(void)
 	uint32_t imax = vcn_array_get_max_id_wd(array, N, sizeof(*array),
 						compare_fnc, &data);
 	bool success = fabsf(data.f((float)N) - data.f(array[imax])) < 1e-5;
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
@@ -352,7 +352,7 @@ static void test_array_get_min_max(void)
 	vcn_array_get_min_max_ids(array, N, sizeof(*array), vcn_compare_int8,
 				  &imin, &imax);
 	bool success = (1 == array[imin]) && (N == array[imax]);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
@@ -372,7 +372,7 @@ static void test_array_get_min_max_with_data(void)
 	bool success = 
 		(fabsf(data.f((float)1) - data.f(array[imin])) < 1e-5) &&
 		(fabsf(data.f((float)N) - data.f(array[imax])) < 1e-5);
-	free(array);
+	nb_free_mem(array);
 	CU_ASSERT(success);
 }
 
