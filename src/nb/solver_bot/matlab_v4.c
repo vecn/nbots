@@ -18,9 +18,9 @@
 
 static int meta_compare_data_bycol(const void *a, const void *b);
 
-void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label)
+void nb_sparse_read_mat4(nb_sparse_t *A, const char *url, char *label)
 {
-	/* Read a vcn_sparse_t matrix named [label] from matlab v4 file */
+	/* Read a nb_sparse_t matrix named [label] from matlab v4 file */
  
 	/* Open file */
 	FILE *pfile = fopen(url,"rb");
@@ -164,7 +164,7 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label)
 	}
 }
 
-void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
+void nb_sparse_save_mat4(const nb_sparse_t *const A,
 			  const char *url, char *label)
 /* Write a sparse matrix named [label] in matlab v4 format */
 {
@@ -175,7 +175,7 @@ void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
-	uint32_t nnz = vcn_sparse_get_nnz(A);
+	uint32_t nnz = nb_sparse_get_nnz(A);
 	int32_t info[5];
 	info[0] = 2; /* Sparse matrix with double precision */
 	info[1] = nnz + 1;
@@ -345,7 +345,7 @@ void vcn_mat4_printf(const char *url)
 				exit(1);
 			}
 		}else{
-			printf("ERROR: Support only for complete and vcn_sparse_t matrix with double precision.\n");
+			printf("ERROR: Support only for complete and nb_sparse_t matrix with double precision.\n");
 			exit(1);
 		}
 		/* Free memory */
@@ -407,7 +407,7 @@ short vcn_mat4_exist(const char *url, char* label)
 				exit(1);
 			}
 		}else{
-			printf("ERROR: Support only for complete and vcn_sparse_t matrix with double precision.\n");
+			printf("ERROR: Support only for complete and nb_sparse_t matrix with double precision.\n");
 			exit(1);
 		}
 		/* Free memory */

@@ -17,9 +17,9 @@ void pipeline_sum_gauss_point(const vcn_fem_elem_t *elem, int gp_id,
 void pipeline_add_to_global_system(const vcn_fem_elem_t *elem, uint32_t id,
 				   const nb_partition_t *part,
 				   double *Ke, double *Me, double *Fe,
-				   vcn_sparse_t *K, double *M, double *F);
+				   nb_sparse_t *K, double *M, double *F);
 int pipeline_assemble_system
-		(vcn_sparse_t* K, double* M, double *F,
+		(nb_sparse_t* K, double* M, double *F,
 		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elemtype,
 		 const nb_material_t *const material,
@@ -30,7 +30,7 @@ int pipeline_assemble_system
 		 const bool* elements_enabled /* NULL to enable all */);
 
 void pipeline_set_boundary_conditions(const nb_partition_t *part,
-				      vcn_sparse_t* K,
+				      nb_sparse_t* K,
 				      double* F, 
 				      const nb_bcond_t *const bcond, 
 				      double factor);

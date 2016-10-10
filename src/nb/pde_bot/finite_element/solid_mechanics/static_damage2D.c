@@ -49,7 +49,7 @@ static double tension_truncated_damage
 			 nb_analysis2D_t analysis2D);
 */
 static void DMG_pipeline_assemble_system
-		(vcn_sparse_t* K, double* M, double *F,
+		(nb_sparse_t* K, double* M, double *F,
 		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elem,
 		 const nb_material_t *const material,
@@ -281,12 +281,12 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
-	vcn_sparse_t* K = vcn_sparse_create(graph, NULL, 2);
+	nb_sparse_t* K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
-	vcn_sparse_t *L = NULL;
-	vcn_sparse_t *U = NULL;
+	nb_sparse_t *L = NULL;
+	nb_sparse_t *U = NULL;
 	/* Allocate the triangular matrices L and U using symbolic Cholesky */
-	vcn_sparse_alloc_LU(K, &L, &U);
+	nb_sparse_alloc_LU(K, &L, &U);
 
   
 	/* Allocate force vectors and displacement increment */
@@ -347,7 +347,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			/******* > Verify residual *****************/
 			/*******************************************/
 			/* Compute P increment */
-			vcn_sparse_multiply_vector(K, displacement, P, omp_parallel_threads);
+			nb_sparse_multiply_vector(K, displacement, P, omp_parallel_threads);
 
 			/* Compute residual norm */
 			residual_norm = 0;
@@ -388,13 +388,13 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 			if(enable_Cholesky_solver){
 				/* Decompose matrix */
 				solver_status = 
-					vcn_sparse_decompose_Cholesky(K, L, U, omp_parallel_threads);
+					nb_sparse_decompose_Cholesky(K, L, U, omp_parallel_threads);
 
 				if(solver_status != 0)
-					vcn_sparse_decompose_LU(K, L, U, omp_parallel_threads);
+					nb_sparse_decompose_LU(K, L, U, omp_parallel_threads);
   
 				/* Solve system */
-				vcn_sparse_solve_LU(L, U, residual, du);
+				nb_sparse_solve_LU(L, U, residual, du);
 			}
 			if(!enable_Cholesky_solver || solver_status != 0){
 				if(solver_status != 0){
@@ -406,14 +406,14 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 				double error = 0.0; /* Default initialization (Must be initialized) */
 				uint32_t iters = 0;     /* Default initialization (Must be initialized) */
 				solver_status = 
-					vcn_sparse_solve_CG_precond_Jacobi(K, residual, du,
-									   vcn_sparse_get_size(K),
+					nb_sparse_solve_CG_precond_Jacobi(K, residual, du,
+									   nb_sparse_get_size(K),
 									   1e-8,
 									   &iters, &error,
 									   omp_parallel_threads);
 				if(solver_status != 0){
-					solver_status = vcn_sparse_solve_Gauss_Seidel(K, residual, du,
-										      60 * vcn_sparse_get_size(K),
+					solver_status = nb_sparse_solve_Gauss_Seidel(K, residual, du,
+										      60 * nb_sparse_get_size(K),
 										      1e-8,
 										      &iters, &error,
 										      omp_parallel_threads);
@@ -455,10 +455,10 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 	nb_free_mem(strain);
 	nb_free_mem(damage);
 
-	vcn_sparse_destroy(K);
+	nb_sparse_destroy(K);
 	if(enable_Cholesky_solver){
-		vcn_sparse_destroy(L);
-		vcn_sparse_destroy(U);
+		nb_sparse_destroy(L);
+		nb_sparse_destroy(U);
 	}
 
 	nb_free_mem(F);
@@ -471,7 +471,7 @@ void vcn_fem_compute_2D_Non_Linear_Solid_Mechanics
 }
 
 static void DMG_pipeline_assemble_system
-		(vcn_sparse_t* K, double* M, double *F,
+		(nb_sparse_t* K, double* M, double *F,
 		 const nb_partition_t *const part,
 		 const vcn_fem_elem_t *const elem,
 		 const nb_material_t *const material,
@@ -485,10 +485,10 @@ static void DMG_pipeline_assemble_system
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 
-	vcn_sparse_reset(K);
+	nb_sparse_reset(K);
 	if (NULL != M)
-		memset(M, 0, vcn_sparse_get_size(K) * sizeof(double));
-	memset(F, 0, vcn_sparse_get_size(K) * sizeof(double));
+		memset(M, 0, nb_sparse_get_size(K) * sizeof(double));
+	memset(F, 0, nb_sparse_get_size(K) * sizeof(double));
 
 	/* Allocate elemental Stiffness Matrix and Force Vector */
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);

@@ -13,7 +13,7 @@
 
 #define POW2(a) ((a)*(a))
 
-int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
+int nb_sparse_spy_plot_as_png(const nb_sparse_t *const A,
 			       const char* url, uint32_t size,
 			       bool enable_zeros_allocated,
 			       bool enable_color)

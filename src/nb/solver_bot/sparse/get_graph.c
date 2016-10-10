@@ -6,11 +6,11 @@
 
 #include "sparse_struct.h"
 
-void nb_sparse_get_graph(const vcn_sparse_t* A, nb_graph_t *graph)
+void nb_sparse_get_graph(const nb_sparse_t* A, nb_graph_t *graph)
 {
 	uint32_t N = A->N;
 	graph->N = N;
-	uint32_t N_total_adj = vcn_sparse_get_nnz(A) - N;
+	uint32_t N_total_adj = nb_sparse_get_nnz(A) - N;
 	uint32_t memsize = N * (sizeof(*(graph->N_adj)) +
 				sizeof(*(graph->adj))) +
 		N_total_adj * sizeof(**(graph->adj));

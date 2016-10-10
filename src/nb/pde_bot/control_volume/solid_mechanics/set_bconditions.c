@@ -73,12 +73,12 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 			      const nb_bcond_t *const bcond, 
 			      double factor,
 			      nb_bcond_t *numeric_bcond);
-static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
+static void set_numeric_bconditions(nb_sparse_t *K, double *F,
 				    const nb_partition_t *const part,
 				    nb_bcond_t *bcond);
 
 static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
-					vcn_sparse_t* K, uint8_t N_dof,
+					nb_sparse_t* K, uint8_t N_dof,
 					double* F,
 					nb_bcond_iter_t *iter,
 					uint32_t elem_id);
@@ -87,7 +87,7 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     const nb_material_t *material,
 			     nb_analysis2D_t analysis2D,
-			     vcn_sparse_t* K, double* F,
+			     nb_sparse_t* K, double* F,
 			     const nb_bcond_t *bcond,
 			     double factor)
 {
@@ -491,7 +491,7 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
+static void set_numeric_bconditions(nb_sparse_t *K, double *F,
 				    const nb_partition_t *const part,
 				    nb_bcond_t *bcond)
 {
@@ -512,7 +512,7 @@ static void set_numeric_bconditions(vcn_sparse_t *K, double *F,
 }
 
 static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
-					vcn_sparse_t* K, uint8_t N_dof,
+					nb_sparse_t* K, uint8_t N_dof,
 					double* F,
 					nb_bcond_iter_t *iter,
 					uint32_t elem_id)
@@ -527,7 +527,7 @@ static void set_numeric_bcond_dirichlet(const nb_partition_t *part,
 		bool mask = nb_bcond_iter_get_mask(iter, j);
 		if (mask) {
 			uint32_t mtx_id = elem_id * N_dof + j;
-			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
+			nb_sparse_set_Dirichlet_condition(K, F, mtx_id,
 							   val[j]);
 		}
 	}

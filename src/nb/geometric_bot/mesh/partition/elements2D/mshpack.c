@@ -35,7 +35,7 @@ static bool vtx_is_forming_input(const msh_vtx_t *const vtx);
 static double pack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
-					     vcn_sparse_t *Hk,
+					     nb_sparse_t *Hk,
 					     double *Bk,
 					     double *Xb,
 					     double gamma);
@@ -490,7 +490,7 @@ static bool vtx_is_forming_input(const msh_vtx_t *const vtx)
 static double pack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
-					     vcn_sparse_t *Hk,
+					     nb_sparse_t *Hk,
 					     double *Bk,
 					     double *Xb,
 					     double gamma)
@@ -534,7 +534,7 @@ static double pack_optimize_assemble_system(nb_container_t *segments,
 			for (uint32_t i = 0; i < 6; i++) {
 				for (uint32_t j = 0; j < 6; j++) {
 					double val = gl[i]*gl[j];
-					vcn_sparse_add(Hk, idx[i], idx[j], val);
+					nb_sparse_add(Hk, idx[i], idx[j], val);
 				}
 			}
 		} else if (sgm_struct[2] < N_spheres) {
@@ -572,7 +572,7 @@ static double pack_optimize_assemble_system(nb_container_t *segments,
 			for (uint32_t i = 0; i < 3; i++) {
 				for (uint32_t j = 0; j < 3; j++) {
 					double val = gl[i]*gl[j];
-					vcn_sparse_add(Hk, idx[i], idx[j], val);
+					nb_sparse_add(Hk, idx[i], idx[j], val);
 				}
 			}
 		}
@@ -648,7 +648,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 	graph.N = pack->N_elems;
 	graph.N_adj = pack->N_ngb;
 	graph.adj = pack->ngb;
-	vcn_sparse_t* Hk = vcn_sparse_create(&graph, NULL, 3);
+	nb_sparse_t* Hk = nb_sparse_create(&graph, NULL, 3);
 
 	/* Start to minimize contact gaps and intersections 
 	   using Newton Method */
@@ -669,13 +669,13 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 			optim_k ++;
 			/* Reset global Hessian and Independent vector */
 			memset(Bk, 0, 3 * pack->N_elems * sizeof(double));
-			vcn_sparse_make_diagonal(Hk, 1.0);
+			nb_sparse_make_diagonal(Hk, 1.0);
 			global_min =       
 				pack_optimize_assemble_system(segments, pack->N_elems,
 							       Xk, Hk, Bk, Xb, gamma);
 			/* Solve system for qk */
-			vcn_sparse_solve_CG_precond_Jacobi(Hk, Bk, hk,
-							   vcn_sparse_get_size(Hk) * 2,
+			nb_sparse_solve_CG_precond_Jacobi(Hk, Bk, hk,
+							   nb_sparse_get_size(Hk) * 2,
 							   1e-8, NULL, NULL, 1); 
 			/* Xk = Xk + hk */
 			for (uint32_t i = 0; i < 3 * pack->N_elems; i++)
@@ -768,13 +768,13 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 				}
 				nb_container_destroy(new_ngb[i]);
 			}
-			vcn_sparse_destroy(Hk);
+			nb_sparse_destroy(Hk);
 			
 			nb_graph_t graph;
 			graph.N = pack->N_elems;
 			graph.N_adj = pack->N_ngb;
 			graph.adj = pack->ngb;
-			Hk = vcn_sparse_create(&graph, NULL, 3);
+			Hk = nb_sparse_create(&graph, NULL, 3);
 		} else {
 			for (uint32_t i = 0; i < pack->N_elems; i++) {
 				nb_container_set_destroyer(new_ngb[i], free);
@@ -785,7 +785,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 	}
 
 	/* Free memory */
-	vcn_sparse_destroy(Hk);
+	nb_sparse_destroy(Hk);
 	nb_free_mem(hk);
 	nb_free_mem(Bk);
 	nb_free_mem(Xb);

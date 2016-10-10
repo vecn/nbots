@@ -17,13 +17,13 @@ static inline double get_norm(double* x, uint32_t N);
 
 static int meta_compare_data_bycol(const void *a, const void *b);
 
-static inline vcn_sparse_t* sparse_allocate(uint32_t N);
+static inline nb_sparse_t* sparse_allocate(uint32_t N);
 
-static void cholesky_symbolic(const vcn_sparse_t *const A,
-			      vcn_sparse_t *_L, vcn_sparse_t* _Lt, 
+static void cholesky_symbolic(const nb_sparse_t *const A,
+			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
 			      uint32_t ktrunc);
 
-static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
+static inline uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
 					  uint32_t i, uint32_t col, 
 					  int imin, int imax);
 
@@ -35,9 +35,9 @@ static inline double get_norm(double* x, uint32_t N)
 	return sqrt(n);
 }
 
-static inline vcn_sparse_t* sparse_allocate(uint32_t N)
+static inline nb_sparse_t* sparse_allocate(uint32_t N)
 {
-	vcn_sparse_t* A = nb_allocate_mem(sizeof(*A));
+	nb_sparse_t* A = nb_allocate_mem(sizeof(*A));
 	A->rows_values = nb_allocate_mem(N * sizeof(*(A->rows_values)));
 	A->rows_index = nb_allocate_mem(N * sizeof(*(A->rows_index)));
 	A->rows_size = nb_allocate_zero_mem(N * sizeof(*(A->rows_size)));
@@ -45,11 +45,11 @@ static inline vcn_sparse_t* sparse_allocate(uint32_t N)
 	return A;
 }
 
-vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const restrict graph,
+nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 				const uint32_t *const restrict perm,
 				uint32_t vars_per_node)
 {
-	vcn_sparse_t* A = sparse_allocate(graph->N * vars_per_node);
+	nb_sparse_t* A = sparse_allocate(graph->N * vars_per_node);
 
 	for (uint32_t i = 0; i < graph->N; i++) {
 		uint32_t row_size = (graph->N_adj[i] + 1) * vars_per_node;    
@@ -86,9 +86,9 @@ vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const restrict graph,
 	return A;
 }
 
-vcn_sparse_t* vcn_sparse_clone(vcn_sparse_t* A)
+nb_sparse_t* nb_sparse_clone(nb_sparse_t* A)
 {
-	vcn_sparse_t* Acopy = sparse_allocate(A->N);
+	nb_sparse_t* Acopy = sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
 		Acopy->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					      sizeof(**(Acopy->rows_index)));
@@ -105,7 +105,7 @@ vcn_sparse_t* vcn_sparse_clone(vcn_sparse_t* A)
 	return Acopy;
 }
 
-void vcn_sparse_save(const vcn_sparse_t *const A, const char* filename)
+void nb_sparse_save(const nb_sparse_t *const A, const char* filename)
 {
 	FILE *fp = fopen(filename, "w");
 	if (fp == NULL) {
@@ -120,7 +120,7 @@ void vcn_sparse_save(const vcn_sparse_t *const A, const char* filename)
 	fclose(fp);
 }
 
-void vcn_sparse_destroy(vcn_sparse_t* A)
+void nb_sparse_destroy(nb_sparse_t* A)
 {
 	/* Clear all rows */
 	for (uint32_t i = 0; i < A->N; i++) {
@@ -133,7 +133,7 @@ void vcn_sparse_destroy(vcn_sparse_t* A)
 	nb_free_mem(A);
 }
 
-static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
+static inline uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
 					  uint32_t i, uint32_t col, 
 					  int imin, int imax)
 {
@@ -148,14 +148,14 @@ static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
 	return index;
 }
 
-void vcn_sparse_reset(vcn_sparse_t *A)
+void nb_sparse_reset(nb_sparse_t *A)
 {
 	for(uint32_t i = 0; i < A->N; i++)
 		memset(A->rows_values[i], 0,
 		       A->rows_size[i] * sizeof(*(A->rows_values)));  
 }
 
-void vcn_sparse_set(vcn_sparse_t *A, uint32_t i, uint32_t j, double value)
+void nb_sparse_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
 	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
@@ -163,29 +163,29 @@ void vcn_sparse_set(vcn_sparse_t *A, uint32_t i, uint32_t j, double value)
 	} else {
 		/* OPPORTUNITY: Send this to some logfile */
 		printf("ERROR: Entry of sparse matrix is not allocated.\n");
-		printf("    -> vcn_sparse_set(*A=%p, i=%i, j=%i, value=%lf)\n",
+		printf("    -> nb_sparse_set(*A=%p, i=%i, j=%i, value=%lf)\n",
 		       (void*) A, i, j, value);
 		exit(1);
 	}
 }
 
-void vcn_sparse_set_identity_row(vcn_sparse_t* A, uint32_t row)
+void nb_sparse_set_identity_row(nb_sparse_t* A, uint32_t row)
 {
 	memset(A->rows_values[row], 0,
 	       A->rows_size[row] * sizeof(**(A->rows_values)));
-	vcn_sparse_set(A, row, row, 1.0);
+	nb_sparse_set(A, row, row, 1.0);
 }
 
-void vcn_sparse_make_diagonal(vcn_sparse_t* A, double diag_val)
+void nb_sparse_make_diagonal(nb_sparse_t* A, double diag_val)
 {
 	for (uint32_t i = 0; i < A->N; i++){
 		memset(A->rows_values[i], 0, 
 		       A->rows_size[i] * sizeof(**(A->rows_values)));
-		vcn_sparse_set(A, i, i, diag_val);
+		nb_sparse_set(A, i, i, diag_val);
 	}
 }
 
-double vcn_sparse_get(const vcn_sparse_t *const A, uint32_t i, uint32_t j)
+double nb_sparse_get(const nb_sparse_t *const A, uint32_t i, uint32_t j)
 {
 	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j)
@@ -194,7 +194,7 @@ double vcn_sparse_get(const vcn_sparse_t *const A, uint32_t i, uint32_t j)
 		return 0.0;
 }
 
-double vcn_sparse_get_and_set(vcn_sparse_t *A, uint32_t i, uint32_t j, double value)
+double nb_sparse_get_and_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
 	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
@@ -204,13 +204,13 @@ double vcn_sparse_get_and_set(vcn_sparse_t *A, uint32_t i, uint32_t j, double va
 	} else {
 		/* OPPORTUNITY: Send this to some logfile */
 		printf("ERROR: Entry of sparse matrix is not allocated.\n");
-		printf("    -> vcn_sparse_get_and_set(*A=%p, i=%i, j=%i, value=%lf)\n",
+		printf("    -> nb_sparse_get_and_set(*A=%p, i=%i, j=%i, value=%lf)\n",
 		       (void*) A, i, j, value);
 		exit(1);
 	}
 }
 
-bool vcn_sparse_is_non_zero(const vcn_sparse_t *const A, uint32_t i, uint32_t j)
+bool nb_sparse_is_non_zero(const nb_sparse_t *const A, uint32_t i, uint32_t j)
 {
 	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if(A->rows_index[i][index] == j)
@@ -219,7 +219,7 @@ bool vcn_sparse_is_non_zero(const vcn_sparse_t *const A, uint32_t i, uint32_t j)
 		return false;
 }
 
-uint32_t vcn_sparse_memory_used(const vcn_sparse_t *const A)
+uint32_t nb_sparse_memory_used(const nb_sparse_t *const A)
 {
 	uint32_t size = sizeof(short) + 3 * sizeof(uint32_t) + 3*sizeof(void*);
 	size += A->N * (2*sizeof(void*) + sizeof(uint32_t));
@@ -228,7 +228,7 @@ uint32_t vcn_sparse_memory_used(const vcn_sparse_t *const A)
 	return size;
 }
 
-void vcn_sparse_add(vcn_sparse_t *A, uint32_t i, uint32_t j, double value)
+void nb_sparse_add(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
 	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
@@ -236,13 +236,13 @@ void vcn_sparse_add(vcn_sparse_t *A, uint32_t i, uint32_t j, double value)
 	} else {
 		/* OPPORTUNITY: Send this to some logfile */
 		printf("ERROR: Entry of sparse matrix is not allocated.\n");
-		printf("    -> vcn_sparse_add(*A=%p, i=%i, j=%i, value=%lf)\n",
+		printf("    -> nb_sparse_add(*A=%p, i=%i, j=%i, value=%lf)\n",
 		       (void*) A, i, j, value);
 		exit(1);
 	}
 }
 
-void vcn_sparse_scale(vcn_sparse_t *A, double factor)
+void nb_sparse_scale(nb_sparse_t *A, double factor)
 {
 	for (uint32_t i = 0; i < A->N; i++) {
 		for (uint32_t j = 0; j < A->rows_size[i]; j++)
@@ -250,13 +250,13 @@ void vcn_sparse_scale(vcn_sparse_t *A, double factor)
 	}
 }
  
-vcn_sparse_t* vcn_sparse_create_permutation
-(const vcn_sparse_t *const A,
+nb_sparse_t* nb_sparse_create_permutation
+(const nb_sparse_t *const A,
  const uint32_t *const perm,
  const uint32_t *const iperm)
 {
 	/* Use the vectors perm and iperm to compute Ar = PAP'. */ 
-	vcn_sparse_t* _Ar = sparse_allocate(A->N);
+	nb_sparse_t* _Ar = sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
 		uint32_t j = perm[i];
 		_Ar->rows_size[i] = A->rows_size[j];
@@ -289,8 +289,8 @@ vcn_sparse_t* vcn_sparse_create_permutation
 	return _Ar;
 }
 
-void vcn_sparse_fill_permutation(const vcn_sparse_t *const A, 
-				 vcn_sparse_t* Ar,
+void nb_sparse_fill_permutation(const nb_sparse_t *const A, 
+				 nb_sparse_t* Ar,
 				 const uint32_t *const perm,
 				 const uint32_t *const iperm)
 {
@@ -305,7 +305,7 @@ void vcn_sparse_fill_permutation(const vcn_sparse_t *const A,
 	}
 }
 
-double* vcn_sparse_create_vector_permutation
+double* nb_sparse_create_vector_permutation
 (const double *const b, 
  const uint32_t *const perm,
  uint32_t N){
@@ -315,7 +315,7 @@ double* vcn_sparse_create_vector_permutation
 	return br;
 }
 
-void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
+void nb_sparse_get_transpose(const nb_sparse_t *A, nb_sparse_t *_At)
 /* _At must be allocated and initialized */
 {
 	uint32_t memsize = A->N * sizeof(uint32_t);
@@ -333,7 +333,7 @@ void vcn_sparse_get_transpose(const vcn_sparse_t *A, vcn_sparse_t *_At)
 	nb_soft_free_mem(memsize, jcount);
 }
 
-void vcn_sparse_transpose(vcn_sparse_t *A)
+void nb_sparse_transpose(nb_sparse_t *A)
 {
 	for (uint32_t i = 0; i < A->N; i++) {
 		for (uint32_t q = 0; A->rows_index[i][q] < i; q++) {
@@ -347,13 +347,13 @@ void vcn_sparse_transpose(vcn_sparse_t *A)
 	}
 }
 
-uint32_t vcn_sparse_get_size(const vcn_sparse_t *const A)
+uint32_t nb_sparse_get_size(const nb_sparse_t *const A)
 {
 	return A->N;
 }
 
 
-uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A)
+uint32_t nb_sparse_get_nnz(const nb_sparse_t *const A)
 {
 	uint32_t nnz = 0;
 	for (uint32_t i = 0; i < A->N; i++)
@@ -361,7 +361,7 @@ uint32_t vcn_sparse_get_nnz(const vcn_sparse_t *const A)
 	return nnz;
 }
 
-double vcn_sparse_get_usym(const vcn_sparse_t *const A)
+double nb_sparse_get_usym(const nb_sparse_t *const A)
 {
 	double sum = 0;
 	for (uint32_t i = 0; i < A->N; i++) {
@@ -377,7 +377,7 @@ double vcn_sparse_get_usym(const vcn_sparse_t *const A)
 	return sqrt(sum);
 }
 
-void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
+void nb_sparse_multiply_scalar(nb_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads)
 {
 #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
@@ -388,7 +388,7 @@ void vcn_sparse_multiply_scalar(vcn_sparse_t* A, double scalar,
 
 }
 
-void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
+void nb_sparse_multiply_vector(const nb_sparse_t* A, const double* in,
 				double* out, uint32_t omp_parallel_threads)
 {
 #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
@@ -399,7 +399,7 @@ void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
 	}
 }
 
-void vcn_sparse_set_Dirichlet_condition(vcn_sparse_t* A, double* RHS,
+void nb_sparse_set_Dirichlet_condition(nb_sparse_t* A, double* RHS,
 					uint32_t idx, double value)
 {
 	for (uint32_t j = 0; j < A->rows_size[idx]; j++){
@@ -409,14 +409,14 @@ void vcn_sparse_set_Dirichlet_condition(vcn_sparse_t* A, double* RHS,
 			RHS[idx] = value;
 		} else {
 			A->rows_values[idx][j] = 0.0;
-			double var = vcn_sparse_get_and_set(A, jdx, idx, 0.0);
+			double var = nb_sparse_get_and_set(A, jdx, idx, 0.0);
 			RHS[jdx] -= var * value;
 		}
 	}
 }
 
-int vcn_sparse_solve_Gauss_Seidel
-(const vcn_sparse_t *const A, 
+int nb_sparse_solve_Gauss_Seidel
+(const nb_sparse_t *const A, 
  const double *const b,
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
@@ -424,7 +424,7 @@ int vcn_sparse_solve_Gauss_Seidel
  double* tolerance_reached, /* Out (NULL if not required) */
  uint32_t omp_parallel_threads){
 	/* Allocate RHS vector */
-	double* c = (double*)nb_allocate_mem(vcn_sparse_get_size(A)*sizeof(double));
+	double* c = (double*)nb_allocate_mem(nb_sparse_get_size(A)*sizeof(double));
 	/* Start iterations */
 	register uint32_t k = 0;
 	double error = 1e10;
@@ -432,7 +432,7 @@ int vcn_sparse_solve_Gauss_Seidel
 		/* Generate RHS vector */
 		error = 0;
 #pragma omp parallel for reduction(+:error) num_threads(omp_parallel_threads)
-		for(uint32_t i=0; i < vcn_sparse_get_size(A); i++){
+		for(uint32_t i=0; i < nb_sparse_get_size(A); i++){
 			c[i] = b[i];
 			double error_i = b[i];
 			for(uint32_t j=0; j < A->rows_size[i]; j++){
@@ -448,7 +448,7 @@ int vcn_sparse_solve_Gauss_Seidel
 			break;
 
 		/* Solve by forward substitution */
-		vcn_sparse_forward_solve(A, c, _x);
+		nb_sparse_forward_solve(A, c, _x);
 
 		/* Increase iterations */
 		k++;
@@ -467,8 +467,8 @@ int vcn_sparse_solve_Gauss_Seidel
 	return 0;
 }
 
-int vcn_sparse_solve_conjugate_gradient
-(const vcn_sparse_t *const A, 
+int nb_sparse_solve_conjugate_gradient
+(const nb_sparse_t *const A, 
  const double *const b, 
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
@@ -533,8 +533,8 @@ int vcn_sparse_solve_conjugate_gradient
 	return 0;
 }
 
-int vcn_sparse_solve_CG_precond_Jacobi
-(const vcn_sparse_t *const A, 
+int nb_sparse_solve_CG_precond_Jacobi
+(const nb_sparse_t *const A, 
  const double *const b,
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
@@ -559,7 +559,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		for(uint32_t j=0; j< A->rows_size[i]; j++)
 			sum += A->rows_values[i][j] * _x[A->rows_index[i][j]];
 		g[i] = sum - b[i];
-		Aii[i] = vcn_sparse_get(A,i,i);
+		Aii[i] = nb_sparse_get(A,i,i);
 		q[i] = g[i]/Aii[i];
 		p[i] = -q[i];
 		dot_gg += g[i]*g[i];
@@ -612,8 +612,8 @@ int vcn_sparse_solve_CG_precond_Jacobi
 	return 0;
 }
 
-int vcn_sparse_solve_CG_precond_Cholesky
-(const vcn_sparse_t *const A,
+int nb_sparse_solve_CG_precond_Cholesky
+(const nb_sparse_t *const A,
  const double *const b, 
  double *_x,                /* Out */
  uint32_t ktrunc,
@@ -642,12 +642,12 @@ int vcn_sparse_solve_CG_precond_Cholesky
 		dot_gg += g[i]*g[i];
 	}
 	/* Solve H Ht q = g for q */
-	vcn_sparse_t *H = sparse_allocate(A->N);
-	vcn_sparse_t *Ht = sparse_allocate(A->N);
+	nb_sparse_t *H = sparse_allocate(A->N);
+	nb_sparse_t *Ht = sparse_allocate(A->N);
 	cholesky_symbolic(A, H, Ht, ktrunc);
 
-	vcn_sparse_decompose_Cholesky(A,H,Ht, omp_parallel_threads);
-	vcn_sparse_solve_LU(H,Ht,g,q);
+	nb_sparse_decompose_Cholesky(A,H,Ht, omp_parallel_threads);
+	nb_sparse_solve_LU(H,Ht,g,q);
 
 #pragma omp parallel for num_threads(omp_parallel_threads)
 	for(uint32_t i=0; i< A->N; i++)
@@ -674,7 +674,7 @@ int vcn_sparse_solve_CG_precond_Cholesky
 			g[i] += alphak*w[i];
 		}
 		/* Solve H Ht q = g for q */
-		vcn_sparse_solve_LU(H,Ht,g,q);
+		nb_sparse_solve_LU(H,Ht,g,q);
 
 		double dot_gkqk = 0;
 #pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
@@ -692,8 +692,8 @@ int vcn_sparse_solve_CG_precond_Cholesky
 	nb_free_mem(p);
 	nb_free_mem(q);
 	nb_free_mem(w);
-	vcn_sparse_destroy(H);
-	vcn_sparse_destroy(Ht);
+	nb_sparse_destroy(H);
+	nb_sparse_destroy(Ht);
 
 	if(niter_performed != NULL) niter_performed[0]= k;
 
@@ -705,8 +705,8 @@ int vcn_sparse_solve_CG_precond_Cholesky
 	return 0;
 }
 
-int vcn_sparse_solve_CG_precond_fsai
-(const vcn_sparse_t *const A,
+int nb_sparse_solve_CG_precond_fsai
+(const nb_sparse_t *const A,
  const double *const b,
  double *_x,                /* Out */
  double threshold,
@@ -722,8 +722,8 @@ int vcn_sparse_solve_CG_precond_fsai
 	double *D = nb_allocate_zero_mem(A->N * sizeof(double));
 	double *siD = nb_allocate_zero_mem(A->N * sizeof(double));
 
-	vcn_sparse_t* G  = sparse_allocate(A->N);
-	vcn_sparse_t* Gt = sparse_allocate(A->N);
+	nb_sparse_t* G  = sparse_allocate(A->N);
+	nb_sparse_t* Gt = sparse_allocate(A->N);
 	/* Generate D diagonal matrix as
 	 *           
 	 *     Dii = |Aii|,   if |Aii| > 0
@@ -732,7 +732,7 @@ int vcn_sparse_solve_CG_precond_fsai
 
 #pragma omp parallel for num_threads(omp_parallel_threads)
 	for(uint32_t i=0; i < A->N; i++){
-		D[i] = vcn_sparse_get(A,i,i);
+		D[i] = nb_sparse_get(A,i,i);
 		if(D[i] == 0)
 			D[i] = 1;
 		/* Compute D^(-1/2) */
@@ -797,11 +797,11 @@ int vcn_sparse_solve_CG_precond_fsai
 					G->rows_index[i][k] = j;
 					for(uint32_t l=0; l<k; l++){
 						subA[k*G->rows_size[i] + l] = 
-							vcn_sparse_get(A,j,G->rows_index[i][l]);
+							nb_sparse_get(A,j,G->rows_index[i][l]);
 						subA[l*G->rows_size[i] + k] = 
-							vcn_sparse_get(A,G->rows_index[i][l],j);
+							nb_sparse_get(A,G->rows_index[i][l],j);
 					}
-					subA[k*G->rows_size[i] + k] = vcn_sparse_get(A,j,j);
+					subA[k*G->rows_size[i] + k] = nb_sparse_get(A,j,j);
 					if(i == j)
 						delta[k] = 1;
 					else
@@ -824,7 +824,7 @@ int vcn_sparse_solve_CG_precond_fsai
 		nb_free_mem(delta);
 	}
 	/* Store G transposed */
-	vcn_sparse_get_transpose(G,Gt);
+	nb_sparse_get_transpose(G,Gt);
 
 	/* Free memory */
 	nb_free_mem(D);
@@ -913,8 +913,8 @@ int vcn_sparse_solve_CG_precond_fsai
 		k++;
 	}
 	/* Free memory */
-	vcn_sparse_destroy(G);
-	vcn_sparse_destroy(Gt);
+	nb_sparse_destroy(G);
+	nb_sparse_destroy(Gt);
 	nb_free_mem(r);
 	nb_free_mem(p);
 	nb_free_mem(w);
@@ -942,8 +942,8 @@ typedef struct{
 	void *next;
 }sc_set;
 
-static void cholesky_symbolic(const vcn_sparse_t * const A, 
-			      vcn_sparse_t *_L, vcn_sparse_t* _Lt, 
+static void cholesky_symbolic(const nb_sparse_t * const A, 
+			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
 			      uint32_t ktrunc)
 {
 	/* The algorithm is going to store in "l" the index of
@@ -960,7 +960,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	 * for a matrix of size n, starting the index from 0.
 	 * After each iteration, the algortihm is going to allocate the
 	 * i row of the upper matrix "Lt", finally, the matrix "L" will
-	 * be allocated in row compress format (vcn_sparse_t structure).
+	 * be allocated in row compress format (nb_sparse_t structure).
 	 *
 	 * Reference:
 	 *  GALLIVAN, Heath, Ng, Ortega, Peyton, Plemmons, Romine, 
@@ -1149,9 +1149,9 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 }
 
 
-int vcn_sparse_alloc_LU
-(const vcn_sparse_t *const restrict A,
- vcn_sparse_t** L, vcn_sparse_t** U)
+int nb_sparse_alloc_LU
+(const nb_sparse_t *const restrict A,
+ nb_sparse_t** L, nb_sparse_t** U)
 {
 	*L = sparse_allocate(A->N);
 	*U = sparse_allocate(A->N);
@@ -1162,9 +1162,9 @@ int vcn_sparse_alloc_LU
 	return 0;
 }
 
-int vcn_sparse_decompose_Cholesky(const vcn_sparse_t *const A,
-				  vcn_sparse_t *L,             /* Out */
-				  vcn_sparse_t* Lt,            /* Out */
+int nb_sparse_decompose_Cholesky(const nb_sparse_t *const A,
+				  nb_sparse_t *L,             /* Out */
+				  nb_sparse_t* Lt,            /* Out */
 				  uint32_t omp_parallel_threads)
 {
 	/* "L" must be a lower triangular matrix with the main diagonal 
@@ -1175,7 +1175,7 @@ int vcn_sparse_decompose_Cholesky(const vcn_sparse_t *const A,
     
 	/* Compute the decomposition */
 	for(uint32_t j=0; j< A->N; j++){
-		L->rows_values[j][L->rows_size[j]-1] = vcn_sparse_get(A, j, j);
+		L->rows_values[j][L->rows_size[j]-1] = nb_sparse_get(A, j, j);
     
 		double sum = 0;
 		for(uint32_t q = 0; q < L->rows_size[j]-1; q++)
@@ -1195,7 +1195,7 @@ int vcn_sparse_decompose_Cholesky(const vcn_sparse_t *const A,
 			uint32_t i = Lt->rows_index[j][q];
 			/*** L_ij <- A_ij ********************************************************/
 			uint32_t L_jindex = sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);     /**/
-			L->rows_values[i][L_jindex] = vcn_sparse_get(A, i, j);                     /**/
+			L->rows_values[i][L_jindex] = nb_sparse_get(A, i, j);                     /**/
 			/*************************************************************************/
 			uint32_t r = 0;
 			uint32_t s = 0;
@@ -1229,17 +1229,17 @@ int vcn_sparse_decompose_Cholesky(const vcn_sparse_t *const A,
 	return 0;
 }
 
-void vcn_sparse_decompose_LU(const vcn_sparse_t *const Ar,
-			     vcn_sparse_t *L, vcn_sparse_t* U,
+void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
+			     nb_sparse_t *L, nb_sparse_t* U,
 			     uint32_t omp_parallel_threads){
 
 	/* Create Ut to compute faster the decomposition */
-	vcn_sparse_t* Ut = vcn_sparse_clone(L);
+	nb_sparse_t* Ut = nb_sparse_clone(L);
 
 	/* Compute the decomposition */
 	for(uint32_t j=0; j< Ar->N; j++){
 		L->rows_values[j][L->rows_size[j]-1] = 1.0;
-		U->rows_values[j][0] = vcn_sparse_get(Ar, j, j);
+		U->rows_values[j][0] = nb_sparse_get(Ar, j, j);
 
 		double sum = 0;
 
@@ -1256,10 +1256,10 @@ void vcn_sparse_decompose_LU(const vcn_sparse_t *const Ar,
 			uint32_t i = U->rows_index[j][q];
 			/*** L_ij <- A_ij *******************************************************/
 			uint32_t L_jindex = sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);/**/
-			L->rows_values[i][L_jindex] = vcn_sparse_get(Ar, i, j);               /**/
+			L->rows_values[i][L_jindex] = nb_sparse_get(Ar, i, j);               /**/
 			/************************************************************************/
 			/*** U_ji <- A_ji *******************************************************/
-			U->rows_values[j][q] = vcn_sparse_get(Ar, j, i);                      /**/
+			U->rows_values[j][q] = nb_sparse_get(Ar, j, i);                      /**/
 			/************************************************************************/
 			register uint32_t r = 0;
 			register uint32_t s = 0;
@@ -1295,64 +1295,64 @@ void vcn_sparse_decompose_LU(const vcn_sparse_t *const Ar,
 		}
 	}
 	/* Free memory */
-	vcn_sparse_destroy(Ut);
+	nb_sparse_destroy(Ut);
 }
 
-void  vcn_sparse_solve_LU(const vcn_sparse_t *const L, 
-			  const vcn_sparse_t *const U,
+void  nb_sparse_solve_LU(const nb_sparse_t *const L, 
+			  const nb_sparse_t *const U,
 			  const double *const b,
 			  double* _x  /* Out */)
 {
 	double* z = nb_allocate_zero_mem(L->N * sizeof(*z));
-	vcn_sparse_forward_solve(L, b, z);
-	vcn_sparse_backward_solve(U, z, _x);
+	nb_sparse_forward_solve(L, b, z);
+	nb_sparse_backward_solve(U, z, _x);
 	nb_free_mem(z);
 }
 
-int vcn_sparse_solve_Cholesky(const vcn_sparse_t *const A,
+int nb_sparse_solve_Cholesky(const nb_sparse_t *const A,
 			      const double *const b,
 			      double* x,  /* Out */
 			      uint32_t omp_parallel_threads){
-	vcn_sparse_t *L = NULL; 
-	vcn_sparse_t *U = NULL;
-	vcn_sparse_alloc_LU(A, &L, &U);
+	nb_sparse_t *L = NULL; 
+	nb_sparse_t *U = NULL;
+	nb_sparse_alloc_LU(A, &L, &U);
 	if (NULL == L)
 		return 10;
 	
-	int solver_status = vcn_sparse_decompose_Cholesky(A, L, U, 
+	int solver_status = nb_sparse_decompose_Cholesky(A, L, U, 
 							  omp_parallel_threads);
 
 	if (0 == solver_status)
-		vcn_sparse_solve_LU(L, U, b, x);
+		nb_sparse_solve_LU(L, U, b, x);
 
-	vcn_sparse_destroy(L);
-	vcn_sparse_destroy(U);
+	nb_sparse_destroy(L);
+	nb_sparse_destroy(U);
 
 	return solver_status;
 }
 
-int vcn_sparse_solve_using_LU(const vcn_sparse_t *const A,
+int nb_sparse_solve_using_LU(const nb_sparse_t *const A,
 			      const double *const b,
 			      double* x,  /* Out */
 			      uint32_t omp_parallel_threads)
 {
-	vcn_sparse_t *L = NULL; 
-	vcn_sparse_t *U = NULL;
-	vcn_sparse_alloc_LU(A, &L, &U);
+	nb_sparse_t *L = NULL; 
+	nb_sparse_t *U = NULL;
+	nb_sparse_alloc_LU(A, &L, &U);
 	if(NULL == L)
 		return 1;
 
-	vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
+	nb_sparse_decompose_LU(A, L, U, omp_parallel_threads);
 
-	vcn_sparse_solve_LU(L, U, b, x);
+	nb_sparse_solve_LU(L, U, b, x);
 
-	vcn_sparse_destroy(L);
-	vcn_sparse_destroy(U);
+	nb_sparse_destroy(L);
+	nb_sparse_destroy(U);
 
 	return 0;
 }
 
-void vcn_sparse_forward_solve(const vcn_sparse_t *const L,
+void nb_sparse_forward_solve(const nb_sparse_t *const L,
 			      const double *const b, 
 			      double* _x /* Out */)
 /* Solve the system Lx = b, where L is a lower triangular matrix.
@@ -1371,11 +1371,11 @@ void vcn_sparse_forward_solve(const vcn_sparse_t *const L,
 		if(L->rows_index[i][L->rows_size[i]-1] == i)
 			_x[i] /= L->rows_values[i][L->rows_size[i]-1];
 		else
-			_x[i] /= vcn_sparse_get(L, i, i);
+			_x[i] /= nb_sparse_get(L, i, i);
 	}
 }
 
-void vcn_sparse_backward_solve(const vcn_sparse_t *const U,
+void nb_sparse_backward_solve(const nb_sparse_t *const U,
 			       const double *const b,
 			       double* _x /* Out */)
 /* Solve the system Ux = b, where U is a upper triangular matrix.
@@ -1396,14 +1396,14 @@ void vcn_sparse_backward_solve(const vcn_sparse_t *const U,
 	}
 }
 
-void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
+void nb_sparse_eigen_power(const nb_sparse_t* const A, int h,
 			    double **_eigenvecs,/* Out */ 
 			    double *_eigenvals, /* Out */
 			    int *it,            /* Out */
 			    double tolerance,
 			    uint32_t omp_parallel_threads){
 	/* The program must receive all the pointers allocated, where
-	 *  > A is a vcn_sparse_t matrix
+	 *  > A is a nb_sparse_t matrix
 	 *  > _eigenvecs is an array of size h to store h eigenvectors.
 	 *  > _eigenvals is an array of size h to store the h greatest
 	 *    eigenvalues approximated.
@@ -1477,7 +1477,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 	nb_free_mem(p);
 }
 
-int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
+int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 			    nb_solver_t solver,
 			    int h, double mu, 
 			    double **_eigenvecs,/* Out */ 
@@ -1487,7 +1487,7 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 			    uint32_t omp_parallel_threads)
 {
 	/* The program must receive all the pointers allocated, where
-	 *  > A is a vcn_sparse_t matrix
+	 *  > A is a nb_sparse_t matrix
 	 *  > _eigenvecs is an array of size h to store h eigenvectors.
 	 *  > _eigenvals is an array of size h to store the h
 	 *    eigenvalues approximated.
@@ -1504,20 +1504,20 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 	double* z = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	/* Set M in A (copy ptr to modify const A, it will be restored) */
-	vcn_sparse_t* A_ptr_copy = (vcn_sparse_t*)A;
+	nb_sparse_t* A_ptr_copy = (nb_sparse_t*)A;
 	if (mu != 0.0)
 		for (c = 0; c < A->N; c++)
-			vcn_sparse_add(A_ptr_copy, c, c, -mu);            /* M = A - mu*I */
+			nb_sparse_add(A_ptr_copy, c, c, -mu);            /* M = A - mu*I */
 
 	/* LU Decomposition in case of LU Solver */
-	vcn_sparse_t *L = NULL;
-	vcn_sparse_t *U = NULL;
+	nb_sparse_t *L = NULL;
+	nb_sparse_t *U = NULL;
 	if (NB_SOLVER_CHK == solver) {
-		vcn_sparse_alloc_LU(A, &L, &U);
-		vcn_sparse_decompose_Cholesky(A, L, U, omp_parallel_threads);
+		nb_sparse_alloc_LU(A, &L, &U);
+		nb_sparse_decompose_Cholesky(A, L, U, omp_parallel_threads);
 	} else if (NB_SOLVER_LUD == solver) {
-		vcn_sparse_alloc_LU(A, &L, &U);
-		vcn_sparse_decompose_LU(A, L, U, omp_parallel_threads);
+		nb_sparse_alloc_LU(A, &L, &U);
+		nb_sparse_decompose_LU(A, L, U, omp_parallel_threads);
 	}
 
 	/* Deflation inverse power method */
@@ -1535,15 +1535,15 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 			/* Step 1 */
 			if (NB_SOLVER_CHK == solver ||
 			    NB_SOLVER_LUD == solver)
-				vcn_sparse_solve_LU(L, U, _eigenvecs[i], p);
+				nb_sparse_solve_LU(L, U, _eigenvecs[i], p);
 			else if (NB_SOLVER_CGJ == solver)
-				vcn_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p, 
-								   vcn_sparse_get_size(A)*10, 1e-3, 
+				nb_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p, 
+								   nb_sparse_get_size(A)*10, 1e-3, 
 								   NULL, NULL,
 								   omp_parallel_threads);
 			else
-				vcn_sparse_solve_conjugate_gradient(A,_eigenvecs[i], p, 
-								    vcn_sparse_get_size(A)*10, 1e-3, 
+				nb_sparse_solve_conjugate_gradient(A,_eigenvecs[i], p, 
+								    nb_sparse_get_size(A)*10, 1e-3, 
 								    NULL, NULL,
 								    omp_parallel_threads);
 			/* Step 2 */
@@ -1591,12 +1591,12 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 	/* Restore A */
 	if (mu != 0.0)
 		for (c = 0; c < A->N; c++)
-			vcn_sparse_add(A_ptr_copy, c, c, mu);  /* A = M + mu*I */
+			nb_sparse_add(A_ptr_copy, c, c, mu);  /* A = M + mu*I */
     
 	/* Destroy LU decomposition */
 	if (NB_SOLVER_CHK == solver || NB_SOLVER_LUD == solver) {
-		vcn_sparse_destroy(U);
-		vcn_sparse_destroy(L);
+		nb_sparse_destroy(U);
+		nb_sparse_destroy(L);
 	}
 	/* Free memory */
 	nb_free_mem(p);
@@ -1606,7 +1606,7 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 }
 
 
-void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
+void nb_sparse_eigen_lanczos(const nb_sparse_t* const A,
 			      double *_eigenmax,/* Out */ 
 			      double *_eigenmin,/* Out */
 			      int* it,          /* Out */
@@ -1614,7 +1614,7 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 			      uint32_t omp_parallel_threads)
 {
 	/* The program must receive all the pointers allocated, where
-	 *  > A is a vcn_sparse_t matrix
+	 *  > A is a nb_sparse_t matrix
 	 *  > _eigenvecs is an array of size h to store h eigenvectors.
 	 *  > _eigenvals is an array of size h to store the h greatest
 	 *    eigenvalues approximated.
@@ -1670,8 +1670,8 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 		if (*it > 1) {
 			double delta_eig1 = *_eigenmax;
 			double delta_eigk = *_eigenmin;
-			vcn_sparse_eigen_givens(alpha, beta, 1, _eigenmax, tolerance, *it);
-			vcn_sparse_eigen_givens(alpha, beta, *it, _eigenmin, tolerance, *it);
+			nb_sparse_eigen_givens(alpha, beta, 1, _eigenmax, tolerance, *it);
+			nb_sparse_eigen_givens(alpha, beta, *it, _eigenmin, tolerance, *it);
       
 			delta_eigen = fabs(delta_eig1-*_eigenmax);
 			double tmp = fabs(delta_eigk-*_eigenmin);
@@ -1691,7 +1691,7 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	nb_free_mem(v_prev);
 }
 
-void vcn_sparse_eigen_givens(const double* const main_diag, 
+void nb_sparse_eigen_givens(const double* const main_diag, 
 			     const double* const uplw_diag,
 			     int i, double *_eigenvalue,
 			     double tolerance, uint32_t N)

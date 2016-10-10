@@ -46,7 +46,7 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   nb_partition_t **intmsh,
 				   nb_graph_t **trg_x_vol,
 				   face_t ***faces);
-static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
+static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 			       const nb_partition_t *intmsh);
 static void load_faces(const nb_partition_t *part,
 		       const nb_partition_t *intmsh,
@@ -90,26 +90,26 @@ static void integrate_elem_force(const nb_partition_t *part,
 				 double gravity[2],
 				 uint32_t elem_id,
 				 double *F);
-static void assemble_global_stiffness(vcn_sparse_t *K,
+static void assemble_global_stiffness(nb_sparse_t *K,
 				      const nb_partition_t *const part,
 				      const nb_partition_t *intmsh,
 				      face_t **faces,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D);
-static void assemble_face(vcn_sparse_t *K,
+static void assemble_face(nb_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_partition_t *intmsh,
 			  face_t *face,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D);
-static void assemble_internal_face(vcn_sparse_t *K,
+static void assemble_internal_face(nb_sparse_t *K,
 				   const nb_partition_t *const part,
 				   const nb_partition_t *intmsh,
 				   face_t *face, const double D[4],
 				   nb_analysis2D_params *params2D);
-static void integrate_subfaces(vcn_sparse_t *K,
+static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_partition_t *const part,
 			       const nb_partition_t *intmsh,
 			       face_t *face, const double D[4],
@@ -141,8 +141,8 @@ static void subface_get_nodal_contribution(const double D[4],
 					   double Kfi[4]);
 static void add_Kf_to_K(face_t *face, const nb_partition_t *intmsh,
 			uint16_t subface_id, const double *Kf,
-			vcn_sparse_t *K);
-static void integrate_pairwise(vcn_sparse_t *K,
+			nb_sparse_t *K);
+static void integrate_pairwise(nb_sparse_t *K,
 			       const nb_partition_t *const part,
 			       face_t *faces, const double D[4],
 			       nb_analysis2D_params *params2D);
@@ -152,10 +152,10 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 				      double grad[2]);
 static void add_Kf_to_K_pairwise(face_t *face, const double *Kf,
-				 vcn_sparse_t *K);
-static int solver(const vcn_sparse_t *const A,
+				 nb_sparse_t *K);
+static int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x);
-static void get_permutation(const vcn_sparse_t *const A,
+static void get_permutation(const nb_sparse_t *const A,
 			    uint32_t *perm, uint32_t *iperm);
 static void vector_permutation(uint32_t N, const double *v,
 			       const uint32_t *perm, double *vp);
@@ -230,7 +230,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_cvfa_correlate_partition_and_integration_mesh(part, intmsh,
 							 trg_x_vol);
 
-	vcn_sparse_t *K;
+	nb_sparse_t *K;
 	init_global_matrix(&K, trg_x_vol, intmsh);
 
 	load_faces(part, intmsh, trg_x_vol, faces);
@@ -256,7 +256,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
 	finish_faces(N_faces, faces);
-	vcn_sparse_destroy(K);
+	nb_sparse_destroy(K);
 	nb_graph_finish(trg_x_vol);
 	nb_partition_finish(intmsh);
 	nb_soft_free_mem(memsize, memblock);
@@ -294,7 +294,7 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 	}
 }
 
-static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
+static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 			       const nb_partition_t *intmsh)
 {
 	uint32_t memsize = nb_graph_get_memsize();
@@ -304,7 +304,7 @@ static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
 	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
 	nb_graph_force_symmetry(graph);
 
-	*K = vcn_sparse_create(graph, NULL, 2);
+	*K = nb_sparse_create(graph, NULL, 2);
 
 	nb_graph_finish(graph);
 	nb_soft_free_mem(memsize, graph);
@@ -619,7 +619,7 @@ static void integrate_elem_force(const nb_partition_t *part,
 	}
 }
 
-static void assemble_global_stiffness(vcn_sparse_t *K,
+static void assemble_global_stiffness(nb_sparse_t *K,
 				      const nb_partition_t *const part,
 				      const nb_partition_t *intmsh,
 				      face_t **faces,
@@ -627,7 +627,7 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D)
 {
-	vcn_sparse_reset(K);
+	nb_sparse_reset(K);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	for (uint32_t i = 0; i < N_faces; i++) {
 		assemble_face(K, part, intmsh, faces[i], material,
@@ -635,7 +635,7 @@ static void assemble_global_stiffness(vcn_sparse_t *K,
 	}
 }
 
-static void assemble_face(vcn_sparse_t *K,
+static void assemble_face(nb_sparse_t *K,
 			  const nb_partition_t *const part,
 			  const nb_partition_t *intmsh,
 			  face_t *face,
@@ -652,7 +652,7 @@ static void assemble_face(vcn_sparse_t *K,
 				       D, params2D);
 }
 
-static void assemble_internal_face(vcn_sparse_t *K,
+static void assemble_internal_face(nb_sparse_t *K,
 				   const nb_partition_t *const part,
 				   const nb_partition_t *intmsh,
 				   face_t *face, const double D[4],
@@ -669,7 +669,7 @@ static void assemble_internal_face(vcn_sparse_t *K,
 		integrate_pairwise(K, part, face, D, params2D);
 }
 
-static void integrate_subfaces(vcn_sparse_t *K,
+static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_partition_t *const part,
 			       const nb_partition_t *intmsh,
 			       face_t *face, const double D[4],
@@ -817,26 +817,26 @@ static void subface_get_nodal_contribution(const double D[4],
 
 static void add_Kf_to_K(face_t *face, const nb_partition_t *intmsh,
 			uint16_t subface_id, const double *Kf,
-			vcn_sparse_t *K)
+			nb_sparse_t *K)
 {
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 	uint32_t trg_id = face->subfaces[subface_id]->trg_id;
 	for (uint8_t m = 0; m < 3; m++) {
 		uint32_t k = nb_partition_elem_get_adj(intmsh, trg_id, m);
-		vcn_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
-		vcn_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
-		vcn_sparse_add(K, i*2+1, k * 2, -Kf[6 + m * 2]);
-		vcn_sparse_add(K, i*2+1, k*2+1, -Kf[6 + m*2+1]);
+		nb_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
+		nb_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
+		nb_sparse_add(K, i*2+1, k * 2, -Kf[6 + m * 2]);
+		nb_sparse_add(K, i*2+1, k*2+1, -Kf[6 + m*2+1]);
 
-		vcn_sparse_add(K, j * 2, k * 2, Kf[m * 2]);
-		vcn_sparse_add(K, j * 2, k*2+1, Kf[m*2+1]);
-		vcn_sparse_add(K, j*2+1, k * 2, Kf[6 + m * 2]);
-		vcn_sparse_add(K, j*2+1, k*2+1, Kf[6 + m*2+1]);
+		nb_sparse_add(K, j * 2, k * 2, Kf[m * 2]);
+		nb_sparse_add(K, j * 2, k*2+1, Kf[m*2+1]);
+		nb_sparse_add(K, j*2+1, k * 2, Kf[6 + m * 2]);
+		nb_sparse_add(K, j*2+1, k*2+1, Kf[6 + m*2+1]);
 	}
 }
 
-static void integrate_pairwise(vcn_sparse_t *K,
+static void integrate_pairwise(nb_sparse_t *K,
 			       const nb_partition_t *part,
 			       face_t *face, const double D[4],
 			       nb_analysis2D_params *params2D)
@@ -890,28 +890,28 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 }
 
 static void add_Kf_to_K_pairwise(face_t *face, const double *Kf,
-				 vcn_sparse_t *K)
+				 nb_sparse_t *K)
 {
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 	for (uint8_t m = 0; m < 2; m++) {
 		uint32_t k = face->elems[m];
-		vcn_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
-		vcn_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
-		vcn_sparse_add(K, i*2+1, k * 2, -Kf[4 + m * 2]);
-		vcn_sparse_add(K, i*2+1, k*2+1, -Kf[4 + m*2+1]);
+		nb_sparse_add(K, i * 2, k * 2, -Kf[m * 2]);
+		nb_sparse_add(K, i * 2, k*2+1, -Kf[m*2+1]);
+		nb_sparse_add(K, i*2+1, k * 2, -Kf[4 + m * 2]);
+		nb_sparse_add(K, i*2+1, k*2+1, -Kf[4 + m*2+1]);
 
-		vcn_sparse_add(K, j * 2, k * 2, Kf[m * 2]);
-		vcn_sparse_add(K, j * 2, k*2+1, Kf[m*2+1]);
-		vcn_sparse_add(K, j*2+1, k * 2, Kf[4 + m * 2]);
-		vcn_sparse_add(K, j*2+1, k*2+1, Kf[4 + m*2+1]);
+		nb_sparse_add(K, j * 2, k * 2, Kf[m * 2]);
+		nb_sparse_add(K, j * 2, k*2+1, Kf[m*2+1]);
+		nb_sparse_add(K, j*2+1, k * 2, Kf[4 + m * 2]);
+		nb_sparse_add(K, j*2+1, k*2+1, Kf[4 + m*2+1]);
 	}
 }
 
-static int solver(const vcn_sparse_t *const A,
+static int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x)
 {
-	uint32_t N = vcn_sparse_get_size(A);
+	uint32_t N = nb_sparse_get_size(A);
 	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
 	char *memblock = nb_soft_allocate_mem(memsize);
 	uint32_t *perm = (void*) memblock;
@@ -920,24 +920,24 @@ static int solver(const vcn_sparse_t *const A,
 	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 			      N * sizeof(double));
 
-	double usym = vcn_sparse_get_usym(A);/* TEMPORAL */
+	double usym = nb_sparse_get_usym(A);/* TEMPORAL */
 	printf("-- K usym: %e\n", usym);     /* TEMPORAL */
 
 	get_permutation(A, perm, iperm);
 
-	vcn_sparse_t *Ar = vcn_sparse_create_permutation(A, perm, iperm);
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
 	vector_permutation(N, b, perm, br);
 
-	int status = vcn_sparse_solve_using_LU(Ar, br, xr, 1);
+	int status = nb_sparse_solve_using_LU(Ar, br, xr, 1);
 
 	vector_permutation(N, xr, iperm, x);
 	
-	vcn_sparse_destroy(Ar);
+	nb_sparse_destroy(Ar);
 	nb_soft_free_mem(memsize, memblock);
 	return status;
 }
 
-static void get_permutation(const vcn_sparse_t *const A,
+static void get_permutation(const nb_sparse_t *const A,
 			    uint32_t *perm, uint32_t *iperm)
 {
 	uint16_t memsize = nb_graph_get_memsize();

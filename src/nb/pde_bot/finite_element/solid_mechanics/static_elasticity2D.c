@@ -26,7 +26,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static int solver(const vcn_sparse_t *const A,
+static int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x);
 
 int vcn_fem_compute_2D_Solid_Mechanics
@@ -46,7 +46,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
-	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);
+	nb_sparse_t *K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 
 	uint32_t N_nod = nb_partition_get_N_nodes(part);
@@ -76,17 +76,17 @@ int vcn_fem_compute_2D_Solid_Mechanics
 	pipeline_compute_strain(strain, part, displacement, elemtype);
 
 CLEANUP_LINEAR_SYSTEM:
-	vcn_sparse_destroy(K);
+	nb_sparse_destroy(K);
 	nb_soft_free_mem(F_memsize, F);
 	return status;
 }
 
-static int solver(const vcn_sparse_t *const A,
+static int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x)
 {
-	uint32_t N = vcn_sparse_get_size(A);
+	uint32_t N = nb_sparse_get_size(A);
 	memset(x, 0, N * sizeof(*x));
-	int status = vcn_sparse_solve_CG_precond_Jacobi(A, b, x, N,
+	int status = nb_sparse_solve_CG_precond_Jacobi(A, b, x, N,
 							1e-8, NULL,
 							NULL, 1);
 	int out;

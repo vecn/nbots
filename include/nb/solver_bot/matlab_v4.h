@@ -5,9 +5,9 @@
 
 #include <stdint.h>
 
-void vcn_sparse_read_mat4(vcn_sparse_t *A,
+void nb_sparse_read_mat4(nb_sparse_t *A,
 			  const char *url, char *label);
-void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
+void nb_sparse_save_mat4(const nb_sparse_t *const A,
 			  const char *url, char *label);
 
 void vcn_mat4_printf(const char* url);
