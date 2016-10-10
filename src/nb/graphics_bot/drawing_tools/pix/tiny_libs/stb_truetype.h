@@ -185,8 +185,8 @@
    // #define your own functions "STBTT_malloc" / "STBTT_free" to avoid malloc.h
    #ifndef STBTT_malloc
    #include <stdlib.h>
-   #define STBTT_malloc(x,u)  ((void)(u),malloc(x))
-   #define STBTT_free(x,u)    ((void)(u),free(x))
+   #define STBTT_nb_allocate_mem(x,u)  ((void)(u),nb_allocate_mem(x))
+   #define STBTT_nb_free_mem(x,u)    ((void)(u),nb_free_mem(x))
    #endif
 
    #ifndef STBTT_assert
@@ -1049,7 +1049,7 @@ STBTT_DEF int stbtt_GetGlyphShape(const stbtt_fontinfo *info, int glyph_index, s
       n = 1+ttUSHORT(endPtsOfContours + numberOfContours*2-2);
 
       m = n + 2*numberOfContours;  // a loose bound on how many vertices we might need
-      vertices = (stbtt_vertex *) STBTT_malloc(m * sizeof(vertices[0]), info->userdata);
+      vertices = (stbtt_vertex *) STBTT_nb_allocate_mem(m * sizeof(vertices[0]), info->userdata);
       if (vertices == 0)
          return 0;
 
@@ -1221,17 +1221,17 @@ STBTT_DEF int stbtt_GetGlyphShape(const stbtt_fontinfo *info, int glyph_index, s
                v->cy = (stbtt_vertex_type)(n * (mtx[1]*x + mtx[3]*y + mtx[5]));
             }
             // Append vertices.
-            tmp = (stbtt_vertex*)STBTT_malloc((num_vertices+comp_num_verts)*sizeof(stbtt_vertex), info->userdata);
+            tmp = (stbtt_vertex*)STBTT_nb_allocate_mem((num_vertices+comp_num_verts)*sizeof(stbtt_vertex), info->userdata);
             if (!tmp) {
-               if (vertices) STBTT_free(vertices, info->userdata);
-               if (comp_verts) STBTT_free(comp_verts, info->userdata);
+               if (vertices) STBTT_nb_free_mem(vertices, info->userdata);
+               if (comp_verts) STBTT_nb_free_mem(comp_verts, info->userdata);
                return 0;
             }
             if (num_vertices > 0) STBTT_memcpy(tmp, vertices, num_vertices*sizeof(stbtt_vertex));
             STBTT_memcpy(tmp+num_vertices, comp_verts, comp_num_verts*sizeof(stbtt_vertex));
-            if (vertices) STBTT_free(vertices, info->userdata);
+            if (vertices) STBTT_nb_free_mem(vertices, info->userdata);
             vertices = tmp;
-            STBTT_free(comp_verts, info->userdata);
+            STBTT_nb_free_mem(comp_verts, info->userdata);
             num_vertices += comp_num_verts;
          }
          // More components ?
@@ -1331,7 +1331,7 @@ STBTT_DEF float stbtt_ScaleForMappingEmToPixels(const stbtt_fontinfo *info, floa
 
 STBTT_DEF void stbtt_FreeShape(const stbtt_fontinfo *info, stbtt_vertex *v)
 {
-   STBTT_free(v, info->userdata);
+   STBTT_nb_free_mem(v, info->userdata);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1397,7 +1397,7 @@ static void *stbtt__hheap_alloc(stbtt__hheap *hh, size_t size, void *userdata)
    } else {
       if (hh->num_remaining_in_head_chunk == 0) {
          int count = (size < 32 ? 2000 : size < 128 ? 800 : 100);
-         stbtt__hheap_chunk *c = (stbtt__hheap_chunk *) STBTT_malloc(sizeof(stbtt__hheap_chunk) + size * count, userdata);
+         stbtt__hheap_chunk *c = (stbtt__hheap_chunk *) STBTT_nb_allocate_mem(sizeof(stbtt__hheap_chunk) + size * count, userdata);
          if (c == NULL)
             return NULL;
          c->next = hh->head;
@@ -1409,7 +1409,7 @@ static void *stbtt__hheap_alloc(stbtt__hheap *hh, size_t size, void *userdata)
    }
 }
 
-static void stbtt__hheap_free(stbtt__hheap *hh, void *p)
+static void stbtt__hheap_nb_free_mem(stbtt__hheap *hh, void *p)
 {
    *(void **) p = hh->first_free;
    hh->first_free = p;
@@ -1420,7 +1420,7 @@ static void stbtt__hheap_cleanup(stbtt__hheap *hh, void *userdata)
    stbtt__hheap_chunk *c = hh->head;
    while (c) {
       stbtt__hheap_chunk *n = c->next;
-      STBTT_free(c, userdata);
+      STBTT_nb_free_mem(c, userdata);
       c = n;
    }
 }
@@ -1552,7 +1552,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    unsigned char scanline_data[512], *scanline;
 
    if (result->w > 512)
-      scanline = (unsigned char *) STBTT_malloc(result->w, userdata);
+      scanline = (unsigned char *) STBTT_nb_allocate_mem(result->w, userdata);
    else
       scanline = scanline_data;
 
@@ -1574,7 +1574,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
                *step = z->next; // delete from list
                STBTT_assert(z->direction);
                z->direction = 0;
-               stbtt__hheap_free(&hh, z);
+               stbtt__hheap_nb_free_mem(&hh, z);
             } else {
                z->x += z->dx; // advance to position for current scanline
                step = &((*step)->next); // advance through list
@@ -1639,7 +1639,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    stbtt__hheap_cleanup(&hh, userdata);
 
    if (scanline != scanline_data)
-      STBTT_free(scanline, userdata);
+      STBTT_nb_free_mem(scanline, userdata);
 }
 
 #elif STBTT_RASTERIZER_VERSION == 2
@@ -1856,7 +1856,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    STBTT__NOTUSED(vsubsample);
 
    if (result->w > 64)
-      scanline = (float *) STBTT_malloc((result->w*2+1) * sizeof(float), userdata);
+      scanline = (float *) STBTT_nb_allocate_mem((result->w*2+1) * sizeof(float), userdata);
    else
       scanline = scanline_data;
 
@@ -1882,7 +1882,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
             *step = z->next; // delete from list
             STBTT_assert(z->direction);
             z->direction = 0;
-            stbtt__hheap_free(&hh, z);
+            stbtt__hheap_nb_free_mem(&hh, z);
          } else {
             step = &((*step)->next); // advance through list
          }
@@ -1934,7 +1934,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    stbtt__hheap_cleanup(&hh, userdata);
 
    if (scanline != scanline_data)
-      STBTT_free(scanline, userdata);
+      STBTT_nb_free_mem(scanline, userdata);
 }
 #else
 #error "Unrecognized value of STBTT_RASTERIZER_VERSION"
@@ -2052,7 +2052,7 @@ static void stbtt__rasterize(stbtt__bitmap *result, stbtt__point *pts, int *wcou
    for (i=0; i < windings; ++i)
       n += wcount[i];
 
-   e = (stbtt__edge *) STBTT_malloc(sizeof(*e) * (n+1), userdata); // add an extra one as a sentinel
+   e = (stbtt__edge *) STBTT_nb_allocate_mem(sizeof(*e) * (n+1), userdata); // add an extra one as a sentinel
    if (e == 0) return;
    n = 0;
 
@@ -2087,7 +2087,7 @@ static void stbtt__rasterize(stbtt__bitmap *result, stbtt__point *pts, int *wcou
    // now, traverse the scanlines and find the intersections on each scanline, use xor winding rule
    stbtt__rasterize_sorted_edges(result, e, n, vsubsample, off_x, off_y, userdata);
 
-   STBTT_free(e, userdata);
+   STBTT_nb_free_mem(e, userdata);
 }
 
 static void stbtt__add_point(stbtt__point *points, int n, float x, float y)
@@ -2135,7 +2135,7 @@ static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, 
    *num_contours = n;
    if (n == 0) return 0;
 
-   *contour_lengths = (int *) STBTT_malloc(sizeof(**contour_lengths) * n, userdata);
+   *contour_lengths = (int *) STBTT_nb_allocate_mem(sizeof(**contour_lengths) * n, userdata);
 
    if (*contour_lengths == 0) {
       *num_contours = 0;
@@ -2146,7 +2146,7 @@ static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, 
    for (pass=0; pass < 2; ++pass) {
       float x=0,y=0;
       if (pass == 1) {
-         points = (stbtt__point *) STBTT_malloc(num_points * sizeof(points[0]), userdata);
+         points = (stbtt__point *) STBTT_nb_allocate_mem(num_points * sizeof(points[0]), userdata);
          if (points == NULL) goto error;
       }
       num_points = 0;
@@ -2181,8 +2181,8 @@ static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, 
 
    return points;
 error:
-   STBTT_free(points, userdata);
-   STBTT_free(*contour_lengths, userdata);
+   STBTT_nb_free_mem(points, userdata);
+   STBTT_nb_free_mem(*contour_lengths, userdata);
    *contour_lengths = 0;
    *num_contours = 0;
    return NULL;
@@ -2195,14 +2195,14 @@ STBTT_DEF void stbtt_Rasterize(stbtt__bitmap *result, float flatness_in_pixels, 
    stbtt__point *windings = stbtt_FlattenCurves(vertices, num_verts, flatness_in_pixels / scale, &winding_lengths, &winding_count, userdata);
    if (windings) {
       stbtt__rasterize(result, windings, winding_lengths, winding_count, scale_x, scale_y, shift_x, shift_y, x_off, y_off, invert, userdata);
-      STBTT_free(winding_lengths, userdata);
-      STBTT_free(windings, userdata);
+      STBTT_nb_free_mem(winding_lengths, userdata);
+      STBTT_nb_free_mem(windings, userdata);
    }
 }
 
 STBTT_DEF void stbtt_FreeBitmap(unsigned char *bitmap, void *userdata)
 {
-   STBTT_free(bitmap, userdata);
+   STBTT_nb_free_mem(bitmap, userdata);
 }
 
 STBTT_DEF unsigned char *stbtt_GetGlyphBitmapSubpixel(const stbtt_fontinfo *info, float scale_x, float scale_y, float shift_x, float shift_y, int glyph, int *width, int *height, int *xoff, int *yoff)
@@ -2215,7 +2215,7 @@ STBTT_DEF unsigned char *stbtt_GetGlyphBitmapSubpixel(const stbtt_fontinfo *info
    if (scale_x == 0) scale_x = scale_y;
    if (scale_y == 0) {
       if (scale_x == 0) {
-         STBTT_free(vertices, info->userdata);
+         STBTT_nb_free_mem(vertices, info->userdata);
          return NULL;
       }
       scale_y = scale_x;
@@ -2234,14 +2234,14 @@ STBTT_DEF unsigned char *stbtt_GetGlyphBitmapSubpixel(const stbtt_fontinfo *info
    if (yoff  ) *yoff   = iy0;
    
    if (gbm.w && gbm.h) {
-      gbm.pixels = (unsigned char *) STBTT_malloc(gbm.w * gbm.h, info->userdata);
+      gbm.pixels = (unsigned char *) STBTT_nb_allocate_mem(gbm.w * gbm.h, info->userdata);
       if (gbm.pixels) {
          gbm.stride = gbm.w;
 
          stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, scale_x, scale_y, shift_x, shift_y, ix0, iy0, 1, info->userdata);
       }
    }
-   STBTT_free(vertices, info->userdata);
+   STBTT_nb_free_mem(vertices, info->userdata);
    return gbm.pixels;
 }   
 
@@ -2266,7 +2266,7 @@ STBTT_DEF void stbtt_MakeGlyphBitmapSubpixel(const stbtt_fontinfo *info, unsigne
    if (gbm.w && gbm.h)
       stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, scale_x, scale_y, shift_x, shift_y, ix0,iy0, 1, info->userdata);
 
-   STBTT_free(vertices, info->userdata);
+   STBTT_nb_free_mem(vertices, info->userdata);
 }
 
 STBTT_DEF void stbtt_MakeGlyphBitmap(const stbtt_fontinfo *info, unsigned char *output, int out_w, int out_h, int out_stride, float scale_x, float scale_y, int glyph)
@@ -2446,13 +2446,13 @@ static void stbrp_pack_rects(stbrp_context *con, stbrp_rect *rects, int num_rect
 
 STBTT_DEF int stbtt_PackBegin(stbtt_pack_context *spc, unsigned char *pixels, int pw, int ph, int stride_in_bytes, int padding, void *alloc_context)
 {
-   stbrp_context *context = (stbrp_context *) STBTT_malloc(sizeof(*context)            ,alloc_context);
+   stbrp_context *context = (stbrp_context *) STBTT_nb_allocate_mem(sizeof(*context)            ,alloc_context);
    int            num_nodes = pw - padding;
-   stbrp_node    *nodes   = (stbrp_node    *) STBTT_malloc(sizeof(*nodes  ) * num_nodes,alloc_context);
+   stbrp_node    *nodes   = (stbrp_node    *) STBTT_nb_allocate_mem(sizeof(*nodes  ) * num_nodes,alloc_context);
 
    if (context == NULL || nodes == NULL) {
-      if (context != NULL) STBTT_free(context, alloc_context);
-      if (nodes   != NULL) STBTT_free(nodes  , alloc_context);
+      if (context != NULL) STBTT_nb_free_mem(context, alloc_context);
+      if (nodes   != NULL) STBTT_nb_free_mem(nodes  , alloc_context);
       return 0;
    }
 
@@ -2477,8 +2477,8 @@ STBTT_DEF int stbtt_PackBegin(stbtt_pack_context *spc, unsigned char *pixels, in
 
 STBTT_DEF void stbtt_PackEnd  (stbtt_pack_context *spc)
 {
-   STBTT_free(spc->nodes    , spc->user_allocator_context);
-   STBTT_free(spc->pack_info, spc->user_allocator_context);
+   STBTT_nb_free_mem(spc->nodes    , spc->user_allocator_context);
+   STBTT_nb_free_mem(spc->pack_info, spc->user_allocator_context);
 }
 
 STBTT_DEF void stbtt_PackSetOversampling(stbtt_pack_context *spc, unsigned int h_oversample, unsigned int v_oversample)
@@ -2765,7 +2765,7 @@ STBTT_DEF int stbtt_PackFontRanges(stbtt_pack_context *spc, unsigned char *fontd
    for (i=0; i < num_ranges; ++i)
       n += ranges[i].num_chars;
          
-   rects = (stbrp_rect *) STBTT_malloc(sizeof(*rects) * n, spc->user_allocator_context);
+   rects = (stbrp_rect *) STBTT_nb_allocate_mem(sizeof(*rects) * n, spc->user_allocator_context);
    if (rects == NULL)
       return 0;
 
@@ -2778,7 +2778,7 @@ STBTT_DEF int stbtt_PackFontRanges(stbtt_pack_context *spc, unsigned char *fontd
   
    return_value = stbtt_PackFontRangesRenderIntoRects(spc, &info, ranges, num_ranges, rects);
 
-   STBTT_free(rects, spc->user_allocator_context);
+   STBTT_nb_free_mem(rects, spc->user_allocator_context);
    return return_value;
 }
 

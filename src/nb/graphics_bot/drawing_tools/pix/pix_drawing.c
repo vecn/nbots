@@ -162,7 +162,7 @@ void* nb_graphics_pix_create_context(int width, int height)
 	uint16_t fnt_size = sizeof(font_t);
 	uint32_t memsize = ctx_size + img_size + pix_size +
 		trt_size + rp_size + src_size + fnt_size;
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	context_t *ctx = (void*) memblock;
 
 	ctx->img = (void*) (memblock + ctx_size);
@@ -199,13 +199,13 @@ void nb_graphics_pix_destroy_context(void *ctx)
 	context_t *c = ctx;
 	turtle_clear(c->turtle);
 	pixmask_finish(c->pen_stencil);
-	free(ctx);
+	nb_free_mem(ctx);
 }
 
 static void turtle_clear(turtle_t *turtle)
 {
 	if (turtle->N_alloc > 0)
-		free(turtle->dynamic_mem);
+		nb_free_mem(turtle->dynamic_mem);
 	memset(turtle, 0, sizeof(turtle_t));
 }
 
@@ -560,7 +560,7 @@ static void pixmask_alloc_pix(pixmask_t *pixmask)
 {
 	if (pixmask->width * pixmask->height > PIXMASK_STATIC_MEMSIZE) {
 		uint32_t memsize = (uint32_t)(pixmask->width * pixmask->height);
-		pixmask->pix = calloc(memsize, 1);
+		pixmask->pix = nb_allocate_zero_mem(memsize);
 	} else {
 		memset(pixmask->static_pix, 0, PIXMASK_STATIC_MEMSIZE);
 		pixmask->pix = pixmask->static_pix;
@@ -727,7 +727,7 @@ static void pixmask_finish(pixmask_t *pixmask)
 {
 	if (pixmask->pix != pixmask->static_pix &&
 	    pixmask->pix != NULL)
-		free(pixmask->pix);
+		nb_free_mem(pixmask->pix);
 }
 
 static void rasterize_turtle(const turtle_t *turtle,

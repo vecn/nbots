@@ -1239,5 +1239,5 @@ static void push(pix_stack_t *ps, int x, int y)
 static void finish_stack(pix_stack_t *ps)
 {
 	if (ps->N_alloc > 0)
-		free(ps->dynamic_mem);
+		nb_free_mem(ps->dynamic_mem);
 }
