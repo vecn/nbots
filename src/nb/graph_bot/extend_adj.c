@@ -167,7 +167,7 @@ static void add_1degree_adj(const nb_graph_t *graph,
 			    nb_membank_t *membank)
 {
 	uint32_t N = graph->N;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < N; i++) {
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, current_adj[i]);

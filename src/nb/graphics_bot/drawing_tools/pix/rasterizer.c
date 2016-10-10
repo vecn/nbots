@@ -1,5 +1,3 @@
-/* Rasterizer based on Bresenham algorithm */
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -7,6 +5,8 @@
 #include <assert.h>
 
 #include "rasterizer.h"
+
+#include "nb/memory_bot.h"
 
 #define PIX_STACK_STATIC_SIZE 500
 #define PIX_STACK_DYNAMIC_INCREMENTS 500
@@ -1144,7 +1144,7 @@ void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 	if (!pixel_is_empty(x, y, pixel_data))
 		goto EXIT;
 
-	pix_stack_t *pix_stack = alloca(sizeof(*pix_stack));
+	pix_stack_t *pix_stack = nb_allocate_on_stack(sizeof(*pix_stack));
 	init_stack(pix_stack, width);
 
 	push(pix_stack, x, y);

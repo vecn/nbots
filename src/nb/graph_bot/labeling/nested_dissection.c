@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <alloca.h>
 
 #include "../imported_libs/metis.h"
 

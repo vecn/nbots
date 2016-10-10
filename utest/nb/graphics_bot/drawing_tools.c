@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
 static int suite_init(void);

@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/image_bot/image.h"
 
 #define INPUTS_DIR "../../../../utest/nb/image_bot/image_inputs"
@@ -40,7 +40,7 @@ static void test_render_ascii(void)
 	char filename[100];
 	sprintf(filename, "%s/%s", INPUTS_DIR, "jessica.jpg");
 	
-	vcn_image_t *img = alloca(vcn_image_get_memsize());
+	vcn_image_t *img = nb_allocate_on_stack(vcn_image_get_memsize());
 	vcn_image_init(img);
 	vcn_image_read(img, filename);
 	vcn_image_write_ascii(img, "../../../jessica030.txt", 30);

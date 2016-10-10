@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include <CUnit/Basic.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/geometric_bot.h"
 
@@ -379,7 +379,7 @@ static void test_get_delaunay_1000_cloud(void)
 static bool all_trg_are_delaunay(nb_mesh_t *mesh)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
-	void *msh3trg = alloca(memsize);
+	void *msh3trg = nb_allocate_on_stack(memsize);
 	nb_msh3trg_init(msh3trg);
 	nb_msh3trg_load_from_mesh(msh3trg, mesh);
 

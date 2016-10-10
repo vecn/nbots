@@ -16,8 +16,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot/graph.h"
 #include "nb/graph_bot/labeling/amd.h"
@@ -253,7 +253,7 @@ static void add_vars_from_adj_elems(int *elem_p, uint32_t* N_adj_elements,
 				    void*** adj_elements,
 				    nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < N_adj_elements[*elem_p]; i++) {
 		int *elem_e = adj_elements[*elem_p][i];
 		nb_iterator_init(iter);
@@ -276,7 +276,7 @@ static void update_vars_i_adj_to_p(int *elem_p,
 				   void*** adj_elements,
 				   nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*elem_p]);
 	while (nb_iterator_has_more(iter)) {
@@ -294,7 +294,7 @@ static void update_vars_i_adj_to_p(int *elem_p,
 static void remove_redundant_entries(nb_container_t** adj_variables,
 				     int i, int p)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[p]);
 	while (nb_iterator_has_more(iter)) {
@@ -350,7 +350,7 @@ static void compute_approx_degree(int *elem_p,
 				  void*** adj_elements,
 				  nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*elem_p]);
 	while (nb_iterator_has_more(iter)) {
@@ -386,7 +386,7 @@ static void supervars_detection(uint32_t p,
 				void*** super_variable)
 {
 	nb_container_type type = NB_HASH;
-	nb_container_t *supervars = alloca(nb_container_get_memsize(type));
+	nb_container_t *supervars = nb_allocate_on_stack(nb_container_get_memsize(type));
 	nb_container_init(supervars, type);
 	nb_container_set_key_generator(supervars,
 				       hash_function_supervariables);
@@ -415,7 +415,7 @@ static void find_supervars(uint32_t p, nb_container_t *supervars,
 			   uint32_t* N_adj_elements, void*** adj_elements,
 			   nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[p]);
 	while (nb_iterator_has_more(iter)) {
@@ -438,7 +438,7 @@ static uint32_t get_hash_key(uint32_t i, uint32_t* N_adj_elements,
 			     nb_container_t** adj_variables)
 {
 	uint32_t hash = 0;
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[i]);
 	while (nb_iterator_has_more(iter)) {
@@ -495,8 +495,8 @@ static void disolve_collisions(nb_container_t *colliding_set,
 			       uint32_t* N_super_variable,
 			       void*** super_variable)
 {
-	nb_iterator_t* iter1 = alloca(nb_iterator_get_memsize());
-	nb_iterator_t* iter2 = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter1 = nb_allocate_on_stack(nb_iterator_get_memsize());
+	nb_iterator_t* iter2 = nb_allocate_on_stack(nb_iterator_get_memsize());
 
 	nb_iterator_init(iter1);
 	nb_iterator_set_container(iter1, colliding_set);
@@ -569,12 +569,12 @@ static bool vij_are_indistinguishable(uint32_t i, uint32_t j,
 		}
 	}
 	nb_iterator_t* iter_i =
-		alloca(nb_iterator_get_memsize());
+		nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter_i);
 	nb_iterator_set_container(iter_i, adj_variables[i]);
 
 	nb_iterator_t* iter_j =
-		alloca(nb_iterator_get_memsize());
+		nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter_j);
 	nb_iterator_set_container(iter_j, adj_variables[j]);
 	while (nb_iterator_has_more(iter_i) &&
@@ -604,7 +604,7 @@ static void remove_references(int *vtx_i, int *vtx_j,
 			nb_container_insert(adj_variables[*vtx_k], vtx_i);
 	}
 	    
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*vtx_j]);
 	while (nb_iterator_has_more(iter)) {

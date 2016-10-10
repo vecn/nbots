@@ -485,14 +485,14 @@ static unsigned int re_string_context_at (const re_string_t *input, int idx,
 #define re_string_set_index(pstr,idx) ((pstr)->cur_idx = (idx))
 
 #ifdef __GNUC__
-# define alloca(size)   __builtin_alloca (size)
+# define nb_allocate_on_stack(size)   __builtin_alloca (size)
 # define HAVE_ALLOCA 1
 #elif defined(_MSC_VER)
 # include <malloc.h>
 # define alloca _alloca
 # define HAVE_ALLOCA 1
 #else
-# error No alloca()
+# error No nb_allocate_on_stack()
 #endif
 
 #ifndef _LIBC
@@ -501,10 +501,10 @@ static unsigned int re_string_context_at (const re_string_t *input, int idx,
    and a page size can be as small as 4096 bytes.  So we cannot safely
    allocate anything larger than 4096 bytes.  Also care for the possibility
    of a few compiler-allocated temporary stack slots.  */
-#  define __libc_use_alloca(n) ((n) < 4032)
+#  define __libc_use_nb_allocate_on_stack(n) ((n) < 4032)
 # else
 /* alloca is implemented with malloc, so just use malloc.  */
-#  define __libc_use_alloca(n) 0
+#  define __libc_use_nb_allocate_on_stack(n) 0
 # endif
 #endif
 

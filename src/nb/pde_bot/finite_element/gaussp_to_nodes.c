@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/geometric_bot.h"
@@ -243,7 +242,7 @@ static double get_gp_error(uint32_t id_elem, int id_gp,
 			   double* gp_values,
 			   double* nodal_values)
 {
-	double *value_gp = alloca(N_comp * sizeof(*value_gp));
+	double *value_gp = nb_allocate_on_stack(N_comp * sizeof(*value_gp));
 	memset(value_gp, 0, N_comp * sizeof(*value_gp));
 
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);

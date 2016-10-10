@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <alloca.h>
 #include <math.h>
 
 #include "nb/graphics_bot/drawing_tools.h"

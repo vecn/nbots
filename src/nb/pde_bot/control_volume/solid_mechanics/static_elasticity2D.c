@@ -507,7 +507,7 @@ static void get_face_vtx_outside_intmsh(const nb_container_t *subfaces,
 {
 	bool s1_is_outside = true;
 
-	nb_iterator_t * iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t * iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, subfaces);
 	while (nb_iterator_has_more(iter)) {
@@ -536,7 +536,7 @@ static uint32_t get_face_closest_intersection_to_intmsh
 {
 	uint32_t sf_id = 9999;
 	double min = 1e30;
-	nb_iterator_t * iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t * iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, subfaces);
 	while (nb_iterator_has_more(iter)) {
