@@ -217,7 +217,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
 	uint32_t memsize = get_cvfa_memsize(N_elems, N_faces);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double *F;
 	nb_partition_t *intmsh;
 	nb_graph_t *trg_x_vol;
@@ -261,7 +261,7 @@ CLEANUP_LINEAR_SYSTEM:
 	vcn_sparse_destroy(K);
 	nb_graph_finish(trg_x_vol);
 	nb_partition_finish(intmsh);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 	return status;
 }
 
@@ -300,7 +300,7 @@ static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
 			       const nb_partition_t *intmsh)
 {
 	uint32_t memsize = nb_graph_get_memsize();
-	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
 
 	nb_graph_init(graph);
 	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
@@ -309,7 +309,7 @@ static void init_global_matrix(vcn_sparse_t **K, const nb_graph_t *trg_x_vol,
 	*K = vcn_sparse_create(graph, NULL, 2);
 
 	nb_graph_finish(graph);
-	NB_SOFT_FREE(memsize, graph);
+	nb_soft_free_mem(memsize, graph);
 }
 
 static void load_faces(const nb_partition_t *part,
@@ -384,7 +384,7 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size +
 		nb_container_get_memsize(cnt_type);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	nb_membank_t *membank = (void*) memblock;
 	nb_container_t *subfaces = (void*) (memblock + bank_size);
@@ -416,7 +416,7 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 
 	nb_container_finish(subfaces);
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static uint8_t add_subface_if_intersected(nb_membank_t *membank,
@@ -915,7 +915,7 @@ static int solver(const vcn_sparse_t *const A,
 {
 	uint32_t N = vcn_sparse_get_size(A);
 	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	uint32_t *perm = (void*) memblock;
 	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
 	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
@@ -935,7 +935,7 @@ static int solver(const vcn_sparse_t *const A,
 	vector_permutation(N, xr, iperm, x);
 	
 	vcn_sparse_destroy(Ar);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 	return status;
 }
 
@@ -943,13 +943,13 @@ static void get_permutation(const vcn_sparse_t *const A,
 			    uint32_t *perm, uint32_t *iperm)
 {
 	uint16_t memsize = nb_graph_get_memsize();
-	nb_graph_t *graph = NB_SOFT_MALLOC(memsize);
+	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
 	nb_graph_init(graph);
 	nb_sparse_get_graph(A, graph);
 	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
 	nb_graph_finish(graph);
 
-	NB_SOFT_FREE(memsize, graph);
+	nb_soft_free_mem(memsize, graph);
 }
 
 static void vector_permutation(uint32_t N, const double *v,

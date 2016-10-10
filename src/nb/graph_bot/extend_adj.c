@@ -65,7 +65,7 @@ void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees)
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size +
 		N * (sizeof(void*) + cnt_size);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_membank_t *membank = (void*) memblock;
 	nb_membank_init(membank, sizeof(node_t));
 	nb_container_t ** extended_adj = (void*) (memblock + bank_size);
@@ -87,7 +87,7 @@ void nb_graph_extend_adj(nb_graph_t *graph, uint8_t N_degrees)
 	nb_membank_finish(membank);
 	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(extended_adj[i]);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 EXIT:
 	return;
 }
@@ -115,7 +115,7 @@ static void extend_adj_1degree(const nb_graph_t *graph,
 
 	uint32_t cnt_size = nb_container_get_memsize(type);
 	uint32_t memsize = N * (sizeof(void*) + cnt_size);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t ** new_adj = (void*) memblock;
 	char *mem = memblock + N * sizeof(void*);
 	for (uint32_t i = 0; i < N; i++) {
@@ -131,7 +131,7 @@ static void extend_adj_1degree(const nb_graph_t *graph,
 
 	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(new_adj[i]);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void set_current_adj(const nb_graph_t *graph,
@@ -247,7 +247,7 @@ static void extend_adj(const nb_graph_t *graph,
 
 	uint32_t cnt_size = nb_container_get_memsize(type);
 	uint32_t memsize = 2 * N * (sizeof(void*) + cnt_size);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t ** current_adj = (void*) memblock;
 	nb_container_t ** new_adj = (void*) (memblock + N * sizeof(void*));
 	char *mem = memblock + 2 * N * sizeof(void*);
@@ -276,7 +276,7 @@ static void extend_adj(const nb_graph_t *graph,
 		nb_container_finish(current_adj[i]);
 		nb_container_finish(new_adj[i]);
 	}
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void get_extended_graph(nb_graph_t *graph,

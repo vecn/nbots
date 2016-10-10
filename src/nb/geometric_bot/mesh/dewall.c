@@ -759,7 +759,7 @@ static void update_AFLs(const msh_trg_t *const trg,
 static uint32_t dewall(nb_mesh_t* mesh)
 {
 	uint32_t memsize = mesh->N_input_vtx * sizeof(msh_vtx_t*);
-	msh_vtx_t **vertices =  NB_SOFT_MALLOC(memsize);
+	msh_vtx_t **vertices =  nb_soft_allocate_mem(memsize);
 	memcpy(vertices, mesh->input_vtx, memsize);
 
 	nb_container_t* AFL = alloca(nb_container_get_memsize(NB_HASH));
@@ -769,6 +769,6 @@ static uint32_t dewall(nb_mesh_t* mesh)
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
 					  vertices, 0, AFL);
   	nb_container_finish(AFL);
-	NB_SOFT_FREE(memsize, vertices);
+	nb_soft_free_mem(memsize, vertices);
 	return N_trg;
 }

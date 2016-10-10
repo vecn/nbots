@@ -363,7 +363,7 @@ void nb_partition_finish(nb_partition_t *part)
 nb_partition_t* nb_partition_create(nb_partition_type type)
 {
 	uint32_t memsize = nb_partition_get_memsize(type);
-	nb_partition_t *part = malloc(memsize);
+	nb_partition_t *part = nb_allocate_mem(memsize);
 	nb_partition_init(part, type);
 	return part;
 }
@@ -371,7 +371,7 @@ nb_partition_t* nb_partition_create(nb_partition_type type)
 nb_partition_t* nb_partition_clone(nb_partition_t* part)
 {
 	uint32_t memsize = nb_partition_get_memsize(part->type);
-	nb_partition_t *clone = malloc(memsize);
+	nb_partition_t *clone = nb_allocate_mem(memsize);
 	nb_partition_copy(clone, part);
 	return clone;
 }

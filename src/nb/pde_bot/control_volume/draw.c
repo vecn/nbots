@@ -29,7 +29,7 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 	const nb_partition_t *part = data_ptr;
 
 	uint32_t memsize = nb_cvfa_get_integration_mesh_memsize();
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_partition_t *intmsh = (void*) memblock;
 
 	nb_cvfa_init_integration_mesh(intmsh);
@@ -49,7 +49,7 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 	nb_graphics_set_line_width(g, 0.5);
 	nb_partition_draw_wires(intmsh, g);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void set_camera(nb_graphics_context_t *g, int width, int height,

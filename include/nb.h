@@ -3,6 +3,7 @@
 
 #include "nb/exceptions.h"
 
+#include "nb/sysinfo.h"
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/interpolation_bot.h"

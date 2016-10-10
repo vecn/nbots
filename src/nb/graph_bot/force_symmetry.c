@@ -27,7 +27,7 @@ void nb_graph_force_symmetry(nb_graph_t *graph)
 	uint32_t N = graph->N;
 	uint32_t memsize = N * (sizeof(void*) + cnt_size) +
 		nb_membank_get_memsize();
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	nb_container_t **cnt_graph = (void*) memblock;
 	for (uint32_t i = 0; i < N; i++) {
@@ -47,7 +47,7 @@ void nb_graph_force_symmetry(nb_graph_t *graph)
 		nb_container_finish(cnt_graph[i]);
 
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void load_dynamic_sym_graph(nb_container_t **cnt_graph,

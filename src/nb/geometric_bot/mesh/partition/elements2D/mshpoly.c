@@ -64,7 +64,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly);
 static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 			   const nb_mshpoly_t *const src_poly);
-static void* malloc_poly(void);
+static void* nb_allocate_mem_poly(void);
 
 static void init_voronoi_info(vinfo_t *vinfo,
 			      const nb_mesh_t *const mesh);
@@ -222,7 +222,7 @@ static void set_arrays_memory(nb_mshpoly_t *poly)
 		adj_size + ngb_size + elem_vtx_size +
 		N_nod_x_sgm_size + nod_x_sgm_size;
 
-	char *memblock = malloc(size);
+	char *memblock = nb_allocate_mem(size);
 
 	poly->nod = (void*) memblock;
 	poly->edg = (void*) ((char*)(poly->nod) + nod_size);
@@ -272,7 +272,7 @@ static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly)
 
 static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
 {
-	char *memblock1 = malloc(memsize);
+	char *memblock1 = nb_allocate_mem(memsize);
 	char *memblock2 = memblock1 + memsize / 2;
 	for (uint32_t i = 0; i < poly->N_elems; i++) {
 		poly->adj[i] = (void*) memblock1;
@@ -320,7 +320,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly)
 
 static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize)
 {
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		poly->nod_x_sgm[i] = (void*) memblock;
 		memblock += poly->N_nod_x_sgm[i] *
@@ -344,21 +344,21 @@ void nb_mshpoly_finish(void *mshpoly_ptr)
 
 void* nb_mshpoly_create(void)
 {
-	nb_mshpoly_t *poly = malloc_poly();
+	nb_mshpoly_t *poly = nb_allocate_mem_poly();
 	nb_mshpoly_init(poly);
 	return poly;
 }
 
-static void* malloc_poly(void)
+static void* nb_allocate_mem_poly(void)
 {
 	uint32_t size = nb_mshpoly_get_memsize();
-	nb_mshpoly_t *poly = malloc(size);
+	nb_mshpoly_t *poly = nb_allocate_mem(size);
 	return poly;
 }
 
 void* nb_mshpoly_clone(const void *const mshpoly_ptr)
 {
-	nb_mshpoly_t *poly = malloc_poly();
+	nb_mshpoly_t *poly = nb_allocate_mem_poly();
 	nb_mshpoly_copy(poly, mshpoly_ptr);
 	return poly;
 }
@@ -691,7 +691,7 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 		init_voronoi_info(&vinfo, mesh);
 
 		uint32_t Nt = nb_mesh_get_N_trg(mesh);
-		uint32_t *trg_cc_map = malloc(Nt * sizeof(uint32_t));
+		uint32_t *trg_cc_map = nb_allocate_mem(Nt * sizeof(uint32_t));
 		init_trg_cc_map(trg_cc_map, Nt);
 
 		vgraph_t vgraph;
@@ -715,7 +715,7 @@ static void init_voronoi_info(vinfo_t *vinfo,
 	uint32_t Nt = nb_mesh_get_N_trg(mesh);
 	uint32_t size1 = Nv * sizeof(uint32_t);
 	uint32_t size2 = Nt * sizeof(uint32_t);
-	char *memblock = malloc(2 * size1 + size2);
+	char *memblock = nb_allocate_mem(2 * size1 + size2);
 	vinfo->vtx_map = (void*) memblock;
 	vinfo->trg_map = (void*) (memblock + size1);
 
@@ -744,7 +744,7 @@ static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 	uint32_t size2 = vgraph->N * sizeof(*(vgraph->adj));
 	uint32_t memsize = size1 + size2 +
 		2 * N_edg * sizeof(**(vgraph->adj));
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 
 	vgraph->N_adj = (void*) (memblock);
 	vgraph->adj = (void*) (memblock +  size1);
@@ -1436,7 +1436,7 @@ static void set_nodal_perm_to_nodes(nb_mshpoly_t *poly, const uint32_t *perm)
 	uint32_t N = poly->N_nod;
 	
 	uint32_t memsize = N * 2 * sizeof(*(poly->nod));
-	double *nodes = NB_SOFT_MALLOC(memsize);
+	double *nodes = nb_soft_allocate_mem(memsize);
 
 	memcpy(nodes, poly->nod, memsize);
 
@@ -1445,7 +1445,7 @@ static void set_nodal_perm_to_nodes(nb_mshpoly_t *poly, const uint32_t *perm)
 		memcpy(&(poly->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
 	}
 
-	NB_SOFT_FREE(memsize, nodes);
+	nb_soft_free_mem(memsize, nodes);
 }
 
 static void set_nodal_perm_to_edges(nb_mshpoly_t *poly, const uint32_t *perm)

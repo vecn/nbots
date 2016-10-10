@@ -18,7 +18,7 @@
 
 #define MAX(a, b) (((a)>(b))?(a):(b))
 
-static inline void *malloc_model(void);
+static inline void *nb_allocate_mem_model(void);
 static void build_dynamic_graph(const nb_model_t *model,
 				nb_membank_t *membank,
 				nb_container_t **cnt_graph);
@@ -43,21 +43,21 @@ void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
 	model->N = src_model->N;
 	if (0 < model->N) {
 		uint32_t size = 2 * model->N * sizeof(*(model->vertex));
-		model->vertex = malloc(size);
+		model->vertex = nb_allocate_mem(size);
 		memcpy(model->vertex, src_model->vertex, size);
 	}
 
 	model->M = src_model->M;
 	if (0 < model->M) {
 		uint32_t size = 2 * model->M * sizeof(*(model->edge));
-		model->edge = malloc(size);
+		model->edge = nb_allocate_mem(size);
 		memcpy(model->edge, src_model->edge, size);
 	}
 
 	model->H = src_model->H;
 	if (0 < model->H) {
 		uint32_t size = 2 * model->H * sizeof(*(model->holes));
-		model->holes = malloc(size);
+		model->holes = nb_allocate_mem(size);
 		memcpy(model->holes, src_model->holes, size);
 	}
 }
@@ -69,20 +69,20 @@ void vcn_model_finish(void *model_ptr)
 
 void* vcn_model_create(void)
 {
-	vcn_model_t *model = malloc_model();
+	vcn_model_t *model = nb_allocate_mem_model();
 	vcn_model_init(model);
 	return model;
 }
 
-static inline void *malloc_model(void)
+static inline void *nb_allocate_mem_model(void)
 {
 	uint32_t size = vcn_model_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* vcn_model_clone(const void *model_ptr)
 {
-	vcn_model_t *model = malloc_model();
+	vcn_model_t *model = nb_allocate_mem_model();
 	vcn_model_copy(model, model_ptr);
 	return model;
 }
@@ -290,7 +290,7 @@ void vcn_model_load_vtx_graph(const vcn_model_t *const model,
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t memsize = N * (sizeof(void*) + cnt_size) 
 		+ nb_membank_get_memsize();
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 
 	nb_container_t **cnt_graph = (void*) memblock;
 	for (uint32_t i = 0; i < N; i++) {
@@ -310,7 +310,7 @@ void vcn_model_load_vtx_graph(const vcn_model_t *const model,
 	for (uint32_t i = 0; i < N; i++)
 		nb_container_finish(cnt_graph);
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void build_dynamic_graph(const nb_model_t *model,
@@ -412,7 +412,7 @@ double* vcn_model_get_holes(const vcn_model_t *const model,
 		holes = NULL;
 	} else {
 		N_holes[0] = model->H;
-		holes = malloc(model->H * 2 * sizeof(*holes));
+		holes = nb_allocate_mem(model->H * 2 * sizeof(*holes));
 		memcpy(holes, model->holes, model->H * 2 * sizeof(*holes));
 	}	
 	return holes;
@@ -427,7 +427,7 @@ double* vcn_model_get_vertices(const vcn_model_t *const model,
 		vertices = NULL;
 	} else {
 		N_vertices[0] = model->N;
-		vertices = malloc(2 * model->N * sizeof(*vertices));
+		vertices = nb_allocate_mem(2 * model->N * sizeof(*vertices));
 		memcpy(vertices, model->vertex, 2 * model->N * sizeof(*vertices));
 	}
 	return vertices;
@@ -449,7 +449,7 @@ double* vcn_model_get_vertex_coordinate(const vcn_model_t *const model, uint32_t
 {
 	double *vtx = NULL;
 	if (id < model->N) {
-		vtx = malloc(2 * sizeof(*vtx));
+		vtx = nb_allocate_mem(2 * sizeof(*vtx));
 		vtx[0] = model->vertex[id * 2];
 		vtx[1] = model->vertex[id*2+1];
 	}
@@ -491,7 +491,7 @@ double* vcn_model_get_edge_coordinates(const vcn_model_t *const model, uint32_t 
 		uint32_t id1 = model->edge[id * 2];
 		uint32_t id2 = model->edge[id*2+1];
 
-		sgm = malloc(4 * sizeof(*sgm));
+		sgm = nb_allocate_mem(4 * sizeof(*sgm));
 		sgm[0] = model->vertex[id1 * 2];
 		sgm[1] = model->vertex[id1*2+1];
 		sgm[2] = model->vertex[id2 * 2];

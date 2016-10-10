@@ -150,7 +150,7 @@ static int integrate_elemental_system
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	uint32_t deriv_memsize = N_nodes * sizeof(double);
-	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
+	char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
@@ -171,7 +171,7 @@ static int integrate_elemental_system
 	}
 	status = 0;
 EXIT:
-	NB_SOFT_FREE(2 * deriv_memsize, deriv_memblock);
+	nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
 	return status;
 }
 
@@ -291,7 +291,7 @@ static int get_element_strain(uint32_t id, double *strain,
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
 	uint32_t deriv_memsize = N_nodes * sizeof(double);
-	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
+	char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
@@ -318,7 +318,7 @@ static int get_element_strain(uint32_t id, double *strain,
 	}
 	status = 0;
 EXIT:
-	NB_SOFT_FREE(2 * deriv_memsize, deriv_memblock);
+	nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
 	return status;
 }
 

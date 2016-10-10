@@ -93,7 +93,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 			     double factor)
 {
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
-	nb_bcond_t *numeric_bcond = NB_SOFT_MALLOC(bcond_size);
+	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
 	nb_bcond_init(numeric_bcond, 2);
 
 	uint32_t **elem_adj = malloc_elem_adj(part);
@@ -109,7 +109,7 @@ void nb_cvfa_set_bconditions(const nb_partition_t *part,
 
 	free_elem_adj(elem_adj);
 	nb_bcond_finish(numeric_bcond);
-	NB_SOFT_FREE(bcond_size, numeric_bcond);
+	nb_soft_free_mem(bcond_size, numeric_bcond);
 }
 
 static uint32_t **malloc_elem_adj(const nb_partition_t *part)

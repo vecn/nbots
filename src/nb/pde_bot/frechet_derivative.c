@@ -32,7 +32,7 @@ void nb_pde_get_frechet_derivative(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 	uint16_t G_size = POW2(dim_x) * sizeof(double);
 	uint16_t Ah_size = dim_x * dim_f * sizeof(double);
 	uint32_t memsize = 2 * G_size + Ah_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double *G = (void*) memblock;
 	double *LLt = (void*) (memblock + G_size);
 	double *Ah_sum = (void*) (memblock + 2 * G_size);
@@ -51,7 +51,7 @@ void nb_pde_get_frechet_derivative(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 						  &(Df[i*dim_x]), dim_x);
 	}
 	transpose_Df(Df, Ah_sum, dim_x, dim_f);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void calculate_G_and_sum_Ah(uint32_t N, uint8_t dim_x, uint8_t dim_f,
@@ -60,7 +60,7 @@ static void calculate_G_and_sum_Ah(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 				   double *G, double *Ah_sum)
 {
 	uint16_t memsize = (dim_x + dim_f) * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double *nij = (void*) memblock;
 	double *fij = (void*) (memblock + dim_x * sizeof(double));
 
@@ -72,7 +72,7 @@ static void calculate_G_and_sum_Ah(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 		sum_G(dim_x, nij, G);
 		sum_Ah(dim_x, dim_f, nij, fij, dist, Ah_sum);
 	}
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static double get_normal(uint8_t dim_x, const double *ni,

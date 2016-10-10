@@ -166,7 +166,7 @@ void vcn_bins2D_finish(vcn_bins2D_t *bins2D)
 
 vcn_bins2D_t* vcn_bins2D_create(double size_of_bins)
 {
-	vcn_bins2D_t* bins2D = malloc(vcn_bins2D_get_memsize());
+	vcn_bins2D_t* bins2D = nb_allocate_mem(vcn_bins2D_get_memsize());
 	vcn_bins2D_init(bins2D, size_of_bins);
 	return bins2D;
 }

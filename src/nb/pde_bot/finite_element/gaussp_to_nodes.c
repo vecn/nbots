@@ -90,7 +90,7 @@ static int assemble_system(const nb_partition_t *const part,
 	
 	uint16_t nodes_size = N_nodes_x_elem * sizeof(double);
 	uint32_t memsize = (1 + N_comp) * nodes_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double* Me = (void*) memblock;
 	double* be = (void*) (memblock + nodes_size);
 
@@ -107,7 +107,7 @@ static int assemble_system(const nb_partition_t *const part,
 				     Me, be, M, b);
 	}
 EXIT:
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 	return status;
 }
 
@@ -126,7 +126,7 @@ static int integrate_elemental_system
 
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	uint32_t deriv_memsize = N_nodes * sizeof(double);
-	char *deriv_memblock = NB_SOFT_MALLOC(2 * deriv_memsize);
+	char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
@@ -146,7 +146,7 @@ static int integrate_elemental_system
 	}
 	status = 0;
 EXIT:
-	NB_SOFT_FREE(2 * deriv_memsize, deriv_memblock);
+	nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
 	return status;
 }
 

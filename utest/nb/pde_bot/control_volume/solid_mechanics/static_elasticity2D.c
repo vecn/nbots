@@ -334,7 +334,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 {
 	uint32_t N_nodes = nb_partition_get_N_nodes(part);
 	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	double *stress = (void*) memblock;
 	double *vm_stress = (void*) (memblock + N_nodes* 3 * sizeof(double));
 	uint8_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
@@ -444,7 +444,7 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,

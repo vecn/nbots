@@ -144,7 +144,7 @@ void nb_mesh_finish(nb_mesh_t *mesh)
 nb_mesh_t* nb_mesh_create(void)
 {
 	uint32_t memsize = nb_mesh_get_memsize();
-	nb_mesh_t *mesh = malloc(memsize);
+	nb_mesh_t *mesh = nb_allocate_mem(memsize);
 	nb_mesh_init(mesh);
 	return mesh;
 }
@@ -646,7 +646,7 @@ bool nb_mesh_insert_vtx(nb_mesh_t *restrict mesh, const double vertex[2])
 nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 {
 	uint32_t memsize = nb_mesh_get_memsize();
-	nb_mesh_t *clone = malloc(memsize);
+	nb_mesh_t *clone = nb_allocate_mem(memsize);
 	set_memory(clone);
 
 	clone->scale = mesh->scale;
@@ -682,7 +682,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	uint32_t N_segments = nb_container_get_length(mesh->ht_edge);
 	uint32_t sgm_memsize = N_segments * sizeof(msh_edge_t*);
 	uint32_t total_memsize = vtx_memsize + trg_memsize + sgm_memsize;
-	char *memblock = NB_SOFT_MALLOC(total_memsize);
+	char *memblock = nb_soft_allocate_mem(total_memsize);
 	msh_vtx_t** vertices = (void*) memblock;
 	msh_trg_t** triangles = (void*)(memblock + vtx_memsize);
 	msh_edge_t** segments = (void*)(memblock + vtx_memsize + trg_memsize);
@@ -733,8 +733,8 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 		msh_edge_t* sgm_clone = medge_calloc(clone);
 
 		/* Set an index to the original */
-		void** attr = malloc(2 * sizeof(*attr));
-		uint32_t *pid = malloc(sizeof(*pid));
+		void** attr = nb_allocate_mem(2 * sizeof(*attr));
+		uint32_t *pid = nb_allocate_mem(sizeof(*pid));
 		pid[0] = id++;
 		attr[0] = pid;
 		attr[1] = sgm->attr;
@@ -804,7 +804,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 			segments[((uint32_t*)((void**)mesh->input_sgm[i]->attr)[0])[0]];  
 
 	/* Free memory */
-	NB_SOFT_FREE(total_memsize, memblock);
+	nb_soft_free_mem(total_memsize, memblock);
 
 	nb_iterator_restart(sgm_iter);
 	while (nb_iterator_has_more(sgm_iter)) {

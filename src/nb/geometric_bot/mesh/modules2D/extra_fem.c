@@ -20,7 +20,7 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
 		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
-		void** attr = malloc(2 * sizeof(*attr));
+		void** attr = nb_allocate_mem(2 * sizeof(*attr));
 		nb_container_t* trg_x_vtx =
 			nb_container_create(NB_QUEUE);
 		attr[0] = trg_x_vtx;

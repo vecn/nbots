@@ -84,7 +84,7 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 	uint32_t vtx_size = 2 * N_elems * sizeof(double);
 	uint32_t perm_size = N_elems * sizeof(uint32_t);
 	uint32_t memsize = mesh_size + vtx_size + perm_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_mesh_t *mesh = (void*) memblock;
 	double *vtx = (void*) (memblock + mesh_size);
 	uint32_t *perm = (void*) (memblock + mesh_size + vtx_size);
@@ -106,7 +106,7 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 
 	nb_partition_set_nodal_permutation(intmsh, perm);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 void nb_cvfa_correlate_partition_and_integration_mesh
@@ -119,7 +119,7 @@ void nb_cvfa_correlate_partition_and_integration_mesh
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = N_elems * (cnt_size + sizeof(void*)) + bank_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t **all_trg_x_vol = (void*) memblock;
 	nb_membank_t *membank = (void*) (memblock + N_elems * 
 					 (cnt_size + sizeof(void*)));
@@ -136,7 +136,7 @@ void nb_cvfa_correlate_partition_and_integration_mesh
 	finish_containers_trg_x_vol(N_elems, all_trg_x_vol, membank);
 
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
@@ -146,7 +146,7 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 				      const nb_partition_t *intmsh)
 {
 	uint32_t memsize = nb_graph_get_memsize();
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_graph_t *trg_x_vtx = (void*) memblock;
 
 	nb_graph_init(trg_x_vtx);
@@ -169,7 +169,7 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 
 	nb_graph_finish(trg_x_vtx);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void vol_get_adj(const nb_partition_t *part,
@@ -183,7 +183,7 @@ static void vol_get_adj(const nb_partition_t *part,
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t active_size = nb_container_get_memsize(cnt_type);
 	uint32_t memsize = cnt_size + active_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t *out = (void*) memblock;
 	nb_container_t *active = (void*) (memblock + cnt_size);
 
@@ -219,7 +219,7 @@ static void vol_get_adj(const nb_partition_t *part,
 	nb_container_finish(out);
 	nb_container_finish(active);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static int8_t compare_ids(const void *ptr1, const void *ptr2)
@@ -400,7 +400,7 @@ static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 {
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_membank_t *membank = (void*) memblock;
 	nb_container_t *list = (void*) (memblock + bank_size);
 
@@ -423,7 +423,7 @@ static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 	
 	nb_container_finish(list);
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 
 	return N;
 }
@@ -458,7 +458,7 @@ static void adj_graph_set_adj(nb_graph_t *graph,
 {
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_membank_t *membank = (void*) memblock;
 	nb_container_t *list = (void*) (memblock + bank_size);
 
@@ -495,5 +495,5 @@ static void adj_graph_set_adj(nb_graph_t *graph,
 	
 	nb_container_finish(list);
 	nb_membank_finish(membank);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }

@@ -227,7 +227,7 @@ void medge_set_length(msh_edge_t *const sgm)
 {
 	attr_t* attr = calloc(1, sizeof(attr_t));
 	attr->id = 2;
-	double* length = malloc(sizeof(*length));
+	double* length = nb_allocate_mem(sizeof(*length));
 	*length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	attr->data = length;
 

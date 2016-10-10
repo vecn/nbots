@@ -690,7 +690,7 @@ static inline void retriangulate_fan(nb_mesh_t *const mesh,
 	/* Allocate orfan vertices into an array */
 	uint32_t orfan_memsize = nb_container_get_length(orfan_vtx)
 		* sizeof(msh_vtx_t*);
-	msh_vtx_t** orfan_array = NB_SOFT_MALLOC(orfan_memsize);
+	msh_vtx_t** orfan_array = nb_soft_allocate_mem(orfan_memsize);
 
 	uint32_t N_orfan_vtx = 0;
 	while (nb_container_is_not_empty(orfan_vtx)) {
@@ -726,7 +726,7 @@ static inline void retriangulate_fan(nb_mesh_t *const mesh,
 		sgm = mesh_exist_edge(mesh->ht_edge, v_pivot, vtx);
 	} while (vtx != v_start && !medge_is_subsgm(sgm));
 
-	NB_SOFT_FREE(orfan_memsize, orfan_array);
+	nb_soft_free_mem(orfan_memsize, orfan_array);
 }
 
 static void verify_new_encroachments

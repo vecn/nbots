@@ -42,7 +42,7 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	uint32_t iter_size = nb_iterator_get_memsize();
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t memsize = iter_size + cnt_size;
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_container_t *to_delete = (void*) memblock;
 	nb_iterator_t *iter = (void*) (memblock + cnt_size);
 
@@ -68,7 +68,7 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	}
 	nb_container_finish(to_delete);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 double nb_mesh_get_smallest_ns_alpha_complex(nb_mesh_t *mesh,
@@ -91,7 +91,7 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(double) +
 		N_vtx * sizeof(msh_trg_t*);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	double *max_t = (void*) memblock;
 	msh_trg_t **min_v = (void*) (memblock + N_trg * sizeof(double));
@@ -107,7 +107,7 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 	double r_minmax = vcn_utils2D_get_circumradius(t_minmax->v1->x,
 						       t_minmax->v2->x,
 						       t_minmax->v3->x);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 	return r_minmax;
 }
 

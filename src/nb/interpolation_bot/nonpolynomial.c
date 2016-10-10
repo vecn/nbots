@@ -45,7 +45,7 @@ void nb_nonpolynomial_eval(uint32_t N, uint8_t dim, const double *ni,
 			   const double *x, double *eval)
 {
 	uint32_t memsize = 2 * N * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	double *phis = (void*) memblock;
 	double *Pis = (void*) (memblock + N * sizeof(double));
@@ -58,7 +58,7 @@ void nb_nonpolynomial_eval(uint32_t N, uint8_t dim, const double *ni,
 
 	eval_interpolators(N, Pis, k, eval);
 
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void eval_phis(uint32_t N, uint8_t dim, const double *ni,
@@ -157,7 +157,7 @@ void nb_nonpolynomial_eval_grad(uint32_t N, uint8_t dim,
 				double *eval)
 {
 	uint32_t memsize = ((2 + dim) * N + dim) * sizeof(double);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	
 	double *phis = (void*) memblock;
 	double *Pis = (void*) (memblock + N * sizeof(double));
@@ -176,7 +176,7 @@ void nb_nonpolynomial_eval_grad(uint32_t N, uint8_t dim,
 
 	eval_grad_interpolators(N, dim, Pis, grad_Pis, k, grad_k, eval);
 
-	NB_SOFT_FREE(memsize, memblock);	
+	nb_soft_free_mem(memsize, memblock);	
 }
 
 static void eval_grad_Pis(uint32_t N, uint8_t dim, const double *ni,
@@ -192,7 +192,7 @@ static void eval_grad_Pi(uint32_t N, uint8_t dim, const double *ni,
 			 const double *x, uint32_t i, double *eval)
 {
 	uint32_t memsize = dim * sizeof(double);
-	double *grad_z = NB_SOFT_MALLOC(memsize);
+	double *grad_z = nb_soft_allocate_mem(memsize);
 	memset(eval, 0, dim * sizeof(*eval));
 	for (uint32_t j = 0; j < N; j++) {
 		if (j != i) {			  
@@ -207,7 +207,7 @@ static void eval_grad_Pi(uint32_t N, uint8_t dim, const double *ni,
 			}
 		}
 	}
-	NB_SOFT_FREE(memsize, grad_z);
+	nb_soft_free_mem(memsize, grad_z);
 }
 
 static double get_Pij(uint32_t N, const double *phis, uint32_t i, uint32_t j)

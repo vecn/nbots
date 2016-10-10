@@ -91,14 +91,14 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 	const nb_msh3trg_t *src = src_ptr;
 
 	msh3trg->N_nod = src->N_nod;
-	msh3trg->nod = malloc(2 * msh3trg->N_nod * sizeof(*(msh3trg->nod)));
+	msh3trg->nod = nb_allocate_mem(2 * msh3trg->N_nod * sizeof(*(msh3trg->nod)));
 	memcpy(msh3trg->nod, src->nod, 
 	       2 * msh3trg->N_nod * sizeof(*(msh3trg->nod)));
 
 	msh3trg->N_elems = src->N_elems;
 	if (msh3trg->N_elems > 0) {
 		msh3trg->adj =
-			malloc(3 * msh3trg->N_elems *
+			nb_allocate_mem(3 * msh3trg->N_elems *
 			       sizeof(*(msh3trg->adj)));
 		memcpy(msh3trg->adj,
 		       src->adj,
@@ -107,7 +107,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 	}
 	if (NULL != src->ngb) {
 		msh3trg->ngb =
-			malloc(3 * msh3trg->N_elems *
+			nb_allocate_mem(3 * msh3trg->N_elems *
 			       sizeof(*(msh3trg->ngb)));
 		memcpy(msh3trg->ngb,
 		       src->ngb,
@@ -115,7 +115,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 		       sizeof(*(msh3trg->ngb)));
 	}
 	msh3trg->N_vtx = src->N_vtx;
-	msh3trg->vtx = malloc(msh3trg->N_vtx *
+	msh3trg->vtx = nb_allocate_mem(msh3trg->N_vtx *
 			      sizeof(*(msh3trg->vtx)));
 	memcpy(msh3trg->vtx,
 	       src->vtx,
@@ -124,7 +124,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 	msh3trg->N_sgm = src->N_sgm;
 	if (msh3trg->N_sgm > 0) {
 		msh3trg->N_nod_x_sgm = 
-			malloc(msh3trg->N_sgm *
+			nb_allocate_mem(msh3trg->N_sgm *
 			       sizeof(*(msh3trg->N_nod_x_sgm)));
 		memcpy(msh3trg->N_nod_x_sgm,
 		       src->N_nod_x_sgm,
@@ -137,7 +137,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 			uint32_t N_vtx = msh3trg->N_nod_x_sgm[i];
 			if (0 < N_vtx) {
 				msh3trg->nod_x_sgm[i] =
-					malloc(N_vtx *
+					nb_allocate_mem(N_vtx *
 					       sizeof(*(msh3trg->nod_x_sgm[i])));
 				memcpy(msh3trg->nod_x_sgm[i],
 				       src->nod_x_sgm[i],
@@ -151,7 +151,7 @@ void nb_msh3trg_copy(void *msh3trg_ptr, const void *src_ptr)
 void* nb_msh3trg_create(void)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
-	nb_msh3trg_t* msh3trg = malloc(memsize);
+	nb_msh3trg_t* msh3trg = nb_allocate_mem(memsize);
 	nb_msh3trg_init(msh3trg);
 	return msh3trg;
 }
@@ -159,7 +159,7 @@ void* nb_msh3trg_create(void)
 void* nb_msh3trg_clone(void* msh3trg)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
-	nb_msh3trg_t* clone = malloc(memsize);
+	nb_msh3trg_t* clone = nb_allocate_mem(memsize);
 	nb_msh3trg_copy(clone, msh3trg);
 	return clone;
 }
@@ -560,7 +560,7 @@ static void msh3trg_malloc_vtx(void *exp_structure)
 
 	uint32_t memsize = 2 * msh3trg->N_nod * 
 		sizeof(*(msh3trg->nod));
-	msh3trg->nod = malloc(memsize);
+	msh3trg->nod = nb_allocate_mem(memsize);
 }
 
 static void msh3trg_set_vtx(void *exp_structure, uint32_t i,
@@ -581,7 +581,7 @@ static void msh3trg_malloc_edg(void *exp_structure)
 {
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = 2 * msh3trg->N_edg * sizeof(*(msh3trg->edg));
-	msh3trg->edg = malloc(memsize);
+	msh3trg->edg = nb_allocate_mem(memsize);
 }
 
 static void msh3trg_set_edg(void *exp_structure, uint32_t i,
@@ -603,12 +603,12 @@ static void msh3trg_malloc_trg(void *exp_structure, bool include_neighbours)
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t vtx_memsize = 3 * msh3trg->N_elems *
 		sizeof(*(msh3trg->adj));
-	msh3trg->adj = malloc(vtx_memsize);
+	msh3trg->adj = nb_allocate_mem(vtx_memsize);
 
 	if (include_neighbours) {
 		uint32_t nbg_memsize = 3 * msh3trg->N_elems *
 			sizeof(*(msh3trg->ngb));
-		msh3trg->ngb = malloc(nbg_memsize);
+		msh3trg->ngb = nb_allocate_mem(nbg_memsize);
 	}
 }
 
@@ -643,7 +643,7 @@ static void msh3trg_malloc_input_vtx(void *exp_structure)
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = msh3trg->N_vtx *
 		sizeof(*(msh3trg->vtx));
-	msh3trg->vtx = malloc(memsize);
+	msh3trg->vtx = nb_allocate_mem(memsize);
 }
 
 static void msh3trg_set_input_vtx(void *exp_structure, uint32_t i,
@@ -664,10 +664,10 @@ static void msh3trg_malloc_input_sgm_table(void *exp_structure)
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t sgm_memsize = msh3trg->N_sgm *
 		sizeof(*(msh3trg->N_nod_x_sgm));
-	msh3trg->N_nod_x_sgm = malloc(sgm_memsize);
+	msh3trg->N_nod_x_sgm = nb_allocate_mem(sgm_memsize);
 	uint32_t vtx_memsize = msh3trg->N_sgm *
 		sizeof(*(msh3trg->nod_x_sgm));
-	msh3trg->nod_x_sgm = malloc(vtx_memsize);
+	msh3trg->nod_x_sgm = nb_allocate_mem(vtx_memsize);
 }
 
 static void msh3trg_input_sgm_set_N_vtx(void *exp_structure, uint32_t i,
@@ -682,7 +682,7 @@ static void msh3trg_input_sgm_malloc_vtx(void *exp_structure, uint32_t i)
 	nb_msh3trg_t *msh3trg = GET_MSH3TRG_FROM_STRUCT(exp_structure);
 	uint32_t memsize = msh3trg->N_nod_x_sgm[i] *
 		sizeof(**(msh3trg->nod_x_sgm));
-	msh3trg->nod_x_sgm[i] = malloc(memsize);
+	msh3trg->nod_x_sgm[i] = nb_allocate_mem(memsize);
 }
 
 static void msh3trg_input_sgm_start_access(void *exp_structure, uint32_t i)
@@ -714,7 +714,7 @@ static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm)
 	uint32_t N = msh3trg->N_nod;
 	
 	uint32_t memsize = N * 2 * sizeof(*(msh3trg->nod));
-	double *nodes = NB_SOFT_MALLOC(memsize);
+	double *nodes = nb_soft_allocate_mem(memsize);
 
 	memcpy(nodes, msh3trg->nod, memsize);
 
@@ -723,7 +723,7 @@ static void set_nodal_perm_to_nodes(nb_msh3trg_t *msh3trg, const uint32_t *perm)
 		memcpy(&(msh3trg->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
 	}
 
-	NB_SOFT_FREE(memsize, nodes);
+	nb_soft_free_mem(memsize, nodes);
 }
 
 static void set_nodal_perm_to_edges(nb_msh3trg_t *msh3trg, const uint32_t *perm)
@@ -773,7 +773,7 @@ void nb_msh3trg_disable_single_point_connections(const void *msh3trg_ptr,
 	/* Allocate lists to store triangles per vertex */
 	uint32_t *N_trg_x_vtx = calloc(msh3trg->N_nod, 
 				       sizeof(*N_trg_x_vtx));
-	uint32_t **trg_x_vtx = malloc(msh3trg->N_nod *
+	uint32_t **trg_x_vtx = nb_allocate_mem(msh3trg->N_nod *
 				      sizeof(*trg_x_vtx));
 	for (uint32_t i = 0; i < msh3trg->N_nod; i++)
 		trg_x_vtx[i] = calloc(10, sizeof(*(trg_x_vtx[i])));
@@ -919,13 +919,13 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
 
 	uint32_t sgm_memsize = 2 * N_sgm * sizeof(uint32_t);
-	uint32_t* segments = NB_SOFT_MALLOC(sgm_memsize);
+	uint32_t* segments = nb_soft_allocate_mem(sgm_memsize);
 
 	uint32_t vtx_memsize = 2 * N_vtx * sizeof(double);
-	double* vertices = NB_SOFT_MALLOC(vtx_memsize);
+	double* vertices = nb_soft_allocate_mem(vtx_memsize);
 
 	uint32_t idx_memsize = N_vtx * sizeof(uint32_t);
-	uint32_t* vtx_index_relation = NB_SOFT_MALLOC(idx_memsize);
+	uint32_t* vtx_index_relation = nb_soft_allocate_mem(idx_memsize);
 
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < N_vtx; i++) {
@@ -969,16 +969,16 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	/* Build model without holes */
 	vcn_model_clear(model);
 	model->N = N_vertices;
-	model->vertex = malloc(2 * N_vertices * sizeof(*(model->vertex)));
+	model->vertex = nb_allocate_mem(2 * N_vertices * sizeof(*(model->vertex)));
 	memcpy(model->vertex, vertices, 
 	       2 * N_vertices * sizeof(*(model->vertex)));
 	model->M = N_segments;
-	model->edge = malloc(2 * N_segments * sizeof(*(model->edge)));
+	model->edge = nb_allocate_mem(2 * N_segments * sizeof(*(model->edge)));
 	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
 
-	NB_SOFT_FREE(sgm_memsize, segments);
-	NB_SOFT_FREE(vtx_memsize, vertices);
-	NB_SOFT_FREE(idx_memsize, vtx_index_relation);
+	nb_soft_free_mem(sgm_memsize, segments);
+	nb_soft_free_mem(vtx_memsize, vertices);
+	nb_soft_free_mem(idx_memsize, vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
 	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
@@ -995,7 +995,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	double *holes = NULL;
 
 	if (0 < N_centroids) {
-		char* mask_centroids = NB_SOFT_MALLOC(N_centroids);
+		char* mask_centroids = nb_soft_allocate_mem(N_centroids);
 		memset(mask_centroids, 0, N_centroids);
 		/* get mask */
 		for (uint32_t i = 0; i < N_centroids; i++) {
@@ -1011,7 +1011,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 
 		if (0 < N_holes) {
 			uint32_t i = 0;
-			holes = malloc(2 * N_holes * sizeof(*holes));
+			holes = nb_allocate_mem(2 * N_holes * sizeof(*holes));
 			for (uint32_t j = 0; j < N_centroids; j++) {
 				if (1 == mask_centroids[j]) {
 					memcpy(&(holes[i*2]),
@@ -1022,7 +1022,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 			}
 		}
 
-		NB_SOFT_FREE(N_centroids, mask_centroids);
+		nb_soft_free_mem(N_centroids, mask_centroids);
 		free(centroids);
 	}
 	
@@ -1042,10 +1042,10 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 	model->M = 0;
 	
 	uint32_t N_nod = nb_msh3trg_get_N_nodes(msh3trg);
-	char* vertices_used = NB_SOFT_MALLOC(N_nod);
+	char* vertices_used = nb_soft_allocate_mem(N_nod);
 	memset(vertices_used, 0, N_nod);
 
-	char* vertices_bndr = NB_SOFT_MALLOC(N_nod);
+	char* vertices_bndr = nb_soft_allocate_mem(N_nod);
 	memset(vertices_bndr, 0, N_nod);
 
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
@@ -1101,7 +1101,7 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 		if(vertices_used[i]) 
 			model->N += 1;
 	}
-	NB_SOFT_FREE(N_nod, vertices_used);
+	nb_soft_free_mem(N_nod, vertices_used);
 
 	N_input_vtx[0] = 0;
 	for (uint32_t i = 0; i < N_nod; i++) {
@@ -1113,12 +1113,12 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 	nb_model_alloc_vertices(model);
 	nb_model_alloc_edges(model);
 
-	input_vtx[0] = malloc(N_input_vtx[0] * 
-					sizeof(uint32_t));
+	input_vtx[0] = nb_allocate_mem(N_input_vtx[0] * 
+				       sizeof(uint32_t));
 
 	/* Set vertices and segments */ 
 	uint32_t idx_memsize = N_nod * sizeof(uint32_t);
-	uint32_t* vertices_idx = NB_SOFT_MALLOC(idx_memsize);
+	uint32_t* vertices_idx = nb_soft_allocate_mem(idx_memsize);
 	memset(vertices_idx, 0, idx_memsize);
 
 	for (uint32_t i = 0; i < N_nod; i++)
@@ -1236,6 +1236,6 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 			sgm_counter += 1;
 		}
 	}
-	NB_SOFT_FREE(idx_memsize, vertices_idx);
-	NB_SOFT_FREE(N_nod, vertices_bndr);
+	nb_soft_free_mem(idx_memsize, vertices_idx);
+	nb_soft_free_mem(N_nod, vertices_bndr);
 }

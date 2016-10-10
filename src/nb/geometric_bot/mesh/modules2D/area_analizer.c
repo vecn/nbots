@@ -69,7 +69,7 @@ static void* subarea_create(void)
 {
 	uint16_t size = sizeof(subarea_t) +
 		nb_container_get_memsize(NB_QUEUE);
-	char *memblock = malloc(size);
+	char *memblock = nb_allocate_mem(size);
 	subarea_t *subarea = (void*) memblock;
 	subarea->trgs = (void*) (memblock + sizeof(subarea_t));
 	nb_container_init(subarea->trgs, NB_QUEUE);
@@ -301,7 +301,7 @@ static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 	double *out = NULL;
 	if (0 < *N_centroids) {
 		const uint32_t memsize = *N_centroids * 2 * sizeof(double);
-		double *centroids = NB_SOFT_MALLOC(memsize);
+		double *centroids = nb_soft_allocate_mem(memsize);
 
 		uint32_t i = 0;
 		while (nb_container_is_not_empty(areas)) {
@@ -318,10 +318,10 @@ static double* get_centroids_if_enclosed(const nb_mesh_t *mesh,
 		*N_centroids = i;
 		if (0 < *N_centroids) {
 			uint32_t imemsize = i * 2 * sizeof(double);
-			out = malloc(imemsize);
+			out = nb_allocate_mem(imemsize);
 			memcpy(out, centroids, imemsize);
 		}
-		NB_SOFT_FREE(memsize, centroids);
+		nb_soft_free_mem(memsize, centroids);
 	}
 	return out;
 
@@ -359,9 +359,9 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg =
 				nb_container_create(NB_SORTED);
-			double* area = malloc(sizeof(*area));
+			double* area = nb_allocate_mem(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, true);
-			void** obj = malloc(2 * sizeof(*obj));
+			void** obj = nb_allocate_mem(2 * sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
 			nb_container_insert(areas, obj);
@@ -425,9 +425,9 @@ double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
 		if (CLEAN == trg->status) {
 			nb_container_t* area_trg =
 				nb_container_create(NB_SORTED);
-			double* area = malloc(sizeof(*area));
+			double* area = nb_allocate_mem(sizeof(*area));
 			area[0] = spread_infection(trg, area_trg, false);
-			void** obj = malloc(2*sizeof(*obj));
+			void** obj = nb_allocate_mem(2*sizeof(*obj));
 			obj[0] = area;
 			obj[1] = area_trg;
 			nb_container_insert(areas, obj);

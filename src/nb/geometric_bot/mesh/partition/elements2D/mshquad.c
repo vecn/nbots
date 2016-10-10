@@ -36,7 +36,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad);
 static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshquad_t* quad,
 			   const nb_mshquad_t *const src_quad);
-static void* malloc_quad(void);
+static void* nb_allocate_mem_quad(void);
 static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph);
 static double get_quality(const msh_trg_t *trg1,
@@ -143,7 +143,7 @@ static void set_arrays_memory(nb_mshquad_t *quad)
 	uint32_t size = nod_size + edg_size + type_size + adj_size +
 		ngb_size + vtx_size + N_nod_x_sgm_size + nod_x_sgm_size;
 
-	char *memblock = malloc(size);
+	char *memblock = nb_allocate_mem(size);
 
 	quad->nod = (void*) memblock;
 	quad->edg = (void*) ((char*)(quad->nod) + nod_size);
@@ -201,7 +201,7 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshquad_t *const quad)
 
 static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize)
 {
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
 		quad->nod_x_sgm[i] = (void*) memblock;
 		memblock += quad->N_nod_x_sgm[i] *
@@ -226,21 +226,21 @@ void nb_mshquad_finish(void *mshquad_ptr)
 
 void* nb_mshquad_create(void)
 {
-	nb_mshquad_t *quad = malloc_quad();
+	nb_mshquad_t *quad = nb_allocate_mem_quad();
 	nb_mshquad_init(quad);
 	return quad;
 }
 
-static void* malloc_quad(void)
+static void* nb_allocate_mem_quad(void)
 {
 	uint32_t size = nb_mshquad_get_memsize();
-	nb_mshquad_t *quad = malloc(size);
+	nb_mshquad_t *quad = nb_allocate_mem(size);
 	return quad;
 }
 
 void* nb_mshquad_clone(const void *const mshquad_ptr)
 {
-	nb_mshquad_t *quad = malloc_quad();
+	nb_mshquad_t *quad = nb_allocate_mem_quad();
 	nb_mshquad_copy(quad, mshquad_ptr);
 	return quad;
 }
@@ -596,7 +596,7 @@ void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t grp_size = nb_graph_get_memsize();
 	uint32_t memsize = grp_size + N_trg * sizeof(uint32_t);
-	char *memblock = NB_SOFT_MALLOC(memsize);
+	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_graph_t *graph = (void*) memblock;
 	uint32_t *matches = (void*) (memblock + grp_size);;
 
@@ -615,7 +615,7 @@ void nb_mshquad_load_from_mesh(void *mshquad, nb_mesh_t *mesh)
 
 	nb_graph_finish_edge_weights(graph);
 	nb_graph_finish(graph);
-	NB_SOFT_FREE(memsize, memblock);
+	nb_soft_free_mem(memsize, memblock);
 EXIT:
 	return;
 }
@@ -829,10 +829,10 @@ static void set_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 {
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(uint32_t);
-	uint32_t *new_elem_id = NB_SOFT_MALLOC(memsize);
+	uint32_t *new_elem_id = nb_soft_allocate_mem(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
 	update_neighbors_ids(quad, new_elem_id);
-	NB_SOFT_FREE(memsize, new_elem_id);
+	nb_soft_free_mem(memsize, new_elem_id);
 }
 
 static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -1112,7 +1112,7 @@ static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
 	uint32_t N = quad->N_nod;
 	
 	uint32_t memsize = N * 2 * sizeof(*(quad->nod));
-	double *nodes = NB_SOFT_MALLOC(memsize);
+	double *nodes = nb_soft_allocate_mem(memsize);
 
 	memcpy(nodes, quad->nod, memsize);
 
@@ -1121,7 +1121,7 @@ static void set_nodal_perm_to_nodes(nb_mshquad_t *quad, const uint32_t *perm)
 		memcpy(&(quad->nod[id*2]), &(nodes[i*2]), 2 * sizeof(*nodes));
 	}
 
-	NB_SOFT_FREE(memsize, nodes);
+	nb_soft_free_mem(memsize, nodes);
 }
 
 static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm)

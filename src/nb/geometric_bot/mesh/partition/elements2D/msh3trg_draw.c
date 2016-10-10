@@ -424,7 +424,7 @@ static void draw_msh3trg_partition(nb_graphics_context_t *g,
 	/* Calculate center of partitions */
 	double** pcenter = NULL;
 	if (data->scale > 0.0 && data->scale < 1.0) {
-		pcenter = malloc(data->k_part * sizeof(*pcenter));
+		pcenter = nb_allocate_mem(data->k_part * sizeof(*pcenter));
 		for (uint32_t k = 0; k < data->k_part; k++)
 			pcenter[k] = calloc(2, sizeof(*(pcenter[k])));
 		calculate_partition_centers(msh3trg, data->part,
