@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/memory_bot.h"
 #include "nb/geometric_bot/point2D.h"
@@ -762,7 +761,7 @@ static void create_mapping(vinfo_t *vinfo,
 	uint32_t ielem = 0;
 	uint32_t inode = 0;
 
-	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
@@ -781,7 +780,7 @@ static void create_mapping(vinfo_t *vinfo,
 	vcn_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -824,7 +823,7 @@ static void count_vgraph_adj(vgraph_t *vgraph,
 	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
 
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -853,7 +852,7 @@ static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
 
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -1032,7 +1031,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vinfo_t *const vinfo,
 				    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
@@ -1050,7 +1049,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 	vcn_bins2D_iter_finish(biter);
 
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -1085,7 +1084,7 @@ static void set_edges(nb_mshpoly_t *poly,
 	uint32_t iedge = 0;
 
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -1155,7 +1154,7 @@ static void set_N_adj(nb_mshpoly_t *poly,
 		      const vinfo_t *const vinfo,
 		      const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
@@ -1174,7 +1173,7 @@ static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vinfo_t *const vinfo,
 			    const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* biter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* biter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(biter);
 	vcn_bins2D_iter_set_bins(biter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(biter)) {
@@ -1359,7 +1358,7 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 static void split_exterior_trg(nb_mesh_t *mesh)
 {
 	nb_container_t *exterior_trg =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(exterior_trg, NB_QUEUE);
 	
 	initialize_exterior_trg(mesh, exterior_trg);
@@ -1372,7 +1371,7 @@ static void initialize_exterior_trg(const nb_mesh_t *mesh,
 				    nb_container_t *exterior_trg)
 {
 	uint32_t size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(size);
+	nb_iterator_t *iter = nb_allocate_on_stack(size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {

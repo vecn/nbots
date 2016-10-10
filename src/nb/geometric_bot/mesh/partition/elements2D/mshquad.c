@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <alloca.h>
 #include <math.h>
 
 #include "nb/math_bot.h"
@@ -624,7 +623,7 @@ static void set_quad_quality_as_weights(const nb_mesh_t *const mesh,
 					nb_graph_t *graph)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	uint32_t elem_id = 0;
@@ -758,7 +757,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 			const nb_mesh_t *const mesh,
 			const uint32_t *const matches)
 {
-	match_data *data = alloca(sizeof(match_data));
+	match_data *data = nb_allocate_on_stack(sizeof(match_data));
 	get_match_data(graph, matches, data);
 	
 	quad->N_nod = nb_mesh_get_N_vtx(mesh);
@@ -781,7 +780,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -797,7 +796,7 @@ static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		      const uint32_t *const matches)
 {
 	uint32_t i = 0;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -840,7 +839,7 @@ static void init_elems(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
 		       uint32_t *new_elem_id)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = alloca(iter_size);
+	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	uint32_t elem_id = 0;

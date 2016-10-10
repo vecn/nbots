@@ -290,7 +290,7 @@ static uint32_t count_bins_iterating_container
 			       const int block[4])
 {
 	uint32_t N_bins = 0;
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins);
 	while (nb_iterator_has_more(iter)) {
@@ -325,7 +325,7 @@ static void get_bins_block(nb_container_t* bins_block,
 	if (nb_container_get_length(bins) < 
 	    (add_block[2] - add_block[0]) * (add_block[3] - add_block[1])) {
 		/* Iterate cells in the hash table */
-		nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+		nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, bins);
 		while (nb_iterator_has_more(iter)) {
@@ -433,7 +433,7 @@ static inline void knn_scan_list(const nb_container_t *const points,
 				 const void* const restrict filter_data)
 {
 	/* Iterate points in the cell */
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
@@ -498,7 +498,7 @@ uint32_t vcn_bins2D_get_knn(const vcn_bins2D_t *const restrict bins2D,
 	while (n_scanned < bins2D->length  && m_nearest < k) {
 		/* 1. Get cells where the search should be performed. */
 		nb_container_t* layer_cells = 
-			alloca(nb_container_get_memsize(NB_QUEUE));
+			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 		nb_container_init(layer_cells, NB_QUEUE);
 
 		knn_get_layer_bins(bins2D, layer, p, layer_cells);
@@ -541,7 +541,7 @@ static bool half_side_have_points(const vcn_bins2D_t* const bins2D,
 				  const vcn_point2D_t *const p1,
 				  const vcn_point2D_t *const p2)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins2D->bins);
 	bool have_points = false;
@@ -602,7 +602,7 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 					 const vcn_point2D_t *const p1,
 					 const vcn_point2D_t *const p2)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bin->points);
 	bool have_points = false;
@@ -658,7 +658,7 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 				nb_container_t* vertices,
 				nb_container_t* outside_vtx)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
@@ -711,7 +711,7 @@ void vcn_bins2D_get_candidate_points_to_min_delaunay
 	 *                     Segment ---|>|\|1|2|3|
 	 *                                | | |·|2|3|
 	 */
-	nb_container_t *outside_vtx = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *outside_vtx = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(outside_vtx, NB_QUEUE);
 	bool have_points = half_side_have_points(bins2D, p1, p2);
 	int layer = 0;
@@ -724,7 +724,7 @@ void vcn_bins2D_get_candidate_points_to_min_delaunay
 
 		/* 1. Get bins where the search should be performed. */
 		nb_container_t* layer_bins =
-			alloca(nb_container_get_memsize(NB_QUEUE));
+			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 		nb_container_init(layer_bins, NB_QUEUE);
 		delaunay_get_layer_bins(layer_bins, bins2D, p1, p2,
 					&circle, layer);
@@ -770,7 +770,7 @@ static void delaunay_set_inside_points_of_prev_layer
 {
 	nb_container_type type = nb_container_get_type(outside_vtx);
 
-	nb_container_t *aux = alloca(nb_container_get_memsize(type));
+	nb_container_t *aux = nb_allocate_on_stack(nb_container_get_memsize(type));
 	nb_container_init(aux, type);
 	while (nb_container_is_not_empty(outside_vtx)) {
 		vcn_point2D_t *p = nb_container_delete_first(outside_vtx);
@@ -796,14 +796,14 @@ void vcn_bins2D_get_points_inside_circle(const vcn_bins2D_t *const bins2D,
 	block[3] = get_bin_coord(center[1] + radius, bins2D->size_of_bins);
 
 	nb_container_t* bins_block =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(bins_block, NB_QUEUE);
 	get_bins_block(bins_block, bins2D->bins, block, NULL);
 
 	/* Compute points inside the circle */
 	while (nb_container_is_not_empty(bins_block)) {
 		nb_container_t* points = nb_container_delete_first(bins_block);
-		nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+		nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, points);
 		while (nb_iterator_has_more(iter)) {
@@ -834,7 +834,7 @@ bool vcn_bins2D_are_points_inside_circle
 			if (NULL == bin)
 				continue;
 			nb_container_t* points = bin->points;
-			nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+			nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 			nb_iterator_init(iter);
 			nb_iterator_set_container(iter, points);
 			while (nb_iterator_has_more(iter)) {
@@ -869,7 +869,7 @@ inline bool vcn_bins2D_is_not_empty(const vcn_bins2D_t *const restrict bins2D)
 uint32_t vcn_bins2D_get_min_points_x_bin(const vcn_bins2D_t *const bins2D)
 {
 	uint32_t min = bins2D->length;
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins2D->bins);
 	while (nb_iterator_has_more(iter)) {

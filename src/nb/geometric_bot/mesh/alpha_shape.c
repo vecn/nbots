@@ -113,7 +113,7 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 
 static void get_max_length_x_trg(const nb_mesh_t *mesh, double *max_t)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -141,7 +141,7 @@ static void get_min_trg_x_vtx(const nb_mesh_t *mesh, const double *max_t,
 	uint32_t N_vtx = nb_mesh_get_N_vtx(mesh);
 	memset(min_v, 0, N_vtx * sizeof(*min_v));
 
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <alloca.h>
 #include <math.h>
 
 #include "nb/memory_bot.h"
@@ -982,7 +981,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	nb_soft_free_mem(idx_memsize, vtx_index_relation);
 
 	/* Build a light mesh to know where are the holes */
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 	

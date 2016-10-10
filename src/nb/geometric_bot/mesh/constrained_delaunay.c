@@ -102,7 +102,7 @@ static void set_new_constraining_sgm(nb_mesh_t *mesh,
 				     uint32_t sgm_id)
 {
 	nb_container_t *vertices =
-		alloca(nb_container_get_memsize(NB_SORTED));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(vertices, NB_SORTED);
 	remove_trg_intersecting_sgm(mesh, v1, v2, vertices);
 
@@ -124,9 +124,9 @@ static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
 					nb_container_t *vertices)
 {
 	nb_container_t *intersected_trg =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(intersected_trg, NB_QUEUE);
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -204,7 +204,7 @@ static msh_trg_t* create_trg_constrained
 	msh_vtx_t* restrict vtx_near = NULL;
 	bool vtx_found = false;
 	double min_circumradius = 0; /* Must be initialized with zero */
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
@@ -300,7 +300,7 @@ static bool trg_is_constrained_exahustive_search
 /* List Naive Search */
 {
 	/* Check the Delaunay condition */
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
@@ -390,7 +390,7 @@ static bool trg_is_constrained(const nb_mesh_t *const restrict mesh,
 	vcn_utils2D_get_circumcenter(trg_v1->x, trg_v2->x, trg_v3->x,
 				     circumcenter);
 	nb_container_t *l_inside_vtx = 
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(l_inside_vtx, NB_QUEUE);
 
 	  vcn_bins2D_get_points_inside_circle(mesh->ug_vtx,
@@ -438,7 +438,7 @@ static bool are_intersecting_edges(const nb_mesh_t *const restrict mesh,
 				   const msh_vtx_t *const restrict v2)
 /* Exahustive search */
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 

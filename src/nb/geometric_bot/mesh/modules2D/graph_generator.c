@@ -23,7 +23,7 @@ void nb_mesh_load_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph)
 	graph->wij = NULL;
 	allocate_elem_graph(mesh, graph);
 
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {

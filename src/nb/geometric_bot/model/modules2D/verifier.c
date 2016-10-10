@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -253,7 +253,7 @@ bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
 bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -266,7 +266,7 @@ bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model)
 
 bool vcn_model_is_continuum(const vcn_model_t *model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -279,7 +279,7 @@ bool vcn_model_is_continuum(const vcn_model_t *model)
 
 uint16_t vcn_model_get_N_subareas(const vcn_model_t *model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 

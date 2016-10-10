@@ -352,7 +352,7 @@ bool nb_mesh_is_vtx_inside(const nb_mesh_t *const restrict mesh,
 
 void nb_mesh_get_vertices(nb_mesh_t* mesh, double* vertices)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int i = 0;
@@ -383,7 +383,7 @@ inline uint32_t nb_mesh_get_N_edg(const nb_mesh_t *const mesh)
 double nb_mesh_get_area(const nb_mesh_t *const mesh)
 {
 	double area = 0.0;
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
@@ -539,7 +539,7 @@ static inline uint32_t hash_key_trg(const void *const restrict triangle)
 
 static void remove_concavities_triangles(nb_mesh_t* mesh)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	bool stop = false;
 	while (!stop) {
 		msh_trg_t *trg = NULL;
@@ -557,7 +557,7 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 		nb_iterator_finish(iter);
 		if (NULL != trg) {
 			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
 			nb_container_finish(trg_deleted);
@@ -570,7 +570,7 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 static void remove_holes_triangles(nb_mesh_t* mesh,
 				   const vcn_model_t *const model)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	for (uint32_t i = 0; i < model->H; i++) {
 		double hole[2];
 		hole[0] = mesh->scale * (model->holes[i * 2] - mesh->xdisp);
@@ -594,7 +594,7 @@ static void remove_holes_triangles(nb_mesh_t* mesh,
 		if (NULL != trg) {
 			uint16_t container_size =
 				nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = alloca(container_size);
+			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
 			nb_container_init(trg_deleted, NB_SORTED);
 
 			delete_triangles_by_wave(mesh, trg, trg_deleted);
@@ -683,7 +683,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 
 	double bins_size = vcn_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
-	vcn_bins2D_iter_t* giter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* giter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(giter);
 	vcn_bins2D_iter_set_bins(giter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(giter)) {
@@ -700,7 +700,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	 * and triangles */
 
 	id = 0;
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {
@@ -716,7 +716,7 @@ nb_mesh_t* nb_mesh_clone(const nb_mesh_t* const mesh)
 	}
 
 	id = 0;
-	nb_iterator_t* sgm_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* sgm_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(sgm_iter);
 	nb_iterator_set_container(sgm_iter, mesh->ht_edge);
 	while (nb_iterator_has_more(sgm_iter)) {

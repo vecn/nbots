@@ -941,7 +941,7 @@ double mesh_get_min_angle(const nb_mesh_t *const mesh)
 msh_trg_t* mesh_locate_vtx(const nb_mesh_t *const restrict mesh,
 			   const msh_vtx_t *const restrict v)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	msh_trg_t *enveloping_trg = NULL;
@@ -969,7 +969,7 @@ inline void mesh_get_extern_scale_and_disp(const nb_mesh_t *const mesh,
 
 void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 {
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int id = 0;
@@ -984,7 +984,7 @@ void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 void mesh_enumerate_trg(nb_mesh_t *mesh)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t* trg_iter = alloca(iter_size);
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;

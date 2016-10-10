@@ -2,10 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <alloca.h>
 
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/memory_bot.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
 #include "nb/geometric_bot/mesh/partition/elements2D/trg_exporter.h"
@@ -73,7 +72,7 @@ static void export_vertices(const nb_mesh_t *const restrict mesh,
 
 	exp->start_vtx_access(exp->structure);
 
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	while (vcn_bins2D_iter_has_more(iter)) {
@@ -98,7 +97,7 @@ static void export_edges(const nb_mesh_t *const restrict mesh,
 	exp->start_edg_access(exp->structure);
 
 	uint32_t i = 0;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_edge);
 	while (nb_iterator_has_more(iter)) {
@@ -123,7 +122,7 @@ static void export_and_enumerate_trg(nb_mesh_t *mesh,
 
 	exp->start_trg_access(exp->structure);
 
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	uint32_t i = 0;
@@ -147,7 +146,7 @@ static void export_trg_neighbours(const nb_mesh_t *const restrict mesh,
 {
 	exp->start_trg_neighbours_access(exp->structure);
 
-	nb_iterator_t* trg_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* trg_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(trg_iter);
 	nb_iterator_set_container(trg_iter, mesh->ht_trg);
 	while (nb_iterator_has_more(trg_iter)) {

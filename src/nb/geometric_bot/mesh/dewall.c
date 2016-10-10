@@ -284,7 +284,7 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 					 const nb_container_t *const edges)
 {
 	bool intersects = false;
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
 	while (nb_iterator_has_more(iter)) {
@@ -376,7 +376,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const msh_vtx_t *const restrict v1,
 					 const msh_vtx_t *const restrict v2)
 {
-	nb_container_t* vertices = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t* vertices = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(vertices, NB_QUEUE);
 	
 	vcn_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
@@ -508,15 +508,15 @@ static uint32_t dewall_recursion
 	}
 
 	/* Initialize Action face lists */
-	nb_container_t* AFL_alpha = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_alpha = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_alpha, NB_HASH);
 	nb_container_set_key_generator(AFL_alpha, hash_key_edge);
 
-	nb_container_t* AFL_1 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_1 = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_1, NB_HASH);
 	nb_container_set_key_generator(AFL_1, hash_key_edge);
 
-	nb_container_t* AFL_2 = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL_2 = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL_2, NB_HASH);
 	nb_container_set_key_generator(AFL_2, hash_key_edge);
 
@@ -615,7 +615,7 @@ static void set_interval(interval_t *interval,
 			 int8_t axe)
 {
 	if (nb_container_is_not_empty(AFL)) {
-		nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+		nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, AFL);
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
@@ -762,7 +762,7 @@ static uint32_t dewall(nb_mesh_t* mesh)
 	msh_vtx_t **vertices =  nb_soft_allocate_mem(memsize);
 	memcpy(vertices, mesh->input_vtx, memsize);
 
-	nb_container_t* AFL = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* AFL = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(AFL, NB_HASH);
 
 	nb_container_set_key_generator(AFL, hash_key_edge);

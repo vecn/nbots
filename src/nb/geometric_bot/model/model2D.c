@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <alloca.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -366,7 +365,7 @@ static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
 
 void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -384,7 +383,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 			     const double *const vtx)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 
@@ -525,7 +524,7 @@ double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
 
 double vcn_model_get_area(const vcn_model_t *const model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 	nb_mesh_get_simplest_from_model(mesh, model);
 	double area = nb_mesh_get_area(mesh);

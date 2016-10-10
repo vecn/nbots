@@ -230,13 +230,13 @@ void vcn_model_get_combination(vcn_model_t *model,
 	scale_and_displace(model2, &scaling);
 
 	/* Insert segments and vertices */
-	nb_container_t* ht_vtx = alloca(nb_container_get_memsize(NB_HASH));
+	nb_container_t* ht_vtx = nb_allocate_on_stack(nb_container_get_memsize(NB_HASH));
 	nb_container_init(ht_vtx, NB_HASH);
 	nb_container_set_key_generator(ht_vtx, vtx_hash_key);
 	nb_container_set_comparer(ht_vtx, vtx_compare);
 	nb_container_set_destroyer(ht_vtx, vtx_destroy);
 
-	nb_container_t* avl_sgm = alloca(nb_container_get_memsize(NB_SORTED));
+	nb_container_t* avl_sgm = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(avl_sgm, NB_SORTED);
 	nb_container_set_comparer(avl_sgm, edge_compare);
 	nb_container_set_destroyer(avl_sgm, edge_destroy);
@@ -264,7 +264,7 @@ static void get_combined_elements(const vcn_model_t *model1,
 				  nb_container_t *avl_sgm)
 {	   
 	nb_container_t *sgm_intersect = 
-		alloca(nb_container_get_memsize(NB_SORTED));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(sgm_intersect, NB_SORTED);
 	nb_container_set_comparer(sgm_intersect, ipack_comparer);
 
@@ -282,12 +282,12 @@ static void get_combined_elements(const vcn_model_t *model1,
 static void search_intersections_in_edges(const nb_container_t *edges,
 					  nb_container_t *intersections)
 {  
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
 	while (nb_iterator_has_more(iter)) {
 		const edge_t* edge1 = nb_iterator_get_next(iter);
-		nb_iterator_t* subiter = alloca(nb_iterator_get_memsize());
+		nb_iterator_t* subiter = nb_allocate_on_stack(nb_iterator_get_memsize());
 		nb_iterator_copy(subiter, iter);
 		while (nb_iterator_has_more(subiter)) {
 			const edge_t* edge2 = nb_iterator_get_next(subiter);
@@ -320,7 +320,7 @@ static void set_combined_model(vcn_model_t *model,
 static void set_vertices(vcn_model_t *model,
 			 nb_container_t *ht_vtx)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, ht_vtx);
 
@@ -338,7 +338,7 @@ static void set_vertices(vcn_model_t *model,
 static void set_segments(vcn_model_t *model,
 			 nb_container_t *avl_sgm)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, avl_sgm);
 
@@ -356,7 +356,7 @@ static void set_holes(const vcn_model_t *model1,
 		      const vcn_model_t *model2,
 		      vcn_model_t *model)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 
 	nb_mesh_get_simplest_from_model(mesh, model);
@@ -398,11 +398,11 @@ static uint32_t mask_true_centroids(const vcn_model_t *model1,
 {
 	memset(mask, 0, N_centroids);
 
-	nb_mesh_t* mesh1 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh1);
 	nb_mesh_get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh2);
 	nb_mesh_get_simplest_from_model(mesh2, model2);
 
@@ -738,7 +738,7 @@ static void process_intersected_sgm(ipack_t *ipack,
 				    nb_container_t* ht_vtx)
 {
 	/* Segments intersecting */
-	vtx_t* vtx = alloca(vtx_get_memsize());
+	vtx_t* vtx = nb_allocate_on_stack(vtx_get_memsize());
 	vtx_init(vtx);
 	memcpy(vtx->x, ipack->intersection, 2 * sizeof(*(vtx->x)));
       	vtx_t* aux_vtx = nb_container_exist(ht_vtx, vtx);
@@ -813,7 +813,7 @@ static void process_collinear_intersected(ipack_t *ipack,
 {
 	/* Intersected by one side */
 	nb_container_t* sgm_intersect_aux = 
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(sgm_intersect_aux, NB_QUEUE);
 
 	nb_container_delete(avl_sgm, ipack->sgm1);
@@ -953,7 +953,7 @@ static void remove_short_segments(nb_container_t* avl_sgm,
 				  nb_container_t* ht_vtx,
 				  double min_length_x_sgm)
 {
-	nb_container_t *short_sgm = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *short_sgm = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(short_sgm, NB_QUEUE);
 	get_short_sgm(avl_sgm, short_sgm, min_length_x_sgm);
 
@@ -973,7 +973,7 @@ static void get_short_sgm(const nb_container_t *avl_sgm,
 			  nb_container_t *short_sgm,
 			  double min_length_x_sgm)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, avl_sgm);
 	while (nb_iterator_has_more(iter)) {
@@ -991,7 +991,7 @@ static void collapse_sgm_into_v1(nb_container_t *avl_sgm,
 	nb_container_delete(ht_vtx, sgm->v1);
 	nb_container_delete(ht_vtx, sgm->v2);
 
-	nb_container_t* list_sgm = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t* list_sgm = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(list_sgm, NB_QUEUE);
 
 	get_connected_segments(avl_sgm, sgm, list_sgm);
@@ -1008,7 +1008,7 @@ static void link_connected_segments_to_v1(const edge_t *sgm,
 					  nb_container_t *avl_sgm,
 					  nb_container_t *list_sgm)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, list_sgm);
 	while (nb_iterator_has_more(iter)) {
@@ -1029,7 +1029,7 @@ static void get_connected_segments(const nb_container_t *avl_sgm,
 				   const edge_t *sgm,
 				   nb_container_t *list_sgm)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, avl_sgm);
 	while (nb_iterator_has_more(iter)) {
@@ -1072,7 +1072,7 @@ static void update_segments_connected(nb_container_t *avl_sgm,
 
 static void set_as_initial_vtx_in_edges(nb_container_t *edges)
 {
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, edges);
 	while (nb_iterator_has_more(iter)) {
@@ -1085,9 +1085,9 @@ static void set_as_initial_vtx_in_edges(nb_container_t *edges)
 
 static void delete_unused_vertices(nb_container_t *vertices)
 {
-	nb_container_t *to_delete = alloca(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *to_delete = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(to_delete, NB_QUEUE);
-	nb_iterator_t *iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, vertices);
 	while (nb_iterator_has_more(iter)) {
@@ -1109,7 +1109,7 @@ static ipack_t* search_ipack_with_sgm
 				(const nb_container_t *const packs,
 				 const edge_t *const edge)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, packs);
 	ipack_t *out_ipack = NULL;
@@ -1128,7 +1128,7 @@ static ipack_t* search_ipack_with_both_sgm(const nb_container_t *const packs,
 					   const edge_t *const edge1,
 					   const edge_t *const edge2)
 {
-	nb_iterator_t* iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, packs);
 	ipack_t *out_ipack = NULL;
@@ -1168,7 +1168,7 @@ static void split_segment_by_vertex(nb_container_t* avl_sgm,
 		edge_destroy(new_sgm);
 	
 	nb_container_t* sgm_intersect_aux =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(sgm_intersect_aux, NB_QUEUE);
   
 	set_new_segments_ipacks(sgm, new_sgm, 
@@ -1256,7 +1256,7 @@ static void set_intersection_holes(vcn_model_t *model,
 static double* get_centroids_of_model_subareas(const vcn_model_t *model,
 						uint32_t *N_centroids)
 {
-	nb_mesh_t* mesh = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
 
 	nb_mesh_get_simplest_from_model(mesh, model);
@@ -1273,11 +1273,11 @@ static uint32_t mask_intersection_holes(const vcn_model_t *model1,
 					char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	nb_mesh_t* mesh1 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh1);
 	nb_mesh_get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh2);
 	nb_mesh_get_simplest_from_model(mesh2, model2);
  
@@ -1329,7 +1329,7 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 static void delete_isolated_elements(vcn_model_t *model)
 {
 	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t *mesh = alloca(mesh_memsize);
+	nb_mesh_t *mesh = nb_allocate_on_stack(mesh_memsize);
 	nb_mesh_init(mesh);
 
 	nb_mesh_get_simplest_from_model(mesh, model);
@@ -1342,7 +1342,7 @@ static void delete_isolated_elements(vcn_model_t *model)
 		vcn_model_clear(model);
 	} else {
 		uint32_t msh_memsize = nb_partition_get_memsize(NB_TRIAN);
-		nb_partition_t* part = alloca(msh_memsize);
+		nb_partition_t* part = nb_allocate_on_stack(msh_memsize);
 		nb_partition_init(part, NB_TRIAN);
 		nb_partition_load_from_mesh(part, mesh);
 
@@ -1443,11 +1443,11 @@ static uint32_t mask_difference_holes(const vcn_model_t *model1,
 				      char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	nb_mesh_t* mesh1 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh1);
 	nb_mesh_get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh2);
 	nb_mesh_get_simplest_from_model(mesh2, model2);
 
@@ -1503,7 +1503,7 @@ static uint32_t mask_substraction_holes(const vcn_model_t *model2,
 {
 	uint32_t N_new_holes = 0;
 
-	nb_mesh_t* mesh2 = alloca(nb_mesh_get_memsize());
+	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh2);
 	nb_mesh_get_simplest_from_model(mesh2, model2);
 	for (uint32_t i = 0; i < N_centroids; i++) {

@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <alloca.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
@@ -14,7 +14,7 @@
 void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 {
 	/* Allocate lists to store triangles per vertex */
-	vcn_bins2D_iter_t* iter = alloca(vcn_bins2D_iter_get_memsize());
+	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
 	vcn_bins2D_iter_init(iter);
 
 	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
@@ -28,7 +28,7 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 		vtx->attr = attr;
 	}
 	/* Iterate over triangles to found relations */
-	nb_iterator_t* ht_iter = alloca(nb_iterator_get_memsize());
+	nb_iterator_t* ht_iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(ht_iter);
 
 	nb_iterator_set_container(ht_iter, mesh->ht_trg);
@@ -42,7 +42,7 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 
 	/* Detect one point connections and duplicate vertices */
 	nb_container_t* new_vertices =
-		alloca(nb_container_get_memsize(NB_QUEUE));
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(new_vertices, NB_QUEUE);
 
 	vcn_bins2D_iter_restart(iter);
@@ -66,7 +66,7 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 			continue;
 
 		nb_container_t* trg_fan =
-			alloca(nb_container_get_memsize(NB_QUEUE));
+			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 		nb_container_init(trg_fan, NB_QUEUE);
 		do {
 			nb_container_insert(trg_fan, trg_twist);

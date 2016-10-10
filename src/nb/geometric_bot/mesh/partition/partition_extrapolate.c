@@ -172,7 +172,7 @@ static void elem_get_interpolation(const nb_partition_t *part, uint32_t elem_id,
 	memset(out, 0, N_comp * sizeof(*out));
 	
 	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	double *f = alloca(N_adj * sizeof(*f));
+	double *f = nb_allocate_on_stack(N_adj * sizeof(*f));
 	eval_shape_funcs(part, elem_id, f);
 
 	for (uint32_t j = 0; j < N_adj; j++) {
