@@ -16,7 +16,7 @@
 static inline void matrix_r_solver(const double *const A, int n, 
 				   double *d, double *b);
 
-double vcn_matrix_2X2_inverse(const double *const A, double* A_inv)
+double nb_matrix_2X2_inverse(const double *const A, double* A_inv)
 {
 	double det = (A[0] * A[3] - A[1] * A[2]);
 	A_inv[0] = A[3] / det;
@@ -26,7 +26,7 @@ double vcn_matrix_2X2_inverse(const double *const A, double* A_inv)
 	return det;
 }
 
-void vcn_matrix_2X2_eigen(const double *const A,
+void nb_matrix_2X2_eigen(const double *const A,
 			  double* Lambda, /* Output (diag) */
 			  double* P,      /* Output */
 			  double tolerance)
@@ -78,12 +78,12 @@ void vcn_matrix_2X2_eigen(const double *const A,
 	P[1] /= normalizer;
 	P[3] /= normalizer;
 }
-double vcn_matrix_2X2_det(double *A)
+double nb_matrix_2X2_det(double *A)
 {
 	return A[0] * A[3] - A[1] * A[2];
 }
 
-double vcn_matrix_3X3_det(double *A)
+double nb_matrix_3X3_det(double *A)
 {
 	return 
 		A[0] * A[4] * A[8] + 
@@ -94,7 +94,7 @@ double vcn_matrix_3X3_det(double *A)
 		A[8] * A[1] * A[3];
 }
 
-double vcn_matrix_2X2_inverse_destructive(double *A)
+double nb_matrix_2X2_inverse_destructive(double *A)
 {
 	double det = A[0] * A[3] - A[1] * A[2];
 	double tmp = A[0];
@@ -105,9 +105,9 @@ double vcn_matrix_2X2_inverse_destructive(double *A)
 	return det;
 }
 
-double vcn_matrix_3X3_inverse_destructive(double *A)
+double nb_matrix_3X3_inverse_destructive(double *A)
 {
-	double det = vcn_matrix_3X3_det(A);
+	double det = nb_matrix_3X3_det(A);
 	double a11, a12, a13, a21, a22, a23, a31, a32, a33;
 	a11 = A[0];
 	a12 = A[1];
@@ -130,7 +130,7 @@ double vcn_matrix_3X3_inverse_destructive(double *A)
 	return det;
 }
 
-int vcn_matrix_cholesky_decomposition(const double *const A,
+int nb_matrix_cholesky_decomposition(const double *const A,
 				      double* _LplusLt,   /* Out */
 				      uint32_t N)
 {
@@ -153,7 +153,7 @@ int vcn_matrix_cholesky_decomposition(const double *const A,
 	return 0;
 }
 
-void vcn_matrix_cholesky_solve
+void nb_matrix_cholesky_solve
 (const double *const LplusLt,
  const double *const b, 
  double* _x,            /* Out */
@@ -161,13 +161,13 @@ void vcn_matrix_cholesky_solve
 /* Solve the system LL'x = b, where LL'= A */
 {
 	double* z = nb_allocate_zero_mem(N * sizeof(double));
-	vcn_matrix_forward_solve(LplusLt, b, z, N);
-	vcn_matrix_backward_solve(LplusLt, z, _x, N);
+	nb_matrix_forward_solve(LplusLt, b, z, N);
+	nb_matrix_backward_solve(LplusLt, z, _x, N);
 	/* Free memory */
 	nb_free_mem(z);
 }
 
-double vcn_matrix_cond1(const double *const A, int n){
+double nb_matrix_cond1(const double *const A, int n){
 	double *Acopy = (double*)nb_allocate_mem(n*n*sizeof(double));
 	memcpy(Acopy, A, n*n*sizeof(double));
 	double *x = (double*)nb_allocate_mem(n*sizeof(double));
@@ -177,7 +177,7 @@ double vcn_matrix_cond1(const double *const A, int n){
 	int sing;
 	double *c = (double*)nb_allocate_mem(n*sizeof(double));
 	double *diag = (double*)nb_allocate_mem(n*sizeof(double));
-	vcn_matrix_qr_decomposition(Acopy, n, c, diag, &sing);
+	nb_matrix_qr_decomposition(Acopy, n, c, diag, &sing);
 	/* Compute ||A||_1 (Max absolute column sum) */
 	double estimation = fabs(diag[0]);
 	for(uint32_t i=1; i<n; i++){
@@ -215,7 +215,7 @@ double vcn_matrix_cond1(const double *const A, int n){
 	for(uint32_t i=0; i<n; i++) xnorm += fabs(x[i]);
 	estimation /= xnorm;
 	/* Solve Ry = x */
-	vcn_matrix_qr_solve(Acopy, n, c, diag, x);
+	nb_matrix_qr_solve(Acopy, n, c, diag, x);
 
 	xnorm = 0;
 	for(uint32_t i=0; i<n; i++) xnorm += fabs(x[i]);
@@ -230,13 +230,13 @@ double vcn_matrix_cond1(const double *const A, int n){
 	return estimation;
 }
 
-double vcn_matrix_cond2(const double *const A, int n){
+double nb_matrix_cond2(const double *const A, int n){
 	double *Acopy = (double*)nb_allocate_mem(n*n*sizeof(double));
 	memcpy(Acopy, A, n*n*sizeof(double));
 	double* w = (double*)nb_allocate_mem(n*sizeof(double));
 	double* V = (double*)nb_allocate_mem(n*n*sizeof(double));
 	/* Compute SVD Decomposition */ 
-	vcn_matrix_svd_decomposition(Acopy, w, V, n, n);
+	nb_matrix_svd_decomposition(Acopy, w, V, n, n);
 	/* Compute condition number estimation */
 	double estimation = w[0]/w[n-1];
 	/* Free memory */
@@ -246,7 +246,7 @@ double vcn_matrix_cond2(const double *const A, int n){
 	return estimation;
 }
 
-void vcn_matrix_qr_decomposition(double *A, /* Overwritten */
+void nb_matrix_qr_decomposition(double *A, /* Overwritten */
 				 int n,
 				 double *c, double *d, int *sing){
 	/* Numerical Recipes in C.
@@ -302,12 +302,12 @@ static inline void matrix_r_solver(const double *const A, int n, double *d, doub
 	}
 }
 
-void vcn_matrix_qr_solve(const double *const A,
+void nb_matrix_qr_solve(const double *const A,
 			 int n, double *c, double *d,
 			 double *b /* Solution overwritten */){
 	/* Numerical Recipes in C
 	 * Solves the set of n linear equations Ax = b. A, c and d are the 
-	 * input as the output of the routine vcn_matrix_qr_decomposition  and
+	 * input as the output of the routine nb_matrix_qr_decomposition  and
 	 * are not modified. b is input as the right hand side vector, and 
 	 * is overwritten with the solution vector on output.
 	 */
@@ -322,7 +322,7 @@ void vcn_matrix_qr_solve(const double *const A,
 	matrix_r_solver(A, n, d, b);
 }
 
-void vcn_matrix_svd_decomposition(double *A, /* Overwritten wit U */
+void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 				  double *w, double *V, 
 				  int n, int m){
 	/* Numerical Recipes in C.
@@ -515,7 +515,7 @@ void vcn_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 }
 
 
-void vcn_matrix_svd_solve(const double *const U,
+void nb_matrix_svd_solve(const double *const U,
 			  const double *const w, 
 			  const double *const V, 
 			  double *x,             /* Out */
@@ -548,7 +548,7 @@ void vcn_matrix_svd_solve(const double *const U,
 }
 
 
-void vcn_matrix_forward_solve(const double *const L,
+void nb_matrix_forward_solve(const double *const L,
 			      const double *const b, 
 			      double *_x, uint32_t N)
 /* Solve the system Lx = b, where L is a lower triangular matrix */
@@ -562,7 +562,7 @@ void vcn_matrix_forward_solve(const double *const L,
 	}
 }
 
-void vcn_matrix_backward_solve(const double *const U,
+void nb_matrix_backward_solve(const double *const U,
 			       const double *const b,
 			       double *_x, uint32_t N)
 /* Solve the system Ux = b, where U is a upper triangular matrix */

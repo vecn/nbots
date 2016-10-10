@@ -39,7 +39,7 @@ void nb_pde_get_frechet_derivative(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 
 	calculate_G_and_sum_Ah(N, dim_x, dim_f, x, f, ni, fi, G, Ah_sum);
 
-	int status = vcn_matrix_cholesky_decomposition(G, LLt, dim_x);
+	int status = nb_matrix_cholesky_decomposition(G, LLt, dim_x);
   
 	if (0 != status) {
 		/* Single component information */
@@ -47,7 +47,7 @@ void nb_pde_get_frechet_derivative(uint32_t N, uint8_t dim_x, uint8_t dim_f,
 			Df[i] = Ah_sum[i] / N;
 	} else {
 		for (uint16_t i = 0; i < dim_f; i++)
-			vcn_matrix_cholesky_solve(LLt, &(Ah_sum[i*dim_x]),
+			nb_matrix_cholesky_solve(LLt, &(Ah_sum[i*dim_x]),
 						  &(Df[i*dim_x]), dim_x);
 	}
 	transpose_Df(Df, Ah_sum, dim_x, dim_f);

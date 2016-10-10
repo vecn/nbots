@@ -744,7 +744,7 @@ static double subface_get_inverse_jacobian(const double t1[2],
 	iJ[2] = t3[0] - t1[0];
 	iJ[3] = t3[1] - t1[1];
 
-	double det = vcn_matrix_2X2_inverse_destructive(iJ);
+	double det = nb_matrix_2X2_inverse_destructive(iJ);
 
 	return det;
 }
@@ -777,7 +777,7 @@ static void get_normalized_point(const double x1[2], const double x2[2],
 	b[0] = xq[0] - x1[0];
 	b[1] = xq[1] - x1[1];
 
-	vcn_matrix_2X2_inverse_destructive(A);
+	nb_matrix_2X2_inverse_destructive(A);
 
 	psi[0] = A[0] * b[0] + A[1] * b[1];
 	psi[1] = A[2] * b[0] + A[3] * b[1];

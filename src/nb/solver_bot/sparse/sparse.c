@@ -812,8 +812,8 @@ int nb_sparse_solve_CG_precond_fsai
 		}
 		double* L = nb_allocate_zero_mem(POW2(G->rows_size[i]) *
 						 sizeof(double));
-		vcn_matrix_cholesky_decomposition(subA, L, G->rows_size[i]);
-		vcn_matrix_cholesky_solve(L, delta, subg, G->rows_size[i]);
+		nb_matrix_cholesky_decomposition(subA, L, G->rows_size[i]);
+		nb_matrix_cholesky_solve(L, delta, subg, G->rows_size[i]);
 		/* Finally do G = [~G]*D   */
 		for(uint32_t q=0; q < G->rows_size[i]; q++)
 			G->rows_values[i][q] *= D[G->rows_index[i][q]];
