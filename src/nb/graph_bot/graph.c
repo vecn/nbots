@@ -108,8 +108,6 @@ static void graph_clear(nb_graph_t *graph)
 	if (NULL != graph->wij)
 		/* Includes graph->wij[i] in the same memblock */
 		nb_free_mem(graph->wij);
-
-	memset(graph, 0, nb_graph_get_memsize());
 }
 
 void nb_graph_clear(nb_graph_t *graph)

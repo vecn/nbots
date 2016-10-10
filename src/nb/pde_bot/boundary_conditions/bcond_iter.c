@@ -15,7 +15,7 @@ struct nb_bcond_iter_s {
 	nb_iterator_t *internal;
 };
 
-static void* malloc_bcond_iter(void);
+static void* allocate_bcond_iter(void);
 
 uint16_t nb_bcond_iter_get_memsize(void)
 {
@@ -46,20 +46,20 @@ void nb_bcond_iter_finish(void *iter_ptr)
 
 void* nb_bcond_iter_create(void)
 {
-	void *iter = malloc_bcond_iter();
+	void *iter = allocate_bcond_iter();
 	nb_bcond_iter_init(iter);
 	return iter;
 }
 
-static void* malloc_bcond_iter(void)
+static void* allocate_bcond_iter(void)
 {
 	uint16_t size = nb_bcond_iter_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* nb_bcond_iter_clone(const void *iter_ptr)
 {
-	void *iter = malloc_bcond_iter();
+	void *iter = allocate_bcond_iter();
 	nb_bcond_iter_copy(iter, iter_ptr);
 	return iter;
 }
@@ -67,7 +67,7 @@ void* nb_bcond_iter_clone(const void *iter_ptr)
 void nb_bcond_iter_destroy(void *iter_ptr)
 {
 	nb_bcond_iter_clear(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 void nb_bcond_iter_clear(void *iter_ptr)

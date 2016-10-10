@@ -1,8 +1,5 @@
 /******************************************************************************
  *   Statistics Cat: Statistics utilities.                                    *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
  ******************************************************************************/
 
 #include <stdlib.h>
@@ -10,6 +7,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/container_bot/array.h"
 #include "nb/statistics_bot.h"
@@ -67,8 +65,8 @@ void vcn_statistics_rnorm(int n, double mean, double var,
 	 * using the Box-Muller transformation method.
 	 */
 	const int m = (int)(n * 0.5 + 0.5);
-	double *const restrict U = (double*)malloc(m * sizeof(double));
-	double *const restrict V = (double*)malloc(m * sizeof(double));
+	double *const restrict U = nb_allocate_mem(m * sizeof(double));
+	double *const restrict V = nb_allocate_mem(m * sizeof(double));
 	vcn_statistics_runif(m, 0.0, 1.0, U, seed1);
 	vcn_statistics_runif(m, 0.0, 1.0, V, seed2);
 	for (uint32_t i = 0; i < m; i++) {
@@ -78,6 +76,6 @@ void vcn_statistics_rnorm(int n, double mean, double var,
 			out[i*2+1] = mean + sqrt(-2 * log(V[i])) * 
 				sin(2.0 * NB_MATH_PI * U[i]) * var;
 	}
-	free(U);
-	free(V);
+	nb_free_mem(U);
+	nb_free_mem(V);
 }

@@ -49,11 +49,11 @@ void* hash_do(nb_container_t *container, const char* func,
 	*status = 0;
 	void *out = NULL;
 	if (0 == strcmp("get_size", func)) {
-		uint32_t *size = malloc(sizeof(*size));
+		uint32_t *size = nb_allocate_mem(sizeof(*size));
 		*size = hash_get_size(container->cnt);
 		out = size;
 	} else if (0 == strcmp("get_N_collisions", func)) {
-		uint32_t *N = malloc(sizeof(*N));
+		uint32_t *N = nb_allocate_mem(sizeof(*N));
 		*N = hash_get_N_collisions(container->cnt);
 		out = N;
 	} else if (0 == strcmp("get_collisions", func)) {

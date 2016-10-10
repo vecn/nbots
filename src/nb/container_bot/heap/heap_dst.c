@@ -1,9 +1,6 @@
 /******************************************************************************
  *   Heap DST: Heap or priority queue.                                        *
  *             Implemented as a pairing heap (in a half-ordered binary tree)  *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
  ******************************************************************************/
 
 #include <stdlib.h>
@@ -16,7 +13,7 @@
 
 #include "nb/memory_bot.h"
 
-static void* malloc_heap(void);
+static void* allocate_heap(void);
 static void destroy_values(heap_t *heap, void (*destroy)(void*));
 static htree_t* cut_root(heap_t *heap);
 static bool is_not_empty(const heap_t *const heap);
@@ -61,21 +58,21 @@ void heap_finish(void *heap_ptr, void (*destroy)(void*))
 
 void* heap_create(void)
 {
-	void *heap = malloc_heap();
+	void *heap = allocate_heap();
 	heap_init(heap);
 	return heap;
 }
 
-static void* malloc_heap(void)
+static void* allocate_heap(void)
 {
 	uint16_t size = sizeof(heap_t);
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* heap_clone(const void *const heap_ptr,
 		 void* (*clone)(const void*))
 {
-	void *heap = malloc_heap();
+	void *heap = allocate_heap();
 	heap_copy(heap, heap_ptr, clone);
 	return heap;
 }
@@ -83,7 +80,7 @@ void* heap_clone(const void *const heap_ptr,
 void heap_destroy(void *heap_ptr, void (*destroy)(void*))
 {
 	heap_finish(heap_ptr, destroy);
-	free(heap_ptr);
+	nb_free_mem(heap_ptr);
 }
 
 void heap_clear(void *heap_ptr, void (*destroy)(void*))

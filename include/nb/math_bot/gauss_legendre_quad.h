@@ -1,5 +1,5 @@
-#ifndef __NB_PDE_BOT_GAUSS_LEGENDRE_QUAD_H__
-#define __NB_PDE_BOT_GAUSS_LEGENDRE_QUAD_H__
+#ifndef __NB_MATH_BOT_GAUSS_LEGENDRE_QUAD_H__
+#define __NB_MATH_BOT_GAUSS_LEGENDRE_QUAD_H__
 
 #include <stdint.h>
 

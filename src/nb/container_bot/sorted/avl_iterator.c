@@ -1,10 +1,3 @@
-/******************************************************************************
- *   AVL iterator                                                             *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -22,7 +15,7 @@ typedef struct {
 	tree_t* tree;
 } iter_t;
 
-static void* malloc_iter(void);
+static void* allocate_iter(void);
 static void jump_to_most_left(iter_t *iter);
 static void jump_to_parent(iter_t *iter);
 static void jump_to_next(iter_t *iter);
@@ -46,8 +39,8 @@ void avl_iter_copy(void *iter_ptr, const void *src_iter_ptr)
 	iter->parent_id = src_iter->parent_id;
 	iter->N_parent = src_iter->N_parent;
 	if (0 < iter->N_parent) {
-		iter->parent =
-			malloc(iter->N_parent * sizeof(*(iter->parent)));
+		iter->parent = nb_allocate_mem(iter->N_parent *
+					       sizeof(*(iter->parent)));
 		memcpy(iter->parent, src_iter->parent, 
 		       iter->N_parent * sizeof(*(iter->parent)));
 	} else {
@@ -62,20 +55,20 @@ inline void avl_iter_finish(void *iter_ptr)
 
 inline void* avl_iter_create(void)
 {
-	void *iter = malloc_iter();
+	void *iter = allocate_iter();
 	avl_iter_init(iter);
 	return iter;
 }
 
-static inline void* malloc_iter(void)
+static inline void* allocate_iter(void)
 {
 	uint16_t size = avl_iter_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 inline void* avl_iter_clone(const void *iter_ptr)
 {
-	void *iter = malloc_iter();
+	void *iter = allocate_iter();
 	avl_iter_copy(iter, iter_ptr);
 	return iter;
 }
@@ -83,14 +76,14 @@ inline void* avl_iter_clone(const void *iter_ptr)
 inline void avl_iter_destroy(void *iter_ptr)
 {
 	avl_iter_finish(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 inline void avl_iter_clear(void *iter_ptr)
 {
 	iter_t *iter = iter_ptr;
 	if (iter->N_parent > 0)
-       		free(iter->parent);
+       		nb_free_mem(iter->parent);
 }
 
 void avl_iter_set_dst(void *iter_ptr, const void *avl_ptr)
@@ -101,7 +94,8 @@ void avl_iter_set_dst(void *iter_ptr, const void *avl_ptr)
 	iter->tree = (tree_t*) iter->root;
 	if (NULL != iter->root) {
 		iter->N_parent = tree_get_height(iter->root);
-		iter->parent = calloc(iter->N_parent, sizeof(tree_t*));
+		iter->parent = nb_allocate_zero_mem(iter->N_parent *
+						    sizeof(tree_t*));
 		jump_to_most_left(iter);
 	}
 }

@@ -6,7 +6,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"

@@ -1,13 +1,8 @@
-/******************************************************************************
- *   Hash-Table iterator                                                      *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "nb/memory_bot.h"
 
 #include "../queue/nb_queue_dst.h"
 #include "../queue/nb_queue_iterator.h"
@@ -23,7 +18,7 @@ typedef struct {
 } iter_t;
 
 static void set_next_row_iterator(iter_t *iter);
-static void* malloc_hash_iter(void);
+static void* allocate_hash_iter(void);
 
 inline uint16_t hash_iter_get_memsize(void)
 {
@@ -52,20 +47,20 @@ void hash_iter_finish(void *iter_ptr)
 
 void* hash_iter_create(void)
 {
-	void *iter = malloc_hash_iter();
+	void *iter = allocate_hash_iter();
 	hash_iter_init(iter);
 	return iter;
 }
 
-static inline void* malloc_hash_iter(void)
+static inline void* allocate_hash_iter(void)
 {
 	uint16_t size = hash_iter_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* hash_iter_clone(const void *iter_ptr)
 {
-	void *iter = malloc_hash_iter();
+	void *iter = allocate_hash_iter();
 	hash_iter_copy(iter, iter_ptr);
 	return iter;
 }
@@ -73,7 +68,7 @@ void* hash_iter_clone(const void *iter_ptr)
 void hash_iter_destroy(void *iter_ptr)
 {
 	hash_iter_finish(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 void hash_iter_clear(void *iter_ptr)

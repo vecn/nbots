@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "nb/memory_bot.h"
 #include "nb/pde_bot/material.h"
 
 struct nb_material_s {
@@ -23,7 +24,7 @@ struct nb_material_s {
 
 nb_material_t *nb_material_create(void)
 {
-	nb_material_t *mat = calloc(1, sizeof(*mat));
+	nb_material_t *mat = nb_allocate_zero_mem(sizeof(*mat));
 	return mat;
 }
 
@@ -42,7 +43,7 @@ nb_material_t *nb_material_clone(nb_material_t* mat)
 }
 
 void nb_material_destroy(nb_material_t* mat){
-	free(mat);
+	nb_free_mem(mat);
 }
 
 void nb_material_set_poisson_module(nb_material_t* mat, double pmodule){

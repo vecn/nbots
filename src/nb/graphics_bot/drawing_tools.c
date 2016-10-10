@@ -606,7 +606,7 @@ void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 
 nb_graphics_palette_t* nb_graphics_palette_create(void)
 {
-	return calloc(1, sizeof(nb_graphics_palette_t));
+	return nb_allocate_zero_mem(sizeof(nb_graphics_palette_t));
 }
 
 nb_graphics_palette_t* nb_graphics_palette_create_preset
@@ -626,7 +626,7 @@ nb_graphics_palette_t* nb_graphics_palette_create_preset
 
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette)
 {
-	free(palette);
+	nb_free_mem(palette);
 }
 
 void nb_graphics_palette_clear(nb_graphics_palette_t *palette)

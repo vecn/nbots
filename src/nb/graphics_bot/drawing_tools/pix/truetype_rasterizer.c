@@ -72,7 +72,7 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 		int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock, 0);
 		stbtt_InitFont(font, ttf_memblock, font_idx);
 		get_size_truetype_font(font, string, size, w, h);
-		free(ttf_memblock);
+		nb_free_mem(ttf_memblock);
 	} else {
 		get_size_bitmap_font(string, size, w, h);
 	}
@@ -150,7 +150,7 @@ void nb_graphics_truetype_rasterizer_bake(const char *string,
 	char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
 		bake_truetype_font(ttf_memblock, string, size, bitmap);
-		free(ttf_memblock);
+		nb_free_mem(ttf_memblock);
 	} else {
 		bake_bitmap_font(string, size, bitmap);
 	}
@@ -167,7 +167,7 @@ static char* read_ttf_memblock(const char *type)
 		int64_t file_size  = ftell(fp);
 		fseek(fp, 0L, SEEK_SET);
 
-		ttf_memblock = malloc(file_size);
+		ttf_memblock = nb_allocate_mem(file_size);
 		fread(ttf_memblock, 1, file_size, fp);
 		fclose(fp);
 	}

@@ -8,7 +8,7 @@
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/cfreader_cat.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/geometric_bot.h"
@@ -43,7 +43,7 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double *strain        /* Output */)
 {
 	int status = 0;
-	nb_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	vcn_sparse_t *K = vcn_sparse_create(graph, NULL, 2);

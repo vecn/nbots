@@ -7,7 +7,7 @@
 
 #define INV_3 0.33333333333333333333333333333
 
-static vcn_fem_elem_t *elem_malloc(uint8_t N_nodes, uint8_t N_gp);
+static vcn_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp);
 static void init_trg_linear(vcn_fem_elem_t *elem);
 static void init_quad_linear(vcn_fem_elem_t *elem);
 
@@ -16,28 +16,28 @@ vcn_fem_elem_t *vcn_fem_elem_create(vcn_elem_id type)
 	vcn_fem_elem_t *elem;
 	switch(type) {
 	case NB_TRG_LINEAR:
-		elem = elem_malloc(3, 1);
+		elem = elem_allocate_mem(3, 1);
 		init_trg_linear(elem);
 		break;
 	case NB_QUAD_LINEAR:
-		elem = elem_malloc(4, 4);
+		elem = elem_allocate_mem(4, 4);
 		init_quad_linear(elem);
 		break;
 	default:
-		elem = elem_malloc(3, 1);
+		elem = elem_allocate_mem(3, 1);
 		init_trg_linear(elem);
 	}
 	return elem;
 }
 
-static vcn_fem_elem_t *elem_malloc(uint8_t N_nodes, uint8_t N_gp)
+static vcn_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp)
 {
 	uint16_t w_memsize = N_gp * sizeof(double);
 	uint16_t Ni_memsize = N_nodes * N_gp * sizeof(double);
 	uint16_t elem_memsize = sizeof(vcn_fem_elem_t);
 	uint32_t memsize = elem_memsize + w_memsize + 3 * Ni_memsize;
 	
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 
 	vcn_fem_elem_t *elem = (void*) memblock;
 	elem->gp_weight = (void*) (memblock + elem_memsize);
@@ -120,7 +120,7 @@ static void init_quad_linear(vcn_fem_elem_t *elem)
 
 void vcn_fem_elem_destroy(vcn_fem_elem_t* elem)
 {
-	free(elem);
+	nb_free_mem(elem);
 }
 
 uint8_t vcn_fem_elem_get_N_gpoints(const vcn_fem_elem_t *const elem)

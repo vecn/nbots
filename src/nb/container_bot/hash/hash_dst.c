@@ -1,8 +1,5 @@
 /******************************************************************************
  *   Hash Table DST: Hash Table                                               *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
  ******************************************************************************/
 
 #include <stdlib.h>
@@ -23,14 +20,14 @@ static void clone_lists(hash_t *hash, const hash_t *const src_hash,
 			void* (*clone)(const void *const));
 static void clear_rows(hash_t *hash,
 		       void (*destroy)(void*));
-static void* malloc_hash(void);
-static void check_realloc(hash_t *hash,
-			  uint32_t (*key)(const void *const),
-			  int8_t (*compare)(const void*, const void*));
+static void* allocate_hash(void);
+static void check_reallocate(hash_t *hash,
+			     uint32_t (*key)(const void *const),
+			     int8_t (*compare)(const void*, const void*));
 static float get_load_factor(hash_t *hash);
-static void realloc_rows(hash_t *hash,
-			 uint32_t (*key)(const void *const),
-			 int8_t (*compare)(const void*, const void*));
+static void reallocate_rows(hash_t *hash,
+			    uint32_t (*key)(const void *const),
+			    int8_t (*compare)(const void*, const void*));
 static void reinsert_list(hash_t *hash, void *queue_ptr,
 			  uint32_t (*key)(const void *const),
 			  int8_t (*compare)(const void*, const void*));
@@ -59,7 +56,7 @@ static void init(hash_t *hash, float max_load_factor, uint32_t size)
 	hash->max_load_factor = max_load_factor;
 	hash->size = size;
 	hash->length = 0;
-	hash->rows = calloc(size, sizeof(*(hash->rows)));
+	hash->rows = nb_allocate_zero_mem(size * sizeof(*(hash->rows)));
 
 	hash->membank = (void*)(((char*)hash) + sizeof(hash_t));
 	nb_membank_init(hash->membank, nb_queue_get_memsize());
@@ -74,7 +71,7 @@ void hash_copy(void *hash_ptr, const void *src_hash_ptr,
 	hash->max_load_factor = src_hash->max_load_factor;
 	hash->size = src_hash->size;
 	hash->length = src_hash->length;
-	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
+	hash->rows = nb_allocate_zero_mem(hash->size * sizeof(*(hash->rows)));
 
 	hash->membank = (void*)(((char*)hash) + sizeof(hash_t));
 	nb_membank_init(hash->membank, nb_queue_get_memsize());
@@ -96,7 +93,7 @@ void hash_finish(void *hash_ptr, void (*destroy)(void*))
 {
 	hash_t* hash = hash_ptr;
 	clear_rows(hash, destroy);
-	free(hash->rows);
+	nb_free_mem(hash->rows);
 	nb_membank_finish(hash->membank);
 }
 
@@ -112,21 +109,21 @@ static void clear_rows(hash_t *hash, void (*destroy)(void*))
 
 void* hash_create(void)
 {
-	hash_t *hash = malloc_hash();
+	hash_t *hash = allocate_hash();
 	hash_init(hash);
 	return hash;
 }
 
-static inline void* malloc_hash(void)
+static inline void* allocate_hash(void)
 {
 	uint16_t size = hash_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* hash_clone(const void *const hash_ptr,
 			void* (*clone)(const void*))
 {
-	hash_t *hash = malloc_hash();
+	hash_t *hash = allocate_hash();
 	hash_copy(hash, hash_ptr, clone);
 	return hash;
 }
@@ -135,7 +132,7 @@ void hash_destroy(void* hash_ptr, void (*destroy)(void*))
 {
 	hash_t *hash = hash_ptr;
 	hash_finish(hash, destroy);
-	free(hash);
+	nb_free_mem(hash);
 }
 
 void hash_clear(void* hash_ptr, void (*destroy)(void*))
@@ -154,19 +151,19 @@ void hash_merge(void *hash1_ptr, void *hash2_ptr,
 	hash_t *hash2 = (hash_t*) hash2_ptr;
 	if (hash_is_not_empty(hash2)) {
 		hash1->length += hash2->length;
-		check_realloc(hash1, key, compare);
+		check_reallocate(hash1, key, compare);
 		merge_rows(hash1, hash2, key, compare);
 		hash2->length = 0;
 	}
 }
 
-static void check_realloc(hash_t *hash,
-			  uint32_t (*key)(const void *const),
-			  int8_t (*compare)(const void*, const void*))
+static void check_reallocate(hash_t *hash,
+			     uint32_t (*key)(const void *const),
+			     int8_t (*compare)(const void*, const void*))
 {
   	float load = get_load_factor(hash);
 	if (load > hash->max_load_factor)
-	  realloc_rows(hash, key, compare);
+		reallocate_rows(hash, key, compare);
 }
 
 static inline float get_load_factor(hash_t *hash)
@@ -174,14 +171,15 @@ static inline float get_load_factor(hash_t *hash)
 	return (float) hash->length / (float) hash->size;
 }
 
-static void realloc_rows(hash_t *hash,
-			 uint32_t (*key)(const void *const),
-			 int8_t (*compare)(const void*, const void*))
+static void reallocate_rows(hash_t *hash,
+			    uint32_t (*key)(const void *const),
+			    int8_t (*compare)(const void*, const void*))
 {
 	void **rows = hash->rows;
 	uint32_t N = hash->size;
 	hash->size = N * 2;
-	hash->rows = calloc(hash->size, sizeof(*(hash->rows)));
+	hash->rows = nb_allocate_zero_mem(hash->size *
+					  sizeof(*(hash->rows)));
 
 	for (uint32_t i = 0; i < N; i++) {
 		if (NULL != rows[i]) {
@@ -190,7 +188,7 @@ static void realloc_rows(hash_t *hash,
 			nb_membank_free_mem(hash->membank, rows[i]);
 		}
 	}
-	free(rows);
+	nb_free_mem(rows);
 }
 
 static void reinsert_list(hash_t *hash, void *queue_ptr,
@@ -242,7 +240,7 @@ bool hash_insert(void *hash_ptr, const void *const val,
 {
 	hash_t* hash = hash_ptr;
 	hash->length += 1;
-	check_realloc(hash, key, compare);
+	check_reallocate(hash, key, compare);
 	insert(hash, val, key, compare);
 	return true;
 }

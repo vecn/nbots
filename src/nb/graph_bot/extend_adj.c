@@ -47,8 +47,8 @@ static void extend_adj(const nb_graph_t *graph,
 static void get_extended_graph(nb_graph_t *graph,
 			       nb_container_t **extended_adj,
 			       nb_membank_t *membank);
-static void realloc_memory(nb_graph_t *graph,
-			   nb_container_t **extended_adj);
+static void reallocate_memory(nb_graph_t *graph,
+			      nb_container_t **extended_adj);
 static uint32_t get_N_total_adj(uint32_t N,
 				nb_container_t **extended_adj);
 
@@ -283,7 +283,7 @@ static void get_extended_graph(nb_graph_t *graph,
 			       nb_container_t **extended_adj,
 			       nb_membank_t *membank)
 {
-	realloc_memory(graph, extended_adj);
+	reallocate_memory(graph, extended_adj);
 
 	uint32_t N = graph->N;
 	for (uint32_t i = 0; i < N; i++) {
@@ -300,17 +300,17 @@ static void get_extended_graph(nb_graph_t *graph,
 	}
 }
 
-static void realloc_memory(nb_graph_t *graph,
-			   nb_container_t **extended_adj)
+static void reallocate_memory(nb_graph_t *graph,
+			      nb_container_t **extended_adj)
 {
 	uint32_t N = graph->N;
 	if (NULL != graph->N_adj)
-		free(graph->N_adj);
+		nb_free_mem(graph->N_adj);
 	uint32_t N_total_adj = get_N_total_adj(N, extended_adj);
 	uint32_t memsize = N * (sizeof(*(graph->N_adj)) +
 				sizeof(*(graph->adj))) +
 		N_total_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + N * sizeof(*(graph->N_adj)));
 
@@ -323,10 +323,10 @@ static void realloc_memory(nb_graph_t *graph,
 	}
 
 	if (NULL != graph->wij) {
-		free(graph->wij);
+		nb_free_mem(graph->wij);
 		uint32_t w_memsize = N * sizeof(*(graph->wij)) +
 			N_total_adj * sizeof(**(graph->wij));
-		char *w_memblock = malloc(w_memsize);
+		char *w_memblock = nb_allocate_mem(w_memsize);
 		graph->wij = (void*) w_memblock;
 		
 		memblock += N * sizeof(*(graph->wij));

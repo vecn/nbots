@@ -19,12 +19,17 @@ Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat 
 Developers and contributions
 -----------------------
 - Victor E. Cardoso (victorc@cimat.mx)
-     > Library arch, 2D meshes, alpha-shapes, containers,
-       finite element assemblers, linear algebra routines,
-       graph labeling routines, spectral bissection,
-       and graphics functions (rasterizers).
+     > Library arch.
      > Bots integration and Unit tests.
+     > Containers.
+     > 2D Geometric algorithms (meshes, alpha-shapes, Voronoi, etc).
+     > Finite element assemblers.
+     > Linear algebra routines,
+     > AMD: Graph labeling routines.
+     > Spectral bissection,
+     > Graphics bot (rasterizers).
 - Miguel Vargas Felix (miguelvargas@cimat.mx)
+     > System macros.
      > Parallel sparse solvers and structures.
      > Domain segmentation routines.
 - Jorge Lopez (jorge.lopez@cimat.mx)

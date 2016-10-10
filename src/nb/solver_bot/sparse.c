@@ -1,23 +1,16 @@
-/******************************************************************************
- *   Sparse Bot: Linear Algebra for sparse and symmetric matrices.            *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot/array.h"
-#include "nb/eigen_bot/sparse.h"
+#include "nb/solver_bot/sparse.h"
 
 #include "sparse_struct.h"
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
 static inline double get_norm(double* x, uint32_t N);
@@ -33,8 +26,6 @@ static void cholesky_symbolic(const vcn_sparse_t *const A,
 static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
 					  uint32_t i, uint32_t col, 
 					  int imin, int imax);
-static inline void matrix_r_solver(const double *const A, int n, 
-				   double *d, double *b);
 
 static inline double get_norm(double* x, uint32_t N)
 {
@@ -44,26 +35,12 @@ static inline double get_norm(double* x, uint32_t N)
 	return sqrt(n);
 }
 
-static int meta_compare_data_bycol(const void *a, const void *b)
-{
-	if((*(double**)a)[0] == (*(double**)b)[0])
-		return (*(double**)a)[1] - (*(double**)b)[1];
-	else
-		return (*(double**)a)[0] - (*(double**)b)[0];
-}
-
-/* Warning: The methods of sparse struct doesn't have any 
- *  validation, because they are thought to be fast.
- *  Ensure all pointers are allocated and initialized, and
- *  all index are inside bounds, etc.
- */
-
 static inline vcn_sparse_t* sparse_allocate(uint32_t N)
 {
-	vcn_sparse_t* A = malloc(sizeof(*A));
-	A->rows_values = malloc(N * sizeof(*(A->rows_values)));
-	A->rows_index = malloc(N * sizeof(*(A->rows_index)));
-	A->rows_size = calloc(N, sizeof(*(A->rows_size)));
+	vcn_sparse_t* A = nb_allocate_mem(sizeof(*A));
+	A->rows_values = nb_allocate_mem(N * sizeof(*(A->rows_values)));
+	A->rows_index = nb_allocate_mem(N * sizeof(*(A->rows_index)));
+	A->rows_size = nb_allocate_zero_mem(N * sizeof(*(A->rows_size)));
 	A->N = N;
 	return A;
 }
@@ -85,10 +62,10 @@ vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const restrict graph,
 
 			A->rows_size[irow] = row_size;
 			A->rows_values[irow] = 
-				calloc(row_size,
+				nb_allocate_zero_mem(row_size *
 				       sizeof(*(A->rows_values[irow])));
 			A->rows_index[irow] = 
-				malloc(row_size *
+				nb_allocate_mem(row_size *
 				       sizeof(*(A->rows_index[irow])));
 
 			for (uint32_t j = 0; j < graph->N_adj[i]; j++) {
@@ -113,12 +90,12 @@ vcn_sparse_t* vcn_sparse_clone(vcn_sparse_t* A)
 {
 	vcn_sparse_t* Acopy = sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
-		Acopy->rows_index[i] = calloc(A->rows_size[i], 
+		Acopy->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					      sizeof(**(Acopy->rows_index)));
 		memcpy(Acopy->rows_index[i], A->rows_index[i], 
 		       A->rows_size[i] * sizeof(**(Acopy->rows_index)));
 
-		Acopy->rows_values[i] = calloc(A->rows_size[i],
+		Acopy->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					       sizeof(**(Acopy->rows_values)));
 		memcpy(Acopy->rows_values[i], A->rows_values[i],
 		       A->rows_size[i] * sizeof(**(Acopy->rows_values)));
@@ -147,13 +124,13 @@ void vcn_sparse_destroy(vcn_sparse_t* A)
 {
 	/* Clear all rows */
 	for (uint32_t i = 0; i < A->N; i++) {
-		free(A->rows_values[i]);
-		free(A->rows_index[i]);
+		nb_free_mem(A->rows_values[i]);
+		nb_free_mem(A->rows_index[i]);
 	}
-	free(A->rows_values);
-	free(A->rows_index);
-	free(A->rows_size);
-	free(A);
+	nb_free_mem(A->rows_values);
+	nb_free_mem(A->rows_index);
+	nb_free_mem(A->rows_size);
+	nb_free_mem(A);
 }
 
 static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
@@ -283,12 +260,18 @@ vcn_sparse_t* vcn_sparse_create_permutation
 	for (uint32_t i = 0; i < A->N; i++) {
 		uint32_t j = perm[i];
 		_Ar->rows_size[i] = A->rows_size[j];
-		_Ar->rows_index[i] = calloc(_Ar->rows_size[i],sizeof(**(_Ar->rows_index)));
-		_Ar->rows_values[i] = calloc(_Ar->rows_size[i],sizeof(**(_Ar->rows_values)));
-		double** data2sort = malloc(_Ar->rows_size[i]*sizeof(*data2sort));
+		_Ar->rows_index[i] = 
+			nb_allocate_zero_mem(_Ar->rows_size[i] *
+					     sizeof(**(_Ar->rows_index)));
+		_Ar->rows_values[i] =
+			nb_allocate_zero_mem(_Ar->rows_size[i] *
+					     sizeof(**(_Ar->rows_values)));
+		double** data2sort =
+			nb_allocate_mem(_Ar->rows_size[i] * sizeof(*data2sort));
 		for (uint32_t k = 0; k < A->rows_size[j]; k++) {
 			uint32_t m = iperm[A->rows_index[j][k]];
-			data2sort[k] = calloc(2, sizeof(**data2sort));
+			data2sort[k] =
+				nb_allocate_zero_mem(2 * sizeof(**data2sort));
 			data2sort[k][0] = (double)m; /* OPPORTUNITY */
 			data2sort[k][1] = A->rows_values[j][k];
 		}
@@ -300,8 +283,8 @@ vcn_sparse_t* vcn_sparse_create_permutation
 		}
 		/* Free memory */
 		for (uint32_t k=0; k< A->rows_size[j]; k++)
-			free(data2sort[k]);
-		free(data2sort);
+			nb_free_mem(data2sort[k]);
+		nb_free_mem(data2sort);
 	}
 	return _Ar;
 }
@@ -326,7 +309,7 @@ double* vcn_sparse_create_vector_permutation
 (const double *const b, 
  const uint32_t *const perm,
  uint32_t N){
-	double* br = (double*)malloc(N * sizeof(double));
+	double* br = (double*)nb_allocate_mem(N * sizeof(double));
 	for(uint32_t i=0; i < N; i++)
 		br[i] = b[perm[i]];
 	return br;
@@ -448,7 +431,7 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //	int plot_size = size-2*border;
 //	float cell_size = ((float)A->N)/plot_size;
 //	float cell_max = 0;
-//	float* cells = (float*)calloc(plot_size*plot_size, sizeof(float));
+//	float* cells = nb_allocate_zero_mem(POW2(plot_size) * sizeof(float));
 //	for(i=0; i<plot_size; i++){
 //		for(j=0; j<plot_size; j++){
 //			/* Start iterations over matrix */
@@ -540,10 +523,10 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //
 //	/* Initialize pointers */
 //	uint8_t r, g, b;
-//	row_pointers = png_malloc(png_ptr, h*sizeof(png_byte*));
+//	row_pointers = png_nb_allocate_mem(png_ptr, h*sizeof(png_byte*));
 //	for(i=0; i<h; i++){
 //		png_byte *row=
-//			png_malloc(png_ptr, sizeof(uint8_t)*w*pixel_size);
+//			png_nb_allocate_mem(png_ptr, sizeof(uint8_t)*w*pixel_size);
 //		row_pointers[i] = row;
 //		for(j=0; j<w; j++){
 //			/* Create bitmap */
@@ -592,11 +575,11 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //
 //	/* Free memory */
 //	for(i=0; i<h; i++)
-//		png_free(png_ptr, row_pointers[i]);
-//	png_free(png_ptr, row_pointers);
+//		png_nb_free_mem(png_ptr, row_pointers[i]);
+//	png_nb_free_mem(png_ptr, row_pointers);
 //	png_destroy_write_struct(&png_ptr, &info_ptr);
 //
-//	free(cells);
+//	nb_free_mem(cells);
 //
 //	/* Close url */
 //	fclose(fp);
@@ -628,7 +611,7 @@ int vcn_sparse_solve_Gauss_Seidel
  double* tolerance_reached, /* Out (NULL if not required) */
  uint32_t omp_parallel_threads){
 	/* Allocate RHS vector */
-	double* c = (double*)malloc(vcn_sparse_get_size(A)*sizeof(double));
+	double* c = (double*)nb_allocate_mem(vcn_sparse_get_size(A)*sizeof(double));
 	/* Start iterations */
 	register uint32_t k = 0;
 	double error = 1e10;
@@ -658,7 +641,7 @@ int vcn_sparse_solve_Gauss_Seidel
 		k++;
 	}
 	/* Free memory */
-	free(c);
+	nb_free_mem(c);
 
 	/* Successful exit */
 	if(niter_performed != NULL) *niter_performed = k;
@@ -682,9 +665,9 @@ int vcn_sparse_solve_conjugate_gradient
 /* Return the num of iterations */
 {
 	/* Solve Ax = b with Conjugate Gradient method */
-	double *g = (double*)calloc(A->N, sizeof(double));
-	double *p = (double*)calloc(A->N, sizeof(double));
-	double *w = (double*)calloc(A->N, sizeof(double));
+	double *g = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *w = nb_allocate_zero_mem(A->N * sizeof(double));
 	double dot_gg = 0;
 
 #pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
@@ -723,9 +706,9 @@ int vcn_sparse_solve_conjugate_gradient
 		k++;
 	}
 	/* Free memory */
-	free(g);
-	free(p);
-	free(w);
+	nb_free_mem(g);
+	nb_free_mem(p);
+	nb_free_mem(w);
   
 	if(niter_performed != NULL) niter_performed[0]= k;
 
@@ -749,7 +732,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 {
 	/* Solve Ax = b with Conjugate Gradient preconditioned with jacobi */
 	uint32_t vec_size = A->N * sizeof(double);
-	char *memblock = calloc(1, 5 * vec_size);	
+	char *memblock = nb_allocate_zero_mem(5 * vec_size);	
 	double* g = (void*) memblock;
 	double* p = (void*) (memblock + vec_size);
 	double* q = (void*) (memblock + 2 * vec_size);
@@ -802,7 +785,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		k++;
 	}
 	/* Free memory */
-	free(memblock);
+	nb_free_mem(memblock);
 
 	if (NULL != niter_performed)
 		niter_performed[0]= k;
@@ -830,10 +813,10 @@ int vcn_sparse_solve_CG_precond_Cholesky
 	/* Solve Ax = b with Conjugate Gradient preconditioned with 
 	 * Cholesky truncated.
 	 */
-	double* g = (double*)calloc(A->N, sizeof(double));
-	double* p = (double*)calloc(A->N, sizeof(double));
-	double* q = (double*)calloc(A->N, sizeof(double));
-	double* w = (double*)calloc(A->N, sizeof(double));
+	double* g = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* q = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	double dot_gg = 0;
   
@@ -892,10 +875,10 @@ int vcn_sparse_solve_CG_precond_Cholesky
 		k++;
 	}
 	/* Free memory */
-	free(g);
-	free(p);
-	free(q);
-	free(w);
+	nb_free_mem(g);
+	nb_free_mem(p);
+	nb_free_mem(q);
+	nb_free_mem(w);
 	vcn_sparse_destroy(H);
 	vcn_sparse_destroy(Ht);
 
@@ -923,8 +906,8 @@ int vcn_sparse_solve_CG_precond_fsai
 	/* Conjugate gradient preconditioned with "Factorized sparse 
 	 * approximated inverse" 
 	 */
-	double *D = (double*)calloc(A->N, sizeof(double));
-	double *siD = (double*)calloc(A->N, sizeof(double));
+	double *D = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *siD = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	vcn_sparse_t* G  = sparse_allocate(A->N);
 	vcn_sparse_t* Gt = sparse_allocate(A->N);
@@ -970,22 +953,28 @@ int vcn_sparse_solve_CG_precond_fsai
 			}
 		}
 		G->rows_size[i] = isize;
-		G->rows_index[i] = (uint32_t*)calloc(isize,sizeof(uint32_t));
-		G->rows_values[i] = (double*)calloc(isize,sizeof(double));
+		G->rows_index[i] = nb_allocate_zero_mem(isize *
+							sizeof(uint32_t));
+		G->rows_values[i] = nb_allocate_zero_mem(isize *
+							 sizeof(double));
 
 		Gt->rows_size[i] = isizet;
-		Gt->rows_index[i] = (uint32_t*)calloc(isizet,sizeof(uint32_t));
-		Gt->rows_values[i] = (double*)calloc(isizet,sizeof(double));
+		Gt->rows_index[i] = nb_allocate_zero_mem(isizet *
+							 sizeof(uint32_t));
+		Gt->rows_values[i] = nb_allocate_zero_mem(isizet *
+							  sizeof(double));
 	}
 
 #pragma omp parallel for num_threads(omp_parallel_threads)
 	for(uint32_t i=0; i < A->N; i++){
 		/* Compute values of ~G */
-		double* subA = (double*)
-			calloc(G->rows_size[i]*G->rows_size[i], sizeof(double));
+		double* subA =
+			nb_allocate_zero_mem(POW2(G->rows_size[i]) *
+					     sizeof(double));
 		/* The data of vector g is not allocated, is a pointer to each row of ~G */
 		double* subg = G->rows_values[i];
-		double *delta = (double*)calloc(G->rows_size[i], sizeof(double));
+		double *delta = nb_allocate_zero_mem(G->rows_size[i] *
+						     sizeof(double));
 		uint32_t k = 0;
 		for(uint32_t q = 0; q < A->rows_size[i]; q++){
 			uint32_t j = A->rows_index[i][q];
@@ -1008,8 +997,8 @@ int vcn_sparse_solve_CG_precond_fsai
 				}
 			}
 		}
-		double* L = (double*) 
-			calloc(G->rows_size[i]*G->rows_size[i], sizeof(double));
+		double* L = nb_allocate_zero_mem(POW2(G->rows_size[i]) *
+						 sizeof(double));
 		vcn_matrix_cholesky_decomposition(subA, L, G->rows_size[i]);
 		vcn_matrix_cholesky_solve(L, delta, subg, G->rows_size[i]);
 		/* Finally do G = [~G]*D   */
@@ -1017,23 +1006,23 @@ int vcn_sparse_solve_CG_precond_fsai
 			G->rows_values[i][q] *= D[G->rows_index[i][q]];
 
 		/* Free memory */
-		free(subA);
-		free(L);
-		free(delta);
+		nb_free_mem(subA);
+		nb_free_mem(L);
+		nb_free_mem(delta);
 	}
 	/* Store G transposed */
 	vcn_sparse_get_transpose(G,Gt);
 
 	/* Free memory */
-	free(D);
-	free(siD);
+	nb_free_mem(D);
+	nb_free_mem(siD);
 
 	/* Solve Ax = b with Conjugate Gradient method */
-	double* r = (double*)calloc(A->N, sizeof(double));
-	double* p = (double*)calloc(A->N, sizeof(double));
-	double* w = (double*)calloc(A->N, sizeof(double));
-	double* Gr = (double*)calloc(A->N, sizeof(double));
-	double* Mr = (double*)calloc(A->N, sizeof(double));
+	double* r = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* Gr = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* Mr = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	double dot_rr = 0;
 
@@ -1113,11 +1102,11 @@ int vcn_sparse_solve_CG_precond_fsai
 	/* Free memory */
 	vcn_sparse_destroy(G);
 	vcn_sparse_destroy(Gt);
-	free(r);
-	free(p);
-	free(w);
-	free(Gr);
-	free(Mr);
+	nb_free_mem(r);
+	nb_free_mem(p);
+	nb_free_mem(w);
+	nb_free_mem(Gr);
+	nb_free_mem(Mr);
 
 	if(niter_performed != NULL) niter_performed[0]= k;
 
@@ -1166,9 +1155,9 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	 *    "Parallel Algorithms for Matrix Computations"
 	 *    SIAM 1990 p86-88
 	 */
-	uint32_t *L_size = calloc(A->N, sizeof(*L_size));
+	uint32_t *L_size = nb_allocate_zero_mem(A->N * sizeof(*L_size));
 
-	sc_set** r = calloc(A->N, sizeof(*r));
+	sc_set** r = nb_allocate_zero_mem(A->N * sizeof(*r));
 
 	for (uint32_t j = 0; j < A->N; j++) { 
 		sc_set* lj = NULL;
@@ -1179,7 +1168,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		/* lj <- aj ************************************************/
 		sc_set *iterator_lj;                                     /**/
 		for(uint32_t i = _i+1; i<A->rows_size[j]; i++){     /**/
-			sc_set* aji = (sc_set*)malloc(sizeof(sc_set));         /**/
+			sc_set* aji = (sc_set*)nb_allocate_mem(sizeof(sc_set));         /**/
 			aji->index = A->rows_index[j][i];                      /**/
 			aji->next = NULL;                                      /**/
 			if(lj == NULL){                                        /**/
@@ -1217,7 +1206,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 							}                                               /**/
 						}                                                 /**/
 						if(flag1 != 2){                                   /**/
-							sc_set* node = (sc_set*)malloc(sizeof(sc_set)); /**/
+							sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set)); /**/
 							node->index = index;                            /**/
 							node->next = next_itr_lj;                       /**/
 							if(iterator_lj != NULL)                         /**/
@@ -1238,7 +1227,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 						k++;                                              /**/
 				}                                                     /**/
 				if(flag == 1){                                        /**/
-					lj = (sc_set*)malloc(sizeof(sc_set));               /**/
+					lj = (sc_set*)nb_allocate_mem(sizeof(sc_set));               /**/
 					lj->index = _Lt->rows_index[i][k];                  /**/
 					lj->next = NULL;                                    /**/
 					lj_size++;                                          /**/
@@ -1247,7 +1236,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 				sc_set* iterator_lj = lj;                             /**/
 				while(k < _Lt->rows_size[i]){                         /**/
 					if(_Lt->rows_index[i][k] != j){                     /**/
-						sc_set* node = (sc_set*)malloc(sizeof(sc_set));   /**/
+						sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set));   /**/
 						node->index = _Lt->rows_index[i][k];              /**/
 						node->next = NULL;                                /**/
 						iterator_lj->next = node;                         /**/
@@ -1276,14 +1265,14 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 				}                                                     /**/
 				if(flag == 0){                                        /**/
 					if(iterator_rp->index != j){                        /**/
-						sc_set* node = (sc_set*)malloc(sizeof(sc_set));   /**/
+						sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set));   /**/
 						node->index = j;                                  /**/
 						node->next = NULL;                                /**/
 						iterator_rp->next = node;                         /**/
 					}                                                   /**/
 				}                                                     /**/
 			}else{                                                  /**/
-				r[p] = (sc_set*)malloc(sizeof(sc_set));               /**/
+				r[p] = (sc_set*)nb_allocate_mem(sizeof(sc_set));               /**/
 				r[p]->index = j;                                      /**/
 				r[p]->next = NULL;                                    /**/
 			}                                                       /**/
@@ -1291,8 +1280,10 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		}
 
 		/*************** Allocate the jth row of "Lt" **********************/
-		_Lt->rows_values[j] = (double*)calloc(lj_size,sizeof(double));   /**/
-		_Lt->rows_index[j] = (uint32_t*)calloc(lj_size,sizeof(uint32_t));        /**/
+		_Lt->rows_values[j] = nb_allocate_zero_mem(lj_size *
+							   sizeof(double));   /**/
+		_Lt->rows_index[j] = nb_allocate_zero_mem(lj_size *
+							  sizeof(uint32_t));        /**/
 		_Lt->rows_size[j] = lj_size;                                     /**/
 		iterator_lj = lj;                                                /**/
 		_Lt->rows_index[j][0] = j;                                       /**/
@@ -1305,7 +1296,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		while(lj != NULL){                                               /**/
 			sc_set* lj_free = lj;                                          /**/
 			lj = (sc_set*)lj->next;                                        /**/
-			free(lj_free);                                                 /**/
+			nb_free_mem(lj_free);                                                 /**/
 		}                                                                /**/
 		/*******************************************************************/
     
@@ -1313,12 +1304,14 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	/****************************** Allocate "L" ****************************/
 	for(uint32_t i=0; i<_L->N; i++){                                 /**/
 		L_size[i]++;            /* To include main diagonal */              /**/
-		_L->rows_values[i] = (double*)calloc(L_size[i],sizeof(double));     /**/
-		_L->rows_index[i] = (uint32_t*)calloc(L_size[i],sizeof(uint32_t));          /**/
+		_L->rows_values[i] = nb_allocate_zero_mem(L_size[i] *
+							  sizeof(double));     /**/
+		_L->rows_index[i] = nb_allocate_zero_mem(L_size[i] *
+							 sizeof(uint32_t));          /**/
 		_L->rows_size[i] = L_size[i];                                       /**/
 	}                                                                     /**/
 	/* Cycle to set columns in L */                                       /**/
-	uint32_t* L_index = (uint32_t*)calloc(_L->N,sizeof(uint32_t));                    /**/
+	uint32_t* L_index = nb_allocate_zero_mem(_L->N * sizeof(uint32_t));                    /**/
 	/* This "for" can not be parallelizad to guaranty increasing sort */  /**/
 	for(uint32_t i=0; i<_Lt->N; i++){                                /**/
 		for(uint32_t j=0; j<_Lt->rows_size[i]; j++){                   /**/
@@ -1329,17 +1322,17 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	/************************************************************************/
 
 	/* Free memory */
-	free(L_size);
-	free(L_index);
+	nb_free_mem(L_size);
+	nb_free_mem(L_index);
 	for(uint32_t i=0; i< A->N; i++){
 		sc_set* iterator_ri = r[i];
 		while(iterator_ri != NULL){
 			sc_set* rm = iterator_ri;
 			iterator_ri = (sc_set*)iterator_ri->next;
-			free(rm);
+			nb_free_mem(rm);
 		}
 	}
-	free(r);
+	nb_free_mem(r);
 }
 
 
@@ -1497,10 +1490,10 @@ void  vcn_sparse_solve_LU(const vcn_sparse_t *const L,
 			  const double *const b,
 			  double* _x  /* Out */)
 {
-	double* z = calloc(L->N, sizeof(*z));
+	double* z = nb_allocate_zero_mem(L->N * sizeof(*z));
 	vcn_sparse_forward_solve(L, b, z);
 	vcn_sparse_backward_solve(U, z, _x);
-	free(z);
+	nb_free_mem(z);
 }
 
 int vcn_sparse_solve_Cholesky(const vcn_sparse_t *const A,
@@ -1590,566 +1583,6 @@ void vcn_sparse_backward_solve(const vcn_sparse_t *const U,
 	}
 }
 
-double vcn_matrix_2X2_inverse(const double *const A, double* A_inv)
-{
-	double det = (A[0] * A[3] - A[1] * A[2]);
-	A_inv[0] = A[3] / det;
-	A_inv[1] = -A[1] / det;
-	A_inv[2] = -A[2] / det;
-	A_inv[3] = A[0] / det;
-	return det;
-}
-
-void vcn_matrix_2X2_eigen(const double *const A,
-			  double* Lambda, /* Output (diag) */
-			  double* P,      /* Output */
-			  double tolerance)
-/* Returns A decomposed into P Lambda P' */
-{
-	if (fabs(A[1]) < tolerance && fabs(A[2]) < tolerance) {
-		Lambda[0] = A[0];
-		Lambda[1] = A[3];
-		P[0] = 1.0;
-		P[2] = 0.0;
-		P[1] = 0.0;
-		P[3] = 1.0;
-	} else {
-		double T = A[0] + A[3];
-		double D = A[0] * A[3] - A[1] * A[2];
-		double root = sqrt(POW2(T)/4.0 - D);
-		Lambda[0] = T/2.0 + root;
-		Lambda[1] = T/2.0 - root;
-		if (fabs(A[2]) > tolerance) {
-			P[0] = Lambda[0] - A[3];
-			P[2] = A[2];
-			P[1] = Lambda[1] - A[3];
-			P[3] = A[2];
-		} else {
-			P[0] = A[1];
-			P[2] = Lambda[0] - A[0];
-			P[1] = A[1];
-			P[3] = Lambda[1] - A[0];
-		}
-	}
-	if (fabs(Lambda[0]) < fabs(Lambda[1])) {
-		double aux = Lambda[0];
-		Lambda[0] = Lambda[1];
-		Lambda[1] = aux;
-
-		aux = P[0];
-		P[0] = P[1];
-		P[1] = aux;
-
-		aux = P[2];
-		P[2] = P[3];
-		P[3] = aux;
-	}
-	/* Normalize eigenvectors */
-	double normalizer = sqrt(POW2(P[0]) + POW2(P[2]));
-	P[0] /= normalizer;
-	P[2] /= normalizer;
-	normalizer = sqrt(POW2(P[1]) + POW2(P[3]));
-	P[1] /= normalizer;
-	P[3] /= normalizer;
-}
-double vcn_matrix_2X2_det(double *A)
-{
-	return A[0] * A[3] - A[1] * A[2];
-}
-
-double vcn_matrix_3X3_det(double *A)
-{
-	return 
-		A[0] * A[4] * A[8] + 
-		A[3] * A[7] * A[2] +
-		A[6] * A[1] * A[5] -
-		A[2] * A[4] * A[6] -
-		A[5] * A[7] * A[0] -
-		A[8] * A[1] * A[3];
-}
-
-double vcn_matrix_2X2_inverse_destructive(double *A)
-{
-	double det = A[0] * A[3] - A[1] * A[2];
-	double tmp = A[0];
-	A[0] = A[3]/det;
-	A[3] = tmp/det;
-	A[1] = -A[1]/det;
-	A[2] = -A[2]/det;
-	return det;
-}
-
-double vcn_matrix_3X3_inverse_destructive(double *A)
-{
-	double det = vcn_matrix_3X3_det(A);
-	double a11, a12, a13, a21, a22, a23, a31, a32, a33;
-	a11 = A[0];
-	a12 = A[1];
-	a13 = A[2];
-	a21 = A[3];
-	a22 = A[4];
-	a23 = A[5];
-	a31 = A[6];
-	a32 = A[7];
-	a33 = A[8];
-	A[0] = (a33*a22-a32*a23)/det;
-	A[1] = -(a33*a12-a32*a13)/det;
-	A[2] = (a23*a12-a22*a13)/det;
-	A[3] = -(a33*a21-a31*a23)/det;
-	A[4] = (a33*a11-a31*a13)/det;
-	A[5] = -(a23*a11-a21*a13)/det;
-	A[6] = (a32*a21-a31*a22)/det;
-	A[7] = -(a32*a11*a31*a12)/det;
-	A[8] = (a22*a11-a21*a12)/det;
-	return det;
-}
-
-int vcn_matrix_cholesky_decomposition(const double *const A,
-				      double* _LplusLt,   /* Out */
-				      uint32_t N)
-{
-	/* The 'L' computed correspond to [L + Lt] */
-	for (uint32_t j=0; j < N; j++) {
-		_LplusLt[j*N+j] = A[j*N+j];
-		for (uint32_t k=0; k<j; k++)
-			_LplusLt[j*N+j] -= _LplusLt[j*N+k]*_LplusLt[j*N+k];
-		if (_LplusLt[j*N+j] <= 1e-16)
-			return 1;
-		_LplusLt[j*N+j] = sqrt(_LplusLt[j*N+j]);
-		for (uint32_t i=j+1;  i<N; i++) {
-			_LplusLt[i*N+j] = A[i*N+j];
-			for (uint32_t k=0; k<j; k++)
-				_LplusLt[j*N+j] -= _LplusLt[i*N+k]*_LplusLt[j*N+k];
-			_LplusLt[i*N+j] /= _LplusLt[j*N+j];
-			_LplusLt[j*N+i] = _LplusLt[i*N+j];
-		}
-	}
-	return 0;
-}
-
-void vcn_matrix_cholesky_solve
-(const double *const LplusLt,
- const double *const b, 
- double* _x,            /* Out */
- uint32_t N)
-/* Solve the system LL'x = b, where LL'= A */
-{
-	double* z = (double*)calloc(N, sizeof(double));
-	vcn_matrix_forward_solve(LplusLt, b, z, N);
-	vcn_matrix_backward_solve(LplusLt, z, _x, N);
-	/* Free memory */
-	free(z);
-}
-
-double vcn_matrix_cond1(const double *const A, int n){
-	double *Acopy = (double*)malloc(n*n*sizeof(double));
-	memcpy(Acopy, A, n*n*sizeof(double));
-	double *x = (double*)malloc(n*sizeof(double));
-	double *p = (double*)malloc(n*sizeof(double));
-	double *pm = (double*)malloc(n*sizeof(double));
-	/* Compute QR decomposition */
-	int sing;
-	double *c = (double*)malloc(n*sizeof(double));
-	double *diag = (double*)malloc(n*sizeof(double));
-	vcn_matrix_qr_decomposition(Acopy, n, c, diag, &sing);
-	/* Compute ||A||_1 (Max absolute column sum) */
-	double estimation = fabs(diag[0]);
-	for(uint32_t i=1; i<n; i++){
-		double sum = 0;
-		for(uint32_t j=0; j<i; j++)
-			sum +=  fabs(Acopy[i*n+j]);
-		double tmp = fabs(diag[i]) + sum;
-		estimation = (tmp>estimation)?tmp:estimation;
-	}
-	/* Solve R^T x = e, selecting e as they proceed */
-	x[0] = 1.0/diag[0];
-	for(uint32_t i=1; i<n; i++)
-		p[i] = Acopy[i]*x[0];
-	for(uint32_t i=1; i<n; i++){
-		/* Select ej and calculate xj */
-		double xp = (1-p[i])/diag[i];
-		double xm = (-1-p[i])/diag[i];
-		double tmp = fabs(xp);
-		double tmpm = fabs(xm);
-		for(uint32_t j=i+1; j<n; j++){
-			pm[j] = p[j] + Acopy[i*n+j]*xm;
-			tmpm += (fabs(pm[j])/fabs(diag[j]));
-			p[j] = p[j] + Acopy[i*n+j]*xp;
-			tmp += (fabs(p[j])/fabs(diag[j]));
-		}
-		if(tmp > tmpm) x[i] = xp;    /* ej = 1 */
-		else{
-			/* ej = -1 */
-			x[i] = xm;
-			for(uint32_t j=i+1; j<n; j++)
-				p[j]  = pm[j];
-		}
-	}
-	double xnorm = 0;
-	for(uint32_t i=0; i<n; i++) xnorm += fabs(x[i]);
-	estimation /= xnorm;
-	/* Solve Ry = x */
-	vcn_matrix_qr_solve(Acopy, n, c, diag, x);
-
-	xnorm = 0;
-	for(uint32_t i=0; i<n; i++) xnorm += fabs(x[i]);
-	estimation *= xnorm;
-	/* Free memory */
-	free(Acopy);
-	free(x);
-	free(p);
-	free(pm);
-	free(diag);
-	free(c);
-	return estimation;
-}
-
-double vcn_matrix_cond2(const double *const A, int n){
-	double *Acopy = (double*)malloc(n*n*sizeof(double));
-	memcpy(Acopy, A, n*n*sizeof(double));
-	double* w = (double*)malloc(n*sizeof(double));
-	double* V = (double*)malloc(n*n*sizeof(double));
-	/* Compute SVD Decomposition */ 
-	vcn_matrix_svd_decomposition(Acopy, w, V, n, n);
-	/* Compute condition number estimation */
-	double estimation = w[0]/w[n-1];
-	/* Free memory */
-	free(Acopy);
-	free(w);
-	free(V);
-	return estimation;
-}
-
-void vcn_matrix_qr_decomposition(double *A, /* Overwritten */
-				 int n,
-				 double *c, double *d, int *sing){
-	/* Numerical Recipes in C.
-	 * Constructs the QR decomposition of A. The upper triangular matrix
-	 * R is returned in the upper triangle of A, except for the diagonal 
-	 * elements of R which are returned in d[1..n]. The orthogonal matrix 
-	 * Q is represented as a product of n-1 Householder matrices Q_1...Q_{n-1},
-	 * where Q_j = 1 - u_j prod u_j/c_j. The ith component of u_j is zero
-	 * for i=1,...,j-1 while the nonzero components are returned in A_ij 
-	 * for i=j,...,n.  "sing" return as true(1) if singularity is encountered
-	 * during the decomposition, but the decomposition is still completed in 
-	 * this case, otherwise it returns false(0).
-	 */
-	double scale, sigma, sum, tau;
-	*sing = 0;
-	for(int k=0; k<n-1; k++){
-		scale = 0.0;
-		for(int i=k; i<n; i++) 
-			scale = (scale > fabs(A[i*n+k]))?(scale):(fabs(A[i*n+k]));
-		if(scale == 0.0){
-			*sing = 1;
-			c[k] = d[k] = 0.0;
-		}else{
-			for(int i=k; i<n; i++)
-				A[i*n+k] /= scale;
-			sum = 0.0;
-			for(int i=k; i<n; i++) 
-				sum += A[i*n+k]*A[i*n+k];
-			sigma = (A[k*n+k] >= 0.0 ? fabs(sqrt(sum)) : -fabs(sqrt(sum)));
-			A[k*n+k] += sigma;
-			c[k] = sigma*A[k*n+k];
-			d[k] = -scale*sigma;
-			for(int j=k+1; j<n; j++){
-				sum = 0.0;
-				for(int i=k; i<n; i++)
-					sum += A[i*n+k]*A[i*n+j];
-				tau = sum/c[k];
-				for(int i=k; i<n; i++)
-					A[i*n+j] -= tau*A[i*n+k];
-			}
-		}
-	}
-	d[n-1] = A[n*n-1];
-	if(d[n-1] == 0.0) *sing = 1;
-}
-
-static inline void matrix_r_solver(const double *const A, int n, double *d, double *b){
-	b[n-1] /= d[n-1];
-	for(int i=n-2; i>=0; i--){
-		double sum = 0.0;
-		for(int j=i+1; j<n; j++) sum += A[i*n+j]*b[j];
-		b[i] = (b[i]-sum)/d[i];
-	}
-}
-
-void vcn_matrix_qr_solve(const double *const A,
-			 int n, double *c, double *d,
-			 double *b /* Solution overwritten */){
-	/* Numerical Recipes in C
-	 * Solves the set of n linear equations Ax = b. A, c and d are the 
-	 * input as the output of the routine vcn_matrix_qr_decomposition  and
-	 * are not modified. b is input as the right hand side vector, and 
-	 * is overwritten with the solution vector on output.
-	 */
-	for(int j=0; j<n-1; j++){
-		double sum = 0.0;
-		for(int i=j; i<n; i++)
-			sum += A[i*n+j]*b[i];
-		double tau = sum/c[j];
-		for(int i=j; i<n; i++)
-			b[i] -= tau*A[i*n+j];
-	}
-	matrix_r_solver(A, n, d, b);
-}
-
-void vcn_matrix_svd_decomposition(double *A, /* Overwritten wit U */
-				  double *w, double *V, 
-				  int n, int m){
-	/* Numerical Recipes in C.
-	 * Given  a  matrix  A,  this  routine  computes its singular value 
-	 * decomposition, A = UWV^T. The matrix U replaces A on output. The
-	 * diagonal  matrix  of  singular  values W is output as a vector w. 
-	 * The matrix V (not the transpose V^T) is output as V.
-	 */
-	int flag, i, its, j, jj, k, l, nm;
-	double anorm, c, f, g, h, s, scale, x, y, z, *rv1;
-	rv1 = (double*)calloc(n, sizeof(double));
-	g = scale = anorm = 0.0;
-	for(i=0; i<n; i++){
-		l = i+1;
-		rv1[i] = scale*g;
-		g = s = scale = 0.0;
-		if(i < m){
-			for(k=i; k<m; k++) scale += fabs(A[k*n+i]);
-			if(scale){
-				for(k=i; k<m; k++){
-					A[k*n+i] /= scale;
-					s += A[k*n+i]*A[k*n+i];
-				}
-				f = A[i*n+i];
-				g = -(f >= 0.0 ? fabs(sqrt(s)) : -fabs(sqrt(s)));
-				h = f*g-s;
-				A[i*n+i] = f-g;
-				for(j=l; j<n; j++){
-					for(s=0.0, k=i; k<m; k++) s += A[k*n+i]*A[k*n+j];
-					f = s/h;
-					for(k=i; k<m; k++) A[k*n+j] += f*A[k*n+i];
-				}
-				for(k=i; k<m; k++) A[k*n+i] *= scale;
-			}
-		}
-		w[i] = scale*g;
-		g = s = scale = 0.0;
-		if(i < m && i != n-1){
-			for(k=l; k<n; k++) scale += fabs(A[i*n+k]);
-			if(scale){
-				for(k=l; k<n; k++){
-					A[i*n+k] /= scale;
-					s += A[i*n+k]*A[i*n+k];
-				}
-				f = A[i*n+l];
-				g = -(f >= 0.0 ? fabs(sqrt(s)) : -fabs(sqrt(s)));
-				h = f*g-s;
-				A[i*n+l] = f-g;
-				for(k=l; k<n; k++) rv1[k] = A[i*n+k]/h;
-				for(j=l; j<m; j++){
-					for(s = 0.0, k=l; k<n; k++) s += A[j*n+k]*A[i*n+k];
-					for(k=l; k<n; k++) A[j*n+k] += s*rv1[k];
-				}
-				for(k=l; k<n; k++) A[i*n+k] *= scale;
-			}
-		}
-		anorm = 
-			(anorm >= (fabs(w[i])+fabs(rv1[i]))) ? anorm: (fabs(w[i])+fabs(rv1[i]));
-	}
-	for(i=n-1; i>=0; i--){
-		if(i<n-1){
-			if(g){
-				for(j=l; j<n; j++)
-					V[j*n+i] = (A[i*n+j]/A[i*n+l])/g;
-				for(j=l; j<n; j++){
-					for(s=0.0, k=l; k<n; k++) s += A[i*n+k]*V[k*n+j];
-					for(k=l; k<n; k++) V[k*n+j] += s*V[k*n+i];
-				}
-			}
-			for(j=l; j<n; j++) V[i*n+j] = V[j*n+i] = 0.0;
-		}
-		V[i*n+i] = 1.0;
-		g = rv1[i];
-		l = i;
-	}
-	for(i=((n<m)?(n-1):(m-1)); i>=0; i--){
-		l = i+1;
-		g = w[i];
-		for(j=l; j<n; j++) A[i*n+j] = 0.0;
-		if(g){
-			g = 1.0/g;
-			for(j=l; j<n; j++){
-				for(s=0.0, k=l; k<m; k++) s += A[k*n+i]*A[k*n+j];
-				f = (s/A[i*n+i])*g;
-				for(k=i; k<m; k++) A[k*n+j] += f*A[k*n+i];
-			}
-			for(j=i; j<m; j++) A[j*n+i] *= g;
-      
-		}else for(j=i; j<n; j++) A[j*n+i] = 0.0;
-		++A[i*n+i];
-	}
-	for(k=n-1; k>=0; k--){
-		for(its=0; its<30; its++){
-			flag = 1;
-			for(l=k; l>=0; l--){
-				nm = l-1;
-				if(fabs(rv1[l])+anorm == anorm){
-					flag = 0;
-					break;
-				}
-				if(fabs(w[nm])+anorm == anorm) break;
-			}
-			if(flag){
-				c = 0.0;
-				s = 1.0;
-				for(i=l; i<k; i++){
-					f = s*rv1[i];
-					rv1[i] = c*rv1[i];
-					if(fabs(f)+anorm == anorm) break;
-					g = w[i];
-					h = vcn_math_hypo(f,g);
-					w[i] = h;
-					h = 1.0/h;
-					c = g*h;
-					s = -f*h;
-					for(j=0; j<m; j++){
-						y = A[j*n+nm];
-						z = A[j*n+i];
-						A[j*n+nm] = y*c+z*s;
-						A[j*n+i] = z*c-y*s;
-					}
-				}
-			}
-			z = w[k];
-			if(l == k){
-				if(z < 0.0){
-					w[k] = -z;
-					for(j=0; j<n; j++) 
-						V[j*n+k] = -V[j*n+k];
-				}
-				break;
-			}
-			if(its == 29){
-				printf("SVD Error 1\n");
-				exit(1);
-			}
-			x = w[l];
-			nm = k-1;
-			y = w[nm];
-			g = rv1[nm];
-			h = rv1[k];
-			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-			g = vcn_math_hypo(f, 1.0);
-			f = ((x-z)*(x+z) + 
-			     h*((y/(f + (f >= 0.0 ? fabs(g):-fabs(g))))-h))/x;
-			c = s = 1.0;
-			for(j=l; j<=nm; j++){
-				i = j+1;
-				g = rv1[i];
-				y = w[i];
-				h = s*g;
-				g = c*g;
-				z = vcn_math_hypo(f, h);
-				rv1[j] = z;
-				c = f/z;
-				s = h/z;
-				f = x*c+g*s;
-				g = g*c-x*s;
-				h = y*s;
-				y *= c;
-				for(jj=0; jj<n; jj++){
-					x = V[jj*n+j];
-					z = V[jj*n+i];
-					V[jj*n+j] = x*c+z*s;
-					V[jj*n+i] = z*c-x*s;
-				}
-				z = vcn_math_hypo(f, h);
-				w[j] = z;
-				if(z){
-					z = 1.0/z;
-					c = f*z;
-					s = h*z;
-				}
-				f = c*g+s*y;
-				x = c*y-s*g;
-				for(jj=0; jj<m; jj++){
-					y = A[jj*n+j];
-					z = A[jj*n+i];
-					A[jj*n+j] = y*c+z*s;
-					A[jj*n+i] = z*c-y*s;
-				}
-			}
-			rv1[l] = 0.0;
-			rv1[k] = f;
-			w[k] = x;
-		}
-	}
-	/* Free memory */
-	free(rv1);
-}
-
-
-void vcn_matrix_svd_solve(const double *const U,
-			  const double *const w, 
-			  const double *const V, 
-			  double *x,             /* Out */
-			  const double *const b, 
-			  int n, int m){
-	/* Numerical Recipes in C.
-	 * Solves Ax = b for a vector X, where A is specified by the arrays u, w, v 
-	 * as returned by svd_dcmp, m and n are the dimensions of a, and will be equal
-	 * for square matrices. b is the input right-hand side. x is the output solution 
-	 * vector. No input quantities are destroyed, so the routine may be called 
-	 * sequentially with different b's. 
-	 */
-	int jj, j, i;
-	double s, *tmp;
-	tmp = (double*)malloc(n*sizeof(double));
-	for(j=0; j<n; j++){
-		s = 0.0;
-		if(w[j]){
-			for(i=0; i<m; i++) s += U[i*n+j]*b[i];
-			s /= w[j];
-		}
-		tmp[j] = s;
-	}
-	for(j=0; j<n; j++){
-		s = 0.0;
-		for(jj=0; jj<n; jj++) s += V[j*n+jj]*tmp[jj];
-		x[j] = s;
-	}
-	free(tmp);
-}
-
-
-void vcn_matrix_forward_solve(const double *const L,
-			      const double *const b, 
-			      double *_x, uint32_t N)
-/* Solve the system Lx = b, where L is a lower triangular matrix */
-{
-	/* This solver cannot be parallelized to guaranty the solution */
-	for(uint32_t i=0; i< N; i++){
-		_x[i] = b[i];
-		for(uint32_t k=0; k < i; k++)
-			_x[i] -= L[i*N+k]*_x[k];
-		_x[i] /= L[i*N+i];
-	}
-}
-
-void vcn_matrix_backward_solve(const double *const U,
-			       const double *const b,
-			       double *_x, uint32_t N)
-/* Solve the system Ux = b, where U is a upper triangular matrix */
-{
-	/* This solver cannot be parallelized to guaranty the solution */
-	for(int i=N-1; i>=0 ; i--){
-		_x[i] = b[i];
-		for(int k=i+1; k<N; k++)
-			_x[i] -= U[i*N+k]*_x[k];
-		_x[i] /= U[i*N+i];
-	}
-}
-
 void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 			    double **_eigenvecs,/* Out */ 
 			    double *_eigenvals, /* Out */
@@ -2170,7 +1603,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 	uint32_t i, j, c, d; /* Iterative variables */
 	double pnorm, rnorm2;
 	/* Allocate memory for structures */
-	double *p = (double*)calloc(A->N, sizeof(double));
+	double *p = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	/* Deflation power method */
 	for (i=0; i<h; i++){
@@ -2228,7 +1661,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 	}
 
 	/* Free memory */
-	free(p);
+	nb_free_mem(p);
 }
 
 int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
@@ -2254,8 +1687,8 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 	uint32_t i, j, c, d; /* Iterative variables */
 	double pnorm, rnorm2;
 	/* Allocate memory for structures */
-	double* p = (double*) calloc(A->N, sizeof(double));
-	double* z = (double*) calloc(A->N, sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* z = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	/* Set M in A (copy ptr to modify const A, it will be restored) */
 	vcn_sparse_t* A_ptr_copy = (vcn_sparse_t*)A;
@@ -2353,8 +1786,8 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 		vcn_sparse_destroy(L);
 	}
 	/* Free memory */
-	free(p);
-	free(z);
+	nb_free_mem(p);
+	nb_free_mem(z);
 
 	return 0;
 }
@@ -2380,11 +1813,11 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	int i, j;
 
 	/* Declare structures and variables to be used */
-	double* alpha = (double*) calloc(A->N, sizeof(double));
-	double* beta = (double*) calloc(A->N, sizeof(double));
-	double* v = (double*) calloc(A->N, sizeof(double));
-	double* w = (double*) calloc(A->N, sizeof(double));
-	double* v_prev = (double*) calloc(A->N, sizeof(double));
+	double* alpha = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* beta = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* v = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* v_prev = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	*it = 0;
 	beta[*it] = 0;
@@ -2438,11 +1871,11 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	}
 
 	/* Free memory */
-	free(alpha);
-	free(beta);
-	free(w);
-	free(v);
-	free(v_prev);
+	nb_free_mem(alpha);
+	nb_free_mem(beta);
+	nb_free_mem(w);
+	nb_free_mem(v);
+	nb_free_mem(v_prev);
 }
 
 void vcn_sparse_eigen_givens(const double* const main_diag, 
@@ -2465,7 +1898,7 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 	/* Iterative variables */
 	int l;
 	/* Intitialize and allocate structures */
-	double* p = (double*)calloc(N+1, sizeof(double));
+	double* p = nb_allocate_zero_mem((N+1) * sizeof(double));
 
 	/* Init algorithm */
 	int k = N;
@@ -2515,659 +1948,13 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 	}
 
 	/* Free memory */
-	free(p);
+	nb_free_mem(p);
 }
 
-/* Meta-functions */
-int meta_compare_data_bycol_2(const void *a, const void *b){
-	/* The "2" anexed to the name is because the function is 
-	 * already defined in the vcn_sparse_t struct implementation
-	 */
+static int meta_compare_data_bycol(const void *a, const void *b)
+{
 	if((*(double**)a)[0] == (*(double**)b)[0])
 		return (*(double**)a)[1] - (*(double**)b)[1];
 	else
 		return (*(double**)a)[0] - (*(double**)b)[0];
-
-}
-void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
-	/* Read a vcn_sparse_t matrix named [label] from matlab v4 file */
- 
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	/* Init int32[5] to store info */
-	int32_t info[5];
-	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
-		uint32_t i;
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Sparse matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = malloc(info[4] * sizeof(char));
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
-			printf("ERROR: The matlab v4 file is corrupted.\n");
-			exit(1);
-		}
-		if(info[0] == 0){
-			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else if(info[0] == 2){
-			/* Vcn_Sparse_T matrix
-			 *
-			 *  info[1] <- Number of non-zero entries (nnz) +1
-			 *  info[2] <- Type of values {0(Real) | 1(Complex)}
-			 *  info[3] <- Zero
-			 */
-			if(strcmp(name,label) == 1){
-				/* If "name" and "label" are not equal
-				 * then jump to the next structure 
-				 */
-				if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}else{
-				found = 1;
-
-				uint32_t nnz = (uint32_t)(info[1]-1);
-				/* Verification of use of real numbers */
-				if(info[2] == 4){
-					printf("ERROR: Complex numbers unsupported.\n");
-					exit(1);
-				}
-				double *irows = (double*)malloc(nnz*sizeof(double));
-				double *icols = (double*)malloc(nnz*sizeof(double));
-				double *values = (double*)malloc(nnz*sizeof(double));
-				double N;
-				/* Read row's index */
-				if(fread(irows, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				/* Read number of rows */
-				if(fread(&N, sizeof(double), 1, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				A->N = (uint32_t)N;
-				A->rows_values = (double**)malloc(A->N*sizeof(void*));
-				A->rows_index = (uint32_t**)malloc(A->N*sizeof(void*));
-				A->rows_size = (uint32_t*)calloc(A->N,sizeof(uint32_t));
-
-				/* Read col's index */
-				if(fread(icols, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				/* Read number of rows */
-				if(fread(&N, sizeof(double), 1, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				A->N = (uint32_t)N;
-
-				/* Read values */
-				if(fread(values, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-
-				uint32_t* rows_icol = (uint32_t*)calloc(N,sizeof(uint32_t));
-				for(i=0; i< nnz; i++)
-					A->rows_size[(uint32_t)irows[i]-1]++;
-	
-				for(i=0; i< N; i++){
-					A->rows_index[i] = (uint32_t*)calloc(A->rows_size[i],sizeof(uint32_t));
-					A->rows_values[i] = (double*)calloc(A->rows_size[i],sizeof(double));
-				}
-
-				for(i=0; i<nnz; i++){
-					uint32_t irow = irows[i]-1;
-					A->rows_index[irow][rows_icol[irow]] = (uint32_t)icols[i]-1;
-					A->rows_values[irow][rows_icol[irow]] = values[i];
-					rows_icol[irow] ++;
-				}
-
-				/* Sort data by columns */
-				for(i=0; i<A->N; i++)
-					vcn_qsort(A->rows_index[i], A->rows_size[i], 
-						  sizeof(uint32_t), vcn_compare_uint32);
-
-				/* Free memory */
-				free(irows);
-				free(icols);
-				free(values);
-				free(rows_icol);
-			}
-		}else{
-			printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
-			exit(1);
-		}
-		/* Free memory */
-		free(name);
-	}
-	/* Close file */
-	fclose(pfile);
-
-	if(found != 1){
-		printf("ERROR: Sparse matrix \"%s\" not found in \"%s\".\n",label,url);
-		exit(1);
-	}
-}
-
-void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
-			  const char *url, char *label)
-/* Write a sparse matrix named [label] in matlab v4 format */
-{
-	uint32_t i, j;
-	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	uint32_t nnz = vcn_sparse_get_nnz(A);
-	int32_t info[5];
-	info[0] = 2; /* Sparse matrix with double precision */
-	info[1] = nnz + 1;
-	info[2] = 3; /* Real values */
-	info[3] = 0; /* Strictly zero by matlab v4 definition*/
-	int name_length = strlen(label);
-	info[4] = name_length+1;
-	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
-	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
-	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
-	/* Write sparse matrix data */
-	double** data = (double**)malloc(nnz*sizeof(void*));
-	for(i=0; i<nnz; i++)
-		data[i] = (double*)malloc(3*sizeof(double));
-	uint32_t idata = 0;
-	for(i=0; i< A->N; i++){
-		for(j=0; j< A->rows_size[i]; j++){
-			data[idata][0] = A->rows_index[i][j];
-			data[idata][1] = i;
-			data[idata][2] = A->rows_values[i][j];
-			idata++;
-		}
-	}
-	/* Sort vectors by column and then by rows for octave compability */
-	qsort(data, nnz, sizeof(double*), meta_compare_data_bycol_2);/* TEMPORAL: Use nb_qsort */
-	/* Convert data to vectors to write in octave file */
-	double* irows = (double*)malloc(nnz*sizeof(double));
-	double* icols = (double*)malloc(nnz*sizeof(double));
-	double* values = (double*)malloc(nnz*sizeof(double));
-	for(i=0; i < nnz; i++){
-		icols[i] = data[i][0]+1;
-		irows[i] = data[i][1]+1;
-		values[i] = data[i][2];
-	}
-	/* Write row's index */
-	fwrite(irows, sizeof(double), nnz, pfile);
-	/* Write number of rows */
-	double N = (double)A->N;
-	fwrite(&N, sizeof(double), 1, pfile);
-	/* Write col's index */
-	fwrite(icols, sizeof(double), nnz, pfile);
-	/* Write number of cols */
-	fwrite(&N, sizeof(double), 1, pfile);
-	/* Write values */
-	fwrite(values, sizeof(double), nnz, pfile);
-	/* Write a zero value for octave compability */
-	double zero = 0;
-	fwrite(&zero, sizeof(double), 1, pfile);
-	/* Close file */
-	fclose(pfile);
-}
-
-/* Functions to load and write Octave files (MAT-File 4 format) */
-void vcn_mat4_printf(const char *url)
-{
-	/* Read the octave file to get and print information 
-	 * about stored objects.
-	 */
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	/* Init int32[5] to store info */
-	int32_t info[5];
-	/* Read items */
-	while(fread(info, 4, 5, pfile) != 0){
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Vcn_Sparse_T matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = malloc(info[4]*sizeof(char));
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
-			printf("ERROR: The matlab v4 file is corrupted.\n");
-			exit(1);
-		}
-		if(info[0] == 0){
-			/* Complete matrix (and vectors seen as matrix by octave)
-			 *
-			 *  info[1] <- Number of rows
-			 *  info[2] <- Number of cols
-			 *  info[3] <- Type of values {0(Real) | 1(Complex)}
-			 */
-
-			/* Verification of use of real numbers */
-			if(info[3] == 1){
-				printf("ERROR: Complex numbers unsupported.\n");
-				exit(1);
-			}
-			/* Show information about structure */
-			if(info[1] == 1)
-				printf("%s <- Vector (size: %d)\n", name, info[2]);
-			else if(info[2] == 1)
-				printf("%s <- Vector (size: %d)\n", name, info[1]);
-			else
-				printf("%s <- Complete matrix (size: %dx%d)\n", name, info[1],info[2]);
-			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else if(info[0] == 2){
-			/* Vcn_Sparse_T matrix
-			 *
-			 *  info[1] <- Number of non-zero entries (nnz) +1
-			 *  info[2] <- Type of values {0(Real) | 1(Complex)}
-			 *  info[3] <- Zero
-			 */
-			uint32_t nnz = info[1]-1;
-			/* Verification of use of real numbers */
-			if(info[2] == 1){
-				printf("ERROR: Complex numbers unsupported.\n");
-				exit(1);
-			}
-			double N;
-			/* Jump to get number of rows */
-			if(fseek(pfile, nnz*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-			/* Read number of rows */
-			if(fread(&N, sizeof(double), 1, pfile) == 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-			/* Jump to get number of cols */
-			if(fseek(pfile, nnz*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-			/* Read number of rows */
-			if(fread(&N, sizeof(double), 1, pfile) == 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-			/* Show information about structure */
-			printf("%s <- Vcn_Sparse_T matrix (size: %ix%i, nnz: %d).\n",
-			       name, (uint32_t)N, (uint32_t)N, info[1]);
-			/* Jump to the next structure */
-			if(fseek(pfile, (nnz+1)*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else{
-			printf("ERROR: Support only for complete and vcn_sparse_t matrix with double precision.\n");
-			exit(1);
-		}
-		/* Free memory */
-		free(name);
-	}
-	/* Close file */
-	fclose(pfile);
-}
-
-short vcn_mat4_exist(const char *url, char* label)
-{
-	/* Search a structure in octave file.
-	 * Return 1 if found the structure and 0 if not.
-	 */
-	short found = 0;
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	/* Init int32[5] to store info */
-	int32_t info[5];
-	/* Read items */
-	while(fread(info, 4, 5, pfile) != 0 && found == 0){
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Vcn_Sparse_T matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = malloc(info[4]*sizeof(char));
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
-			printf("ERROR: The matlab v4 file is corrupted.\n");
-			exit(1);
-		}
-		if(strcmp(name,label) == 0)
-			found = 1;
-		else if(info[0] == 0){
-			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else if(info[0] == 2){
-			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else{
-			printf("ERROR: Support only for complete and vcn_sparse_t matrix with double precision.\n");
-			exit(1);
-		}
-		/* Free memory */
-		free(name);
-	}
-	/* Close file */
-	fclose(pfile);
-
-	return found;
-}
-
-void vcn_mat4_clear(const char *url)
-{
-	FILE *pfile = fopen(url,"wb");
-	fclose(pfile);
-}
-
-void vcn_mat4_read_vec(const char *url, char *label, double *_x)
-{
-	/* Read a vector named [label] from matlab v4 file */
- 
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	/* Init int32[5] to store info */
-	int32_t info[5];
-	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Sparse matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = malloc(info[4]*sizeof(char));
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
-			printf("ERROR: The matlab v4 file is corrupted.\n");
-			exit(1);
-		}
-		if(info[0] == 0){
-			/* Vector seen as matrix by octave
-			 *
-			 *  info[1] <- Number of rows
-			 *  info[2] <- Number of cols
-			 *  info[3] <- Type of values {0(Real) | 1(Complex)}
-			 */
-			int min_size = MIN(info[1], info[2]);
-			if(strcmp(name,label) == 1 || min_size > 1){
-				/* If "name" and "label" are not equal
-				 * then jump to the next structure 
-				 */
-				if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}else{
-				/* Verification of use of real numbers */
-				if(info[3] == 1){
-					printf("ERROR: Complex numbers unsupported.\n");
-					exit(1);
-				}
-				found = 1;
-				/* Initialize vector */
-				uint32_t size;
-				if(info[1] == 1)
-					size = info[2];
-				else
-					size = info[1];
-				_x = (double*)calloc(size, sizeof(double));
-				if(fread(_x, sizeof(double), size, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}
-		}else if(info[0] == 2){
-			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else{
-			printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
-			exit(1);
-		}
-		/* Free memory */
-		free(name);
-	}
-	/* Close file */
-	fclose(pfile);
-
-	if(found != 1){
-		printf("ERROR: Vector \"%s\" not found in \"%s\".\n",label,url);
-		exit(1);
-	}
-}
-
-void vcn_mat4_save_vec(const char *url, char *label, 
-		       const double *const x, uint32_t N){
-	/* Write a sparse matrix named [label] in matlab v4 format */
-
-	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	int32_t info[5];
-	info[0] = 0; /* Complete matrix with double precision */
-	info[1] = N;     /* N */
-	info[2] = 1;     /* N */
-	info[3] = 0; /* Real values */
-	int name_length = strlen(label);
-	info[4] = name_length+1;
-	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
-	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
-	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
-	/* Write vector values */
-	fwrite(x, sizeof(double), N, pfile);
-	/* Close file */
-	fclose(pfile);
-}
-
-void vcn_mat4_read_mtx(const char *url, char *label, double *_A){
-	/* Read a vector named [label] from matlab v4 file */
- 
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	/* Init int32[5] to store info */
-	int32_t info[5];
-	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Sparse matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = malloc(info[4]*sizeof(char));
-
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
-			printf("ERROR: The matlab v4 file is corrupted.\n");
-			exit(1);
-		}
-
-		if(info[0] == 0){
-			/* Vector seen as matrix by octave
-			 *
-			 *  info[1] <- Number of rows
-			 *  info[2] <- Number of cols
-			 *  info[3] <- Type of values {0(Real) | 1(Complex)}
-			 */
-			if(strcmp(name,label) == 1){
-				/* If "name" and "label" are not equal
-				 * then jump to the next structure 
-				 */
-				if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}else{
-				/* Verification of use of real numbers */
-				if(info[3] == 1){
-					printf("ERROR: Complex numbers unsupported.\n");
-					exit(1);
-				}
-				found = 1;
-				/* Initialize vector */
-				uint32_t N = info[1];
-				_A = (double*)calloc(N*N,sizeof(double));
-				if(fread(_A, sizeof(double), N*N, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}
-		}else if(info[0] == 2){
-			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
-				printf("ERROR: The matlab v4 file is corrupted.\n");
-				exit(1);
-			}
-		}else{
-			printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
-			exit(1);
-		}
-		/* Free memory */
-		free(name);
-	}
-	/* Close file */
-	fclose(pfile);
-
-	if(found != 1){
-		printf("ERROR: Complete matrix \"%s\" not found in \"%s\".\n",label,url);
-		exit(1);
-	}
-}
-
-void vcn_mat4_write_mtx(const char *url, char *label,
-			const double *const A, uint32_t N){
-	/* Write a matrix named [label] in matlab v4 format */
-
-	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
-		printf("ERROR: Impossible to open matlab v4 file.\n");
-		exit(1);
-	}
-	int32_t info[5];
-	info[0] = 0; /* Complete matrix with double precision */
-	info[1] = N;
-	info[2] = N;
-	info[3] = 0; /* Real values */
-	int name_length = strlen(label);
-	info[4] = name_length+1;
-	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
-	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
-	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
-	/* Transpose matrix */
-	double* At = (double*) calloc(N*N, sizeof(double));
-	uint32_t i, j;
-	for(i=0; i < N; i++)
-		for(j=0; j < N; j++)
-			At[i*N + j] = A[j*N + i];
-
-	/* Write matrix values */
-	fwrite(At, sizeof(double), N*N, pfile);
-	free(At);
-	/* Close file */
-	fclose(pfile);
 }

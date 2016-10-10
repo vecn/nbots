@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
-#include "nb/eigen_bot.h"
+#include "nb/solver_bot.h"
 
 #define POW2(a) ((a)*(a))
 

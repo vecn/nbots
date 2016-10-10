@@ -16,7 +16,7 @@
 
 static bool is_not_empty(const nb_queue_t *const list);
 static nb_queue_node_t* get_first(const nb_queue_t *const list);
-static void* calloc_queue(void);
+static void* allocate_zero_queue(void);
 static void destroy_values(nb_queue_t *queue, void (*destroy)(void*));
 static void insert_node_as_starting(nb_queue_t *list, const void *const val);
 static void add_node(nb_queue_t *list, nb_queue_node_t *node);
@@ -93,12 +93,12 @@ void nb_queue_finish(void *queue_ptr, void (*destroy)(void*))
 
 void* nb_queue_create(void)
 {
-	void *queue = calloc_queue();
+	void *queue = allocate_zero_queue();
 	nb_queue_init(queue);
 	return queue;
 }
 
-static inline void* calloc_queue(void)
+static inline void* allocate_zero_queue(void)
 {
 	uint32_t size = nb_queue_get_memsize();
   	return nb_allocate_zero_mem(size);
@@ -107,7 +107,7 @@ static inline void* calloc_queue(void)
 void* nb_queue_clone(const void *const queue_ptr,
 		     void* (*clone)(const void*))
 {
-	void *queue = calloc_queue();
+	void *queue = allocate_zero_queue();
 	nb_queue_copy(queue, queue_ptr, clone);
 	return queue;
 }
@@ -116,7 +116,7 @@ void nb_queue_destroy(void *queue_ptr,
 		      void (*destroy)(void*))
 {
 	nb_queue_finish(queue_ptr, destroy);
-	free(queue_ptr);
+	nb_free_mem(queue_ptr);
 }
 
 void nb_queue_clear(void *queue_ptr,

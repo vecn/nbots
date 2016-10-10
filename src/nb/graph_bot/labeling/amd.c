@@ -139,17 +139,21 @@ void nb_graph_labeling_amd(const nb_graph_t *const graph,
 	nb_container_set_comparer(minimum_degree, compare_degree);
 
 	/* List to store labeled nodes */
-	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
+	char* flag_elements =
+		nb_allocate_zero_mem(graph->N * sizeof(*flag_elements));
 
 	/* Allocate and initialize nodal data */
-	nb_container_t** adj_variables = calloc(graph->N, 
-						sizeof(*adj_variables));
-	void*** adj_elements = calloc(graph->N, sizeof(*adj_elements));
-	uint32_t* N_adj_elements = calloc(graph->N, sizeof(*N_adj_elements));
-	int* degree = malloc(2 * graph->N * sizeof(*degree));
-	void*** super_variable = malloc(graph->N * sizeof(*super_variable));
+	nb_container_t** adj_variables =
+		nb_allocate_zero_mem(graph->N * sizeof(*adj_variables));
+	void*** adj_elements =
+		nb_allocate_zero_mem(graph->N * sizeof(*adj_elements));
+	uint32_t* N_adj_elements =
+		nb_allocate_zero_mem(graph->N * sizeof(*N_adj_elements));
+	int* degree = nb_allocate_mem(2 * graph->N * sizeof(*degree));
+	void*** super_variable = 
+		nb_allocate_mem(graph->N * sizeof(*super_variable));
 	uint32_t* N_super_variable =
-		calloc(graph->N, sizeof(*N_super_variable));
+		nb_allocate_zero_mem(graph->N * sizeof(*N_super_variable));
 
 	
 	for (uint32_t i = 0; i < graph->N; i++) {
@@ -159,12 +163,14 @@ void nb_graph_labeling_amd(const nb_graph_t *const graph,
 			nb_container_insert(adj_variables[i],
 					    &(degree[node_id * 2]));
 		}
-		adj_elements[i] = calloc(NUM, sizeof(**adj_elements));
+		adj_elements[i] =
+			nb_allocate_zero_mem(NUM * sizeof(**adj_elements));
 
 		degree[i * 2] = i;
 		degree[i*2+1] = graph->N_adj[i];
 
-		super_variable[i] = calloc(NUM, sizeof(**super_variable));
+		super_variable[i] =
+			nb_allocate_zero_mem(NUM * sizeof(**super_variable));
 		N_super_variable[i] = 
 			array_insert(N_super_variable[i], &(super_variable[i]),
 				     &(degree[i*2]));
@@ -179,18 +185,18 @@ void nb_graph_labeling_amd(const nb_graph_t *const graph,
 
   	for (uint32_t i = 0; i < graph->N; i++) {
 		nb_container_destroy(adj_variables[i]);
-		free(super_variable[i]);
-		free(adj_elements[i]);
+		nb_free_mem(super_variable[i]);
+		nb_free_mem(adj_elements[i]);
 	}
 
 	/* Free memory */  
-	free(adj_variables);
-	free(adj_elements);
-	free(N_adj_elements);		       
-	free(super_variable);
-	free(N_super_variable);
-	free(degree);
-	free(flag_elements);
+	nb_free_mem(adj_variables);
+	nb_free_mem(adj_elements);
+	nb_free_mem(N_adj_elements);		       
+	nb_free_mem(super_variable);
+	nb_free_mem(N_super_variable);
+	nb_free_mem(degree);
+	nb_free_mem(flag_elements);
 	nb_container_destroy(minimum_degree);
 }
 
@@ -386,7 +392,8 @@ static void supervars_detection(uint32_t p,
 				void*** super_variable)
 {
 	nb_container_type type = NB_HASH;
-	nb_container_t *supervars = nb_allocate_on_stack(nb_container_get_memsize(type));
+	nb_container_t *supervars = 
+		nb_allocate_on_stack(nb_container_get_memsize(type));
 	nb_container_init(supervars, type);
 	nb_container_set_key_generator(supervars,
 				       hash_function_supervariables);
@@ -421,7 +428,7 @@ static void find_supervars(uint32_t p, nb_container_t *supervars,
 	while (nb_iterator_has_more(iter)) {
 		const int* vtx_i = nb_iterator_get_next(iter);
 		uint32_t memsize = 2 * sizeof(void*) + sizeof(uint32_t);
-		char *memblock = malloc(memsize);
+		char *memblock = nb_allocate_mem(memsize);
 		void **var = (void*) memblock;
 		uint32_t *key = (void*) (memblock + 2 * sizeof(void*));
 		*key = get_hash_key(*vtx_i, N_adj_elements, adj_elements,
@@ -526,7 +533,7 @@ static void disolve_collisions(nb_container_t *colliding_set,
 						    N_super_variable,
 						    super_variable);
 				nb_container_delete(colliding_set, hash_val_j);
-				/* free(hash_val_j) */
+				/* nb_free_mem(hash_val_j) */
 				
 				delete_node(vtx_j, minimum_degree,
 					    adj_variables, adj_elements);
@@ -668,27 +675,37 @@ void nb_graph_labeling_mmd(const nb_graph_t *const graph,
 	nb_container_t* minimum_degree = nb_container_create(NB_SORTED);
 	nb_container_set_comparer(minimum_degree, compare_degree);
 	/* List to store labeled nodes */
-	char* flag_elements = calloc(graph->N, sizeof(*flag_elements));
+	char* flag_elements =
+		nb_allocate_zero_mem(graph->N * sizeof(*flag_elements));
   
 	/* Allocate and initialize nodal data */
-	nb_container_t** adj_variables = calloc(graph->N, sizeof(*adj_variables));
-	void*** adj_elements = calloc(graph->N, sizeof(*adj_elements));
-	uint32_t* N_adj_elements = calloc(graph->N, sizeof(*N_adj_elements));
-	int* degree = malloc(2 * graph->N * sizeof(*degree));
-	void*** super_variable = malloc(graph->N * sizeof(*super_variable));
-	uint32_t* N_super_variable = calloc(graph->N, sizeof(*N_super_variable));
+	nb_container_t** adj_variables =
+		nb_allocate_zero_mem(graph->N * sizeof(*adj_variables));
+	void*** adj_elements = 
+		nb_allocate_zero_mem(graph->N * sizeof(*adj_elements));
+	uint32_t* N_adj_elements =
+		nb_allocate_zero_mem(graph->N * sizeof(*N_adj_elements));
+	int* degree = nb_allocate_mem(2 * graph->N * sizeof(*degree));
+	void*** super_variable =
+		nb_allocate_mem(graph->N * sizeof(*super_variable));
+	uint32_t* N_super_variable = 
+		nb_allocate_zero_mem(graph->N* sizeof(*N_super_variable));
 	for (uint32_t i = 0; i < graph->N; i++) {
 		adj_variables[i] = nb_container_create(NB_QUEUE);
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++)
-			nb_container_insert(adj_variables[i], &(degree[graph->adj[i][j] * 2]));
-		adj_elements[i] = calloc(NUM, sizeof(*adj_elements[i]));
+			nb_container_insert(adj_variables[i],
+					    &(degree[graph->adj[i][j] * 2]));
+		adj_elements[i] =
+			nb_allocate_zero_mem(NUM * sizeof(*adj_elements[i]));
 
 		degree[i * 2] = i;
 		degree[i*2+1] = nb_container_get_length(adj_variables[i]);
 
-		super_variable[i] = calloc(NUM, sizeof(*super_variable[i]));
+		super_variable[i] =
+			nb_allocate_zero_mem(NUM * sizeof(*super_variable[i]));
 		N_super_variable[i] = 
-			array_insert(N_super_variable[i], &(super_variable[i]), &(degree[i*2]));
+			array_insert(N_super_variable[i],
+				     &(super_variable[i]), &(degree[i*2]));
 
 		nb_container_insert(minimum_degree, &(degree[i*2]));
 	}
@@ -789,7 +806,7 @@ void nb_graph_labeling_mmd(const nb_graph_t *const graph,
 		while (nb_iterator_has_more(iter)) {
 			const int *vtx_i = nb_iterator_get_next(iter);
 			uint32_t memsize = 2 * sizeof(void*) + sizeof(uint32_t);
-			char *memblock = malloc(memsize);
+			char *memblock = nb_allocate_mem(memsize);
 			void **var = (void*) memblock;
 			uint32_t *key = (void*) (memblock + 2 * sizeof(void*));
 			*key = get_hash_key(*vtx_i, N_adj_elements, adj_elements,
@@ -918,16 +935,16 @@ void nb_graph_labeling_mmd(const nb_graph_t *const graph,
 	/* Free memory */ 
 	for (uint32_t i = 0; i < graph->N; i++) {
 		nb_container_destroy(adj_variables[i]);
-		free(super_variable[i]);
-		free(adj_elements[i]);
+		nb_free_mem(super_variable[i]);
+		nb_free_mem(adj_elements[i]);
 	}
-	free(adj_variables);
-	free(adj_elements);
-	free(N_adj_elements);	       
-	free(super_variable);
-	free(N_super_variable);
-	free(degree);
-	free(flag_elements);
+	nb_free_mem(adj_variables);
+	nb_free_mem(adj_elements);
+	nb_free_mem(N_adj_elements);	       
+	nb_free_mem(super_variable);
+	nb_free_mem(N_super_variable);
+	nb_free_mem(degree);
+	nb_free_mem(flag_elements);
 	nb_container_destroy(minimum_degree);
 }
 
@@ -950,9 +967,9 @@ static uint32_t array_insert(uint32_t N, void*** array, void* val)
 			return N;
 	}
 	if (N % NUM == 0 && N > 0) {
-		void** new_array = malloc((N+NUM) * sizeof(*new_array));
+		void** new_array = nb_allocate_mem((N+NUM) * sizeof(*new_array));
 		memcpy(new_array, array[0], N * sizeof(*new_array));
-		free(array[0]);
+		nb_free_mem(array[0]);
 		array[0] = new_array;
 	}
 	array[0][N] = val;
@@ -966,9 +983,11 @@ static uint32_t array_remove(uint32_t N, void*** array, void* val)
 			for (uint32_t j = i; j < N-1; j++)
 				array[0][j] = array[0][j+1];
 			if ((N-1)%NUM == NUM - 1) {
-				void** new_array = malloc(N * sizeof(*new_array));
-				memcpy(new_array, array[0], (N-1) * sizeof(*new_array));
-				free(array[0]);
+				void** new_array = 
+				  nb_allocate_mem(N * sizeof(*new_array));
+				memcpy(new_array, array[0],
+				       (N-1) * sizeof(*new_array));
+				nb_free_mem(array[0]);
 				array[0] = new_array;
 			}
 			return N-1;

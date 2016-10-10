@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot/array.h"
 #include "nb/graph_bot/graph.h"
 #include "nb/graph_bot/matching/greedy.h"
@@ -25,11 +26,11 @@ void nb_graph_matching_greedy(const nb_graph_t *const graph,
 {
 	init_array(nodal_match, graph);
 	uint32_t N_edges = count_edges(graph);
-	edge_t *edges = malloc(N_edges * sizeof(*edges));
+	edge_t *edges = nb_allocate_mem(N_edges * sizeof(*edges));
 	set_edges(graph, edges);
 	vcn_qsort(edges, N_edges, sizeof(*edges), compare_edges);
 	greedy_matching(N_edges, edges, nodal_match);
-	free(edges);
+	nb_free_mem(edges);
 }
 
 static void init_array(uint32_t *nodal_match, const nb_graph_t *const graph)

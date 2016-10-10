@@ -1,12 +1,7 @@
-/******************************************************************************
- *   Queue iterator                                                           *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <string.h>
+
+#include "nb/memory_bot.h"
 
 #include "nb_queue_node.h"
 #include "nb_queue_struct.h"
@@ -18,7 +13,7 @@ typedef struct {
 	const nb_queue_node_t *start;
 } iter_t;
 
-static void* malloc_iter(void);
+static void* allocate_iter(void);
 
 uint16_t nb_queue_iter_get_memsize(void)
 {
@@ -46,20 +41,20 @@ void nb_queue_iter_finish(void *iter_ptr)
 
 void* nb_queue_iter_create(void)
 {
-	void *iter = malloc_iter();
+	void *iter = allocate_iter();
 	nb_queue_iter_init(iter);
 	return iter;
 }
 
-static inline void* malloc_iter(void)
+static inline void* allocate_iter(void)
 {
 	uint16_t size = nb_queue_iter_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* nb_queue_iter_clone(const void *const iter_ptr)
 {
-	void *iter = malloc_iter();
+	void *iter = allocate_iter();
 	nb_queue_iter_copy(iter, iter_ptr);
 	return iter;
 }
@@ -67,7 +62,7 @@ void* nb_queue_iter_clone(const void *const iter_ptr)
 void nb_queue_iter_destroy(void *iter_ptr)
 {
 	nb_queue_iter_finish(iter_ptr);
-	free(iter_ptr);
+	nb_free_mem(iter_ptr);
 }
 
 void nb_queue_iter_clear(void *iter_ptr)

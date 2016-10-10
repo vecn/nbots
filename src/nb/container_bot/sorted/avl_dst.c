@@ -1,8 +1,5 @@
 /******************************************************************************
  *   AVL DST: AVL Tree, a self-balanced binary search tree                    *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
  ******************************************************************************/
 
 #include <stdlib.h>
@@ -17,7 +14,7 @@
 #include "avl_struct.h"
 
 static bool is_not_empty(const avl_t *const avl);
-static void* malloc_avl(void);
+static void* allocate_avl(void);
 static void destroy_values(avl_t *avl, void (*destroy)(void*));
 static void* delete_root(avl_t *avl);
 
@@ -66,21 +63,21 @@ void avl_finish(void *avl_ptr, void (*destroy)(void*))
 
 void* avl_create(void)
 {
-	void *avl = malloc_avl();
+	void *avl = allocate_avl();
 	avl_init(avl);
 	return avl;
 }
 
-static inline void* malloc_avl(void)
+static inline void* allocate_avl(void)
 {
 	uint16_t size = avl_get_memsize();
-	return malloc(size);
+	return nb_allocate_mem(size);
 }
 
 void* avl_clone(const void *const avl_ptr,
 		void* (*clone)(const void*))
 {
-	void *avl = malloc_avl();
+	void *avl = allocate_avl();
 	avl_copy(avl, avl_ptr, clone);
 	return avl;	
 }
@@ -88,7 +85,7 @@ void* avl_clone(const void *const avl_ptr,
 void avl_destroy(void *avl_ptr,	void (*destroy)(void*))
 {
 	avl_finish(avl_ptr, destroy);
-	free(avl_ptr);
+	nb_free_mem(avl_ptr);
 }
 
 void avl_clear(void *avl_ptr, void (*destroy)(void*))
