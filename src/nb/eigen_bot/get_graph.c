@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/eigen_bot/sparse.h"
 
@@ -13,7 +14,7 @@ void nb_sparse_get_graph(const vcn_sparse_t* A, nb_graph_t *graph)
 	uint32_t memsize = N * (sizeof(*(graph->N_adj)) +
 				sizeof(*(graph->adj))) +
 		N_total_adj * sizeof(**(graph->adj));
-	char *memblock = malloc(memsize);
+	char *memblock = nb_allocate_mem(memsize);
 
 	graph->N_adj = (void*) memblock;
 	graph->adj = (void*) (memblock + N * sizeof(*(graph->N_adj)));

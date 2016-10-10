@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot/array.h"
@@ -60,10 +61,10 @@ static int meta_compare_data_bycol(const void *a, const void *b)
 
 static inline vcn_sparse_t* sparse_allocate(uint32_t N)
 {
-	vcn_sparse_t* A = malloc(sizeof(*A));
-	A->rows_values = malloc(N * sizeof(*(A->rows_values)));
-	A->rows_index = malloc(N * sizeof(*(A->rows_index)));
-	A->rows_size = calloc(N, sizeof(*(A->rows_size)));
+	vcn_sparse_t* A = nb_allocate_mem(sizeof(*A));
+	A->rows_values = nb_allocate_mem(N * sizeof(*(A->rows_values)));
+	A->rows_index = nb_allocate_mem(N * sizeof(*(A->rows_index)));
+	A->rows_size = nb_allocate_zero_mem(N * sizeof(*(A->rows_size)));
 	A->N = N;
 	return A;
 }
@@ -85,10 +86,10 @@ vcn_sparse_t* vcn_sparse_create(const nb_graph_t *const restrict graph,
 
 			A->rows_size[irow] = row_size;
 			A->rows_values[irow] = 
-				calloc(row_size,
+				nb_allocate_zero_mem(row_size *
 				       sizeof(*(A->rows_values[irow])));
 			A->rows_index[irow] = 
-				malloc(row_size *
+				nb_allocate_mem(row_size *
 				       sizeof(*(A->rows_index[irow])));
 
 			for (uint32_t j = 0; j < graph->N_adj[i]; j++) {
@@ -113,12 +114,12 @@ vcn_sparse_t* vcn_sparse_clone(vcn_sparse_t* A)
 {
 	vcn_sparse_t* Acopy = sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
-		Acopy->rows_index[i] = calloc(A->rows_size[i], 
+		Acopy->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					      sizeof(**(Acopy->rows_index)));
 		memcpy(Acopy->rows_index[i], A->rows_index[i], 
 		       A->rows_size[i] * sizeof(**(Acopy->rows_index)));
 
-		Acopy->rows_values[i] = calloc(A->rows_size[i],
+		Acopy->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					       sizeof(**(Acopy->rows_values)));
 		memcpy(Acopy->rows_values[i], A->rows_values[i],
 		       A->rows_size[i] * sizeof(**(Acopy->rows_values)));
@@ -147,13 +148,13 @@ void vcn_sparse_destroy(vcn_sparse_t* A)
 {
 	/* Clear all rows */
 	for (uint32_t i = 0; i < A->N; i++) {
-		free(A->rows_values[i]);
-		free(A->rows_index[i]);
+		nb_free_mem(A->rows_values[i]);
+		nb_free_mem(A->rows_index[i]);
 	}
-	free(A->rows_values);
-	free(A->rows_index);
-	free(A->rows_size);
-	free(A);
+	nb_free_mem(A->rows_values);
+	nb_free_mem(A->rows_index);
+	nb_free_mem(A->rows_size);
+	nb_free_mem(A);
 }
 
 static inline uint32_t sparse_bsearch_row(const vcn_sparse_t *const A,
@@ -283,12 +284,18 @@ vcn_sparse_t* vcn_sparse_create_permutation
 	for (uint32_t i = 0; i < A->N; i++) {
 		uint32_t j = perm[i];
 		_Ar->rows_size[i] = A->rows_size[j];
-		_Ar->rows_index[i] = calloc(_Ar->rows_size[i],sizeof(**(_Ar->rows_index)));
-		_Ar->rows_values[i] = calloc(_Ar->rows_size[i],sizeof(**(_Ar->rows_values)));
-		double** data2sort = malloc(_Ar->rows_size[i]*sizeof(*data2sort));
+		_Ar->rows_index[i] = 
+			nb_allocate_zero_mem(_Ar->rows_size[i] *
+					     sizeof(**(_Ar->rows_index)));
+		_Ar->rows_values[i] =
+			nb_allocate_zero_mem(_Ar->rows_size[i] *
+					     sizeof(**(_Ar->rows_values)));
+		double** data2sort =
+			nb_allocate_mem(_Ar->rows_size[i] * sizeof(*data2sort));
 		for (uint32_t k = 0; k < A->rows_size[j]; k++) {
 			uint32_t m = iperm[A->rows_index[j][k]];
-			data2sort[k] = calloc(2, sizeof(**data2sort));
+			data2sort[k] =
+				nb_allocate_zero_mem(2 * sizeof(**data2sort));
 			data2sort[k][0] = (double)m; /* OPPORTUNITY */
 			data2sort[k][1] = A->rows_values[j][k];
 		}
@@ -300,8 +307,8 @@ vcn_sparse_t* vcn_sparse_create_permutation
 		}
 		/* Free memory */
 		for (uint32_t k=0; k< A->rows_size[j]; k++)
-			free(data2sort[k]);
-		free(data2sort);
+			nb_free_mem(data2sort[k]);
+		nb_free_mem(data2sort);
 	}
 	return _Ar;
 }
@@ -326,7 +333,7 @@ double* vcn_sparse_create_vector_permutation
 (const double *const b, 
  const uint32_t *const perm,
  uint32_t N){
-	double* br = (double*)malloc(N * sizeof(double));
+	double* br = (double*)nb_allocate_mem(N * sizeof(double));
 	for(uint32_t i=0; i < N; i++)
 		br[i] = b[perm[i]];
 	return br;
@@ -448,7 +455,7 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //	int plot_size = size-2*border;
 //	float cell_size = ((float)A->N)/plot_size;
 //	float cell_max = 0;
-//	float* cells = (float*)calloc(plot_size*plot_size, sizeof(float));
+//	float* cells = nb_allocate_zero_mem(POW2(plot_size) * sizeof(float));
 //	for(i=0; i<plot_size; i++){
 //		for(j=0; j<plot_size; j++){
 //			/* Start iterations over matrix */
@@ -540,10 +547,10 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //
 //	/* Initialize pointers */
 //	uint8_t r, g, b;
-//	row_pointers = png_malloc(png_ptr, h*sizeof(png_byte*));
+//	row_pointers = png_nb_allocate_mem(png_ptr, h*sizeof(png_byte*));
 //	for(i=0; i<h; i++){
 //		png_byte *row=
-//			png_malloc(png_ptr, sizeof(uint8_t)*w*pixel_size);
+//			png_nb_allocate_mem(png_ptr, sizeof(uint8_t)*w*pixel_size);
 //		row_pointers[i] = row;
 //		for(j=0; j<w; j++){
 //			/* Create bitmap */
@@ -592,11 +599,11 @@ int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
 //
 //	/* Free memory */
 //	for(i=0; i<h; i++)
-//		png_free(png_ptr, row_pointers[i]);
-//	png_free(png_ptr, row_pointers);
+//		png_nb_free_mem(png_ptr, row_pointers[i]);
+//	png_nb_free_mem(png_ptr, row_pointers);
 //	png_destroy_write_struct(&png_ptr, &info_ptr);
 //
-//	free(cells);
+//	nb_free_mem(cells);
 //
 //	/* Close url */
 //	fclose(fp);
@@ -628,7 +635,7 @@ int vcn_sparse_solve_Gauss_Seidel
  double* tolerance_reached, /* Out (NULL if not required) */
  uint32_t omp_parallel_threads){
 	/* Allocate RHS vector */
-	double* c = (double*)malloc(vcn_sparse_get_size(A)*sizeof(double));
+	double* c = (double*)nb_allocate_mem(vcn_sparse_get_size(A)*sizeof(double));
 	/* Start iterations */
 	register uint32_t k = 0;
 	double error = 1e10;
@@ -658,7 +665,7 @@ int vcn_sparse_solve_Gauss_Seidel
 		k++;
 	}
 	/* Free memory */
-	free(c);
+	nb_free_mem(c);
 
 	/* Successful exit */
 	if(niter_performed != NULL) *niter_performed = k;
@@ -682,9 +689,9 @@ int vcn_sparse_solve_conjugate_gradient
 /* Return the num of iterations */
 {
 	/* Solve Ax = b with Conjugate Gradient method */
-	double *g = (double*)calloc(A->N, sizeof(double));
-	double *p = (double*)calloc(A->N, sizeof(double));
-	double *w = (double*)calloc(A->N, sizeof(double));
+	double *g = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *w = nb_allocate_zero_mem(A->N * sizeof(double));
 	double dot_gg = 0;
 
 #pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
@@ -723,9 +730,9 @@ int vcn_sparse_solve_conjugate_gradient
 		k++;
 	}
 	/* Free memory */
-	free(g);
-	free(p);
-	free(w);
+	nb_free_mem(g);
+	nb_free_mem(p);
+	nb_free_mem(w);
   
 	if(niter_performed != NULL) niter_performed[0]= k;
 
@@ -749,7 +756,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 {
 	/* Solve Ax = b with Conjugate Gradient preconditioned with jacobi */
 	uint32_t vec_size = A->N * sizeof(double);
-	char *memblock = calloc(1, 5 * vec_size);	
+	char *memblock = nb_allocate_zero_mem(5 * vec_size);	
 	double* g = (void*) memblock;
 	double* p = (void*) (memblock + vec_size);
 	double* q = (void*) (memblock + 2 * vec_size);
@@ -802,7 +809,7 @@ int vcn_sparse_solve_CG_precond_Jacobi
 		k++;
 	}
 	/* Free memory */
-	free(memblock);
+	nb_free_mem(memblock);
 
 	if (NULL != niter_performed)
 		niter_performed[0]= k;
@@ -830,10 +837,10 @@ int vcn_sparse_solve_CG_precond_Cholesky
 	/* Solve Ax = b with Conjugate Gradient preconditioned with 
 	 * Cholesky truncated.
 	 */
-	double* g = (double*)calloc(A->N, sizeof(double));
-	double* p = (double*)calloc(A->N, sizeof(double));
-	double* q = (double*)calloc(A->N, sizeof(double));
-	double* w = (double*)calloc(A->N, sizeof(double));
+	double* g = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* q = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	double dot_gg = 0;
   
@@ -892,10 +899,10 @@ int vcn_sparse_solve_CG_precond_Cholesky
 		k++;
 	}
 	/* Free memory */
-	free(g);
-	free(p);
-	free(q);
-	free(w);
+	nb_free_mem(g);
+	nb_free_mem(p);
+	nb_free_mem(q);
+	nb_free_mem(w);
 	vcn_sparse_destroy(H);
 	vcn_sparse_destroy(Ht);
 
@@ -923,8 +930,8 @@ int vcn_sparse_solve_CG_precond_fsai
 	/* Conjugate gradient preconditioned with "Factorized sparse 
 	 * approximated inverse" 
 	 */
-	double *D = (double*)calloc(A->N, sizeof(double));
-	double *siD = (double*)calloc(A->N, sizeof(double));
+	double *D = nb_allocate_zero_mem(A->N * sizeof(double));
+	double *siD = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	vcn_sparse_t* G  = sparse_allocate(A->N);
 	vcn_sparse_t* Gt = sparse_allocate(A->N);
@@ -970,22 +977,28 @@ int vcn_sparse_solve_CG_precond_fsai
 			}
 		}
 		G->rows_size[i] = isize;
-		G->rows_index[i] = (uint32_t*)calloc(isize,sizeof(uint32_t));
-		G->rows_values[i] = (double*)calloc(isize,sizeof(double));
+		G->rows_index[i] = nb_allocate_zero_mem(isize *
+							sizeof(uint32_t));
+		G->rows_values[i] = nb_allocate_zero_mem(isize *
+							 sizeof(double));
 
 		Gt->rows_size[i] = isizet;
-		Gt->rows_index[i] = (uint32_t*)calloc(isizet,sizeof(uint32_t));
-		Gt->rows_values[i] = (double*)calloc(isizet,sizeof(double));
+		Gt->rows_index[i] = nb_allocate_zero_mem(isizet *
+							 sizeof(uint32_t));
+		Gt->rows_values[i] = nb_allocate_zero_mem(isizet *
+							  sizeof(double));
 	}
 
 #pragma omp parallel for num_threads(omp_parallel_threads)
 	for(uint32_t i=0; i < A->N; i++){
 		/* Compute values of ~G */
-		double* subA = (double*)
-			calloc(G->rows_size[i]*G->rows_size[i], sizeof(double));
+		double* subA =
+			nb_allocate_zero_mem(POW2(G->rows_size[i]) *
+					     sizeof(double));
 		/* The data of vector g is not allocated, is a pointer to each row of ~G */
 		double* subg = G->rows_values[i];
-		double *delta = (double*)calloc(G->rows_size[i], sizeof(double));
+		double *delta = nb_allocate_zero_mem(G->rows_size[i] *
+						     sizeof(double));
 		uint32_t k = 0;
 		for(uint32_t q = 0; q < A->rows_size[i]; q++){
 			uint32_t j = A->rows_index[i][q];
@@ -1008,8 +1021,8 @@ int vcn_sparse_solve_CG_precond_fsai
 				}
 			}
 		}
-		double* L = (double*) 
-			calloc(G->rows_size[i]*G->rows_size[i], sizeof(double));
+		double* L = nb_allocate_zero_mem(POW2(G->rows_size[i]) *
+						 sizeof(double));
 		vcn_matrix_cholesky_decomposition(subA, L, G->rows_size[i]);
 		vcn_matrix_cholesky_solve(L, delta, subg, G->rows_size[i]);
 		/* Finally do G = [~G]*D   */
@@ -1017,23 +1030,23 @@ int vcn_sparse_solve_CG_precond_fsai
 			G->rows_values[i][q] *= D[G->rows_index[i][q]];
 
 		/* Free memory */
-		free(subA);
-		free(L);
-		free(delta);
+		nb_free_mem(subA);
+		nb_free_mem(L);
+		nb_free_mem(delta);
 	}
 	/* Store G transposed */
 	vcn_sparse_get_transpose(G,Gt);
 
 	/* Free memory */
-	free(D);
-	free(siD);
+	nb_free_mem(D);
+	nb_free_mem(siD);
 
 	/* Solve Ax = b with Conjugate Gradient method */
-	double* r = (double*)calloc(A->N, sizeof(double));
-	double* p = (double*)calloc(A->N, sizeof(double));
-	double* w = (double*)calloc(A->N, sizeof(double));
-	double* Gr = (double*)calloc(A->N, sizeof(double));
-	double* Mr = (double*)calloc(A->N, sizeof(double));
+	double* r = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* Gr = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* Mr = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	double dot_rr = 0;
 
@@ -1113,11 +1126,11 @@ int vcn_sparse_solve_CG_precond_fsai
 	/* Free memory */
 	vcn_sparse_destroy(G);
 	vcn_sparse_destroy(Gt);
-	free(r);
-	free(p);
-	free(w);
-	free(Gr);
-	free(Mr);
+	nb_free_mem(r);
+	nb_free_mem(p);
+	nb_free_mem(w);
+	nb_free_mem(Gr);
+	nb_free_mem(Mr);
 
 	if(niter_performed != NULL) niter_performed[0]= k;
 
@@ -1166,9 +1179,9 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	 *    "Parallel Algorithms for Matrix Computations"
 	 *    SIAM 1990 p86-88
 	 */
-	uint32_t *L_size = calloc(A->N, sizeof(*L_size));
+	uint32_t *L_size = nb_allocate_zero_mem(A->N * sizeof(*L_size));
 
-	sc_set** r = calloc(A->N, sizeof(*r));
+	sc_set** r = nb_allocate_zero_mem(A->N * sizeof(*r));
 
 	for (uint32_t j = 0; j < A->N; j++) { 
 		sc_set* lj = NULL;
@@ -1179,7 +1192,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		/* lj <- aj ************************************************/
 		sc_set *iterator_lj;                                     /**/
 		for(uint32_t i = _i+1; i<A->rows_size[j]; i++){     /**/
-			sc_set* aji = (sc_set*)malloc(sizeof(sc_set));         /**/
+			sc_set* aji = (sc_set*)nb_allocate_mem(sizeof(sc_set));         /**/
 			aji->index = A->rows_index[j][i];                      /**/
 			aji->next = NULL;                                      /**/
 			if(lj == NULL){                                        /**/
@@ -1217,7 +1230,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 							}                                               /**/
 						}                                                 /**/
 						if(flag1 != 2){                                   /**/
-							sc_set* node = (sc_set*)malloc(sizeof(sc_set)); /**/
+							sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set)); /**/
 							node->index = index;                            /**/
 							node->next = next_itr_lj;                       /**/
 							if(iterator_lj != NULL)                         /**/
@@ -1238,7 +1251,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 						k++;                                              /**/
 				}                                                     /**/
 				if(flag == 1){                                        /**/
-					lj = (sc_set*)malloc(sizeof(sc_set));               /**/
+					lj = (sc_set*)nb_allocate_mem(sizeof(sc_set));               /**/
 					lj->index = _Lt->rows_index[i][k];                  /**/
 					lj->next = NULL;                                    /**/
 					lj_size++;                                          /**/
@@ -1247,7 +1260,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 				sc_set* iterator_lj = lj;                             /**/
 				while(k < _Lt->rows_size[i]){                         /**/
 					if(_Lt->rows_index[i][k] != j){                     /**/
-						sc_set* node = (sc_set*)malloc(sizeof(sc_set));   /**/
+						sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set));   /**/
 						node->index = _Lt->rows_index[i][k];              /**/
 						node->next = NULL;                                /**/
 						iterator_lj->next = node;                         /**/
@@ -1276,14 +1289,14 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 				}                                                     /**/
 				if(flag == 0){                                        /**/
 					if(iterator_rp->index != j){                        /**/
-						sc_set* node = (sc_set*)malloc(sizeof(sc_set));   /**/
+						sc_set* node = (sc_set*)nb_allocate_mem(sizeof(sc_set));   /**/
 						node->index = j;                                  /**/
 						node->next = NULL;                                /**/
 						iterator_rp->next = node;                         /**/
 					}                                                   /**/
 				}                                                     /**/
 			}else{                                                  /**/
-				r[p] = (sc_set*)malloc(sizeof(sc_set));               /**/
+				r[p] = (sc_set*)nb_allocate_mem(sizeof(sc_set));               /**/
 				r[p]->index = j;                                      /**/
 				r[p]->next = NULL;                                    /**/
 			}                                                       /**/
@@ -1291,8 +1304,10 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		}
 
 		/*************** Allocate the jth row of "Lt" **********************/
-		_Lt->rows_values[j] = (double*)calloc(lj_size,sizeof(double));   /**/
-		_Lt->rows_index[j] = (uint32_t*)calloc(lj_size,sizeof(uint32_t));        /**/
+		_Lt->rows_values[j] = nb_allocate_zero_mem(lj_size *
+							   sizeof(double));   /**/
+		_Lt->rows_index[j] = nb_allocate_zero_mem(lj_size *
+							  sizeof(uint32_t));        /**/
 		_Lt->rows_size[j] = lj_size;                                     /**/
 		iterator_lj = lj;                                                /**/
 		_Lt->rows_index[j][0] = j;                                       /**/
@@ -1305,7 +1320,7 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 		while(lj != NULL){                                               /**/
 			sc_set* lj_free = lj;                                          /**/
 			lj = (sc_set*)lj->next;                                        /**/
-			free(lj_free);                                                 /**/
+			nb_free_mem(lj_free);                                                 /**/
 		}                                                                /**/
 		/*******************************************************************/
     
@@ -1313,12 +1328,14 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	/****************************** Allocate "L" ****************************/
 	for(uint32_t i=0; i<_L->N; i++){                                 /**/
 		L_size[i]++;            /* To include main diagonal */              /**/
-		_L->rows_values[i] = (double*)calloc(L_size[i],sizeof(double));     /**/
-		_L->rows_index[i] = (uint32_t*)calloc(L_size[i],sizeof(uint32_t));          /**/
+		_L->rows_values[i] = nb_allocate_zero_mem(L_size[i] *
+							  sizeof(double));     /**/
+		_L->rows_index[i] = nb_allocate_zero_mem(L_size[i] *
+							 sizeof(uint32_t));          /**/
 		_L->rows_size[i] = L_size[i];                                       /**/
 	}                                                                     /**/
 	/* Cycle to set columns in L */                                       /**/
-	uint32_t* L_index = (uint32_t*)calloc(_L->N,sizeof(uint32_t));                    /**/
+	uint32_t* L_index = nb_allocate_zero_mem(_L->N * sizeof(uint32_t));                    /**/
 	/* This "for" can not be parallelizad to guaranty increasing sort */  /**/
 	for(uint32_t i=0; i<_Lt->N; i++){                                /**/
 		for(uint32_t j=0; j<_Lt->rows_size[i]; j++){                   /**/
@@ -1329,17 +1346,17 @@ static void cholesky_symbolic(const vcn_sparse_t * const A,
 	/************************************************************************/
 
 	/* Free memory */
-	free(L_size);
-	free(L_index);
+	nb_free_mem(L_size);
+	nb_free_mem(L_index);
 	for(uint32_t i=0; i< A->N; i++){
 		sc_set* iterator_ri = r[i];
 		while(iterator_ri != NULL){
 			sc_set* rm = iterator_ri;
 			iterator_ri = (sc_set*)iterator_ri->next;
-			free(rm);
+			nb_free_mem(rm);
 		}
 	}
-	free(r);
+	nb_free_mem(r);
 }
 
 
@@ -1497,10 +1514,10 @@ void  vcn_sparse_solve_LU(const vcn_sparse_t *const L,
 			  const double *const b,
 			  double* _x  /* Out */)
 {
-	double* z = calloc(L->N, sizeof(*z));
+	double* z = nb_allocate_zero_mem(L->N * sizeof(*z));
 	vcn_sparse_forward_solve(L, b, z);
 	vcn_sparse_backward_solve(U, z, _x);
-	free(z);
+	nb_free_mem(z);
 }
 
 int vcn_sparse_solve_Cholesky(const vcn_sparse_t *const A,
@@ -1734,23 +1751,23 @@ void vcn_matrix_cholesky_solve
  uint32_t N)
 /* Solve the system LL'x = b, where LL'= A */
 {
-	double* z = (double*)calloc(N, sizeof(double));
+	double* z = nb_allocate_zero_mem(N * sizeof(double));
 	vcn_matrix_forward_solve(LplusLt, b, z, N);
 	vcn_matrix_backward_solve(LplusLt, z, _x, N);
 	/* Free memory */
-	free(z);
+	nb_free_mem(z);
 }
 
 double vcn_matrix_cond1(const double *const A, int n){
-	double *Acopy = (double*)malloc(n*n*sizeof(double));
+	double *Acopy = (double*)nb_allocate_mem(n*n*sizeof(double));
 	memcpy(Acopy, A, n*n*sizeof(double));
-	double *x = (double*)malloc(n*sizeof(double));
-	double *p = (double*)malloc(n*sizeof(double));
-	double *pm = (double*)malloc(n*sizeof(double));
+	double *x = (double*)nb_allocate_mem(n*sizeof(double));
+	double *p = (double*)nb_allocate_mem(n*sizeof(double));
+	double *pm = (double*)nb_allocate_mem(n*sizeof(double));
 	/* Compute QR decomposition */
 	int sing;
-	double *c = (double*)malloc(n*sizeof(double));
-	double *diag = (double*)malloc(n*sizeof(double));
+	double *c = (double*)nb_allocate_mem(n*sizeof(double));
+	double *diag = (double*)nb_allocate_mem(n*sizeof(double));
 	vcn_matrix_qr_decomposition(Acopy, n, c, diag, &sing);
 	/* Compute ||A||_1 (Max absolute column sum) */
 	double estimation = fabs(diag[0]);
@@ -1795,28 +1812,28 @@ double vcn_matrix_cond1(const double *const A, int n){
 	for(uint32_t i=0; i<n; i++) xnorm += fabs(x[i]);
 	estimation *= xnorm;
 	/* Free memory */
-	free(Acopy);
-	free(x);
-	free(p);
-	free(pm);
-	free(diag);
-	free(c);
+	nb_free_mem(Acopy);
+	nb_free_mem(x);
+	nb_free_mem(p);
+	nb_free_mem(pm);
+	nb_free_mem(diag);
+	nb_free_mem(c);
 	return estimation;
 }
 
 double vcn_matrix_cond2(const double *const A, int n){
-	double *Acopy = (double*)malloc(n*n*sizeof(double));
+	double *Acopy = (double*)nb_allocate_mem(n*n*sizeof(double));
 	memcpy(Acopy, A, n*n*sizeof(double));
-	double* w = (double*)malloc(n*sizeof(double));
-	double* V = (double*)malloc(n*n*sizeof(double));
+	double* w = (double*)nb_allocate_mem(n*sizeof(double));
+	double* V = (double*)nb_allocate_mem(n*n*sizeof(double));
 	/* Compute SVD Decomposition */ 
 	vcn_matrix_svd_decomposition(Acopy, w, V, n, n);
 	/* Compute condition number estimation */
 	double estimation = w[0]/w[n-1];
 	/* Free memory */
-	free(Acopy);
-	free(w);
-	free(V);
+	nb_free_mem(Acopy);
+	nb_free_mem(w);
+	nb_free_mem(V);
 	return estimation;
 }
 
@@ -1907,7 +1924,7 @@ void vcn_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 	 */
 	int flag, i, its, j, jj, k, l, nm;
 	double anorm, c, f, g, h, s, scale, x, y, z, *rv1;
-	rv1 = (double*)calloc(n, sizeof(double));
+	rv1 = (double*)nb_allocate_zero_mem(n * sizeof(double));
 	g = scale = anorm = 0.0;
 	for(i=0; i<n; i++){
 		l = i+1;
@@ -2085,7 +2102,7 @@ void vcn_matrix_svd_decomposition(double *A, /* Overwritten wit U */
 		}
 	}
 	/* Free memory */
-	free(rv1);
+	nb_free_mem(rv1);
 }
 
 
@@ -2104,7 +2121,7 @@ void vcn_matrix_svd_solve(const double *const U,
 	 */
 	int jj, j, i;
 	double s, *tmp;
-	tmp = (double*)malloc(n*sizeof(double));
+	tmp = (double*)nb_allocate_mem(n*sizeof(double));
 	for(j=0; j<n; j++){
 		s = 0.0;
 		if(w[j]){
@@ -2118,7 +2135,7 @@ void vcn_matrix_svd_solve(const double *const U,
 		for(jj=0; jj<n; jj++) s += V[j*n+jj]*tmp[jj];
 		x[j] = s;
 	}
-	free(tmp);
+	nb_free_mem(tmp);
 }
 
 
@@ -2170,7 +2187,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 	uint32_t i, j, c, d; /* Iterative variables */
 	double pnorm, rnorm2;
 	/* Allocate memory for structures */
-	double *p = (double*)calloc(A->N, sizeof(double));
+	double *p = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	/* Deflation power method */
 	for (i=0; i<h; i++){
@@ -2228,7 +2245,7 @@ void vcn_sparse_eigen_power(const vcn_sparse_t* const A, int h,
 	}
 
 	/* Free memory */
-	free(p);
+	nb_free_mem(p);
 }
 
 int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
@@ -2254,8 +2271,8 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 	uint32_t i, j, c, d; /* Iterative variables */
 	double pnorm, rnorm2;
 	/* Allocate memory for structures */
-	double* p = (double*) calloc(A->N, sizeof(double));
-	double* z = (double*) calloc(A->N, sizeof(double));
+	double* p = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* z = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	/* Set M in A (copy ptr to modify const A, it will be restored) */
 	vcn_sparse_t* A_ptr_copy = (vcn_sparse_t*)A;
@@ -2353,8 +2370,8 @@ int vcn_sparse_eigen_ipower(const vcn_sparse_t *const A,
 		vcn_sparse_destroy(L);
 	}
 	/* Free memory */
-	free(p);
-	free(z);
+	nb_free_mem(p);
+	nb_free_mem(z);
 
 	return 0;
 }
@@ -2380,11 +2397,11 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	int i, j;
 
 	/* Declare structures and variables to be used */
-	double* alpha = (double*) calloc(A->N, sizeof(double));
-	double* beta = (double*) calloc(A->N, sizeof(double));
-	double* v = (double*) calloc(A->N, sizeof(double));
-	double* w = (double*) calloc(A->N, sizeof(double));
-	double* v_prev = (double*) calloc(A->N, sizeof(double));
+	double* alpha = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* beta = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* v = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
+	double* v_prev = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	*it = 0;
 	beta[*it] = 0;
@@ -2438,11 +2455,11 @@ void vcn_sparse_eigen_lanczos(const vcn_sparse_t* const A,
 	}
 
 	/* Free memory */
-	free(alpha);
-	free(beta);
-	free(w);
-	free(v);
-	free(v_prev);
+	nb_free_mem(alpha);
+	nb_free_mem(beta);
+	nb_free_mem(w);
+	nb_free_mem(v);
+	nb_free_mem(v_prev);
 }
 
 void vcn_sparse_eigen_givens(const double* const main_diag, 
@@ -2465,7 +2482,7 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 	/* Iterative variables */
 	int l;
 	/* Intitialize and allocate structures */
-	double* p = (double*)calloc(N+1, sizeof(double));
+	double* p = nb_allocate_zero_mem((N+1) * sizeof(double));
 
 	/* Init algorithm */
 	int k = N;
@@ -2515,7 +2532,7 @@ void vcn_sparse_eigen_givens(const double* const main_diag,
 	}
 
 	/* Free memory */
-	free(p);
+	nb_free_mem(p);
 }
 
 /* Meta-functions */
@@ -2558,7 +2575,7 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
 		 *
 		 * info[4] <- Name length + 1
 		 */
-		char* name = malloc(info[4] * sizeof(char));
+		char* name = nb_allocate_mem(info[4] * sizeof(char));
 		/* Read name */
 		if(fread(name, sizeof(char), info[4], pfile) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
@@ -2594,9 +2611,9 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
 					printf("ERROR: Complex numbers unsupported.\n");
 					exit(1);
 				}
-				double *irows = (double*)malloc(nnz*sizeof(double));
-				double *icols = (double*)malloc(nnz*sizeof(double));
-				double *values = (double*)malloc(nnz*sizeof(double));
+				double *irows = (double*)nb_allocate_mem(nnz*sizeof(double));
+				double *icols = (double*)nb_allocate_mem(nnz*sizeof(double));
+				double *values = (double*)nb_allocate_mem(nnz*sizeof(double));
 				double N;
 				/* Read row's index */
 				if(fread(irows, sizeof(double), nnz, pfile) == 0){
@@ -2609,9 +2626,9 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
 					exit(1);
 				}
 				A->N = (uint32_t)N;
-				A->rows_values = (double**)malloc(A->N*sizeof(void*));
-				A->rows_index = (uint32_t**)malloc(A->N*sizeof(void*));
-				A->rows_size = (uint32_t*)calloc(A->N,sizeof(uint32_t));
+				A->rows_values = (double**)nb_allocate_mem(A->N*sizeof(void*));
+				A->rows_index = (uint32_t**)nb_allocate_mem(A->N*sizeof(void*));
+				A->rows_size = (uint32_t*)nb_allocate_zero_mem(A->N * sizeof(uint32_t));
 
 				/* Read col's index */
 				if(fread(icols, sizeof(double), nnz, pfile) == 0){
@@ -2631,13 +2648,13 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
 					exit(1);
 				}
 
-				uint32_t* rows_icol = (uint32_t*)calloc(N,sizeof(uint32_t));
+				uint32_t* rows_icol = nb_allocate_zero_mem(N * sizeof(uint32_t));
 				for(i=0; i< nnz; i++)
 					A->rows_size[(uint32_t)irows[i]-1]++;
 	
 				for(i=0; i< N; i++){
-					A->rows_index[i] = (uint32_t*)calloc(A->rows_size[i],sizeof(uint32_t));
-					A->rows_values[i] = (double*)calloc(A->rows_size[i],sizeof(double));
+					A->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(uint32_t));
+					A->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(double));
 				}
 
 				for(i=0; i<nnz; i++){
@@ -2653,17 +2670,17 @@ void vcn_sparse_read_mat4(vcn_sparse_t *A, const char *url, char *label){
 						  sizeof(uint32_t), vcn_compare_uint32);
 
 				/* Free memory */
-				free(irows);
-				free(icols);
-				free(values);
-				free(rows_icol);
+				nb_free_mem(irows);
+				nb_free_mem(icols);
+				nb_free_mem(values);
+				nb_free_mem(rows_icol);
 			}
 		}else{
 			printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
 			exit(1);
 		}
 		/* Free memory */
-		free(name);
+		nb_free_mem(name);
 	}
 	/* Close file */
 	fclose(pfile);
@@ -2700,9 +2717,9 @@ void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
 	char end_label = '\0';
 	fwrite(&end_label, sizeof(char), 1, pfile);
 	/* Write sparse matrix data */
-	double** data = (double**)malloc(nnz*sizeof(void*));
+	double** data = (double**)nb_allocate_mem(nnz*sizeof(void*));
 	for(i=0; i<nnz; i++)
-		data[i] = (double*)malloc(3*sizeof(double));
+		data[i] = (double*)nb_allocate_mem(3*sizeof(double));
 	uint32_t idata = 0;
 	for(i=0; i< A->N; i++){
 		for(j=0; j< A->rows_size[i]; j++){
@@ -2715,9 +2732,9 @@ void vcn_sparse_save_mat4(const vcn_sparse_t *const A,
 	/* Sort vectors by column and then by rows for octave compability */
 	qsort(data, nnz, sizeof(double*), meta_compare_data_bycol_2);/* TEMPORAL: Use nb_qsort */
 	/* Convert data to vectors to write in octave file */
-	double* irows = (double*)malloc(nnz*sizeof(double));
-	double* icols = (double*)malloc(nnz*sizeof(double));
-	double* values = (double*)malloc(nnz*sizeof(double));
+	double* irows = (double*)nb_allocate_mem(nnz*sizeof(double));
+	double* icols = (double*)nb_allocate_mem(nnz*sizeof(double));
+	double* values = (double*)nb_allocate_mem(nnz*sizeof(double));
 	for(i=0; i < nnz; i++){
 		icols[i] = data[i][0]+1;
 		irows[i] = data[i][1]+1;
@@ -2772,7 +2789,7 @@ void vcn_mat4_printf(const char *url)
 		 *
 		 * info[4] <- Name length + 1
 		 */
-		char* name = malloc(info[4]*sizeof(char));
+		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
 		if(fread(name, sizeof(char), info[4], pfile) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
@@ -2850,7 +2867,7 @@ void vcn_mat4_printf(const char *url)
 			exit(1);
 		}
 		/* Free memory */
-		free(name);
+		nb_free_mem(name);
 	}
 	/* Close file */
 	fclose(pfile);
@@ -2887,7 +2904,7 @@ short vcn_mat4_exist(const char *url, char* label)
 		 *
 		 * info[4] <- Name length + 1
 		 */
-		char* name = malloc(info[4]*sizeof(char));
+		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
 		if(fread(name, sizeof(char), info[4], pfile) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
@@ -2912,7 +2929,7 @@ short vcn_mat4_exist(const char *url, char* label)
 			exit(1);
 		}
 		/* Free memory */
-		free(name);
+		nb_free_mem(name);
 	}
 	/* Close file */
 	fclose(pfile);
@@ -2955,7 +2972,7 @@ void vcn_mat4_read_vec(const char *url, char *label, double *_x)
 		 *
 		 * info[4] <- Name length + 1
 		 */
-		char* name = malloc(info[4]*sizeof(char));
+		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
 		if(fread(name, sizeof(char), info[4], pfile) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
@@ -2990,7 +3007,7 @@ void vcn_mat4_read_vec(const char *url, char *label, double *_x)
 					size = info[2];
 				else
 					size = info[1];
-				_x = (double*)calloc(size, sizeof(double));
+				_x = (double*)nb_allocate_zero_mem(size * sizeof(double));
 				if(fread(_x, sizeof(double), size, pfile) == 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
@@ -3007,7 +3024,7 @@ void vcn_mat4_read_vec(const char *url, char *label, double *_x)
 			exit(1);
 		}
 		/* Free memory */
-		free(name);
+		nb_free_mem(name);
 	}
 	/* Close file */
 	fclose(pfile);
@@ -3075,7 +3092,7 @@ void vcn_mat4_read_mtx(const char *url, char *label, double *_A){
 		 *
 		 * info[4] <- Name length + 1
 		 */
-		char* name = malloc(info[4]*sizeof(char));
+		char* name = nb_allocate_mem(info[4]*sizeof(char));
 
 		/* Read name */
 		if(fread(name, sizeof(char), info[4], pfile) == 0){
@@ -3107,7 +3124,7 @@ void vcn_mat4_read_mtx(const char *url, char *label, double *_A){
 				found = 1;
 				/* Initialize vector */
 				uint32_t N = info[1];
-				_A = (double*)calloc(N*N,sizeof(double));
+				_A = nb_allocate_zero_mem(POW2(N) * sizeof(double));
 				if(fread(_A, sizeof(double), N*N, pfile) == 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
@@ -3124,7 +3141,7 @@ void vcn_mat4_read_mtx(const char *url, char *label, double *_A){
 			exit(1);
 		}
 		/* Free memory */
-		free(name);
+		nb_free_mem(name);
 	}
 	/* Close file */
 	fclose(pfile);
@@ -3159,7 +3176,7 @@ void vcn_mat4_write_mtx(const char *url, char *label,
 	char end_label = '\0';
 	fwrite(&end_label, sizeof(char), 1, pfile);
 	/* Transpose matrix */
-	double* At = (double*) calloc(N*N, sizeof(double));
+	double* At = nb_allocate_zero_mem(POW2(N) * sizeof(double));
 	uint32_t i, j;
 	for(i=0; i < N; i++)
 		for(j=0; j < N; j++)
@@ -3167,7 +3184,7 @@ void vcn_mat4_write_mtx(const char *url, char *label,
 
 	/* Write matrix values */
 	fwrite(At, sizeof(double), N*N, pfile);
-	free(At);
+	nb_free_mem(At);
 	/* Close file */
 	fclose(pfile);
 }
