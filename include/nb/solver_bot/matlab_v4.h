@@ -1,7 +1,7 @@
 #ifndef __NB_SOLVER_BOT_MATLAB_V4_H__
 #define __NB_SOLVER_BOT_MATLAB_V4_H__
 
-#include "nb/solver_bot/sparse.h"
+#include "nb/solver_bot/sparse/sparse.h"
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
-#ifndef __NB_SOLVER_BOT_SPARSE_H__
-#define __NB_SOLVER_BOT_SPARSE_H__
+#ifndef __NB_SOLVER_BOT_SPARSE_SPARSE_H__
+#define __NB_SOLVER_BOT_SPARSE_SPARSE_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -54,12 +54,6 @@ void vcn_sparse_multiply_vector(const vcn_sparse_t* A, const double* in,
 				double* out, uint32_t omp_parallel_threads);
   
 void nb_sparse_get_graph(const vcn_sparse_t* A, nb_graph_t *graph);
-
-/* Functions to explore sparse matrix */
-int vcn_sparse_spy_plot_as_png(const vcn_sparse_t *const A,
-			       const char* url, uint32_t size,
-			       bool enable_zeros_allocated,
-			       bool enable_color);
 
 /* Set Dirichlet condition in the system */
 void vcn_sparse_set_Dirichlet_condition(vcn_sparse_t* A, double* RHS,

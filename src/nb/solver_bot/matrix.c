@@ -9,7 +9,7 @@
 #include "nb/container_bot/array.h"
 #include "nb/solver_bot/matrix.h"
 
-#include "sparse_struct.h"
+#include "sparse/sparse_struct.h"
 
 #define POW2(a) ((a)*(a))
 

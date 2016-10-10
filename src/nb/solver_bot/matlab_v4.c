@@ -8,10 +8,10 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 
-#include "nb/solver_bot/sparse.h"
+#include "nb/solver_bot/sparse/sparse.h"
 #include "nb/solver_bot/matlab_v4.h"
 
-#include "sparse_struct.h"
+#include "sparse/sparse_struct.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define POW2(a) ((a)*(a))
