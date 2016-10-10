@@ -40,14 +40,14 @@ static void test_render_ascii(void)
 	char filename[100];
 	sprintf(filename, "%s/%s", INPUTS_DIR, "jessica.jpg");
 	
-	vcn_image_t *img = nb_allocate_on_stack(vcn_image_get_memsize());
-	vcn_image_init(img);
-	vcn_image_read(img, filename);
-	vcn_image_write_ascii(img, "../../../jessica030.txt", 30);
-	vcn_image_write_ascii(img, "../../../jessica050.txt", 50);
-	vcn_image_write_ascii(img, "../../../jessica075.txt", 75);
-	vcn_image_write_ascii(img, "../../../jessica100.txt", 100);
-	vcn_image_finish(img);
+	nb_image_t *img = nb_allocate_on_stack(nb_image_get_memsize());
+	nb_image_init(img);
+	nb_image_read(img, filename);
+	nb_image_write_ascii(img, "../../../jessica030.txt", 30);
+	nb_image_write_ascii(img, "../../../jessica050.txt", 50);
+	nb_image_write_ascii(img, "../../../jessica075.txt", 75);
+	nb_image_write_ascii(img, "../../../jessica100.txt", 100);
+	nb_image_finish(img);
 	/* TEMPORAL: this test is not checked */
 	CU_ASSERT(true);
 }

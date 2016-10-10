@@ -385,7 +385,7 @@ static bool all_trg_are_delaunay(nb_mesh_t *mesh)
 
 	bool (*inside)(const double v1[2], const double v2[2],
 		       const double v3[2], const double p[2]) =
-		vcn_utils2D_pnt_lies_strictly_in_circumcircle;
+		nb_utils2D_pnt_lies_strictly_in_circumcircle;
 	bool all_delaunay = true;
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);
 	for (uint32_t i = 0; i < N_elems; i++) {

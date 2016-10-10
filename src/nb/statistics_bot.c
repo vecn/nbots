@@ -12,13 +12,13 @@
 #include "nb/container_bot/array.h"
 #include "nb/statistics_bot.h"
 
-inline uint32_t vcn_statistics_get_seed(void)
+inline uint32_t nb_statistics_get_seed(void)
 {
 	srand(time(0));
 	return rand();	
 }
 
-inline uint32_t vcn_statistics_lcg(uint32_t seed)
+inline uint32_t nb_statistics_lcg(uint32_t seed)
 /* Linear congruencial generator (Park and Miller 1988) */
 {
 	if (0 == seed)
@@ -26,18 +26,18 @@ inline uint32_t vcn_statistics_lcg(uint32_t seed)
 	return ((uint64_t)seed * 48271UL) % 2147483647UL;
 }
 
-void vcn_statistics_random_permutation(uint32_t N, void *base, 
+void nb_statistics_random_permutation(uint32_t N, void *base, 
 				       uint16_t type_size)
 {	
-	uint32_t rseed = vcn_statistics_get_seed();
+	uint32_t rseed = nb_statistics_get_seed();
 	for (uint32_t i = 0; i < N; i++) {
 		uint32_t k = rseed % N;
-		rseed = vcn_statistics_lcg(rseed);
-		vcn_swap(base, i, k, type_size);
+		rseed = nb_statistics_lcg(rseed);
+		nb_swap(base, i, k, type_size);
 	}
 }
 
-void vcn_statistics_runif(int n, double min, double max, 
+void nb_statistics_runif(int n, double min, double max, 
 			  double *const restrict out,
 			  uint64_t *const restrict seed)
 {
@@ -56,7 +56,7 @@ void vcn_statistics_runif(int n, double min, double max,
 	}
 }
 
-void vcn_statistics_rnorm(int n, double mean, double var,
+void nb_statistics_rnorm(int n, double mean, double var,
 			  double *const restrict out,
 			  uint64_t *const restrict seed1, 
 			  uint64_t *const restrict seed2)
@@ -67,8 +67,8 @@ void vcn_statistics_rnorm(int n, double mean, double var,
 	const int m = (int)(n * 0.5 + 0.5);
 	double *const restrict U = nb_allocate_mem(m * sizeof(double));
 	double *const restrict V = nb_allocate_mem(m * sizeof(double));
-	vcn_statistics_runif(m, 0.0, 1.0, U, seed1);
-	vcn_statistics_runif(m, 0.0, 1.0, V, seed2);
+	nb_statistics_runif(m, 0.0, 1.0, U, seed1);
+	nb_statistics_runif(m, 0.0, 1.0, V, seed2);
 	for (uint32_t i = 0; i < m; i++) {
 		out[i*2] = mean + sqrt(-2.0 * log(U[i])) * 
 			cos(2.0 * NB_MATH_PI * V[i]) * var;

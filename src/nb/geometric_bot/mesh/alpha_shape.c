@@ -53,7 +53,7 @@ static void get_alpha_complex(nb_mesh_t *mesh, double alpha)
 	nb_iterator_set_container(iter, mesh->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		double cr = vcn_utils2D_get_circumradius(trg->v1->x,
+		double cr = nb_utils2D_get_circumradius(trg->v1->x,
 							 trg->v2->x,
 							 trg->v3->x);
 		if (cr > r)
@@ -104,7 +104,7 @@ static double get_minmax_radius(const nb_mesh_t *mesh)
 	
 	msh_trg_t *t_minmax = get_max_trg(max_t, N_vtx, min_v);
 
-	double r_minmax = vcn_utils2D_get_circumradius(t_minmax->v1->x,
+	double r_minmax = nb_utils2D_get_circumradius(t_minmax->v1->x,
 						       t_minmax->v2->x,
 						       t_minmax->v3->x);
 	nb_soft_free_mem(memsize, memblock);

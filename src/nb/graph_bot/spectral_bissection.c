@@ -12,22 +12,22 @@
 static int8_t compare_sb(const void *const A, const void *const B,
 			 const void *const data);
 
-static vcn_sparse_t* sb_build_laplacian(const nb_graph_t *const graph);
+static nb_sparse_t* sb_build_laplacian(const nb_graph_t *const graph);
 static uint32_t* sb_partition(const nb_graph_t *const graph, uint32_t k,
 			  uint32_t N_perm, uint32_t *perm);
 
 
-static vcn_sparse_t* sb_build_laplacian(const nb_graph_t *graph)
+static nb_sparse_t* sb_build_laplacian(const nb_graph_t *graph)
 {
-	vcn_sparse_t* B = vcn_sparse_create(graph, NULL, 1);
+	nb_sparse_t* B = nb_sparse_create(graph, NULL, 1);
 	for (uint32_t i = 0; i < graph->N; i++) {
-		vcn_sparse_add(B, i, i, 1e-9); /* Damping to the matrix */
+		nb_sparse_add(B, i, i, 1e-9); /* Damping to the matrix */
 		for (uint32_t j = 0; j < graph->N_adj[i]; j++) {
 			double wij = 1.0;
 			if (graph->wij != NULL)
 				wij = graph->wij[i][j];
-			vcn_sparse_add(B, i, i, wij);
-			vcn_sparse_add(B, i, graph->adj[i][j], -wij);
+			nb_sparse_add(B, i, i, wij);
+			nb_sparse_add(B, i, graph->adj[i][j], -wij);
 		}
 	}
 	return B;
@@ -49,7 +49,7 @@ static int8_t compare_sb(const void *const A, const void *const B,
 static uint32_t* sb_partition(const nb_graph_t *const __restrict graph, 
 			  uint32_t k, uint32_t N_perm, uint32_t *perm)
 {
-	vcn_sparse_t* B = sb_build_laplacian(graph);
+	nb_sparse_t* B = sb_build_laplacian(graph);
 
 	/* Compute eigenvector with second nondecreasing eigenvalue */
 	double* eigen_vals = nb_allocate_mem(2 * sizeof(*eigen_vals));
@@ -58,16 +58,16 @@ static uint32_t* sb_partition(const nb_graph_t *const __restrict graph,
 	eigen_vecs[1] = nb_allocate_mem(graph->N * sizeof(*eigen_vecs[1]));
 
 	int iter; /* TEMPORAL: Unused */
-	vcn_sparse_eigen_ipower(B, NB_SOLVER_LUD,
+	nb_sparse_eigen_ipower(B, NB_SOLVER_LUD,
 				2, 0.0, eigen_vecs, eigen_vals,
 				&iter, 1e-8, 1);
-	vcn_sparse_destroy(B);
+	nb_sparse_destroy(B);
 
 	uint32_t* p = (uint32_t*) nb_allocate_mem(graph->N * sizeof(uint32_t));
 	for (uint32_t i = 0; i < graph->N; i++)
 		p[i] = i;
 
-	vcn_qsort_wd(p, graph->N, sizeof(*p), compare_sb, eigen_vecs[0]);
+	nb_qsort_wd(p, graph->N, sizeof(*p), compare_sb, eigen_vecs[0]);
 
 	nb_free_mem(eigen_vals);
 	nb_free_mem(eigen_vecs[0]);

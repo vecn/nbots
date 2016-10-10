@@ -5,14 +5,14 @@
 #include <stdbool.h>
 #include "nb/container_bot/container.h"
 
-typedef struct vcn_point2D_s {
+typedef struct nb_point2D_s {
 	double x[2];
 	void* attr;
-} vcn_point2D_t;
+} nb_point2D_t;
 
-vcn_point2D_t*  vcn_point2D_create(void);
-void vcn_point2D_destroy(void *point_ptr);
-int8_t vcn_point2D_compare(const void *const p1_ptr,
+nb_point2D_t*  nb_point2D_create(void);
+void nb_point2D_destroy(void *point_ptr);
+int8_t nb_point2D_compare(const void *const p1_ptr,
 			   const void *const p2_ptr);
 
 #endif

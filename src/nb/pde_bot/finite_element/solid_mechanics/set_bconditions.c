@@ -35,21 +35,21 @@ static void set_neumann_vtx(const nb_partition_t *part,
 			    const nb_bcond_t *const bcond, 
 			    double factor);
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      vcn_sparse_t* K, double* F, 
+			      nb_sparse_t* K, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor);
 static void set_dirichlet(const nb_partition_t *part,
-			  vcn_sparse_t* K, uint8_t N_dof,
+			  nb_sparse_t* K, uint8_t N_dof,
 			  double* F, double factor,
 			  nb_bcond_iter_t *iter,
 			  uint32_t vtx_id);
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      vcn_sparse_t* K, double* F, 
+			      nb_sparse_t* K, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor);
 
 void nb_fem_set_bconditions(const nb_partition_t *part,
-			    vcn_sparse_t* K, double* F, 
+			    nb_sparse_t* K, double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor)
 {
@@ -190,7 +190,7 @@ static void set_neumann_vtx(const nb_partition_t *part,
 }
 
 static void set_dirichlet_sgm(const nb_partition_t *part,
-			      vcn_sparse_t* K,
+			      nb_sparse_t* K,
 			      double* F, 
 			      const nb_bcond_t *const bcond,
 			      double factor)
@@ -216,7 +216,7 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 }
 
 static void set_dirichlet(const nb_partition_t *part,
-			  vcn_sparse_t* K, uint8_t N_dof,
+			  nb_sparse_t* K, uint8_t N_dof,
 			  double* F, double factor,
 			  nb_bcond_iter_t *iter,
 			  uint32_t vtx_id)
@@ -231,14 +231,14 @@ static void set_dirichlet(const nb_partition_t *part,
 		bool mask = nb_bcond_iter_get_mask(iter, j);
 		if (mask) {
 			uint32_t mtx_id = vtx_id * N_dof + j;
-			vcn_sparse_set_Dirichlet_condition(K, F, mtx_id,
+			nb_sparse_set_Dirichlet_condition(K, F, mtx_id,
 							   factor * val[j]);
 		}
 	}
 }
 
 static void set_dirichlet_vtx(const nb_partition_t *part,
-			      vcn_sparse_t* K,
+			      nb_sparse_t* K,
 			      double* F, 
 			      const nb_bcond_t *const bcond,
 			      double factor)

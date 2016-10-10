@@ -18,7 +18,7 @@ typedef enum {
 	CLEAN = 0, INFECTED
 } mtrg_status_t;
 
-typedef vcn_point2D_t msh_vtx_t;
+typedef nb_point2D_t msh_vtx_t;
 typedef struct msh_edge_s msh_edge_t;
 typedef struct msh_trg_s msh_trg_t;
 
@@ -86,7 +86,7 @@ struct nb_mesh_s {
 				 * linked list containing the subsegments
 				 * forming this input segment. */
 	/* Data structures to handle mesh */
-	vcn_bins2D_t* ug_vtx;       /* Grid to sort vertices */
+	nb_bins2D_t* ug_vtx;       /* Grid to sort vertices */
 	nb_container_t* ht_trg;   /* Hash table of triangles */
 	nb_container_t* ht_edge;   /* Hash table of segments */
 

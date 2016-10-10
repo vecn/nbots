@@ -5,7 +5,7 @@
 
 #include "nb/exceptions.h"
 
-struct  vcn_exception_s {
+struct  nb_exception_s {
 	jmp_buf buf; /* Used in the try/catch statements */
 	int id;      /* Used to identify the exception */
 	char* info;  /* Info about the exception */
@@ -15,41 +15,41 @@ struct  vcn_exception_s {
 
 static void destroy_allocation(void *allocation);
 
-inline void* vcn_exception_try_USE_MACRO_INSTEAD_OF_THIS
-	(vcn_exception_t *exception)
+inline void* nb_exception_try_USE_MACRO_INSTEAD_OF_THIS
+	(nb_exception_t *exception)
 {
   return exception->buf;
 }
 
-vcn_exception_t* vcn_exception_create()
+nb_exception_t* nb_exception_create()
 {
-	return nb_allocate_zero_mem(sizeof(vcn_exception_t));
+	return nb_allocate_zero_mem(sizeof(nb_exception_t));
 }
 
-void vcn_exception_destroy(vcn_exception_t *exception)
+void nb_exception_destroy(nb_exception_t *exception)
 {
-	vcn_exception_clear_alloc(exception);
+	nb_exception_clear_alloc(exception);
 	nb_free_mem(exception);
 }
 
-void vcn_exception_throw(vcn_exception_t *exception, int id, void *info)
+void nb_exception_throw(nb_exception_t *exception, int id, void *info)
 {
 	exception->id = id;
 	exception->info = info;
 	longjmp(exception->buf, 1);    
 }
 
-int vcn_exception_get_id(vcn_exception_t *exception)
+int nb_exception_get_id(nb_exception_t *exception)
 {
 	return exception->id;
 }
 
-char* vcn_exception_get_info(vcn_exception_t *exception)
+char* nb_exception_get_info(nb_exception_t *exception)
 {
   return exception->info;
 }
 
-void vcn_exception_set_alloc(vcn_exception_t *exception,
+void nb_exception_set_alloc(nb_exception_t *exception,
 			     void* ptr, void (*nb_free)(void*))
 {
 	nb_container_t *list = exception->memory_handler;
@@ -63,7 +63,7 @@ void vcn_exception_set_alloc(vcn_exception_t *exception,
 	nb_container_insert(list, alloc_and_free);
 }
 
-void vcn_exception_clear_alloc(vcn_exception_t *exception)
+void nb_exception_clear_alloc(nb_exception_t *exception)
 {
 	nb_container_t *list = exception->memory_handler;
 	if (NULL != list) {

@@ -31,7 +31,7 @@ static int suite_clean(void)
 
 static void test_load_from_mesh(void)
 {
-	nb_model_t *model  = nb_allocate_on_stack(vcn_model_get_memsize());
+	nb_model_t *model  = nb_allocate_on_stack(nb_model_get_memsize());
 	model->N = 5;
 	model->M = 5;
 	model->H = 0;

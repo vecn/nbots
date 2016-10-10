@@ -191,8 +191,8 @@ static void normalize_values(double *normalized_values,
 {
 	uint32_t min_id;
 	uint32_t max_id;
-	vcn_array_get_min_max_ids(values, N, sizeof(*values),
-				  vcn_compare_double,
+	nb_array_get_min_max_ids(values, N, sizeof(*values),
+				  nb_compare_double,
 				  &(min_id), &(max_id));
 
 	double min = values[min_id];

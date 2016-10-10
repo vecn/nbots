@@ -24,20 +24,20 @@ static void build_dynamic_graph(const nb_model_t *model,
 static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
 			  nb_graph_t *graph);
 
-uint16_t vcn_model_get_memsize(void)
+uint16_t nb_model_get_memsize(void)
 {
-	return sizeof(vcn_model_t);
+	return sizeof(nb_model_t);
 }
 
-void vcn_model_init(void *model_ptr)
+void nb_model_init(void *model_ptr)
 {
-	memset(model_ptr, 0, vcn_model_get_memsize());
+	memset(model_ptr, 0, nb_model_get_memsize());
 }
 
-void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
+void nb_model_copy(void *model_ptr, const void *src_model_ptr)
 {
-	vcn_model_t *model = model_ptr;
-	const vcn_model_t *src_model = src_model_ptr;
+	nb_model_t *model = model_ptr;
+	const nb_model_t *src_model = src_model_ptr;
 
 	model->N = src_model->N;
 	if (0 < model->N) {
@@ -61,40 +61,40 @@ void vcn_model_copy(void *model_ptr, const void *src_model_ptr)
 	}
 }
 
-void vcn_model_finish(void *model_ptr)
+void nb_model_finish(void *model_ptr)
 {
-	vcn_model_clear(model_ptr);
+	nb_model_clear(model_ptr);
 }
 
-void* vcn_model_create(void)
+void* nb_model_create(void)
 {
-	vcn_model_t *model = nb_allocate_mem_model();
-	vcn_model_init(model);
+	nb_model_t *model = nb_allocate_mem_model();
+	nb_model_init(model);
 	return model;
 }
 
 static inline void *nb_allocate_mem_model(void)
 {
-	uint32_t size = vcn_model_get_memsize();
+	uint32_t size = nb_model_get_memsize();
 	return nb_allocate_mem(size);
 }
 
-void* vcn_model_clone(const void *model_ptr)
+void* nb_model_clone(const void *model_ptr)
 {
-	vcn_model_t *model = nb_allocate_mem_model();
-	vcn_model_copy(model, model_ptr);
+	nb_model_t *model = nb_allocate_mem_model();
+	nb_model_copy(model, model_ptr);
 	return model;
 }
 
-void vcn_model_destroy(void *model_ptr)
+void nb_model_destroy(void *model_ptr)
 {
-	vcn_model_finish(model_ptr);
+	nb_model_finish(model_ptr);
 	nb_free_mem(model_ptr);
 }
 
-void vcn_model_clear(void *model_ptr)
+void nb_model_clear(void *model_ptr)
 {
-	vcn_model_t *model = model_ptr;
+	nb_model_t *model = model_ptr;
 	if (0 < model->N)
 		nb_free_mem(model->vertex);
 	model->N = 0;
@@ -111,10 +111,10 @@ void vcn_model_clear(void *model_ptr)
 	model->holes = NULL;
 }
 
-vcn_model_t* vcn_model_load(const char* filename)
+nb_model_t* nb_model_load(const char* filename)
 {
 	/* OPPORTUNITY: Use custom format */
-	vcn_model_t* model = vcn_model_create();
+	nb_model_t* model = nb_model_create();
 	/* Open file and verify if exist */
 	FILE* fp = fopen(filename, "r");
 	if (NULL == fp)
@@ -162,7 +162,7 @@ vcn_model_t* vcn_model_load(const char* filename)
 	return model;
 }
 
-void vcn_model_load_from_farrays(vcn_model_t *model,
+void nb_model_load_from_farrays(nb_model_t *model,
 				 float vertices[], uint32_t N_vertices,
 				 uint32_t segments[], uint32_t N_segments,
 				 float holes[], uint32_t N_holes)
@@ -184,10 +184,10 @@ void vcn_model_load_from_farrays(vcn_model_t *model,
 	  model->holes[i] = holes[i];
 }
 
-vcn_model_t* vcn_model_create_rectangle(double x_min, double y_min,
+nb_model_t* nb_model_create_rectangle(double x_min, double y_min,
 					double x_max, double y_max)
 {
-	vcn_model_t* model = vcn_model_create();
+	nb_model_t* model = nb_model_create();
 	model->N = 4;
 	model->M = 4;
 	nb_model_alloc_vertices(model);
@@ -216,12 +216,12 @@ vcn_model_t* vcn_model_create_rectangle(double x_min, double y_min,
 	return model;
 }
 
-vcn_model_t* vcn_model_create_polygon(double radius,
+nb_model_t* nb_model_create_polygon(double radius,
 				      double x_center,
 				      double y_center,
 				      uint32_t N_sides)
 {
-	vcn_model_t *model = vcn_model_create();
+	nb_model_t *model = nb_model_create();
 	double angle_step = (NB_MATH_PI * 2.0) / N_sides;
 	model->N = N_sides;
 	model->M = N_sides;
@@ -237,7 +237,7 @@ vcn_model_t* vcn_model_create_polygon(double radius,
 	return model;
 }
 
-vcn_model_t* vcn_model_create_circle(double radius,
+nb_model_t* nb_model_create_circle(double radius,
 				     double x_center,
 				     double y_center,
 				     double side_length)
@@ -246,10 +246,10 @@ vcn_model_t* vcn_model_create_circle(double radius,
 	uint32_t n = (uint32_t) (perimeter / side_length + 0.5);
 	if (10 > n)
 		n = 10;
-	return vcn_model_create_polygon(radius, x_center, y_center, n);
+	return nb_model_create_polygon(radius, x_center, y_center, n);
 }
 
-uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename)
+uint8_t nb_model_save(const nb_model_t *const model, const char* filename)
 {
 	/* Open file and verify if exist */
 	FILE* fp = fopen(filename, "w");
@@ -281,7 +281,7 @@ uint8_t vcn_model_save(const vcn_model_t *const model, const char* filename)
 	return 0;
 }
 
-void vcn_model_load_vtx_graph(const vcn_model_t *const model,
+void nb_model_load_vtx_graph(const nb_model_t *const model,
 			      nb_graph_t *graph)
 {
 	uint32_t N = model->N;
@@ -363,7 +363,7 @@ static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
 	}
 }
 
-void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
+void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 {
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
@@ -380,7 +380,7 @@ void vcn_model_set_enveloped_areas_as_holes(vcn_model_t* model)
 	model->holes = holes;
 }
 
-bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
+bool nb_model_is_vtx_inside(const nb_model_t *const model,
 			     const double *const vtx)
 {
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
@@ -392,17 +392,17 @@ bool vcn_model_is_vtx_inside(const vcn_model_t *const model,
 	return is_inside;
 }
 
-void vcn_model_get_enveloping_box(const vcn_model_t *const model,
+void nb_model_get_enveloping_box(const nb_model_t *const model,
 				  double box[4])
 {
-	vcn_utils2D_get_enveloping_box(model->N, model->vertex,
+	nb_utils2D_get_enveloping_box(model->N, model->vertex,
 				       2 * sizeof(*(model->vertex)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 }
 
-double* vcn_model_get_holes(const vcn_model_t *const model, 
+double* nb_model_get_holes(const nb_model_t *const model, 
 			    uint32_t* N_holes /* Output */)
 {
 	double *holes;
@@ -417,7 +417,7 @@ double* vcn_model_get_holes(const vcn_model_t *const model,
 	return holes;
 }
 
-double* vcn_model_get_vertices(const vcn_model_t *const model, 
+double* nb_model_get_vertices(const nb_model_t *const model, 
 			       uint32_t* N_vertices /* Output */)
 {
 	double *vertices;
@@ -432,11 +432,11 @@ double* vcn_model_get_vertices(const vcn_model_t *const model,
 	return vertices;
 }
 
-uint32_t vcn_model_get_vertex_id(const vcn_model_t *const model, double* vtx)
+uint32_t nb_model_get_vertex_id(const nb_model_t *const model, double* vtx)
 {
 	uint32_t id = model->N;
 	for (uint32_t i = 0; i < model->N; i++) {
-		if (vcn_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
+		if (nb_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
 			id = i;
 			break;
 		}
@@ -444,7 +444,7 @@ uint32_t vcn_model_get_vertex_id(const vcn_model_t *const model, double* vtx)
 	return id;
 }
 
-double* vcn_model_get_vertex_coordinate(const vcn_model_t *const model, uint32_t id)
+double* nb_model_get_vertex_coordinate(const nb_model_t *const model, uint32_t id)
 {
 	double *vtx = NULL;
 	if (id < model->N) {
@@ -455,25 +455,25 @@ double* vcn_model_get_vertex_coordinate(const vcn_model_t *const model, uint32_t
 	return vtx;
 }
 
-uint32_t vcn_model_get_edge_id(const vcn_model_t *const model, double* edge_vertices)
+uint32_t nb_model_get_edge_id(const nb_model_t *const model, double* edge_vertices)
 {
 	uint32_t id = model->M;
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id1 = model->edge[i * 2];
 		uint32_t id2 = model->edge[i*2+1];
-		if (vcn_utils2D_get_dist2(edge_vertices, 
+		if (nb_utils2D_get_dist2(edge_vertices, 
 				 &(model->vertex[id1 * 2])) <
 		    NB_GEOMETRIC_TOL_POW2) {
-			if (vcn_utils2D_get_dist2(&(edge_vertices[2]), 
+			if (nb_utils2D_get_dist2(&(edge_vertices[2]), 
 					 &(model->vertex[id2*2])) <
 			    NB_GEOMETRIC_TOL_POW2) {
 				id = i;
 				break;
 			}
-		} else if (vcn_utils2D_get_dist2(edge_vertices, 
+		} else if (nb_utils2D_get_dist2(edge_vertices, 
 					&(model->vertex[id2 * 2])) <
 			   NB_GEOMETRIC_TOL_POW2){
-			if (vcn_utils2D_get_dist2(&(edge_vertices[2]), 
+			if (nb_utils2D_get_dist2(&(edge_vertices[2]), 
 					 &(model->vertex[id1*2])) <
 			    NB_GEOMETRIC_TOL_POW2) {
 				id = i;
@@ -483,7 +483,7 @@ uint32_t vcn_model_get_edge_id(const vcn_model_t *const model, double* edge_vert
 	}
 	return id;
 }
-double* vcn_model_get_edge_coordinates(const vcn_model_t *const model, uint32_t id)
+double* nb_model_get_edge_coordinates(const nb_model_t *const model, uint32_t id)
 {
 	double *sgm = NULL;
 	if(id < model->M) {
@@ -499,30 +499,30 @@ double* vcn_model_get_edge_coordinates(const vcn_model_t *const model, uint32_t 
 	return sgm;
 }
 
-uint32_t vcn_model_get_number_of_vertices(const vcn_model_t *const model)
+uint32_t nb_model_get_number_of_vertices(const nb_model_t *const model)
 {
 	return model->N;
 }
 
-uint32_t vcn_model_get_N_edges(const vcn_model_t *const model)
+uint32_t nb_model_get_N_edges(const nb_model_t *const model)
 {
 	return model->M;
 }
 
-uint32_t vcn_model_get_number_of_hole_seeds(const vcn_model_t *const model)
+uint32_t nb_model_get_number_of_hole_seeds(const nb_model_t *const model)
 {
 	return model->H;
 }
 
-double vcn_model_get_length_of_ith_edge(const vcn_model_t* model, uint32_t i)
+double nb_model_get_length_of_ith_edge(const nb_model_t* model, uint32_t i)
 {
 	uint32_t v1 = model->edge[i * 2];
 	uint32_t v2 = model->edge[i*2+1];
-	return vcn_utils2D_get_dist(&(model->vertex[v1*2]),
+	return nb_utils2D_get_dist(&(model->vertex[v1*2]),
 			&(model->vertex[v2*2]));
 }
 
-double vcn_model_get_area(const vcn_model_t *const model)
+double nb_model_get_area(const nb_model_t *const model)
 {
 	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
 	nb_mesh_init(mesh);
@@ -532,13 +532,13 @@ double vcn_model_get_area(const vcn_model_t *const model)
 	return area;
 }
 
-double vcn_model_get_sum_of_sgm_length(const vcn_model_t *const model)
+double nb_model_get_sum_of_sgm_length(const nb_model_t *const model)
 {
 	double sum = 0.0;
 	for (uint32_t i = 0; i < model->M; i++) {
 		uint32_t id1 = model->edge[i * 2];
 		uint32_t id2 = model->edge[i*2+1];
-		sum += vcn_utils2D_get_dist(&(model->vertex[id1 * 2]),
+		sum += nb_utils2D_get_dist(&(model->vertex[id1 * 2]),
 				&(model->vertex[id2 * 2]));
 	}
 	return sum;

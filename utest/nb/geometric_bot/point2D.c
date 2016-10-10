@@ -33,27 +33,27 @@ static int suite_clean(void)
 
 static void test_create(void)
 {
-	vcn_point2D_t *p = vcn_point2D_create();
+	nb_point2D_t *p = nb_point2D_create();
 	bool is_ok = (0 == p->x[0]) && (0 == p->x[1]) &&
 		(NULL == p->attr);
-	vcn_point2D_destroy(p);
+	nb_point2D_destroy(p);
 	CU_ASSERT(is_ok);
 }
 
 static void test_destroy(void)
 {
-	vcn_point2D_t *p = vcn_point2D_create();
-	vcn_point2D_destroy(p);
+	nb_point2D_t *p = nb_point2D_create();
+	nb_point2D_destroy(p);
 	CU_ASSERT(true);
 }
 
 static void test_compare(void)
 {
-	vcn_point2D_t p1;
-	vcn_point2D_t p2;
+	nb_point2D_t p1;
+	nb_point2D_t p2;
 	p1.x[0] = 1.0 + 1e-16;
 	p1.x[1] = 1.0 + 1e-16;
 	p2.x[0] = 1.0 - 1e-16;
 	p2.x[1] = 1.0 - 1e-16;
-	CU_ASSERT(0 == vcn_point2D_compare(&p1, &p2));
+	CU_ASSERT(0 == nb_point2D_compare(&p1, &p2));
 }

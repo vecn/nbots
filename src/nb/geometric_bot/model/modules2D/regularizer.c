@@ -17,11 +17,11 @@
 #define GET_1_EDGE_VTX(model, i) ((model)->edge[(i) * 2])
 #define GET_2_EDGE_VTX(model, i) ((model)->edge[(i)*2+1])
 
-static void init_matrix(const nb_model_t *model, vcn_sparse_t **A);
-static void assemble_system(const nb_model_t *model, vcn_sparse_t *A,
+static void init_matrix(const nb_model_t *model, nb_sparse_t **A);
+static void assemble_system(const nb_model_t *model, nb_sparse_t *A,
 			    double *b, double lambda);
 
-int vcn_model_regularize(vcn_model_t* model, double lambda,
+int nb_model_regularize(nb_model_t* model, double lambda,
 			 uint32_t N_fixed_vertices,
 			 uint32_t* fixed_vertices)
 {
@@ -30,7 +30,7 @@ int vcn_model_regularize(vcn_model_t* model, double lambda,
 	double* b = (void*) memblock;
 	memset(b, 0, 2 * model->N  * sizeof(*b));
     
-	vcn_sparse_t *A;
+	nb_sparse_t *A;
 	init_matrix(model, &A);
 
 	assemble_system(model, A, b, lambda);
@@ -39,38 +39,38 @@ int vcn_model_regularize(vcn_model_t* model, double lambda,
 	for (uint32_t i = 0; i < N_fixed_vertices; i++) {
 		uint32_t idx = fixed_vertices[i] * 2;
 		uint32_t idy = fixed_vertices[i]*2+1;
-		vcn_sparse_set_Dirichlet_condition(A, b, idx,
+		nb_sparse_set_Dirichlet_condition(A, b, idx,
 						   model->vertex[idx]);
-		vcn_sparse_set_Dirichlet_condition(A, b, idy,
+		nb_sparse_set_Dirichlet_condition(A, b, idy,
 						   model->vertex[idy]);
 	}
 
 	int solver_status = 
-		vcn_sparse_solve_CG_precond_Jacobi(A, b, model->vertex, 
-						   vcn_sparse_get_size(A),
+		nb_sparse_solve_CG_precond_Jacobi(A, b, model->vertex, 
+						   nb_sparse_get_size(A),
 						   1e-12, NULL, NULL, 1);
 
-	vcn_sparse_destroy(A);
+	nb_sparse_destroy(A);
 	nb_soft_free_mem(memsize, memblock);
 
 	return solver_status;
 }
 
-static void init_matrix(const nb_model_t *model, vcn_sparse_t **A)
+static void init_matrix(const nb_model_t *model, nb_sparse_t **A)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_graph_t *graph = (void*) memblock;
 	nb_graph_init(graph);
 	
-	vcn_model_load_vtx_graph(model, graph);
-	*A = vcn_sparse_create(graph, NULL, 2);
+	nb_model_load_vtx_graph(model, graph);
+	*A = nb_sparse_create(graph, NULL, 2);
 
 	nb_graph_finish(graph);
 	nb_soft_free_mem(memsize, memblock);
 }
 
-static void assemble_system(const nb_model_t *model, vcn_sparse_t *A,
+static void assemble_system(const nb_model_t *model, nb_sparse_t *A,
 			    double *b, double lambda)
 {
 	for (uint32_t i = 0; i < model->M; i++) {
@@ -86,17 +86,17 @@ static void assemble_system(const nb_model_t *model, vcn_sparse_t *A,
 		 *  |_  0   -l   0    1  _|           |_yj_|
 		 */
 
-		vcn_sparse_add(A, id_xi, id_xi, 1.0);
-		vcn_sparse_add(A, id_xi, id_xj, -lambda);
+		nb_sparse_add(A, id_xi, id_xi, 1.0);
+		nb_sparse_add(A, id_xi, id_xj, -lambda);
 
-		vcn_sparse_add(A, id_yi, id_yi, 1.0);
-		vcn_sparse_add(A, id_yi, id_yj, -lambda);
+		nb_sparse_add(A, id_yi, id_yi, 1.0);
+		nb_sparse_add(A, id_yi, id_yj, -lambda);
 
-		vcn_sparse_add(A, id_xj, id_xi, -lambda);
-		vcn_sparse_add(A, id_xj, id_xj, 1.0);
+		nb_sparse_add(A, id_xj, id_xi, -lambda);
+		nb_sparse_add(A, id_xj, id_xj, 1.0);
 
-		vcn_sparse_add(A, id_yj, id_yi, -lambda);
-		vcn_sparse_add(A, id_yj, id_yj, 1.0);
+		nb_sparse_add(A, id_yj, id_yi, -lambda);
+		nb_sparse_add(A, id_yj, id_yj, 1.0);
 
 		/* Assembly RHS vector */
 		b[id_xi] += (1.0 - lambda) * model->vertex[id_xi];

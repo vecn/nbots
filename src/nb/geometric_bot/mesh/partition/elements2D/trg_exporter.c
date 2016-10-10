@@ -32,7 +32,7 @@ static void set_input_sgm(const nb_mesh_t *const restrict mesh,
 void nb_mesh_export(const nb_mesh_t *const mesh,
 		     nb_trg_exporter_interface_t *exp)
 {
-	if (vcn_bins2D_is_empty(mesh->ug_vtx))
+	if (nb_bins2D_is_empty(mesh->ug_vtx))
 		goto EXIT;
 
 	mesh_enumerate_vtx((nb_mesh_t*)mesh);
@@ -66,23 +66,23 @@ EXIT:
 static void export_vertices(const nb_mesh_t *const restrict mesh,
 			    nb_trg_exporter_interface_t * restrict exp)
 {
-	uint32_t N_vtx = vcn_bins2D_get_length(mesh->ug_vtx);
+	uint32_t N_vtx = nb_bins2D_get_length(mesh->ug_vtx);
 	exp->set_N_vtx(exp->structure, N_vtx);
 	exp->allocate_vtx(exp->structure);
 
 	exp->start_vtx_access(exp->structure);
 
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		uint32_t id = mvtx_get_id(vtx);
 		double x = vtx->x[0]/mesh->scale + mesh->xdisp;
 		double y = vtx->x[1]/mesh->scale + mesh->ydisp;
 		exp->set_vtx(exp->structure, id, x, y);
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 
 	exp->stop_vtx_access(exp->structure);
 }

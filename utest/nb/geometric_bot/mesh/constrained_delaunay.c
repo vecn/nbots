@@ -347,7 +347,7 @@ static bool is_not_constrained(const double v1[2], const double v2[2],
 {
 	bool (*inside)(const double v1[2], const double v2[2],
 		       const double v3[2], const double p[2]) =
-		vcn_utils2D_pnt_lies_strictly_in_circumcircle;
+		nb_utils2D_pnt_lies_strictly_in_circumcircle;
 	bool is_constrained = true;
 	if (inside(v1, v2, v3, p))
 		is_constrained = input_constrains(input, v1, v2, v3, p);
@@ -383,7 +383,7 @@ static inline bool intersects(const double a1[2], const double a2[2],
 			      const double b1[2], const double b2[2])
 {
 	return (NB_INTERSECTED == 
-		vcn_utils2D_get_sgm_intersection(a1, a2, b1, b2, NULL));
+		nb_utils2D_get_sgm_intersection(a1, a2, b1, b2, NULL));
 }
 
 static bool check_get_cdelaunay_centipede(int N_pairs)

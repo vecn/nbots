@@ -125,21 +125,21 @@ static void test_array_get(void)
 {
 	uint8_t id = 2;
 	int8_t array[5] = {2, 4, 6, 8, 10};
-	int8_t *val = vcn_array_get(array, sizeof(*array), id);
+	int8_t *val = nb_array_get(array, sizeof(*array), id);
 	CU_ASSERT(array[id] == *val);
 }
 
 static void test_swap_with_int8_ieqj(void)
 {
 	int8_t array[3] = {1, 2, 3};
-	vcn_swap(array, 1, 1, sizeof(*array));
+	nb_swap(array, 1, 1, sizeof(*array));
 	CU_ASSERT(array[1] == 2);
 }
 
 static void test_swap_with_int8_igtj(void)
 {
 	int8_t array[3] = {1, 2, 3};
-	vcn_swap(array, 2, 0, sizeof(*array));
+	nb_swap(array, 2, 0, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -147,7 +147,7 @@ static void test_swap_with_int8_igtj(void)
 static void test_swap_with_int8_iltj(void)
 {
 	int8_t array[3] = {1, 2, 3};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -155,7 +155,7 @@ static void test_swap_with_int8_iltj(void)
 static void test_swap_with_int16(void)
 {
 	int16_t array[3] = {1, 2, 3};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -163,7 +163,7 @@ static void test_swap_with_int16(void)
 static void test_swap_with_int32(void)
 {
 	int32_t array[3] = {1, 2, 3};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -171,7 +171,7 @@ static void test_swap_with_int32(void)
 static void test_swap_with_int64(void)
 {
 	int64_t array[3] = {1, 2, 3};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -179,7 +179,7 @@ static void test_swap_with_int64(void)
 static void test_swap_with_uint8(void)
 {
 	uint8_t array[3] = {1U, 2U, 3U};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -187,7 +187,7 @@ static void test_swap_with_uint8(void)
 static void test_swap_with_uint16(void)
 {
 	uint16_t array[3] = {1U, 2U, 3U};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -195,7 +195,7 @@ static void test_swap_with_uint16(void)
 static void test_swap_with_uint32(void)
 {
 	uint32_t array[3] = {1U, 2U, 3U};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -203,7 +203,7 @@ static void test_swap_with_uint32(void)
 static void test_swap_with_uint64(void)
 {
 	uint64_t array[3] = {1U, 2U, 3U};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -211,7 +211,7 @@ static void test_swap_with_uint64(void)
 static void test_swap_with_float(void)
 {
 	float array[3] = {1.0f, 2.0f, 3.0f};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -219,7 +219,7 @@ static void test_swap_with_float(void)
 static void test_swap_with_double(void)
 {
 	double array[3] = {1.0, 2.0, 3.0};
-	vcn_swap(array, 0, 2, sizeof(*array));
+	nb_swap(array, 0, 2, sizeof(*array));
 	CU_ASSERT(array[0] == 3);
 	CU_ASSERT(array[2] == 1);
 }
@@ -230,7 +230,7 @@ static void test_qsort(void)
 	int8_t *array = calloc(N, sizeof(*array));
 	for (int i = 0; i < N; i++)
 		array[i] = N - i;
-	vcn_qsort(array, N, sizeof(*array), vcn_compare_int8);
+	nb_qsort(array, N, sizeof(*array), nb_compare_int8);
 	bool are_sorted = true;
 	for (int i = 1; i < N; i++) {
 		if (array[i-1] > array[i]) {
@@ -251,7 +251,7 @@ static void test_qsort_with_data(void)
 	data_t data;
 	data.f = sinf;
 
-	vcn_qsort_wd(array, N, sizeof(*array), compare_fnc, &data);
+	nb_qsort_wd(array, N, sizeof(*array), compare_fnc, &data);
 	bool are_sorted = true;
 	for (int i = 1; i < N; i++) {
 		if (data.f(array[i-1]) > data.f(array[i])) {
@@ -287,8 +287,8 @@ static void test_array_get_min(void)
 	for (int i = 0; i < N; i++)
 		array[i] = N - i;
 
-	uint32_t imin = vcn_array_get_min_id(array, N, sizeof(*array),
-					     vcn_compare_int8);
+	uint32_t imin = nb_array_get_min_id(array, N, sizeof(*array),
+					     nb_compare_int8);
 	bool success = (1 == array[imin]);
 	nb_free_mem(array);
 	CU_ASSERT(success);
@@ -303,7 +303,7 @@ static void test_array_get_min_with_data(void)
 	data_t data;
 	data.f = sqrtf;
 
-	uint32_t imin = vcn_array_get_min_id_wd(array, N, sizeof(*array),
+	uint32_t imin = nb_array_get_min_id_wd(array, N, sizeof(*array),
 						compare_fnc, &data);
 	bool success = fabsf(data.f(1.0f) - data.f(array[imin])) < 1e-5;
 	nb_free_mem(array);
@@ -317,8 +317,8 @@ static void test_array_get_max(void)
 	for (int i = 0; i < N; i++)
 		array[i] = N - i;
 
-	uint32_t imax = vcn_array_get_max_id(array, N, sizeof(*array),
-					     vcn_compare_int8);
+	uint32_t imax = nb_array_get_max_id(array, N, sizeof(*array),
+					     nb_compare_int8);
 	bool success = (N == array[imax]);
 	nb_free_mem(array);
 	CU_ASSERT(success);
@@ -333,7 +333,7 @@ static void test_array_get_max_with_data(void)
 	data_t data;
 	data.f = sqrtf;
 
-	uint32_t imax = vcn_array_get_max_id_wd(array, N, sizeof(*array),
+	uint32_t imax = nb_array_get_max_id_wd(array, N, sizeof(*array),
 						compare_fnc, &data);
 	bool success = fabsf(data.f((float)N) - data.f(array[imax])) < 1e-5;
 	nb_free_mem(array);
@@ -349,7 +349,7 @@ static void test_array_get_min_max(void)
 
 	uint32_t imin;
 	uint32_t imax;
-	vcn_array_get_min_max_ids(array, N, sizeof(*array), vcn_compare_int8,
+	nb_array_get_min_max_ids(array, N, sizeof(*array), nb_compare_int8,
 				  &imin, &imax);
 	bool success = (1 == array[imin]) && (N == array[imax]);
 	nb_free_mem(array);
@@ -367,7 +367,7 @@ static void test_array_get_min_max_with_data(void)
 
 	uint32_t imin;
 	uint32_t imax;
-	vcn_array_get_min_max_ids_wd(array, N, sizeof(*array),
+	nb_array_get_min_max_ids_wd(array, N, sizeof(*array),
 				     compare_fnc, &data, &imin, &imax);
 	bool success = 
 		(fabsf(data.f((float)1) - data.f(array[imin])) < 1e-5) &&
@@ -381,9 +381,9 @@ static void test_compare_char(void)
 	char a = 0;
 	char b = 0;
 	char c = 1;
-	int8_t cmp_eq = vcn_compare_char(&a, &b);
-	int8_t cmp_lt = vcn_compare_char(&b, &c);
-	int8_t cmp_gt = vcn_compare_char(&c, &a);
+	int8_t cmp_eq = nb_compare_char(&a, &b);
+	int8_t cmp_lt = nb_compare_char(&b, &c);
+	int8_t cmp_gt = nb_compare_char(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -394,9 +394,9 @@ static void test_compare_float(void)
 	float a = 0.0f;
 	float b = 0.0f;
 	float c = 1.0f;
-	int8_t cmp_eq = vcn_compare_float(&a, &b);
-	int8_t cmp_lt = vcn_compare_float(&b, &c);
-	int8_t cmp_gt = vcn_compare_float(&c, &a);
+	int8_t cmp_eq = nb_compare_float(&a, &b);
+	int8_t cmp_lt = nb_compare_float(&b, &c);
+	int8_t cmp_gt = nb_compare_float(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -407,9 +407,9 @@ static void test_compare_double(void)
 	double a = 0.0;
 	double b = 0.0;
 	double c = 1.0;
-	int8_t cmp_eq = vcn_compare_double(&a, &b);
-	int8_t cmp_lt = vcn_compare_double(&b, &c);
-	int8_t cmp_gt = vcn_compare_double(&c, &a);
+	int8_t cmp_eq = nb_compare_double(&a, &b);
+	int8_t cmp_lt = nb_compare_double(&b, &c);
+	int8_t cmp_gt = nb_compare_double(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -420,9 +420,9 @@ static void test_compare_int8(void)
 	int8_t a = 0;
 	int8_t b = 0;
 	int8_t c = 1;
-	int8_t cmp_eq = vcn_compare_int8(&a, &b);
-	int8_t cmp_lt = vcn_compare_int8(&b, &c);
-	int8_t cmp_gt = vcn_compare_int8(&c, &a);
+	int8_t cmp_eq = nb_compare_int8(&a, &b);
+	int8_t cmp_lt = nb_compare_int8(&b, &c);
+	int8_t cmp_gt = nb_compare_int8(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -433,9 +433,9 @@ static void test_compare_int16(void)
 	int16_t a = 0;
 	int16_t b = 0;
 	int16_t c = 1;
-	int8_t cmp_eq = vcn_compare_int16(&a, &b);
-	int8_t cmp_lt = vcn_compare_int16(&b, &c);
-	int8_t cmp_gt = vcn_compare_int16(&c, &a);
+	int8_t cmp_eq = nb_compare_int16(&a, &b);
+	int8_t cmp_lt = nb_compare_int16(&b, &c);
+	int8_t cmp_gt = nb_compare_int16(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -446,9 +446,9 @@ static void test_compare_int32(void)
 	int32_t a = 0;
 	int32_t b = 0;
 	int32_t c = 1;
-	int8_t cmp_eq = vcn_compare_int32(&a, &b);
-	int8_t cmp_lt = vcn_compare_int32(&b, &c);
-	int8_t cmp_gt = vcn_compare_int32(&c, &a);
+	int8_t cmp_eq = nb_compare_int32(&a, &b);
+	int8_t cmp_lt = nb_compare_int32(&b, &c);
+	int8_t cmp_gt = nb_compare_int32(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -459,9 +459,9 @@ static void test_compare_int64(void)
 	int64_t a = 0;
 	int64_t b = 0;
 	int64_t c = 1;
-	int8_t cmp_eq = vcn_compare_int64(&a, &b);
-	int8_t cmp_lt = vcn_compare_int64(&b, &c);
-	int8_t cmp_gt = vcn_compare_int64(&c, &a);
+	int8_t cmp_eq = nb_compare_int64(&a, &b);
+	int8_t cmp_lt = nb_compare_int64(&b, &c);
+	int8_t cmp_gt = nb_compare_int64(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -472,9 +472,9 @@ static void test_compare_uint8(void)
 	uint8_t a = 0U;
 	uint8_t b = 0U;
 	uint8_t c = 1U;
-	int8_t cmp_eq = vcn_compare_uint8(&a, &b);
-	int8_t cmp_lt = vcn_compare_uint8(&b, &c);
-	int8_t cmp_gt = vcn_compare_uint8(&c, &a);
+	int8_t cmp_eq = nb_compare_uint8(&a, &b);
+	int8_t cmp_lt = nb_compare_uint8(&b, &c);
+	int8_t cmp_gt = nb_compare_uint8(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -485,9 +485,9 @@ static void test_compare_uint16(void)
 	uint16_t a = 0U;
 	uint16_t b = 0U;
 	uint16_t c = 1U;
-	int8_t cmp_eq = vcn_compare_uint16(&a, &b);
-	int8_t cmp_lt = vcn_compare_uint16(&b, &c);
-	int8_t cmp_gt = vcn_compare_uint16(&c, &a);
+	int8_t cmp_eq = nb_compare_uint16(&a, &b);
+	int8_t cmp_lt = nb_compare_uint16(&b, &c);
+	int8_t cmp_gt = nb_compare_uint16(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -498,9 +498,9 @@ static void test_compare_uint32(void)
 	uint32_t a = 0U;
 	uint32_t b = 0U;
 	uint32_t c = 1U;
-	int8_t cmp_eq = vcn_compare_uint32(&a, &b);
-	int8_t cmp_lt = vcn_compare_uint32(&b, &c);
-	int8_t cmp_gt = vcn_compare_uint32(&c, &a);
+	int8_t cmp_eq = nb_compare_uint32(&a, &b);
+	int8_t cmp_lt = nb_compare_uint32(&b, &c);
+	int8_t cmp_gt = nb_compare_uint32(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);
@@ -511,9 +511,9 @@ static void test_compare_uint64(void)
 	uint64_t a = 0U;
 	uint64_t b = 0U;
 	uint64_t c = 1U;
-	int8_t cmp_eq = vcn_compare_uint64(&a, &b);
-	int8_t cmp_lt = vcn_compare_uint64(&b, &c);
-	int8_t cmp_gt = vcn_compare_uint64(&c, &a);
+	int8_t cmp_eq = nb_compare_uint64(&a, &b);
+	int8_t cmp_lt = nb_compare_uint64(&b, &c);
+	int8_t cmp_gt = nb_compare_uint64(&c, &a);
 	CU_ASSERT(cmp_eq == 0);
 	CU_ASSERT(cmp_lt == -1);
 	CU_ASSERT(cmp_gt == 1);

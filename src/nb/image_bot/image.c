@@ -59,55 +59,55 @@ enum {
 };
 
 static int get_format(const char *filename);
-static void image_write_default(const vcn_image_t *img, const char *filename);
+static void image_write_default(const nb_image_t *img, const char *filename);
 
 static const char *get_ascii_scale(void);
-static uint8_t get_block_luma(const vcn_image_t *img, uint32_t i, uint32_t j,
+static uint8_t get_block_luma(const nb_image_t *img, uint32_t i, uint32_t j,
 			      uint16_t block_width, uint16_t block_height);
 static char get_ascii_from_luma(uint8_t luma, const char *scale,
 				uint8_t *next_char);
-static uint8_t get_luma_1comp(const vcn_image_t *img, uint32_t r, uint32_t c);
-static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c);
-static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c);
-static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_1comp(const nb_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_2comp(const nb_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_3comp(const nb_image_t *img, uint32_t r, uint32_t c);
+static uint8_t get_luma_4comp(const nb_image_t *img, uint32_t r, uint32_t c);
 
-uint32_t vcn_image_get_memsize(void)
+uint32_t nb_image_get_memsize(void)
 {
-	return sizeof(vcn_image_t);
+	return sizeof(nb_image_t);
 }
 
-void vcn_image_init(vcn_image_t *img)
+void nb_image_init(nb_image_t *img)
 {
-	uint32_t memsize = vcn_image_get_memsize();
+	uint32_t memsize = nb_image_get_memsize();
 	memset(img, 0, memsize);
 }
 
-void vcn_image_finish(vcn_image_t *img)
+void nb_image_finish(nb_image_t *img)
 {
-	vcn_image_clear(img);
+	nb_image_clear(img);
 }
 
-void vcn_image_clear(vcn_image_t *img)
+void nb_image_clear(nb_image_t *img)
 {
 	if (NULL != img->pixels)
 		stbi_image_free(img->pixels);
-	uint32_t memsize = vcn_image_get_memsize();
+	uint32_t memsize = nb_image_get_memsize();
 	memset(img, 0, memsize);
 }
 
-inline vcn_image_t* vcn_image_create(void)
+inline nb_image_t* nb_image_create(void)
 {
-	uint32_t memsize = vcn_image_get_memsize();
+	uint32_t memsize = nb_image_get_memsize();
 	return nb_allocate_zero_mem(memsize);
 }
 
-void vcn_image_destroy(vcn_image_t *img)
+void nb_image_destroy(nb_image_t *img)
 {
-	vcn_image_finish(img);
+	nb_image_finish(img);
 	free(img);
 }
 
-void vcn_image_init_white(vcn_image_t *img,
+void nb_image_init_white(nb_image_t *img,
 			  int width, int height,
 			  int comp_x_pixel)
 {
@@ -118,7 +118,7 @@ void vcn_image_init_white(vcn_image_t *img,
 	img->pixels = nb_allocate_zero_mem(memsize);
 }
 
-void vcn_image_read(vcn_image_t *img, const char* filename)
+void nb_image_read(nb_image_t *img, const char* filename)
 {
 	int w, h, n;
 	uint8_t *const restrict pixels = stbi_load(filename, &w, &h, &n, 0);
@@ -131,22 +131,22 @@ void vcn_image_read(vcn_image_t *img, const char* filename)
 	}
 }
 
-inline uint32_t vcn_image_get_width(const vcn_image_t *const img)
+inline uint32_t nb_image_get_width(const nb_image_t *const img)
 {
 	return img->width;
 }
 
-inline uint32_t vcn_image_get_height(const vcn_image_t *const img)
+inline uint32_t nb_image_get_height(const nb_image_t *const img)
 {
 	return img->height;
 }
 
-inline uint8_t vcn_image_get_N_channels(const vcn_image_t *const img)
+inline uint8_t nb_image_get_N_channels(const nb_image_t *const img)
 {
 	return img->comp_x_pixel;
 }
 
-void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
+void nb_image_get_pixel(const nb_image_t *const img, uint32_t r,
 			 uint32_t c, uint8_t pixel[])
 {
 	uint32_t w = img->width * img->comp_x_pixel;
@@ -154,7 +154,7 @@ void vcn_image_get_pixel(const vcn_image_t *const img, uint32_t r,
 	memcpy(pixel, &(img->pixels[r * w + col]), img->comp_x_pixel);
 }
 
-void vcn_image_set_pixel(vcn_image_t *img, uint32_t r,
+void nb_image_set_pixel(nb_image_t *img, uint32_t r,
 			 uint32_t c,  uint8_t pixel[])
 {
 	uint32_t w = img->width * img->comp_x_pixel;
@@ -162,7 +162,7 @@ void vcn_image_set_pixel(vcn_image_t *img, uint32_t r,
 	memcpy(&(img->pixels[r * w + col]), pixel, img->comp_x_pixel);
 }
 
-void vcn_image_blend_pixel_ga(vcn_image_t *img, uint32_t r,
+void nb_image_blend_pixel_ga(nb_image_t *img, uint32_t r,
 				uint32_t c,  uint8_t pixel[2])
 {
 	uint32_t w = img->width * img->comp_x_pixel;
@@ -181,7 +181,7 @@ void vcn_image_blend_pixel_ga(vcn_image_t *img, uint32_t r,
 	}
 }
 
-void vcn_image_blend_pixel_rgba(vcn_image_t *img, uint32_t r,
+void nb_image_blend_pixel_rgba(nb_image_t *img, uint32_t r,
 				uint32_t c,  uint8_t pixel[4])
 {
 	uint32_t w = img->width * img->comp_x_pixel;
@@ -202,7 +202,7 @@ void vcn_image_blend_pixel_rgba(vcn_image_t *img, uint32_t r,
 	}
 }
 
-uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,
+uint8_t nb_image_get_pixel_luma(const nb_image_t *img,
 				 uint32_t r, uint32_t c)
 {
 	uint8_t luma;
@@ -223,13 +223,13 @@ uint8_t vcn_image_get_pixel_luma(const vcn_image_t *img,
 	return  luma;
 }
 
-static uint8_t get_luma_1comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+static uint8_t get_luma_1comp(const nb_image_t *img, uint32_t r, uint32_t c)
 {
 	uint32_t w = img->width;
 	return img->pixels[r * w + c];
 }
 
-static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+static uint8_t get_luma_2comp(const nb_image_t *img, uint32_t r, uint32_t c)
 {
 	uint32_t w = 2 * img->width;
 	uint8_t g = img->pixels[r * w + (c * 2)];
@@ -238,7 +238,7 @@ static uint8_t get_luma_2comp(const vcn_image_t *img, uint32_t r, uint32_t c)
 	return (1 - weight) * 255 + weight * g;
 }
 
-static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+static uint8_t get_luma_3comp(const nb_image_t *img, uint32_t r, uint32_t c)
 {
 	uint32_t w = 3 * img->width;
 	uint8_t red = img->pixels[r * w + (c * 3)];
@@ -249,7 +249,7 @@ static uint8_t get_luma_3comp(const vcn_image_t *img, uint32_t r, uint32_t c)
 		(uint8_t)(_LUMA_B_WEIGHT * b + 0.5);
 }
 
-static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c)
+static uint8_t get_luma_4comp(const nb_image_t *img, uint32_t r, uint32_t c)
 {
 	uint32_t w = 4 * img->width;
 	uint8_t red = img->pixels[r * w + (c * 4)];
@@ -264,8 +264,8 @@ static uint8_t get_luma_4comp(const vcn_image_t *img, uint32_t r, uint32_t c)
 }
 
 
-void vcn_image_resize(const vcn_image_t *input_img,
-		      vcn_image_t *output_img,
+void nb_image_resize(const nb_image_t *input_img,
+		      nb_image_t *output_img,
 		      int out_width, int out_height)
 {
 	output_img->width = out_width;
@@ -287,21 +287,21 @@ void vcn_image_resize(const vcn_image_t *input_img,
 	assert(0 != status);
 }
 
-void vcn_image_write(const vcn_image_t *img, const char *filename)
+void nb_image_write(const nb_image_t *img, const char *filename)
 {
 	int format = get_format(filename);
 	switch (format) {
 	case PNG:
-		vcn_image_write_png(img, filename);
+		nb_image_write_png(img, filename);
 		break;
 	case BMP:
-		vcn_image_write_bmp(img, filename);
+		nb_image_write_bmp(img, filename);
 		break;
 	case TGA:
-		vcn_image_write_tga(img, filename);
+		nb_image_write_tga(img, filename);
 		break;
 	case TXT:
-		vcn_image_write_ascii(img, filename,
+		nb_image_write_ascii(img, filename,
 				      img->width / 10);
 		break;
 	default:
@@ -330,14 +330,14 @@ static int get_format(const char *filename)
 	return format;
 }
 
-static void image_write_default(const vcn_image_t *img, const char *filename)
+static void image_write_default(const nb_image_t *img, const char *filename)
 {
 	char *name = nb_allocate_on_stack(strlen(filename) + 4);
 	sprintf(name, "%s.png", filename);
-	vcn_image_write_png(img, name);
+	nb_image_write_png(img, name);
 }
 
-void vcn_image_write_png(const vcn_image_t *img, const char *filename)
+void nb_image_write_png(const nb_image_t *img, const char *filename)
 {  
 	int stride_in_bytes = img->width * img->comp_x_pixel;
 	int status = stbi_write_png(filename,
@@ -349,7 +349,7 @@ void vcn_image_write_png(const vcn_image_t *img, const char *filename)
 	assert(0 != status);
 }
 
-void vcn_image_write_bmp(const vcn_image_t *img, const char *filename)
+void nb_image_write_bmp(const nb_image_t *img, const char *filename)
 {  
 	int status = stbi_write_bmp(filename,
 				    img->width,
@@ -359,7 +359,7 @@ void vcn_image_write_bmp(const vcn_image_t *img, const char *filename)
 	assert(0 != status);
 }
 
-void vcn_image_write_tga(const vcn_image_t *img, const char *filename)
+void nb_image_write_tga(const nb_image_t *img, const char *filename)
 {  
 	int status = stbi_write_tga(filename,
 				    img->width,
@@ -369,7 +369,7 @@ void vcn_image_write_tga(const vcn_image_t *img, const char *filename)
 	assert(0 != status);
 }
 
-void vcn_image_write_ascii(const vcn_image_t *img, const char *filename,
+void nb_image_write_ascii(const nb_image_t *img, const char *filename,
 			   uint16_t N_chars_width)
 {
 	FILE *fp = fopen(filename, "w");
@@ -412,7 +412,7 @@ static const char *get_ascii_scale(void)
 
 }
 
-static uint8_t get_block_luma(const vcn_image_t *img, uint32_t i, uint32_t j,
+static uint8_t get_block_luma(const nb_image_t *img, uint32_t i, uint32_t j,
 			      uint16_t block_width, uint16_t block_height)
 {
 	uint16_t pix_jump = 1;
@@ -429,7 +429,7 @@ static uint8_t get_block_luma(const vcn_image_t *img, uint32_t i, uint32_t j,
 		uint32_t r = i * block_height + pix_jump * m;
 		for (uint16_t n = 0; n < Nbw; n++) {
 			uint32_t c = j * block_width + pix_jump * n;
-			sum_luma += vcn_image_get_pixel_luma(img, r, c);			
+			sum_luma += nb_image_get_pixel_luma(img, r, c);			
 		}
 	}
 	return sum_luma / (Nbw * Nbh);

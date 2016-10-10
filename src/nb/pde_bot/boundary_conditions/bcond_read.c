@@ -7,9 +7,9 @@
 #include "bcond_struct.h"
 
 static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
-			   vcn_cfreader_t *cfreader);
+			   nb_cfreader_t *cfreader);
 
-int nb_bcond_read(nb_bcond_t *bcond, vcn_cfreader_t *cfreader)
+int nb_bcond_read(nb_bcond_t *bcond, nb_cfreader_t *cfreader)
 {
 	int status = 1;
 	if (0 != read_conditions(bcond->dirichlet_vtx, bcond->N_dof, cfreader))
@@ -26,27 +26,27 @@ EXIT:
 }
 
 static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
-			   vcn_cfreader_t *cfreader)
+			   nb_cfreader_t *cfreader)
 {
 	int status = 1;
 	unsigned int N;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto EXIT;
 
 	for (unsigned int i = 0; i < N; i++) {
 		bc_atom_t *bc = bc_atom_create(N_dof);
 		nb_container_insert(cnt, bc);
-		if (0 != vcn_cfreader_read_uint(cfreader, &(bc->id)))
+		if (0 != nb_cfreader_read_uint(cfreader, &(bc->id)))
 			goto CLEANUP;
 		for (uint8_t j = 0; j < N_dof; j++) {
-			if (0 != vcn_cfreader_read_bool(cfreader,
+			if (0 != nb_cfreader_read_bool(cfreader,
 							&(bc->mask[j])))
 				goto CLEANUP;
 		}
 		for (uint8_t j = 0; j < N_dof; j++) {
 			if (bc->mask[j]) {
 				double value = 0.0;
-				if (0 != vcn_cfreader_read_double(cfreader,
+				if (0 != nb_cfreader_read_double(cfreader,
 								  &value))
 					goto CLEANUP;
 				bc->val[j] = value;

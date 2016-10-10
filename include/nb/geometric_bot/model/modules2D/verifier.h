@@ -24,25 +24,25 @@
  * + <b>8</b> Unknown error (Unlikely but possible due to numerical error).
  * + <b>9</b> Unclosed shape.
  */
-int vcn_model_verify_consistence(const vcn_model_t *const model,
+int nb_model_verify_consistence(const nb_model_t *const model,
 				 uint32_t ids_causing_error[2]);
 
-bool vcn_model_have_vertices(const vcn_model_t *const model);
-bool vcn_model_have_edges(const vcn_model_t *const model);
-bool vcn_model_have_repeated_vertices(const vcn_model_t *const model,
+bool nb_model_have_vertices(const nb_model_t *const model);
+bool nb_model_have_edges(const nb_model_t *const model);
+bool nb_model_have_repeated_vertices(const nb_model_t *const model,
 				      uint32_t repeated_ids[2]);
-bool vcn_model_have_incoherent_edges(const vcn_model_t *const model,
+bool nb_model_have_incoherent_edges(const nb_model_t *const model,
 				     uint32_t ids_edge_and_vtx[2]);
-bool vcn_model_have_repeated_edges(const vcn_model_t *const model,
+bool nb_model_have_repeated_edges(const nb_model_t *const model,
 				   uint32_t repeated_ids[2]);
-bool vcn_model_have_intersected_edges(const vcn_model_t *const model,
+bool nb_model_have_intersected_edges(const nb_model_t *const model,
 				      uint32_t intersected_ids[2]);
-bool vcn_model_have_vtx_intersecting_edges(const vcn_model_t *const model,
+bool nb_model_have_vtx_intersecting_edges(const nb_model_t *const model,
 					   uint32_t ids_edge_and_vtx[2]);
-bool vcn_model_have_unclosed_boundary(const vcn_model_t *const model);
-bool vcn_model_is_continuum(const vcn_model_t *model);
+bool nb_model_have_unclosed_boundary(const nb_model_t *const model);
+bool nb_model_is_continuum(const nb_model_t *model);
 
-uint16_t vcn_model_get_N_subareas(const vcn_model_t *model);
+uint16_t nb_model_get_N_subareas(const nb_model_t *model);
 
 
 #endif

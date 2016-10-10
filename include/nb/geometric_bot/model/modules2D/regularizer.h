@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "nb/geometric_bot/model/model2D.h"
 	
-int vcn_model_regularize(vcn_model_t* model, double lambda,
+int nb_model_regularize(nb_model_t* model, double lambda,
 			 uint32_t N_fixed_vertices,
 			 uint32_t* fixed_vertices);
 

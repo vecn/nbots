@@ -339,7 +339,7 @@ double nb_mshquad_edge_get_normal(const void *msh, uint32_t face_id,
 	uint32_t n2 =  quad->edg[face_id*2+1];
 	double *s1 = &(quad->nod[n1 * 2]);
 	double *s2 = &(quad->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] =  (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -397,12 +397,12 @@ double nb_mshquad_elem_get_area(const void *msh, uint32_t id)
 	double *t2 = &(mshquad->nod[v2 * 2]);
 	double *t3 = &(mshquad->nod[v3 * 2]);
 
-	double area = vcn_utils2D_get_trg_area(t1, t2, t3);
+	double area = nb_utils2D_get_trg_area(t1, t2, t3);
 
 	if (nb_mshquad_elem_is_quad(msh, id)) {
 		uint32_t v4 = nb_mshquad_elem_get_adj(msh, id, 3);
 		double *t4 = &(mshquad->nod[v4 * 2]);
-		area += vcn_utils2D_get_trg_area(t1, t3, t4);
+		area += nb_utils2D_get_trg_area(t1, t3, t4);
 	}
 
 	return area;
@@ -419,7 +419,7 @@ double nb_mshquad_elem_get_radius(const void *msh, uint32_t id)
 	for (uint16_t i = 0; i < N_adj; i++) {
 		uint32_t nid = nb_mshquad_elem_get_adj(msh, id, i);
 		double *ni = &(quad->nod[nid * 2]);
-		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		double dist2 = nb_utils2D_get_dist2(x, ni);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -440,8 +440,8 @@ double nb_mshquad_elem_get_apotem(const void *msh, uint32_t id)
 		double *n1 = &(quad->nod[id1 * 2]);
 		double *n2 = &(quad->nod[id2 * 2]);
 		double closest[2];
-		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
-		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		nb_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = nb_utils2D_get_dist2(x, closest);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -487,7 +487,7 @@ double nb_mshquad_elem_face_get_length(const void *msh,
 	double *n1 = &(mshquad->nod[v1 * 2]);
 	double *n2 = &(mshquad->nod[v2 * 2]);
 
-	return vcn_utils2D_get_dist(n1, n2);	
+	return nb_utils2D_get_dist(n1, n2);	
 }
 
 double nb_mshquad_elem_face_get_normal(const void *msh, uint32_t elem_id,
@@ -500,7 +500,7 @@ double nb_mshquad_elem_face_get_normal(const void *msh, uint32_t elem_id,
 					      (face_id + 1) % N_adj);
 	double *s1 = &(mshquad->nod[n1 * 2]);
 	double *s2 = &(mshquad->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] =  (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -523,7 +523,7 @@ double nb_mshquad_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 		id2[0] = nb_mshquad_elem_get_x(msh, nid);
 		id2[1] = nb_mshquad_elem_get_y(msh, nid);
 
-		dist = vcn_utils2D_get_dist(id1, id2);
+		dist = nb_utils2D_get_dist(id1, id2);
 		normal[0] = (id2[0] - id1[0]) / dist;
 		normal[1] = (id2[1] - id1[1]) / dist;
 	}
@@ -780,16 +780,16 @@ static void set_mshquad(nb_mshquad_t *quad,
 
 static void set_nodes(nb_mshquad_t *quad, const nb_mesh_t *const mesh)
 {
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		uint32_t id = mvtx_get_id(vtx);
 		quad->nod[id * 2] = vtx->x[0] / mesh->scale + mesh->xdisp;
 		quad->nod[id*2+1] = vtx->x[1] / mesh->scale + mesh->ydisp;
 	}
-	vcn_bins2D_iter_finish(iter);	
+	nb_bins2D_iter_finish(iter);	
 }
 
 static void set_edges(nb_mshquad_t *quad, const nb_mesh_t *const mesh,
@@ -1167,10 +1167,10 @@ static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm)
 void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])
 {
 	const nb_mshquad_t *mshquad = mshquad_ptr;
-	vcn_utils2D_get_enveloping_box(mshquad->N_nod, mshquad->nod,
+	nb_utils2D_get_enveloping_box(mshquad->N_nod, mshquad->nod,
 				       2 * sizeof(*(mshquad->nod)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 }
 

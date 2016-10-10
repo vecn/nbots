@@ -172,7 +172,7 @@ static void calculate_area_centroid(const nb_mesh_t *mesh,
 		memset(centroid, 0, 2 * sizeof(*centroid));
 	} else if (1 == N_trg) {
 		msh_trg_t* trg = nb_container_delete_first(area_trg);
-		vcn_utils2D_trg_get_centroid(trg->v1->x, trg->v2->x,
+		nb_utils2D_trg_get_centroid(trg->v1->x, trg->v2->x,
 					     trg->v3->x, centroid);
 	} else {
 		msh_edge_t *max_edge = NULL;
@@ -201,7 +201,7 @@ static msh_edge_t* check_if_internal_edge_is_longer(msh_edge_t *edge,
 	msh_edge_t *longest = longest_edge;
 	if (!medge_is_subsgm(edge)) {
 		double dist2 =
-			vcn_utils2D_get_dist2(edge->v1->x, edge->v2->x);
+			nb_utils2D_get_dist2(edge->v1->x, edge->v2->x);
 		if (dist2 > *max_length2) {
 			*max_length2 = dist2;
 			longest = edge;
@@ -252,7 +252,7 @@ static double spread_infection(msh_trg_t* trg_infected,
 						 blocking_with_input_segments);
 		}
 
-		area += vcn_utils2D_get_trg_area(trg_infected->v1->x,
+		area += nb_utils2D_get_trg_area(trg_infected->v1->x,
 						 trg_infected->v2->x,
 						 trg_infected->v3->x);
 	}
@@ -525,12 +525,12 @@ uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh)
 	nb_container_init(useful_vtx, NB_SORTED);
 
 	get_useful_vtx(mesh, useful_vtx);	
-	uint32_t length = vcn_bins2D_get_length(mesh->ug_vtx);
+	uint32_t length = nb_bins2D_get_length(mesh->ug_vtx);
 	delete_unused_vtx(mesh, useful_vtx);
 
 	nb_container_finish(useful_vtx);
 
-	return length - vcn_bins2D_get_length(mesh->ug_vtx);
+	return length - nb_bins2D_get_length(mesh->ug_vtx);
 }
 
 static void get_useful_vtx(const nb_mesh_t *mesh, nb_container_t *useful_vtx)
@@ -556,7 +556,7 @@ static void delete_unused_vtx(nb_mesh_t *mesh, nb_container_t *useful_vtx)
 
 	while (nb_container_is_not_empty(unused_vtx)) {
 		msh_vtx_t *vtx = nb_container_delete_first(unused_vtx);
-		vcn_bins2D_delete(mesh->ug_vtx, vtx);
+		nb_bins2D_delete(mesh->ug_vtx, vtx);
 		update_input_array(mesh, vtx);
 		mvtx_destroy(mesh, vtx);
 	}
@@ -567,16 +567,16 @@ static void get_unused_vtx(const nb_mesh_t *mesh,
 			   const nb_container_t *useful_vtx,
 			   nb_container_t *unused_vtx)
 {
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		if (!nb_container_exist(useful_vtx, vtx)) {
 			nb_container_insert(unused_vtx, vtx);
 		}
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 }
 
 static void update_input_array(nb_mesh_t *mesh, const msh_vtx_t *vtx)

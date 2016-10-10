@@ -32,7 +32,7 @@ inline void edge_destroy(void *edge)
 
 inline void edge_set_length(edge_t *edge)
 {
-	edge->length = vcn_utils2D_get_dist(edge->v1->x, edge->v2->x);
+	edge->length = nb_utils2D_get_dist(edge->v1->x, edge->v2->x);
 }
 
 inline double edge_get_length(const edge_t *const edge)

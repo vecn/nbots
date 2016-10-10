@@ -271,7 +271,7 @@ double nb_msh3trg_edge_get_normal(const void *msh, uint32_t face_id,
 	uint32_t n2 =  msh3trg->edg[face_id*2+1];
 	double *s1 = &(msh3trg->nod[n1 * 2]);
 	double *s2 = &(msh3trg->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] =  (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -313,7 +313,7 @@ double nb_msh3trg_elem_get_area(const void *msh, uint32_t id)
 	double *t2 = &(msh3trg->nod[v2 * 2]);
 	double *t3 = &(msh3trg->nod[v3 * 2]);
 
-	return vcn_utils2D_get_trg_area(t1, t2, t3);
+	return nb_utils2D_get_trg_area(t1, t2, t3);
 }
 
 double nb_msh3trg_elem_get_radius(const void *msh, uint32_t id)
@@ -326,7 +326,7 @@ double nb_msh3trg_elem_get_radius(const void *msh, uint32_t id)
 	for (uint8_t i = 0; i < 3; i++) {
 		uint32_t nid = nb_msh3trg_elem_get_adj(msh, id, i);
 		double *ni = &(msh3trg->nod[nid * 2]);
-		double dist2 = vcn_utils2D_get_dist2(x, ni);
+		double dist2 = nb_utils2D_get_dist2(x, ni);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -346,8 +346,8 @@ double nb_msh3trg_elem_get_apotem(const void *msh, uint32_t id)
 		double *n1 = &(msh3trg->nod[id1 * 2]);
 		double *n2 = &(msh3trg->nod[id2 * 2]);
 		double closest[2];
-		vcn_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
-		double dist2 = vcn_utils2D_get_dist2(x, closest);
+		nb_utils2D_get_closest_pnt_to_sgm(n1, n2, x, closest);
+		double dist2 = nb_utils2D_get_dist2(x, closest);
 		if (dist2 > max)
 			max = dist2;
 	}
@@ -386,7 +386,7 @@ double nb_msh3trg_elem_face_get_length(const void *msh,
 	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, elem_id, (face_id + 1)%3);
 	double *s1 = &(msh3trg->nod[n1 * 2]);
 	double *s2 = &(msh3trg->nod[n2 * 2]);
-	return vcn_utils2D_get_dist(s1, s2);
+	return nb_utils2D_get_dist(s1, s2);
 }
 
 double nb_msh3trg_elem_face_get_normal(const void *msh, uint32_t elem_id,
@@ -397,7 +397,7 @@ double nb_msh3trg_elem_face_get_normal(const void *msh, uint32_t elem_id,
 	uint32_t n2 = nb_msh3trg_elem_get_adj(msh, elem_id, (face_id + 1) % 3);
 	double *s1 = &(msh3trg->nod[n1 * 2]);
 	double *s2 = &(msh3trg->nod[n2 * 2]);
-	double length = vcn_utils2D_get_dist(s1, s2);
+	double length = nb_utils2D_get_dist(s1, s2);
 	normal[0] =  (s2[1] - s1[1]) / length;
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
@@ -420,7 +420,7 @@ double nb_msh3trg_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 		id2[0] = nb_msh3trg_elem_get_x(msh, nid);
 		id2[1] = nb_msh3trg_elem_get_y(msh, nid);
 
-		dist = vcn_utils2D_get_dist(id1, id2);
+		dist = nb_utils2D_get_dist(id1, id2);
 		normal[0] = (id2[0] - id1[0]) / dist;
 		normal[1] = (id2[1] - id1[1]) / dist;
 	}
@@ -484,7 +484,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 		double *v2 = &(msh3trg->nod[id2*2]);
 		double *v3 = &(msh3trg->nod[id3*2]);
 		double p[2] = {x, y};
-		if (vcn_utils2D_pnt_lies_in_trg(v1, v2, v3, p)) {
+		if (nb_utils2D_pnt_lies_in_trg(v1, v2, v3, p)) {
 			is_inside = true;
 			break;
 		}
@@ -905,10 +905,10 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 				   double box[4])
 {
 	const nb_msh3trg_t *msh3trg = msh3trg_ptr;
-	vcn_utils2D_get_enveloping_box(msh3trg->N_nod, msh3trg->nod,
+	nb_utils2D_get_enveloping_box(msh3trg->N_nod, msh3trg->nod,
 				       2 * sizeof(*(msh3trg->nod)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 }
 
@@ -967,7 +967,7 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 		}
 	}
 	/* Build model without holes */
-	vcn_model_clear(model);
+	nb_model_clear(model);
 	model->N = N_vertices;
 	model->vertex = nb_allocate_mem(2 * N_vertices * sizeof(*(model->vertex)));
 	memcpy(model->vertex, vertices, 

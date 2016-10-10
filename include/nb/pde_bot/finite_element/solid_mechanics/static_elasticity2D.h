@@ -10,9 +10,9 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/finite_element/element.h"
 
-int vcn_fem_compute_2D_Solid_Mechanics
+int nb_fem_compute_2D_Solid_Mechanics
 			(const nb_partition_t *const part,
-			 const vcn_fem_elem_t *const elemtype,
+			 const nb_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight,
@@ -23,9 +23,9 @@ int vcn_fem_compute_2D_Solid_Mechanics
 			 double* displacement, /* Output */
 			 double* strain       /* Output */);
 
-void vcn_fem_compute_stress_from_strain
+void nb_fem_compute_stress_from_strain
 			(uint32_t N_elements,
-			 const vcn_fem_elem_t *const elemtype,
+			 const nb_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 nb_analysis2D_t analysis2D,
 			 double* strain,

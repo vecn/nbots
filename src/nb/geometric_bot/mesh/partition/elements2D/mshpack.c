@@ -35,7 +35,7 @@ static bool vtx_is_forming_input(const msh_vtx_t *const vtx);
 static double pack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
-					     vcn_sparse_t *Hk,
+					     nb_sparse_t *Hk,
 					     double *Bk,
 					     double *Xb,
 					     double gamma);
@@ -158,7 +158,7 @@ void nb_mshpack_edge_get_midpoint(const void *msh,
 	const nb_mshpack_t *pack = msh;
 	double *c1 = &(pack->cen[elem_id * 2]);
 	double *c2 = &(pack->cen[nj * 2]);
-	double dij2 = vcn_utils2D_get_dist2(c1, c2);
+	double dij2 = nb_utils2D_get_dist2(c1, c2);
 
 	midpoint[0] = c1[0] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[0] - c1[0]);
 	midpoint[1] = c1[1] + 0.5 * (1 + (Ri2 - Rj2)/dij2) * (c2[1] - c1[1]);
@@ -222,7 +222,7 @@ double nb_mshpack_elem_face_get_length(const void *msh,
 	const nb_mshpack_t *pack = msh;
 	double *c1 = &(pack->cen[elem_id * 2]);
 	double *c2 = &(pack->cen[nj * 2]);
-	double dij2 = vcn_utils2D_get_dist2(c1, c2);
+	double dij2 = nb_utils2D_get_dist2(c1, c2);
 
 	return sqrt(2 * (Ri2 + Rj2) - dij2 - Qij2 / dij2);
 }
@@ -244,7 +244,7 @@ double nb_mshpack_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 	if (nid < N_elems) {
 		double *id1 = &(mshpack->cen[elem_id * 2]);
 		double *id2 = &(mshpack->cen[nid * 2]);
-		dist = vcn_utils2D_get_dist(id1, id2);
+		dist = nb_utils2D_get_dist(id1, id2);
 		normal[0] = (id2[0] - id1[0]) / dist;
 		normal[1] = (id2[1] - id1[1]) / dist;
 	}
@@ -383,11 +383,11 @@ static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_mesh_t *mesh)
 {
 	uint32_t N_steiner = 0;
 	uint32_t N_input = 0;
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) nb_bins2D_iter_get_next(iter);
 		uint32_t id;
 		if (!vtx_is_forming_input(vtx))
 			id = N_steiner ++; /* Numeration for steiner points */
@@ -395,7 +395,7 @@ static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_mesh_t *mesh)
 			id = N_input ++; /* Numeration for fixed nodes in the boundary */
 		mvtx_set_id(vtx, id);
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 	return N_steiner;
 }
 
@@ -490,7 +490,7 @@ static bool vtx_is_forming_input(const msh_vtx_t *const vtx)
 static double pack_optimize_assemble_system(nb_container_t *segments,
 					     uint32_t N_spheres,
 					     double *Xk,
-					     vcn_sparse_t *Hk,
+					     nb_sparse_t *Hk,
 					     double *Bk,
 					     double *Xb,
 					     double gamma)
@@ -534,7 +534,7 @@ static double pack_optimize_assemble_system(nb_container_t *segments,
 			for (uint32_t i = 0; i < 6; i++) {
 				for (uint32_t j = 0; j < 6; j++) {
 					double val = gl[i]*gl[j];
-					vcn_sparse_add(Hk, idx[i], idx[j], val);
+					nb_sparse_add(Hk, idx[i], idx[j], val);
 				}
 			}
 		} else if (sgm_struct[2] < N_spheres) {
@@ -572,7 +572,7 @@ static double pack_optimize_assemble_system(nb_container_t *segments,
 			for (uint32_t i = 0; i < 3; i++) {
 				for (uint32_t j = 0; j < 3; j++) {
 					double val = gl[i]*gl[j];
-					vcn_sparse_add(Hk, idx[i], idx[j], val);
+					nb_sparse_add(Hk, idx[i], idx[j], val);
 				}
 			}
 		}
@@ -608,16 +608,16 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 	double* hk = nb_allocate_zero_mem(3 * pack->N_elems * sizeof(*hk));
 	double* Bk = nb_allocate_mem(3 * pack->N_elems * sizeof(*Bk));
 	/* Allocate boundaries positions */
-	uint32_t N_input_vtx = vcn_bins2D_get_length(mesh->ug_vtx) - pack->N_elems;
+	uint32_t N_input_vtx = nb_bins2D_get_length(mesh->ug_vtx) - pack->N_elems;
 	double* Xb =  nb_allocate_mem(N_input_vtx * 2 * sizeof(*Xb));
   
 	/***************** Optimize position + radius ***********************/
 	/* Initialize solution */
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		/* Get ID */
 		uint32_t id = mvtx_get_id(vtx);
 		if (vtx_is_forming_input(vtx)) {
@@ -630,14 +630,14 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 		Xk[id * 3] = vtx->x[0];
 		Xk[id*3+1] = vtx->x[1];
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 
 	for (uint32_t i = 0; i < pack->N_elems; i++) {
 		/* Initial radii */
 		double radii = 0.0;
 		for (uint32_t j = 0; j < pack->N_ngb[i]; j++) {
 			uint32_t j_id = pack->ngb[i][j];
-			radii += (0.5/gamma) * vcn_utils2D_get_dist(&(Xk[i*3]), &(Xk[j_id*3]));
+			radii += (0.5/gamma) * nb_utils2D_get_dist(&(Xk[i*3]), &(Xk[j_id*3]));
 		}
 		radii /= pack->N_ngb[i];
 		Xk[i*3+2] = radii; /* Initial ratio */
@@ -648,7 +648,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 	graph.N = pack->N_elems;
 	graph.N_adj = pack->N_ngb;
 	graph.adj = pack->ngb;
-	vcn_sparse_t* Hk = vcn_sparse_create(&graph, NULL, 3);
+	nb_sparse_t* Hk = nb_sparse_create(&graph, NULL, 3);
 
 	/* Start to minimize contact gaps and intersections 
 	   using Newton Method */
@@ -669,13 +669,13 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 			optim_k ++;
 			/* Reset global Hessian and Independent vector */
 			memset(Bk, 0, 3 * pack->N_elems * sizeof(double));
-			vcn_sparse_make_diagonal(Hk, 1.0);
+			nb_sparse_make_diagonal(Hk, 1.0);
 			global_min =       
 				pack_optimize_assemble_system(segments, pack->N_elems,
 							       Xk, Hk, Bk, Xb, gamma);
 			/* Solve system for qk */
-			vcn_sparse_solve_CG_precond_Jacobi(Hk, Bk, hk,
-							   vcn_sparse_get_size(Hk) * 2,
+			nb_sparse_solve_CG_precond_Jacobi(Hk, Bk, hk,
+							   nb_sparse_get_size(Hk) * 2,
 							   1e-8, NULL, NULL, 1); 
 			/* Xk = Xk + hk */
 			for (uint32_t i = 0; i < 3 * pack->N_elems; i++)
@@ -706,7 +706,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 			/* Add current adjacencies close enough */
 			for (uint32_t j = 0; j < pack->N_ngb[i]; j++) {
 				uint32_t j_id = pack->ngb[i][j];
-				if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[j_id*3])) <
+				if (nb_utils2D_get_dist2(&(Xk[i*3]), &(Xk[j_id*3])) <
 				    POW2(gap_factor*gamma*(Xk[i*3+2] + Xk[j_id*3+2]))){
 					uint32_t* id = nb_allocate_mem(sizeof(*id));
 					id[0] = j_id;
@@ -724,7 +724,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 						continue;
 					if (NULL != nb_container_exist(new_ngb[i], &k_id))
 						continue;
-					if (vcn_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
+					if (nb_utils2D_get_dist2(&(Xk[i*3]), &(Xk[k_id*3])) <
 					    POW2(gamma*(Xk[i*3+2] + Xk[k_id*3+2]))) {
 						uint32_t* id = nb_allocate_mem(sizeof(*id));
 						id[0] = k_id;
@@ -768,13 +768,13 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 				}
 				nb_container_destroy(new_ngb[i]);
 			}
-			vcn_sparse_destroy(Hk);
+			nb_sparse_destroy(Hk);
 			
 			nb_graph_t graph;
 			graph.N = pack->N_elems;
 			graph.N_adj = pack->N_ngb;
 			graph.adj = pack->ngb;
-			Hk = vcn_sparse_create(&graph, NULL, 3);
+			Hk = nb_sparse_create(&graph, NULL, 3);
 		} else {
 			for (uint32_t i = 0; i < pack->N_elems; i++) {
 				nb_container_set_destroyer(new_ngb[i], free);
@@ -785,7 +785,7 @@ static void pack_optimize(const nb_mesh_t *const mesh,
 	}
 
 	/* Free memory */
-	vcn_sparse_destroy(Hk);
+	nb_sparse_destroy(Hk);
 	nb_free_mem(hk);
 	nb_free_mem(Bk);
 	nb_free_mem(Xb);
@@ -796,11 +796,11 @@ static void pack_update_disks(const nb_mesh_t *const mesh,
 			       double *Xk)
 {
 
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
-	while (vcn_bins2D_iter_has_more(iter)) {
-		const msh_vtx_t* vtx = vcn_bins2D_iter_get_next(iter);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	while (nb_bins2D_iter_has_more(iter)) {
+		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
 		if (!vtx_is_forming_input(vtx)) {
 			uint32_t id = mvtx_get_id(vtx);
 			pack->cen[id * 2] = Xk[id * 3]/mesh->scale + mesh->xdisp;
@@ -808,7 +808,7 @@ static void pack_update_disks(const nb_mesh_t *const mesh,
 			pack->radii[id] = Xk[id*3+2] / mesh->scale;
 		}
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 }
 
 

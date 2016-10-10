@@ -17,7 +17,7 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 typedef struct {
-	const vcn_image_t *img;
+	const nb_image_t *img;
 	double max_density;
 } img_density_data_t;
 
@@ -28,7 +28,7 @@ static double img_density(const double x[2],
 			  const void *const data_ptr);
 
 void nb_mesh_set_img_density(nb_mesh_t *mesh,
-			      const vcn_image_t *const img,
+			      const nb_image_t *const img,
 			      double density_volume)
 {
 	img_density_data_t *data = nb_allocate_zero_mem(sizeof(*data));
@@ -44,8 +44,8 @@ static inline void bound_max_density(img_density_data_t *data,
 	density_volume =  MIN(1.0, density_volume);
 	double density_ratio = density_volume * 2.5e-3 +
 		(1.0 - density_volume) * 1e-2;
-	double max_dim = MAX(vcn_image_get_width(data->img),
-			     vcn_image_get_height(data->img));
+	double max_dim = MAX(nb_image_get_width(data->img),
+			     nb_image_get_height(data->img));
 	double h_min = max_dim * density_ratio;
 	data->max_density = 1.0 / h_min;
 }
@@ -65,20 +65,20 @@ static double img_density(const double x[2],
 	const img_density_data_t *const data = data_ptr;
 
 	/* Calculate pixel positions */
-	double c_aux = x[0] - vcn_image_get_width(data->img) / 2.0
-		+ vcn_image_get_width(data->img) / 2.0;
-	double r_aux = x[1] - vcn_image_get_height(data->img) / 2.0
-		+ vcn_image_get_height(data->img) / 2.0;
+	double c_aux = x[0] - nb_image_get_width(data->img) / 2.0
+		+ nb_image_get_width(data->img) / 2.0;
+	double r_aux = x[1] - nb_image_get_height(data->img) / 2.0
+		+ nb_image_get_height(data->img) / 2.0;
 	int c = (int)(c_aux);
-	int r = vcn_image_get_height(data->img) - 1 - (int)(r_aux);
+	int r = nb_image_get_height(data->img) - 1 - (int)(r_aux);
 
 	/* Check if the pixel coordinates are outside bounds */
-	if (r < 0 || r >= vcn_image_get_height(data->img) ||
-	    c < 0 || c >= vcn_image_get_width(data->img)) {
+	if (r < 0 || r >= nb_image_get_height(data->img) ||
+	    c < 0 || c >= nb_image_get_width(data->img)) {
 		return NB_GEOMETRIC_TOL;
 	}
 
-	uint8_t luma = vcn_image_get_pixel_luma(data->img, r, c);
+	uint8_t luma = nb_image_get_pixel_luma(data->img, r, c);
 	double density = 1.0 - luma / 255.0;
 	return data->max_density * density;
 }

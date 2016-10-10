@@ -55,21 +55,21 @@ static int simulate(const char *problem_data, nb_partition_t *part,
 		    results_t *results, uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
-static void get_mesh(const vcn_model_t *model, void *part,
+static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
 static void results_init(results_t *results, uint32_t N_faces,
 			 uint32_t N_elems);
 static void results_finish(results_t *results);
 static int read_problem_data
 		(const char* filename,
-		 vcn_model_t *model,
+		 nb_model_t *model,
 		 nb_bcond_t* bcond,
 		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D);
-static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model);
-static int read_material(vcn_cfreader_t *cfreader, nb_material_t *mat);
-static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
+static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model);
+static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
+static int read_elasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
 static void show_cvfa_error_msg(int cvfa_status);
@@ -477,8 +477,8 @@ static int simulate(const char *problem_data, nb_partition_t *part,
 					 nb_bcond_t*)/* Can be NULL */)
 {
 	int status = 1;
-	vcn_model_t* model = nb_allocate_on_stack(vcn_model_get_memsize());
-	vcn_model_init(model);
+	nb_model_t* model = nb_allocate_on_stack(nb_model_get_memsize());
+	nb_model_init(model);
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *bcond = nb_allocate_on_stack(bcond_size);
 	nb_bcond_init(bcond, 2);
@@ -524,14 +524,14 @@ static int simulate(const char *problem_data, nb_partition_t *part,
 
 	status = 0;
 CLEANUP:
-	vcn_model_finish(model);
+	nb_model_finish(model);
 	nb_bcond_finish(bcond);
 	nb_material_destroy(material);
 
 	return status;
 }
 
-static void get_mesh(const vcn_model_t *model, void *part,
+static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
 	uint32_t mesh_memsize = nb_mesh_get_memsize();
@@ -574,7 +574,7 @@ static inline void results_finish(results_t *results)
 
 static int read_problem_data
 		(const char* filename,
-		 vcn_model_t *model,
+		 nb_model_t *model,
 		 nb_bcond_t* bcond,
 		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
@@ -582,7 +582,7 @@ static int read_problem_data
 {      
 	int status = 1;
 	/* Initialize custom format to read file */
-	vcn_cfreader_t* cfreader = vcn_cfreader_create(filename, "#");
+	nb_cfreader_t* cfreader = nb_cfreader_create(filename, "#");
 	if (NULL == cfreader) {
 		printf("\nERROR: Can not open file %s.\n",
 		       filename);
@@ -608,18 +608,18 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
-	vcn_cfreader_destroy(cfreader);
+	nb_cfreader_destroy(cfreader);
 	status = 0;
 EXIT:
 	return status;
 }
 
-static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
+static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 {
 	int status = 1;
 	/* Read modele vertices */
 	uint32_t N = 0;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto EXIT;
 
 	if (1 > N)
@@ -628,12 +628,12 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 
 	model->vertex = malloc(2 * model->N * sizeof(*(model->vertex)));
 	for (uint32_t i = 0; i < 2 * model->N; i++) {
-		if (0 != vcn_cfreader_read_double(cfreader, &(model->vertex[i])))
+		if (0 != nb_cfreader_read_double(cfreader, &(model->vertex[i])))
 			goto CLEANUP_VERTICES;
 	}
 	/* Read model segments */
 	N = 0;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto CLEANUP_VERTICES;
 
 	if (1 > N)
@@ -642,12 +642,12 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 
 	model->edge = malloc(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
-		if (0 != vcn_cfreader_read_uint(cfreader, &(model->edge[i])))
+		if (0 != nb_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
 	}
 	/* Read model holes */
 	N = 0;
-	if (0 != vcn_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto CLEANUP_SEGMENTS;
 	model->H = N;
 
@@ -655,7 +655,7 @@ static int read_geometry(vcn_cfreader_t *cfreader, vcn_model_t *model)
 	if (0 < model->H) {
 		model->holes = malloc(2 * model->H * sizeof(*(model->holes)));
 		for (uint32_t i = 0; i < 2 * model->H; i++) {
-			if (0 != vcn_cfreader_read_double(cfreader,
+			if (0 != nb_cfreader_read_double(cfreader,
 							  &(model->holes[i])))
 				goto CLEANUP_HOLES;
 		}
@@ -683,32 +683,32 @@ EXIT:
 }
 
 
-static int read_material(vcn_cfreader_t *cfreader, nb_material_t *mat)
+static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat)
 {
 	int status = 1;
 	double poisson_module;
-	if (0 != vcn_cfreader_read_double(cfreader, &poisson_module))
+	if (0 != nb_cfreader_read_double(cfreader, &poisson_module))
 		goto EXIT;
 	nb_material_set_poisson_module(mat, poisson_module);
 
 	double elasticity_module;
-	if (0 != vcn_cfreader_read_double(cfreader, &elasticity_module))
+	if (0 != nb_cfreader_read_double(cfreader, &elasticity_module))
 		goto EXIT;
 	nb_material_set_elasticity_module(mat, elasticity_module);
 
 	double fracture_energy;
-	if (0 != vcn_cfreader_read_double(cfreader, &fracture_energy))
+	if (0 != nb_cfreader_read_double(cfreader, &fracture_energy))
 		goto EXIT;
 	nb_material_set_fracture_energy(mat, fracture_energy);
 
 	double compression_limit_stress;
-	if (0 != vcn_cfreader_read_double(cfreader, &compression_limit_stress))
+	if (0 != nb_cfreader_read_double(cfreader, &compression_limit_stress))
 		goto EXIT;
 	nb_material_set_compression_limit_stress(mat,
 						      compression_limit_stress);
 
 	double traction_limit_stress;
-	if (0 != vcn_cfreader_read_double(cfreader, &traction_limit_stress))
+	if (0 != nb_cfreader_read_double(cfreader, &traction_limit_stress))
 		goto EXIT;
 	nb_material_set_traction_limit_stress(mat, traction_limit_stress);
 	status = 0;
@@ -717,13 +717,13 @@ EXIT:
 }
 
 
-static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
+static int read_elasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D)
 {
 	int status = 1;
 	int iaux;
-	if (0 != vcn_cfreader_read_int(cfreader, &iaux))
+	if (0 != nb_cfreader_read_int(cfreader, &iaux))
 		goto EXIT;
 	
 	switch (iaux) {
@@ -741,7 +741,7 @@ static int read_elasticity2D_params(vcn_cfreader_t *cfreader,
 	}
 
 	/* FIX: Usable only for plane stress */
-	if (0 != vcn_cfreader_read_double(cfreader, &(params2D->thickness)))
+	if (0 != nb_cfreader_read_double(cfreader, &(params2D->thickness)))
 		goto EXIT;
 	status = 0;
 EXIT:

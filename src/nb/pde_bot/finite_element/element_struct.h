@@ -5,8 +5,8 @@
 
 #include "nb/pde_bot/finite_element/element.h"
 
-struct vcn_fem_elem_s {
-	vcn_elem_id type;
+struct nb_fem_elem_s {
+	nb_elem_id type;
 	uint8_t N_nodes;
 	uint8_t N_gp;
 	double *gp_weight;    /* Integration weights of the Gauss pnt */

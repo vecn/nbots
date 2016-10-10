@@ -97,7 +97,7 @@ static void draw_mesh(nb_graphics_context_t *g, int width, int height,
 	if (0 < nb_mesh_get_N_vtx(mesh_ptr)) {
 		const nb_mesh_t *const mesh = mesh_ptr;
 		double box[4];
-		vcn_utils2D_get_enveloping_box(mesh->N_input_vtx,
+		nb_utils2D_get_enveloping_box(mesh->N_input_vtx,
 					       mesh->input_vtx,
 					       sizeof(*(mesh->input_vtx)),
 					       msh_vtx_get_x,
@@ -133,7 +133,7 @@ void nb_mesh_draw(const nb_mesh_t *const mesh,
 	nb_graphics_export(filename, width, height, draw_mesh, mesh);
 }
 
-void vcn_dewall_draw(const nb_mesh_t *const mesh,
+void nb_dewall_draw(const nb_mesh_t *const mesh,
 		     const char* filename, int width, int height,
 		     uint8_t axe, double alpha, uint32_t N,
 		     void *vtx_array)
@@ -155,7 +155,7 @@ static void draw_dewall(nb_graphics_context_t *g, int width, int height,
 	msh_vtx_t **vertices = data->vtx_array;
 
 	double box[4];
-	vcn_utils2D_get_enveloping_box(data->mesh->N_input_vtx,
+	nb_utils2D_get_enveloping_box(data->mesh->N_input_vtx,
 				       data->mesh->input_vtx,
 				       sizeof(*(data->mesh->input_vtx)),
 				       msh_vtx_get_x,

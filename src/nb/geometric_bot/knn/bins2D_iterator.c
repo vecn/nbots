@@ -7,26 +7,26 @@
 
 #include "bins2D_structs.h"
 
-struct vcn_bins2D_iter_s {
+struct nb_bins2D_iter_s {
 	nb_container_t *bins;
 	nb_iterator_t *bin_iter;
 	nb_iterator_t *point_iter;
-	const vcn_point2D_t *current;
+	const nb_point2D_t *current;
 };
 
-static void point_to_next(vcn_bins2D_iter_t *iter);
+static void point_to_next(nb_bins2D_iter_t *iter);
 
-uint32_t vcn_bins2D_iter_get_memsize(void)
+uint32_t nb_bins2D_iter_get_memsize(void)
 {
-	return sizeof(vcn_bins2D_iter_t);
+	return sizeof(nb_bins2D_iter_t);
 }
 
-void vcn_bins2D_iter_init(vcn_bins2D_iter_t *iter)
+void nb_bins2D_iter_init(nb_bins2D_iter_t *iter)
 {
-	memset(iter, 0, vcn_bins2D_iter_get_memsize());
+	memset(iter, 0, nb_bins2D_iter_get_memsize());
 }
 
-void vcn_bins2D_iter_finish(vcn_bins2D_iter_t *iter)
+void nb_bins2D_iter_finish(nb_bins2D_iter_t *iter)
 {
 	if (NULL != iter->bin_iter)
 		nb_iterator_destroy(iter->bin_iter);
@@ -34,36 +34,36 @@ void vcn_bins2D_iter_finish(vcn_bins2D_iter_t *iter)
 		nb_iterator_destroy(iter->point_iter);
 }
 
-vcn_bins2D_iter_t* vcn_bins2D_iter_create(void)
+nb_bins2D_iter_t* nb_bins2D_iter_create(void)
 {
-	vcn_bins2D_iter_t *iter = nb_allocate_mem(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
+	nb_bins2D_iter_t *iter = nb_allocate_mem(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
 	return iter;
 }
 
-void vcn_bins2D_iter_destroy(vcn_bins2D_iter_t *iter)
+void nb_bins2D_iter_destroy(nb_bins2D_iter_t *iter)
 {
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 	nb_free_mem(iter);
 }
 
-inline void vcn_bins2D_iter_set_bins(vcn_bins2D_iter_t *iter,
-				     const vcn_bins2D_t *const bins2D)
+inline void nb_bins2D_iter_set_bins(nb_bins2D_iter_t *iter,
+				     const nb_bins2D_t *const bins2D)
 {
 	if (NULL != bins2D) {
 		iter->bins = bins2D->bins;
-		vcn_bins2D_iter_restart(iter);
+		nb_bins2D_iter_restart(iter);
 	}
 }
 
-inline bool vcn_bins2D_iter_has_more(vcn_bins2D_iter_t *iter)
+inline bool nb_bins2D_iter_has_more(nb_bins2D_iter_t *iter)
 {
 	return (NULL != iter->current);
 }
 
-const vcn_point2D_t* vcn_bins2D_iter_get_next(vcn_bins2D_iter_t *iter)
+const nb_point2D_t* nb_bins2D_iter_get_next(nb_bins2D_iter_t *iter)
 {
-	const vcn_point2D_t* point = iter->current;
+	const nb_point2D_t* point = iter->current;
 	if (nb_iterator_has_more(iter->point_iter))
 		iter->current = nb_iterator_get_next(iter->point_iter);
         else
@@ -71,7 +71,7 @@ const vcn_point2D_t* vcn_bins2D_iter_get_next(vcn_bins2D_iter_t *iter)
 	return point;
 }
 
-static void point_to_next(vcn_bins2D_iter_t *iter)
+static void point_to_next(nb_bins2D_iter_t *iter)
 {
 	iter->current = NULL;
 	if (nb_iterator_has_more(iter->bin_iter)) {
@@ -82,7 +82,7 @@ static void point_to_next(vcn_bins2D_iter_t *iter)
 	}
 }
 
-void vcn_bins2D_iter_restart(vcn_bins2D_iter_t *iter)
+void nb_bins2D_iter_restart(nb_bins2D_iter_t *iter)
 {
 	if (NULL == iter->bin_iter)
 		iter->bin_iter = nb_iterator_create();

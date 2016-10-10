@@ -250,7 +250,7 @@ static bool vol_intersects_trg(const nb_partition_t *part,
 		uint16_t N_adj2 = nb_partition_elem_get_N_adj(intmsh, trg_id);
 		for (uint16_t j = 0; j < N_adj2; j++) {
 			mesh_load_sgm_from_adj(intmsh, trg_id, j, b1, b2);
-			out = vcn_utils2D_are_sgm_intersected(a1, a2, b1,
+			out = nb_utils2D_are_sgm_intersected(a1, a2, b1,
 							      b2, NULL);
 			if (out)
 				goto EXIT;

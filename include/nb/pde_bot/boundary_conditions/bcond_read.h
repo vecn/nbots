@@ -7,6 +7,6 @@
 
 #include "nb/cfreader_cat.h"
 
-int nb_bcond_read(nb_bcond_t *bcond, vcn_cfreader_t *cfreader);
+int nb_bcond_read(nb_bcond_t *bcond, nb_cfreader_t *cfreader);
 
 #endif

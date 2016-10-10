@@ -4,7 +4,7 @@
 #include "nb/image_bot.h"
 
 void nb_mesh_set_img_density(nb_mesh_t *mesh,
-			      const vcn_image_t *const img,
+			      const nb_image_t *const img,
 			      double density_volume);
 void nb_mesh_clear_img_density(nb_mesh_t *mesh);
 

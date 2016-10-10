@@ -6,7 +6,7 @@
 
 #include "utils.h"
 
-double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
+double nb_fem_get_jacobian(const nb_fem_elem_t *elem, uint32_t id,
 			     const nb_partition_t *part, int gp_id,
 			     double Jinv[4])
 {
@@ -16,13 +16,13 @@ double nb_fem_get_jacobian(const vcn_fem_elem_t *elem, uint32_t id,
 	double dx_deta = 0.0;
 	double dy_deta = 0.0;
 
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		uint32_t inode = nb_partition_elem_get_adj(part, id, i);
 		double xi = nb_partition_node_get_x(part, inode);
 		double yi = nb_partition_node_get_y(part, inode);
-		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
-		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
+		double dNi_dpsi = nb_fem_elem_dNi_dpsi(elem, i, gp_id);
+		double dNi_deta = nb_fem_elem_dNi_deta(elem, i, gp_id);
 		dx_dpsi += dNi_dpsi * xi;
 		dx_deta += dNi_deta * xi;
 		dy_dpsi += dNi_dpsi * yi;
@@ -46,14 +46,14 @@ bool nb_fem_elem_is_distorted(double detJ)
 	return detJ < 0;
 }
 
-void nb_fem_get_derivatives(const vcn_fem_elem_t *elem,
+void nb_fem_get_derivatives(const nb_fem_elem_t *elem,
 			      int gp_id, double Jinv[4],
 			      double *dNi_dx, double *dNi_dy)
 {
-	uint8_t N_nodes = vcn_fem_elem_get_N_nodes(elem);
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint8_t i = 0; i < N_nodes; i++) {
-		double dNi_dpsi = vcn_fem_elem_dNi_dpsi(elem, i, gp_id);
-		double dNi_deta = vcn_fem_elem_dNi_deta(elem, i, gp_id);
+		double dNi_dpsi = nb_fem_elem_dNi_dpsi(elem, i, gp_id);
+		double dNi_deta = nb_fem_elem_dNi_deta(elem, i, gp_id);
 		dNi_dx[i] = Jinv[0] * dNi_dpsi + Jinv[1] * dNi_deta;
 		dNi_dy[i] = Jinv[2] * dNi_dpsi + Jinv[3] * dNi_deta;
 	}

@@ -6,7 +6,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
 void nb_fem_set_bconditions(const nb_partition_t *part,
-			    vcn_sparse_t* K, double* F, 
+			    nb_sparse_t* K, double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor);
 

@@ -51,21 +51,21 @@ static void test_set_img_density_jpg_eye(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/eye.jpg", INPUTS_DIR);
-	vcn_image_t *img = vcn_image_create();
-	vcn_image_read(img, input_name);	
-	vcn_model_t* model = 
-		vcn_model_create_rectangle(0.0, 0.0,
-					   vcn_image_get_width(img),
-					   vcn_image_get_height(img));
+	nb_image_t *img = nb_image_create();
+	nb_image_read(img, input_name);	
+	nb_model_t* model = 
+		nb_model_create_rectangle(0.0, 0.0,
+					   nb_image_get_width(img),
+					   nb_image_get_height(img));
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_img_density(mesh, img, 0.0);
 	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 	nb_mesh_clear_img_density(mesh);
-	vcn_image_destroy(img);
+	nb_image_destroy(img);
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
 	nb_mesh_destroy(mesh);
@@ -78,18 +78,18 @@ static void test_set_img_density_jpg_gnome(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/gnome.jpg", INPUTS_DIR);
-	vcn_image_t *img = vcn_image_create();
-	vcn_image_read(img, input_name);	
-	vcn_model_t* model = 
-		vcn_model_create_rectangle(0.0, 0.0,
-					   vcn_image_get_width(img),
-					   vcn_image_get_height(img));
+	nb_image_t *img = nb_image_create();
+	nb_image_read(img, input_name);	
+	nb_model_t* model = 
+		nb_model_create_rectangle(0.0, 0.0,
+					   nb_image_get_width(img),
+					   nb_image_get_height(img));
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_img_density(mesh, img, 0.0);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 	nb_mesh_clear_img_density(mesh);
-	vcn_image_destroy(img);
+	nb_image_destroy(img);
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
 	nb_mesh_destroy(mesh);
@@ -102,21 +102,21 @@ static void test_set_img_density_png_jolie(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/jolie.png", INPUTS_DIR);
-	vcn_image_t *img = vcn_image_create();
-	vcn_image_read(img, input_name);	
-	vcn_model_t* model = 
-		vcn_model_create_rectangle(0.0, 0.0,
-					   vcn_image_get_width(img),
-					   vcn_image_get_height(img));
+	nb_image_t *img = nb_image_create();
+	nb_image_read(img, input_name);	
+	nb_model_t* model = 
+		nb_model_create_rectangle(0.0, 0.0,
+					   nb_image_get_width(img),
+					   nb_image_get_height(img));
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_img_density(mesh, img, 0.0);
 	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 	nb_mesh_clear_img_density(mesh);
-	vcn_image_destroy(img);
+	nb_image_destroy(img);
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
 	nb_mesh_destroy(mesh);
@@ -129,19 +129,19 @@ static void test_set_img_density_jpg_hand(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/hand.jpg", INPUTS_DIR);
-	vcn_image_t *img = vcn_image_create();
-	vcn_image_read(img, input_name);	
-	vcn_model_t* model = 
-		vcn_model_create_rectangle(0.0, 0.0,
-					   vcn_image_get_width(img),
-					   vcn_image_get_height(img));
+	nb_image_t *img = nb_image_create();
+	nb_image_read(img, input_name);	
+	nb_model_t* model = 
+		nb_model_create_rectangle(0.0, 0.0,
+					   nb_image_get_width(img),
+					   nb_image_get_height(img));
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_img_density(mesh, img, 0.0);
 	nb_mesh_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 	nb_mesh_clear_img_density(mesh);
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
@@ -155,12 +155,12 @@ static void test_set_img_density_jpg_size_const(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/color_eye.jpg", INPUTS_DIR);
-	vcn_image_t *img = vcn_image_create();
-	vcn_image_read(img, input_name);	
-	vcn_model_t* model = 
-		vcn_model_create_rectangle(0.0, 0.0,
-					   vcn_image_get_width(img),
-					   vcn_image_get_height(img));
+	nb_image_t *img = nb_image_create();
+	nb_image_read(img, input_name);	
+	nb_model_t* model = 
+		nb_model_create_rectangle(0.0, 0.0,
+					   nb_image_get_width(img),
+					   nb_image_get_height(img));
 	nb_mesh_t* mesh = nb_mesh_create();
 	nb_mesh_set_img_density(mesh, img, 0.0);
 	nb_mesh_set_size_constraint(mesh,
@@ -170,9 +170,9 @@ static void test_set_img_density_jpg_size_const(void)
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
 	nb_mesh_generate_from_model(mesh, model);
-	vcn_model_destroy(model);
+	nb_model_destroy(model);
 	nb_mesh_clear_img_density(mesh);
-	vcn_image_destroy(img);
+	nb_image_destroy(img);
 	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
 	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
 	nb_mesh_destroy(mesh);

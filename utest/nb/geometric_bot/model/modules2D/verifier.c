@@ -39,8 +39,8 @@ static void test_verify_consistence(void)
 {
 	char input_name[256];
 	sprintf(input_name, "%s/square_donut.psl", INPUTS_DIR);
-	vcn_model_t *model = vcn_model_load(input_name);
-	bool is_ok = (0 == vcn_model_verify_consistence(model, NULL));
-	vcn_model_destroy(model);
+	nb_model_t *model = nb_model_load(input_name);
+	bool is_ok = (0 == nb_model_verify_consistence(model, NULL));
+	nb_model_destroy(model);
 	CU_ASSERT(is_ok);
 }

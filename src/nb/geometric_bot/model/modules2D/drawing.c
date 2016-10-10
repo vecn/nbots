@@ -10,16 +10,16 @@
 #include "nb/geometric_bot.h"
 
 static void draw_edges(nb_graphics_context_t *g,
-		       const vcn_model_t *const model);
+		       const nb_model_t *const model);
 static void draw_vertices(nb_graphics_context_t *g,
-			  const vcn_model_t *const model);
+			  const nb_model_t *const model);
 static void draw_holes(nb_graphics_context_t *g,
-		       const vcn_model_t *const model);
+		       const nb_model_t *const model);
 static void draw_model(nb_graphics_context_t *g, int width, int height,
 		       const void *const model_ptr);
 
 static void draw_edges(nb_graphics_context_t *g,
-		       const vcn_model_t *const model)
+		       const nb_model_t *const model)
 {
 	nb_graphics_set_source(g, NB_BLUE);
 	nb_graphics_set_line_width(g, 1.0);
@@ -37,7 +37,7 @@ static void draw_edges(nb_graphics_context_t *g,
 }
 
 static void draw_vertices(nb_graphics_context_t *g,
-			  const vcn_model_t *const model)
+			  const nb_model_t *const model)
 {
 	for (uint32_t i = 0; i < model->N; i++) {
 		nb_graphics_set_source(g, NB_BLUE);
@@ -66,7 +66,7 @@ static void draw_vertices(nb_graphics_context_t *g,
 }
 
 static void draw_holes(nb_graphics_context_t *g,
-		       const vcn_model_t *const model)
+		       const nb_model_t *const model)
 {
 	nb_graphics_set_source(g, NB_RED);
 	for (uint32_t i = 0; i < model->H; i++) {
@@ -84,16 +84,16 @@ static void draw_holes(nb_graphics_context_t *g,
 static void draw_model(nb_graphics_context_t *g, int width, int height,
 		       const void *const model_ptr)
 {
-	const vcn_model_t *const model = model_ptr;
+	const nb_model_t *const model = model_ptr;
 	if (0 == model->N) 
 		goto EXIT;
 
 	/* Compute center and zoom */
 	double box[4];
-	vcn_utils2D_get_enveloping_box(model->N, model->vertex,
+	nb_utils2D_get_enveloping_box(model->N, model->vertex,
 				       2 * sizeof(*(model->vertex)),
-				       vcn_utils2D_get_x_from_darray,
-				       vcn_utils2D_get_y_from_darray,
+				       nb_utils2D_get_x_from_darray,
+				       nb_utils2D_get_y_from_darray,
 				       box);
 
 	nb_graphics_enable_camera(g);
@@ -108,7 +108,7 @@ EXIT:
 	return;
 }
 
-void vcn_model_draw(const vcn_model_t *const model,
+void nb_model_draw(const nb_model_t *const model,
 		    const char* filename,
 		    int width, int height)
 {

@@ -227,7 +227,7 @@ void medge_set_length(msh_edge_t *const sgm)
 	attr_t* attr = nb_allocate_zero_mem(sizeof(attr_t));
 	attr->id = 2;
 	double* length = nb_allocate_mem(sizeof(*length));
-	*length = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	*length = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	attr->data = length;
 
 	if(medge_is_subsgm(sgm))
@@ -251,7 +251,7 @@ void medge_update_length(msh_edge_t *const sgm)
 	if (attr->id != 2) 
 		return;
 	double* length = attr->data;
-	length[0] = vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+	length[0] = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 }
 
 double medge_get_computed_length(const msh_edge_t *const sgm)
@@ -265,9 +265,9 @@ double medge_get_computed_length(const msh_edge_t *const sgm)
 		/* TEMPORAL: This should never happen
 		 * The routine mesh_insert_vtx does not allocate length 
 		 */
-		return vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+		return nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	if (attr->id != 2)
-		return vcn_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
+		return nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	double* length = attr->data;
 	return length[0];
   
@@ -432,9 +432,9 @@ bool mtrg_has_an_input_sgm(const msh_trg_t *trg)
 bool mtrg_contains_circumcenter(const msh_trg_t *const trg)
 {
 	double cc[2];
-	vcn_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
+	nb_utils2D_get_circumcenter(trg->v1->x, trg->v2->x,
 				     trg->v3->x, cc);
-	return vcn_utils2D_pnt_lies_in_trg(trg->v1->x, trg->v2->x,
+	return nb_utils2D_pnt_lies_in_trg(trg->v1->x, trg->v2->x,
 					   trg->v3->x, cc);
 }
 
@@ -947,7 +947,7 @@ msh_trg_t* mesh_locate_vtx(const nb_mesh_t *const restrict mesh,
 	msh_trg_t *enveloping_trg = NULL;
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t *trg = nb_iterator_get_next(iter);
-		if (vcn_utils2D_pnt_lies_in_trg(trg->v1->x,
+		if (nb_utils2D_pnt_lies_in_trg(trg->v1->x,
 						trg->v2->x,
 						trg->v3->x,
 						v->x)) {
@@ -969,16 +969,16 @@ inline void mesh_get_extern_scale_and_disp(const nb_mesh_t *const mesh,
 
 void mesh_enumerate_vtx(nb_mesh_t * restrict mesh)
 {
-	vcn_bins2D_iter_t* iter = nb_allocate_on_stack(vcn_bins2D_iter_get_memsize());
-	vcn_bins2D_iter_init(iter);
-	vcn_bins2D_iter_set_bins(iter, mesh->ug_vtx);
+	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
+	nb_bins2D_iter_init(iter);
+	nb_bins2D_iter_set_bins(iter, mesh->ug_vtx);
 	int id = 0;
-	while (vcn_bins2D_iter_has_more(iter)) {
-		msh_vtx_t* vtx = (msh_vtx_t*) vcn_bins2D_iter_get_next(iter);
+	while (nb_bins2D_iter_has_more(iter)) {
+		msh_vtx_t* vtx = (msh_vtx_t*) nb_bins2D_iter_get_next(iter);
 		mvtx_set_id(vtx, id);
 		id += 1;
 	}
-	vcn_bins2D_iter_finish(iter);
+	nb_bins2D_iter_finish(iter);
 }
 
 void mesh_enumerate_trg(nb_mesh_t *mesh)

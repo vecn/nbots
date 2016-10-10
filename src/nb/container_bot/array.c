@@ -38,13 +38,13 @@ static void array_get_min_max(const void *const array, uint32_t N,
 			      const void *const data,
 			      uint32_t *min, uint32_t *max);
 
-inline void* vcn_array_get(const void *const base, uint16_t type_size,
+inline void* nb_array_get(const void *const base, uint16_t type_size,
 			   uint32_t i)
 {
 	return (char*) base + i * type_size;
 }
 
-void vcn_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size)
+void nb_swap(void* base, uint32_t i, uint32_t j, uint16_t type_size)
 {
 	if (i != j) {
 		int32_t swapped_bytes = swap_chunks(base, i, j,
@@ -100,13 +100,13 @@ static inline void swap_byte(char* base, uint32_t i, uint32_t j,
 
 }
 
-inline void vcn_qsort(void *base, uint32_t N, uint16_t type_size,
+inline void nb_qsort(void *base, uint32_t N, uint16_t type_size,
 		      int8_t (*compare)(const void *const, const void *const))
 {
 	qsort_data(base, 0, N - 1, type_size, compare, NULL);
 }
 
-inline void vcn_qsort_wd(void *base, uint32_t N, uint16_t type_size,
+inline void nb_qsort_wd(void *base, uint32_t N, uint16_t type_size,
 			 int8_t (*compare)(const void *const,
 					   const void *const,
 					   const void *const data),
@@ -133,15 +133,15 @@ static int partition(char *base, int32_t p, int32_t r, uint16_t type_size,
 	for (uint32_t j = p; j < r; j++) {
 		void *jptr = base + j * type_size;
 		if (compare(jptr, rptr, data) < 0) {
-			vcn_swap(base, k, j, type_size);
+			nb_swap(base, k, j, type_size);
 			k++;
 		}
 	}
-	vcn_swap(base, k, r, type_size);
+	nb_swap(base, k, r, type_size);
 	return k;
 }
 
-inline uint32_t vcn_array_get_min_id(const void *const array, uint32_t N,
+inline uint32_t nb_array_get_min_id(const void *const array, uint32_t N,
 				     uint16_t type_size,
 				     int8_t (*compare)(const void *const,
 						       const void *const))
@@ -149,7 +149,7 @@ inline uint32_t vcn_array_get_min_id(const void *const array, uint32_t N,
 	return array_get_min(array, N, type_size, compare, NULL);
 }
 
-inline uint32_t vcn_array_get_min_id_wd(const void *const array,
+inline uint32_t nb_array_get_min_id_wd(const void *const array,
 					uint32_t N,
 					uint16_t type_size,
 					int8_t (*compare)(const void *const,
@@ -177,7 +177,7 @@ static uint32_t array_get_min(const void *const array, uint32_t N,
 	return min;
 }
 
-inline uint32_t vcn_array_get_max_id(const void *const array, uint32_t N,
+inline uint32_t nb_array_get_max_id(const void *const array, uint32_t N,
 				     uint16_t type_size,
 				     int8_t (*compare)(const void *const,
 						       const void *const))
@@ -185,7 +185,7 @@ inline uint32_t vcn_array_get_max_id(const void *const array, uint32_t N,
 	return array_get_max(array, N, type_size, compare, NULL);
 }
 
-inline uint32_t vcn_array_get_max_id_wd(const void *const array,
+inline uint32_t nb_array_get_max_id_wd(const void *const array,
 					uint32_t N,
 					uint16_t type_size,
 					int8_t (*compare)(const void *const,
@@ -213,7 +213,7 @@ static uint32_t array_get_max(const void *const array, uint32_t N,
 
 }
 
-inline void vcn_array_get_min_max_ids(const void *const array, uint32_t N,
+inline void nb_array_get_min_max_ids(const void *const array, uint32_t N,
 				      uint16_t type_size,
 				      int8_t (*compare)(const void *const,
 							const void *const),
@@ -222,7 +222,7 @@ inline void vcn_array_get_min_max_ids(const void *const array, uint32_t N,
 	array_get_min_max(array, N, type_size, compare, NULL, min, max);
 }
 
-inline void vcn_array_get_min_max_ids_wd(const void *const array, uint32_t N,
+inline void nb_array_get_min_max_ids_wd(const void *const array, uint32_t N,
 					 uint16_t type_size,
 					 int8_t (*compare)(const void *const,
 							   const void *const,
@@ -255,7 +255,7 @@ static void array_get_min_max(const void *const array, uint32_t N,
 	}
 }
 
-int8_t vcn_compare_char(const void *const restrict a, 
+int8_t nb_compare_char(const void *const restrict a, 
 			const void *const restrict b)
 {
 	int8_t out = 0;
@@ -266,7 +266,7 @@ int8_t vcn_compare_char(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_float(const void *const restrict a, 
+int8_t nb_compare_float(const void *const restrict a, 
 			 const void *const restrict b)
 {
 	int8_t out = 0;
@@ -277,7 +277,7 @@ int8_t vcn_compare_float(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_double(const void *const restrict a, 
+int8_t nb_compare_double(const void *const restrict a, 
 			  const void *const restrict b)
 {
 	int8_t out = 0;
@@ -288,7 +288,7 @@ int8_t vcn_compare_double(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_int8(const void *const restrict a, 
+int8_t nb_compare_int8(const void *const restrict a, 
 			const void *const restrict b)
 {
 	int8_t out = 0;
@@ -299,7 +299,7 @@ int8_t vcn_compare_int8(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_int16(const void *const restrict a, 
+int8_t nb_compare_int16(const void *const restrict a, 
 			 const void *const restrict b)
 {
 	int8_t out = 0;
@@ -310,7 +310,7 @@ int8_t vcn_compare_int16(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_int32(const void *const restrict a, 
+int8_t nb_compare_int32(const void *const restrict a, 
 			 const void *const restrict b)
 {
 	int32_t out = 0;
@@ -321,7 +321,7 @@ int8_t vcn_compare_int32(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_int64(const void *const restrict a, 
+int8_t nb_compare_int64(const void *const restrict a, 
 			 const void *const restrict b)
 {
 	int8_t out = 0;
@@ -332,7 +332,7 @@ int8_t vcn_compare_int64(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_uint8(const void *const restrict a, 
+int8_t nb_compare_uint8(const void *const restrict a, 
 			 const void *const restrict b)
 {
 	int8_t out = 0;
@@ -343,7 +343,7 @@ int8_t vcn_compare_uint8(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_uint16(const void *const restrict a, 
+int8_t nb_compare_uint16(const void *const restrict a, 
 			  const void *const restrict b)
 {
 	int8_t out = 0;
@@ -354,7 +354,7 @@ int8_t vcn_compare_uint16(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_uint32(const void *const restrict a, 
+int8_t nb_compare_uint32(const void *const restrict a, 
 			  const void *const restrict b)
 {
 	int32_t out = 0;
@@ -365,7 +365,7 @@ int8_t vcn_compare_uint32(const void *const restrict a,
 	return out;
 }
 
-int8_t vcn_compare_uint64(const void *const restrict a, 
+int8_t nb_compare_uint64(const void *const restrict a, 
 			  const void *const restrict b)
 {
 	int8_t out = 0;

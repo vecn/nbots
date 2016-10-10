@@ -7,13 +7,13 @@
 
 #define INV_3 0.33333333333333333333333333333
 
-static vcn_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp);
-static void init_trg_linear(vcn_fem_elem_t *elem);
-static void init_quad_linear(vcn_fem_elem_t *elem);
+static nb_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp);
+static void init_trg_linear(nb_fem_elem_t *elem);
+static void init_quad_linear(nb_fem_elem_t *elem);
 
-vcn_fem_elem_t *vcn_fem_elem_create(vcn_elem_id type)
+nb_fem_elem_t *nb_fem_elem_create(nb_elem_id type)
 {
-	vcn_fem_elem_t *elem;
+	nb_fem_elem_t *elem;
 	switch(type) {
 	case NB_TRG_LINEAR:
 		elem = elem_allocate_mem(3, 1);
@@ -30,16 +30,16 @@ vcn_fem_elem_t *vcn_fem_elem_create(vcn_elem_id type)
 	return elem;
 }
 
-static vcn_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp)
+static nb_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp)
 {
 	uint16_t w_memsize = N_gp * sizeof(double);
 	uint16_t Ni_memsize = N_nodes * N_gp * sizeof(double);
-	uint16_t elem_memsize = sizeof(vcn_fem_elem_t);
+	uint16_t elem_memsize = sizeof(nb_fem_elem_t);
 	uint32_t memsize = elem_memsize + w_memsize + 3 * Ni_memsize;
 	
 	char *memblock = nb_allocate_mem(memsize);
 
-	vcn_fem_elem_t *elem = (void*) memblock;
+	nb_fem_elem_t *elem = (void*) memblock;
 	elem->gp_weight = (void*) (memblock + elem_memsize);
 	elem->Ni = (void*) (memblock + elem_memsize + w_memsize);
 	elem->dNi_dpsi = (void*) (memblock + elem_memsize +
@@ -49,7 +49,7 @@ static vcn_fem_elem_t *elem_allocate_mem(uint8_t N_nodes, uint8_t N_gp)
 	return elem;
 }
 
-static void init_trg_linear(vcn_fem_elem_t *elem)
+static void init_trg_linear(nb_fem_elem_t *elem)
 {
 	elem->type = NB_TRG_LINEAR;
 	elem->N_nodes = 3;
@@ -70,7 +70,7 @@ static void init_trg_linear(vcn_fem_elem_t *elem)
 	elem->dNi_deta[2] = 1.0;
 }
 
-static void init_quad_linear(vcn_fem_elem_t *elem)
+static void init_quad_linear(nb_fem_elem_t *elem)
 {
 	elem->type = NB_QUAD_LINEAR;
 	elem->N_nodes = 4;
@@ -118,40 +118,40 @@ static void init_quad_linear(vcn_fem_elem_t *elem)
 	memcpy(elem->dNi_deta, dNi_deta, 16 * sizeof(*(elem->dNi_deta)));
 }
 
-void vcn_fem_elem_destroy(vcn_fem_elem_t* elem)
+void nb_fem_elem_destroy(nb_fem_elem_t* elem)
 {
 	nb_free_mem(elem);
 }
 
-uint8_t vcn_fem_elem_get_N_gpoints(const vcn_fem_elem_t *const elem)
+uint8_t nb_fem_elem_get_N_gpoints(const nb_fem_elem_t *const elem)
 {
 	return elem->N_gp;
 }
 
-uint8_t vcn_fem_elem_get_N_nodes(const vcn_fem_elem_t *const elem)
+uint8_t nb_fem_elem_get_N_nodes(const nb_fem_elem_t *const elem)
 {
 	return elem->N_nodes;
 }
 
-double vcn_fem_elem_weight_gp(const vcn_fem_elem_t *const elem,
+double nb_fem_elem_weight_gp(const nb_fem_elem_t *const elem,
 			      uint8_t gp_id)
 {
 	return elem->gp_weight[gp_id];	
 }
 
-double vcn_fem_elem_Ni(const vcn_fem_elem_t *const elem,
+double nb_fem_elem_Ni(const nb_fem_elem_t *const elem,
 		       uint8_t node_id, uint8_t gp_id)
 {
 	return elem->Ni[node_id * elem->N_gp + gp_id];
 }
 
-double vcn_fem_elem_dNi_dpsi(const vcn_fem_elem_t *const elem,
+double nb_fem_elem_dNi_dpsi(const nb_fem_elem_t *const elem,
 			     uint8_t node_id, uint8_t gp_id)
 {
 	return elem->dNi_dpsi[node_id * elem->N_gp + gp_id];
 }
 
-double vcn_fem_elem_dNi_deta(const vcn_fem_elem_t *const elem,
+double nb_fem_elem_dNi_deta(const nb_fem_elem_t *const elem,
 			   uint8_t node_id, uint8_t gp_id)
 {
 	return elem->dNi_deta[node_id * elem->N_gp + gp_id];
