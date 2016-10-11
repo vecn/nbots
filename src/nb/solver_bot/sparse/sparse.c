@@ -361,7 +361,7 @@ uint32_t nb_sparse_get_nnz(const nb_sparse_t *const A)
 	return nnz;
 }
 
-double nb_sparse_get_usym(const nb_sparse_t *const A)
+double nb_sparse_get_asym(const nb_sparse_t *const A)
 {
 	double sum = 0;
 	for (uint32_t i = 0; i < A->N; i++) {

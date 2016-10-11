@@ -920,8 +920,8 @@ static int solver(const nb_sparse_t *const A,
 	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 			      N * sizeof(double));
 
-	double usym = nb_sparse_get_usym(A);/* TEMPORAL */
-	printf("-- K usym: %e\n", usym);     /* TEMPORAL */
+	double asym = nb_sparse_get_asym(A);/* TEMPORAL */
+	printf("-- K usym: %e\n", asym);     /* TEMPORAL */
 
 	get_permutation(A, perm, iperm);
 

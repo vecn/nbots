@@ -19,6 +19,7 @@
 #define nb_soft_allocate_mem(size)				\
 	((NB_MAX_STACK_MEM_ON_SOFT_ALLOCATION < (size)) ?       \
 	 nb_allocate_mem(size):nb_allocate_on_stack(size))
+
 #define nb_soft_free_mem(size, ptr)				\
 	((NB_MAX_STACK_MEM_ON_SOFT_ALLOCATION < (size)) ?	\
 	 nb_free_mem(ptr):((ptr) = 0))
