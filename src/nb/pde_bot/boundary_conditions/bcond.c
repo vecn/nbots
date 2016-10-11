@@ -84,8 +84,8 @@ static void clone_container_elements(nb_container_t *cnt,
 				     const nb_container_t *const cnt_src,
 				     uint8_t N_dof)
 {
-	uint16_t size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = nb_allocate_on_stack(size);
+	uint16_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, cnt_src);
 	while (nb_iterator_has_more(iter)) {
@@ -94,6 +94,8 @@ static void clone_container_elements(nb_container_t *cnt,
 		nb_container_insert(cnt, bc_clone);
 	}
 	nb_iterator_finish(iter);
+
+	nb_soft_free_mem(iter_size, iter);
 }
 
 inline void nb_bcond_finish(void *bcond_ptr)

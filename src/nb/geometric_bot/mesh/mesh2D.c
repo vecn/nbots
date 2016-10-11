@@ -34,6 +34,8 @@ static void delete_triangles_by_wave(nb_mesh_t *const mesh, msh_trg_t* trg,
 static void advance_deletion_wave(nb_mesh_t *mesh, msh_trg_t *nb_trg,
 				  nb_container_t *trg_deleted);
 static void remove_concavities_triangles(nb_mesh_t* mesh);
+static void delete_trg_by_wave_and_forget_trg(nb_mesh_t *mesh,
+					      msh_trg_t *trg);
 static void remove_holes_triangles(nb_mesh_t* mesh,
 				   const nb_model_t *const model);
 static bool size_constraints_allow_refine(const nb_mesh_t *const mesh);
@@ -555,16 +557,22 @@ static void remove_concavities_triangles(nb_mesh_t* mesh)
 			}
 		}
 		nb_iterator_finish(iter);
-		if (NULL != trg) {
-			uint16_t container_size = nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
-			nb_container_init(trg_deleted, NB_SORTED);
-			delete_triangles_by_wave(mesh, trg, trg_deleted);
-			nb_container_finish(trg_deleted);
-		} else {
+		if (NULL != trg)
+			delete_trg_by_wave_and_forget_trg(mesh, trg);
+		else
 			stop = true;
-		}
 	}
+}
+
+static void delete_trg_by_wave_and_forget_trg(nb_mesh_t *mesh, msh_trg_t *trg)
+{
+	uint32_t container_size = nb_container_get_memsize(NB_SORTED);
+	nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
+	nb_container_init(trg_deleted, NB_SORTED);
+
+	delete_triangles_by_wave(mesh, trg, trg_deleted);
+
+	nb_container_finish(trg_deleted);
 }
 
 static void remove_holes_triangles(nb_mesh_t* mesh,
@@ -591,16 +599,8 @@ static void remove_holes_triangles(nb_mesh_t* mesh,
 		}
 		nb_iterator_finish(iter);
 
-		if (NULL != trg) {
-			uint16_t container_size =
-				nb_container_get_memsize(NB_SORTED);
-			nb_container_t *trg_deleted = nb_allocate_on_stack(container_size);
-			nb_container_init(trg_deleted, NB_SORTED);
-
-			delete_triangles_by_wave(mesh, trg, trg_deleted);
-
-			nb_container_finish(trg_deleted);
-		}
+		if (NULL != trg)
+			delete_trg_by_wave_and_forget_trg(mesh, trg);
 	}
 }
 
