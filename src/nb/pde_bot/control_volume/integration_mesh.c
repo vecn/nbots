@@ -85,6 +85,7 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 	uint32_t perm_size = N_elems * sizeof(uint32_t);
 	uint32_t memsize = mesh_size + vtx_size + perm_size;
 	char *memblock = nb_soft_allocate_mem(memsize);
+
 	nb_mesh_t *mesh = (void*) memblock;
 	double *vtx = (void*) (memblock + mesh_size);
 	uint32_t *perm = (void*) (memblock + mesh_size + vtx_size);

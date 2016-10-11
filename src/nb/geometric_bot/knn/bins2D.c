@@ -22,7 +22,6 @@ typedef struct {
 	double r;
 } circle_t;
 
-
 static int get_bin_coord(double x, double bin_size);
 static uint32_t bin_hash_key(const void *const bin_ptr);
 static int8_t bin_compare(const void* restrict bin1_ptr,
@@ -48,6 +47,16 @@ static void get_bins_block(nb_container_t* bins_block,
 			   int add_block[4],
 			   int substract_block[4]
 			   /* NULL if not required */);
+static void iterate_cells_in_container(nb_container_t* bins_block,
+				       const nb_container_t *bins,
+				       int add_block[4],
+				       int substract_block[4]
+				       /* NULL if not required */);
+static void iterate_cells_in_block(nb_container_t* bins_block,
+				   const nb_container_t *bins,
+				   int add_block[4],
+				   int substract_block[4]
+				   /* NULL if not required */);
 static bool bin_is_inside_block(int xcell, int ycell, const int block[4]);
 
 static bool bin_is_outside_block(int xcell, int ycell, const int block[4]);
@@ -110,7 +119,11 @@ static void delaunay_set_inside_points_of_prev_layer
 				(nb_container_t* vertices,
 				 nb_container_t* outside_vtx,
 				 const circle_t *const circle);
-
+static void get_points_inside_circle(nb_container_t *bins_block,
+				     double center[2], double radius,
+				     nb_container_t *points_inside);
+static bool are_points_inside_circle(const nb_container_t *points,
+				     double center[2], double radius);
 /****************** Functions implementation *************************/
 static inline int get_bin_coord(double x, double bin_size)
 {
@@ -290,7 +303,8 @@ static uint32_t count_bins_iterating_container
 			       const int block[4])
 {
 	uint32_t N_bins = 0;
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins);
 	while (nb_iterator_has_more(iter)) {
@@ -299,6 +313,7 @@ static uint32_t count_bins_iterating_container
 			N_bins += 1;
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 	return N_bins;
 }
 
@@ -322,36 +337,59 @@ static void get_bins_block(nb_container_t* bins_block,
 			   int substract_block[4]
 			   /* NULL if not required */)
 {
-	if (nb_container_get_length(bins) < 
-	    (add_block[2] - add_block[0]) * (add_block[3] - add_block[1])) {
-		/* Iterate cells in the hash table */
-		nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
-		nb_iterator_init(iter);
-		nb_iterator_set_container(iter, bins);
-		while (nb_iterator_has_more(iter)) {
-			const bin2D_t* bin = nb_iterator_get_next(iter);
-			if (bin_is_outside_block(bin->x, bin->y, add_block))
+	uint32_t bins_length = nb_container_get_length(bins);
+	uint32_t N_blocks = (add_block[2] - add_block[0]) *
+		(add_block[3] - add_block[1]);
+
+	if (bins_length < N_blocks)
+		iterate_cells_in_container(bins_block, bins, add_block,
+					   substract_block);
+	else
+		iterate_cells_in_block(bins_block, bins, add_block,
+				       substract_block);
+}
+
+static void iterate_cells_in_container(nb_container_t* bins_block,
+				       const nb_container_t *bins,
+				       int add_block[4],
+				       int substract_block[4]
+				       /* NULL if not required */)
+{
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, bins);
+	while (nb_iterator_has_more(iter)) {
+		const bin2D_t* bin = nb_iterator_get_next(iter);
+		if (bin_is_outside_block(bin->x, bin->y, add_block))
+			continue;
+		if (NULL != substract_block)
+			if (bin_is_inside_block(bin->x, bin->y,
+						substract_block)) 
 				continue;
+
+		nb_container_insert(bins_block, bin->points);	
+	}
+	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
+}
+
+static void iterate_cells_in_block(nb_container_t* bins_block,
+				   const nb_container_t *bins,
+				   int add_block[4],
+				   int substract_block[4]
+				   /* NULL if not required */)
+{
+	for (int i = add_block[0]; i <= add_block[2]; i++) {
+		for (int j = add_block[1]; j <= add_block[3]; j++) {
 			if (NULL != substract_block)
-				if (bin_is_inside_block(bin->x, bin->y, substract_block)) 
+				if (bin_is_inside_block(i, j, substract_block)) 
 					continue;
-			/* Insert points */
-			nb_container_insert(bins_block, bin->points);	
-		}
-		nb_iterator_finish(iter);
-	} else {
-		/* Iterate cells in the block */
-		for (int i = add_block[0]; i <= add_block[2]; i++) {
-			for (int j = add_block[1]; j <= add_block[3]; j++) {
-				if (NULL != substract_block)
-					if (bin_is_inside_block(i, j, substract_block)) 
-						continue;
-				bin2D_t *bin = get_bin(bins, i, j);
-				if (NULL == bin)
-					continue;
-				/* Insert points */
-				nb_container_insert(bins_block, bin->points);
-			}
+			bin2D_t *bin = get_bin(bins, i, j);
+			if (NULL == bin)
+				continue;
+
+			nb_container_insert(bins_block, bin->points);
 		}
 	}
 }
@@ -433,7 +471,8 @@ static inline void knn_scan_list(const nb_container_t *const points,
 				 const void* const restrict filter_data)
 {
 	/* Iterate points in the cell */
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
@@ -446,7 +485,7 @@ static inline void knn_scan_list(const nb_container_t *const points,
 			continue;
     
 		/* Filter point */
-		if(!filter(p_ref, p, filter_data)) 
+		if (!filter(p_ref, p, filter_data)) 
 			continue;
     
 		/* Calculate distance */
@@ -472,6 +511,7 @@ static inline void knn_scan_list(const nb_container_t *const points,
 		}
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 }
 
 uint32_t nb_bins2D_get_knn(const nb_bins2D_t *const restrict bins2D,
@@ -492,20 +532,22 @@ uint32_t nb_bins2D_get_knn(const nb_bins2D_t *const restrict bins2D,
 	 *                                |2|1|1|1|2|
 	 *                                |2|2|2|2|2|
 	 */
+	nb_container_type cnt_type = NB_QUEUE;
+	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
+	nb_container_t *layer_cells = nb_soft_allocate_mem(cnt_size);
+
 	uint32_t n_scanned = 0;
 	uint32_t m_nearest = 0;
-	int layer = 0;
+	uint32_t layer = 0;
 	while (n_scanned < bins2D->length  && m_nearest < k) {
 		/* 1. Get cells where the search should be performed. */
-		nb_container_t* layer_cells = 
-			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
-		nb_container_init(layer_cells, NB_QUEUE);
+		nb_container_init(layer_cells, cnt_type);
 
 		knn_get_layer_bins(bins2D, layer, p, layer_cells);
 
 		/* 2. Compute nearest neighbours */
 		while (nb_container_is_not_empty(layer_cells)) {
-			const nb_container_t *const restrict points =
+			nb_container_t *points =
 				nb_container_delete_first(layer_cells);
 			n_scanned += nb_container_get_length(points);
 			knn_scan_list(points, p, k, knn, &m_nearest, knn_dist, 
@@ -518,8 +560,8 @@ uint32_t nb_bins2D_get_knn(const nb_bins2D_t *const restrict bins2D,
 		/* Increment layer */
 		layer += 1;
 	}
+	nb_soft_free_mem(cnt_size, layer_cells);
 
-	/* Return number of closest points */
 	return m_nearest;
 }
 
@@ -541,7 +583,8 @@ static bool half_side_have_points(const nb_bins2D_t* const bins2D,
 				  const nb_point2D_t *const p1,
 				  const nb_point2D_t *const p2)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins2D->bins);
 	bool have_points = false;
@@ -563,6 +606,7 @@ static bool half_side_have_points(const nb_bins2D_t* const bins2D,
 		}
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 	return have_points;
 }
 
@@ -602,7 +646,8 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 					 const nb_point2D_t *const p1,
 					 const nb_point2D_t *const p2)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bin->points);
 	bool have_points = false;
@@ -614,6 +659,7 @@ static bool bin_have_points_in_half_side(const bin2D_t* const bin,
 		}
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 	return have_points;
 }
 
@@ -658,7 +704,8 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 				nb_container_t* vertices,
 				nb_container_t* outside_vtx)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, points);
 	while (nb_iterator_has_more(iter)) {
@@ -667,6 +714,7 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 						p1, p2, circle, p);
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void delaunay_insert_if_is_candidate
@@ -711,10 +759,17 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
 	 *                     Segment ---|>|\|1|2|3|
 	 *                                | | |·|2|3|
 	 */
-	nb_container_t *outside_vtx = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(outside_vtx, NB_QUEUE);
+	nb_container_type cnt_type = NB_QUEUE;
+	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
+	uint32_t memsize = 2 * cnt_size;
+	char *memblock = nb_soft_allocate_mem(memsize);
+
+	nb_container_t *outside_vtx = (void*) memblock;
+	nb_container_t *layer_bins = (void*) (memblock + cnt_size);
+
+	nb_container_init(outside_vtx, cnt_type);
 	bool have_points = half_side_have_points(bins2D, p1, p2);
-	int layer = 0;
+	uint32_t layer = 0;
 	while (nb_container_is_empty(vertices) && have_points) {
 		circle_t circle;
 		set_circle_from_layer(&circle, p1, p2, bins2D, layer);
@@ -723,9 +778,7 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
 							 &circle);
 
 		/* 1. Get bins where the search should be performed. */
-		nb_container_t* layer_bins =
-			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
-		nb_container_init(layer_bins, NB_QUEUE);
+		nb_container_init(layer_bins, cnt_type);
 		delaunay_get_layer_bins(layer_bins, bins2D, p1, p2,
 					&circle, layer);
 
@@ -738,8 +791,17 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
 		}
 		nb_container_finish(layer_bins);	
 		layer += 1;
+
+		if (layer > 200) { /**** TEMPORAL PATCH *************/
+			fprintf(stderr, "-- NB_DEWALL WARNING: "	\
+				"Bins layer search > 200, in "		\
+				"Delaunay min dist\n");
+			break;
+		}/********************** TEMPORAL PATCH *************/
 	}
 	nb_container_finish(outside_vtx);
+
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void set_circle_from_layer(circle_t *circle,
@@ -769,8 +831,8 @@ static void delaunay_set_inside_points_of_prev_layer
 				 const circle_t *const circle)
 {
 	nb_container_type type = nb_container_get_type(outside_vtx);
-
-	nb_container_t *aux = nb_allocate_on_stack(nb_container_get_memsize(type));
+	uint32_t cnt_size = nb_container_get_memsize(type);
+	nb_container_t *aux = nb_soft_allocate_mem(cnt_size);
 	nb_container_init(aux, type);
 	while (nb_container_is_not_empty(outside_vtx)) {
 		nb_point2D_t *p = nb_container_delete_first(outside_vtx);
@@ -781,12 +843,13 @@ static void delaunay_set_inside_points_of_prev_layer
 	}
 	nb_container_merge(outside_vtx, aux);
 	nb_container_finish(aux);
+	nb_soft_free_mem(cnt_size, aux);
 }
 
 void nb_bins2D_get_points_inside_circle(const nb_bins2D_t *const bins2D,
-					 double center[2],
-					 double radius,
-					 nb_container_t *points_inside)
+					double center[2],
+					double radius,
+					nb_container_t *points_inside)
 {
 	/* Get block */
 	int block[4];
@@ -795,15 +858,28 @@ void nb_bins2D_get_points_inside_circle(const nb_bins2D_t *const bins2D,
 	block[2] = get_bin_coord(center[0] + radius, bins2D->size_of_bins);
 	block[3] = get_bin_coord(center[1] + radius, bins2D->size_of_bins);
 
-	nb_container_t* bins_block =
-		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
-	nb_container_init(bins_block, NB_QUEUE);
+	nb_container_type cnt_type = NB_QUEUE;
+	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
+	nb_container_t* bins_block = nb_soft_allocate_mem(cnt_size);
+	nb_container_init(bins_block, cnt_type);
+
 	get_bins_block(bins_block, bins2D->bins, block, NULL);
 
-	/* Compute points inside the circle */
+	get_points_inside_circle(bins_block, center, radius, points_inside);
+
+	nb_container_finish(bins_block);
+	nb_soft_free_mem(cnt_size, bins_block);
+}
+
+static void get_points_inside_circle(nb_container_t *bins_block,
+				     double center[2], double radius,
+				     nb_container_t *points_inside)
+{
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	while (nb_container_is_not_empty(bins_block)) {
-		nb_container_t* points = nb_container_delete_first(bins_block);
-		nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+		nb_container_t* points =  nb_container_delete_first(bins_block);
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, points);
 		while (nb_iterator_has_more(iter)) {
@@ -814,7 +890,8 @@ void nb_bins2D_get_points_inside_circle(const nb_bins2D_t *const bins2D,
 		}
 		nb_iterator_finish(iter);
 	}
-	nb_container_finish(bins_block);
+
+	nb_soft_free_mem(iter_size, iter);
 }
 
 bool nb_bins2D_are_points_inside_circle
@@ -828,27 +905,44 @@ bool nb_bins2D_are_points_inside_circle
 	block[2]  = get_bin_coord(center[0] + radius, bins2D->size_of_bins);
 	block[3]  = get_bin_coord(center[1] + radius, bins2D->size_of_bins);
 
+	bool are_inside = false;
 	for (int i = block[0]; i <= block[2]; i++) {
 		for (int j = block[1]; j <= block[3]; j++) {
 			bin2D_t *bin = get_bin(bins2D->bins, i, j);
 			if (NULL == bin)
 				continue;
 			nb_container_t* points = bin->points;
-			nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
-			nb_iterator_init(iter);
-			nb_iterator_set_container(iter, points);
-			while (nb_iterator_has_more(iter)) {
-				const nb_point2D_t *p = nb_iterator_get_next(iter);
-				double dist2 = nb_utils2D_get_dist2(p->x, center);
-				if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2) {
-					nb_iterator_finish(iter);
-					return true;
-				}
-			}
-			nb_iterator_finish(iter);
+			are_inside = are_points_inside_circle(points, center,
+							      radius);
+			if (are_inside)
+				goto EXIT;
 		}
 	}
-	return false;
+EXIT:
+	return are_inside;
+}
+
+static bool are_points_inside_circle(const nb_container_t *points,
+				     double center[2], double radius)
+{
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, points);
+	bool are_inside = false;
+	while (nb_iterator_has_more(iter)) {
+		const nb_point2D_t *p = nb_iterator_get_next(iter);
+		double dist2 = nb_utils2D_get_dist2(p->x, center);
+		if (POW2(radius) - dist2 > NB_GEOMETRIC_TOL_POW2) {
+			nb_iterator_finish(iter);
+			are_inside = true;
+			goto EXIT;
+		}
+	}
+EXIT:
+	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
+	return are_inside;
 }
 
 inline uint32_t nb_bins2D_get_N_bins(const nb_bins2D_t *const restrict bins2D)
@@ -868,16 +962,18 @@ inline bool nb_bins2D_is_not_empty(const nb_bins2D_t *const restrict bins2D)
 
 uint32_t nb_bins2D_get_min_points_x_bin(const nb_bins2D_t *const bins2D)
 {
-	uint32_t min = bins2D->length;
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, bins2D->bins);
+	uint32_t min = bins2D->length;
 	while (nb_iterator_has_more(iter)) {
 		const bin2D_t *bin = nb_iterator_get_next(iter);
 		if (min > nb_container_get_length(bin->points))
 			min = nb_container_get_length(bin->points);
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 	return min;
 }
 

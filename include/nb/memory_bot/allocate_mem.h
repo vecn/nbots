@@ -7,7 +7,7 @@
 
 #if defined(CC_Microsoft) || (defined(CC_GNU) && defined(OS_Windows))
 	#include <malloc.h>
-	#define nb_allocate_on_stack(size) _alloca(size)
+        #define nb_allocate_on_stack(size) _alloca(size)
 #else
 
 	#include <alloca.h>
