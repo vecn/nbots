@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-#updated by Cardoso
 ##############################################################################
 ##
 ##  Gradle start up script for UN*X
