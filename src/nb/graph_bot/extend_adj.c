@@ -167,7 +167,8 @@ static void add_1degree_adj(const nb_graph_t *graph,
 			    nb_membank_t *membank)
 {
 	uint32_t N = graph->N;
-	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
 	for (uint32_t i = 0; i < N; i++) {
 		nb_iterator_init(iter);
 		nb_iterator_set_container(iter, current_adj[i]);
@@ -179,7 +180,7 @@ static void add_1degree_adj(const nb_graph_t *graph,
 		}
 		nb_iterator_finish(iter);
 	}
-
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void add_nodal_1degree_adj(const nb_graph_t *graph,

@@ -259,7 +259,9 @@ static void add_vars_from_adj_elems(int *elem_p, uint32_t* N_adj_elements,
 				    void*** adj_elements,
 				    nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	for (uint32_t i = 0; i < N_adj_elements[*elem_p]; i++) {
 		int *elem_e = adj_elements[*elem_p][i];
 		nb_iterator_init(iter);
@@ -275,6 +277,8 @@ static void add_vars_from_adj_elems(int *elem_p, uint32_t* N_adj_elements,
 		nb_iterator_finish(iter);
 		nb_container_clear(adj_variables[*elem_e]);
 	}
+
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void update_vars_i_adj_to_p(int *elem_p,
@@ -282,7 +286,9 @@ static void update_vars_i_adj_to_p(int *elem_p,
 				   void*** adj_elements,
 				   nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*elem_p]);
 	while (nb_iterator_has_more(iter)) {
@@ -295,12 +301,16 @@ static void update_vars_i_adj_to_p(int *elem_p,
 				   *vtx_i, elem_p);
 	}
 	nb_iterator_finish(iter);
+
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void remove_redundant_entries(nb_container_t** adj_variables,
 				     int i, int p)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[p]);
 	while (nb_iterator_has_more(iter)) {
@@ -308,6 +318,7 @@ static void remove_redundant_entries(nb_container_t** adj_variables,
 		int *del = nb_container_delete(adj_variables[i], vtx_j);
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void element_absorption(uint32_t* N_adj_elements, void*** adj_elements,
@@ -356,7 +367,9 @@ static void compute_approx_degree(int *elem_p,
 				  void*** adj_elements,
 				  nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*elem_p]);
 	while (nb_iterator_has_more(iter)) {
@@ -381,6 +394,8 @@ static void compute_approx_degree(int *elem_p,
 		}
 	}
 	nb_iterator_finish(iter);
+
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void supervars_detection(uint32_t p,
@@ -392,8 +407,9 @@ static void supervars_detection(uint32_t p,
 				void*** super_variable)
 {
 	nb_container_type type = NB_HASH;
-	nb_container_t *supervars = 
-		nb_allocate_on_stack(nb_container_get_memsize(type));
+	uint32_t cnt_size = nb_container_get_memsize(type);
+	nb_container_t *supervars = nb_soft_allocate_mem(cnt_size);
+
 	nb_container_init(supervars, type);
 	nb_container_set_key_generator(supervars,
 				       hash_function_supervariables);
@@ -410,6 +426,8 @@ static void supervars_detection(uint32_t p,
 			   super_variable);
 		
 	nb_container_destroy(hash_collisions);
+
+	nb_soft_free_mem(cnt_size, supervars);
 }
 
 static uint32_t hash_function_supervariables(const void *const A)
@@ -422,7 +440,9 @@ static void find_supervars(uint32_t p, nb_container_t *supervars,
 			   uint32_t* N_adj_elements, void*** adj_elements,
 			   nb_container_t** adj_variables)
 {
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[p]);
 	while (nb_iterator_has_more(iter)) {
@@ -438,6 +458,7 @@ static void find_supervars(uint32_t p, nb_container_t *supervars,
 		nb_container_insert(supervars, var);
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static uint32_t get_hash_key(uint32_t i, uint32_t* N_adj_elements,
@@ -445,7 +466,9 @@ static uint32_t get_hash_key(uint32_t i, uint32_t* N_adj_elements,
 			     nb_container_t** adj_variables)
 {
 	uint32_t hash = 0;
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[i]);
 	while (nb_iterator_has_more(iter)) {
@@ -458,6 +481,8 @@ static uint32_t get_hash_key(uint32_t i, uint32_t* N_adj_elements,
 		int *vtx = (int*)adj_elements[i][j];
 		hash += *vtx;
 	}
+
+	nb_soft_free_mem(iter_size, iter);
 	return hash;
 }
 
@@ -502,8 +527,12 @@ static void disolve_collisions(nb_container_t *colliding_set,
 			       uint32_t* N_super_variable,
 			       void*** super_variable)
 {
-	nb_iterator_t* iter1 = nb_allocate_on_stack(nb_iterator_get_memsize());
-	nb_iterator_t* iter2 = nb_allocate_on_stack(nb_iterator_get_memsize());
+	uint32_t iter_size = nb_iterator_get_memsize();
+	uint32_t memsize = 2 * iter_size;
+	char *memblock = nb_soft_allocate_mem(memsize);
+
+	nb_iterator_t* iter1 = (void*) memblock;
+	nb_iterator_t* iter2 = (void*) (memblock + iter_size);
 
 	nb_iterator_init(iter1);
 	nb_iterator_set_container(iter1, colliding_set);
@@ -547,6 +576,8 @@ static void disolve_collisions(nb_container_t *colliding_set,
 		nb_iterator_finish(iter2);
 	}
 	nb_iterator_finish(iter1);
+
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static bool vij_are_indistinguishable(uint32_t i, uint32_t j, 
@@ -575,15 +606,19 @@ static bool vij_are_indistinguishable(uint32_t i, uint32_t j,
 			goto EXIT;
 		}
 	}
-	nb_iterator_t* iter_i =
-		nb_allocate_on_stack(nb_iterator_get_memsize());
+
+	uint32_t iter_size = nb_iterator_get_memsize();
+	uint32_t memsize = 2 * iter_size;
+	char *memblock = nb_soft_allocate_mem(memsize);
+
+	nb_iterator_t* iter_i = (void*) memblock;
+	nb_iterator_t* iter_j = (void*) (memblock + iter_size);
+
 	nb_iterator_init(iter_i);
 	nb_iterator_set_container(iter_i, adj_variables[i]);
-
-	nb_iterator_t* iter_j =
-		nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter_j);
 	nb_iterator_set_container(iter_j, adj_variables[j]);
+
 	while (nb_iterator_has_more(iter_i) &&
 	       nb_iterator_has_more(iter_j)) {
 		const int *ui = nb_iterator_get_next(iter_i);
@@ -595,6 +630,8 @@ static bool vij_are_indistinguishable(uint32_t i, uint32_t j,
 	}
 	nb_iterator_finish(iter_i);
 	nb_iterator_finish(iter_j);
+
+	nb_soft_free_mem(memsize, memblock);
 EXIT:
 	return indist;
 }
@@ -610,8 +647,10 @@ static void remove_references(int *vtx_i, int *vtx_j,
 		if (NULL == nb_container_exist(adj_variables[*vtx_k], vtx_i))
 			nb_container_insert(adj_variables[*vtx_k], vtx_i);
 	}
-	    
-	nb_iterator_t* iter = nb_allocate_on_stack(nb_iterator_get_memsize());
+
+	uint32_t iter_size = nb_iterator_get_memsize();
+	nb_iterator_t* iter = nb_soft_allocate_mem(iter_size);
+
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, adj_variables[*vtx_j]);
 	while (nb_iterator_has_more(iter)) {
@@ -621,6 +660,7 @@ static void remove_references(int *vtx_i, int *vtx_j,
 			nb_container_insert(adj_variables[*vtx_k], vtx_i);
 	}
 	nb_iterator_finish(iter);
+	nb_soft_free_mem(iter_size, iter);
 }
 
 static void add_j_to_supervar_i(int *vtx_i, int *vtx_j,

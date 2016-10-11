@@ -332,7 +332,7 @@ static int get_format(const char *filename)
 
 static void image_write_default(const nb_image_t *img, const char *filename)
 {
-	str_size = strlen(filename) + 4;
+	uint32_t str_size = strlen(filename) + 4;
 	char *name = nb_soft_allocate_mem(str_size);
 
 	sprintf(name, "%s.png", filename);
