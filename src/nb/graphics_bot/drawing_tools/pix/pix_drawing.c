@@ -367,7 +367,9 @@ static void set_pen_stencil_w3(pixmask_t *pen_stencil, float thickness)
 
 static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness)
 {	
-	turtle_t *turtle_stencil = nb_allocate_on_stack(sizeof(turtle_t));
+	uint32_t memsize = sizeof(turtle_t);
+	turtle_t *turtle_stencil = nb_soft_allocate_mem(memsize);
+
 	memset(turtle_stencil, 0, sizeof(turtle_t));
 	set_turtle_stencil(turtle_stencil, thickness);
 	
@@ -383,6 +385,8 @@ static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness)
 	rasterize_turtle(turtle_stencil, false, pixmask_set_pixel, pen_stencil);
 
 	turtle_clear(turtle_stencil);
+
+	nb_soft_free_mem(memsize, turtle_stencil);
 }
 
 static void set_turtle_stencil(turtle_t *turtle_stencil, float thickness)
@@ -497,9 +501,10 @@ void nb_graphics_pix_fill(void *ctx)
 
 void nb_graphics_pix_fill_preserve(void *ctx)
 {
-	
+	uint32_t mask_size = sizeof(pixmask_t);
+	pixmask_t *pixmask = nb_soft_allocate_mem(mask_size);
+
 	context_t *c = ctx;
-	pixmask_t *pixmask = nb_allocate_on_stack(sizeof(pixmask_t));
 	pixmask_init(pixmask, c->turtle);
 	if (pixmask->xmin < (int32_t)c->img->width &&
 	    pixmask->ymin < (int32_t)c->img->height &&
@@ -516,6 +521,8 @@ void nb_graphics_pix_fill_preserve(void *ctx)
 		pixmask_blend_image(pixmask, c->source, 255, c->img);
 	}
 	pixmask_finish(pixmask);
+
+	nb_soft_free_mem(mask_size, pixmask);
 }
 
 static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle)
@@ -1033,7 +1040,8 @@ void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 	nb_graphics_text_attr_t attr;
 	nb_graphics_pix_get_text_attr(c, str, &attr);
 
-	pixmask_t *mask = nb_allocate_on_stack(sizeof(pixmask_t));
+	uint32_t mask_size = sizeof(pixmask_t);
+	pixmask_t *mask = nb_soft_allocate_mem(mask_size);
 	mask->xmin = x;
 	mask->ymin = y - attr.height;
 	mask->width = attr.width;
@@ -1046,6 +1054,8 @@ void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 
 	pixmask_blend_image(mask, c->source, 255, c->img);
 	pixmask_finish(mask);
+
+	nb_soft_free_mem(mask_size, mask);
 }
 
 void nb_graphics_pix_get_text_attr(const void *ctx, const char *str,

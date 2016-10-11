@@ -45,6 +45,9 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 	nb_container_init(new_vertices, NB_QUEUE);
 
+	nb_container_t* trg_fan =
+		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
+
 	nb_bins2D_iter_restart(iter);
 	while (nb_bins2D_iter_has_more(iter)) {
 		const msh_vtx_t* vtx = nb_bins2D_iter_get_next(iter);
@@ -65,8 +68,6 @@ void nb_mesh_duplicate_one_point_connections(nb_mesh_t* mesh)
 		if (trg_twist == trg && twist_around)
 			continue;
 
-		nb_container_t* trg_fan =
-			nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
 		nb_container_init(trg_fan, NB_QUEUE);
 		do {
 			nb_container_insert(trg_fan, trg_twist);

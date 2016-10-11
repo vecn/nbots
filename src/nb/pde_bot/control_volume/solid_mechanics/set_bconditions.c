@@ -265,6 +265,8 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 				       const nb_bcond_iter_t *const iter,
 				       double factor)
 {
+	double *val = nb_allocate_on_stack(N_dof * sizeof(double));
+
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 	double sgm_length = nb_partition_insgm_get_length(part, model_id);
 
@@ -277,7 +279,6 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 		uint32_t elem_id = elem_adj[model_id][i];
 
 		double x_dummy[2] = {0, 0};
-		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x_dummy, 0, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
@@ -334,10 +335,17 @@ static void set_neumann_vtx(const nb_partition_t *part,
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
-	nb_bcond_iter_t *iter = nb_allocate_on_stack(size);
+
+	uint32_t memsize = size + N_dof * sizeof(double);
+	char *memblock = nb_soft_allocate_mem(memsize);
+
+	nb_bcond_iter_t *iter = (void*) memblock;
+	double *val = (void*) (memblock + size);
+
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_NEUMANN,
 				     NB_BC_ON_POINT);
+
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 
@@ -349,7 +357,6 @@ static void set_neumann_vtx(const nb_partition_t *part,
 		double x[2];
 		x[0] = nb_partition_node_get_x(part, node_id);
 		x[1] = nb_partition_node_get_y(part, node_id);
-		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
@@ -364,6 +371,8 @@ static void set_neumann_vtx(const nb_partition_t *part,
 					       subsgm_id[2], subsgm_id[3]);
 	}
 	nb_bcond_iter_finish(iter);
+
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void set_neumann_subsgm_adj_to_node(const nb_partition_t *part,
@@ -426,6 +435,7 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
 				     NB_BC_ON_SEGMENT);
+	double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
@@ -438,7 +448,6 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 			
 			double x[2] = {nb_partition_elem_get_x(part, elem_id),
 				       nb_partition_elem_get_y(part, elem_id)};
-			double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 			nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 			val[0] *= factor;
 			val[1] *= factor;
@@ -462,6 +471,7 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 	nb_bcond_iter_init(iter);
 	nb_bcond_iter_set_conditions(iter, bcond, NB_DIRICHLET,
 				     NB_BC_ON_POINT);
+	double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_node_id = nb_bcond_iter_get_id(iter);
@@ -474,7 +484,6 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 			
 		double x[2] = {nb_partition_node_get_x(part, node_id),
 			       nb_partition_node_get_y(part, node_id)};
-		double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
 		val[0] *= factor;
 		val[1] *= factor;

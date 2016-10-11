@@ -1144,7 +1144,9 @@ void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 	if (!pixel_is_empty(x, y, pixel_data))
 		goto EXIT;
 
-	pix_stack_t *pix_stack = nb_allocate_on_stack(sizeof(*pix_stack));
+	uint32_t stack_size = sizeof(pix_stack_t);
+	pix_stack_t *pix_stack = nb_soft_allocate_mem(stack_size);
+
 	init_stack(pix_stack, width);
 
 	push(pix_stack, x, y);
@@ -1183,6 +1185,8 @@ void nb_graphics_rasterizer_fill(int x, int y, uint8_t i,
 		}
 	}
 	finish_stack(pix_stack);
+
+	nb_soft_free_mem(stack_size, pix_stack);
  EXIT:
 	return;
 }
