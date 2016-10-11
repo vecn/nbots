@@ -380,15 +380,15 @@ static void iterate_cells_in_block(nb_container_t* bins_block,
 				   int substract_block[4]
 				   /* NULL if not required */)
 {
-	for (uint32_t i = add_block[0]; i <= add_block[2]; i++) {
-		for (uint32_t j = add_block[1]; j <= add_block[3]; j++) {
+	for (int i = add_block[0]; i <= add_block[2]; i++) {
+		for (int j = add_block[1]; j <= add_block[3]; j++) {
 			if (NULL != substract_block)
 				if (bin_is_inside_block(i, j, substract_block)) 
 					continue;
 			bin2D_t *bin = get_bin(bins, i, j);
 			if (NULL == bin)
 				continue;
-			/* Insert points */
+
 			nb_container_insert(bins_block, bin->points);
 		}
 	}

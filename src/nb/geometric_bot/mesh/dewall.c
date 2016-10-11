@@ -385,10 +385,8 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 	nb_container_t* vertices = nb_soft_allocate_mem(cnt_size);
 	nb_container_init(vertices, NB_QUEUE);
 
-	printf(" -- CATCHING BUG 1\n");/* TEMPORAL */	
 	nb_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
 							vertices);
-	printf(" -- CATCHING BUG 2\n");/* TEMPORAL */	
   	msh_vtx_t *v3 = NULL;
 	double min_dist = 0.0;
 	while (nb_container_is_not_empty(vertices)) {
