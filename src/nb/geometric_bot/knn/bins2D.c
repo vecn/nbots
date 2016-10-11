@@ -792,9 +792,9 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
 		nb_container_finish(layer_bins);	
 		layer += 1;
 
-		if (layer > 200) { /**** TEMPORAL PATCH *************/
+		if (layer > 1000) { /**** TEMPORAL PATCH *************/
 			fprintf(stderr, "-- NB_DEWALL WARNING: "	\
-				"Bins layer search > 200, in "		\
+				"Bins layer search > 1000, in "		\
 				"Delaunay min dist\n");
 			break;
 		}/********************** TEMPORAL PATCH *************/
