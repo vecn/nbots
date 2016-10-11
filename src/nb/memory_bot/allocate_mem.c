@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include <alloca.h>
 
 #include "nb/memory_bot/allocate_mem.h"
 
