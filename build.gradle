@@ -46,9 +46,8 @@ model {
 	    include "**/*.c"
 	  }
 	  exportedHeaders {
-	    srcDirs "include", "/usr/include/cairo"//TEMPORAL
+	    srcDirs "include"
 	  }
-	  lib library: 'cairo' // TEMPORAL
 	}
       }
     }
