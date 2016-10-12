@@ -700,7 +700,6 @@ static void integrate_Kf(const nb_partition_t *const part,
 	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
 
 	double factor = lfn * detJ * params2D->thickness;
-	memset(Kf, 0, 12 * sizeof(*Kf));
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
@@ -708,10 +707,10 @@ static void integrate_Kf(const nb_partition_t *const part,
 		subface_get_grad(iJ, grad_xi, grad);
 		double Kfi[4];
 		subface_get_nodal_contribution(D, face->nf, grad, Kfi);
-		Kf[i * 2] += factor * Kfi[0];
-		Kf[i*2+1] += factor * Kfi[1];
-		Kf[6 + i * 2] += factor * Kfi[2];
-		Kf[6 + i*2+1] += factor * Kfi[3];
+		Kf[i * 2] = factor * Kfi[0];
+		Kf[i*2+1] = factor * Kfi[1];
+		Kf[6 + i * 2] = factor * Kfi[2];
+		Kf[6 + i*2+1] = factor * Kfi[3];
 	}
 }
 
@@ -858,7 +857,6 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 
 	double lf = nb_utils2D_get_dist(face->x1, face->x2);
 	double factor = lf * params2D->thickness;
-	memset(Kf, 0, 8 * sizeof(*Kf));
 	for (uint8_t i = 0; i < 2; i++) {
 		double grad[2];
 		if (0 == i)
@@ -867,10 +865,10 @@ static void integrate_Kf_pairwise(const nb_partition_t *const part,
 			face_get_grad_pairwise(c2, c1, grad);
 		double Kfi[4];
 		subface_get_nodal_contribution(D, face->nf, grad, Kfi);
-		Kf[i * 2] += factor * Kfi[0];
-		Kf[i*2+1] += factor * Kfi[1];
-		Kf[4 + i * 2] += factor * Kfi[2];
-		Kf[4 + i*2+1] += factor * Kfi[3];
+		Kf[i * 2] = factor * Kfi[0];
+		Kf[i*2+1] = factor * Kfi[1];
+		Kf[4 + i * 2] = factor * Kfi[2];
+		Kf[4 + i*2+1] = factor * Kfi[3];
 	}
 }
 
