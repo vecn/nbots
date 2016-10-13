@@ -72,7 +72,7 @@ uint32_t nb_cvfa_get_integration_mesh_memsize(void)
 
 void nb_cvfa_init_integration_mesh(nb_partition_t *intmsh)
 {
-	nb_partition_init(intmsh , INTEGRATOR_TYPE);
+	nb_partition_init(intmsh, INTEGRATOR_TYPE);
 }
 
 void nb_cvfa_load_integration_mesh(const nb_partition_t *part,

@@ -22,7 +22,7 @@
 
 #define POW2(a) ((a)*(a))
 
-#define ENABLE_PAIRWISE
+//#define ENABLE_PAIRWISE
 
 typedef struct subface_s subface_t;
 
@@ -891,8 +891,6 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
 				 nb_sparse_t *K)
 {
-	printf("KF: |%e %e %e %e| \n", Kf[0], Kf[1], Kf[2], Kf[3]);
-	printf("    |%e %e %e %e| \n", Kf[4], Kf[5], Kf[6], Kf[7]);
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 	for (uint8_t m = 0; m < 2; m++) {
