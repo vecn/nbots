@@ -22,7 +22,7 @@
 
 #define POW2(a) ((a)*(a))
 
-//#define ENABLE_PAIRWISE
+#define ENABLE_PAIRWISE
 
 typedef struct subface_s subface_t;
 
@@ -629,10 +629,13 @@ static void assemble_global_stiffness(nb_sparse_t *K,
 {
 	nb_sparse_reset(K);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
+	double lf = 0;/* TEMPORAL */
 	for (uint32_t i = 0; i < N_faces; i++) {
 		assemble_face(K, part, intmsh, faces[i], material,
 			      analysis2D, params2D);
+		lf += nb_partition_edge_get_length(part, i);/* TEMPORAL */
 	}
+	printf("-- lf: %e\n", lf);/* TEMPORAL */
 }
 
 static void assemble_face(nb_sparse_t *K,

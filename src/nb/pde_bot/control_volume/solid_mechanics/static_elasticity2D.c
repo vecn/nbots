@@ -629,10 +629,13 @@ static void assemble_global_stiffness(nb_sparse_t *K,
 {
 	nb_sparse_reset(K);
 	uint32_t N_faces = nb_partition_get_N_edges(part);
+	double lf = 0;/* TEMPORAL */
 	for (uint32_t i = 0; i < N_faces; i++) {
 		assemble_face(K, part, intmsh, faces[i], material,
 			      analysis2D, params2D);
+		lf += nb_partition_edge_get_length(part, i);/* TEMPORAL */
 	}
+	printf("-- lf: %e\n", lf);/* TEMPORAL */
 }
 
 static void assemble_face(nb_sparse_t *K,
@@ -891,8 +894,6 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
 				 nb_sparse_t *K)
 {
-	printf("KF: |%e %e %e %e| \n", Kf[0], Kf[1], Kf[2], Kf[3]);
-	printf("    |%e %e %e %e| \n", Kf[4], Kf[5], Kf[6], Kf[7]);
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 	for (uint8_t m = 0; m < 2; m++) {
