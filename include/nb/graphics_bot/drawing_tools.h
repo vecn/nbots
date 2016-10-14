@@ -15,7 +15,8 @@ typedef enum {
 typedef enum {
 	NB_RAINBOW,
 	NB_SUNSET,
-	NB_FRENCH
+	NB_FRENCH,
+	NB_GRAYSCALE
 } nb_graphics_palette_preset;
 
 typedef enum {

@@ -114,6 +114,7 @@ static void set_raw_circle(nb_graphics_context_t *g, float x,
 static nb_graphics_palette_t* palette_get_rainbow(void);
 static nb_graphics_palette_t* palette_get_sunset(void);
 static nb_graphics_palette_t* palette_get_french(void);
+static nb_graphics_palette_t* palette_get_grayscale(void);
 
 static void palette_draw_rectangle(nb_graphics_context_t *g,
 				   const nb_graphics_palette_t *const palette,
@@ -612,16 +613,24 @@ nb_graphics_palette_t* nb_graphics_palette_create(void)
 nb_graphics_palette_t* nb_graphics_palette_create_preset
 				(nb_graphics_palette_preset preset)
 {
-	if (NB_RAINBOW == preset)
-		return palette_get_rainbow();
-
-	if (NB_SUNSET == preset)
-		return palette_get_sunset();
-
-	if (NB_FRENCH == preset)
-		return palette_get_french();
-
-	return NULL;
+	nb_graphics_palette_t *pal;
+	switch (preset) {
+	case NB_RAINBOW:
+		pal = palette_get_rainbow();
+		break;
+	case NB_SUNSET:
+		pal = palette_get_sunset();
+		break;
+	case NB_FRENCH:
+		pal = palette_get_french();
+		break;
+	case NB_GRAYSCALE:
+		pal = palette_get_grayscale();
+		break;
+	default:
+		pal = NULL;
+	}
+	return pal;
 }
 
 void nb_graphics_palette_destroy(nb_graphics_palette_t* palette)
@@ -733,6 +742,15 @@ static nb_graphics_palette_t* palette_get_french(void)
 	nb_graphics_palette_add_rgba(palette, 0.70f, 255, 180, 180, 255);
 	nb_graphics_palette_add_rgba(palette, 0.80f, 255,   0,   0, 255);
 	nb_graphics_palette_add_rgba(palette, 1.00f, 150,   0,   0, 255);
+	return palette;
+}
+
+static nb_graphics_palette_t* palette_get_grayscale(void)
+{
+	nb_graphics_palette_t* palette = nb_graphics_palette_create();
+	nb_graphics_palette_add_rgba(palette, 0.00f, 255, 255, 255, 255);
+	nb_graphics_palette_add_rgba(palette, 0.80f, 100, 100, 100, 255);
+	nb_graphics_palette_add_rgba(palette, 1.00f,   0,   0,   0, 255);
 	return palette;
 }
 
