@@ -932,6 +932,9 @@ static int solver(const nb_sparse_t *const A,
 
 	int status = nb_sparse_solve_using_LU(Ar, br, xr, 1);
 
+	nb_sparse_export_spy_plot(Ar, "../../../spyploy.png", 200, false,
+				  NB_SUNSET);/* TEMPORAL */
+
 	vector_permutation(N, xr, iperm, x);
 	
 	nb_sparse_destroy(Ar);

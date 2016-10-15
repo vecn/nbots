@@ -95,18 +95,6 @@ void nb_image_clear(nb_image_t *img)
 	memset(img, 0, memsize);
 }
 
-inline nb_image_t* nb_image_create(void)
-{
-	uint32_t memsize = nb_image_get_memsize();
-	return nb_allocate_zero_mem(memsize);
-}
-
-void nb_image_destroy(nb_image_t *img)
-{
-	nb_image_finish(img);
-	free(img);
-}
-
 void nb_image_init_white(nb_image_t *img,
 			  int width, int height,
 			  int comp_x_pixel)
