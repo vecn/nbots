@@ -5,6 +5,7 @@ I wrote this 'Quick-start guide' as a friendly introduction to development conve
 ## Why C?
 
 The main reasons are:
+
 - C can interact with other programming languages using a binding, but not in the other way around.
 - Every computer architecture has at least a minimal C compiler.
 - Every new technology is C-compatible.
