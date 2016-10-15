@@ -71,7 +71,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh);
+void nb_mshpoly_load_from_mesh(void *mshpoly, nb_tessellator2D__t *mesh);
 void nb_mshpoly_set_nodal_permutation(void *msh, const uint32_t *perm);
 void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],

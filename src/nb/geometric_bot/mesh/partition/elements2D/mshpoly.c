@@ -66,7 +66,7 @@ static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 static void* nb_allocate_mem_poly(void);
 
 static void init_voronoi_info(vinfo_t *vinfo,
-			      const nb_mesh_t *const mesh);
+			      const nb_tessellator2D__t *const mesh);
 static void set_nodal_perm_to_nodes(nb_mshpoly_t *poly, const uint32_t *perm);
 static void set_nodal_perm_to_edges(nb_mshpoly_t *poly, const uint32_t *perm);
 static void set_nodal_perm_to_elems(nb_mshpoly_t *poly, const uint32_t *perm);
@@ -75,19 +75,19 @@ static void set_nodal_perm_to_insgm(nb_mshpoly_t *poly, const uint32_t *perm);
 static void init_trg_cc_map(uint32_t *trg_cc_map, uint32_t Nt);
 static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 			       uint32_t *trg_cc_map,
-			       const nb_mesh_t *const mesh);
+			       const nb_tessellator2D__t *const mesh);
 static void create_mapping(vinfo_t *vinfo,
 			   const vgraph_t *const vgraph,
-			   const nb_mesh_t *const mesh,
+			   const nb_tessellator2D__t *const mesh,
 			   const uint32_t *trg_cc_map);
 static bool trg_is_interior(const msh_trg_t *const trg,
 			    const vgraph_t *const vgraph);
 static void count_vgraph_adj(vgraph_t *vgraph,
-			     const nb_mesh_t *const mesh);
+			     const nb_tessellator2D__t *const mesh);
 static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock);
 static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 			   uint32_t *trg_cc_map,
-			   const nb_mesh_t *const mesh);
+			   const nb_tessellator2D__t *const mesh);
 static bool adj_is_cocircular(const msh_edge_t *const edg);
 static void update_cc_map(const msh_edge_t *edge, bool is_cc,
 			  uint32_t *trg_cc_map, uint32_t N_trg);
@@ -104,20 +104,20 @@ static void finish_voronoi_graph(vgraph_t *vgraph);
 static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const vgraph,
 			const vinfo_t *const vinfo,
-			const nb_mesh_t *const mesh);
+			const nb_tessellator2D__t *const mesh);
 static void set_quantities(nb_mshpoly_t *poly,
 			   const vinfo_t *const vinfo,
-			   const nb_mesh_t *const mesh);
+			   const nb_tessellator2D__t *const mesh);
 static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vgraph_t *const vgraph,
 				    const vinfo_t *const vinfo,
-				    const nb_mesh_t *const mesh);
+				    const nb_tessellator2D__t *const mesh);
 static void scale_vtx(double out[2], double in[2],
-		      const nb_mesh_t *mesh);
+		      const nb_tessellator2D__t *mesh);
 static void set_edges(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh);
+		      const nb_tessellator2D__t *const mesh);
 
 static void process_interior_edge(nb_mshpoly_t *poly,
 				  const vgraph_t *const vgraph,
@@ -127,12 +127,12 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 static void set_N_adj(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh);
+		      const nb_tessellator2D__t *const mesh);
 
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vgraph_t *const vgraph,
 			    const vinfo_t *const vinfo,
-			    const nb_mesh_t *const mesh);
+			    const nb_tessellator2D__t *const mesh);
 static uint16_t add_adj_and_ngb(nb_mshpoly_t *poly,
 				const vgraph_t *const vgraph,
 				const vinfo_t *const vinfo,
@@ -146,26 +146,26 @@ static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 static void set_elem_vtx(nb_mshpoly_t *poly,
 			 const vgraph_t *const vgraph,
 			 const vinfo_t *const vinfo,
-			 const nb_mesh_t *const mesh);
+			 const nb_tessellator2D__t *const mesh);
 static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
-			    const nb_mesh_t *const mesh);
+			    const nb_tessellator2D__t *const mesh);
 static void set_nod_x_sgm(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const nb_mesh_t *const mesh);
+			  const nb_tessellator2D__t *const mesh);
 static void set_sgm_nodes(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const nb_mesh_t *const mesh,
+			  const nb_tessellator2D__t *const mesh,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshpoly_t *poly,
 			      const vinfo_t *const vinfo,
 			      uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
-static void split_exterior_trg(nb_mesh_t *mesh);
-static void initialize_exterior_trg(const nb_mesh_t *mesh,
+static void split_exterior_trg(nb_tessellator2D__t *mesh);
+static void initialize_exterior_trg(const nb_tessellator2D__t *mesh,
 				    nb_container_t *exterior_trg);
 static bool is_exterior(const msh_trg_t *trg);
 static bool have_all_nodes_in_sgm(const msh_trg_t *trg);
-static void delete_exterior_trg(nb_mesh_t *mesh,
+static void delete_exterior_trg(nb_tessellator2D__t *mesh,
 				nb_container_t *exterior_trg);
 
 uint32_t nb_mshpoly_get_memsize(void)
@@ -678,9 +678,9 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 	/* PENDING */
 }
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
+void nb_mshpoly_load_from_mesh(void *mshpoly, nb_tessellator2D__t *mesh)
 {
-	if (nb_mesh_get_N_trg(mesh) > 0) {
+	if (nb_tessellator2D__get_N_trg(mesh) > 0) {
 		split_exterior_trg(mesh);
 
 		mesh_enumerate_vtx(mesh);
@@ -689,7 +689,7 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 		vinfo_t vinfo;
 		init_voronoi_info(&vinfo, mesh);
 
-		uint32_t Nt = nb_mesh_get_N_trg(mesh);
+		uint32_t Nt = nb_tessellator2D__get_N_trg(mesh);
 		uint32_t *trg_cc_map = nb_allocate_mem(Nt * sizeof(uint32_t));
 		init_trg_cc_map(trg_cc_map, Nt);
 
@@ -707,11 +707,11 @@ void nb_mshpoly_load_from_mesh(void *mshpoly, nb_mesh_t *mesh)
 }
 
 static void init_voronoi_info(vinfo_t *vinfo,
-			      const nb_mesh_t *const mesh)
+			      const nb_tessellator2D__t *const mesh)
 {
 	memset(vinfo, 0,  sizeof(*vinfo));
-	uint32_t Nv = nb_mesh_get_N_vtx(mesh);
-	uint32_t Nt = nb_mesh_get_N_trg(mesh);
+	uint32_t Nv = nb_tessellator2D__get_N_vtx(mesh);
+	uint32_t Nt = nb_tessellator2D__get_N_trg(mesh);
 	uint32_t size1 = Nv * sizeof(uint32_t);
 	uint32_t size2 = Nt * sizeof(uint32_t);
 	char *memblock = nb_allocate_mem(2 * size1 + size2);
@@ -733,11 +733,11 @@ static void init_trg_cc_map(uint32_t *trg_cc_map, uint32_t Nt)
 
 static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 			       uint32_t *trg_cc_map,
-			       const nb_mesh_t *const mesh)
+			       const nb_tessellator2D__t *const mesh)
 {
-	vgraph->N = nb_mesh_get_N_vtx(mesh);
+	vgraph->N = nb_tessellator2D__get_N_vtx(mesh);
 	
-	uint32_t N_edg = nb_mesh_get_N_edg(mesh);
+	uint32_t N_edg = nb_tessellator2D__get_N_edg(mesh);
 
 	uint32_t size1 = vgraph->N * sizeof(*(vgraph->N_adj));
 	uint32_t size2 = vgraph->N * sizeof(*(vgraph->adj));
@@ -755,7 +755,7 @@ static void init_voronoi_graph(vgraph_t *vgraph, vinfo_t *vinfo,
 
 static void create_mapping(vinfo_t *vinfo,
 			   const vgraph_t *const vgraph,
-			   const nb_mesh_t *const mesh,
+			   const nb_tessellator2D__t *const mesh,
 			   const uint32_t *trg_cc_map)
 {
 	uint32_t ielem = 0;
@@ -818,7 +818,7 @@ static bool trg_is_interior(const msh_trg_t *const trg,
 }
 
 static void count_vgraph_adj(vgraph_t *vgraph,
-			     const nb_mesh_t *const mesh)
+			     const nb_tessellator2D__t *const mesh)
 {
 	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
 
@@ -847,7 +847,7 @@ static void set_vgraph_adj_mem(vgraph_t *vgraph, char *memblock)
 
 static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 			   uint32_t *trg_cc_map,
-			   const nb_mesh_t *const mesh)
+			   const nb_tessellator2D__t *const mesh)
 {
 	memset(vgraph->N_adj, 0,  vgraph->N * sizeof(*(vgraph->N_adj)));
 
@@ -860,7 +860,7 @@ static void set_vgraph_adj(vgraph_t *vgraph, vinfo_t *vinfo,
 
 		bool cc = adj_is_cocircular(edge);
 		update_cc_map(edge, cc, trg_cc_map,
-			      nb_mesh_get_N_trg(mesh));
+			      nb_tessellator2D__get_N_trg(mesh));
 		insert_edg_as_adj(vgraph, edge, cc);
 		counting_edg_in_vinfo(vinfo, vgraph, edge, cc);
 	}
@@ -991,7 +991,7 @@ static void finish_voronoi_graph(vgraph_t *vgraph)
 static void set_voronoi(nb_mshpoly_t *poly,
 			const vgraph_t *const vgraph,
 			const vinfo_t *const vinfo,
-			const nb_mesh_t *const mesh)
+			const nb_tessellator2D__t *const mesh)
 {
 	set_quantities(poly, vinfo, mesh);
 	
@@ -1016,7 +1016,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 
 static void set_quantities(nb_mshpoly_t *poly,
 			   const vinfo_t *const vinfo,
-			   const nb_mesh_t *const mesh)
+			   const nb_tessellator2D__t *const mesh)
 {
 	poly->N_nod = vinfo->N_trg_in + vinfo->N_vtx_out - vinfo->N_cc_in;
 	poly->N_edg = vinfo->N_edg_in + vinfo->N_edg_out - vinfo->N_cc_in;
@@ -1029,7 +1029,7 @@ static void set_quantities(nb_mshpoly_t *poly,
 static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 				    const vgraph_t *const vgraph,
 				    const vinfo_t *const vinfo,
-				    const nb_mesh_t *const mesh)
+				    const nb_tessellator2D__t *const mesh)
 {
 	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
 	nb_bins2D_iter_init(biter);
@@ -1070,7 +1070,7 @@ static void set_nodes_and_centroids(nb_mshpoly_t *poly,
 }
 
 static void scale_vtx(double out[2], double in[2],
-		      const nb_mesh_t *mesh)
+		      const nb_tessellator2D__t *mesh)
 {
 	out[0] = in[0] / mesh->scale + mesh->xdisp;
 	out[1] = in[1] / mesh->scale + mesh->ydisp;
@@ -1079,7 +1079,7 @@ static void scale_vtx(double out[2], double in[2],
 static void set_edges(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh)
+		      const nb_tessellator2D__t *const mesh)
 {
 	uint32_t iedge = 0;
 
@@ -1152,7 +1152,7 @@ static void process_interior_edge(nb_mshpoly_t *poly,
 static void set_N_adj(nb_mshpoly_t *poly,
 		      const vgraph_t *const vgraph,
 		      const vinfo_t *const vinfo,
-		      const nb_mesh_t *const mesh)
+		      const nb_tessellator2D__t *const mesh)
 {
 	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
 	nb_bins2D_iter_init(biter);
@@ -1171,7 +1171,7 @@ static void set_N_adj(nb_mshpoly_t *poly,
 static void set_adj_and_ngb(nb_mshpoly_t *poly,
 			    const vgraph_t *const vgraph,
 			    const vinfo_t *const vinfo,
-			    const nb_mesh_t *const mesh)
+			    const nb_tessellator2D__t *const mesh)
 {
 	nb_bins2D_iter_t* biter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
 	nb_bins2D_iter_init(biter);
@@ -1264,7 +1264,7 @@ static msh_trg_t *get_prev_trg(const vgraph_t *const vgraph,
 static void set_elem_vtx(nb_mshpoly_t *poly,
 			 const vgraph_t *const vgraph,
 			 const vinfo_t *const vinfo,
-			 const nb_mesh_t *const mesh)
+			 const nb_tessellator2D__t *const mesh)
 {
 	for (uint32_t i = 0; i < poly->N_vtx; i++) {
 		msh_vtx_t *vtx = mesh->input_vtx[i];
@@ -1278,7 +1278,7 @@ static void set_elem_vtx(nb_mshpoly_t *poly,
 }
 
 static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
-			    const nb_mesh_t *const mesh)
+			    const nb_tessellator2D__t *const mesh)
 {
 	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		msh_edge_t* sgm = mesh->input_sgm[i];
@@ -1294,7 +1294,7 @@ static void set_N_nod_x_sgm(nb_mshpoly_t *poly,
 
 static void set_nod_x_sgm(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const nb_mesh_t *const mesh)
+			  const nb_tessellator2D__t *const mesh)
 {
 	for (uint32_t i = 0; i < poly->N_sgm; i++)
 		set_sgm_nodes(poly, vinfo, mesh, i);
@@ -1302,7 +1302,7 @@ static void set_nod_x_sgm(nb_mshpoly_t *poly,
 
 static void set_sgm_nodes(nb_mshpoly_t *poly,
 			  const vinfo_t *const vinfo,
-			  const nb_mesh_t *const mesh,
+			  const nb_tessellator2D__t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];
@@ -1355,7 +1355,7 @@ static void assemble_sgm_wire(nb_mshpoly_t *poly,
 	}
 }
 
-static void split_exterior_trg(nb_mesh_t *mesh)
+static void split_exterior_trg(nb_tessellator2D__t *mesh)
 {
 	nb_container_t *exterior_trg =
 		nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
@@ -1367,7 +1367,7 @@ static void split_exterior_trg(nb_mesh_t *mesh)
 	nb_container_finish(exterior_trg);
 }
 
-static void initialize_exterior_trg(const nb_mesh_t *mesh,
+static void initialize_exterior_trg(const nb_tessellator2D__t *mesh,
 				    nb_container_t *exterior_trg)
 {
 	uint32_t size = nb_iterator_get_memsize();
@@ -1404,7 +1404,7 @@ static bool have_all_nodes_in_sgm(const msh_trg_t *trg)
 }
 
 
-static void delete_exterior_trg(nb_mesh_t *mesh,
+static void delete_exterior_trg(nb_tessellator2D__t *mesh,
 				nb_container_t *exterior_trg)
 {
 	while (nb_container_is_not_empty(exterior_trg)) {

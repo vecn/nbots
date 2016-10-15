@@ -15,24 +15,24 @@
 
 #define POW2(a) ((a)*(a))
 
-static void set_constraints(nb_mesh_t *mesh,
+static void set_constraints(nb_tessellator2D__t *mesh,
 			    const uint32_t *const input_sgm,
 			    uint32_t N_input_sgm);
-static void set_new_constraining_sgm(nb_mesh_t *mesh,
+static void set_new_constraining_sgm(nb_tessellator2D__t *mesh,
 				     const msh_vtx_t *const v1,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id);
-static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
+static void remove_trg_intersecting_sgm(nb_tessellator2D__t *mesh,
 					const msh_vtx_t *const v1,
 					const msh_vtx_t *const v2,
 					nb_container_t *vertices);
 static void spread_trg_adjacent_to_constrains
-                  (nb_mesh_t *const mesh,
+                  (nb_tessellator2D__t *const mesh,
 		   const nb_container_t *const available_vtx,
 		   msh_edge_t *const sgm,
 		   bool left_side);
 static msh_trg_t* create_trg_constrained
-                          (nb_mesh_t *const mesh,
+                          (nb_tessellator2D__t *const mesh,
 			   const nb_container_t *const vertices,
 			   msh_edge_t *const base_sgm,
 			   const msh_vtx_t *const base_v1);
@@ -49,27 +49,27 @@ static bool vtx_is_constrained
 		     const msh_vtx_t *const trg_v2,
 		     const msh_vtx_t *const trg_v3,
 		     const msh_vtx_t *const encroaching_vtx);
-static bool trg_is_constrained(const nb_mesh_t *const mesh,
+static bool trg_is_constrained(const nb_tessellator2D__t *const mesh,
 			       const msh_vtx_t *const trg_v1, 
 			       const msh_vtx_t *const trg_v2,
 			       const msh_vtx_t *const trg_v3,
 			       const nb_container_t *const vertices);
 static void link_constraining_sgm(msh_edge_t *sgm);
-static bool are_intersecting_edges(const nb_mesh_t *const mesh,
+static bool are_intersecting_edges(const nb_tessellator2D__t *const mesh,
 				   const msh_vtx_t *const v1, 
 				   const msh_vtx_t *const v2);
 
-void nb_mesh_get_constrained_delaunay(nb_mesh_t *mesh,
+void nb_tessellator2D__get_constrained_delaunay(nb_tessellator2D__t *mesh,
 				       uint32_t N_vertices,
 				       const double *const vertices,
 				       uint32_t N_segments,
 				       const uint32_t *const segments)
 {
-	nb_mesh_get_delaunay(mesh, N_vertices, vertices);
+	nb_tessellator2D__get_delaunay(mesh, N_vertices, vertices);
 	set_constraints(mesh, segments, N_segments);
 }
 
-static void set_constraints(nb_mesh_t *mesh,
+static void set_constraints(nb_tessellator2D__t *mesh,
 			    const uint32_t *const input_sgm,
 			    uint32_t N_input_sgm)
 {
@@ -96,7 +96,7 @@ static void set_constraints(nb_mesh_t *mesh,
 	}
 }
 
-static void set_new_constraining_sgm(nb_mesh_t *mesh,
+static void set_new_constraining_sgm(nb_tessellator2D__t *mesh,
 				     const msh_vtx_t *const v1,
 				     const msh_vtx_t *const v2,
 				     uint32_t sgm_id)
@@ -118,7 +118,7 @@ static void set_new_constraining_sgm(nb_mesh_t *mesh,
 	nb_container_finish(vertices);
 }
 
-static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
+static void remove_trg_intersecting_sgm(nb_tessellator2D__t *mesh,
 					const msh_vtx_t *const v1,
 					const msh_vtx_t *const v2,
 					nb_container_t *vertices)
@@ -152,7 +152,7 @@ static void remove_trg_intersecting_sgm(nb_mesh_t *mesh,
 }
 
 static void spread_trg_adjacent_to_constrains
-                  (nb_mesh_t *const restrict mesh,
+                  (nb_tessellator2D__t *const restrict mesh,
 		   const nb_container_t *const restrict available_vtx,
 		   msh_edge_t *const restrict sgm,
 		   bool left_side)
@@ -190,7 +190,7 @@ static void spread_trg_adjacent_to_constrains
 
 
 static msh_trg_t* create_trg_constrained
-                          (nb_mesh_t *const restrict mesh,
+                          (nb_tessellator2D__t *const restrict mesh,
 			   const nb_container_t *const restrict vertices,
 			   msh_edge_t *const restrict base_sgm,
 			   const msh_vtx_t *const restrict base_v1)
@@ -363,7 +363,7 @@ static bool vtx_is_constrained
 	return false;
 }
 
-static bool trg_is_constrained(const nb_mesh_t *const restrict mesh,
+static bool trg_is_constrained(const nb_tessellator2D__t *const restrict mesh,
 			       const msh_vtx_t *const restrict trg_v1, 
 			       const msh_vtx_t *const restrict trg_v2,
 			       const msh_vtx_t *const restrict trg_v3,
@@ -433,7 +433,7 @@ static void link_constraining_sgm(msh_edge_t *sgm)
 	}
 }
 
-static bool are_intersecting_edges(const nb_mesh_t *const restrict mesh,
+static bool are_intersecting_edges(const nb_tessellator2D__t *const restrict mesh,
 				   const msh_vtx_t *const restrict v1, 
 				   const msh_vtx_t *const restrict v2)
 /* Exahustive search */

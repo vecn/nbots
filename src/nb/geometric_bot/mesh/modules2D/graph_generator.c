@@ -8,11 +8,11 @@
 
 #include "../mesh2D_structs.h"
 
-static void allocate_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph);
+static void allocate_elem_graph(const nb_tessellator2D__t *mesh, nb_graph_t *graph);
 
-void nb_mesh_load_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph)
+void nb_tessellator2D__load_elem_graph(const nb_tessellator2D__t *mesh, nb_graph_t *graph)
 {
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
 	if (0 == N_trg) {
 		memset(graph, 0, nb_graph_get_memsize());
 		goto EXIT;
@@ -52,9 +52,9 @@ EXIT:
 	return;
 }
 
-static void allocate_elem_graph(const nb_mesh_t *mesh, nb_graph_t *graph)
+static void allocate_elem_graph(const nb_tessellator2D__t *mesh, nb_graph_t *graph)
 {
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
 	uint32_t N_total_adj = N_trg * 3;
 	uint32_t memsize = N_trg * (sizeof(*(graph->N_adj)) +
 				    sizeof(*(graph->adj))) +

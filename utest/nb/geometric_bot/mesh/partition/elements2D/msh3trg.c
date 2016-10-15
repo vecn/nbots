@@ -49,17 +49,17 @@ static void test_load_from_mesh(void)
 	model->edge = edge;
 	model->holes = NULL;
 	
-	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t* mesh = nb_allocate_on_stack(mesh_memsize);
-	nb_mesh_init(mesh);
-	nb_mesh_generate_from_model(mesh, model);
+	uint32_t mesh_memsize = nb_tessellator2D__get_memsize();
+	nb_tessellator2D__t* mesh = nb_allocate_on_stack(mesh_memsize);
+	nb_tessellator2D__init(mesh);
+	nb_tessellator2D__generate_from_model(mesh, model);
 
 	uint32_t msh_memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = nb_allocate_on_stack(msh_memsize);
 	nb_msh3trg_init(msh3trg);
 	nb_msh3trg_load_from_mesh(msh3trg, mesh);
 
-	nb_mesh_finish(mesh);
+	nb_tessellator2D__finish(mesh);
 	
 	CU_ASSERT(9 == nb_msh3trg_get_N_nodes(msh3trg));
 	CU_ASSERT(15 == nb_msh3trg_get_N_edges(msh3trg));

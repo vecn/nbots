@@ -356,15 +356,15 @@ static void set_holes(const nb_model_t *model1,
 		      const nb_model_t *model2,
 		      nb_model_t *model)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
+	nb_tessellator2D__t* mesh = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh);
 
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D__get_simplest_from_model(mesh, model);
 
 	uint32_t N_centroids;
 	double *centroids = 
-		nb_mesh_get_centroids_of_subareas(mesh, &N_centroids);
-	nb_mesh_finish(mesh);
+		nb_tessellator2D__get_centroids_of_subareas(mesh, &N_centroids);
+	nb_tessellator2D__finish(mesh);
 
 	if (1 < N_centroids) {
 		char* mask_centroids = nb_soft_allocate_mem(N_centroids);
@@ -398,25 +398,25 @@ static uint32_t mask_true_centroids(const nb_model_t *model1,
 {
 	memset(mask, 0, N_centroids);
 
-	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh1);
-	nb_mesh_get_simplest_from_model(mesh1, model1);
+	nb_tessellator2D__t* mesh1 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh1);
+	nb_tessellator2D__get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh2);
-	nb_mesh_get_simplest_from_model(mesh2, model2);
+	nb_tessellator2D__t* mesh2 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh2);
+	nb_tessellator2D__get_simplest_from_model(mesh2, model2);
 
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < N_centroids; i++) {
-		if (!nb_mesh_is_vtx_inside(mesh1, &(centroids[i*2]))) {
-			if (!nb_mesh_is_vtx_inside(mesh2, &(centroids[i*2]))) {
+		if (!nb_tessellator2D__is_vtx_inside(mesh1, &(centroids[i*2]))) {
+			if (!nb_tessellator2D__is_vtx_inside(mesh2, &(centroids[i*2]))) {
 				mask[i] = 1;
 				N += 1;
 			}
 		}
 	}
-	nb_mesh_finish(mesh1);
-	nb_mesh_finish(mesh2);
+	nb_tessellator2D__finish(mesh1);
+	nb_tessellator2D__finish(mesh2);
 	return N;
 }
 
@@ -1256,13 +1256,13 @@ static void set_intersection_holes(nb_model_t *model,
 static double* get_centroids_of_model_subareas(const nb_model_t *model,
 						uint32_t *N_centroids)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
+	nb_tessellator2D__t* mesh = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh);
 
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D__get_simplest_from_model(mesh, model);
 	double* centroids = 
-		nb_mesh_get_centroids_of_subareas(mesh, N_centroids);
-	nb_mesh_finish(mesh);
+		nb_tessellator2D__get_centroids_of_subareas(mesh, N_centroids);
+	nb_tessellator2D__finish(mesh);
 	return centroids;
 }
 
@@ -1273,25 +1273,25 @@ static uint32_t mask_intersection_holes(const nb_model_t *model1,
 					char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh1);
-	nb_mesh_get_simplest_from_model(mesh1, model1);
+	nb_tessellator2D__t* mesh1 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh1);
+	nb_tessellator2D__get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh2);
-	nb_mesh_get_simplest_from_model(mesh2, model2);
+	nb_tessellator2D__t* mesh2 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh2);
+	nb_tessellator2D__get_simplest_from_model(mesh2, model2);
  
 	for (uint32_t i = 0; i < N_centroids; i++) {
-		if (!nb_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) ||
-		    !nb_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
+		if (!nb_tessellator2D__is_vtx_inside(mesh1, &(centroids[i * 2])) ||
+		    !nb_tessellator2D__is_vtx_inside(mesh2, &(centroids[i * 2]))) {
 			mask_centroids[i] = 1;
 			N_new_holes += 1;
 		} else {
 			mask_centroids[i] = 0;
 		}
 	}
-	nb_mesh_finish(mesh1);
-	nb_mesh_finish(mesh2);
+	nb_tessellator2D__finish(mesh1);
+	nb_tessellator2D__finish(mesh2);
 	return N_new_holes;
 }
 
@@ -1328,17 +1328,17 @@ static void set_new_holes_to_model(uint32_t N_new_holes,
 
 static void delete_isolated_elements(nb_model_t *model)
 {
-	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t *mesh = nb_allocate_on_stack(mesh_memsize);
-	nb_mesh_init(mesh);
+	uint32_t mesh_memsize = nb_tessellator2D__get_memsize();
+	nb_tessellator2D__t *mesh = nb_allocate_on_stack(mesh_memsize);
+	nb_tessellator2D__init(mesh);
 
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D__get_simplest_from_model(mesh, model);
 
-	nb_mesh_delete_isolated_segments(mesh);
-	nb_mesh_delete_internal_input_segments(mesh);
-	nb_mesh_delete_isolated_vertices(mesh);
+	nb_tessellator2D__delete_isolated_segments(mesh);
+	nb_tessellator2D__delete_internal_input_segments(mesh);
+	nb_tessellator2D__delete_isolated_vertices(mesh);
 
-	if (0 == nb_mesh_get_N_trg(mesh)) {
+	if (0 == nb_tessellator2D__get_N_trg(mesh)) {
 		nb_model_clear(model);
 	} else {
 		uint32_t msh_memsize = nb_partition_get_memsize(NB_TRIAN);
@@ -1349,7 +1349,7 @@ static void delete_isolated_elements(nb_model_t *model)
 		nb_partition_build_model(part, model);
 		nb_partition_finish(part);
 	}
-	nb_mesh_finish(mesh);
+	nb_tessellator2D__finish(mesh);
 }
 
 static void delete_isolated_internal_vtx(nb_model_t *model)
@@ -1443,25 +1443,25 @@ static uint32_t mask_difference_holes(const nb_model_t *model1,
 				      char *mask_centroids)
 {
 	uint32_t N_new_holes = 0;
-	nb_mesh_t* mesh1 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh1);
-	nb_mesh_get_simplest_from_model(mesh1, model1);
+	nb_tessellator2D__t* mesh1 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh1);
+	nb_tessellator2D__get_simplest_from_model(mesh1, model1);
 
-	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh2);
-	nb_mesh_get_simplest_from_model(mesh2, model2);
+	nb_tessellator2D__t* mesh2 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh2);
+	nb_tessellator2D__get_simplest_from_model(mesh2, model2);
 
 	for (uint32_t i = 0; i < N_centroids; i++) {
-		if (nb_mesh_is_vtx_inside(mesh1, &(centroids[i * 2])) &&
-		    nb_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
+		if (nb_tessellator2D__is_vtx_inside(mesh1, &(centroids[i * 2])) &&
+		    nb_tessellator2D__is_vtx_inside(mesh2, &(centroids[i * 2]))) {
 			mask_centroids[i] = 1;
 			N_new_holes += 1;
 		} else {
 			mask_centroids[i] = 0;
 		}
 	}
-	nb_mesh_finish(mesh1);
-	nb_mesh_finish(mesh2);
+	nb_tessellator2D__finish(mesh1);
+	nb_tessellator2D__finish(mesh2);
 	return N_new_holes;
 }
 
@@ -1503,17 +1503,17 @@ static uint32_t mask_substraction_holes(const nb_model_t *model2,
 {
 	uint32_t N_new_holes = 0;
 
-	nb_mesh_t* mesh2 = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh2);
-	nb_mesh_get_simplest_from_model(mesh2, model2);
+	nb_tessellator2D__t* mesh2 = nb_allocate_on_stack(nb_tessellator2D__get_memsize());
+	nb_tessellator2D__init(mesh2);
+	nb_tessellator2D__get_simplest_from_model(mesh2, model2);
 	for (uint32_t i = 0; i < N_centroids; i++) {
-		if (nb_mesh_is_vtx_inside(mesh2, &(centroids[i * 2]))) {
+		if (nb_tessellator2D__is_vtx_inside(mesh2, &(centroids[i * 2]))) {
 			mask_centroids[i] = 1;
 			N_new_holes += 1;
 		} else {
 			mask_centroids[i] = 0;
 		}
 	}
-	nb_mesh_finish(mesh2);
+	nb_tessellator2D__finish(mesh2);
 	return N_new_holes;
 }

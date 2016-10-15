@@ -318,19 +318,19 @@ CLEANUP_INPUT:
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
-	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t* mesh = nb_allocate_on_stack(mesh_memsize);
-	nb_mesh_init(mesh);
-	nb_mesh_set_size_constraint(mesh,
+	uint32_t mesh_memsize = nb_tessellator2D__get_memsize();
+	nb_tessellator2D__t* mesh = nb_allocate_on_stack(mesh_memsize);
+	nb_tessellator2D__init(mesh);
+	nb_tessellator2D__set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     N_vtx);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D__set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__generate_from_model(mesh, model);
 
 	nb_partition_load_from_mesh(part, mesh);
-	nb_mesh_finish(mesh);
+	nb_tessellator2D__finish(mesh);
 }
 
 static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)

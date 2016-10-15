@@ -93,7 +93,7 @@ void nb_partition_load_graph(const nb_partition_t *part,
 			     nb_partition_graph_type type);
 
 void nb_partition_load_from_mesh(nb_partition_t *part,
-				 nb_mesh_t *mesh);
+				 nb_tessellator2D__t *mesh);
 void nb_partition_set_nodal_permutation(nb_partition_t *part,
 					const uint32_t *perm);
 void nb_partition_get_enveloping_box(const nb_partition_t *part,

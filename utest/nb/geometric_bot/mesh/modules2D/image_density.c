@@ -62,19 +62,19 @@ static void test_set_img_density_jpg_eye(void)
 		nb_model_create_rectangle(0.0, 0.0,
 					   nb_image_get_width(img),
 					   nb_image_get_height(img));
-	nb_mesh_t* mesh = nb_mesh_create();
-	nb_mesh_set_img_density(mesh, img, 0.0);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
+	nb_tessellator2D__set_img_density(mesh, img, 0.0);
+	nb_tessellator2D__set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__generate_from_model(mesh, model);
 	nb_model_destroy(model);
-	nb_mesh_clear_img_density(mesh);
+	nb_tessellator2D__clear_img_density(mesh);
 	nb_image_finish(img);
 
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
-	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
-	nb_mesh_destroy(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_edge = nb_tessellator2D__get_N_edg(mesh);
+	nb_tessellator2D__destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(3600 < N_trg && 3900 > N_trg);
 	CU_ASSERT(5500 < N_edge && 5800 > N_edge);
@@ -96,15 +96,15 @@ static void test_set_img_density_jpg_gnome(void)
 		nb_model_create_rectangle(0.0, 0.0,
 					   nb_image_get_width(img),
 					   nb_image_get_height(img));
-	nb_mesh_t* mesh = nb_mesh_create();
-	nb_mesh_set_img_density(mesh, img, 0.0);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
+	nb_tessellator2D__set_img_density(mesh, img, 0.0);
+	nb_tessellator2D__generate_from_model(mesh, model);
 	nb_model_destroy(model);
-	nb_mesh_clear_img_density(mesh);
+	nb_tessellator2D__clear_img_density(mesh);
 	nb_image_finish(img);
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
-	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
-	nb_mesh_destroy(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_edge = nb_tessellator2D__get_N_edg(mesh);
+	nb_tessellator2D__destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(12000 < N_trg && 12900 > N_trg);
 	CU_ASSERT(18000 < N_edge && 19500 > N_edge);
@@ -126,18 +126,18 @@ static void test_set_img_density_png_jolie(void)
 		nb_model_create_rectangle(0.0, 0.0,
 					   nb_image_get_width(img),
 					   nb_image_get_height(img));
-	nb_mesh_t* mesh = nb_mesh_create();
-	nb_mesh_set_img_density(mesh, img, 0.0);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
+	nb_tessellator2D__set_img_density(mesh, img, 0.0);
+	nb_tessellator2D__set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__generate_from_model(mesh, model);
 	nb_model_destroy(model);
-	nb_mesh_clear_img_density(mesh);
+	nb_tessellator2D__clear_img_density(mesh);
 	nb_image_finish(img);
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
-	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
-	nb_mesh_destroy(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_edge = nb_tessellator2D__get_N_edg(mesh);
+	nb_tessellator2D__destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(11300 < N_trg && 11900 > N_trg);
 	CU_ASSERT(17100 < N_edge && 17900 > N_edge);
@@ -159,18 +159,18 @@ static void test_set_img_density_jpg_hand(void)
 		nb_model_create_rectangle(0.0, 0.0,
 					   nb_image_get_width(img),
 					   nb_image_get_height(img));
-	nb_mesh_t* mesh = nb_mesh_create();
-	nb_mesh_set_img_density(mesh, img, 0.0);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
+	nb_tessellator2D__set_img_density(mesh, img, 0.0);
+	nb_tessellator2D__set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__generate_from_model(mesh, model);
 	nb_model_destroy(model);
-	nb_mesh_clear_img_density(mesh);
+	nb_tessellator2D__clear_img_density(mesh);
 	nb_image_finish(img);
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
-	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
-	nb_mesh_destroy(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_edge = nb_tessellator2D__get_N_edg(mesh);
+	nb_tessellator2D__destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(13200 < N_trg && 13700 > N_trg);
 	CU_ASSERT(20000 < N_edge && 21000 > N_edge);
@@ -192,21 +192,21 @@ static void test_set_img_density_jpg_size_const(void)
 		nb_model_create_rectangle(0.0, 0.0,
 					   nb_image_get_width(img),
 					   nb_image_get_height(img));
-	nb_mesh_t* mesh = nb_mesh_create();
-	nb_mesh_set_img_density(mesh, img, 0.0);
-	nb_mesh_set_size_constraint(mesh,
+	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
+	nb_tessellator2D__set_img_density(mesh, img, 0.0);
+	nb_tessellator2D__set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     3000);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D__set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MIN_ANGLE,
 					  0.2);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D__generate_from_model(mesh, model);
 	nb_model_destroy(model);
-	nb_mesh_clear_img_density(mesh);
+	nb_tessellator2D__clear_img_density(mesh);
 	nb_image_finish(img);
-	uint32_t N_trg = nb_mesh_get_N_trg(mesh);
-	uint32_t N_edge = nb_mesh_get_N_edg(mesh);
-	nb_mesh_destroy(mesh);
+	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_edge = nb_tessellator2D__get_N_edg(mesh);
+	nb_tessellator2D__destroy(mesh);
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	CU_ASSERT(5800 < N_trg && 6000 > N_trg);
 	CU_ASSERT(8800 < N_edge && 10001 > N_edge);

@@ -634,7 +634,7 @@ double nb_partition_insgm_subsgm_get_length(const nb_partition_t *part,
 }
 
 void nb_partition_load_from_mesh(nb_partition_t *part,
-				 nb_mesh_t *mesh)
+				 nb_tessellator2D__t *mesh)
 {
 	part->load_from_mesh(part->msh, mesh);
 }
