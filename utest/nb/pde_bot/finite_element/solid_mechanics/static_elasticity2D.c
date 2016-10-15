@@ -52,7 +52,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */);
 static int simulate(const char *problem_data,
-		    nb_partition_t *part, results_t *results,
+		    nb_mesh2D_t *part, results_t *results,
 		    uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
@@ -106,7 +106,7 @@ static void check_beam_cantilever(const void *part,
 				  const results_t *results)
 {
 	double max_disp = 0;
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		double disp2 = POW2(results->disp[i * 2]) +
 			POW2(results->disp[i*2+1]);
@@ -143,7 +143,7 @@ static double get_error_avg_pwh(const void *part,
 {
 	double avg = 0.0;
 	uint32_t N = 0;
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		int8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 		N += N_gp;
@@ -180,9 +180,9 @@ static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
 	gp[1] = 0.0;
 	for (int i = 0; i < N; i++) {
 		double Ni = nb_fem_elem_Ni(elem, i, id_gp);
-		uint32_t vi = nb_partition_elem_get_adj(part, id_elem, i);
-		gp[0] += Ni * nb_partition_node_get_x(part, vi);
-		gp[1] += Ni * nb_partition_node_get_y(part, vi);
+		uint32_t vi = nb_mesh2D_elem_get_adj(part, id_elem, i);
+		gp[0] += Ni * nb_mesh2D_node_get_x(part, vi);
+		gp[1] += Ni * nb_mesh2D_node_get_y(part, vi);
 	}
 }
 
@@ -239,8 +239,8 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	nb_partition_t *part = nb_allocate_on_stack(nb_partition_get_memsize(NB_TRIAN));
-	nb_partition_init(part, NB_TRIAN);
+	nb_mesh2D_t *part = nb_allocate_on_stack(nb_mesh2D_get_memsize(NB_TRIAN));
+	nb_mesh2D_init(part, NB_TRIAN);
 
 	int status = simulate(problem_data, part, &results,
 			      N_vtx, modify_bcond);
@@ -249,12 +249,12 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 
 	check_results(part, &results);
 
-	nb_partition_finish(part);
+	nb_mesh2D_finish(part);
 	results_finish(&results);
 }
 
 static int simulate(const char *problem_data,
-		    nb_partition_t *part, results_t *results,
+		    nb_mesh2D_t *part, results_t *results,
 		    uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					 nb_bcond_t*)/* Can be NULL */)
@@ -285,8 +285,8 @@ static int simulate(const char *problem_data,
 
 	nb_fem_elem_t* elem = nb_fem_elem_create(NB_TRG_LINEAR);
 
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
 
 	int status_fem =
@@ -329,7 +329,7 @@ static void get_mesh(const nb_model_t *model, void *part,
 					  NB_GEOMETRIC_TOL);
 	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_partition_load_from_mesh(part, mesh);
+	nb_mesh2D_load_from_mesh(part, mesh);
 	nb_tessellator2D_finish(mesh);
 }
 

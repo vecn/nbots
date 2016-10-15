@@ -23,7 +23,7 @@
 #define POW2(a) ((a)*(a))
 
 static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
-			    const nb_partition_t *part,
+			    const nb_mesh2D_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
@@ -34,18 +34,18 @@ static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
 static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
-			 const nb_partition_t *part,
+			 const nb_mesh2D_t *part,
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe);
 static int get_element_strain(uint32_t id, double *strain,
-			      const nb_partition_t *const part,
+			      const nb_mesh2D_t *const part,
 			      double *displacement,
 			      const nb_fem_elem_t *const elem);
 
 int pipeline_assemble_system
 		(nb_sparse_t* K, double* M, double *F,
-		 const nb_partition_t *const part,
+		 const nb_mesh2D_t *const part,
 		 const nb_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -55,7 +55,7 @@ int pipeline_assemble_system
 		 const bool* elements_enabled /* NULL to enable all */)
 {
 	int status = 1;
-	uint32_t N_elem = nb_partition_get_N_elems(part);
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
 	nb_sparse_reset(K);
 	if (NULL != M)
 		memset(M, 0, nb_sparse_get_size(K) * sizeof(*M));
@@ -85,7 +85,7 @@ bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id)
 }
 
 static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
-			    const nb_partition_t *part,
+			    const nb_mesh2D_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
 			    nb_analysis2D_t analysis2D,
@@ -128,7 +128,7 @@ CLEANUP:
 static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
-			 const nb_partition_t *part,
+			 const nb_mesh2D_t *part,
 			 nb_analysis2D_params *params2D,
 			 bool enable_self_weight,
 			 double *Ke, double *Me, double *Fe)
@@ -234,15 +234,15 @@ void pipeline_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 }
 
 void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
-				   const nb_partition_t *part,
+				   const nb_mesh2D_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   nb_sparse_t *K, double *M, double *F)
 {
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
+		uint32_t v1 = nb_mesh2D_elem_get_adj(part, id, i);
 		for (uint32_t j = 0; j < N_nodes; j++) {
-			uint32_t v2 = nb_partition_elem_get_adj(part, id, j);
+			uint32_t v2 = nb_mesh2D_elem_get_adj(part, id, j);
 			nb_sparse_add(K, v1 * 2, v2 * 2,
 				       Ke[(i * 2)*(2 * N_nodes) +
 					  (j * 2)]);
@@ -268,11 +268,11 @@ void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
 }
 
 void pipeline_compute_strain(double *strain,
-			     const nb_partition_t *const part,
+			     const nb_mesh2D_t *const part,
 			     double *displacement,
 			     const nb_fem_elem_t *const elem)
 {
-	uint32_t N_elem = nb_partition_get_N_elems(part);
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
 
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
@@ -282,7 +282,7 @@ void pipeline_compute_strain(double *strain,
 }
 
 static int get_element_strain(uint32_t id, double *strain,
-			      const nb_partition_t *const part,
+			      const nb_mesh2D_t *const part,
 			      double *displacement,
 			      const nb_fem_elem_t *const elem)
 {
@@ -309,7 +309,7 @@ static int get_element_strain(uint32_t id, double *strain,
 		uint32_t idx = id * N_gp + j;
 		/* Compute Strain at Gauss Point */
 		for (uint32_t i = 0; i < N_nodes; i++) {
-			uint32_t inode = nb_partition_elem_get_adj(part, id, i);
+			uint32_t inode = nb_mesh2D_elem_get_adj(part, id, i);
 			strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 			strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 			strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +

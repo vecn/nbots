@@ -1,11 +1,12 @@
 #ifndef __NB_GEOMETRIC_BOT_MESH_ALPHA_SHAPE_H__
 #define __NB_GEOMETRIC_BOT_MESH_ALPHA_SHAPE_H__
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
-void nb_tessellator2D_get_alpha_complex(nb_tessellator2D_t *mesh, uint32_t N_vertices,
-			       const double *const vertices,
-			       double alpha);
+void nb_tessellator2D_get_alpha_complex(nb_tessellator2D_t *mesh,
+					uint32_t N_vertices,
+					const double *const vertices,
+					double alpha);
 /**
  * @brief Smallest non-singular
  */

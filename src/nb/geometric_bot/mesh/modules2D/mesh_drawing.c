@@ -9,7 +9,7 @@
 #include "nb/geometric_bot.h"
 #include "nb/graphics_bot.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 
 typedef struct {
 	const nb_tessellator2D_t *mesh;

@@ -11,7 +11,7 @@
 #include "nb/pde_bot/control_volume/solid_mechanics/static_elasticity2D.h"
 
 int nb_cvfa_compute_2D_Solid_Mechanics
-			(const nb_partition_t *const part,
+			(const nb_mesh2D_t *const part,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight, double gravity[2],
@@ -21,7 +21,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */);
 
-void nb_cvfa_compute_stress_from_strain(const nb_partition_t *part,
+void nb_cvfa_compute_stress_from_strain(const nb_mesh2D_t *part,
 					const nb_material_t *const material,
 					nb_analysis2D_t analysis2D,
 					const double* strain,

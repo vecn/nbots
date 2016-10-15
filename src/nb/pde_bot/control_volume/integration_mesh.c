@@ -15,22 +15,22 @@
 static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 				      nb_container_type cnt_type,
 				      nb_membank_t *membank,
-				      const nb_partition_t *part,
-				      const nb_partition_t *intmsh);
-static void vol_get_adj(const nb_partition_t *part,
-			const nb_partition_t *intmsh,
+				      const nb_mesh2D_t *part,
+				      const nb_mesh2D_t *intmsh);
+static void vol_get_adj(const nb_mesh2D_t *part,
+			const nb_mesh2D_t *intmsh,
 			const nb_graph_t *trg_x_vtx,
 			nb_membank_t *membank,
 			uint32_t vol_id,
 			nb_container_t *trg_adj);
 static int8_t compare_ids(const void *ptr1, const void *ptr2);
-static bool vol_intersects_trg(const nb_partition_t *part,
-			       const nb_partition_t *intmsh,
+static bool vol_intersects_trg(const nb_mesh2D_t *part,
+			       const nb_mesh2D_t *intmsh,
 			       uint32_t vol_id, uint32_t trg_id);
-static void mesh_load_sgm_from_adj(const nb_partition_t *part,
+static void mesh_load_sgm_from_adj(const nb_mesh2D_t *part,
 				   uint32_t elem_id, uint16_t adj_id,
 				   double s1[2], double s2[2]);
-static void put_neighbours_in_active(const nb_partition_t *intmsh,
+static void put_neighbours_in_active(const nb_mesh2D_t *intmsh,
 				     nb_membank_t *membank,
 				     const nb_container_t *trg_adj,
 				     const nb_container_t *out,
@@ -53,32 +53,32 @@ static void finish_containers_trg_x_vol(uint32_t N,
 					nb_membank_t *membank);
 static void adj_graph_allocate_adj(nb_graph_t *graph,
 				   const nb_graph_t *trg_x_vol,
-				   const nb_partition_t *intmsh);
+				   const nb_mesh2D_t *intmsh);
 static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
-				    const nb_partition_t *intmsh);
+				    const nb_mesh2D_t *intmsh);
 static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
-				     const nb_partition_t *intmsh,
+				     const nb_mesh2D_t *intmsh,
 				     uint32_t vol_id,
 				     nb_membank_t *membank,
 				     nb_container_t *list);
 static void adj_graph_set_adj(nb_graph_t *graph,
 			      const nb_graph_t *trg_x_vol,
-			      const nb_partition_t *intmsh);
+			      const nb_mesh2D_t *intmsh);
 
 uint32_t nb_cvfa_get_integration_mesh_memsize(void)
 {
-	return nb_partition_get_memsize(INTEGRATOR_TYPE);
+	return nb_mesh2D_get_memsize(INTEGRATOR_TYPE);
 }
 
-void nb_cvfa_init_integration_mesh(nb_partition_t *intmsh)
+void nb_cvfa_init_integration_mesh(nb_mesh2D_t *intmsh)
 {
-	nb_partition_init(intmsh, INTEGRATOR_TYPE);
+	nb_mesh2D_init(intmsh, INTEGRATOR_TYPE);
 }
 
-void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
-				   nb_partition_t *intmsh)
+void nb_cvfa_load_integration_mesh(const nb_mesh2D_t *part,
+				   nb_mesh2D_t *intmsh)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 
 	uint32_t mesh_size = nb_tessellator2D_get_memsize();
 	uint32_t vtx_size = 2 * N_elems * sizeof(double);
@@ -91,32 +91,32 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 	uint32_t *perm = (void*) (memblock + mesh_size + vtx_size);
 	
 	for (uint32_t i = 0; i < N_elems; i++) {
-		vtx[i * 2] = nb_partition_elem_get_x(part, i);
-		vtx[i*2+1] = nb_partition_elem_get_y(part, i);
+		vtx[i * 2] = nb_mesh2D_elem_get_x(part, i);
+		vtx[i*2+1] = nb_mesh2D_elem_get_y(part, i);
 	}
 
 	nb_tessellator2D_init(mesh);
 	nb_tessellator2D_get_smallest_ns_alpha_complex(mesh, N_elems, vtx, 0.666);
-	nb_partition_load_from_mesh(intmsh, mesh);
+	nb_mesh2D_load_from_mesh(intmsh, mesh);
 	nb_tessellator2D_finish(mesh);
 
 	for (uint32_t i = 0; i < N_elems; i++) {
-		uint32_t id = nb_partition_get_invtx(intmsh, i);
+		uint32_t id = nb_mesh2D_get_invtx(intmsh, i);
 		perm[id] = i;
 	}
 
-	nb_partition_set_nodal_permutation(intmsh, perm);
+	nb_mesh2D_set_nodal_permutation(intmsh, perm);
 
 	nb_soft_free_mem(memsize, memblock);
 }
 
-void nb_cvfa_correlate_partition_and_integration_mesh
-					(const nb_partition_t *part,
-					 const nb_partition_t *intmsh,
+void nb_cvfa_correlate_mesh_and_integration_mesh
+					(const nb_mesh2D_t *part,
+					 const nb_mesh2D_t *intmsh,
 					 nb_graph_t *trg_x_vol)
 {
 	nb_container_type cnt_type = NB_SORTED;
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = N_elems * (cnt_size + sizeof(void*)) + bank_size;
@@ -143,18 +143,18 @@ void nb_cvfa_correlate_partition_and_integration_mesh
 static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 				      nb_container_type cnt_type,
 				      nb_membank_t *membank,
-				      const nb_partition_t *part,
-				      const nb_partition_t *intmsh)
+				      const nb_mesh2D_t *part,
+				      const nb_mesh2D_t *intmsh)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_graph_t *trg_x_vtx = (void*) memblock;
 
 	nb_graph_init(trg_x_vtx);
-	nb_partition_load_graph(intmsh, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
+	nb_mesh2D_load_graph(intmsh, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
 
 	uint32_t N = 0;
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	char *block = ((char*) all_trg_x_vol) + N_elems * sizeof(void*);
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);
 	for (uint32_t i = 0; i < N_elems; i++) {
@@ -173,8 +173,8 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 	nb_soft_free_mem(memsize, memblock);
 }
 
-static void vol_get_adj(const nb_partition_t *part,
-			const nb_partition_t *intmsh,
+static void vol_get_adj(const nb_mesh2D_t *part,
+			const nb_mesh2D_t *intmsh,
 			const nb_graph_t *trg_x_vtx,
 			nb_membank_t *membank,
 			uint32_t vol_id,
@@ -237,18 +237,18 @@ static int8_t compare_ids(const void *ptr1, const void *ptr2)
 	return out;
 }
 
-static bool vol_intersects_trg(const nb_partition_t *part,
-			       const nb_partition_t *intmsh,
+static bool vol_intersects_trg(const nb_mesh2D_t *part,
+			       const nb_mesh2D_t *intmsh,
 			       uint32_t vol_id, uint32_t trg_id)
 {
 	bool out = false;
 
 	double a1[2], a2[2], b1[2], b2[2];
 	
-	uint16_t N_adj1 = nb_partition_elem_get_N_adj(part, vol_id);
+	uint16_t N_adj1 = nb_mesh2D_elem_get_N_adj(part, vol_id);
 	for (uint16_t i = 0; i < N_adj1; i++) {
 		mesh_load_sgm_from_adj(part, vol_id, i, a1, a2);
-		uint16_t N_adj2 = nb_partition_elem_get_N_adj(intmsh, trg_id);
+		uint16_t N_adj2 = nb_mesh2D_elem_get_N_adj(intmsh, trg_id);
 		for (uint16_t j = 0; j < N_adj2; j++) {
 			mesh_load_sgm_from_adj(intmsh, trg_id, j, b1, b2);
 			out = nb_utils2D_are_sgm_intersected(a1, a2, b1,
@@ -261,31 +261,31 @@ EXIT:
 	return out;
 }
 
-static void mesh_load_sgm_from_adj(const nb_partition_t *part,
+static void mesh_load_sgm_from_adj(const nb_mesh2D_t *part,
 				   uint32_t elem_id, uint16_t adj_id,
 				   double s1[2], double s2[2])
 {
-	uint32_t N_adj = nb_partition_elem_get_N_adj(part, elem_id);
-	uint32_t id1 = nb_partition_elem_get_adj(part, elem_id, adj_id);
-	uint32_t id2 = nb_partition_elem_get_adj(part, elem_id,
+	uint32_t N_adj = nb_mesh2D_elem_get_N_adj(part, elem_id);
+	uint32_t id1 = nb_mesh2D_elem_get_adj(part, elem_id, adj_id);
+	uint32_t id2 = nb_mesh2D_elem_get_adj(part, elem_id,
 						 (adj_id + 1) % N_adj);
-	s1[0] = nb_partition_node_get_x(part, id1);
-	s1[1] = nb_partition_node_get_y(part, id1);
+	s1[0] = nb_mesh2D_node_get_x(part, id1);
+	s1[1] = nb_mesh2D_node_get_y(part, id1);
 
-	s2[0] = nb_partition_node_get_x(part, id2);
-	s2[1] = nb_partition_node_get_y(part, id2);
+	s2[0] = nb_mesh2D_node_get_x(part, id2);
+	s2[1] = nb_mesh2D_node_get_y(part, id2);
 }
 
-static void put_neighbours_in_active(const nb_partition_t *intmsh,
+static void put_neighbours_in_active(const nb_mesh2D_t *intmsh,
 				     nb_membank_t *membank,
 				     const nb_container_t *trg_adj,
 				     const nb_container_t *out,
 				     nb_container_t *active, uint32_t id)
 {
-	uint16_t N_adj = nb_partition_elem_get_N_adj(intmsh, id);
+	uint16_t N_adj = nb_mesh2D_elem_get_N_adj(intmsh, id);
 	for (uint32_t i = 0; i < N_adj; i++) {
-		if (nb_partition_elem_has_ngb(intmsh, id, i)) {
-			uint32_t ngb = nb_partition_elem_get_ngb(intmsh,
+		if (nb_mesh2D_elem_has_ngb(intmsh, id, i)) {
+			uint32_t ngb = nb_mesh2D_elem_get_ngb(intmsh,
 								 id, i);
 			insert_in_active_if_dont_exists(active, membank,
 							trg_adj, out, ngb);
@@ -372,7 +372,7 @@ static void finish_containers_trg_x_vol(uint32_t N,
 	}
 }
 
-void nb_cvfa_get_adj_graph(const nb_partition_t *intmsh,
+void nb_cvfa_get_adj_graph(const nb_mesh2D_t *intmsh,
 			   const nb_graph_t *trg_x_vol,
 			   nb_graph_t *graph)
 {
@@ -385,7 +385,7 @@ void nb_cvfa_get_adj_graph(const nb_partition_t *intmsh,
 
 static void adj_graph_allocate_adj(nb_graph_t *graph,
 				   const nb_graph_t *trg_x_vol,
-				   const nb_partition_t *intmsh)
+				   const nb_mesh2D_t *intmsh)
 {
 	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
 	uint32_t N_adj = adj_graph_get_N_adj(trg_x_vol, intmsh);
@@ -397,7 +397,7 @@ static void adj_graph_allocate_adj(nb_graph_t *graph,
 }
 
 static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
-				    const nb_partition_t *intmsh)
+				    const nb_mesh2D_t *intmsh)
 {
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
@@ -430,16 +430,16 @@ static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 }
 
 static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
-				     const nb_partition_t *intmsh,
+				     const nb_mesh2D_t *intmsh,
 				     uint32_t vol_id, nb_membank_t *bank,
 				     nb_container_t *list)
 {
 	uint32_t N_vol_adj = trg_x_vol->N_adj[vol_id];
 	for (uint32_t i = 0; i < N_vol_adj; i++) {
 		uint32_t id = trg_x_vol->adj[vol_id][i];
-		uint16_t N_adj = nb_partition_elem_get_N_adj(intmsh, id);
+		uint16_t N_adj = nb_mesh2D_elem_get_N_adj(intmsh, id);
 		for (uint16_t j = 0; j < N_adj; j++) {
-			uint32_t nid = nb_partition_elem_get_adj(intmsh,
+			uint32_t nid = nb_mesh2D_elem_get_adj(intmsh,
 								 id, j);
 			if (vol_id != nid) {
 				if (NULL == nb_container_exist(list, &nid)) {
@@ -455,7 +455,7 @@ static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
 
 static void adj_graph_set_adj(nb_graph_t *graph,
 			      const nb_graph_t *trg_x_vol,
-			      const nb_partition_t *intmsh)
+			      const nb_mesh2D_t *intmsh)
 {
 	uint32_t bank_size = nb_membank_get_memsize();
 	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);

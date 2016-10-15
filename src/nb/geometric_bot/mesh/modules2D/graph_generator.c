@@ -3,14 +3,16 @@
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 
-static void allocate_elem_graph(const nb_tessellator2D_t *mesh, nb_graph_t *graph);
+static void allocate_elem_graph(const nb_tessellator2D_t *mesh,
+				nb_graph_t *graph);
 
-void nb_tessellator2D_load_elem_graph(const nb_tessellator2D_t *mesh, nb_graph_t *graph)
+void nb_tessellator2D_load_elem_graph(const nb_tessellator2D_t *mesh,
+				      nb_graph_t *graph)
 {
 	uint32_t N_trg = nb_tessellator2D_get_N_trg(mesh);
 	if (0 == N_trg) {

@@ -20,7 +20,7 @@ static void test_set_img_density_png_jolie(void);
 static void test_set_img_density_jpg_hand(void);
 static void test_set_img_density_jpg_size_const(void);
 
-void cunit_nb_geometric_bot_mesh2D_image_density(void)
+void cunit_nb_geometric_bot_tessellator2D_image_density(void)
 {
 	CU_pSuite suite =
 		CU_add_suite("nb/geometric_bot/mesh/modules2D/image_density.c",

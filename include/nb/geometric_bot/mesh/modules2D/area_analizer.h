@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
 /**
  * @brief Calculates the pseudo-centroid of the sub-areas in the mesh.
@@ -18,8 +18,9 @@
  * @param[out] N_centroids Stores the number of enveloped areas.
  * @return Return the array with the locations of the centroids concatenated.
  */  
-double* nb_tessellator2D_get_centroids_of_subareas(const nb_tessellator2D_t *const mesh,
-					   uint32_t* N_centroids);
+double* nb_tessellator2D_get_centroids_of_subareas
+					(const nb_tessellator2D_t *mesh,
+					 uint32_t* N_centroids);
 
 /**
  * @brief A hole can be seen as an enveloped sub-area, which is a sub-area inside

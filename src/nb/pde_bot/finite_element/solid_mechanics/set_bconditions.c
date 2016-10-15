@@ -15,40 +15,40 @@
 
 #define POW2(a) ((a)*(a))
 
-static void set_neumann_sgm(const nb_partition_t *part,  double* F, 
+static void set_neumann_sgm(const nb_mesh2D_t *part,  double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
 
-static void set_neumann_sgm_function(const nb_partition_t *part,
+static void set_neumann_sgm_function(const nb_mesh2D_t *part,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor);
-static void set_neumann_sgm_integrated(const nb_partition_t *part,
+static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
-static void set_neumann(const nb_partition_t *part, uint8_t N_dof,
+static void set_neumann(const nb_mesh2D_t *part, uint8_t N_dof,
 			double* F, double factor, nb_bcond_iter_t *iter,
 			uint32_t vtx_id);
-static void set_neumann_vtx(const nb_partition_t *part,
+static void set_neumann_vtx(const nb_mesh2D_t *part,
 			    double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor);
-static void set_dirichlet_sgm(const nb_partition_t *part,
+static void set_dirichlet_sgm(const nb_mesh2D_t *part,
 			      nb_sparse_t* K, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor);
-static void set_dirichlet(const nb_partition_t *part,
+static void set_dirichlet(const nb_mesh2D_t *part,
 			  nb_sparse_t* K, uint8_t N_dof,
 			  double* F, double factor,
 			  nb_bcond_iter_t *iter,
 			  uint32_t vtx_id);
-static void set_dirichlet_vtx(const nb_partition_t *part,
+static void set_dirichlet_vtx(const nb_mesh2D_t *part,
 			      nb_sparse_t* K, double* F, 
 			      const nb_bcond_t *const bcond, 
 			      double factor);
 
-void nb_fem_set_bconditions(const nb_partition_t *part,
+void nb_fem_set_bconditions(const nb_mesh2D_t *part,
 			    nb_sparse_t* K, double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor)
@@ -59,7 +59,7 @@ void nb_fem_set_bconditions(const nb_partition_t *part,
 	set_dirichlet_vtx(part, K, F, bcond, factor);
 }
 
-static void set_neumann_sgm(const nb_partition_t *part,
+static void set_neumann_sgm(const nb_mesh2D_t *part,
 			    double* F, 
 			    const nb_bcond_t *const bcond, 
 			    double factor)
@@ -83,31 +83,31 @@ static void set_neumann_sgm(const nb_partition_t *part,
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_neumann_sgm_function(const nb_partition_t *part,
+static void set_neumann_sgm_function(const nb_mesh2D_t *part,
 				     double* F, uint8_t N_dof,
 				     const nb_bcond_iter_t *const iter,
 				     double factor)
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
 
-	uint32_t v1_id = nb_partition_insgm_get_node(part, model_id, 0);
+	uint32_t v1_id = nb_mesh2D_insgm_get_node(part, model_id, 0);
 	double x[2];
-	x[0] = nb_partition_node_get_x(part, v1_id);
-	x[1] = nb_partition_node_get_y(part, v1_id);
+	x[0] = nb_mesh2D_node_get_x(part, v1_id);
+	x[1] = nb_mesh2D_node_get_y(part, v1_id);
 	double *val1 = nb_allocate_on_stack(N_dof * sizeof(double));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val1);
 
 	double *val2 = nb_allocate_on_stack(N_dof * sizeof(double));
 
-	uint32_t N = nb_partition_insgm_get_N_nodes(part, model_id);
+	uint32_t N = nb_mesh2D_insgm_get_N_nodes(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
-			nb_partition_insgm_subsgm_get_length(part, model_id, i);
+			nb_mesh2D_insgm_subsgm_get_length(part, model_id, i);
 		
-		uint32_t v2_id = nb_partition_insgm_get_node(part, model_id,
+		uint32_t v2_id = nb_mesh2D_insgm_get_node(part, model_id,
 							       i + 1);
-		x[0] = nb_partition_node_get_x(part, v2_id);
-		x[1] = nb_partition_node_get_y(part, v2_id);
+		x[0] = nb_mesh2D_node_get_x(part, v2_id);
+		x[1] = nb_mesh2D_node_get_y(part, v2_id);
 		nb_bcond_iter_get_val(iter, N_dof, x, 0, val2);
 
 		for (uint8_t j = 0; j < N_dof; j++) {
@@ -129,22 +129,22 @@ static void set_neumann_sgm_function(const nb_partition_t *part,
 	}
 }
 
-static void set_neumann_sgm_integrated(const nb_partition_t *part,
+static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 				       double* F, uint8_t N_dof,
 				       const nb_bcond_iter_t *const iter,
 				       double factor)
 {
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
-	double sgm_length = nb_partition_insgm_get_length(part, model_id);
+	double sgm_length = nb_mesh2D_insgm_get_length(part, model_id);
 
-	uint32_t N = nb_partition_insgm_get_N_nodes(part, model_id);
+	uint32_t N = nb_mesh2D_insgm_get_N_nodes(part, model_id);
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
-			nb_partition_insgm_subsgm_get_length(part, model_id, i);
+			nb_mesh2D_insgm_subsgm_get_length(part, model_id, i);
 		double w = subsgm_length / sgm_length;
 
-		uint32_t v1_id = nb_partition_insgm_get_node(part, model_id, i);
-		uint32_t v2_id = nb_partition_insgm_get_node(part, model_id,
+		uint32_t v1_id = nb_mesh2D_insgm_get_node(part, model_id, i);
+		uint32_t v2_id = nb_mesh2D_insgm_get_node(part, model_id,
 							     i + 1);
 
 		set_neumann(part, N_dof, F, factor * w * 0.5, iter, v1_id);
@@ -152,7 +152,7 @@ static void set_neumann_sgm_integrated(const nb_partition_t *part,
 	}
 }
 
-static void set_neumann(const nb_partition_t *part,
+static void set_neumann(const nb_mesh2D_t *part,
 			uint8_t N_dof, double* F, double factor,
 			nb_bcond_iter_t *iter,
 			uint32_t vtx_id)
@@ -169,7 +169,7 @@ static void set_neumann(const nb_partition_t *part,
 	}
 }
 
-static void set_neumann_vtx(const nb_partition_t *part,
+static void set_neumann_vtx(const nb_mesh2D_t *part,
 			    double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor)
@@ -183,13 +183,13 @@ static void set_neumann_vtx(const nb_partition_t *part,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t mesh_id = nb_partition_get_invtx(part, model_id);
+		uint32_t mesh_id = nb_mesh2D_get_invtx(part, model_id);
 		set_neumann(part, N_dof, F, factor, iter, mesh_id);
 	}
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_dirichlet_sgm(const nb_partition_t *part,
+static void set_dirichlet_sgm(const nb_mesh2D_t *part,
 			      nb_sparse_t* K,
 			      double* F, 
 			      const nb_bcond_t *const bcond,
@@ -204,10 +204,10 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
-		uint32_t N = nb_partition_insgm_get_N_nodes(part, sgm_id);
+		uint32_t N = nb_mesh2D_insgm_get_N_nodes(part, sgm_id);
 		for (uint32_t i = 0; i < N; i++) {
 			uint32_t nid = 
-				nb_partition_insgm_get_node(part, sgm_id, i);
+				nb_mesh2D_insgm_get_node(part, sgm_id, i);
 			set_dirichlet(part, K, N_dof, F, factor,
 				      iter, nid);
 		}
@@ -215,15 +215,15 @@ static void set_dirichlet_sgm(const nb_partition_t *part,
 	nb_bcond_iter_finish(iter);
 }
 
-static void set_dirichlet(const nb_partition_t *part,
+static void set_dirichlet(const nb_mesh2D_t *part,
 			  nb_sparse_t* K, uint8_t N_dof,
 			  double* F, double factor,
 			  nb_bcond_iter_t *iter,
 			  uint32_t vtx_id)
 {
 	double x[2];
-	x[0] = nb_partition_node_get_x(part, vtx_id);
-	x[1] = nb_partition_node_get_y(part, vtx_id);
+	x[0] = nb_mesh2D_node_get_x(part, vtx_id);
+	x[1] = nb_mesh2D_node_get_y(part, vtx_id);
 
 	double *val = nb_allocate_on_stack(N_dof * sizeof(*val));
 	nb_bcond_iter_get_val(iter, N_dof, x, 0, val);
@@ -237,7 +237,7 @@ static void set_dirichlet(const nb_partition_t *part,
 	}
 }
 
-static void set_dirichlet_vtx(const nb_partition_t *part,
+static void set_dirichlet_vtx(const nb_mesh2D_t *part,
 			      nb_sparse_t* K,
 			      double* F, 
 			      const nb_bcond_t *const bcond,
@@ -252,7 +252,7 @@ static void set_dirichlet_vtx(const nb_partition_t *part,
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
 		uint32_t model_id = nb_bcond_iter_get_id(iter);
-		uint32_t mesh_id = nb_partition_get_invtx(part, model_id);
+		uint32_t mesh_id = nb_mesh2D_get_invtx(part, model_id);
 		set_dirichlet(part, K, N_dof, F,
 			      factor, iter, mesh_id);
 	}

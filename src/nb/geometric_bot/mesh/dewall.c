@@ -9,10 +9,10 @@
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 
-#include "mesh2D_structs.h"
+#include "tessellator2D_structs.h"
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))

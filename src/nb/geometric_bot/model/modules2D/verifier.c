@@ -7,8 +7,7 @@
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"

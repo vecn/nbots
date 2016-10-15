@@ -9,7 +9,7 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "nb/geometric_bot/model/model2D_struct.h"

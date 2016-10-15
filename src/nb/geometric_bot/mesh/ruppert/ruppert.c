@@ -9,9 +9,9 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 #include "ruppert.h"
 
 #define _NB_MAX_LH_TOLERATED (1.0)

@@ -2,7 +2,8 @@
 #define __NB_GEOMETRIC_BOT_MODEL_MODULES2D_SIMPLIFIER_H__
 
 #include <stdint.h>
-#include "nb/container_bot/container.h"
+
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/model/model2D.h"
 
 nb_container_t* nb_model_generate_wires(const nb_model_t *const model);

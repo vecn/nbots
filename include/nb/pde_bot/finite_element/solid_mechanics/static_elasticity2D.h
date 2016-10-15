@@ -11,7 +11,7 @@
 #include "nb/pde_bot/finite_element/element.h"
 
 int nb_fem_compute_2D_Solid_Mechanics
-			(const nb_partition_t *const part,
+			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,

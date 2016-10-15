@@ -7,11 +7,11 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 #include "nb/geometric_bot/mesh/alpha_shape.h"
 
-#include "mesh2D_structs.h"
+#include "tessellator2D_structs.h"
 
 #define POW2(a) ((a)*(a))
 #define MAX(a,b) (((a)>(b))?(a):(b))

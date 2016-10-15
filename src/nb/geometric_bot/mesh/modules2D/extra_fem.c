@@ -6,10 +6,10 @@
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/modules2D/extra_fem.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 
 void nb_tessellator2D_duplicate_one_point_connections(nb_tessellator2D_t* mesh)
 {

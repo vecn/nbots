@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 
 void nb_ruppert_refine(nb_tessellator2D_t *mesh);
 bool nb_ruppert_insert_vtx(nb_tessellator2D_t *restrict mesh,

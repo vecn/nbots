@@ -23,8 +23,8 @@ static void cunit_suites_nb_geometric_bot(void)
 	cunit_nb_geometric_bot_bins2D_iterator();
 	cunit_nb_geometric_bot_dewall();
 	cunit_nb_geometric_bot_constrained_delaunay();
-	cunit_nb_geometric_bot_mesh2D();
-	cunit_nb_geometric_bot_mesh2D_image_density();
+	cunit_nb_geometric_bot_tessellator2D();
+	cunit_nb_geometric_bot_tessellator2D_image_density();
 	cunit_nb_msh3trg();
 	cunit_nb_mshquad();
 	cunit_nb_mshpoly();

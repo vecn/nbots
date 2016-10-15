@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nb/geometric_bot/mesh/partition.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
 void nb_tessellator2D_draw(const nb_tessellator2D_t *mesh, const char* filename,
 		   int width, int height);

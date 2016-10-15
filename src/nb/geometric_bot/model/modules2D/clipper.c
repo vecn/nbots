@@ -9,8 +9,8 @@
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"
 #include "nb/geometric_bot/utils2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/partition.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "vtx.h"
@@ -1341,13 +1341,13 @@ static void delete_isolated_elements(nb_model_t *model)
 	if (0 == nb_tessellator2D_get_N_trg(mesh)) {
 		nb_model_clear(model);
 	} else {
-		uint32_t msh_memsize = nb_partition_get_memsize(NB_TRIAN);
-		nb_partition_t* part = nb_allocate_on_stack(msh_memsize);
-		nb_partition_init(part, NB_TRIAN);
-		nb_partition_load_from_mesh(part, mesh);
+		uint32_t msh_memsize = nb_mesh2D_get_memsize(NB_TRIAN);
+		nb_mesh2D_t* part = nb_allocate_on_stack(msh_memsize);
+		nb_mesh2D_init(part, NB_TRIAN);
+		nb_mesh2D_load_from_mesh(part, mesh);
 
-		nb_partition_build_model(part, model);
-		nb_partition_finish(part);
+		nb_mesh2D_build_model(part, model);
+		nb_mesh2D_finish(part);
 	}
 	nb_tessellator2D_finish(mesh);
 }
