@@ -40,17 +40,17 @@ enum {
  * @brief Write-only mesh structure used to create and modify meshes.
  * This mesh is based on a Delaunay triangulation.
  */
-typedef struct nb_tessellator2D__s nb_tessellator2D__t;
+typedef struct nb_tessellator2D_s nb_tessellator2D_t;
 
-uint32_t nb_tessellator2D__get_memsize(void);
-void nb_tessellator2D__init(nb_tessellator2D__t *mesh);
-void nb_tessellator2D__finish(nb_tessellator2D__t *mesh);
+uint32_t nb_tessellator2D_get_memsize(void);
+void nb_tessellator2D_init(nb_tessellator2D_t *mesh);
+void nb_tessellator2D_finish(nb_tessellator2D_t *mesh);
 
-nb_tessellator2D__t* nb_tessellator2D__create(void);
-void nb_tessellator2D__clear(nb_tessellator2D__t* mesh);
-void nb_tessellator2D__destroy(nb_tessellator2D__t* mesh);
-void nb_tessellator2D__set_task(nb_tessellator2D__t *mesh, int type,
-		       void (*task)(const nb_tessellator2D__t *const));
+nb_tessellator2D_t* nb_tessellator2D_create(void);
+void nb_tessellator2D_clear(nb_tessellator2D_t* mesh);
+void nb_tessellator2D_destroy(nb_tessellator2D_t* mesh);
+void nb_tessellator2D_set_task(nb_tessellator2D_t *mesh, int type,
+		       void (*task)(const nb_tessellator2D_t *const));
 
 /**
  * @param[in] max_vtx Maximum number of vertices, which should be 
@@ -66,10 +66,10 @@ void nb_tessellator2D__set_task(nb_tessellator2D__t *mesh, int type,
  * refinment process if it runs-out of triangles.
  * Use this feature only if it is strictly necessary.
  */
-void nb_tessellator2D__set_size_constraint(nb_tessellator2D__t *mesh, int type,
+void nb_tessellator2D_set_size_constraint(nb_tessellator2D_t *mesh, int type,
 				  uint32_t value);
-void nb_tessellator2D__unset_size_constraint(nb_tessellator2D__t *mesh, int type);
-uint32_t nb_tessellator2D__get_size_constraint(const nb_tessellator2D__t *mesh, int type);
+void nb_tessellator2D_unset_size_constraint(nb_tessellator2D_t *mesh, int type);
+uint32_t nb_tessellator2D_get_size_constraint(const nb_tessellator2D_t *mesh, int type);
 
 /**
  * @param[in] min_angle Minimum angle allowed in the triangulation (in 
@@ -77,10 +77,10 @@ uint32_t nb_tessellator2D__get_size_constraint(const nb_tessellator2D__t *mesh, 
  * This angle must be in the range of 0 and <b>NB_MESH_MAX_ANGLE</b>,
  * which corresponds to 26.45 degrees (0.4616 radians approx).
  */
-void nb_tessellator2D__set_geometric_constraint(nb_tessellator2D__t *mesh, int type,
+void nb_tessellator2D_set_geometric_constraint(nb_tessellator2D_t *mesh, int type,
 				       double value);
-void nb_tessellator2D__unset_geometric_constraint(nb_tessellator2D__t *mesh, int type);
-double nb_tessellator2D__get_geometric_constraint(const nb_tessellator2D__t *mesh,
+void nb_tessellator2D_unset_geometric_constraint(nb_tessellator2D_t *mesh, int type);
+double nb_tessellator2D_get_geometric_constraint(const nb_tessellator2D_t *mesh,
 					int type);
 /**
  * @param[in] density Function to control the density of the triangulation,
@@ -115,21 +115,21 @@ double nb_tessellator2D__get_geometric_constraint(const nb_tessellator2D__t *mes
  * to the density function without alterations.
  * Set NULL if not required.
  */
-void nb_tessellator2D__set_density(nb_tessellator2D__t* mesh,
+void nb_tessellator2D_set_density(nb_tessellator2D_t* mesh,
 			  double (*density)(const double x[2],
 					    const void *data),
 			  const void *density_data);
-void nb_tessellator2D__unset_density(nb_tessellator2D__t* mesh);
-void nb_tessellator2D__set_refiner(nb_tessellator2D__t *mesh, int type);
-int nb_tessellator2D__get_refiner(const nb_tessellator2D__t *const mesh);
-bool nb_tessellator2D__is_empty(const nb_tessellator2D__t *const mesh);
+void nb_tessellator2D_unset_density(nb_tessellator2D_t* mesh);
+void nb_tessellator2D_set_refiner(nb_tessellator2D_t *mesh, int type);
+int nb_tessellator2D_get_refiner(const nb_tessellator2D_t *const mesh);
+bool nb_tessellator2D_is_empty(const nb_tessellator2D_t *const mesh);
 
 /**
  * @brief Create an identical copy of the mesh.
  * @param[in] mesh Mesh to be cloned.
  * @return Cloned mesh if success, NULL if something goes wrong.
  */
-nb_tessellator2D__t* nb_tessellator2D__clone(const nb_tessellator2D__t* const mesh);
+nb_tessellator2D_t* nb_tessellator2D_clone(const nb_tessellator2D_t* const mesh);
   
 /**
  * @brief Creates a mesh from a Planar Straight Line Graph (PSLG, encoded
@@ -152,10 +152,10 @@ nb_tessellator2D__t* nb_tessellator2D__clone(const nb_tessellator2D__t* const me
  * the model also contains the location of the points inside the holes,
  * at least one point for each hole.
  */
-void nb_tessellator2D__generate_from_model(nb_tessellator2D__t *mesh,
+void nb_tessellator2D_generate_from_model(nb_tessellator2D_t *mesh,
 				  const nb_model_t *const model);
 
-void nb_tessellator2D__get_simplest_from_model(nb_tessellator2D__t *mesh,
+void nb_tessellator2D_get_simplest_from_model(nb_tessellator2D_t *mesh,
 				      const nb_model_t *const  model);
 
 /**
@@ -165,7 +165,7 @@ void nb_tessellator2D__get_simplest_from_model(nb_tessellator2D__t *mesh,
  * @return <b>true</b> if the vertes lies inside the mesh 
  * (<b>false</b> if the vertex lies outside the mesh).
  */
-bool nb_tessellator2D__is_vtx_inside(const nb_tessellator2D__t *const mesh,
+bool nb_tessellator2D_is_vtx_inside(const nb_tessellator2D_t *const mesh,
 			    const double *const vtx);
 
 /**
@@ -190,12 +190,12 @@ bool nb_tessellator2D__is_vtx_inside(const nb_tessellator2D__t *const mesh,
  * @param[in] mesh The triangulation which is going to be refined, it
  * is assumed to be a Constrainted Delaunay Triangulation.
  */
-void nb_tessellator2D__refine(nb_tessellator2D__t *mesh);
-bool nb_tessellator2D__insert_vtx(nb_tessellator2D__t *mesh, const double vertex[2]);
-void nb_tessellator2D__get_vertices(nb_tessellator2D__t* mesh, double* vertices);
-uint32_t nb_tessellator2D__get_N_vtx(const nb_tessellator2D__t *const mesh);
-uint32_t nb_tessellator2D__get_N_trg(const nb_tessellator2D__t *const mesh);
-uint32_t nb_tessellator2D__get_N_edg(const nb_tessellator2D__t *const mesh);
-double nb_tessellator2D__get_area(const nb_tessellator2D__t *const mesh);
+void nb_tessellator2D_refine(nb_tessellator2D_t *mesh);
+bool nb_tessellator2D_insert_vtx(nb_tessellator2D_t *mesh, const double vertex[2]);
+void nb_tessellator2D_get_vertices(nb_tessellator2D_t* mesh, double* vertices);
+uint32_t nb_tessellator2D_get_N_vtx(const nb_tessellator2D_t *const mesh);
+uint32_t nb_tessellator2D_get_N_trg(const nb_tessellator2D_t *const mesh);
+uint32_t nb_tessellator2D_get_N_edg(const nb_tessellator2D_t *const mesh);
+double nb_tessellator2D_get_area(const nb_tessellator2D_t *const mesh);
 
 #endif

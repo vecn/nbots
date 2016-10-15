@@ -7,6 +7,6 @@
  *
  * @param[in] mesh Mesh to be processed.
  */
-void nb_tessellator2D__duplicate_one_point_connections(nb_tessellator2D__t* mesh);
+void nb_tessellator2D_duplicate_one_point_connections(nb_tessellator2D_t* mesh);
 
 #endif

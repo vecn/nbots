@@ -80,13 +80,13 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 {
 	uint32_t N_elems = nb_partition_get_N_elems(part);
 
-	uint32_t mesh_size = nb_tessellator2D__get_memsize();
+	uint32_t mesh_size = nb_tessellator2D_get_memsize();
 	uint32_t vtx_size = 2 * N_elems * sizeof(double);
 	uint32_t perm_size = N_elems * sizeof(uint32_t);
 	uint32_t memsize = mesh_size + vtx_size + perm_size;
 	char *memblock = nb_soft_allocate_mem(memsize);
 
-	nb_tessellator2D__t *mesh = (void*) memblock;
+	nb_tessellator2D_t *mesh = (void*) memblock;
 	double *vtx = (void*) (memblock + mesh_size);
 	uint32_t *perm = (void*) (memblock + mesh_size + vtx_size);
 	
@@ -95,10 +95,10 @@ void nb_cvfa_load_integration_mesh(const nb_partition_t *part,
 		vtx[i*2+1] = nb_partition_elem_get_y(part, i);
 	}
 
-	nb_tessellator2D__init(mesh);
-	nb_tessellator2D__get_smallest_ns_alpha_complex(mesh, N_elems, vtx, 0.666);
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_smallest_ns_alpha_complex(mesh, N_elems, vtx, 0.666);
 	nb_partition_load_from_mesh(intmsh, mesh);
-	nb_tessellator2D__finish(mesh);
+	nb_tessellator2D_finish(mesh);
 
 	for (uint32_t i = 0; i < N_elems; i++) {
 		uint32_t id = nb_partition_get_invtx(intmsh, i);

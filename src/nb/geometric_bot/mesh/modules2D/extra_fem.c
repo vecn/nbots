@@ -11,7 +11,7 @@
 
 #include "../mesh2D_structs.h"
 
-void nb_tessellator2D__duplicate_one_point_connections(nb_tessellator2D__t* mesh)
+void nb_tessellator2D_duplicate_one_point_connections(nb_tessellator2D_t* mesh)
 {
 	/* Allocate lists to store triangles per vertex */
 	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());

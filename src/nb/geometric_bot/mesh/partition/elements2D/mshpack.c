@@ -27,8 +27,8 @@ static double distort_using_elem_field(nb_mshpack_t *msh, double *disp,
 				       double max_disp);
 static double get_max_displacement(uint32_t N, double *disp);
 static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems);
-static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_tessellator2D__t *mesh);
-static void pack_assemble_adjacencies(const nb_tessellator2D__t *const mesh,
+static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_tessellator2D_t *mesh);
+static void pack_assemble_adjacencies(const nb_tessellator2D_t *const mesh,
 				       nb_mshpack_t *pack,
 				       nb_container_t *segments);
 static bool vtx_is_forming_input(const msh_vtx_t *const vtx);
@@ -41,13 +41,13 @@ static double pack_optimize_assemble_system(nb_container_t *segments,
 					     double gamma);
 static int8_t compare_id(const void* const ptrA,
 			 const void* const ptrB);
-static void pack_optimize(const nb_tessellator2D__t *const mesh,
+static void pack_optimize(const nb_tessellator2D_t *const mesh,
 			   nb_mshpack_t *pack, 
 			   nb_container_t *segments,
 			   double *Xk,
 			   double overlapping_factor,
 			   uint32_t iterations);
-static void pack_update_disks(const nb_tessellator2D__t *const mesh,
+static void pack_update_disks(const nb_tessellator2D_t *const mesh,
 			       nb_mshpack_t *pack,
 			       double *Xk);
 
@@ -340,13 +340,13 @@ static double get_max_displacement(uint32_t N, double *disp)
 	return sqrt(max);
 }
 
-void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_tessellator2D__t *mesh,
+void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_tessellator2D_t *mesh,
 					    double ov_factor)
 {
 	nb_mshpack_t *pack = msh;
 	uint32_t iterations = 100;
 	uint32_t N_elems =
-		mesh_enumerate_input_and_steiner_vtx((nb_tessellator2D__t*)mesh);
+		mesh_enumerate_input_and_steiner_vtx((nb_tessellator2D_t*)mesh);
 
 	if (N_elems != 0) {
 		allocate_mem(pack, N_elems);
@@ -379,7 +379,7 @@ static void allocate_mem(nb_mshpack_t *pack, uint32_t N_elems)
 	pack->ngb = nb_allocate_mem(N_elems * sizeof(*(pack->ngb)));
 }
 
-static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_tessellator2D__t *mesh)
+static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_tessellator2D_t *mesh)
 {
 	uint32_t N_steiner = 0;
 	uint32_t N_input = 0;
@@ -399,7 +399,7 @@ static uint32_t mesh_enumerate_input_and_steiner_vtx(nb_tessellator2D__t *mesh)
 	return N_steiner;
 }
 
-static void pack_assemble_adjacencies(const nb_tessellator2D__t *const mesh,
+static void pack_assemble_adjacencies(const nb_tessellator2D_t *const mesh,
 				       nb_mshpack_t *pack,
 				       nb_container_t *segments)
 {
@@ -596,7 +596,7 @@ static int8_t compare_id(const void* const ptrA,
 	return out;
 }
 
-static void pack_optimize(const nb_tessellator2D__t *const mesh,
+static void pack_optimize(const nb_tessellator2D_t *const mesh,
 			   nb_mshpack_t *pack, 
 			   nb_container_t *segments,
 			   double *Xk,
@@ -791,7 +791,7 @@ static void pack_optimize(const nb_tessellator2D__t *const mesh,
 	nb_free_mem(Xb);
 }
 
-static void pack_update_disks(const nb_tessellator2D__t *const mesh,
+static void pack_update_disks(const nb_tessellator2D_t *const mesh,
 			       nb_mshpack_t *pack,
 			       double *Xk)
 {
@@ -812,7 +812,7 @@ static void pack_update_disks(const nb_tessellator2D__t *const mesh,
 }
 
 
-void nb_mshpack_load_from_mesh(void *msh, nb_tessellator2D__t *mesh)
+void nb_mshpack_load_from_mesh(void *msh, nb_tessellator2D_t *mesh)
 {
 	nb_mshpack_load_from_mesh_with_overlap(msh, mesh, 0.0);
 }

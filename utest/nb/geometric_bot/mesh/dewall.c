@@ -43,7 +43,7 @@ static void test_get_delaunay_quasi_collinear(void);
 static void test_get_delaunay_square(void);
 static void test_get_delaunay_1000_cloud(void);
 
-static bool all_trg_are_delaunay(nb_tessellator2D__t *mesh);
+static bool all_trg_are_delaunay(nb_tessellator2D_t *mesh);
 static bool check_get_delaunay_polygon(int N, int N_centers);
 static int get_expected_trg_of_polygon(int N, int N_centers);
 static int get_expected_edg_of_polygon(int N, int N_centers);
@@ -219,15 +219,15 @@ static void test_get_delaunay_grid(void)
 {
 	int N = 12;
 	double *vertices = get_grid(N, N, 10.0);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N * N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N * N, vertices);
 	nb_free_mem(vertices);
 	int N_squares = POW2(N - 1);
-	bool N_trg_is_ok = (2 * N_squares == nb_tessellator2D__get_N_trg(mesh));
+	bool N_trg_is_ok = (2 * N_squares == nb_tessellator2D_get_N_trg(mesh));
 	int N_expected_edges = 2 * (N - 1) * N + N_squares;
-	bool N_edg_is_ok = (N_expected_edges == nb_tessellator2D__get_N_edg(mesh));
+	bool N_edg_is_ok = (N_expected_edges == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 	CU_ASSERT(all_delaunay);
@@ -237,18 +237,18 @@ static void test_get_delaunay_hexagonal_grid(void)
 {
 	int N = 12;
 	double *vertices = get_hexagonal_grid(N, N, 10.0);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N * N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N * N, vertices);
 	nb_free_mem(vertices);
 	int N_boundary_trg = 0;
 	if (N > 1)
 		N_boundary_trg = (2*N - 3) / 2;
 	int N_expected_trg = 2 * POW2(N - 1) + N_boundary_trg;
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
 	int N_expected_edges = (N - 1) * (3*N - 1) + N_boundary_trg;
-	bool N_edg_is_ok = (N_expected_edges == nb_tessellator2D__get_N_edg(mesh));
+	bool N_edg_is_ok = (N_expected_edges == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 	CU_ASSERT(all_delaunay);
@@ -309,12 +309,12 @@ static void test_get_delaunay_collinear(void)
 {
 	int N = 100;
 	double *vertices = get_collinear(N);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
-	bool N_trg_is_ok = (0 == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (0 == nb_tessellator2D__get_N_edg(mesh));
-	nb_tessellator2D__destroy(mesh);
+	bool N_trg_is_ok = (0 == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (0 == nb_tessellator2D_get_N_edg(mesh));
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 }
@@ -323,15 +323,15 @@ static void test_get_delaunay_quasi_collinear(void)
 {
 	int N = 100;
 	double *vertices = get_quasi_collinear(N);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 	CU_ASSERT(all_delaunay);
@@ -342,15 +342,15 @@ static void test_get_delaunay_square(void)
 	int N_interior = 50;
 	int N = 4 * N_interior;
 	double *vertices = get_square(N_interior, 10.0);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, 0);
 	int N_expected_edg = get_expected_edg_of_polygon(N, 0);
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 	CU_ASSERT(all_delaunay);
@@ -362,21 +362,21 @@ static void test_get_delaunay_1000_cloud(void)
 	sprintf(input_name, "%s/cloud_1000.vtx", INPUTS_DIR);
 	int N;
 	double *vertices = read_vertices(input_name, &N);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
 	int N_expected_trg = 1981;
 	int N_expected_edg = 2980;
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	CU_ASSERT(N_trg_is_ok);
 	CU_ASSERT(N_edg_is_ok);
 	CU_ASSERT(all_delaunay);
 }
 
-static bool all_trg_are_delaunay(nb_tessellator2D__t *mesh)
+static bool all_trg_are_delaunay(nb_tessellator2D_t *mesh)
 {
 	uint32_t memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = nb_allocate_on_stack(memsize);
@@ -422,15 +422,15 @@ static bool all_trg_are_delaunay(nb_tessellator2D__t *mesh)
 static bool check_get_delaunay_polygon(int N, int N_centers)
 {
 	double *vertices = get_polygon(N, N_centers, 10);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N + N_centers, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N + N_centers, vertices);
 	nb_free_mem(vertices);
 	int N_expected_trg = get_expected_trg_of_polygon(N, N_centers);
 	int N_expected_edg = get_expected_edg_of_polygon(N, N_centers);
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_delaunay;
 }
 
@@ -508,8 +508,8 @@ static bool check_get_delaunay_rings(int N_rings, int N_sides,
 {
 	int N = N_rings * N_sides + N_centers;
 	double *vertices = get_rings(N_rings, N_sides, N_centers, 10);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
 	int N_expected_trg =
 		get_expected_trg_of_polygonal_rings(N_rings, N_sides,
@@ -517,10 +517,10 @@ static bool check_get_delaunay_rings(int N_rings, int N_sides,
 	int N_expected_edg =
 		get_expected_edg_of_polygonal_rings(N_rings, N_sides,
 						    N_centers);
-	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_expected_trg == nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_expected_edg == nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_delaunay;
 }
 
@@ -602,15 +602,15 @@ static bool check_get_delaunay_spiral(int Ns, int Np)
 {
 	int N = Ns * Np + 2;
 	double *vertices = get_spiral(Ns, Np);
-	nb_tessellator2D__t *mesh = nb_tessellator2D__create();
-	nb_tessellator2D__get_delaunay(mesh, N, vertices);
+	nb_tessellator2D_t *mesh = nb_tessellator2D_create();
+	nb_tessellator2D_get_delaunay(mesh, N, vertices);
 	nb_free_mem(vertices);
 	int N_min_trg = (Ns * Np + 1);
 	int N_min_edges = 2 * N_min_trg;
-	bool N_trg_is_ok = (N_min_trg <= nb_tessellator2D__get_N_trg(mesh));
-	bool N_edg_is_ok = (N_min_edges <= nb_tessellator2D__get_N_edg(mesh));
+	bool N_trg_is_ok = (N_min_trg <= nb_tessellator2D_get_N_trg(mesh));
+	bool N_edg_is_ok = (N_min_edges <= nb_tessellator2D_get_N_edg(mesh));
 	bool all_delaunay = all_trg_are_delaunay(mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 	return N_trg_is_ok && N_edg_is_ok && all_delaunay;
 }
 

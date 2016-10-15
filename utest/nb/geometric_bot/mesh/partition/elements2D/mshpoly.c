@@ -32,17 +32,17 @@ static int suite_clean(void)
 static void test_load_from_mesh(void)
 {
 	nb_model_t *model = nb_model_create_polygon(1, 0, 0, 6);
-	nb_tessellator2D__t* mesh = nb_tessellator2D__create();
-	nb_tessellator2D__set_geometric_constraint(mesh,
+	nb_tessellator2D_t* mesh = nb_tessellator2D_create();
+	nb_tessellator2D_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  0.05);
-	nb_tessellator2D__generate_from_model(mesh, model);
+	nb_tessellator2D_generate_from_model(mesh, model);
 	nb_model_destroy(model);
 
 	void *poly = nb_allocate_on_stack(nb_mshpoly_get_memsize());
 	nb_mshpoly_init(poly);
 	nb_mshpoly_load_from_mesh(poly, mesh);
-	nb_tessellator2D__destroy(mesh);
+	nb_tessellator2D_destroy(mesh);
 
 	/* TEMPORAL FAIL: Produce different triangles each time */
 	uint32_t N_elems = nb_mshpoly_get_N_elems(poly);

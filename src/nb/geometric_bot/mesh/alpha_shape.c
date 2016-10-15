@@ -16,26 +16,26 @@
 #define POW2(a) ((a)*(a))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-static void get_alpha_complex(nb_tessellator2D__t *mesh, double alpha);
-static double get_minmax_radius(const nb_tessellator2D__t *mesh);
-static void get_max_length_x_trg(const nb_tessellator2D__t *mesh, double *max_t);
+static void get_alpha_complex(nb_tessellator2D_t *mesh, double alpha);
+static double get_minmax_radius(const nb_tessellator2D_t *mesh);
+static void get_max_length_x_trg(const nb_tessellator2D_t *mesh, double *max_t);
 static double trg_get_max_length(msh_trg_t *trg);
-static void get_min_trg_x_vtx(const nb_tessellator2D__t *mesh, const double *max_t,
+static void get_min_trg_x_vtx(const nb_tessellator2D_t *mesh, const double *max_t,
 			      msh_trg_t **min_v);
 static void verify_min_on_vtx(const double *max_t, const msh_trg_t *trg,
 			      msh_trg_t **min_v, uint32_t vid);
 static msh_trg_t *get_max_trg(const double *max_t, uint32_t N_vtx,
 			      msh_trg_t **min_v);
 
-void nb_tessellator2D__get_alpha_complex(nb_tessellator2D__t *mesh, uint32_t N_vertices,
+void nb_tessellator2D_get_alpha_complex(nb_tessellator2D_t *mesh, uint32_t N_vertices,
 			       const double *const vertices,
 			       double alpha)
 {
-	nb_tessellator2D__get_delaunay(mesh, N_vertices, vertices);
+	nb_tessellator2D_get_delaunay(mesh, N_vertices, vertices);
 	get_alpha_complex(mesh, alpha);
 }
 
-static void get_alpha_complex(nb_tessellator2D__t *mesh, double alpha)
+static void get_alpha_complex(nb_tessellator2D_t *mesh, double alpha)
 {
 	uint32_t cnt_type = NB_QUEUE;
 
@@ -71,24 +71,24 @@ static void get_alpha_complex(nb_tessellator2D__t *mesh, double alpha)
 	nb_soft_free_mem(memsize, memblock);
 }
 
-double nb_tessellator2D__get_smallest_ns_alpha_complex(nb_tessellator2D__t *mesh,
+double nb_tessellator2D_get_smallest_ns_alpha_complex(nb_tessellator2D_t *mesh,
 					     uint32_t N_vertices,
 					     const double *vertices,
 					     double alpha_factor)
 /* Smallest non-singular */
 {
-	nb_tessellator2D__get_delaunay(mesh, N_vertices, vertices);
+	nb_tessellator2D_get_delaunay(mesh, N_vertices, vertices);
 	double rminmax = get_minmax_radius(mesh);
 	double alpha = 1.0 / rminmax;
 	get_alpha_complex(mesh, alpha * alpha_factor);
 	return alpha;
 }
 
-static double get_minmax_radius(const nb_tessellator2D__t *mesh)
+static double get_minmax_radius(const nb_tessellator2D_t *mesh)
 /* Max(Min(Max())) */
 {
-	uint32_t N_vtx = nb_tessellator2D__get_N_vtx(mesh);
-	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_vtx = nb_tessellator2D_get_N_vtx(mesh);
+	uint32_t N_trg = nb_tessellator2D_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(double) +
 		N_vtx * sizeof(msh_trg_t*);
 	char *memblock = nb_soft_allocate_mem(memsize);
@@ -96,8 +96,8 @@ static double get_minmax_radius(const nb_tessellator2D__t *mesh)
 	double *max_t = (void*) memblock;
 	msh_trg_t **min_v = (void*) (memblock + N_trg * sizeof(double));
 	
-	mesh_enumerate_vtx((nb_tessellator2D__t*) mesh);
-	mesh_enumerate_trg((nb_tessellator2D__t*) mesh);
+	mesh_enumerate_vtx((nb_tessellator2D_t*) mesh);
+	mesh_enumerate_trg((nb_tessellator2D_t*) mesh);
 	get_max_length_x_trg(mesh, max_t);
 
         get_min_trg_x_vtx(mesh, max_t, min_v);
@@ -111,7 +111,7 @@ static double get_minmax_radius(const nb_tessellator2D__t *mesh)
 	return r_minmax;
 }
 
-static void get_max_length_x_trg(const nb_tessellator2D__t *mesh, double *max_t)
+static void get_max_length_x_trg(const nb_tessellator2D_t *mesh, double *max_t)
 {
 	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());
 	nb_iterator_init(iter);
@@ -135,10 +135,10 @@ static double trg_get_max_length(msh_trg_t *trg)
 	return MAX(MAX(l1, l2), l3);
 }
 
-static void get_min_trg_x_vtx(const nb_tessellator2D__t *mesh, const double *max_t,
+static void get_min_trg_x_vtx(const nb_tessellator2D_t *mesh, const double *max_t,
 			      msh_trg_t **min_v)
 {
-	uint32_t N_vtx = nb_tessellator2D__get_N_vtx(mesh);
+	uint32_t N_vtx = nb_tessellator2D_get_N_vtx(mesh);
 	memset(min_v, 0, N_vtx * sizeof(*min_v));
 
 	nb_iterator_t *iter = nb_allocate_on_stack(nb_iterator_get_memsize());

@@ -36,7 +36,7 @@ static void set_mem_of_nod_x_sgm(nb_mshquad_t *quad, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshquad_t* quad,
 			   const nb_mshquad_t *const src_quad);
 static void* nb_allocate_mem_quad(void);
-static void set_quad_quality_as_weights(const nb_tessellator2D__t *const mesh,
+static void set_quad_quality_as_weights(const nb_tessellator2D_t *const mesh,
 					nb_graph_t *graph);
 static double get_quality(const msh_trg_t *trg1,
 			  const msh_trg_t *trg2);
@@ -53,7 +53,7 @@ static msh_trg_t * get_trg_adj(const msh_trg_t *const trg,
 			       uint32_t id_adj);
 static void set_mshquad(nb_mshquad_t *quad,
 			const nb_graph_t *const graph,
-			const nb_tessellator2D__t *const mesh,
+			const nb_tessellator2D_t *const mesh,
 			const uint32_t *const matches);
 static void get_match_data(const nb_graph_t *const graph,
 			   const uint32_t *const matches,
@@ -63,14 +63,14 @@ static void set_nodal_perm_to_edges(nb_mshquad_t *quad, const uint32_t *perm);
 static void set_nodal_perm_to_elems(nb_mshquad_t *quad, const uint32_t *perm);
 static void set_nodal_perm_to_invtx(nb_mshquad_t *quad, const uint32_t *perm);
 static void set_nodal_perm_to_insgm(nb_mshquad_t *quad, const uint32_t *perm);
-static void set_nodes(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh);
-static void set_edges(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void set_nodes(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh);
+static void set_edges(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		      const uint32_t *const matches);
 static bool edge_is_not_matched(const msh_edge_t *const edge,
 				const uint32_t *const matches);
-static void set_elems(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void set_elems(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		      const uint32_t *const matches);
-static void init_elems(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void init_elems(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		       const uint32_t *const matches,
 		       uint32_t *new_elem_id);
 static void set_trg_element(nb_mshquad_t *quad,
@@ -86,11 +86,11 @@ static void set_quad_from_trg(nb_mshquad_t *quad,
 			      uint32_t elem_id);
 static void update_neighbors_ids(nb_mshquad_t *quad,
 				 const uint32_t *const new_elem_id);
-static void set_vtx(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh);
-static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh);
-static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh);
+static void set_vtx(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh);
+static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh);
+static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh);
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const nb_tessellator2D__t *const mesh,
+			  const nb_tessellator2D_t *const mesh,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
@@ -587,12 +587,12 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 	return mshquad->nod_x_sgm[sgm_id][node_id];
 }
 
-void nb_mshquad_load_from_mesh(void *mshquad, nb_tessellator2D__t *mesh)
+void nb_mshquad_load_from_mesh(void *mshquad, nb_tessellator2D_t *mesh)
 {
-	if (0 == nb_tessellator2D__get_N_trg(mesh))
+	if (0 == nb_tessellator2D_get_N_trg(mesh))
 		goto EXIT;
 
-	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_trg = nb_tessellator2D_get_N_trg(mesh);
 	uint32_t grp_size = nb_graph_get_memsize();
 	uint32_t memsize = grp_size + N_trg * sizeof(uint32_t);
 	char *memblock = nb_soft_allocate_mem(memsize);
@@ -601,10 +601,10 @@ void nb_mshquad_load_from_mesh(void *mshquad, nb_tessellator2D__t *mesh)
 
 	nb_graph_init(graph);
 
-	mesh_enumerate_vtx((nb_tessellator2D__t*)mesh);
-	mesh_enumerate_trg((nb_tessellator2D__t*)mesh);
+	mesh_enumerate_vtx((nb_tessellator2D_t*)mesh);
+	mesh_enumerate_trg((nb_tessellator2D_t*)mesh);
 
-	nb_tessellator2D__load_elem_graph(mesh, graph);
+	nb_tessellator2D_load_elem_graph(mesh, graph);
 	nb_graph_init_edge_weights(graph);
 
 	set_quad_quality_as_weights(mesh, graph);
@@ -619,7 +619,7 @@ EXIT:
 	return;
 }
 
-static void set_quad_quality_as_weights(const nb_tessellator2D__t *const mesh,
+static void set_quad_quality_as_weights(const nb_tessellator2D_t *const mesh,
 					nb_graph_t *graph)
 {
 	uint16_t iter_size = nb_iterator_get_memsize();
@@ -754,14 +754,14 @@ static msh_trg_t* get_trg_adj(const msh_trg_t *const trg,
 
 static void set_mshquad(nb_mshquad_t *quad,
 			const nb_graph_t *const graph,
-			const nb_tessellator2D__t *const mesh,
+			const nb_tessellator2D_t *const mesh,
 			const uint32_t *const matches)
 {
 	match_data *data = nb_allocate_on_stack(sizeof(match_data));
 	get_match_data(graph, matches, data);
 	
-	quad->N_nod = nb_tessellator2D__get_N_vtx(mesh);
-	quad->N_edg = nb_tessellator2D__get_N_edg(mesh) - data->N_matchs;
+	quad->N_nod = nb_tessellator2D_get_N_vtx(mesh);
+	quad->N_edg = nb_tessellator2D_get_N_edg(mesh) - data->N_matchs;
 	quad->N_elems = data->N_matchs + data->N_unmatched_trg;
 	quad->N_vtx = mesh->N_input_vtx;
 	quad->N_sgm = mesh->N_input_sgm;
@@ -778,7 +778,7 @@ static void set_mshquad(nb_mshquad_t *quad,
 	set_nod_x_sgm(quad, mesh);
 }
 
-static void set_nodes(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
+static void set_nodes(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh)
 {
 	nb_bins2D_iter_t* iter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
 	nb_bins2D_iter_init(iter);
@@ -792,7 +792,7 @@ static void set_nodes(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
 	nb_bins2D_iter_finish(iter);	
 }
 
-static void set_edges(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void set_edges(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		      const uint32_t *const matches)
 {
 	uint32_t i = 0;
@@ -823,10 +823,10 @@ static bool edge_is_not_matched(const msh_edge_t *const edge,
 	return out;
 }
 
-static void set_elems(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void set_elems(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		      const uint32_t *const matches)
 {
-	uint32_t N_trg = nb_tessellator2D__get_N_trg(mesh);
+	uint32_t N_trg = nb_tessellator2D_get_N_trg(mesh);
 	uint32_t memsize = N_trg * sizeof(uint32_t);
 	uint32_t *new_elem_id = nb_soft_allocate_mem(memsize);
 	init_elems(quad, mesh, matches, new_elem_id);
@@ -834,7 +834,7 @@ static void set_elems(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
 	nb_soft_free_mem(memsize, new_elem_id);
 }
 
-static void init_elems(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh,
+static void init_elems(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh,
 		       const uint32_t *const matches,
 		       uint32_t *new_elem_id)
 {
@@ -995,7 +995,7 @@ static void update_neighbors_ids(nb_mshquad_t *quad,
 	}
 }
 
-static void set_vtx(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
+static void set_vtx(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh)
 {
 	for (uint32_t i = 0; i < quad->N_vtx; i++) {
 		if (NULL != mesh->input_vtx[i]) {
@@ -1007,7 +1007,7 @@ static void set_vtx(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
 	}
 }
 
-static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
+static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh)
 {
 	uint32_t N_nod = 0;
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
@@ -1027,7 +1027,7 @@ static uint32_t set_N_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *c
 	return N_nod * sizeof(**(quad->nod_x_sgm));
 }
 
-static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *const mesh)
+static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D_t *const mesh)
 {
 	for (uint32_t i = 0; i < quad->N_sgm; i++) {
 		if (NULL != mesh->input_sgm[i])
@@ -1036,7 +1036,7 @@ static void set_nod_x_sgm(nb_mshquad_t *quad, const nb_tessellator2D__t *const m
 }
 
 static void set_sgm_nodes(nb_mshquad_t *quad,
-			  const nb_tessellator2D__t *const mesh,
+			  const nb_tessellator2D_t *const mesh,
 			  uint32_t sgm_id)
 {
 	msh_edge_t *sgm_prev = mesh->input_sgm[sgm_id];

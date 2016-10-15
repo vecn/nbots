@@ -3,9 +3,9 @@
 
 #include "nb/image_bot.h"
 
-void nb_tessellator2D__set_img_density(nb_tessellator2D__t *mesh,
+void nb_tessellator2D_set_img_density(nb_tessellator2D_t *mesh,
 			      const nb_image_t *const img,
 			      double density_volume);
-void nb_tessellator2D__clear_img_density(nb_tessellator2D__t *mesh);
+void nb_tessellator2D_clear_img_density(nb_tessellator2D_t *mesh);
 
 #endif

@@ -27,14 +27,14 @@ static void bound_max_density(img_density_data_t *data,
 static double img_density(const double x[2],
 			  const void *const data_ptr);
 
-void nb_tessellator2D__set_img_density(nb_tessellator2D__t *mesh,
+void nb_tessellator2D_set_img_density(nb_tessellator2D_t *mesh,
 			      const nb_image_t *const img,
 			      double density_volume)
 {
 	img_density_data_t *data = nb_allocate_zero_mem(sizeof(*data));
 	data->img = img;
 	bound_max_density(data, density_volume);
-	nb_tessellator2D__set_density(mesh, img_density, data);
+	nb_tessellator2D_set_density(mesh, img_density, data);
 }
 
 static inline void bound_max_density(img_density_data_t *data,
@@ -50,7 +50,7 @@ static inline void bound_max_density(img_density_data_t *data,
 	data->max_density = 1.0 / h_min;
 }
 
-void nb_tessellator2D__clear_img_density(nb_tessellator2D__t *mesh)
+void nb_tessellator2D_clear_img_density(nb_tessellator2D_t *mesh)
 {
 	if (NULL != mesh->density_data) {
 		nb_free_mem((void*)mesh->density_data);	

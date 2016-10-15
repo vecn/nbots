@@ -77,7 +77,7 @@ struct msh_trg_s {
 	uint32_t id;
 };
 
-struct nb_tessellator2D__s {
+struct nb_tessellator2D_s {
 	/* Arrays to relate the mesh with the PSLG input */
 	uint32_t N_input_vtx;
 	uint32_t N_input_sgm;
@@ -117,14 +117,14 @@ struct nb_tessellator2D__s {
 	int refiner_type;
 
 	/* Tasks functions */
-	void (*do_after_insert_trg)(const nb_tessellator2D__t *const);
-	void (*do_after_insert_vtx)(const nb_tessellator2D__t *const);
+	void (*do_after_insert_trg)(const nb_tessellator2D_t *const);
+	void (*do_after_insert_vtx)(const nb_tessellator2D_t *const);
 };
 
 uint8_t mvtx_get_memsize(void);
-msh_vtx_t *mvtx_create(nb_tessellator2D__t *mesh);
-msh_vtx_t *mvtx_clone(nb_tessellator2D__t *mesh, msh_vtx_t *vtx);
-void mvtx_destroy(nb_tessellator2D__t *mesh, void *vtx);
+msh_vtx_t *mvtx_create(nb_tessellator2D_t *mesh);
+msh_vtx_t *mvtx_clone(nb_tessellator2D_t *mesh, msh_vtx_t *vtx);
+void mvtx_destroy(nb_tessellator2D_t *mesh, void *vtx);
 
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id);
 uint32_t mvtx_get_id(const msh_vtx_t *const vtx);
@@ -134,8 +134,8 @@ bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
 bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin);
 bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location);
 
-msh_edge_t *medge_allocate_zero_mem(nb_tessellator2D__t *mesh);
-void medge_nb_free_mem(nb_tessellator2D__t *mesh, msh_edge_t *edge);
+msh_edge_t *medge_allocate_zero_mem(nb_tessellator2D_t *mesh);
+void medge_nb_free_mem(nb_tessellator2D_t *mesh, msh_edge_t *edge);
 bool medge_is_boundary(const msh_edge_t *const sgm);
 bool medge_is_subsgm(const msh_edge_t *const sgm);
 void medge_set_as_subsgm(msh_edge_t *const sgm,
@@ -180,8 +180,8 @@ msh_vtx_t *medge_get_partner_vtx(const msh_edge_t *const edge,
 				 const msh_vtx_t *const vtx);
 void medge_flip_without_dealloc(msh_edge_t* shared_sgm);
 
-msh_trg_t *mtrg_allocate_zero_mem(nb_tessellator2D__t *mesh);
-void mtrg_nb_free_mem(nb_tessellator2D__t *mesh, msh_trg_t *trg);
+msh_trg_t *mtrg_allocate_zero_mem(nb_tessellator2D_t *mesh);
+void mtrg_nb_free_mem(nb_tessellator2D_t *mesh, msh_trg_t *trg);
 
 bool mtrg_has_an_input_vertex(const msh_trg_t *trg);
 bool mtrg_has_an_input_sgm(const msh_trg_t *trg);
@@ -213,7 +213,7 @@ msh_edge_t* mtrg_get_CCW_edge(const msh_trg_t *const trg,
 			      const msh_edge_t *const edge);
 msh_edge_t* mtrg_get_CW_edge(const msh_trg_t *const trg,
 			     const msh_edge_t *const edge);
-msh_edge_t* mesh_insert_edge(nb_tessellator2D__t *mesh,
+msh_edge_t* mesh_insert_edge(nb_tessellator2D_t *mesh,
 			     const msh_vtx_t *const v1, 
 			     const msh_vtx_t *const v2);
 msh_edge_t* mesh_exist_edge_guided(nb_container_t *const ht_edge,
@@ -222,17 +222,17 @@ msh_edge_t* mesh_exist_edge_guided(nb_container_t *const ht_edge,
 msh_edge_t* mesh_exist_edge(nb_container_t *const ht_edge,
 			    const msh_vtx_t *const v1,
 			    const msh_vtx_t *const v2);
-void mesh_add_triangle(nb_tessellator2D__t *const mesh, msh_trg_t *const trg);
-void mesh_substract_triangle(nb_tessellator2D__t *mesh, msh_trg_t *trg);
+void mesh_add_triangle(nb_tessellator2D_t *const mesh, msh_trg_t *const trg);
+void mesh_substract_triangle(nb_tessellator2D_t *mesh, msh_trg_t *trg);
 uint32_t hash_key_edge(const void *const  edge_ptr);
 int8_t compare_edge(const void *const edge1_ptr, const void *const edge2_ptr);
-msh_trg_t* mesh_locate_vtx(const nb_tessellator2D__t *const mesh,
+msh_trg_t* mesh_locate_vtx(const nb_tessellator2D_t *const mesh,
 			  const msh_vtx_t *const v);
-double mesh_get_min_angle(const nb_tessellator2D__t *const mesh);
-void mesh_get_extern_scale_and_disp(const nb_tessellator2D__t *const mesh,
+double mesh_get_min_angle(const nb_tessellator2D_t *const mesh);
+void mesh_get_extern_scale_and_disp(const nb_tessellator2D_t *const mesh,
 				    const double *const internal,
 				    double external[2]);
-void mesh_enumerate_vtx(nb_tessellator2D__t *mesh);
-void mesh_enumerate_trg(nb_tessellator2D__t *mesh);
+void mesh_enumerate_vtx(nb_tessellator2D_t *mesh);
+void mesh_enumerate_trg(nb_tessellator2D_t *mesh);
 
 #endif

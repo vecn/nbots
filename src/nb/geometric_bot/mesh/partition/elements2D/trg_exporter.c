@@ -11,31 +11,31 @@
 
 #include "../../mesh2D_structs.h"
 
-static void export_vertices(const nb_tessellator2D__t *const mesh,
+static void export_vertices(const nb_tessellator2D_t *const mesh,
 			    nb_trg_exporter_interface_t *exp);
-static void export_edges(const nb_tessellator2D__t *const mesh,
+static void export_edges(const nb_tessellator2D_t *const mesh,
 			 nb_trg_exporter_interface_t *exp);
-static void export_and_enumerate_trg(nb_tessellator2D__t *mesh,
+static void export_and_enumerate_trg(nb_tessellator2D_t *mesh,
 				     nb_trg_exporter_interface_t *exp);
-static void export_trg_neighbours(const nb_tessellator2D__t *const mesh,
+static void export_trg_neighbours(const nb_tessellator2D_t *const mesh,
 				  nb_trg_exporter_interface_t *exp);
-static void export_input_vtx(const nb_tessellator2D__t *const mesh,
+static void export_input_vtx(const nb_tessellator2D_t *const mesh,
 			     nb_trg_exporter_interface_t *exp);
-static void export_input_sgm(const nb_tessellator2D__t *const mesh,
+static void export_input_sgm(const nb_tessellator2D_t *const mesh,
 			     nb_trg_exporter_interface_t * exp);
-static void set_input_sgm_table(const nb_tessellator2D__t *const restrict mesh,
+static void set_input_sgm_table(const nb_tessellator2D_t *const restrict mesh,
 				nb_trg_exporter_interface_t * restrict exp);
-static void set_input_sgm(const nb_tessellator2D__t *const restrict mesh,
+static void set_input_sgm(const nb_tessellator2D_t *const restrict mesh,
 			  nb_trg_exporter_interface_t * restrict exp,
 			  uint32_t isgm);
 
-void nb_tessellator2D__export(const nb_tessellator2D__t *const mesh,
+void nb_tessellator2D_export(const nb_tessellator2D_t *const mesh,
 		     nb_trg_exporter_interface_t *exp)
 {
 	if (nb_bins2D_is_empty(mesh->ug_vtx))
 		goto EXIT;
 
-	mesh_enumerate_vtx((nb_tessellator2D__t*)mesh);
+	mesh_enumerate_vtx((nb_tessellator2D_t*)mesh);
 	export_vertices(mesh, exp);
 
 	if (NULL != exp->set_N_edg) {
@@ -45,7 +45,7 @@ void nb_tessellator2D__export(const nb_tessellator2D__t *const mesh,
 
 	if (NULL != exp->set_N_trg) {
 		if (nb_container_is_not_empty(mesh->ht_trg)) {
-			export_and_enumerate_trg((nb_tessellator2D__t*)mesh, exp);
+			export_and_enumerate_trg((nb_tessellator2D_t*)mesh, exp);
 			if (NULL != exp->set_trg_neighbours)
 				export_trg_neighbours(mesh, exp);
 		}
@@ -63,7 +63,7 @@ EXIT:
 	return;
 }
 
-static void export_vertices(const nb_tessellator2D__t *const restrict mesh,
+static void export_vertices(const nb_tessellator2D_t *const restrict mesh,
 			    nb_trg_exporter_interface_t * restrict exp)
 {
 	uint32_t N_vtx = nb_bins2D_get_length(mesh->ug_vtx);
@@ -87,7 +87,7 @@ static void export_vertices(const nb_tessellator2D__t *const restrict mesh,
 	exp->stop_vtx_access(exp->structure);
 }
 
-static void export_edges(const nb_tessellator2D__t *const restrict mesh,
+static void export_edges(const nb_tessellator2D_t *const restrict mesh,
 			 nb_trg_exporter_interface_t * restrict exp)
 {
 	uint32_t N_edg = nb_container_get_length(mesh->ht_edge);
@@ -112,7 +112,7 @@ static void export_edges(const nb_tessellator2D__t *const restrict mesh,
 	exp->stop_edg_access(exp->structure);
 }
 
-static void export_and_enumerate_trg(nb_tessellator2D__t *mesh,
+static void export_and_enumerate_trg(nb_tessellator2D_t *mesh,
 				    nb_trg_exporter_interface_t *exp)
 {
 	uint32_t N_trg = nb_container_get_length(mesh->ht_trg);
@@ -141,7 +141,7 @@ static void export_and_enumerate_trg(nb_tessellator2D__t *mesh,
 	exp->stop_trg_access(exp->structure);
 }
 
-static void export_trg_neighbours(const nb_tessellator2D__t *const restrict mesh,
+static void export_trg_neighbours(const nb_tessellator2D_t *const restrict mesh,
 				  nb_trg_exporter_interface_t * restrict exp)
 {
 	exp->start_trg_neighbours_access(exp->structure);
@@ -152,13 +152,13 @@ static void export_trg_neighbours(const nb_tessellator2D__t *const restrict mesh
 	while (nb_iterator_has_more(trg_iter)) {
 		msh_trg_t* trg = (msh_trg_t*)nb_iterator_get_next(trg_iter);
 		uint32_t id = trg->id;
-		uint32_t t1 = nb_tessellator2D__get_N_trg(mesh);
+		uint32_t t1 = nb_tessellator2D_get_N_trg(mesh);
 		if (NULL != trg->t1)
 			t1 = trg->t1->id;
-		uint32_t t2 = nb_tessellator2D__get_N_trg(mesh);
+		uint32_t t2 = nb_tessellator2D_get_N_trg(mesh);
 		if (NULL != trg->t2)
 			t2 = trg->t2->id;
-		uint32_t t3 = nb_tessellator2D__get_N_trg(mesh);
+		uint32_t t3 = nb_tessellator2D_get_N_trg(mesh);
 		if (NULL != trg->t3)
 			t3 = trg->t3->id;
 
@@ -169,7 +169,7 @@ static void export_trg_neighbours(const nb_tessellator2D__t *const restrict mesh
 	exp->stop_trg_neighbours_access(exp->structure);
 }
 
-static void export_input_vtx(const nb_tessellator2D__t *const restrict mesh,
+static void export_input_vtx(const nb_tessellator2D_t *const restrict mesh,
 			     nb_trg_exporter_interface_t * restrict exp)
 {
 	uint32_t N_vtx = mesh->N_input_vtx;
@@ -180,7 +180,7 @@ static void export_input_vtx(const nb_tessellator2D__t *const restrict mesh,
 	for (uint32_t i = 0; i < N_vtx; i++) {
 		uint32_t vtx_id;
 		if (NULL == mesh->input_vtx[i])
-			vtx_id = nb_tessellator2D__get_N_vtx(mesh);
+			vtx_id = nb_tessellator2D_get_N_vtx(mesh);
 		else
 			vtx_id = mvtx_get_id(mesh->input_vtx[i]);
 		exp->set_input_vtx(exp->structure, i, vtx_id);
@@ -188,7 +188,7 @@ static void export_input_vtx(const nb_tessellator2D__t *const restrict mesh,
 	exp->stop_input_vtx_access(exp->structure);
 }
 
-static void export_input_sgm(const nb_tessellator2D__t *const restrict mesh,
+static void export_input_sgm(const nb_tessellator2D_t *const restrict mesh,
 			     nb_trg_exporter_interface_t * restrict exp)
 {
 	uint32_t N_sgm = mesh->N_input_sgm;
@@ -209,7 +209,7 @@ static void export_input_sgm(const nb_tessellator2D__t *const restrict mesh,
 }
 
 
-static void set_input_sgm_table(const nb_tessellator2D__t *const restrict mesh,
+static void set_input_sgm_table(const nb_tessellator2D_t *const restrict mesh,
 				nb_trg_exporter_interface_t * restrict exp)
 {
 	for (uint32_t i = 0; i < mesh->N_input_sgm; i++) {
@@ -228,7 +228,7 @@ static void set_input_sgm_table(const nb_tessellator2D__t *const restrict mesh,
 	}
 }
 
-static void set_input_sgm(const nb_tessellator2D__t *const restrict mesh,
+static void set_input_sgm(const nb_tessellator2D_t *const restrict mesh,
 			  nb_trg_exporter_interface_t * restrict exp,
 			  uint32_t isgm)
 {

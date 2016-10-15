@@ -8,6 +8,6 @@
  * @param[in] mesh Mesh representing the graph.
  * @return The graph generated from the elements (triangles) of the mesh.
  */
-void nb_tessellator2D__load_elem_graph(const nb_tessellator2D__t *const mesh, nb_graph_t *graph);
+void nb_tessellator2D_load_elem_graph(const nb_tessellator2D_t *const mesh, nb_graph_t *graph);
 
 #endif
