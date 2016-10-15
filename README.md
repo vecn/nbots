@@ -6,14 +6,33 @@ Numerical bots is an incubating project which aims to implement the most used nu
 
 ## Introduction
 
-A numerical bot is an automatic tool to perform several related numerical tasks.
-For example, the Geometric Bot calculates Delaunay triangulations, Finite Element Meshes, Voronoi diagrams, Alpha-shapes, Convex-Hulls, etc. and the Eigen Bot is a linear algebra library, which includes special routines for sparse systems.
-
 The project nbots is a self-contained ecosystem of numerical bots.
+A numerical bot is an interdependent module which perform several related numerical tasks.
+
+### List of bots
+- Memory bot
+- Container bot
+- Math bot
+- Graph bot
+- Geometric bot
+- Graphics bot
+- Image bot
+- Solver bot
+- Optimization bot*
+- Metaheuristics bot*
+- Statistics bot
+- PDE bot
+- Topopt bot*
+
+The '*' is for those bots which are not yet implemented.
 
 ## Compilation
 
 Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat for Windows) if gradle is not installed in your system.
+
+## Acknowledges
+
+The Center of Research in Mathematics, CIMAT, in many ways has been the backbone of this project, especially **the people** forming the department of Computational Sciences and its post-graduate programs, a big **thank you** to all of them.
 
 ## Developers and contributions
 

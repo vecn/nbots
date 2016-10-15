@@ -1,6 +1,6 @@
 # Dear developers
 
-I wrote this letter with the intention to make you a friendly introduction to development conventions, coding style and other caveats of this library.
+I wrote this 'Quick-start guide' as a friendly introduction to development conventions, coding style and other caveats of this library. I hope you find it useful.
 
 ## Why C?
 
@@ -8,8 +8,10 @@ The main reasons are:
 - C can interact with other programming languages using a binding, but not in the other way around.
 - Every computer architecture has at least a minimal C compiler.
 - Every new technology is C-compatible.
-- The most used frameworks for High Performance Computing are integrated directly, such as MPI, CUDA-C, OpenMP and Posix-threads.
+- Standards for High Performance Computing are integrated directly in C, such as MPI, CUDA-C, OpenMP and Posix-threads, but also the most used scientific-computing frameworks, such as OpenGL.
 - C can be compiled for any C++ compiler, but not in the other way around.
+- C allows a fine tuning for memory allocation and thread execution.
+  ("With great power comes great responsibility", Uncle Ben)
 
 ## Coding style
 
@@ -19,7 +21,7 @@ https://www.kernel.org/doc/Documentation/CodingStyle
 
 ## Fast checklist
 
-> Produce files with no more of 500 rows (aims a modular code).
+> Produce files with no more than 500 rows (aims a modular code).
 > Declare static those functions used just in a single file.
 > Add the prefix 'nb_' to those functions visible to every file.
 > Write your code using 80 columns at most (increase readability).
@@ -49,15 +51,11 @@ The create(), destroy() and clone() functions can be built upon these standard f
 
 ## Building the library
 
-To build the project we use 'Gradle', one of the most used tools for big projects written in Java and native code.
+To build the project we use 'Gradle', one of the most used building tools for big projects.
 
-To build the library run:
-**gradle assemble**
-
-To build the library and execute the unit tests run
-**gradle build**
-
-If you does not have **gradle** installed in your system, use the wrapper, **gradlew.sh** on unix/like systems or **gradlew.bat** on windows.
+To build the library run **gradle assemble**.
+To build the library and execute the unit tests run **gradle build**.
+If you do not have **gradle** installed in your system, use the wrapper, **gradlew.sh** on unix/like systems or **gradlew.bat** on windows.
 
 ## Final comments
 - This library has been tested on Windows, Max OS, Linux and Android.
