@@ -11,9 +11,9 @@ Copyright (c) 2010-2016 Victor Eduardo Cardoso Nungaray
 - Conditions:
 	* License and copyright notice
 - Limitations:
-	* Hold liable (without warranty)
+	* Hold liable (no warranty)
 
-Taken from http://choosealicense.com/licenses/mit/
+(Abstract taken from http://choosealicense.com/licenses/mit/)
 
 ## MIT License
 
