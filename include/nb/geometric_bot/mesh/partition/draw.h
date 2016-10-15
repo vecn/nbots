@@ -24,11 +24,11 @@ void nb_partition_fill_elems(const nb_partition_t *part,
 void nb_partition_fill_elems_field_on_nodes(const nb_partition_t *part,
 					    nb_graphics_context_t *g,
 					    const double *normalized_field,
-					    nb_graphics_palette_preset palette);
+					    nb_palette_preset palette);
 void nb_partition_fill_elems_field_on_elems(const nb_partition_t *part,
 					    nb_graphics_context_t *g,
 					    const double *normalized_field,
-					    nb_graphics_palette_preset palette);
+					    nb_palette_preset palette);
 void nb_partition_fill_elems_classes(const nb_partition_t *part,
 				     nb_graphics_context_t *g,
 				     const uint8_t *class, uint8_t N_colors,

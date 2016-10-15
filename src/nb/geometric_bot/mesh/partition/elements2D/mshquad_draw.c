@@ -141,9 +141,9 @@ static void fill_elems(const nb_mshquad_t *msh,
 void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
-	nb_graphics_palette_t *pal = nb_graphics_palette_create_preset(palette);
+	nb_palette_t *pal = nb_palette_create_preset(palette);
 
 	uint32_t N_elems = nb_mshquad_get_N_elems(msh);
 	for (uint32_t i = 0; i < N_elems; i++) {
@@ -160,9 +160,9 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 		double y3 = nb_mshquad_node_get_y(msh, n3);
 
 		uint8_t c1[4], c2[4], c3[4];
-		nb_graphics_palette_get_rgba(pal, normalized_field[n1], c1);
-		nb_graphics_palette_get_rgba(pal, normalized_field[n2], c2);
-		nb_graphics_palette_get_rgba(pal, normalized_field[n3], c3);
+		nb_palette_get_rgba(pal, normalized_field[n1], c1);
+		nb_palette_get_rgba(pal, normalized_field[n2], c2);
+		nb_palette_get_rgba(pal, normalized_field[n3], c3);
 		nb_graphics_set_source_trg(g, x1, y1, x2, y2,
 					   x3, y3, c1, c2, c3);
 
@@ -180,7 +180,7 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 
 			uint8_t c4[4];
 			double field4 = normalized_field[n4];
-			nb_graphics_palette_get_rgba(pal, field4, c4);
+			nb_palette_get_rgba(pal, field4, c4);
 
 			nb_graphics_set_source_trg(g, x1, y1, x3, y3,
 						   x4, y4, c1, c3, c4);
@@ -193,21 +193,21 @@ void nb_mshquad_fill_elems_field_on_nodes(const void *msh,
 			nb_graphics_fill(g);
 		}
 	}
-	nb_graphics_palette_destroy(pal);
+	nb_palette_destroy(pal);
 }
 
 void nb_mshquad_fill_elems_field_on_elems(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
 	void *data[2];
 	data[0] = (void*) normalized_field;
-	data[1] = nb_graphics_palette_create_preset(palette);
+	data[1] = nb_palette_create_preset(palette);
 	
 	fill_elems(msh, g, data, set_source_field_on_elems);
 	
-	nb_graphics_palette_destroy(data[1]);
+	nb_palette_destroy(data[1]);
 }
 
 static void set_source_field_on_elems(const nb_mshquad_t *msh,
@@ -216,10 +216,10 @@ static void set_source_field_on_elems(const nb_mshquad_t *msh,
 {
 	void **cls_data = data;
 	double *field = cls_data[0];
-	nb_graphics_palette_t *palette = cls_data[1];
+	nb_palette_t *palette = cls_data[1];
 	
 	uint8_t c[4];
-	nb_graphics_palette_get_rgba(palette, field[i], c);
+	nb_palette_get_rgba(palette, field[i], c);
 	nb_graphics_set_source_rgba(g, c[0], c[1], c[2], c[3]);
 }
 

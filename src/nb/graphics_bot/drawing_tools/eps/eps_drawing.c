@@ -76,7 +76,7 @@ void nb_graphics_eps_set_source_grad(void *ctx,
 				     nb_graphics_grad_t grad,
 				     float x1, float y1,
 				     float x2, float y2,
-				     nb_graphics_palette_t *pat)
+				     nb_palette_t *pat)
 {
 	;
 }

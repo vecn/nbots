@@ -77,7 +77,7 @@ static void set_source_null(const nb_mshpack_t *msh,
 void nb_mshpack_fill_elems_field_on_nodes(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
 	;/* NULL statement */
 }
@@ -85,15 +85,15 @@ void nb_mshpack_fill_elems_field_on_nodes(const void *msh,
 void nb_mshpack_fill_elems_field_on_elems(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
 	const void *data[2];
 	data[0] = (void*) normalized_field;
-	data[1] = nb_graphics_palette_create_preset(palette);
+	data[1] = nb_palette_create_preset(palette);
 	
 	draw_disks(msh, g, true, NULL, set_source_field);
 	
-	nb_graphics_palette_destroy(data[1]);
+	nb_palette_destroy(data[1]);
 }
 
 static void set_source_field(const nb_msh3trg_t *msh,
@@ -102,10 +102,10 @@ static void set_source_field(const nb_msh3trg_t *msh,
 {
 	void **cls_data = data;
 	double *field = cls_data[0];
-	nb_graphics_palette_t *palette = cls_data[1];
+	nb_palette_t *palette = cls_data[1];
 	
 	uint8_t c[4];
-	nb_graphics_palette_get_rgba(palette, field[i], c);
+	nb_palette_get_rgba(palette, field[i], c);
 	nb_graphics_set_source_rgba(g, c[0], c[1], c[2], c[3]);
 }
 

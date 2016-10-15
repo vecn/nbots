@@ -24,7 +24,7 @@ static void fill_elems(const nb_mshpoly_t *poly,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data));
 static void get_centroid_color(const void *msh,
-			       const nb_graphics_palette_t *pal,
+			       const nb_palette_t *pal,
 			       const double *field, uint32_t elem_id,
 			       uint8_t cc[4]);
 static void set_source_field_on_elems(const nb_mshpoly_t *msh,
@@ -135,10 +135,10 @@ static void fill_elems(const nb_mshpoly_t *poly,
 void nb_mshpoly_fill_elems_field_on_nodes(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
-	nb_graphics_palette_t *pal = 
-		nb_graphics_palette_create_preset(palette);
+	nb_palette_t *pal = 
+		nb_palette_create_preset(palette);
 
 	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
 	for (uint32_t i = 0; i < N_elems; i++) {
@@ -164,9 +164,9 @@ void nb_mshpoly_fill_elems_field_on_nodes(const void *msh,
 			nb_graphics_close_path(g);
 			
 			uint8_t c1[4], c2[4];
-			nb_graphics_palette_get_rgba(pal, normalized_field[n1],
+			nb_palette_get_rgba(pal, normalized_field[n1],
 						     c1);
-			nb_graphics_palette_get_rgba(pal, normalized_field[n2],
+			nb_palette_get_rgba(pal, normalized_field[n2],
 						     c2);
 
 			nb_graphics_set_source_trg(g, xc, yc, x1, y1,
@@ -174,11 +174,11 @@ void nb_mshpoly_fill_elems_field_on_nodes(const void *msh,
 			nb_graphics_fill(g);
 		}
 	}
-	nb_graphics_palette_destroy(pal);
+	nb_palette_destroy(pal);
 }
 
 static void get_centroid_color(const void *msh,
-			       const nb_graphics_palette_t *pal,
+			       const nb_palette_t *pal,
 			       const double *field, uint32_t elem_id,
 			       uint8_t cc[4])
 {
@@ -187,7 +187,7 @@ static void get_centroid_color(const void *msh,
 	for (uint16_t j = 0; j < N_adj; j++) {
 		uint32_t nid = nb_mshpoly_elem_get_adj(msh, elem_id, j);
 		uint8_t rgba[4];
-		nb_graphics_palette_get_rgba(pal, field[nid], rgba);
+		nb_palette_get_rgba(pal, field[nid], rgba);
 			
 		rgba_sum[0] += rgba[0];
 		rgba_sum[1] += rgba[1];
@@ -203,15 +203,15 @@ static void get_centroid_color(const void *msh,
 void nb_mshpoly_fill_elems_field_on_elems(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette)
+					  nb_palette_preset palette)
 {
 	void *data[2];
 	data[0] = (void*) normalized_field;
-	data[1] = nb_graphics_palette_create_preset(palette);
+	data[1] = nb_palette_create_preset(palette);
 	
 	fill_elems(msh, g, data, set_source_field_on_elems);
 	
-	nb_graphics_palette_destroy(data[1]);
+	nb_palette_destroy(data[1]);
 }
 
 static void set_source_field_on_elems(const nb_mshpoly_t *msh,
@@ -220,10 +220,10 @@ static void set_source_field_on_elems(const nb_mshpoly_t *msh,
 {
 	void **cls_data = data;
 	double *field = cls_data[0];
-	nb_graphics_palette_t *palette = cls_data[1];
+	nb_palette_t *palette = cls_data[1];
 	
 	uint8_t c[4];
-	nb_graphics_palette_get_rgba(palette, field[i], c);
+	nb_palette_get_rgba(palette, field[i], c);
 	nb_graphics_set_source_rgba(g, c[0], c[1], c[2], c[3]);
 }
 

@@ -30,12 +30,12 @@ static float get_block_avg(const nb_sparse_t *A,
 			   float cell_size, uint32_t i, uint32_t j,
 			   uint32_t u, uint32_t v);
 static void set_image(nb_image_t *img, int border, uint32_t plot_size,
-		      float *cells, nb_graphics_palette_preset pal);
+		      float *cells, nb_palette_preset pal);
 
 void nb_sparse_export_spy_plot(const nb_sparse_t *A,
 			       const char* url, uint32_t img_size,
 			       bool enable_zeros_allocated,
-			       nb_graphics_palette_preset pal)
+			       nb_palette_preset pal)
 {
 	int border = 3;
 	
@@ -142,10 +142,10 @@ static float get_block_avg(const nb_sparse_t *A,
 }
 
 static void set_image(nb_image_t *img, int border, uint32_t plot_size,
-		      float *cells, nb_graphics_palette_preset pal)
+		      float *cells, nb_palette_preset pal)
 {
-	nb_graphics_palette_t *palette =
-		nb_graphics_palette_create_preset(pal);
+	nb_palette_t *palette =
+		nb_palette_create_preset(pal);
 	
 	for (uint32_t i = 0; i < img->width; i++) {
 		for (uint32_t j = 0; j < img->height; j++) {
@@ -155,7 +155,7 @@ static void set_image(nb_image_t *img, int border, uint32_t plot_size,
 				uint32_t r = i - border;
 				uint32_t c = j - border;
 				uint32_t id = r *  plot_size + c;
-				nb_graphics_palette_get_rgba(palette,
+				nb_palette_get_rgba(palette,
 							     cells[id],
 							     pix);
 			}
@@ -163,5 +163,5 @@ static void set_image(nb_image_t *img, int border, uint32_t plot_size,
 		}
 	}
 
-	nb_graphics_palette_destroy(palette);
+	nb_palette_destroy(palette);
 }

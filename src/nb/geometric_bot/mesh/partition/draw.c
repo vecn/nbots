@@ -277,20 +277,20 @@ static void add_palette(const nb_partition_t *part,
 			const draw_data *data,
 			nb_graphics_context_t *g, int width, int height)
 {
-	nb_graphics_palette_t *palette =
-		nb_graphics_palette_create_preset(PALETTE_FIELD);
+	nb_palette_t *palette =
+		nb_palette_create_preset(PALETTE_FIELD);
 	double min, max;
 	get_min_max(part, data, &min, &max);
 	
 	float label_width = 55;
-	nb_graphics_palette_draw(g, palette,
+	nb_palette_draw(g, palette,
 				 width - PALETTE_W - PALETTE_MARGIN -
 				 label_width,
 				 height - PALETTE_H - PALETTE_MARGIN,
 				 PALETTE_W,
 				 PALETTE_H,
 				 1, min, max);
-	nb_graphics_palette_destroy(palette);
+	nb_palette_destroy(palette);
 }
 
 static void get_min_max(const nb_partition_t *part,
@@ -335,7 +335,7 @@ void nb_partition_fill_elems(const nb_partition_t *part,
 void nb_partition_fill_elems_field_on_nodes(const nb_partition_t *part,
 					    nb_graphics_context_t *g,
 					    const double *normalized_field,
-					    nb_graphics_palette_preset palette)
+					    nb_palette_preset palette)
 {
 	part->graphics.fill_elems_field_on_nodes(part->msh, g,
 						 normalized_field,
@@ -345,7 +345,7 @@ void nb_partition_fill_elems_field_on_nodes(const nb_partition_t *part,
 void nb_partition_fill_elems_field_on_elems(const nb_partition_t *part,
 					    nb_graphics_context_t *g,
 					    const double *normalized_field,
-					    nb_graphics_palette_preset palette)
+					    nb_palette_preset palette)
 {
 	part->graphics.fill_elems_field_on_elems(part->msh, g,
 						 normalized_field,

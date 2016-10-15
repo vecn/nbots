@@ -14,11 +14,11 @@ void nb_msh3trg_fill_elems(const void *msh,
 void nb_msh3trg_fill_elems_field_on_nodes(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette);
+					  nb_palette_preset palette);
 void nb_msh3trg_fill_elems_field_on_elems(const void *msh,
 					  nb_graphics_context_t *g,
 					  const double *normalized_field,
-					  nb_graphics_palette_preset palette);
+					  nb_palette_preset palette);
 void nb_msh3trg_fill_elems_classes(const void *msh,
 				   nb_graphics_context_t *g,
 				   const uint8_t *class, uint8_t N_colors,
