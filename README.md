@@ -28,7 +28,7 @@ The '*' is for those bots which are not implemented yet.
 
 ## Compilation
 
-Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat for Windows) if gradle is not installed in your system.
+Run `gradle assemble` or use the shell script `./gradlew assemble` (`gradlew.bat` for Windows) if gradle is not installed in your system.
 
 ## Acknowledges
 

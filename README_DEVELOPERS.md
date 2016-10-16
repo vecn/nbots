@@ -33,8 +33,8 @@ Since the library implementation begins in 2009, old code does not follow all th
     (improves readability; discussed on the CodingStyle document cited).
   * Use 3 control statements at most per function (for, if, while).
 - About comments
-  * All comments must be C-style, that is  /* comment here */,
-    avoid using C++ single line comments // like this comment.
+  * All comments must be C-style, that is  `/* comment here */`,
+    avoid using C++ single line comments `// like this comment`.
   * The files must not contain any comment at the top.
     * Do not paste the License 
        (The License is on the **git** repository).
@@ -59,31 +59,31 @@ Since the library implementation begins in 2009, old code does not follow all th
   * Undefined yet.
 - Memory management
   * Make just one memory allocation per function when required.
-  * Never use malloc(), calloc() and realloc() directly.
-    Use those declared on nb/memory_bot/allocate_mem.h
+  * Never use `malloc()`, `calloc()` and `realloc()` directly.
+    Use those declared on **nb/memory_bot/allocate_mem.h**
   * If the allocated memory will be freed on the same function,
-    use the "soft_allocate" version.
-  * Use 'nb_membank_t' if it is possible.
+    use the `nb_soft_allocate_mem()` version.
+  * Use `nb_membank_t` whether it is possible.
   * Deliver at least one unit test for every function declared in the header 
     (Using CUNIT).
 
 ## Library standard
 The library uses objects (structs) to handle data, every object must have at least the following functions:
 
-- nb_[object_name]_get_memsize();
-- nb_[object_name]_init(void *ptr_to_object);
-- nb_[object_name]_finish(void *ptr_to_object);
-- nb_[object_name]_copy(void *ptr_to_object, const void *src);
-- nb_[object_name]_clear(void *ptr_to_object);
+- `nb_[object_name]_get_memsize();`
+- `nb_[object_name]_init(void *ptr_to_object);`
+- `nb_[object_name]_finish(void *ptr_to_object);`
+- `nb_[object_name]_copy(void *ptr_to_object, const void *src);`
+- `nb_[object_name]_clear(void *ptr_to_object);`
 
-The create(), destroy() and clone() functions can be built upon these standard functions, but are not included because they are memory exhaustive and decrease the performance on mobile devices.
+The `create()`, `destroy()` and `clone()` functions can be built upon these standard functions, but are not included because they are memory exhaustive and decrease the performance on mobile devices.
 
 ## Building the library
 
-To build the project we use 'Gradle', one of the most used building tools for big projects.
+To build the project we use **Gradle**, one of the most used building tools for big projects.
 
-To build the library run **gradle assemble**.
-To build the library and execute the unit tests run **gradle build**.
+To build the library run `gradle assemble`.
+To build the library and execute the unit tests run `gradle build`.
 If you do not have **gradle** installed in your system, use the wrapper, **gradlew.sh** on unix/like systems or **gradlew.bat** on windows.
 
 ## Final comments
