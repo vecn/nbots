@@ -30,7 +30,7 @@ static int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x);
 
 int nb_fem_compute_2D_Solid_Mechanics
-			(const nb_partition_t *const part,
+			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elemtype,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
@@ -45,11 +45,11 @@ int nb_fem_compute_2D_Solid_Mechanics
 	int status = 0;
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
+	nb_mesh2D_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	nb_sparse_t *K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
 	uint32_t F_memsize = 2 * N_nod * sizeof(double);
 	double* F = nb_soft_allocate_mem(F_memsize);
 	memset(F, 0, F_memsize);

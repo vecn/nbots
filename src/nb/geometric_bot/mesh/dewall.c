@@ -9,10 +9,10 @@
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 
-#include "mesh2D_structs.h"
+#include "tessellator2D_structs.h"
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -34,7 +34,7 @@ typedef struct {
 } search_vtx_t;
 
 static  void mesh_init_disp_and_scale
-                            (nb_mesh_t *const mesh,
+                            (nb_tessellator2D_t *const mesh,
 			     uint32_t N_vertices,
 			     const double *const vertices);
 static int8_t compare_using_axe(const void *const v1_ptr,
@@ -81,18 +81,18 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const nb_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
 					 const msh_vtx_t *const  v2);
-static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx);
-static msh_trg_t* create_trg(nb_mesh_t *mesh,
+static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_vtx);
+static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
 static void update_AFL(nb_container_t *AFL,
 		       const msh_edge_t *const edge);
 static uint32_t dewall_recursion
-                       (nb_mesh_t* mesh, uint32_t N,
+                       (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			nb_container_t* AFL);
-static uint32_t triangulate_wall(nb_mesh_t *mesh,
+static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
@@ -124,16 +124,16 @@ static bool not_space_for_alpha(msh_vtx_t **vertices, uint32_t i, int8_t axe);
 static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 			    msh_vtx_t **vertices, int8_t axe,
 			    double alpha, uint32_t N_half);
-static bool set_first_trg_into_AFL(nb_mesh_t *mesh,
+static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
 				   search_vtx_t *search_vtx,
 				   nb_container_t *AFL);
 static void clear_search_vtx(search_vtx_t *search_vtx);
-static uint32_t dewall(nb_mesh_t* mesh);
+static uint32_t dewall(nb_tessellator2D_t* mesh);
 
-void nb_mesh_get_delaunay(nb_mesh_t *mesh, uint32_t N_vertices,
+void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices,
 			  const double *const vertices)
 {
-	nb_mesh_clear(mesh);
+	nb_tessellator2D_clear(mesh);
 	if (0 == N_vertices)
 		goto EXIT;
 
@@ -159,7 +159,7 @@ EXIT:
 }
 
 static inline void mesh_init_disp_and_scale
-                            (nb_mesh_t *const restrict mesh,
+                            (nb_tessellator2D_t *const restrict mesh,
 			     uint32_t N_vertices,
 			     const double *const restrict vertices)
 {
@@ -398,7 +398,7 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
        	return v3;
 }
 
-static msh_trg_t* create_1st_trg(nb_mesh_t *mesh, search_vtx_t* search_vtx)
+static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_vtx)
 {
 	msh_vtx_t *v1 = get_1st_vtx(search_vtx);
 	msh_vtx_t *v2 = get_2nd_vtx(search_vtx, v1);
@@ -431,7 +431,7 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 	return search_vtx->vtx_array[search_vtx->N_half];
 }
 
-static msh_trg_t* create_trg(nb_mesh_t *mesh,
+static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge)
 {
@@ -469,7 +469,7 @@ static inline void update_AFL(nb_container_t *AFL,
 }
 
 static uint32_t dewall_recursion
-                       (nb_mesh_t* mesh, uint32_t N,
+                       (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			nb_container_t* AFL)
@@ -707,7 +707,7 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 	}
 }
 
-static bool set_first_trg_into_AFL(nb_mesh_t *mesh,
+static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
 				   search_vtx_t *search_vtx,
 				   nb_container_t *AFL)
 {
@@ -732,7 +732,7 @@ static void clear_search_vtx(search_vtx_t *search_vtx)
 		nb_bins2D_destroy(search_vtx->bins);
 }
 
-static uint32_t triangulate_wall(nb_mesh_t *mesh,
+static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 nb_container_t *AFL_alpha,
 				 nb_container_t *AFL_1,
@@ -771,7 +771,7 @@ static void update_AFLs(const msh_trg_t *const trg,
 
 }
 
-static uint32_t dewall(nb_mesh_t* mesh)
+static uint32_t dewall(nb_tessellator2D_t* mesh)
 {
 	nb_container_type cnt_type = NB_HASH;
 	uint32_t vtx_size = mesh->N_input_vtx * sizeof(msh_vtx_t*);

@@ -47,6 +47,7 @@ void nb_sparse_transpose(nb_sparse_t *A);
 uint32_t nb_sparse_get_size(const nb_sparse_t *const A);
 uint32_t nb_sparse_get_nnz(const nb_sparse_t *const A);
 double nb_sparse_get_asym(const nb_sparse_t *const A);
+double nb_sparse_get_frobenius_norm(const nb_sparse_t *const A);
 
 void nb_sparse_multiply_scalar(nb_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads);

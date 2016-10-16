@@ -86,18 +86,16 @@ void* tree_exist(const tree_t *const restrict tree,  const void *val,
 {
 	void *existing_val = NULL;
 	int8_t comparison = compare(val, tree->val);
-	if (0 == comparison) {
-		existing_val = tree->val;
+	if (comparison < 0) {
+		if (NULL != tree->left)
+			existing_val = tree_exist(tree->left, val,
+						  compare);
+	} else if (comparison > 0) {
+		if (NULL != tree->right)
+			existing_val = tree_exist(tree->right, val,
+						  compare);
 	} else {
-		if (comparison < 0) {
-			if (NULL != tree->left)
-				existing_val = tree_exist(tree->left, val,
-							  compare);
-		} else {
-			if (NULL != tree->right)
-				existing_val = tree_exist(tree->right, val,
-							  compare);
-		}
+		existing_val = tree->val;
 	}
 	return existing_val;
 }

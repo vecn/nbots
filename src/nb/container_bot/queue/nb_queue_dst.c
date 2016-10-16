@@ -1,10 +1,3 @@
-/******************************************************************************
- *   List DST: Circular Linked List                                           *
- *   2011-2015 Victor Eduardo Cardoso Nungaray                                *
- *   Twitter: @victore_cardoso                                                *
- *   email: victorc@cimat.mx                                                  *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <string.h>
 

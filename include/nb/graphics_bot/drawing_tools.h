@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 typedef struct nb_graphics_context_s nb_graphics_context_t;
-typedef struct nb_graphics_palette_s nb_graphics_palette_t;
+typedef struct nb_palette_s nb_palette_t;
 
 typedef enum {
 	NB_LINEAR,
@@ -15,8 +15,9 @@ typedef enum {
 typedef enum {
 	NB_RAINBOW,
 	NB_SUNSET,
-	NB_FRENCH
-} nb_graphics_palette_preset;
+	NB_FRENCH,
+	NB_GRAYSCALE
+} nb_palette_preset;
 
 typedef enum {
 	NB_WHITE,
@@ -101,7 +102,7 @@ void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
 				 float x1, float y1,
 				 float x2, float y2,
-				 nb_graphics_palette_t *pal);
+				 nb_palette_t *pal);
 
 void nb_graphics_set_source_trg(nb_graphics_context_t *g,
 				float x1, float y1,
@@ -131,19 +132,19 @@ void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label
 void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 			     float width, float height);
 
-nb_graphics_palette_t* nb_graphics_palette_create(void);
-nb_graphics_palette_t* nb_graphics_palette_create_preset
-					(nb_graphics_palette_preset preset);
-void nb_graphics_palette_destroy(nb_graphics_palette_t* palette);
-void nb_graphics_palette_clear(nb_graphics_palette_t* palette);
-void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,
+nb_palette_t* nb_palette_create(void);
+nb_palette_t* nb_palette_create_preset
+					(nb_palette_preset preset);
+void nb_palette_destroy(nb_palette_t* palette);
+void nb_palette_clear(nb_palette_t* palette);
+void nb_palette_add_rgba(nb_palette_t* palette, float tic,
 				  uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
+void nb_palette_get_rgba(const nb_palette_t *const palette,
 				  float factor,
 				  uint8_t rgba[4]);
 
-void nb_graphics_palette_draw(nb_graphics_context_t *g, 
-			      const nb_graphics_palette_t *const palette,
+void nb_palette_draw(nb_graphics_context_t *g, 
+			      const nb_palette_t *const palette,
 			      float x, float y, float w, float h,
 			      float border, float min_v, float max_v);
 

@@ -12,7 +12,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static int assemble_system(const nb_partition_t *const part, 
+static int assemble_system(const nb_mesh2D_t *const part, 
 			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
@@ -22,7 +22,7 @@ static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
-			 const nb_partition_t *part,
+			 const nb_mesh2D_t *part,
 			 double *Me, double *be);
 
 static void sum_gauss_point(const nb_fem_elem_t *elem,
@@ -34,7 +34,7 @@ static void sum_gauss_point(const nb_fem_elem_t *elem,
 
 static void add_to_global_system(const nb_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
-				 const nb_partition_t *part,
+				 const nb_mesh2D_t *part,
 				 double *Me, double *be,
 				 double *M, double *b);
 
@@ -43,21 +43,21 @@ static void solve_system(const double *M, const double *b,
 			 uint32_t N_vtx, uint32_t N_comp);
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
-			   const nb_partition_t *part,
+			   const nb_mesh2D_t *part,
 			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
 			   double* nodal_values);
 
 int nb_fem_interpolate_from_gpoints_to_nodes
-		(const nb_partition_t *const part, 
+		(const nb_mesh2D_t *const part, 
 		 const nb_fem_elem_t *const elem,
 		 uint32_t N_comp,
 		 const double* gp_values,
 		 double* nodal_values /* Output */)
 {
 	int status = 1;
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
+	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
 	double* M = nb_allocate_zero_mem(N_nod * sizeof(*M));
 	double* b = nb_allocate_zero_mem(N_comp * N_nod * sizeof(*b));
 	status = assemble_system(part, elem, N_comp,
@@ -75,7 +75,7 @@ CLEANUP:
 	return status;
 }
 
-static int assemble_system(const nb_partition_t *const part, 
+static int assemble_system(const nb_mesh2D_t *const part, 
 			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   const double* gp_values,
@@ -83,7 +83,7 @@ static int assemble_system(const nb_partition_t *const part,
 {
 	int status = 1;
 
-	uint32_t N_elem = nb_partition_get_N_elems(part);;
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);;
 
 	uint8_t N_nodes_x_elem = nb_fem_elem_get_N_nodes(elem);
 	
@@ -114,7 +114,7 @@ static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem,
 			 uint32_t N_comp, const double *gp_values,
 			 uint32_t id,
-			 const nb_partition_t *part,
+			 const nb_mesh2D_t *part,
 			 double *Me, double *be)
 {
 	int status = 1;
@@ -178,13 +178,13 @@ static void sum_gauss_point(const nb_fem_elem_t *elem,
 
 static void add_to_global_system(const nb_fem_elem_t *elem, 
 				 uint32_t N_comp, uint32_t id,
-				 const nb_partition_t *part,
+				 const nb_mesh2D_t *part,
 				 double *Me, double *be,
 				 double *M, double *b)
 {
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t v1 = nb_partition_elem_get_adj(part, id, i);
+		uint32_t v1 = nb_mesh2D_elem_get_adj(part, id, i);
 		M[v1] += Me[i];
 
 		for (int c = 0; c < N_comp; c++)
@@ -204,14 +204,14 @@ static void solve_system(const double *M, const double *b,
 	}
 }
 
-void nb_fem_get_error_on_gpoints(const nb_partition_t *const part,
+void nb_fem_get_error_on_gpoints(const nb_mesh2D_t *const part,
 				  const nb_fem_elem_t *const elem,
 				  uint32_t N_comp,
 				  double* gp_values,
 				  double* gp_error)
 {
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	uint32_t N_elem = nb_partition_get_N_elems(part);
+	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
 
 	uint32_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(gp_error, 0, N_elem * N_gp * sizeof(double));
@@ -237,7 +237,7 @@ void nb_fem_get_error_on_gpoints(const nb_partition_t *const part,
 }
 
 static double get_gp_error(uint32_t id_elem, int id_gp,
-			   const nb_partition_t *part,
+			   const nb_mesh2D_t *part,
 			   const nb_fem_elem_t *const elem,
 			   uint32_t N_comp,
 			   double* gp_values,
@@ -248,7 +248,7 @@ static double get_gp_error(uint32_t id_elem, int id_gp,
 
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		uint32_t vid = nb_partition_elem_get_adj(part, id_elem,
+		uint32_t vid = nb_mesh2D_elem_get_adj(part, id_elem,
 							 N_nodes + i);
 		double Ni = nb_fem_elem_Ni(elem, i, id_gp);
 		for (int c = 0; c < N_comp; c++)

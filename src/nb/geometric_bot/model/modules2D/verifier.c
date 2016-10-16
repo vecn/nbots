@@ -7,8 +7,7 @@
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
-#include "nb/container_bot/container.h"
-#include "nb/container_bot/iterator.h"
+#include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
@@ -253,39 +252,39 @@ bool nb_model_have_vtx_intersecting_edges(const nb_model_t *const model,
 bool nb_model_have_unclosed_boundary(const nb_model_t *const model)
 {
 	/* Verify unclosed shapes and unknown errors*/
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
-	bool is_unclosed = nb_mesh_is_empty(mesh);
+	bool is_unclosed = nb_tessellator2D_is_empty(mesh);
 
-	nb_mesh_finish(mesh);
+	nb_tessellator2D_finish(mesh);
 
 	return is_unclosed;
 }
 
 bool nb_model_is_continuum(const nb_model_t *model)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
-	bool is_continuum = nb_mesh_is_continuum(mesh);
+	bool is_continuum = nb_tessellator2D_is_continuum(mesh);
 
-	nb_mesh_finish(mesh);
+	nb_tessellator2D_finish(mesh);
 
 	return is_continuum;	
 }
 
 uint16_t nb_model_get_N_subareas(const nb_model_t *model)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
-	uint16_t N_subareas = nb_mesh_get_N_subareas(mesh);
+	uint16_t N_subareas = nb_tessellator2D_get_N_subareas(mesh);
 
-	nb_mesh_finish(mesh);
+	nb_tessellator2D_finish(mesh);
 
 	return N_subareas;
 

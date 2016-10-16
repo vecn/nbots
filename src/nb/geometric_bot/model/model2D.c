@@ -9,7 +9,7 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/modules2D/area_analizer.h"
 
 #include "nb/geometric_bot/model/model2D_struct.h"
@@ -365,14 +365,14 @@ static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
 
 void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
 	uint32_t N_holes;
 	double* holes =
-		nb_mesh_get_centroids_of_enveloped_areas(mesh, &N_holes);
-	nb_mesh_finish(mesh);
+		nb_tessellator2D_get_centroids_of_enveloped_areas(mesh, &N_holes);
+	nb_tessellator2D_finish(mesh);
 	
 	if (0 < model->H)
 		nb_free_mem(model->holes);
@@ -383,12 +383,12 @@ void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 bool nb_model_is_vtx_inside(const nb_model_t *const model,
 			     const double *const vtx)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
-	bool is_inside = nb_mesh_is_vtx_inside(mesh, vtx);
-	nb_mesh_finish(mesh);
+	bool is_inside = nb_tessellator2D_is_vtx_inside(mesh, vtx);
+	nb_tessellator2D_finish(mesh);
 	return is_inside;
 }
 
@@ -524,11 +524,11 @@ double nb_model_get_length_of_ith_edge(const nb_model_t* model, uint32_t i)
 
 double nb_model_get_area(const nb_model_t *const model)
 {
-	nb_mesh_t* mesh = nb_allocate_on_stack(nb_mesh_get_memsize());
-	nb_mesh_init(mesh);
-	nb_mesh_get_simplest_from_model(mesh, model);
-	double area = nb_mesh_get_area(mesh);
-	nb_mesh_finish(mesh);
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
+	double area = nb_tessellator2D_get_area(mesh);
+	nb_tessellator2D_finish(mesh);
 	return area;
 }
 

@@ -8,10 +8,10 @@
 #include "nb/memory_bot.h"
 #include "nb/image_bot.h"
 #include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/modules2D/image_density.h"
 
-#include "../mesh2D_structs.h"
+#include "../tessellator2D_structs.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -27,14 +27,14 @@ static void bound_max_density(img_density_data_t *data,
 static double img_density(const double x[2],
 			  const void *const data_ptr);
 
-void nb_mesh_set_img_density(nb_mesh_t *mesh,
+void nb_tessellator2D_set_img_density(nb_tessellator2D_t *mesh,
 			      const nb_image_t *const img,
 			      double density_volume)
 {
 	img_density_data_t *data = nb_allocate_zero_mem(sizeof(*data));
 	data->img = img;
 	bound_max_density(data, density_volume);
-	nb_mesh_set_density(mesh, img_density, data);
+	nb_tessellator2D_set_density(mesh, img_density, data);
 }
 
 static inline void bound_max_density(img_density_data_t *data,
@@ -50,7 +50,7 @@ static inline void bound_max_density(img_density_data_t *data,
 	data->max_density = 1.0 / h_min;
 }
 
-void nb_mesh_clear_img_density(nb_mesh_t *mesh)
+void nb_tessellator2D_clear_img_density(nb_tessellator2D_t *mesh)
 {
 	if (NULL != mesh->density_data) {
 		nb_free_mem((void*)mesh->density_data);	

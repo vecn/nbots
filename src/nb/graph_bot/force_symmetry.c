@@ -7,6 +7,7 @@
 #include "nb/container_bot.h"
 #include "nb/graph_bot/graph.h"
 
+static int8_t compare_ids(const void *ptr1, const void *ptr2);
 static void load_dynamic_sym_graph(nb_container_t **cnt_graph,
 				   nb_membank_t *membank,
 				   const nb_graph_t *graph);
@@ -34,6 +35,7 @@ void nb_graph_force_symmetry(nb_graph_t *graph)
 		cnt_graph[i] = (void*) (memblock + N * sizeof(void*) +
 					i * cnt_size);
 		nb_container_init(cnt_graph[i], cnt_type);
+		nb_container_set_comparer(cnt_graph[i], compare_ids);
 	}
 	nb_membank_t *membank = (void*) (memblock + N * (sizeof(void*) +
 							 cnt_size));
@@ -48,6 +50,20 @@ void nb_graph_force_symmetry(nb_graph_t *graph)
 
 	nb_membank_finish(membank);
 	nb_soft_free_mem(memsize, memblock);
+}
+
+static int8_t compare_ids(const void *ptr1, const void *ptr2)
+{
+	const uint32_t *id1 = ptr1;
+	const uint32_t *id2 = ptr2;
+	int8_t out;
+	if (*id1 < *id2)
+		out = -1;
+	else if (*id1 > *id2)
+		out = 1;
+	else
+		out = 0;
+	return out;
 }
 
 static void load_dynamic_sym_graph(nb_container_t **cnt_graph,
@@ -107,7 +123,7 @@ static void allocate_sym_adj(nb_graph_t *graph,
 	for (uint32_t i = 0; i < graph->N; i++) {
 		uint32_t N_adj = nb_container_get_length(cnt_graph[i]);
 		graph->N_adj[i] = N_adj;
-		graph->adj[i] = (void* )memblock;
+		graph->adj[i] = (void*) memblock;
 		memblock += N_adj * sizeof(**(graph->adj));
 	}
 }

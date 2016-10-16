@@ -72,7 +72,7 @@ struct nb_graphics_context_s {
 				nb_graphics_grad_t grad,
 				float x1, float y1,
 				float x2, float y2,
-				nb_graphics_palette_t *pal);
+				nb_palette_t *pal);
 	void (*set_source_trg)(void *ctx,
 			       float x1, float y1,
 			       float x2, float y2,
@@ -111,16 +111,17 @@ static float get_ycam_view(const nb_graphics_context_t *g,
 static void set_raw_circle(nb_graphics_context_t *g, float x,
 			   float y, float r);
 
-static nb_graphics_palette_t* palette_get_rainbow(void);
-static nb_graphics_palette_t* palette_get_sunset(void);
-static nb_graphics_palette_t* palette_get_french(void);
+static nb_palette_t* palette_get_rainbow(void);
+static nb_palette_t* palette_get_sunset(void);
+static nb_palette_t* palette_get_french(void);
+static nb_palette_t* palette_get_grayscale(void);
 
 static void palette_draw_rectangle(nb_graphics_context_t *g,
-				   const nb_graphics_palette_t *const palette,
+				   const nb_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float border);
 static void palette_draw_zero_mark(nb_graphics_context_t *g,
-				   const nb_graphics_palette_t *const palette,
+				   const nb_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float min_v, float max_v);
 static void palette_draw_labels(nb_graphics_context_t *g,
@@ -523,7 +524,7 @@ void nb_graphics_set_source_grad(nb_graphics_context_t *g,
 				 nb_graphics_grad_t grad,
 				 float x1, float y1,
 				 float x2, float y2,
-				 nb_graphics_palette_t *pal)
+				 nb_palette_t *pal)
 {
 	x1 = get_xcam_view(g, x1);
 	y1 = get_ycam_view(g, y1);
@@ -604,37 +605,45 @@ void nb_graphics_cam_fit_box(nb_graphics_camera_t *cam, const double box[4],
 	cam->height = height;
 }
 
-nb_graphics_palette_t* nb_graphics_palette_create(void)
+nb_palette_t* nb_palette_create(void)
 {
-	return nb_allocate_zero_mem(sizeof(nb_graphics_palette_t));
+	return nb_allocate_zero_mem(sizeof(nb_palette_t));
 }
 
-nb_graphics_palette_t* nb_graphics_palette_create_preset
-				(nb_graphics_palette_preset preset)
+nb_palette_t* nb_palette_create_preset
+				(nb_palette_preset preset)
 {
-	if (NB_RAINBOW == preset)
-		return palette_get_rainbow();
-
-	if (NB_SUNSET == preset)
-		return palette_get_sunset();
-
-	if (NB_FRENCH == preset)
-		return palette_get_french();
-
-	return NULL;
+	nb_palette_t *pal;
+	switch (preset) {
+	case NB_RAINBOW:
+		pal = palette_get_rainbow();
+		break;
+	case NB_SUNSET:
+		pal = palette_get_sunset();
+		break;
+	case NB_FRENCH:
+		pal = palette_get_french();
+		break;
+	case NB_GRAYSCALE:
+		pal = palette_get_grayscale();
+		break;
+	default:
+		pal = NULL;
+	}
+	return pal;
 }
 
-void nb_graphics_palette_destroy(nb_graphics_palette_t* palette)
+void nb_palette_destroy(nb_palette_t* palette)
 {
 	nb_free_mem(palette);
 }
 
-void nb_graphics_palette_clear(nb_graphics_palette_t *palette)
+void nb_palette_clear(nb_palette_t *palette)
 {
 	palette->ntics = 0;
 }
 
-void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,
+void nb_palette_add_rgba(nb_palette_t* palette, float tic,
 				  uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	if (tic < 0)
@@ -668,7 +677,7 @@ void nb_graphics_palette_add_rgba(nb_graphics_palette_t* palette, float tic,
 	}
 }
 
-void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
+void nb_palette_get_rgba(const nb_palette_t *const palette,
 				  float factor,
 				  uint8_t rgba[4])
 {
@@ -697,47 +706,56 @@ void nb_graphics_palette_get_rgba(const nb_graphics_palette_t *const palette,
 	}
 }
 
-static nb_graphics_palette_t* palette_get_rainbow(void)
+static nb_palette_t* palette_get_rainbow(void)
 {
-	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0, 128, 255);
-	nb_graphics_palette_add_rgba(palette, 0.10f,   0,   0, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.20f,   0, 128, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.37f,   0, 255, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.50f,   0, 255,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 0.63f, 255, 255,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 0.80f, 255, 128,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 0.90f, 255,   0,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 1.00f, 100,   0,   0, 255);
+	nb_palette_t* palette = nb_palette_create();
+	nb_palette_add_rgba(palette, 0.00f,   0,   0, 128, 255);
+	nb_palette_add_rgba(palette, 0.10f,   0,   0, 255, 255);
+	nb_palette_add_rgba(palette, 0.20f,   0, 128, 255, 255);
+	nb_palette_add_rgba(palette, 0.37f,   0, 255, 255, 255);
+	nb_palette_add_rgba(palette, 0.50f,   0, 255,   0, 255);
+	nb_palette_add_rgba(palette, 0.63f, 255, 255,   0, 255);
+	nb_palette_add_rgba(palette, 0.80f, 255, 128,   0, 255);
+	nb_palette_add_rgba(palette, 0.90f, 255,   0,   0, 255);
+	nb_palette_add_rgba(palette, 1.00f, 100,   0,   0, 255);
 	return palette;
 }
 
-static nb_graphics_palette_t* palette_get_sunset(void)
+static nb_palette_t* palette_get_sunset(void)
 {
-	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 0.15f,  20,   0, 100, 255);
-	nb_graphics_palette_add_rgba(palette, 0.30f, 100,   0, 200, 255);
-	nb_graphics_palette_add_rgba(palette, 0.80f, 220, 100,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 1.00f, 255, 255,   0, 255);
+	nb_palette_t* palette = nb_palette_create();
+	nb_palette_add_rgba(palette, 0.00f,   0,   0,   0, 255);
+	nb_palette_add_rgba(palette, 0.15f,  20,   0, 100, 255);
+	nb_palette_add_rgba(palette, 0.30f, 100,   0, 200, 255);
+	nb_palette_add_rgba(palette, 0.80f, 220, 100,   0, 255);
+	nb_palette_add_rgba(palette, 1.00f, 255, 255,   0, 255);
 	return palette;
 }
 
-static nb_graphics_palette_t* palette_get_french(void)
+static nb_palette_t* palette_get_french(void)
 {
-	nb_graphics_palette_t* palette = nb_graphics_palette_create();
-	nb_graphics_palette_add_rgba(palette, 0.00f,   0,   0, 150, 255);
-	nb_graphics_palette_add_rgba(palette, 0.20f,   0,   0, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.30f, 180, 180, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.50f, 255, 255, 255, 255);
-	nb_graphics_palette_add_rgba(palette, 0.70f, 255, 180, 180, 255);
-	nb_graphics_palette_add_rgba(palette, 0.80f, 255,   0,   0, 255);
-	nb_graphics_palette_add_rgba(palette, 1.00f, 150,   0,   0, 255);
+	nb_palette_t* palette = nb_palette_create();
+	nb_palette_add_rgba(palette, 0.00f,   0,   0, 150, 255);
+	nb_palette_add_rgba(palette, 0.20f,   0,   0, 255, 255);
+	nb_palette_add_rgba(palette, 0.30f, 180, 180, 255, 255);
+	nb_palette_add_rgba(palette, 0.50f, 255, 255, 255, 255);
+	nb_palette_add_rgba(palette, 0.70f, 255, 180, 180, 255);
+	nb_palette_add_rgba(palette, 0.80f, 255,   0,   0, 255);
+	nb_palette_add_rgba(palette, 1.00f, 150,   0,   0, 255);
 	return palette;
 }
 
-void nb_graphics_palette_draw(nb_graphics_context_t *g,
-			      const nb_graphics_palette_t *const palette,
+static nb_palette_t* palette_get_grayscale(void)
+{
+	nb_palette_t* palette = nb_palette_create();
+	nb_palette_add_rgba(palette, 0.00f, 255, 255, 255, 255);
+	nb_palette_add_rgba(palette, 0.80f, 100, 100, 100, 255);
+	nb_palette_add_rgba(palette, 1.00f,   0,   0,   0, 255);
+	return palette;
+}
+
+void nb_palette_draw(nb_graphics_context_t *g,
+			      const nb_palette_t *const palette,
 			      float x, float y, float w, float h,
 			      float border, float min_v, float max_v)
 {
@@ -754,7 +772,7 @@ void nb_graphics_palette_draw(nb_graphics_context_t *g,
 }
 
 static void palette_draw_rectangle(nb_graphics_context_t *g,
-				   const nb_graphics_palette_t *const palette,
+				   const nb_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float border)
 {  
@@ -772,14 +790,14 @@ static void palette_draw_rectangle(nb_graphics_context_t *g,
 }
 
 static void palette_draw_zero_mark(nb_graphics_context_t *g,
-				   const nb_graphics_palette_t *const palette,
+				   const nb_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float min_v, float max_v)
 {
 	if (0 > min_v * max_v) {
 		float factor = - min_v / (max_v - min_v);
 		uint8_t rgba[4];
-		nb_graphics_palette_get_rgba(palette, factor, rgba);
+		nb_palette_get_rgba(palette, factor, rgba);
 	
 		rgba[0] = (rgba[0] + 128) % 256;
 		rgba[1] = (rgba[1] + 128) % 256;

@@ -46,12 +46,12 @@ static void modify_bcond_pwh(const void *part, nb_bcond_t *bcond);
 static void pwh_DC_SGM_cond(const double *x, double t, double *out);
 static void pwh_BC_SGM_cond(const double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
-		     nb_partition_type part_type,
+		     nb_mesh2D_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */);
-static int simulate(const char *problem_data, nb_partition_t *part,
+static int simulate(const char *problem_data, nb_mesh2D_t *part,
 		    results_t *results, uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					     nb_bcond_t*)/* Can be NULL */);
@@ -97,7 +97,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
+	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
@@ -105,7 +105,7 @@ static void check_beam_cantilever(const void *part,
 				  const results_t *results)
 {
 	double max_disp = 0;
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	for (uint32_t i = 0; i < N_elems; i++) {
 		double disp2 = POW2(results->disp[i * 2]) +
 			POW2(results->disp[i*2+1]);
@@ -146,7 +146,7 @@ static double get_error_avg_pwh(const void *part,
 		"Ax Ay Axy Anx Any Atx Aty |An| |At| Ann Ant Atn Att A1 A2\n");/**/
 	fclose(fp);                                   /* TEMPORAL */
 	double avg = 0.0;
-	uint32_t N_faces = nb_partition_get_N_edges(part);
+	uint32_t N_faces = nb_mesh2D_get_N_edges(part);
 	for (uint32_t i = 0; i < N_faces; i++) {
 		if (!(boundary_mask[i]))
 			avg += get_face_error_avg_pwh(part, stress, i);
@@ -159,10 +159,10 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 {
 	FILE *fp = fopen("../../../stress.txt", "a"); /* TEMPORAL */
 	double nf[2];                                   /* TEMPORAL */
-	nb_partition_edge_get_normal(part, face_id, nf);/* TEMPORAL */
+	nb_mesh2D_edge_get_normal(part, face_id, nf);/* TEMPORAL */
 	
 	double xf[2];
-	nb_partition_edge_get_midpoint(part, face_id, 0.5, xf);
+	nb_mesh2D_edge_get_midpoint(part, face_id, 0.5, xf);
 
 	double analytic_stress[3];
 	get_analytic_stress_pwh(xf[0], xf[1], analytic_stress);
@@ -296,32 +296,32 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 	out[1] = stress[1];
 }
 
-static void TEMPORAL1(nb_partition_t *part, results_t *results)
+static void TEMPORAL1(nb_mesh2D_t *part, results_t *results)
 {
 	nb_cvfa_draw_integration_mesh(part, "../../../CVFA_alpha_x.png",/*T*/
 				      1000, 800);              /* TEMPORAL */
 
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	double *disp = malloc(N_elems * sizeof(*disp));
 
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_partition_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
+	nb_mesh2D_distort_with_field(part, NB_ELEMENT, results->disp, 0.5);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
 
-	nb_partition_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
-	nb_partition_export_draw(part, "../../../CVFA_dx.png", 1000, 800,
+	nb_mesh2D_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
+	nb_mesh2D_export_draw(part, "../../../CVFA_dx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2+1];
 
-	nb_partition_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
-	nb_partition_export_draw(part, "../../../CVFA_dy.png", 1000, 800,
+	nb_mesh2D_extrapolate_elems_to_nodes(part, 1, disp, disp_nodes);
+	nb_mesh2D_export_draw(part, "../../../CVFA_dy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
 
@@ -329,9 +329,9 @@ static void TEMPORAL1(nb_partition_t *part, results_t *results)
 	nb_free_mem(disp_nodes);
 }
 
-static void TEMPORAL2(nb_partition_t *part, results_t *results)
+static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 {
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
 	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
 	char *memblock = nb_soft_allocate_mem(memsize);
 	double *stress = (void*) memblock;
@@ -340,10 +340,10 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 
 	memset(stress, 0, 3 * N_nodes * sizeof(*stress));
 	memset(counter, 0, N_nodes * sizeof(*counter));
-	uint32_t N_faces = nb_partition_get_N_edges(part);
+	uint32_t N_faces = nb_mesh2D_get_N_edges(part);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		uint32_t v1 = nb_partition_edge_get_1n(part, i);
-		uint32_t v2 = nb_partition_edge_get_2n(part, i);
+		uint32_t v1 = nb_mesh2D_edge_get_1n(part, i);
+		uint32_t v2 = nb_mesh2D_edge_get_2n(part, i);
 		if (!(results->boundary_mask[i])) {
 			stress[v1 * 3] += results->stress[i * 3];
 			stress[v1*3+1] += results->stress[i*3+1];
@@ -355,8 +355,8 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 			stress[v2*3+2] += results->stress[i*3+2];
 			counter[v2] += 1;
 		} else {
-			double x = nb_partition_node_get_x(part, v1);
-			double y = nb_partition_node_get_y(part, v1);
+			double x = nb_mesh2D_node_get_x(part, v1);
+			double y = nb_mesh2D_node_get_y(part, v1);
 			double s[3];
 			get_analytic_stress_pwh(x, y, s);
 			stress[v1 * 3] += s[0];
@@ -364,8 +364,8 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 			stress[v1*3+2] += s[2];
 			counter[v1] += 1;
 			
-			x = nb_partition_node_get_x(part, v2);
-			y = nb_partition_node_get_y(part, v2);
+			x = nb_mesh2D_node_get_x(part, v2);
+			y = nb_mesh2D_node_get_y(part, v2);
 			stress[v2 * 3] += s[0];
 			stress[v2*3+1] += s[1];
 			stress[v2*3+2] += s[2];
@@ -387,59 +387,59 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 	*/
 
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		double x = nb_partition_node_get_x(part, i);
-		double y = nb_partition_node_get_y(part, i);
+		double x = nb_mesh2D_node_get_x(part, i);
+		double y = nb_mesh2D_node_get_y(part, i);
 		double s[3];
 		get_analytic_stress_pwh(x, y, s);
 		vm_stress[i] = MIN(1,fabs((s[0]-stress[i*3])/CHECK_ZERO(s[0])));
 	}
 
-	nb_partition_export_draw(part, "../../../CVFA_xErr.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_xErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		double x = nb_partition_node_get_x(part, i);
-		double y = nb_partition_node_get_y(part, i);
+		double x = nb_mesh2D_node_get_x(part, i);
+		double y = nb_mesh2D_node_get_y(part, i);
 		double s[3];
 		get_analytic_stress_pwh(x, y, s);
 		vm_stress[i] = MIN(1,fabs((s[1]-stress[i*3+1])/CHECK_ZERO(s[1])));
 	}
 
-	nb_partition_export_draw(part, "../../../CVFA_yErr.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_yErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		double x = nb_partition_node_get_x(part, i);
-		double y = nb_partition_node_get_y(part, i);
+		double x = nb_mesh2D_node_get_x(part, i);
+		double y = nb_mesh2D_node_get_y(part, i);
 		double s[3];
 		get_analytic_stress_pwh(x, y, s);
 		vm_stress[i] = MIN(1,fabs((s[2]-stress[i*3+2])/CHECK_ZERO(s[2])));
 	}
 
-	nb_partition_export_draw(part, "../../../CVFA_xyErr.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_xyErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3];
 
-	nb_partition_export_draw(part, "../../../CVFA_Sxx.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_Sxx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+1];
 
-	nb_partition_export_draw(part, "../../../CVFA_Syy.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_Syy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+2];
 
-	nb_partition_export_draw(part, "../../../CVFA_Sxy.png", 1000, 800,
+	nb_mesh2D_export_draw(part, "../../../CVFA_Sxy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
@@ -447,15 +447,15 @@ static void TEMPORAL2(nb_partition_t *part, results_t *results)
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
-		     nb_partition_type part_type,
+		     nb_mesh2D_type part_type,
 		     void (*check_results)(const void*,
 					   const results_t*),
 		     void (*modify_bcond)(const void*,
 					  nb_bcond_t*)/* Can be NULL */)
 {
 	results_t results;
-	nb_partition_t *part = nb_allocate_on_stack(nb_partition_get_memsize(part_type));
-	nb_partition_init(part, part_type);
+	nb_mesh2D_t *part = nb_allocate_on_stack(nb_mesh2D_get_memsize(part_type));
+	nb_mesh2D_init(part, part_type);
 
 	int status = simulate(problem_data, part, &results,
 			      N_vtx, modify_bcond);
@@ -467,11 +467,11 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	TEMPORAL2(part, &results);
 	TEMPORAL1(part, &results);
 
-	nb_partition_finish(part);
+	nb_mesh2D_finish(part);
 	results_finish(&results);
 }
 
-static int simulate(const char *problem_data, nb_partition_t *part,
+static int simulate(const char *problem_data, nb_mesh2D_t *part,
 		    results_t *results, uint32_t N_vtx,
 		    void (*modify_bcond)(const void*,
 					 nb_bcond_t*)/* Can be NULL */)
@@ -500,8 +500,8 @@ static int simulate(const char *problem_data, nb_partition_t *part,
 
 	get_mesh(model, part, N_vtx);
 
-	uint32_t N_faces = nb_partition_get_N_edges(part);
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_faces = nb_mesh2D_get_N_edges(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init(results, N_faces, N_elems);
 
 	int status_cvfa =
@@ -534,19 +534,19 @@ CLEANUP:
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
-	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t* mesh = nb_allocate_on_stack(mesh_memsize);
-	nb_mesh_init(mesh);
-	nb_mesh_set_size_constraint(mesh,
+	uint32_t mesh_memsize = nb_tessellator2D_get_memsize();
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(mesh_memsize);
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     N_vtx);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_partition_load_from_mesh(part, mesh);
-	nb_mesh_finish(mesh);
+	nb_mesh2D_load_from_mesh(part, mesh);
+	nb_tessellator2D_finish(mesh);
 }
 
 static void results_init(results_t *results, uint32_t N_faces,

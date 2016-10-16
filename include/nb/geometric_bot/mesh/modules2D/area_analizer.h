@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
 /**
  * @brief Calculates the pseudo-centroid of the sub-areas in the mesh.
@@ -18,8 +18,9 @@
  * @param[out] N_centroids Stores the number of enveloped areas.
  * @return Return the array with the locations of the centroids concatenated.
  */  
-double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
-					   uint32_t* N_centroids);
+double* nb_tessellator2D_get_centroids_of_subareas
+					(const nb_tessellator2D_t *mesh,
+					 uint32_t* N_centroids);
 
 /**
  * @brief A hole can be seen as an enveloped sub-area, which is a sub-area inside
@@ -29,7 +30,7 @@ double* nb_mesh_get_centroids_of_subareas(const nb_mesh_t *const mesh,
  * @param[out] N_centroids Stores the number of enveloped areas.
  * @return Return the array with the locations of the centroids concatenated.
  */
-double* nb_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
+double* nb_tessellator2D_get_centroids_of_enveloped_areas(const nb_tessellator2D_t *const mesh,
 						  uint32_t* N_centroids);
 
 
@@ -40,7 +41,7 @@ double* nb_mesh_get_centroids_of_enveloped_areas(const nb_mesh_t *const mesh,
  * Stores the total area of deleted triangles.
  * @return Area of the non-deleted mesh.
  */
-double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
+double nb_tessellator2D_clear_enveloped_areas(nb_tessellator2D_t* mesh,
 				      double* area_removed);
 
 /**
@@ -53,17 +54,17 @@ double nb_mesh_clear_enveloped_areas(nb_mesh_t* mesh,
  * Stores the total area of deleted triangles.
  * @return Area of the non-deleted mesh.
  */
-double nb_mesh_keep_biggest_continuum_area(nb_mesh_t* mesh,
+double nb_tessellator2D_keep_biggest_continuum_area(nb_tessellator2D_t* mesh,
 					    double* area_removed);
 
 /**
  * @brief Delete those input segments without adjacent triangles, which could arise
  * if the PSLG is not well defined or if one of the following functions has been used:
- * nb_mesh_clear_enveloped_areas() or nb_mesh_keep_biggest_isolated_area().
+ * nb_tessellator2D_clear_enveloped_areas() or nb_tessellator2D_keep_biggest_isolated_area().
  * @param[in] mesh Mesh to be processed.
  * @return Number of subsegments deleted.
  */
-uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const mesh);
+uint32_t nb_tessellator2D_delete_isolated_segments(nb_tessellator2D_t *const mesh);
 
   
 /**
@@ -71,23 +72,23 @@ uint32_t nb_mesh_delete_isolated_segments(nb_mesh_t *const mesh);
  * @param[in] mesh Mesh to be processed.
  * @return Number of subsegments deleted.
  */
-uint32_t nb_mesh_delete_internal_input_segments(nb_mesh_t *const mesh);
+uint32_t nb_tessellator2D_delete_internal_input_segments(nb_tessellator2D_t *const mesh);
 
 /**
  * @brief Delete those input vertices disconnected from the mesh, which could arise
  * if the PSLG is not well defined or if the function
- * nb_mesh_delete_isolated_segments() has been used.
+ * nb_tessellator2D_delete_isolated_segments() has been used.
  * @param[in] mesh Mesh to be processed.
  * @return Number of vertices deleted.
  */
-uint32_t nb_mesh_delete_isolated_vertices(nb_mesh_t* mesh);
+uint32_t nb_tessellator2D_delete_isolated_vertices(nb_tessellator2D_t* mesh);
 
-bool nb_mesh_is_continuum(const nb_mesh_t *mesh);
+bool nb_tessellator2D_is_continuum(const nb_tessellator2D_t *mesh);
 
-uint16_t nb_mesh_get_N_subareas(const nb_mesh_t *mesh);
+uint16_t nb_tessellator2D_get_N_subareas(const nb_tessellator2D_t *mesh);
 
-uint16_t nb_mesh_get_subareas(const nb_mesh_t *mesh, uint16_t *area_id);
+uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh, uint16_t *area_id);
 
-uint16_t nb_mesh_get_N_continuum_areas(const nb_mesh_t *mesh);
+uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t *mesh);
 
 #endif

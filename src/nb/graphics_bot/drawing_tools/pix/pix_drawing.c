@@ -55,8 +55,8 @@ typedef struct {
 	uint8_t source_type:4;
 	nb_graphics_grad_t grad_type:4;
 	float vtx[6];
-	nb_graphics_palette_t *pal;
-	nb_graphics_palette_t color;
+	nb_palette_t *pal;
+	nb_palette_t color;
 } source_t;
 
 typedef struct {
@@ -107,7 +107,7 @@ static void source_set_grad(source_t *source,
 			    nb_graphics_grad_t grad,
 			    float x1, float y1,
 			    float x2, float y2,
-			    nb_graphics_palette_t *pal);
+			    nb_palette_t *pal);
 static void source_set_trg(source_t *source,
 			   float x1, float y1,
 			   float x2, float y2,
@@ -421,14 +421,14 @@ static void source_set_rgba(source_t *source, uint8_t r,
 	memset(source, 0, sizeof(source_t));
 	source->source_type = SOLID;
 	source->pal = &(source->color);
-	nb_graphics_palette_add_rgba(source->pal, 0.0,
+	nb_palette_add_rgba(source->pal, 0.0,
 				     r, g, b, a);
 }
 void nb_graphics_pix_set_source_grad(void *ctx,
 				     nb_graphics_grad_t grad,
 				     float x1, float y1,
 				     float x2, float y2,
-				     nb_graphics_palette_t *pal)
+				     nb_palette_t *pal)
 {
 	context_t *c = ctx;
 	source_set_grad(c->source, grad, x1, y1, x2, y2, pal);
@@ -438,7 +438,7 @@ static void source_set_grad(source_t *source,
 			    nb_graphics_grad_t grad,
 			    float x1, float y1,
 			    float x2, float y2,
-			    nb_graphics_palette_t *pal)
+			    nb_palette_t *pal)
 {
 	memset(source, 0, sizeof(source_t));
 	source->source_type = GRAD;
@@ -484,11 +484,11 @@ static void source_set_trg(source_t *source,
 	source->vtx[3] = y2;
 	source->vtx[4] = x3;
 	source->vtx[5] = y3;
-	nb_graphics_palette_add_rgba(source->pal, 0.0, rgba1[0],
+	nb_palette_add_rgba(source->pal, 0.0, rgba1[0],
 				     rgba1[1], rgba1[2], rgba1[3]);
-	nb_graphics_palette_add_rgba(source->pal, 0.5, rgba2[0],
+	nb_palette_add_rgba(source->pal, 0.5, rgba2[0],
 				     rgba2[1], rgba2[2], rgba2[3]);
-	nb_graphics_palette_add_rgba(source->pal, 1.0, rgba3[0],
+	nb_palette_add_rgba(source->pal, 1.0, rgba3[0],
 				     rgba3[1], rgba3[2], rgba3[3]);
 }
 
@@ -900,7 +900,7 @@ static void source_get_color(const source_t *source, int x, int y,
 
 static void source_get_color_solid(const source_t *source, uint8_t pix[4])
 {
-	nb_graphics_palette_get_rgba(source->pal, 0.0, pix);
+	nb_palette_get_rgba(source->pal, 0.0, pix);
 }
 
 static void source_get_color_grad(const source_t *source, int x, int y,
@@ -925,7 +925,7 @@ static void source_get_color_grad_linear(const source_t *source, int x, int y,
 	y = y - source->vtx[1];
 	float factor = x * source->vtx[2] + y * source->vtx[3];
 	factor = factor / source->vtx[4];
-	nb_graphics_palette_get_rgba(source->pal, factor, pix);
+	nb_palette_get_rgba(source->pal, factor, pix);
 }
 
 static void source_get_color_grad_radial(const source_t *source, int x, int y,
@@ -935,7 +935,7 @@ static void source_get_color_grad_radial(const source_t *source, int x, int y,
 	y = y - source->vtx[1];
 	float factor = sqrt(POW2(x) + POW2(y));
 	factor = factor / source->vtx[4];
-	nb_graphics_palette_get_rgba(source->pal, factor, pix);
+	nb_palette_get_rgba(source->pal, factor, pix);
 }
 
 static void source_get_color_trg(const source_t *source, int x, int y,
@@ -947,9 +947,9 @@ static void source_get_color_trg(const source_t *source, int x, int y,
 				    source->vtx[4], source->vtx[5],
 				    x, y, lambda);
 	uint8_t pix1[4], pix2[4], pix3[4];
-	nb_graphics_palette_get_rgba(source->pal, 0.0, pix1);
-	nb_graphics_palette_get_rgba(source->pal, 0.5, pix2);
-	nb_graphics_palette_get_rgba(source->pal, 1.0, pix3);
+	nb_palette_get_rgba(source->pal, 0.0, pix1);
+	nb_palette_get_rgba(source->pal, 0.5, pix2);
+	nb_palette_get_rgba(source->pal, 1.0, pix3);
 
 	for (int j = 0; j < 4; j++)
 		pix[j] = (uint8_t) (lambda[0] * pix1[j] +

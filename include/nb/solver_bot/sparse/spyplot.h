@@ -4,9 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-int nb_sparse_spy_plot_as_png(const nb_sparse_t *const A,
-			       const char* url, uint32_t size,
+#include "nb/graphics_bot.h"
+
+void nb_sparse_export_spy_plot(const nb_sparse_t *A,
+			       const char* url, uint32_t img_size,
 			       bool enable_zeros_allocated,
-			       bool enable_color);
+			       nb_palette_preset pal);
 
 #endif

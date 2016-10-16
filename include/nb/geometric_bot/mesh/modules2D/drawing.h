@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nb/geometric_bot/mesh/partition.h"
+#include "nb/geometric_bot/mesh/tessellator2D.h"
 
-void nb_mesh_draw(const nb_mesh_t *mesh, const char* filename,
+void nb_tessellator2D_draw(const nb_tessellator2D_t *mesh, const char* filename,
 		   int width, int height);
 
-void nb_dewall_draw(const nb_mesh_t *mesh, const char* filename,
+void nb_dewall_draw(const nb_tessellator2D_t *mesh, const char* filename,
 		     int width, int height, uint8_t axe, double alpha,
 		     uint32_t N, void *vtx_array);
 

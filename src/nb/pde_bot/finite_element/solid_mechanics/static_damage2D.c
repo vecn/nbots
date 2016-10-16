@@ -50,7 +50,7 @@ static double tension_truncated_damage
 */
 static void DMG_pipeline_assemble_system
 		(nb_sparse_t* K, double* M, double *F,
-		 const nb_partition_t *const part,
+		 const nb_mesh2D_t *const part,
 		 const nb_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -63,7 +63,7 @@ static void DMG_pipeline_assemble_system
 
 static void DMG_pipeline_compute_strain
 			(double *strain,
-			 const nb_partition_t *const part,
+			 const nb_mesh2D_t *const part,
 			 double *displacement,
 			 const nb_fem_elem_t *const elem,
 			 bool enable_computing_damage,
@@ -73,7 +73,7 @@ static void DMG_pipeline_compute_strain
 			 double *r_dmg_prev,
 			 double *r_dmg);
 
-static double get_clfd(const nb_partition_t *part, uint32_t id_elem);
+static double get_clfd(const nb_mesh2D_t *part, uint32_t id_elem);
 
 nb_fem_implicit_t* nb_fem_implicit_create(void)
 {
@@ -236,7 +236,7 @@ static double tension_truncated_damage
 */
 
 void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
-			(const nb_partition_t *const part,
+			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elem,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
@@ -249,8 +249,8 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 const char* logfile)
 /* Quasistatic formulation */
 {
-	uint32_t N_nod = nb_partition_get_N_nodes(part);
-	uint32_t N_elem = nb_partition_get_N_elems(part);
+	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
 
 	uint32_t omp_parallel_threads = 1;
 
@@ -280,7 +280,7 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/* Allocate global Stiffness Matrices */
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
-	nb_partition_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
+	nb_mesh2D_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	nb_sparse_t* K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 	nb_sparse_t *L = NULL;
@@ -472,7 +472,7 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 
 static void DMG_pipeline_assemble_system
 		(nb_sparse_t* K, double* M, double *F,
-		 const nb_partition_t *const part,
+		 const nb_mesh2D_t *const part,
 		 const nb_fem_elem_t *const elem,
 		 const nb_material_t *const material,
 		 bool enable_self_weight,
@@ -483,7 +483,7 @@ static void DMG_pipeline_assemble_system
 		 double* damage_elem,
 		 bool* elements_enabled /* NULL to enable all */)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 
 	nb_sparse_reset(K);
 	if (NULL != M)
@@ -570,7 +570,7 @@ static void DMG_pipeline_assemble_system
 
 static void DMG_pipeline_compute_strain
 			(double *strain,
-			 const nb_partition_t *const part,
+			 const nb_mesh2D_t *const part,
 			 double *displacement,
 			 const nb_fem_elem_t *const elem,
 			 bool enable_computing_damage,
@@ -580,7 +580,7 @@ static void DMG_pipeline_compute_strain
 			 double *r_dmg_prev,
 			 double *r_dmg)
 {
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 
 	/* Initialize strains */
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
@@ -605,7 +605,7 @@ static void DMG_pipeline_compute_strain
 			uint32_t idx = k * N_gp + j;
 			/* Compute Strain at Gauss Point */
 			for (uint32_t i = 0; i < N_nodes; i++) {
-				uint32_t inode = nb_partition_elem_get_adj(part, k, i);
+				uint32_t inode = nb_mesh2D_elem_get_adj(part, k, i);
 				strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 				strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 				strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +
@@ -630,18 +630,18 @@ EXIT:
 	return;
 }
 
-static double get_clfd(const nb_partition_t *part, uint32_t id_elem)
+static double get_clfd(const nb_mesh2D_t *part, uint32_t id_elem)
 /* characteristic_length_of_fractured_domain */
 {
-	uint32_t n1 = nb_partition_elem_get_adj(part, id_elem, 0);
-	uint32_t n2 = nb_partition_elem_get_adj(part, id_elem, 1);
-	uint32_t n3 = nb_partition_elem_get_adj(part, id_elem, 2);
-	double x1 = nb_partition_node_get_x(part, n1);
-	double y1 = nb_partition_node_get_y(part, n1);
-	double x2 = nb_partition_node_get_x(part, n2);
-	double y2 = nb_partition_node_get_y(part, n2);
-	double x3 = nb_partition_node_get_x(part, n3);
-	double y3 = nb_partition_node_get_y(part, n3);
+	uint32_t n1 = nb_mesh2D_elem_get_adj(part, id_elem, 0);
+	uint32_t n2 = nb_mesh2D_elem_get_adj(part, id_elem, 1);
+	uint32_t n3 = nb_mesh2D_elem_get_adj(part, id_elem, 2);
+	double x1 = nb_mesh2D_node_get_x(part, n1);
+	double y1 = nb_mesh2D_node_get_y(part, n1);
+	double x2 = nb_mesh2D_node_get_x(part, n2);
+	double y2 = nb_mesh2D_node_get_y(part, n2);
+	double x3 = nb_mesh2D_node_get_x(part, n3);
+	double y3 = nb_mesh2D_node_get_y(part, n3);
 	return sqrt((x2 - x1) * (y3 - y1) -
 		    (y2 - y1) * (x3 - x1));
 }
