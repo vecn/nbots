@@ -32,14 +32,13 @@ Since the library implementation begins in 2009, old code does not follow all th
   * 8 chars per identation level
     (improves readability; discussed on the CodingStyle document cited).
   * Use 3 control statements at most per function (for, if, while).
-
 - About comments
   * All comments must be C-style, that is  /* comment here */,
     avoid using C++ single line comments // like this comment.
   * The files must not contain any comment at the top.
-    1. Do not paste the License 
+    * Do not paste the License 
        (The License is on the **git** repository).
-    2. Do not sign the files with your name and the date
+    * Do not sign the files with your name and the date
        (This info is also in the repository, and the **README.md** must
         contain all your contributions, acknowledges and credits).
   * Do not let code-lines commented, delete them if they are not
@@ -49,7 +48,6 @@ Since the library implementation begins in 2009, old code does not follow all th
   * Add a comment only if it is necessary for explaining some weird
     operation or an important note (if you need a lot of comments to
     explain your code, then the code must be rewritten in an elegant manner).
-
 - Library structure
   * Produce files with no more than 500 rows (aims a modular code).
   * Declare static those functions used just in a single file.
@@ -57,10 +55,8 @@ Since the library implementation begins in 2009, old code does not follow all th
   * The directory structure of 'include', 'src' and 'utest' dirs must be the
     same. For each header-file under 'include' dir, it must exist at least one
     file with the same name under 'src' and 'utest'.
-
 - Error handling
   * Undefined yet.
-
 - Memory management
   * Make just one memory allocation per function when required.
   * Never use malloc(), calloc() and realloc() directly.
