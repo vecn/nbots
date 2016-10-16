@@ -36,12 +36,14 @@ Since the library implementation begins in 2009, old code does not follow all th
   	* All comments must be C-style, that is  `/* comment here */`,
 	  avoid using C++ single line comments `// like this comment`.
 	* The files must not contain any comment at the top.
+
 	      	+ Do not paste the License 
 	   	  (The License is on the **git** repository).
 		+ Do not sign the files with your name and the date
        		  (This info is also in the repository,
 		   and the **README.md** must containe all yout
 		   contributions, acknowledges and credits).
+
 	* Do not let code-lines commented, delete them if they are not
 	  required anymore (The repository has the historial of your code,
 	  you can always go back and recover the deleted lines).
