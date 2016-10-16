@@ -22,8 +22,6 @@
 
 #define POW2(a) ((a)*(a))
 
-#define ENABLE_PAIRWISE
-
 typedef struct subface_s subface_t;
 
 typedef struct {
@@ -65,7 +63,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces);
-static void add_subface_in_closest_trg(nb_membank_t *membank,
+static void add_subface_pairwise(nb_membank_t *membank,
 				       const nb_mesh2D_t *intmsh,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces);
@@ -302,8 +300,10 @@ static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
 
 	nb_graph_init(graph);
-	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);/* AQUI VOY Error here*/
-	nb_graph_force_symmetry(graph);/* For running LU decomposition */
+	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
+
+	/* Forces symmetry for LU decomposition */
+	nb_graph_force_symmetry(graph);
 
 	*K = nb_sparse_create(graph, NULL, 2);
 
@@ -407,7 +407,7 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	}
 
 	if (end_trg == 1)
-		add_subface_in_closest_trg(membank, intmsh, faces,
+		add_subface_pairwise(membank, intmsh, faces,
 					   face_id, subfaces);
 
 	set_subfaces(membank, faces[face_id], subfaces);
@@ -476,7 +476,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	return N_int;
 }
 
-static void add_subface_in_closest_trg(nb_membank_t *membank,
+static void add_subface_pairwise(nb_membank_t *membank,
 				       const nb_mesh2D_t *intmsh,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces)
@@ -658,12 +658,7 @@ static void assemble_internal_face(nb_sparse_t *K,
 				   face_t *face, const double D[4],
 				   nb_analysis2D_params *params2D)
 {
-	bool use_submesh = true;
-#ifdef ENABLE_PAIRWISE
-	use_submesh = false;
-#endif
-
-	if (0 < face->N_sf && use_submesh)
+	if (0 < face->N_sf)
 		integrate_subfaces(K, part, intmsh, face, D, params2D);
 	else
 		integrate_pairwise(K, part, face, D, params2D);
