@@ -25,49 +25,49 @@ Since the library implementation begins in 2009, old code does not follow all th
 ## Fast checklist
 
 - Coding Style and format
-  	 * Write your code using 80 columns at most (increase readability).
-	 * Write  functions of 40 rows at most (to compile with the mind).
-	 * 3 identation levels are enough, 4 levels are some times required
-	   (more than 4 provokes brain damage).
-	 * 8 chars per identation level
-	   (improves readability; discussed on the CodingStyle document cited).
-	 * Use 3 control statements at most per function (for, if, while).
+    * Write your code using 80 columns at most (increase readability).
+    * Write  functions of 40 rows at most (to compile with the mind).
+    * 3 identation levels are enough, 4 levels are some times required
+      (more than 4 provokes brain damage).
+    * 8 chars per identation level
+      (improves readability; discussed on the CodingStyle document cited).
+    * Use 3 control statements at most per function (for, if, while).
 - About comments
-  	* All comments must be C-style, that is  `/* comment here */`,
-	  avoid using C++ single line comments `// like this comment`.
-	* The files must not contain any comment at the top.
-      	      + Do not paste the License 
-	        (The License is on the **git** repository).
-	      + Do not sign the files with your name and the date
-       	        (This info is also in the repository,
-		 and the **README.md** must containe all yout
-		 contributions, acknowledges and credits).
-	* Do not let code-lines commented, delete them if they are not
-	  required anymore (The repository has the historial of your code,
-	  you can always go back and recover the deleted lines).
-	* Do not make silly comments, e.g. int a = 1; /* Adding one to a */
-	* Add a comment only if it is necessary for explaining some weird
-	  operation or an important note (if you need a lot of comments to
-	  explain your code, then the code must be rewritten in an elegant
-	   manner).
+    * All comments must be C-style, that is  `/* comment here */`,
+      avoid using C++ single line comments `// like this comment`.
+    * The files must not contain any comment at the top.
+        + Do not paste the License 
+	  (The License is on the **git** repository).
+        + Do not sign the files with your name and the date
+	  (This info is also in the repository,
+	   and the **README.md** must containe all yout
+	   contributions, acknowledges and credits).
+    * Do not let code-lines commented, delete them if they are not
+      required anymore (The repository has the historial of your code,
+      you can always go back and recover the deleted lines).
+    * Do not make silly comments, e.g. int a = 1; /* Adding one to a */
+    * Add a comment only if it is necessary for explaining some weird
+      operation or an important note (if you need a lot of comments to
+      explain your code, then the code must be rewritten in an elegant
+      manner).
 - Library structure
-  	* Produce files with no more than 500 rows (aims a modular code).
-	* Declare static those functions used just in a single file.
-	* Add the prefix 'nb_' to those functions visible to every file.
-	* The directory structure of 'include', 'src' and 'utest' dirs must
-	  be the same. For each header-file under 'include' dir, it must
-	  exist at least one file with the same name under 'src' and 'utest'.
+    * Produce files with no more than 500 rows (aims a modular code).
+    * Declare static those functions used just in a single file.
+    * Add the prefix 'nb_' to those functions visible to every file.
+    * The directory structure of 'include', 'src' and 'utest' dirs must
+      be the same. For each header-file under 'include' dir, it must
+      exist at least one file with the same name under 'src' and 'utest'.
 - Error handling
-  	* Undefined yet.
+    * Undefined yet.
 - Memory management
-  	* Make just one memory allocation per function when required.
-	* Never use `malloc()`, `calloc()` and `realloc()` directly.
-	  Use those declared on **nb/memory_bot/allocate_mem.h**
-	* If the allocated memory will be freed on the same function,
-	  use the `nb_soft_allocate_mem()` version.
-	* Use `nb_membank_t` whether it is possible.
-	* Deliver at least one unit test for every function declared in the
-	  header (Using CUNIT).
+    * Make just one memory allocation per function when required.
+    * Never use `malloc()`, `calloc()` and `realloc()` directly.
+      Use those declared on **nb/memory_bot/allocate_mem.h**
+    * If the allocated memory will be freed on the same function,
+      use the `nb_soft_allocate_mem()` version.
+    * Use `nb_membank_t` whether it is possible.
+    * Deliver at least one unit test for every function declared in the
+      header (Using CUNIT).
 
 ## Library standard
 The library uses objects (structs) to handle data, every object must have at least the following functions:

@@ -37,28 +37,28 @@ The Center for Research in Mathematics, CIMAT, in many ways has been the backbon
 ## Developers and contributions
 
 - Victor E. Cardoso (victorc@cimat.mx)
-     * Library arch.
-     * Bots integration and Unit tests.
-     * Containers.
-     * 2D Geometric algorithms (meshes, alpha-shapes, Voronoi, etc).
-     * Finite element assemblers.
-     * Linear algebra routines,
-     * AMD: Graph labeling routines.
-     * Spectral bissection,
-     * Graphics bot (rasterizers).
+    * Library arch.
+    * Bots integration and Unit tests.
+    * Containers.
+    * 2D Geometric algorithms (meshes, alpha-shapes, Voronoi, etc).
+    * Finite element assemblers.
+    * Linear algebra routines,
+    * AMD: Graph labeling routines.
+    * Spectral bissection,
+    * Graphics bot (rasterizers).
 - Miguel Vargas Felix (miguelvargas@cimat.mx)
-     * System macros.
-     * Parallel sparse solvers and structures.
-     * Domain segmentation routines.
-     * Nested dissections (graph labeling routine)
+    * System macros.
+    * Parallel sparse solvers and structures.
+    * Domain segmentation routines.
+    * Nested dissections (graph labeling routine)
 - Jorge Lopez (jorge.lopez@cimat.mx)
-     * 3D tetrahedral mesher based on octree.
+    * 3D tetrahedral mesher based on octree.
 - Dora Elisa Alvarado (dora.alvarado@cimat.mx)
-     * Image processing routines and filters.
+    * Image processing routines and filters.
 - Miguel Angel Ochoa (miguel.ochoa@cimat.mx)
-     * SIMP Topology optimization method.
+    * SIMP Topology optimization method.
 - J. Gerardo Fuentes
-     * Finite element electromagnetic solver.
+    * Finite element electromagnetic solver.
 - Sean T. Barrett (https://github.com/nothings/stb)
-     * Pixmap exporters to JPG and PNG.
+    * Pixmap exporters to JPG and PNG.
     
