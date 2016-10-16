@@ -63,7 +63,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces);
-static void add_subface_in_closest_trg(nb_membank_t *membank,
+static void add_subface_pairwise(nb_membank_t *membank,
 				       const nb_mesh2D_t *intmsh,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces);
@@ -407,7 +407,7 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	}
 
 	if (end_trg == 1)
-		add_subface_in_closest_trg(membank, intmsh, faces,
+		add_subface_pairwise(membank, intmsh, faces,
 					   face_id, subfaces);
 
 	set_subfaces(membank, faces[face_id], subfaces);
@@ -476,7 +476,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	return N_int;
 }
 
-static void add_subface_in_closest_trg(nb_membank_t *membank,
+static void add_subface_pairwise(nb_membank_t *membank,
 				       const nb_mesh2D_t *intmsh,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces)

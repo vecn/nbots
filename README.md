@@ -32,7 +32,7 @@ Run 'gradle assemble' or use the shell script './gradlew assemble' (gradlew.bat 
 
 ## Acknowledges
 
-The Center of Research in Mathematics, CIMAT, in many ways has been the backbone of this project, especially **the people** forming the department of Computational Sciences and its post-graduate programs, a big **thank you** to all of them.
+The Center for Research in Mathematics, CIMAT, in many ways has been the backbone of this project, especially **the people** forming the department of Computational Sciences and its post-graduate programs, a big **thank you** for all of them.
 
 ## Developers and contributions
 

@@ -26,12 +26,13 @@ Since the library implementation begins in 2009, old code does not follow all th
 
 - Coding Style and format
   * Write your code using 80 columns at most (increase readability).
-  * Write functions of 40 rows at most (to compile with the mind).
+  * Write  functions of 40 rows at most (to compile with the mind).
   * 3 identation levels are enough, 4 levels are some times required
     (more than 4 provokes brain damage).
   * 8 chars per identation level
     (improves readability; discussed on the CodingStyle document cited).
   * Use 3 control statements at most per function (for, if, while).
+
 - About comments
   * All comments must be C-style, that is  /* comment here */,
     avoid using C++ single line comments // like this comment.
@@ -48,6 +49,7 @@ Since the library implementation begins in 2009, old code does not follow all th
   * Add a comment only if it is necessary for explaining some weird
     operation or an important note (if you need a lot of comments to
     explain your code, then the code must be rewritten in an elegant manner).
+
 - Library structure
   * Produce files with no more than 500 rows (aims a modular code).
   * Declare static those functions used just in a single file.
@@ -55,8 +57,10 @@ Since the library implementation begins in 2009, old code does not follow all th
   * The directory structure of 'include', 'src' and 'utest' dirs must be the
     same. For each header-file under 'include' dir, it must exist at least one
     file with the same name under 'src' and 'utest'.
+
 - Error handling
   * Undefined yet.
+
 - Memory management
   * Make just one memory allocation per function when required.
   * Never use malloc(), calloc() and realloc() directly.
