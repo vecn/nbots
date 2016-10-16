@@ -5,6 +5,7 @@
 ### Why C?
 
 The main reasons are:
+
 - C can interact with any programming language using a binding,
   but not in the other way around.
 - Every computer architecture has at least a minimal C compiler.
