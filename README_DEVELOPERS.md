@@ -2,18 +2,6 @@
 
 I wrote this 'Quick-start guide' as a friendly introduction to development conventions, coding style and other caveats of this library. I hope you find it useful.
 
-## Why C?
-
-The main reasons are:
-
-- C can interact with other programming languages using a binding, but not in the other way around.
-- Every computer architecture has at least a minimal C compiler.
-- Every new technology is C-compatible.
-- Standards for High Performance Computing are integrated directly in C, such as MPI, CUDA-C, OpenMP and Posix-threads, but also the most used scientific-computing frameworks, such as OpenGL.
-- C can be compiled for any C++ compiler, but not in the other way around.
-- C allows a fine tuning for memory allocation and thread execution.
-  ("With great power comes great responsibility", Uncle Ben)
-
 ## Coding style
 
 Every one has his own programming style and that is fine, but when working in a sustainable project, it is desirable to follow some coding style and conventions, in order to make the project readable and maintainable for everyone. We follow most of the rules used by the linux kernel developers:
@@ -27,9 +15,9 @@ Since the library implementation begins in 2009, old code does not follow all th
 - Coding Style and format
     * Write your code using 80 columns at most (increase readability).
     * Write  functions of 40 rows at most (to compile with the mind).
-    * 3 identation levels are enough, 4 levels are some times required
+    * 3 indentation levels are enough, 4 levels are some times required
       (more than 4 provokes brain damage).
-    * 8 chars per identation level
+    * 8 chars per indentation level
       (improves readability; discussed on the CodingStyle document cited).
     * Use 3 control statements at most per function (for, if, while).
 - About comments
@@ -40,7 +28,7 @@ Since the library implementation begins in 2009, old code does not follow all th
 	  (The License is on the **git** repository).
         + Do not sign the files with your name and the date
 	  (This info is also in the repository,
-	   and the **README.md** must containe all yout
+	   and the **README.md** must contain all your
 	   contributions, acknowledges and credits).
     * Do not let code-lines commented, delete them if they are not
       required anymore (The repository has the historial of your code,

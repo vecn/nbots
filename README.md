@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Numerical bots is an incubating project which aims to implement the most used numerical calculations in scientific computing focusing on achieving the best performance (processor and memory efficiency) for single and parallel arquitectures, such as shared memory, distributed memory and general purpose graphic processors.
+Numerical bots is an incubating project which aims to implement the most used numerical calculations in scientific computing focusing on achieving the best performance (processor and memory efficiency) for single and parallel architectures, such as shared memory, distributed memory and general purpose graphic processors.
 
 ## Introduction
 
@@ -44,7 +44,7 @@ The Center for Research in Mathematics, CIMAT, in many ways has been the backbon
     * Finite element assemblers.
     * Linear algebra routines,
     * AMD: Graph labeling routines.
-    * Spectral bissection,
+    * Spectral bisection,
     * Graphics bot (rasterizers).
 - Miguel Vargas Felix (miguelvargas@cimat.mx)
     * System macros.
