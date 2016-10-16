@@ -302,8 +302,8 @@ static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
 
 	nb_graph_init(graph);
-	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
-	nb_graph_force_symmetry(graph);
+	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);/* AQUI VOY Error here*/
+	nb_graph_force_symmetry(graph);/* For running LU decomposition */
 
 	*K = nb_sparse_create(graph, NULL, 2);
 
@@ -348,20 +348,20 @@ static void define_face_elems(const nb_mesh2D_t *part,
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	uint32_t ngb_id = nb_mesh2D_elem_get_ngb(part, elem_id,
-						    local_face_id);
+						 local_face_id);
 	if (ngb_id >= N_elems) {
 		uint32_t face_id = 
 			nb_mesh2D_elem_find_edge(part, elem_id,
-						    local_face_id);
+						 local_face_id);
 		faces[face_id]->elems[0] = elem_id;
 		faces[face_id]->elems[1] = N_elems;
 	} else if (elem_id < ngb_id) {
 		uint32_t face_id = 
 			nb_mesh2D_elem_find_edge(part, elem_id,
-						    local_face_id);
+						 local_face_id);
 		uint32_t ev1 =
 			nb_mesh2D_elem_get_adj(part, elem_id,
-						  local_face_id);
+					       local_face_id);
 		uint32_t fv1 =
 			nb_mesh2D_edge_get_1n(part, face_id);
 		if (ev1 == fv1) {
@@ -919,8 +919,9 @@ static int solver(const nb_sparse_t *const A,
 	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 			      N * sizeof(double));
 
-	double asym = nb_sparse_get_asym(A);/* TEMPORAL */
-	printf("-- K asym: %e\n", asym);     /* TEMPORAL */
+	double fnorm = nb_sparse_get_frobenius_norm(A);/* TEMPORAL */
+	double asym = nb_sparse_get_asym(A);            /* TEMPORAL */
+	printf("-- B norm: %e : %e\n", fnorm, asym);    /* TEMPORAL */
 
 	get_permutation(A, perm, iperm);
 
@@ -928,9 +929,6 @@ static int solver(const nb_sparse_t *const A,
 	vector_permutation(N, b, perm, br);
 
 	int status = nb_sparse_solve_using_LU(Ar, br, xr, 1);
-
-	nb_sparse_export_spy_plot(Ar, "../../../spyploy.png", 200, false,
-				  NB_SUNSET);/* TEMPORAL */
 
 	vector_permutation(N, xr, iperm, x);
 	

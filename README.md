@@ -24,7 +24,7 @@ A numerical bot is an interdependent module which perform several related numeri
 - PDE bot
 - Topopt bot*
 
-The '*' is for those bots which are not yet implemented.
+The '*' is for those bots which are not implemented yet.
 
 ## Compilation
 

@@ -23,9 +23,9 @@ static void cholesky_symbolic(const nb_sparse_t *const A,
 			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
 			      uint32_t ktrunc);
 
-static inline uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-					  uint32_t i, uint32_t col, 
-					  int imin, int imax);
+static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
+				   uint32_t i, uint32_t col, 
+				   int imin, int imax);
 
 static inline double get_norm(double* x, uint32_t N)
 {
@@ -133,17 +133,17 @@ void nb_sparse_destroy(nb_sparse_t* A)
 	nb_free_mem(A);
 }
 
-static inline uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-					  uint32_t i, uint32_t col, 
-					  int imin, int imax)
+static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
+				   uint32_t i, uint32_t col, 
+				   int imin, int imax)
 {
-	uint32_t index = (imin+imax)/2;
+	uint32_t index = (imin + imax) / 2;
 	while (A->rows_index[i][index] != col && imin <= imax) {
-		index = (imin+imax)/2;
+		index = (imin + imax) / 2;
 		if (A->rows_index[i][index] < col)
-			imin = index+1;
+			imin = index + 1;
 		else
-			imax = index-1;
+			imax = index - 1;
 	}
 	return index;
 }
@@ -370,8 +370,24 @@ double nb_sparse_get_asym(const nb_sparse_t *const A)
 			uint32_t k = A->rows_index[i][j];
 			uint32_t l = sparse_bsearch_row(A, k, i, 0,
 							A->rows_size[k]-1);
-			double Aji = A->rows_values[k][l];
+			double Aji = 0.0;
+			if (A->rows_index[k][l] == i)
+				Aji = A->rows_values[k][l];
+
 			sum += POW2(Aij - Aji); 
+		}
+	}
+	return sqrt(sum);
+}
+
+double nb_sparse_get_frobenius_norm(const nb_sparse_t *const A)
+{
+	double sum = 0;
+	for (uint32_t i = 0; i < A->N; i++) {
+		uint32_t N_cols = A->rows_size[i];
+		for (uint32_t j = 0; j < N_cols; j++) {
+			double Aij = A->rows_values[i][j];
+			sum += POW2(Aij); 
 		}
 	}
 	return sqrt(sum);

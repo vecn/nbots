@@ -399,15 +399,16 @@ static void adj_graph_allocate_adj(nb_graph_t *graph,
 static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 				    const nb_mesh2D_t *intmsh)
 {
+	nb_container_type cnt_type = NB_SORTED;
 	uint32_t bank_size = nb_membank_get_memsize();
-	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
+	uint32_t memsize = bank_size + nb_container_get_memsize(cnt_type);
 	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_membank_t *membank = (void*) memblock;
 	nb_container_t *list = (void*) (memblock + bank_size);
 
 	nb_membank_init(membank, sizeof(uint32_t));
 
-	nb_container_init(list, NB_QUEUE);
+	nb_container_init(list, cnt_type);
 	nb_container_set_comparer(list, compare_ids);
 
 	uint32_t N = 0;
@@ -439,8 +440,7 @@ static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
 		uint32_t id = trg_x_vol->adj[vol_id][i];
 		uint16_t N_adj = nb_mesh2D_elem_get_N_adj(intmsh, id);
 		for (uint16_t j = 0; j < N_adj; j++) {
-			uint32_t nid = nb_mesh2D_elem_get_adj(intmsh,
-								 id, j);
+			uint32_t nid = nb_mesh2D_elem_get_adj(intmsh, id, j);
 			if (vol_id != nid) {
 				if (NULL == nb_container_exist(list, &nid)) {
 					uint32_t *aux =
@@ -457,21 +457,22 @@ static void adj_graph_set_adj(nb_graph_t *graph,
 			      const nb_graph_t *trg_x_vol,
 			      const nb_mesh2D_t *intmsh)
 {
+	nb_container_type cnt_type = NB_SORTED;
 	uint32_t bank_size = nb_membank_get_memsize();
-	uint32_t memsize = bank_size + nb_container_get_memsize(NB_QUEUE);
+	uint32_t memsize = bank_size + nb_container_get_memsize(cnt_type);
 	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_membank_t *membank = (void*) memblock;
 	nb_container_t *list = (void*) (memblock + bank_size);
 
 	nb_membank_init(membank, sizeof(uint32_t));
 
-	nb_container_init(list, NB_QUEUE);
+	nb_container_init(list, cnt_type);
 	nb_container_set_comparer(list, compare_ids);
 
 
 	uint32_t mem_used = graph->N * sizeof(*(graph->N_adj)) +
 		graph->N * sizeof(*(graph->adj));
-	char *block = (char*) graph->N_adj + mem_used;
+	char *block = ((char*)graph->N_adj) + mem_used;
 
 	for (uint32_t i = 0; i < trg_x_vol->N; i++) {
 		adj_graph_get_list_x_vol(trg_x_vol, intmsh, i,

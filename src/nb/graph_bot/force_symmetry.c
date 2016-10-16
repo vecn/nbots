@@ -107,7 +107,7 @@ static void allocate_sym_adj(nb_graph_t *graph,
 	for (uint32_t i = 0; i < graph->N; i++) {
 		uint32_t N_adj = nb_container_get_length(cnt_graph[i]);
 		graph->N_adj[i] = N_adj;
-		graph->adj[i] = (void* )memblock;
+		graph->adj[i] = (void*) memblock;
 		memblock += N_adj * sizeof(**(graph->adj));
 	}
 }

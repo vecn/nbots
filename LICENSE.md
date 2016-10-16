@@ -1,8 +1,9 @@
-# MIT License
-
-Copyright (c) 2010-2016 Victor Eduardo Cardoso Nungaray
+Copyright (c) 2009-2016 Centro de Investigacion en Matematicas A. C. (CIMAT)
 
 ## Abstract
+Numerical bots is a C-Library provided for scientific computing focused on high performance computing, to learn more please open the README.
+The project is distributed under the MIT License.
+
 - Permissions:
 	* Commericial use
 	* Distribution
@@ -12,8 +13,6 @@ Copyright (c) 2010-2016 Victor Eduardo Cardoso Nungaray
 	* License and copyright notice
 - Limitations:
 	* Hold liable (no warranty)
-
-(Abstract taken from http://choosealicense.com/licenses/mit/)
 
 ## MIT License
 
