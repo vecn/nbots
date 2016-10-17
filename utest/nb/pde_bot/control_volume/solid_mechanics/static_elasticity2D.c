@@ -41,6 +41,9 @@ static double get_error_avg_pwh(const void *part, const double *stress,
 				const char *boundary_mask);
 static double get_face_error_avg_pwh(const void *part, const double *stress,
 				     uint32_t face_id);
+static void get_face_avg_of_analytic_stress_pwh(const nb_mesh2D_t *part,
+						uint32_t face_id,
+						double stress_avg[3]);
 static void get_analytic_stress_pwh(double x, double y, double stress[3]);
 static void modify_bcond_pwh(const void *part, nb_bcond_t *bcond);
 static void pwh_DC_SGM_cond(const double *x, double t, double *out);
@@ -80,8 +83,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -120,7 +123,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1000, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 1500, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -161,11 +164,9 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 	double nf[2];                                   /* TEMPORAL */
 	nb_mesh2D_edge_get_normal(part, face_id, nf);/* TEMPORAL */
 	
-	double xf[2];
-	nb_mesh2D_edge_get_midpoint(part, face_id, 0.5, xf);
-
 	double analytic_stress[3];
-	get_analytic_stress_pwh(xf[0], xf[1], analytic_stress);
+	get_face_avg_of_analytic_stress_pwh(part, face_id,
+					    analytic_stress);
 
 	uint32_t id = face_id;                         /* TEMPORAL */
 	double error[15];                              /* TEMPORAL */
@@ -248,6 +249,35 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 	double vm_error = fabs(1.0 - vm_stress / analytic_vm_stress);
 	fclose(fp);                                   /* TEMPORAL */
 	return vm_error;
+}
+
+static void get_face_avg_of_analytic_stress_pwh(const nb_mesh2D_t *part,
+						uint32_t face_id,
+						double stress_avg[3])
+{
+	int Np = 10;
+	double lf = nb_mesh2D_edge_get_length(part, face_id);
+	memset(stress_avg, 0, 3 * sizeof(*stress_avg));
+	
+	/* Get numerical integral over face */
+	double step = lf / Np;
+	double x1[2], x2[2];
+	nb_mesh2D_edge_get_midpoint(part, face_id, 0, x1);
+	for (int i = 0; i < Np; i++) {
+		double w = step * (i+1);
+		nb_mesh2D_edge_get_midpoint(part, face_id, w, x2);
+		double s1[3], s2[3];
+		get_analytic_stress_pwh(x1[0], x1[1], s1);
+		get_analytic_stress_pwh(x2[0], x2[1], s2);
+		stress_avg[0] += ((s1[0] + s2[0]) * step) / 2;
+		stress_avg[1] += ((s1[1] + s2[1]) * step) / 2;
+		stress_avg[2] += ((s1[2] + s2[2]) * step) / 2;
+		memcpy(x1, x2, 2 * sizeof(*x1));
+	}
+	
+	stress_avg[0] /= lf;
+	stress_avg[1] /= lf;
+	stress_avg[2] /= lf;
 }
 
 static void get_analytic_stress_pwh(double x, double y, double stress[3])
