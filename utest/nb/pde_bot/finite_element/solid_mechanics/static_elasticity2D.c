@@ -137,10 +137,19 @@ static void check_plate_with_hole(const void *part,
 	nb_fem_elem_destroy(elem);
 }
 
+#define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a)) /* TEMPORAL */
+
 static double get_error_avg_pwh(const void *part,
 				const nb_fem_elem_t* elem,
 				const double *stress)
 {
+	FILE *fp = fopen("../../../stress_fem.txt", "w");            /* TEMPORAL */
+	fprintf(fp,                                                  /* TEMPORAL */
+		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2 " \
+		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2 " \
+		"Ax Ay Axy Anx Any Atx Aty |An| |At| Ann Ant Atn Att A1 A2\n");/**/
+	fclose(fp);                                                  /* TEMPORAL */
+
 	double avg = 0.0;
 	uint32_t N = 0;
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
@@ -153,6 +162,79 @@ static double get_error_avg_pwh(const void *part,
 			double analytic_stress[3];
 			get_analytic_stress_pwh(gp[0], gp[1], analytic_stress);
 			uint32_t id = i * N_gp + p;
+
+			FILE *fp = fopen("../../../stress_fem.txt", "a");  /* TEMP */
+			double nf[2] = {0.7071068, 0.7071068};         /* TEMPORAL */
+			double error[15];                              /* TEMPORAL */
+			error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+					CHECK_ZERO(analytic_stress[0]));         /**/
+			error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+					CHECK_ZERO(analytic_stress[1]));         /**/
+			error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+					CHECK_ZERO(analytic_stress[2]));         /**/
+			double Sn[2];                                  /* TEMPORAL */
+			Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
+			Sn[1] = 0.5*stress[id*3+2]*nf[0] + stress[id*3+1]*nf[1]; /**/
+			double St[2];                                  /* TEMPORAL */
+			St[0] = stress[id * 3]*nf[1] - 0.5*stress[id*3+2]*nf[0]; /**/
+			St[1] = 0.5*stress[id*3+2]*nf[1] - stress[id*3+1]*nf[0]; /**/
+			double mSn = sqrt(POW2(Sn[0]) + POW2(Sn[1]));  /* TEMPORAL */
+			double mSt = sqrt(POW2(St[0]) + POW2(St[1]));  /* TEMPORAL */
+			double Snn = Sn[0] * nf[0] + Sn[1] * nf[1];    /* TEMPORAL */
+			double Snt = Sn[0] * nf[1] - Sn[1] * nf[0];    /* TEMPORAL */
+			double Stn = St[0] * nf[0] + St[1] * nf[1];    /* TEMPORAL */
+			double Stt = St[0] * nf[1] - St[1] * nf[0];    /* TEMPORAL */
+			double main_s[2];                                        /**/
+			nb_pde_get_main_stress(stress[id*3], stress[id*3+1],     /**/
+					       stress[id*3+2], main_s);          /**/
+			double An[2];                                  /* TEMPORAL */
+			An[0] = analytic_stress[0]*nf[0] +                       /**/
+			  0.5 * analytic_stress[2]*nf[1];                  /**/
+			An[1] = 0.5 * analytic_stress[2]*nf[0] +                 /**/
+			  analytic_stress[1]*nf[1];                        /**/
+			double At[2];                                  /* TEMPORAL */
+			At[0] = analytic_stress[0]*nf[1] -                       /**/
+			  0.5 * analytic_stress[2]*nf[0];                  /**/
+			At[1] = 0.5 * analytic_stress[2]*nf[1] -                 /**/
+			  analytic_stress[1]*nf[0];                        /**/
+			double mAn = sqrt(POW2(An[0]) + POW2(An[1]));            /**/
+			double mAt = sqrt(POW2(At[0]) + POW2(At[1]));            /**/
+			double Ann = An[0] * nf[0] + An[1] * nf[1];    /* TEMPORAL */
+			double Ant = An[0] * nf[1] - An[1] * nf[0];    /* TEMPORAL */
+			double Atn = At[0] * nf[0] + At[1] * nf[1];    /* TEMPORAL */
+			double Att = At[0] * nf[1] - At[1] * nf[0];    /* TEMPORAL */
+			double main_a[2];                                        /**/
+			nb_pde_get_main_stress(analytic_stress[0],		 /**/
+					       analytic_stress[1],		 /**/
+					       analytic_stress[2], main_a);	 /**/
+			error[3] = fabs((An[0] - Sn[0]) / CHECK_ZERO(An[0]));    /**/
+			error[4] = fabs((An[1] - Sn[1]) / CHECK_ZERO(An[1]));    /**/
+			error[5] = fabs((At[0] - St[0]) / CHECK_ZERO(At[0]));    /**/
+			error[6] = fabs((At[1] - St[1]) / CHECK_ZERO(At[1]));    /**/
+			error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));		 /**/
+			error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));		 /**/
+			error[9] = fabs((Ann - Snn)/CHECK_ZERO(Ann));		 /**/
+			error[10] = fabs((Ant - Snt)/CHECK_ZERO(Ant));		 /**/
+			error[11] = fabs((Atn - Stn)/CHECK_ZERO(Atn));		 /**/
+			error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));           /**/
+			error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));
+			error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));
+			fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
+				"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
+				"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n", /**/
+				error[0], error[1], error[2], error[3], error[4], /**/
+				error[5], error[6], error[7], error[8], /* TEMPORAL */
+				error[9], error[10], error[11], error[12],        /**/
+				error[13], error[14],				  /**/
+				stress[id*3], stress[id*3+1], stress[id*3+2],     /**/
+				Sn[0], Sn[1], St[0], St[1], mSn, mSt, Snn, Snt,	  /**/
+				Stn, Stt, main_s[0], main_s[1],                   /**/
+				analytic_stress[0], analytic_stress[1], /* TEMPORAL */
+				analytic_stress[2],                     /* TEMPORAL */
+				An[0], An[1], At[0], At[1], mAn, mAt, Ann, Ant,   /**/
+				Atn, Att, main_a[0], main_a[1]);                  /**/
+			fclose(fp);                                     /* TEMPORAL */
+
 			double vm_stress =
 			  nb_pde_get_vm_stress(stress[id * 3],
 					       stress[id*3+1],
@@ -162,9 +244,9 @@ static double get_error_avg_pwh(const void *part,
 					       analytic_stress[1],
 					       analytic_stress[2]);
 
-			double error = fabs(1.0 - vm_stress /
-					    analytic_vm_stress);
-			avg += error;
+			double vm_error = fabs(1.0 - vm_stress /
+					       analytic_vm_stress);
+			avg += vm_error;
 		}
 	}
 	return avg /= N;
