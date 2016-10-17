@@ -123,7 +123,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1500, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 5500, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -144,8 +144,8 @@ static double get_error_avg_pwh(const void *part,
 {
 	FILE *fp = fopen("../../../stress.txt", "w"); /* TEMPORAL */
 	fprintf(fp,
-		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2" \
-		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2" \
+		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2 " \
+		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2 " \
 		"Ax Ay Axy Anx Any Atx Aty |An| |At| Ann Ant Atn Att A1 A2\n");/**/
 	fclose(fp);                                   /* TEMPORAL */
 	double avg = 0.0;
@@ -224,8 +224,8 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 	error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));
 	error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));
 	error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));
-	fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
-		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\t" \
+	fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
+		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
 		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n", /**/
 		error[0], error[1], error[2], error[3], error[4],/**/
 		error[5], error[6], error[7], error[8],/* TEMPORAL */

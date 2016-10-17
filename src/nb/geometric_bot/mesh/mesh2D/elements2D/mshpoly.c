@@ -461,7 +461,7 @@ double nb_mshpoly_edge_get_normal(const void *msh, uint32_t face_id,
 	normal[1] = -(s2[0] - s1[0]) / length;
 	return length;
 }
-/*
+
 double nb_mshpoly_elem_get_x(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
@@ -472,52 +472,6 @@ double nb_mshpoly_elem_get_y(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
 	return poly->cen[id*2+1];
-}
-*/
-double nb_mshpoly_elem_get_x(const void *msh, uint32_t id)
-{
-	const nb_mshpoly_t *poly = msh;
-
-	double x = 0;
-	double sign_area = 0;
-	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t n1 = nb_mshpoly_elem_get_adj(msh, id, i);
-		uint32_t n2 = nb_mshpoly_elem_get_adj(msh, id,
-						      (i+1) % N_adj);
-		double x1 = nb_mshpoly_node_get_x(msh, n1);
-		double y1 = nb_mshpoly_node_get_y(msh, n1);
-		double x2 = nb_mshpoly_node_get_x(msh, n2);
-		double y2 = nb_mshpoly_node_get_y(msh, n2);
-
-		double a = x1 * y2 - x2 * y1;
-		sign_area += a;
-		x += (x1 + x2) * a;
-	}
-	return x / (3 * sign_area);
-}
-
-double nb_mshpoly_elem_get_y(const void *msh, uint32_t id)
-{
-	const nb_mshpoly_t *poly = msh;
-
-	double y = 0;
-	double sign_area = 0;
-	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
-	for (uint16_t i = 0; i < N_adj; i++) {
-		uint32_t n1 = nb_mshpoly_elem_get_adj(msh, id, i);
-		uint32_t n2 = nb_mshpoly_elem_get_adj(msh, id,
-						      (i+1) % N_adj);
-		double x1 = nb_mshpoly_node_get_x(msh, n1);
-		double y1 = nb_mshpoly_node_get_y(msh, n1);
-		double x2 = nb_mshpoly_node_get_x(msh, n2);
-		double y2 = nb_mshpoly_node_get_y(msh, n2);
-
-		double a = x1 * y2 - x2 * y1;
-		sign_area += a;
-		y += (y1 + y2) * a;
-	}
-	return y / (3 * sign_area);
 }
 
 double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
