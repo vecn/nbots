@@ -137,8 +137,6 @@ static void check_plate_with_hole(const void *part,
 	nb_fem_elem_destroy(elem);
 }
 
-#define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a)) /* TEMPORAL */
-
 static double get_error_avg_pwh(const void *part,
 				const nb_fem_elem_t* elem,
 				const double *stress)

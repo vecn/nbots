@@ -157,14 +157,9 @@ static double get_error_avg_pwh(const void *part,
 	return avg /= N_faces;
 }
 
-static double get_face_error_avg_pwh(const void *part, const double *stress,
-				     uint32_t face_id)
+static void TEMPORAL3(const void *part, const double analytic_stress[3],
+		      const double *stress, uint32_t face_id)
 {
-	
-	double analytic_stress[3];
-	get_face_avg_of_analytic_stress_pwh(part, face_id,
-					    analytic_stress);
-
 	FILE *fp = fopen("../../../stress.txt", "a");  /* TEMPORAL */
 	double nf[2];                                  /* TEMPORAL */
 	nb_mesh2D_edge_get_normal(part, face_id, nf);  /* TEMPORAL */
@@ -238,6 +233,17 @@ static double get_face_error_avg_pwh(const void *part, const double *stress,
 		An[0], An[1], At[0], At[1], mAn, mAt, Ann, Ant,   /**/
 		Atn, Att, main_a[0], main_a[1]);                  /**/
 	fclose(fp);                                     /* TEMPORAL */
+}
+
+static double get_face_error_avg_pwh(const void *part, const double *stress,
+				     uint32_t face_id)
+{
+	
+	double analytic_stress[3];
+	get_face_avg_of_analytic_stress_pwh(part, face_id,
+					    analytic_stress);
+
+	TEMPORAL3(part, analytic_stress, stress, face_id);
 
 	double vm_stress = 
 		nb_pde_get_vm_stress(stress[face_id * 3],
@@ -362,11 +368,11 @@ static void TEMPORAL1(nb_mesh2D_t *part, results_t *results)
 static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
-	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint8_t));
+	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint16_t));
 	char *memblock = nb_soft_allocate_mem(memsize);
 	double *stress = (void*) memblock;
 	double *vm_stress = (void*) (memblock + N_nodes* 3 * sizeof(double));
-	uint8_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
+	uint16_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
 
 	memset(stress, 0, 3 * N_nodes * sizeof(*stress));
 	memset(counter, 0, N_nodes * sizeof(*counter));
@@ -389,6 +395,7 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 			double y = nb_mesh2D_node_get_y(part, v1);
 			double s[3];
 			get_analytic_stress_pwh(x, y, s);
+
 			stress[v1 * 3] += s[0];
 			stress[v1*3+1] += s[1];
 			stress[v1*3+2] += s[2];
@@ -396,6 +403,8 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 			
 			x = nb_mesh2D_node_get_x(part, v2);
 			y = nb_mesh2D_node_get_y(part, v2);
+			get_analytic_stress_pwh(x, y, s);
+
 			stress[v2 * 3] += s[0];
 			stress[v2*3+1] += s[1];
 			stress[v2*3+2] += s[2];
