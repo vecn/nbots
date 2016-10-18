@@ -1,12 +1,12 @@
 # Dear developers
 
-I wrote this 'Quick-start guide' as a friendly introduction to development conventions, coding style and other caveats of this library. I hope you find it useful.
+I wrote this 'Quick-start guide' as a friendly introduction to development conventions, coding style and other caveats of this library.
+I hope you find it useful.
+
 
 ## Coding style
 
-Every one has his own programming style and that is fine, but when working in a sustainable project, it is desirable to follow some coding style and conventions, in order to make the project readable and maintainable for everyone. We follow most of the rules used by the linux kernel developers:
-
-https://www.kernel.org/doc/Documentation/CodingStyle
+Every one has his own programming style and that is fine, but when working in a sustainable project, it is desirable to follow some coding style and conventions, in order to make the project readable and maintainable for everyone. We follow most of the rules used by the linux kernel [coding style](https://www.kernel.org/doc/Documentation/CodingStyle)
 
 Since the library implementation begins in 2009, old code does not follow all the conventions and coding style discussed here, but we are normalizing all the library as fast as we can.
 
@@ -28,7 +28,7 @@ Since the library implementation begins in 2009, old code does not follow all th
 	  (The License is on the **git** repository).
         + Do not sign the files with your name and the date
 	  (This info is also in the repository,
-	   and the **README.md** must contain all your
+	   and the **README** must contain all your
 	   contributions, acknowledges and credits).
     * Do not let code-lines commented, delete them if they are not
       required anymore (The repository has the historial of your code,
@@ -74,7 +74,7 @@ To build the project we use **Gradle**, one of the most used building tools for 
 
 To build the library run `gradle assemble`.
 To build the library and execute the unit tests run `gradle build`.
-If you do not have **gradle** installed in your system, use the wrapper, **gradlew.sh** on unix/like systems or **gradlew.bat** on windows.
+If you do not have **gradle** installed in your system, use the wrapper, `./gradlew.sh` on unix/like systems or `gradlew.bat` on windows.
 
 ## Final comments
 - This library has been tested on Windows, Max OS, Linux and Android.
@@ -83,8 +83,9 @@ If you do not have **gradle** installed in your system, use the wrapper, **gradl
 - Please read the book 'Clean code' written by Robert Cecil Martin
   (and if possible read also 'Clean coder')
 
-Best regards.
 
-Victor Eduardo Cardoso Nungaray (victorc@cimat.mx)
+Best regards,
 
-Guanajuato, Gto. Mexico, October 2016.
+Victor Eduardo Cardoso Nungaray.
+
+Guanajuato, Gto. Mexico, October 18, 2016.

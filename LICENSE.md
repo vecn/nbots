@@ -1,9 +1,8 @@
+# MIT LICENSE
+
 Copyright (c) 2009-2016 Centro de Investigacion en Matematicas A. C. (CIMAT)
 
 ## Abstract
-Numerical bots is a C-Library provided for scientific computing focused on high performance computing, to learn more please open the README.
-The project is distributed under the MIT License.
-
 - Permissions:
     * Commercial use
     * Distribution
@@ -14,7 +13,13 @@ The project is distributed under the MIT License.
 - Limitations:
     * Hold liable (no warranty)
 
-## MIT License
+## Software licensed
+
+NBOTS library, which is the short-name for Numerical bots, a C-Library
+provided for scientific computing focused on high performance computing,
+to learn more please open the README.
+
+## Statement
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
