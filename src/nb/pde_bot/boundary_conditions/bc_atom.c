@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "nb/memory_bot.h"
 #include "bc_atom.h"
 
 static void init_data_ptr(void *bc_ptr, uint8_t N_dof);
