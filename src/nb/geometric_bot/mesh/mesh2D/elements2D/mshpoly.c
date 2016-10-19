@@ -478,7 +478,7 @@ double nb_mshpoly_elem_get_area(const void *msh, uint32_t id)
 {
 	double area = 0.0;
 
-	uint32_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
+	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, id);
 	for (uint16_t i = 0; i < N_adj; i++) {
 		uint32_t n1 = nb_mshpoly_elem_get_adj(msh, id, i);
 		uint32_t n2 = nb_mshpoly_elem_get_adj(msh, id,

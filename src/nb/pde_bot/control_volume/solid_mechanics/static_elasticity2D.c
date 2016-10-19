@@ -63,6 +63,12 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces);
+static bool add_subface_if_its_inside_trg(nb_membank_t *membank,
+					  const nb_mesh2D_t *intmsh,
+					  const uint32_t *trg_adj,
+					  face_t **faces, uint32_t elem_trg_id,
+					  uint32_t face_id,
+					  nb_container_t *subfaces);
 static void add_subface_in_closest_trg(nb_membank_t *membank,
 				       const nb_mesh2D_t *intmsh,
 				       face_t **faces, uint32_t face_id,
@@ -396,9 +402,9 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 
 	uint8_t end_trg = 0;
 	for (uint16_t i = 0; i < N_trg; i++) {
-		uint8_t N_int = add_subface_if_intersected(membank,
-							   intmsh, trg_adj,
-							   faces, i, face_id,
+		uint8_t N_int = add_subface_if_intersected(membank, intmsh,
+							   trg_adj, faces,
+							   i, face_id,
 							   subfaces);
 		
 		if (1 == N_int)
@@ -406,7 +412,19 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 			
 	}
 
-	if (end_trg == 1)
+	if (0 == end_trg) {
+		for (uint16_t i = 0; i < N_trg; i++) {
+			bool inside =
+				add_subface_if_its_inside_trg(membank, intmsh,
+							      trg_adj, faces,
+							      i, face_id,
+							      subfaces);
+			if (inside)
+				break;
+		}
+	}
+
+	if (1 == end_trg)
 		add_subface_in_closest_trg(membank, intmsh, faces,
 					   face_id, subfaces);
 
@@ -474,6 +492,33 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	}
 	
 	return N_int;
+}
+
+static bool add_subface_if_its_inside_trg(nb_membank_t *membank,
+					  const nb_mesh2D_t *intmsh,
+					  const uint32_t *trg_adj,
+					  face_t **faces, uint32_t elem_trg_id,
+					  uint32_t face_id,
+					  nb_container_t *subfaces)
+{
+	face_t *face = faces[face_id];
+	uint32_t trg_id = trg_adj[elem_trg_id];
+
+	double t1[2], t2[2], t3[2];
+	load_triangle_points(intmsh, trg_id, t1, t2, t3);
+
+	bool s1_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x1);
+	bool s2_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x2);
+
+	if (s1_in && s2_in) {
+		subface_t *subface = nb_membank_allocate_mem(membank);
+		subface->N_int = 0;
+		memcpy(subface->x1, face->x1, 2 * sizeof(*(face->x1)) );
+		memcpy(subface->x2, face->x2, 2 * sizeof(*(face->x2)) );
+		subface->trg_id = trg_id;
+		nb_container_insert(subfaces, subface);
+	}
+	return s1_in && s2_in;
 }
 
 static void add_subface_in_closest_trg(nb_membank_t *membank,
@@ -690,11 +735,11 @@ static void integrate_Kf(const nb_mesh2D_t *const part,
 	load_triangle_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double iJ[4];
-	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
+	subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
-	double factor = lfn * detJ * params2D->thickness;
+	double factor = lf * params2D->thickness;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
@@ -914,10 +959,6 @@ static int solver(const nb_sparse_t *const A,
 	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 			      N * sizeof(double));
 
-	double fnorm = nb_sparse_get_frobenius_norm(A);/* TEMPORAL */
-	double asym = nb_sparse_get_asym(A);            /* TEMPORAL */
-	printf("-- B norm: %e : %e\n", fnorm, asym);    /* TEMPORAL */
-
 	get_permutation(A, perm, iperm);
 
 	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
@@ -1028,20 +1069,26 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const part,
 	load_triangle_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double iJ[4];
-	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
+	subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
-	double factor = lfn * detJ;
+	double factor = lf;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
 		double grad[2];
 		subface_get_grad(iJ, grad_xi, grad);
-		strain[face_id * 3] += factor * (grad[0] * disp[i * 2]);
-		strain[face_id*3+1] += factor * (grad[1] * disp[i*2+1]);
-		strain[face_id*3+2] += factor * (grad[1] * disp[i * 2] +
-						 grad[0] * disp[i*2+1]);
+
+		uint32_t elem_id =
+			nb_mesh2D_elem_get_adj(intmsh, subface->trg_id, i);
+
+		double u = disp[elem_id * 2];
+		double v = disp[elem_id * 2 + 1];
+
+		strain[face_id * 3] += factor * (grad[0] * u);
+		strain[face_id*3+1] += factor * (grad[1] * v);
+		strain[face_id*3+2] += factor * (grad[1] * u + grad[0] * v);
 	}
 }
 
@@ -1065,11 +1112,14 @@ static void get_pairwise_strain(face_t **faces, uint32_t face_id,
 			face_get_grad_pairwise(c1, c2, grad);
 		else
 			face_get_grad_pairwise(c2, c1, grad);
-		uint32_t id = face->elems[i];
-		strain[face_id * 3] += lf * (grad[0] * disp[id * 2]);
-		strain[face_id*3+1] += lf * (grad[1] * disp[id*2+1]);
-		strain[face_id*3+2] += lf * (grad[1] * disp[id * 2] +
-					     grad[0] * disp[id*2+1]);
+
+		uint32_t elem_id = face->elems[i];
+		double u = disp[elem_id * 2];
+		double v = disp[elem_id * 2 + 1];
+
+		strain[face_id * 3] += lf * (grad[0] * u);
+		strain[face_id*3+1] += lf * (grad[1] * v);
+		strain[face_id*3+2] += lf * (grad[1] * u + grad[0] * v);
 	}
 }
 
