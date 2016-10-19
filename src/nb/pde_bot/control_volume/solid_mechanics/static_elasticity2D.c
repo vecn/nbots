@@ -735,12 +735,11 @@ static void integrate_Kf(const nb_mesh2D_t *const part,
 	load_triangle_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double iJ[4];
-	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
+	subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
-	lfn = nb_utils2D_get_dist(subface->x1, subface->x2);/**/
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
-	double factor = lfn * detJ * params2D->thickness;
+	double factor = lf * params2D->thickness;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
@@ -1171,12 +1170,11 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const part,
 	load_triangle_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double iJ[4];
-	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
+	subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
-	lfn = nb_utils2D_get_dist(subface->x1, subface->x2);/**/
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
-	double factor = lfn * detJ;
+	double factor = lf;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(i, grad_xi);
@@ -1207,14 +1205,10 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const part,
 		double u = disp[elem_id * 2];
 		double v = disp[elem_id * 2 + 1];
 
-		__strain[0] += factor * (grad[0] * u);
-		__strain[1] += factor * (grad[1] * v);
-		__strain[2] += factor * (grad[1] * u + grad[0] * v);
+		__strain[0] += (grad[0] * u);
+		__strain[1] += (grad[1] * v);
+		__strain[2] += (grad[1] * u + grad[0] * v);
 	}
-	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
-	__strain[0] /= lf;
-	__strain[1] /= lf;
-	__strain[2] /= lf;
 	double D[4] = {1.098901e+08, 3.296703e+07, 1.098901e+08, 3.846154e+07};
 	double __stress[3];	
 	__stress[0] = (__strain[0] * D[0] + __strain[1] * D[1]);
