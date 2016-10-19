@@ -494,7 +494,7 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	
 	if (0 < N_int) {
 		subface_t *subface = nb_membank_allocate_mem(membank);
-		subface->N_int = N_int;
+		subface->pairwise = false;
 		memcpy(subface->x1, xp, 2 * sizeof(*xp));
 		memcpy(subface->x2, &(xp[2]), 2 * sizeof(*xp));
 		subface->trg_id = trg_id;

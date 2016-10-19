@@ -3,7 +3,6 @@
 I wrote this 'Quick-start guide' as a friendly introduction to development conventions, coding style and other caveats of this library.
 I hope you find it useful.
 
-
 ## Coding style
 
 Every one has his own programming style and that is fine, but when working in a sustainable project, it is desirable to follow some coding style and conventions, in order to make the project readable and maintainable for everyone. We follow most of the rules used by the linux kernel [coding style](https://www.kernel.org/doc/Documentation/CodingStyle)
@@ -20,6 +19,7 @@ Since the library implementation begins in 2009, old code does not follow all th
     * 8 chars per indentation level
       (improves readability; discussed on the CodingStyle document cited).
     * Use 3 control statements at most per function (for, if, while).
+    * Use nouns for classes/structures and verbs for functions.
 - About comments
     * All comments must be C-style, that is  `/* comment here */`,
       avoid using C++ single line comments `// like this comment`.
@@ -76,6 +76,11 @@ To build the library run `gradle assemble`.
 To build the library and execute the unit tests run `gradle build`.
 If you do not have **gradle** installed in your system, use the wrapper, `./gradlew.sh` on unix/like systems or `gradlew.bat` on windows.
 
+## Three laws of Test Driven Development (TDD)
+1. You are not allowed to write any production code until you have first written a failing unit test.
+2. You are not allowed to write more of a unit test than is sufficient to fail (and not compiling is failing).
+3.  You are not allowed to write more production code that is sufficient to pass the currently failing unit test.
+
 ## Final comments
 - This library has been tested on Windows, Max OS, Linux and Android.
 - We use CUNIT to perform the unit tests via Gradle.
@@ -83,6 +88,8 @@ If you do not have **gradle** installed in your system, use the wrapper, `./grad
 - Please read the book 'Clean code' written by Robert Cecil Martin
   (and if possible read also 'Clean coder')
 
+> "Getting software to work and getting software clean are two different activities"
+Robert C. Martin
 
 Best regards,
 
