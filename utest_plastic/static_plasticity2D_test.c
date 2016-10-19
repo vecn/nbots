@@ -10,8 +10,12 @@
 #include "nb/cfreader_cat.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
+#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/static_plasticity2D.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/set_bconditions.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/pipeline.h"
 
-#define INPUTS_DIR "../../../../utest_plastic/static_plasticity2D_inputs"
+#define INPUTS_DIR "C:/Users/David/Desktop/nbots/utest_plastic/static_plasticity2D_inputs"
 
 #define POW2(a) ((a)*(a))
 
@@ -19,41 +23,24 @@ typedef struct {
 	double *disp;
 	double *strain;
 	double *stress;
+    uint32_t N_vtx;
+	uint32_t N_trg;
 } plastic_results_t;
 
 static void test_beam_cantilever(void);
 static void check_beam_cantilever(const void *part,
 				  const plastic_results_t *results);
-static void test_plate_with_hole(void);
-static void check_plate_with_hole(const void *part,
-				  const results_t *results);
-static double get_error_avg_pwh(const void *part,
-				const nb_fem_elem_t* elem,
-				const double *stress);
-static void get_cartesian_gpoint(uint32_t id_elem, int8_t id_gp,
-				 const void *part,
-				 const nb_fem_elem_t* elem,
-				 double gp[2]);
-static void get_analytic_stress_pwh(double x, double y, double stress[3]);
-static void modify_bcond_pwh(const void *part,
-			     nb_bcond_t *bcond);
-static void pwh_DC_SGM_cond(double *x, double t, double *out);
-static void pwh_BC_SGM_cond(double *x, double t, double *out);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const void*,
-					   const results_t*),
-		     void (*modify_bcond)(const void*,
-					  nb_bcond_t*)/* Can be NULL */);
+					   const plastic_results_t*));
 static int simulate(const char *problem_data,
-		    nb_mesh2D_t *part, results_t *results,
-		    uint32_t N_vtx,
-		    void (*modify_bcond)(const void*,
-					     nb_bcond_t*)/* Can be NULL */);
+		    nb_mesh2D_t *part, plastic_results_t *results,
+		    uint32_t N_vtx);
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
 
-static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg);
-static void results_finish(results_t *results);
+static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
+static void results_finish(plastic_results_t *results);
 static int read_problem_data
 		(const char* filename,
 		 nb_model_t *model,
@@ -63,30 +50,58 @@ static int read_problem_data
 		 nb_analysis2D_params *params2D);
 static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model);
 static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
-static int read_elasticity2D_params(nb_cfreader_t *cfreader,
+static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
+int main() {
+
+    test_beam_cantilever();
+
+    return 0;
+}
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000,
-		 check_beam_cantilever, NULL);
+        run_test("%s/plastic_beam_cantilever.txt", 1000,
+        check_beam_cantilever);
 }
-
 static void check_beam_cantilever(const void *part,
-				  const results_t *results)
+				  const plastic_results_t *results)
 {
     /* Hacer el check con tensiones porque aún no he conseguido los desplazamientos. Tensiones en X e Y */
-	double max_disp = 0;
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
-	for (uint32_t i = 0; i < N_nodes; i++) {
-		double disp2 = POW2(results->disp[i * 2]) +
-			POW2(results->disp[i*2+1]);
-		if (max_disp < disp2)
-			max_disp = disp2;
+	double max_X_stress = 0;
+	double max_Y_stress = 0;
+	double max_XY_stress = 0;
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
+	for (uint32_t i = 0; i < N_elem; i++) {
+        double X_stress = results->stress[3*i];
+        double Y_stress = results->stress[3*i+1];
+        double XY_stress = results->stress[3*i+2];
+		if (max_X_stress < X_stress)
+			max_X_stress = X_stress;
+		if (max_Y_stress < Y_stress)
+			max_Y_stress = Y_stress;
+		if (max_XY_stress < XY_stress)
+			max_XY_stress = XY_stress;
 	}
-	max_disp = sqrt(max_disp);
-	CU_ASSERT(fabs(max_disp - 1.00701e-1) < 1e-6);
+    if (abs(max_X_stress - 1.0836e9) < 1e-2) {
+        printf("The maximum Sx is inside tolerance");
+    }
+    else {
+        printf("Error in Sx! It's value is: %lf \n", max_X_stress);
+    }
+	if (abs(max_Y_stress - 7.2167e8) < 1e-2) {
+        printf("The maximum Sy is inside tolerance");
+    }
+    else {
+        printf("Error in Sy! It's value is: %lf \n", max_Y_stress);
+    }
+    if (abs(max_XY_stress - 3.6373e7) < 1e-2) {
+        printf("The maximum Sxy is inside tolerance");
+    }
+    else {
+        printf("Error in Sxy! It's value is: %lf \n", max_XY_stress);
+    }
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
@@ -94,24 +109,23 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					   const plastic_results_t*))
 {
 	plastic_results_t results;
-	nb_mesh2D_t *part = nb_allocate_on_stack(nb_partition_get_memsize(NB_TRIAN));
-	nb_partition_init(part, NB_TRIAN);
+	nb_mesh2D_t *part = nb_allocate_on_stack(nb_mesh2D_get_memsize(NB_TRIAN));
+	nb_mesh2D_init(part, NB_TRIAN);
 
 	int status = simulate(problem_data, part, &results, N_vtx);
 
-	CU_ASSERT(0 == status);
-
+	if (status = 0) {
+        printf("The simulation ran properly. \n");
+	}
 	check_results(part, &results);
 
-	nb_partition_finish(part);
+	nb_mesh2D_finish(part);
 	results_finish(&results);
 }
 
 static int simulate(const char *problem_data,
-		    nb_mesh2D_t *part, results_t *results,
-		    uint32_t N_vtx,
-		    void (*modify_bcond)(const void*,
-					 nb_bcond_t*)/* Can be NULL */)
+		    nb_mesh2D_t *part, plastic_results_t *results,
+		    uint32_t N_vtx)
 {
 	int status = 1;
 	nb_model_t* model = nb_allocate_on_stack(nb_model_get_memsize());
@@ -129,9 +143,6 @@ static int simulate(const char *problem_data,
 		read_problem_data(input, model, bcond, material,
 				  &analysis2D, &params2D);
 
-	if (NULL != modify_bcond)
-		modify_bcond(part, bcond);
-
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
 
@@ -139,26 +150,21 @@ static int simulate(const char *problem_data,
 
 	nb_fem_elem_t* elem = nb_fem_elem_create(NB_TRG_LINEAR);
 
-	uint32_t N_nodes = nb_partition_get_N_nodes(part);
-	uint32_t N_elems = nb_partition_get_N_elems(part);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
-
-	int status_fem =
-		nb_fem_compute_2D_Solid_Mechanics(part, elem,
-						   material, bcond,
-						   false, NULL,
-						   analysis2D,
-						   &params2D, NULL,
-						   results->disp,
-						   results->strain);
+	uint32_t N_force_steps = 100;
+	double accepted_tol = 1e-3;
+	double gravity[2] = {0, -9.81};
+    int status_fem = fem_compute_plastic_2D_Solid_Mechanics (part, elem, material,
+                                                             bcond, true, gravity,
+                                                             analysis2D, &params2D, NULL, results->strain, results->stress,
+                                                             results->disp, N_force_steps, nb_material_get_yield_stress(material),
+                                                             accepted_tol);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
-
-	nb_fem_compute_stress_from_strain(N_elems, elem, material,
-					   analysis2D, results->strain, NULL,
-					   results->stress);
-
 	status = 0;
+
 CLEANUP_FEM:
 	nb_fem_elem_destroy(elem);
 CLEANUP_INPUT:
@@ -172,22 +178,22 @@ CLEANUP_INPUT:
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx)
 {
-	uint32_t mesh_memsize = nb_mesh_get_memsize();
-	nb_mesh_t* mesh = nb_allocate_on_stack(mesh_memsize);
-	nb_mesh_init(mesh);
-	nb_mesh_set_size_constraint(mesh,
+	uint32_t mesh_memsize = nb_tessellator2D_get_memsize();
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(mesh_memsize);
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_set_size_constraint(mesh,
 				     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
 				     N_vtx);
-	nb_mesh_set_geometric_constraint(mesh,
+	nb_tessellator2D_set_geometric_constraint(mesh,
 					  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,
 					  NB_GEOMETRIC_TOL);
-	nb_mesh_generate_from_model(mesh, model);
+	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_partition_load_from_mesh(part, mesh);
-	nb_mesh_finish(mesh);
+	nb_mesh2D_load_from_mesh(part, mesh);
+	nb_tessellator2D_finish(mesh);
 }
 
-static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)
+static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg)
 {
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
@@ -201,7 +207,7 @@ static void results_init(results_t *results, uint32_t N_vtx, uint32_t N_trg)
 	results->stress = (void*)(memblock + size_disp + size_strain);
 }
 
-static inline void results_finish(results_t *results)
+static inline void results_finish(plastic_results_t *results)
 {
 	nb_free_mem(results->disp);
 }
@@ -237,7 +243,7 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_elasticity2D_params(cfreader, analysis2D, params2D)) {
+	if (0 != read_plasticity2D_params(cfreader, analysis2D, params2D)) {
 		printf("\nERROR: Reading numerical params in %s.\n",
 		       filename);
 		goto EXIT;
@@ -251,7 +257,7 @@ EXIT:
 static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 {
 	int status = 1;
-	/* Read modele vertices */
+	/* Read model vertices */
 	uint32_t N = 0;
 	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto EXIT;
@@ -279,31 +285,10 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 		if (0 != nb_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
 	}
-	/* Read model holes */
-	N = 0;
-	if (0 != nb_cfreader_read_uint(cfreader, &N))
-		goto CLEANUP_SEGMENTS;
-	model->H = N;
-
-	model->holes = NULL;
-	if (0 < model->H) {
-		model->holes = malloc(2 * model->H * sizeof(*(model->holes)));
-		for (uint32_t i = 0; i < 2 * model->H; i++) {
-			if (0 != nb_cfreader_read_double(cfreader,
-							  &(model->holes[i])))
-				goto CLEANUP_HOLES;
-		}
-	}
 
 	status = 0;
 	goto EXIT;
 
-CLEANUP_HOLES:
-	if (0 < model->H) {
-		nb_free_mem(model->holes);
-		model->H = 0;
-		model->holes = NULL;
-	}
 CLEANUP_SEGMENTS:
 	model->M = 0;
 	nb_free_mem(model->edge);
@@ -330,28 +315,23 @@ static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat)
 		goto EXIT;
 	nb_material_set_elasticity_module(mat, elasticity_module);
 
-	double fracture_energy;
-	if (0 != nb_cfreader_read_double(cfreader, &fracture_energy))
+	double plasticity_module;
+	if (0 != nb_cfreader_read_double(cfreader, &plasticity_module))
 		goto EXIT;
-	nb_material_set_fracture_energy(mat, fracture_energy);
+	nb_material_set_plasticity_module(mat, plasticity_module);
 
-	double compression_limit_stress;
-	if (0 != nb_cfreader_read_double(cfreader, &compression_limit_stress))
+	double yield_stress;
+	if (0 != nb_cfreader_read_double(cfreader, &yield_stress))
 		goto EXIT;
-	nb_material_set_compression_limit_stress(mat,
-						      compression_limit_stress);
+	nb_material_set_yield_stress(mat, yield_stress);
 
-	double traction_limit_stress;
-	if (0 != nb_cfreader_read_double(cfreader, &traction_limit_stress))
-		goto EXIT;
-	nb_material_set_traction_limit_stress(mat, traction_limit_stress);
 	status = 0;
 EXIT:
 	return status;
 }
 
 
-static int read_elasticity2D_params(nb_cfreader_t *cfreader,
+static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D)
 {

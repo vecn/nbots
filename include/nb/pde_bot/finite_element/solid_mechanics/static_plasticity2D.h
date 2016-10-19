@@ -56,5 +56,21 @@ void nb_fem_compute_plastic_stress_from_strain
                 nb_plastified_analysis2D *elem_regime);
 void residual_force(double *res_force, double *dF, double *FI, uint32_t N_nod);
 int plastic_solver(const nb_sparse_t *const A, const double *const b, double* x);
+int fem_compute_plastic_2D_Solid_Mechanics
+			(const nb_mesh2D_t *const part,
+			 const nb_fem_elem_t *const elemtype,
+			 const nb_material_t *const material,
+			 const nb_bcond_t *const bcond,
+			 bool enable_self_weight,
+			 double gravity[2],
+			 nb_analysis2D_t analysis2D,
+			 nb_analysis2D_params *params2D,
+			 const bool *elements_enabled, /* NULL to enable all */
+			 double *total_strain, /* Output*/
+			 double *stress,
+			 double *displacement, /* Output, just the last computed plastic displacement */
+			 double N_force_steps,
+			 double yield_stress,
+			 double accepted_tol);
 
 #endif // STATIC_PLASTICITY2D_H_INCLUDED

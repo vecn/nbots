@@ -20,8 +20,6 @@
  1 2						#
  2 3						#
  3 0						#
-# Number of holes				#
- 0						#
 #-----------------------------------------------#
 
 #-------------- Boundary conditions ------------#
@@ -51,7 +49,7 @@
 
 #---------------- Analysis ---------------------#
 #--- Does the analysis uses plane stress?-------#
-# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+# (zero: P stress, one: P strain, two: S.Rev)	#
  0						#
 # Analysis params (Thickness axis of rev)       #
  0.2	                                        #
