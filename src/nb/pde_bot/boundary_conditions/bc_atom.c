@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "bc_atom.h"
+#include "nb/memory_bot.h"
 
 static void init_data_ptr(void *bc_ptr, uint8_t N_dof);
 static void* allocate_bc_atom(uint8_t N_dof);
@@ -66,7 +67,7 @@ void* bc_atom_clone(const void *bc_ptr, uint8_t N_dof)
 {
 	void *bc = allocate_bc_atom(N_dof);
 	bc_atom_copy(bc, bc_ptr, N_dof);
-	return bc;	
+	return bc;
 }
 
 void bc_atom_destroy(void *bc_ptr)

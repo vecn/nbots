@@ -13,4 +13,9 @@ typedef struct {
 	char revolution_coordinate; /* 0: x, 1: y */
 } nb_analysis2D_params;
 
+typedef enum {
+    NB_ELASTIC,
+    NB_PLASTIC
+} nb_plastified_analysis2D;
+
 #endif

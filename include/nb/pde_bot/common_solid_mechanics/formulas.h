@@ -6,12 +6,16 @@
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 
-void nb_pde_get_lame_params(double lame[2], 
+void nb_pde_get_lame_params(double lame[2],
 			    const nb_material_t *material,
 			    nb_analysis2D_t analysis2D);
-void nb_pde_get_constitutive_matrix(double D[4], 
+void nb_pde_get_constitutive_matrix(double D[4],
 				    const nb_material_t *material,
 				    nb_analysis2D_t analysis2D);
+void nb_pde_get_plastified_constitutive_matrix(double D[4],
+				    const nb_material_t *material,
+				    nb_analysis2D_t analysis2D,
+				    nb_plastified_analysis2D elem_regime);
 double nb_pde_get_vm_stress(double sxx, double syy, double sxy);
 
 void nb_pde_get_main_stress(double sxx, double syy, double sxy,

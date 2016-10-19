@@ -26,7 +26,7 @@
 
 #define POW2(a) ((a)*(a))
 
-static int solver(const nb_sparse_t *const A,
+int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x);
 
 int nb_fem_compute_2D_Solid_Mechanics
@@ -66,7 +66,7 @@ int nb_fem_compute_2D_Solid_Mechanics
 
 	nb_fem_set_bconditions(part, K, F, bcond, 1.0);
 
-  
+
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
 		status = 2;
@@ -81,7 +81,7 @@ CLEANUP_LINEAR_SYSTEM:
 	return status;
 }
 
-static int solver(const nb_sparse_t *const A,
+int solver(const nb_sparse_t *const A,
 		  const double *const b, double* x)
 {
 	uint32_t N = nb_sparse_get_size(A);
