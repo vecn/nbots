@@ -738,6 +738,7 @@ static void integrate_Kf(const nb_mesh2D_t *const part,
 	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
 	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
+	lfn = nb_utils2D_get_dist(subface->x1, subface->x2);/**/
 
 	double factor = lfn * detJ * params2D->thickness;
 	for (uint8_t i = 0; i < 3; i++) {
@@ -1068,22 +1069,21 @@ static void TEMPORAL3(const void *part, const double analytic_stress[3],
 		      const double stress[3], uint32_t face_id)
 {
 	FILE *fp = fopen("../../../stress_on.txt", "a");  /* TEMPORAL */
-	double nf[2];                                  /* TEMPORAL */
-	nb_mesh2D_edge_get_normal(part, face_id, nf);  /* TEMPORAL */
-	uint32_t id = 0;                         /* TEMPORAL */
+	double nf[2];                                    /* TEMPORAL */
+	nb_mesh2D_edge_get_normal(part, face_id, nf);   /* TEMPORAL */
 	double error[15];                              /* TEMPORAL */
-	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+	error[0] = fabs((analytic_stress[0] - stress[0]) /       /**/
 			CHECK_ZERO(analytic_stress[0]));         /**/
-	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+	error[1] = fabs((analytic_stress[1] - stress[1]) /       /**/
 			CHECK_ZERO(analytic_stress[1]));         /**/
-	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+	error[2] = fabs((analytic_stress[2] - stress[2]) /       /**/
 			CHECK_ZERO(analytic_stress[2]));         /**/
 	double Sn[2];                                  /* TEMPORAL */
-	Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
-	Sn[1] = 0.5*stress[id*3+2]*nf[0] + stress[id*3+1]*nf[1]; /**/
+	Sn[0] = stress[0]*nf[0] + 0.5*stress[2]*nf[1];           /**/
+	Sn[1] = 0.5*stress[2]*nf[0] + stress[1]*nf[1];           /**/
 	double St[2];                                  /* TEMPORAL */
-	St[0] = stress[id * 3]*nf[1] - 0.5*stress[id*3+2]*nf[0]; /**/
-	St[1] = 0.5*stress[id*3+2]*nf[1] - stress[id*3+1]*nf[0]; /**/
+	St[0] = stress[0]*nf[1] - 0.5*stress[2]*nf[0];           /**/
+	St[1] = 0.5*stress[2]*nf[1] - stress[1]*nf[0];           /**/
 	double mSn = sqrt(POW2(Sn[0]) + POW2(Sn[1]));  /* TEMPORAL */
 	double mSt = sqrt(POW2(St[0]) + POW2(St[1]));  /* TEMPORAL */
 	double Snn = Sn[0] * nf[0] + Sn[1] * nf[1];    /* TEMPORAL */
@@ -1091,8 +1091,8 @@ static void TEMPORAL3(const void *part, const double analytic_stress[3],
 	double Stn = St[0] * nf[0] + St[1] * nf[1];    /* TEMPORAL */
 	double Stt = St[0] * nf[1] - St[1] * nf[0];    /* TEMPORAL */
 	double main_s[2];                                        /**/
-	nb_pde_get_main_stress(stress[id*3], stress[id*3+1],     /**/
-			       stress[id*3+2], main_s);          /**/
+	nb_pde_get_main_stress(stress[0], stress[1],             /**/
+			       stress[2], main_s);               /**/
 	double An[2];                                  /* TEMPORAL */
 	An[0] = analytic_stress[0]*nf[0] +                       /**/
 		0.5 * analytic_stress[2]*nf[1];                  /**/
@@ -1117,22 +1117,22 @@ static void TEMPORAL3(const void *part, const double analytic_stress[3],
 	error[4] = fabs((An[1] - Sn[1]) / CHECK_ZERO(An[1]));    /**/
 	error[5] = fabs((At[0] - St[0]) / CHECK_ZERO(At[0]));    /**/
 	error[6] = fabs((At[1] - St[1]) / CHECK_ZERO(At[1]));    /**/
-	error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));		 /**/
-	error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));		 /**/
-	error[9] = fabs((Ann - Snn)/CHECK_ZERO(Ann));		 /**/
-	error[10] = fabs((Ant - Snt)/CHECK_ZERO(Ant));		 /**/
-	error[11] = fabs((Atn - Stn)/CHECK_ZERO(Atn));		 /**/
-	error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));           /**/
-	error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));
-	error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));
+	error[7] = fabs((mAn - mSn)/CHECK_ZERO(mAn));		  /**/
+	error[8] = fabs((mAt - mSt)/CHECK_ZERO(mAt));		   /**/
+	error[9] = fabs((Ann - Snn)/CHECK_ZERO(Ann));		    /**/
+	error[10] = fabs((Ant - Snt)/CHECK_ZERO(Ant));		     /**/
+	error[11] = fabs((Atn - Stn)/CHECK_ZERO(Atn));		      /**/
+	error[12] = fabs((Att - Stt)/CHECK_ZERO(Att));                 /**/
+	error[13] = fabs((main_a[0] - main_s[0])/CHECK_ZERO(main_a[0]));/**/
+	error[14] = fabs((main_a[1] - main_s[1])/CHECK_ZERO(main_a[1]));/**/
 	fprintf(fp, "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
 		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e " \
-		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n", /**/
-		error[0], error[1], error[2], error[3], error[4], /**/
-		error[5], error[6], error[7], error[8], /* TEMPORAL */
+		"%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n",    /**/
+		error[0], error[1], error[2], error[3], error[4],   /**/
+		error[5], error[6], error[7], error[8],  /* TEMPORAL */
 		error[9], error[10], error[11], error[12],        /**/
 		error[13], error[14],				  /**/
-		stress[id*3], stress[id*3+1], stress[id*3+2],     /**/
+		stress[0], stress[1], stress[2],                  /**/
 		Sn[0], Sn[1], St[0], St[1], mSn, mSt, Snn, Snt,	  /**/
 		Stn, Stt, main_s[0], main_s[1],                   /**/
 		analytic_stress[0], analytic_stress[1], /* TEMPORAL */
@@ -1174,6 +1174,7 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const part,
 	double detJ = subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
 	double lfn = subface_get_normalized_length(subface, t1, t2, t3);
+	lfn = nb_utils2D_get_dist(subface->x1, subface->x2);/**/
 
 	double factor = lfn * detJ;
 	for (uint8_t i = 0; i < 3; i++) {
@@ -1206,23 +1207,24 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const part,
 		double u = disp[elem_id * 2];
 		double v = disp[elem_id * 2 + 1];
 
-		__strain[0] += (grad[0] * u);/* AQUI VOY */
-		__strain[1] += (grad[1] * v);
-		__strain[2] += (grad[1] * u + grad[0] * v);
+		__strain[0] += factor * (grad[0] * u);
+		__strain[1] += factor * (grad[1] * v);
+		__strain[2] += factor * (grad[1] * u + grad[0] * v);
 	}
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
+	__strain[0] /= lf;
+	__strain[1] /= lf;
+	__strain[2] /= lf;
 	double D[4] = {1.098901e+08, 3.296703e+07, 1.098901e+08, 3.846154e+07};
-	//nb_pde_get_constitutive_matrix(D, material, analysis2D);
 	double __stress[3];	
-	__stress[0] = (__strain[0] * D[0] +
-		       __strain[1] * D[1]);
-	__stress[1] = (__strain[0] * D[1] +
-		       __strain[1] * D[2]);
-	__stress[2] = __strain[2] * D[3];
+	__stress[0] = (__strain[0] * D[0] + __strain[1] * D[1]);
+	__stress[1] = (__strain[0] * D[1] + __strain[1] * D[2]);
+	__stress[2] =  __strain[2] * D[3];
 	double __astress[3];
 	double x = 0.5 * (subface->x1[0] + subface->x2[0]);
 	double y = 0.5 * (subface->x1[1] + subface->x2[1]);
 	TEMPORAL1(x, y, __astress);
-	TEMPORAL3(part, __stress, __astress, face_id);
+	TEMPORAL3(part, __astress, __stress, face_id);
 }
 
 static void get_pairwise_strain(face_t **faces, uint32_t face_id,

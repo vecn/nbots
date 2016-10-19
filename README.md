@@ -25,12 +25,12 @@ A numerical bot is an interdependent module which perform several related numeri
 | Math bot                | Standard numerical procedures          |
 | Graphics bot            | 2D-vector drawing functions            |
 | Graph bot               | Graph-specific routines                |
-| Geometric bot           | Implements geometric algorithms        |
-| Image bot               | Image processing routines and filters  |
 | Solver bot              | Linear algebra operations              |
 | Optimization bot        | Constrained and unconstrained optim    |
-| Metaheuristics bot      | Black-box and combinatorial optim      |
 | Statistics bot          | Pseudo-random number generators        |
+| Geometric bot           | Implements geometric algorithms        |
+| Image bot               | Image processing routines and filters  |
+| Metaheuristics bot      | Black-box and combinatorial optim      |
 | PDE bot                 | Solve PDE using FEM & CVFA             |
 | Topopt bot              | Topology optimization problems         |
 
@@ -39,14 +39,19 @@ A numerical bot is an interdependent module which perform several related numeri
 ### Math bot
 ### Graphics bot
 ### Graph bot
-### Geometric bot
-### Image bot
 ### Solver bot
 ### Optimization bot*
-### Metaheuristics bot*
 ### Statistics bot
+### Geometric bot
+### Image bot
+### Metaheuristics bot*
 ### PDE bot
 ### Topopt bot*
+
+## Environment variables
+|   Var name  | Bot |    Description      |
+|-------------|-----|---------------------|
+|NB_FONTS_DIR | g2d | True-type fonts dir |
 
 ## Acknowledges
 

@@ -9,12 +9,12 @@
 |mat| Math bot                | Standard numerical procedures          |
 |g2d| Graphics bot            | 2D-vector drawing functions            |
 |grp| Graph bot               | Graph-specific routines                |
-|geo| Geometric bot           | Implements geometric algorithms        |
-|img| Image bot               | Image processing routines and filters  |
 |sol| Solver bot              | Linear algebra operations              |
 |opt| Optimization bot        | Constrained and unconstrained optim    |
-|mhe| Metaheuristics bot      | Black-box and combinatorial optim      |
 |sta| Statistics bot          | Pseudo-random number generators        |
+|geo| Geometric bot           | Implements geometric algorithms        |
+|img| Image bot               | Image processing routines and filters  |
+|mhe| Metaheuristics bot      | Black-box and combinatorial optim      |
 |pde| PDE bot                 | Solve PDE using FEM & CVFA             |
 |top| Topopt bot              | Topology optimization problems         |
 
@@ -25,28 +25,28 @@
 |----|-------------------|--------------------|-----------------------|
 |vic |Victor E. Cardoso  | @vecn              | victorc@cimat.mx      |
 |mvf |Miguel Vargas-Felix| @MiguelVargasFelix | miguelvargas@cimat.mx |
-|jol |Jorge Lopez        | @j1                | jorge.lopez@cimat.mx  |
+|jol |Jorge Lopez        | @mcjorgelopez      | jorge.lopez@cimat.mx  |
 |dal |Dora E. Alvarado   | @d1                | dora.alvarado@cimat.mx|
 |mik |Miguel Angel Ochoa | @mo                | miguel.ochoa@cimat.mx |
 |ger |J. Gerardo Fuentes | @jg                | juan.fuentes@cimat.mx |
 
 ## Contributions
 
-| Dev / Bot | mem | cnt | mat | g2d | grp | geo | img | sol | opt | mhe | sta | pde | top |
+| Dev / Bot | mem | cnt | mat | g2d | grp | sol | opt | sta | geo | img | mhe | pde | top |
 |:---------:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-|  **vic**  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |  x  |  x  |     |
-|  **mvf**  |  x  |     |  x  |     |  x  |     |     |  x  |     |     |     |  x  |     |
-|  **jol**  |     |     |     |     |     |  x  |     |     |     |     |     |     |     |
-|  **dal**  |     |     |     |     |     |     |  x  |     |     |     |     |     |     |
-|  **mik**  |     |     |     |     |     |     |     |     |     |  x  |     |     |  x  |
+|  **vic**  |  x  |  x  |  x  |  x  |  x  |  x  |     |  x  |  x  |  x  |     |  x  |     |
+|  **mvf**  |  x  |     |  x  |     |  x  |  x  |     |     |     |     |     |  x  |     |
+|  **jol**  |     |     |     |     |     |     |     |     |  x  |     |     |     |     |
+|  **dal**  |     |     |     |     |     |     |     |     |     |  x  |     |     |     |
+|  **mik**  |     |     |     |     |     |     |  x  |     |     |     |     |     |  x  |
 |  **ger**  |     |     |     |     |     |     |     |     |     |     |     |  x  |     |
-
 
 ## Detailed contributions
 
 | Project task                      | Bot | Developers |
 |-----------------------------------|-----|------------|
 |Bots integration                   | all |vic         |
+|System macros                      | all |mvf         |
 |Container bot                      | cnt |vic         |
 |2D Delaunay                        | geo |vic         |
 |2D Alpha-complex                   | geo |vic         |
@@ -55,7 +55,6 @@
 |Approximated minimum degree        | grp |vic         |
 |Spectral bisection                 | grp |vic         |
 |Rasterizer                         | g2d |vic         |
-|System macros                      | all |mvf         |
 |Par parse solvers and structures   | sol |mvf, vic    |
 |Domain segmentation                | grp |mvf         |
 |Nested dissection                  | grp |mvf         |

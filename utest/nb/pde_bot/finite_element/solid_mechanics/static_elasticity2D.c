@@ -155,13 +155,13 @@ static double get_error_avg_pwh(const void *part,
 			uint32_t id = i * N_gp + p;
 
 			double vm_stress =
-			  nb_pde_get_vm_stress(stress[id * 3],
-					       stress[id*3+1],
-					       stress[id*3+2]);
+				nb_pde_get_vm_stress(stress[id * 3],
+						     stress[id*3+1],
+						     stress[id*3+2]);
 			double analytic_vm_stress =
-			  nb_pde_get_vm_stress(analytic_stress[0],
-					       analytic_stress[1],
-					       analytic_stress[2]);
+				nb_pde_get_vm_stress(analytic_stress[0],
+						     analytic_stress[1],
+						     analytic_stress[2]);
 
 			double vm_error = fabs(1.0 - vm_stress /
 					       analytic_vm_stress);
