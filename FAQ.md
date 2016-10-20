@@ -67,20 +67,24 @@ The main reasons are:
 ## PDE Bot
 
 ### What numerical method are used to solve PDE?
+
 - Finite Element Method.
 - Control Volume Function Approximation (Finite Volume).
 - Discontinuous Galerkin FEM.
 
 ### What kind of differential equations can be solved?
 Current implementations:
+
 - Stress analysis (solid Mechanics, elasticity).
 
 Coming soon:
+
 - Laplace/Poisson equation (heat analysis, diffusive models).
 - Maxwell equations (electromagnetic analysis).
 
 ### How to define and run customized FEM simulations?
 Please choose a tutorial:
+
 - [Stress analysis](tutorials/stress_analysis.md)
 - Heat analysis
 - Electromagnetic analysis
