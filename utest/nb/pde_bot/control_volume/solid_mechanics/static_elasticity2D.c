@@ -83,8 +83,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)

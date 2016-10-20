@@ -28,7 +28,7 @@
 |jol |Jorge Lopez        | @mcjorgelopez      |
 |dal |Dora E. Alvarado   | @d1                |
 |mik |Miguel Angel Ochoa | @miguel-ochoa      |
-|ger |J. Gerardo Fuentes | @jg                |
+|ger |J. Gerardo Fuentes | @Almeida88         |
 |eot |Ernesto Ortega     | @netohomes         |
 
 ## Contributions
