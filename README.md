@@ -8,7 +8,11 @@ NBOTS is the short name for 'Numerical Bots', since the library is formed by sev
 
 ## Compilation
 
-Run `gradle assemble` or use the shell script `./gradlew assemble` (`gradlew.bat` for Windows) if gradle is not installed in your system.
+Run the script
+
+`./gradlew assemble`
+
+Use `gradlew.bat` if you are on Windows.
 
 ## Numerical bots
 
@@ -40,13 +44,13 @@ A numerical bot is an interdependent module which perform several related numeri
 ### Graphics bot
 ### Graph bot
 ### Solver bot
-### Optimization bot*
+### Optimization bot
 ### Statistics bot
 ### Geometric bot
 ### Image bot
-### Metaheuristics bot*
+### Metaheuristics bot
 ### PDE bot
-### Topopt bot*
+### Topopt bot
 
 ## Environment variables
 |   Var name  | Bot |    Description      |
