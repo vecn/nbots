@@ -28,6 +28,8 @@
 
 #define POW2(a) ((a)*(a))
 
+void print_system_of_equations(double *K, double *F, uint32_t N_nod); /* TEMPORAL */
+
 int fem_compute_plastic_2D_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elemtype,
@@ -42,9 +44,10 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double *stress,
 			 double *displacement, /* Output, just the last computed plastic displacement */
 			 uint32_t N_force_steps,
-			 double yield_stress,
 			 double accepted_tol)
 {
+    printf("Number of force steps: %i\n", N_force_steps);
+    printf("Accepted tolerance for the equilibrium of forces: %f\n", accepted_tol);
 	int status = 0;
 	nb_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
@@ -53,7 +56,9 @@ int fem_compute_plastic_2D_Solid_Mechanics
 	nb_graph_finish(graph);
 
 	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
+	printf("Number of nodes: %i\n", N_nod);
 	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
+	printf("Number of elements: %i\n", N_elem);
 	uint32_t F_memsize = 2 * N_nod * sizeof(double);
 	uint32_t F_elemsize = 3*N_elem*sizeof(double);
 	double *F = nb_soft_allocate_mem(F_memsize);
@@ -68,6 +73,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
 					 enable_self_weight, gravity,
 					 analysis2D, params2D,
 					 elements_enabled);
+   print_system_of_equations(K, F, N_nod); /* TEMPORAL */
 	if (0 != status_assemble) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
@@ -122,6 +128,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
                                            elements_enabled, stress, elem_regime);
 
     /* Compute Von Mises stress for each non plastified element:*/
+    double yield_stress = nb_material_get_yield_stress(material);
     double vm_stress;
     for (int j = 0; j < N_elem; j += 3) {
         if (elem_regime[j] != NB_PLASTIC) {
@@ -307,17 +314,17 @@ int plastic_solver(const nb_sparse_t *const A,
 		out = 1; /* Tolerance not reached in CG Jacobi */
 	return out;
 }
-/*
-add_elastic_displacements(double *displacement, double *elastic_displacement, nb_plastified_analysis2D elem_regime, const nb_fem_elem_t *const elemtype, uint32_t N_elem, uint32_t N_Nod) {
+/* TEMPORAL*/
+void print_system_of_equations(double *K, double *F, uint32_t N_nod) {
 
-    for (int i = 0; i < N_elem; i++) {
-        for (int j = 0; j < nb_fem_elem_get_N_nodes(elemtype); j++) {
-            uint32_t jnode = nb_partition_elem_get_adj(part, id, j);
-            if (elem_regime[i] = NB_ELASTIC) {
-                elastic_displacements[jnode] += displacement[jnode];
-            }
+    for (int i = 0; i < 2*N_nod; i++) {
+        for (int j = 0; j < 2*N_nod; j++) {
+            printf("%lf ", K[(i*2) + (j*2)]);
+            printf("%lf ", K[(i*2) + (j*2+1)]);
+            printf("%lf ", K[(i*2+1) + (j*2)]);
+            printf("%lf ", K[(i*2+1) + (j*2+1)]);
         }
+        printf("\n");
     }
-
 }
-*/
+

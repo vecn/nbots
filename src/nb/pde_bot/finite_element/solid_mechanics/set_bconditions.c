@@ -15,8 +15,8 @@
 
 #define POW2(a) ((a)*(a))
 
-static void set_neumann_sgm(const nb_mesh2D_t *part,  double* F, 
-			    const nb_bcond_t *const bcond, 
+static void set_neumann_sgm(const nb_mesh2D_t *part,  double* F,
+			    const nb_bcond_t *const bcond,
 			    double factor);
 
 static void set_neumann_sgm_function(const nb_mesh2D_t *part,
@@ -31,12 +31,12 @@ static void set_neumann(const nb_mesh2D_t *part, uint8_t N_dof,
 			double* F, double factor, nb_bcond_iter_t *iter,
 			uint32_t vtx_id);
 static void set_neumann_vtx(const nb_mesh2D_t *part,
-			    double* F, 
-			    const nb_bcond_t *const bcond, 
+			    double* F,
+			    const nb_bcond_t *const bcond,
 			    double factor);
 static void set_dirichlet_sgm(const nb_mesh2D_t *part,
-			      nb_sparse_t* K, double* F, 
-			      const nb_bcond_t *const bcond, 
+			      nb_sparse_t* K, double* F,
+			      const nb_bcond_t *const bcond,
 			      double factor);
 static void set_dirichlet(const nb_mesh2D_t *part,
 			  nb_sparse_t* K, uint8_t N_dof,
@@ -44,12 +44,12 @@ static void set_dirichlet(const nb_mesh2D_t *part,
 			  nb_bcond_iter_t *iter,
 			  uint32_t vtx_id);
 static void set_dirichlet_vtx(const nb_mesh2D_t *part,
-			      nb_sparse_t* K, double* F, 
-			      const nb_bcond_t *const bcond, 
+			      nb_sparse_t* K, double* F,
+			      const nb_bcond_t *const bcond,
 			      double factor);
 
 void nb_fem_set_bconditions(const nb_mesh2D_t *part,
-			    nb_sparse_t* K, double* F, 
+			    nb_sparse_t* K, double* F,
 			    const nb_bcond_t *const bcond,
 			    double factor)
 {
@@ -60,8 +60,8 @@ void nb_fem_set_bconditions(const nb_mesh2D_t *part,
 }
 
 static void set_neumann_sgm(const nb_mesh2D_t *part,
-			    double* F, 
-			    const nb_bcond_t *const bcond, 
+			    double* F,
+			    const nb_bcond_t *const bcond,
 			    double factor)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
@@ -72,7 +72,7 @@ static void set_neumann_sgm(const nb_mesh2D_t *part,
 				     NB_BC_ON_SEGMENT);
 	while (nb_bcond_iter_has_more(iter)) {
 		nb_bcond_iter_go_next(iter);
-		
+
 		if (nb_bcond_iter_val_is_function(iter))
 			set_neumann_sgm_function(part, F, N_dof,
 						 iter, factor);
@@ -103,7 +103,7 @@ static void set_neumann_sgm_function(const nb_mesh2D_t *part,
 	for (uint32_t i = 0; i < N - 1; i++) {
 		double subsgm_length =
 			nb_mesh2D_insgm_subsgm_get_length(part, model_id, i);
-		
+
 		uint32_t v2_id = nb_mesh2D_insgm_get_node(part, model_id,
 							       i + 1);
 		x[0] = nb_mesh2D_node_get_x(part, v2_id);
@@ -170,7 +170,7 @@ static void set_neumann(const nb_mesh2D_t *part,
 }
 
 static void set_neumann_vtx(const nb_mesh2D_t *part,
-			    double* F, 
+			    double* F,
 			    const nb_bcond_t *const bcond,
 			    double factor)
 {
@@ -191,7 +191,7 @@ static void set_neumann_vtx(const nb_mesh2D_t *part,
 
 static void set_dirichlet_sgm(const nb_mesh2D_t *part,
 			      nb_sparse_t* K,
-			      double* F, 
+			      double* F,
 			      const nb_bcond_t *const bcond,
 			      double factor)
 {
@@ -206,7 +206,7 @@ static void set_dirichlet_sgm(const nb_mesh2D_t *part,
 		uint32_t sgm_id = nb_bcond_iter_get_id(iter);
 		uint32_t N = nb_mesh2D_insgm_get_N_nodes(part, sgm_id);
 		for (uint32_t i = 0; i < N; i++) {
-			uint32_t nid = 
+			uint32_t nid =
 				nb_mesh2D_insgm_get_node(part, sgm_id, i);
 			set_dirichlet(part, K, N_dof, F, factor,
 				      iter, nid);
@@ -239,7 +239,7 @@ static void set_dirichlet(const nb_mesh2D_t *part,
 
 static void set_dirichlet_vtx(const nb_mesh2D_t *part,
 			      nb_sparse_t* K,
-			      double* F, 
+			      double* F,
 			      const nb_bcond_t *const bcond,
 			      double factor)
 {

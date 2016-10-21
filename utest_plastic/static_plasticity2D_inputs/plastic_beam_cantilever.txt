@@ -27,11 +27,13 @@
  2						#
 # Displacement conditions definition            #
   0 1 1 0 0                                     #
-  4 1 1 0 0	      				#
+  3 1 1 0 0	      				#
 # Num of load conditions over vertices:		#
  1						#
-# Num of displacement conditions over lines:    #
+# Load conditions over vertices definition:	#					#
  3 0 1 -1.4e6                                   #
+# Num of displacement conditions over lines:    #
+ 0						#
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
@@ -40,17 +42,21 @@
 # Poisson module				#
  0.3						#
 # Elasticity module				#
- 2e11	                                        #
+ 2.1e11	                                        #
 # Plasticity module			        #
  0.3e11                                         #
 # Yield stress		                        #
  400e6                                          #
+# Density					#
+ 7850						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
-#--- Does the analysis uses plane stress?-------#
-# (zero: P stress, one: P strain, two: S.Rev)	#
- 0						#
 # Analysis params (Thickness axis of rev)       #
- 0.2	                                        #
+ 0.2  	                                        #
+# ProbType(z P stress o P strain t SRev) 	#
+ 0						#
+# -----------------End of file------------------#
+# Void value					#
+ 0						#
 #-----------------------------------------------#

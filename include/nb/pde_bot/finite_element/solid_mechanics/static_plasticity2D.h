@@ -70,7 +70,6 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double *stress,
 			 double *displacement, /* Output, just the last computed plastic displacement */
 			 double N_force_steps,
-			 double yield_stress,
 			 double accepted_tol);
 
 #endif // STATIC_PLASTICITY2D_H_INCLUDED

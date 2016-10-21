@@ -38,7 +38,6 @@ static int simulate(const char *problem_data,
 		    uint32_t N_vtx);
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
-
 static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
 static void results_finish(plastic_results_t *results);
 static int read_problem_data
@@ -53,6 +52,10 @@ static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
 static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
+static int read_2Dthickness(nb_cfreader_t *cfreader, nb_analysis2D_params *params2D);
+void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
+                    nb_analysis2D_params *params2D);
+
 int main() {
 
     test_beam_cantilever();
@@ -113,7 +116,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	nb_mesh2D_init(part, NB_TRIAN);
 
 	int status = simulate(problem_data, part, &results, N_vtx);
-
+    printf("Simulation status: %i\n", status); /* TEMPORAL */
 	if (status = 0) {
         printf("The simulation ran properly. \n");
 	}
@@ -142,6 +145,8 @@ static int simulate(const char *problem_data,
 	int read_status =
 		read_problem_data(input, model, bcond, material,
 				  &analysis2D, &params2D);
+    printf("Read status: %i\n", read_status);
+    check_input_values(material, analysis2D, &params2D);
 
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
@@ -156,10 +161,11 @@ static int simulate(const char *problem_data,
 	uint32_t N_force_steps = 100;
 	double accepted_tol = 1e-3;
 	double gravity[2] = {0, -9.81};
+	bool *elements_enabled = nb_allocate_mem(N_elems*sizeof(elements_enabled));
     int status_fem = fem_compute_plastic_2D_Solid_Mechanics (part, elem, material,
                                                              bcond, true, gravity,
-                                                             analysis2D, &params2D, NULL, results->strain, results->stress,
-                                                             results->disp, N_force_steps, nb_material_get_yield_stress(material),
+                                                             analysis2D, &params2D, elements_enabled, results->strain, results->stress,
+                                                             results->disp, N_force_steps,
                                                              accepted_tol);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
@@ -243,15 +249,21 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
+    if (0 != read_2Dthickness(cfreader, params2D)) {
+        printf("\nError: Reading thickness of the problem in %s.\n",
+               filename);
+        goto EXIT;
+	}
 	if (0 != read_plasticity2D_params(cfreader, analysis2D, params2D)) {
-		printf("\nERROR: Reading numerical params in %s.\n",
+		printf("\nERROR: Reading problem type in %s.\n",
 		       filename);
 		goto EXIT;
 	}
-	nb_cfreader_destroy(cfreader);
 	status = 0;
 EXIT:
 	return status;
+
+nb_cfreader_destroy(cfreader);
 }
 
 static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
@@ -324,6 +336,9 @@ static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat)
 	if (0 != nb_cfreader_read_double(cfreader, &yield_stress))
 		goto EXIT;
 	nb_material_set_yield_stress(mat, yield_stress);
+	double density;
+	if (0 != nb_cfreader_read_double(cfreader, &density));
+	nb_material_set_density(mat, density);
 
 	status = 0;
 EXIT:
@@ -337,8 +352,9 @@ static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 {
 	int status = 1;
 	int iaux;
-	if (0 != nb_cfreader_read_int(cfreader, &iaux))
-		goto EXIT;
+
+    if (0 != nb_cfreader_read_int(cfreader, &iaux))
+    goto EXIT;
 
 	switch (iaux) {
 	case 0:
@@ -355,9 +371,44 @@ static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 	}
 
 	/* FIX: Usable only for plane stress */
+	/*
 	if (0 != nb_cfreader_read_double(cfreader, &(params2D->thickness)))
 		goto EXIT;
+	*/
 	status = 0;
 EXIT:
 	return status;
 }
+
+static int read_2Dthickness(nb_cfreader_t *cfreader, nb_analysis2D_params *params2D) {
+
+    int status = 1;
+    if (0 != nb_cfreader_read_double(cfreader, &(params2D->thickness)))
+    goto EXIT;
+
+    status = 0;
+    EXIT:
+        return status;
+}
+
+void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
+                    nb_analysis2D_params *params2D) {
+	printf("Elastic Modulus: %lf\n", nb_material_get_elasticity_module(material)); /* TEMPORAL */
+    printf("Plastic Modulus: %lf\n", nb_material_get_plasticity_module(material)); /* TEMPORAL */
+    printf("Poisson module: %f\n", nb_material_get_poisson_module(material)); /* TEMPORAL */
+    printf("Density: %lf\n", nb_material_get_density(material)); /* TEMPORAL */
+    switch (analysis2D) {
+    case 0:
+    printf("Problem type: NB_PLANE_STRESS\n");
+    break;
+    case 1:
+    printf("Problem type: NB_PLANE_STRAIN\n");
+    break;
+    case 2:
+    printf("Problem type: NB_SOLID_OF_REVOLUTION\n");
+    break;
+    default:
+    printf("Problem type: NB_PLANE_STRESS\n");
+    }
+}
+
