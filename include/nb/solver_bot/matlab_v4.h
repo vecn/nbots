@@ -5,8 +5,8 @@
 
 #include <stdint.h>
 
-void nb_sparse_read_mat4(nb_sparse_t *A,
-			  const char *url, char *label);
+void nb_sparse_read_mat4(nb_sparse_t *A, const char *url,
+			 const char *label);
 void nb_sparse_save_mat4(const nb_sparse_t *const A,
 			  const char *url, char *label);
 
