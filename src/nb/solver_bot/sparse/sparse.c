@@ -109,13 +109,15 @@ void nb_sparse_save(const nb_sparse_t *const A, const char* filename)
 {
 	FILE *fp = fopen(filename, "w");
 	if (fp == NULL) {
-		printf("Error: Opening the file %s to save the matrix.\n", filename);
+		printf("Error: Opening the file %s to save the matrix.\n",
+		       filename);
 		return;
 	}
 	fprintf(fp, "%i %i\n", A->N, A->N);
 	for (uint32_t i=0; i < A->N; i++) {
 		for (uint32_t j=0; j < A->rows_size[i]; j++)
-			fprintf(fp, "%i %i %e \n", i, A->rows_index[i][j], A->rows_values[i][j]);
+			fprintf(fp, "%i %i %e \n", i, A->rows_index[i][j],
+				A->rows_values[i][j]);
 	}
 	fclose(fp);
 }
