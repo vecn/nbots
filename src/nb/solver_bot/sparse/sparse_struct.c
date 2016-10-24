@@ -27,11 +27,3 @@ nb_sparse_t* sparse_allocate(uint32_t N)
 	A->N = N;
 	return A;
 }
-
-double nb_vector_get_norm(double* x, uint32_t N)
-{
-	double n = 0;
-	for (uint32_t i = 0; i < N; i++)
-		n += x[i] * x[i];
-	return sqrt(n);
-}
