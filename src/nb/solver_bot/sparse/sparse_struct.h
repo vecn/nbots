@@ -10,6 +10,8 @@ struct nb_sparse_s {
 	uint32_t N;
 };
 
+nb_sparse_t* nb_sparse_allocate(uint32_t N);
+
 uint32_t nb_sparse_bsearch_row(const nb_sparse_t *const A,
 			       uint32_t i, uint32_t col, 
 			       int imin, int imax);
