@@ -1,6 +1,13 @@
 #ifndef __NB_SOLVER_BOT_H__
 #define __NB_SOLVER_BOT_H__
 
+#include "nb/solver_bot/matrix/matrix2X2.h"
+#include "nb/solver_bot/matrix/matrix3X3.h"
+#include "nb/solver_bot/matrix/triangular.h"
+#include "nb/solver_bot/matrix/cholesky.h"
+#include "nb/solver_bot/matrix/cond.h"
+#include "nb/solver_bot/matrix/svd.h"
+#include "nb/solver_bot/matrix/qr.h"
 #include "nb/solver_bot/sparse/sparse.h"
 #include "nb/solver_bot/sparse/spyplot.h"
 #include "nb/solver_bot/sparse/solvers/gauss_seidel.h"
@@ -15,7 +22,6 @@
 #include "nb/solver_bot/sparse/eigen/inv_power.h"
 #include "nb/solver_bot/sparse/eigen/lanczos.h"
 #include "nb/solver_bot/sparse/eigen/givens.h"
-#include "nb/solver_bot/matrix.h"
 #include "nb/solver_bot/matlab_v4.h"
 
 #endif
