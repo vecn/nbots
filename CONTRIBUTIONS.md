@@ -26,7 +26,7 @@
 |vic |Victor E. Cardoso  | @vecn              |
 |mvf |Miguel Vargas-Felix| @MiguelVargasFelix |
 |jol |Jorge Lopez        | @mcjorgelopez      |
-|dal |Dora E. Alvarado   | @d1                |
+|dal |Dora E. Alvarado   | @alvaradocde       |
 |mik |Miguel Angel Ochoa | @miguel-ochoa      |
 |ger |J. Gerardo Fuentes | @Almeida88         |
 |eot |Ernesto Ortega     | @netohomes         |
