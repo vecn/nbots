@@ -6,7 +6,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/solvers/gauss_seidel.h"
+#include "nb/solver_bot/sparse/eigen/power.h"
 
 #include "../sparse_struct.h"
 
