@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "nb/math_bot.h"
 #include "nb/memory_bot.h"
-#include "nb/container_bot.h"
 #include "nb/solver_bot/sparse/sparse.h"
 #include "nb/solver_bot/sparse/solvers/cg_precond_jacobi.h"
 
