@@ -46,7 +46,8 @@ Since the library implementation begins in 2009, old code does not follow all th
       be the same. For each header-file under 'include' dir, it must
       exist at least one file with the same name under 'src' and 'utest'.
 - Error handling
-    * Undefined yet.
+    * Use assert() for check developer exclusive errors.
+    * Return the error code, and zero if success.
 - Memory management
     * Make just one memory allocation per function when required.
     * Never use `malloc()`, `calloc()` and `realloc()` directly.

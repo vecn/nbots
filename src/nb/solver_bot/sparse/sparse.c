@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <assert.h>
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -13,13 +14,15 @@
 
 #define POW2(a) ((a)*(a))
 
+static void verify_graph(const nb_graph_t *graph);
 static int meta_compare_data_bycol(const void *a, const void *b);
 
 nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 				const uint32_t *const restrict perm,
 				uint32_t vars_per_node)
 {
-	nb_sparse_t* A = sparse_allocate(graph->N * vars_per_node);
+	verify_graph(graph);
+	nb_sparse_t*A = sparse_allocate(graph->N * vars_per_node);
 
 	for (uint32_t i = 0; i < graph->N; i++) {
 		uint32_t row_size = (graph->N_adj[i] + 1) * vars_per_node;    
@@ -54,6 +57,22 @@ nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 		}
 	}
 	return A;
+}
+
+static void verify_graph(const nb_graph_t *graph)
+{
+#ifndef NDEBUG
+	uint32_t N = graph->N;
+	for (uint32_t i = 0; i < N; i++) {
+		for (uint32_t j = 0; j < graph->N_adj[i]; j++) {
+			uint32_t adj = graph->adj[i][j];
+			assert(adj < N);
+			assert(i != adj);
+			for (uint32_t k = j + 1; k < graph->N_adj[i]; k++)
+				assert(adj != graph->adj[i][k]);
+		}
+	}
+#endif
 }
 
 nb_sparse_t* nb_sparse_clone(nb_sparse_t* A)
