@@ -23,10 +23,6 @@ static void cholesky_symbolic(const nb_sparse_t *const A,
 			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
 			      uint32_t ktrunc);
 
-static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-				   uint32_t i, uint32_t col, 
-				   int imin, int imax);
-
 static inline double get_norm(double* x, uint32_t N)
 {
 	double n = 0;
@@ -135,21 +131,6 @@ void nb_sparse_destroy(nb_sparse_t* A)
 	nb_free_mem(A);
 }
 
-static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-				   uint32_t i, uint32_t col, 
-				   int imin, int imax)
-{
-	uint32_t index = (imin + imax) / 2;
-	while (A->rows_index[i][index] != col && imin <= imax) {
-		index = (imin + imax) / 2;
-		if (A->rows_index[i][index] < col)
-			imin = index + 1;
-		else
-			imax = index - 1;
-	}
-	return index;
-}
-
 void nb_sparse_reset(nb_sparse_t *A)
 {
 	for(uint32_t i = 0; i < A->N; i++)
@@ -159,7 +140,7 @@ void nb_sparse_reset(nb_sparse_t *A)
 
 void nb_sparse_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
-	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	uint32_t index = nb_sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
 		A->rows_values[i][index] = value;
 	} else {
@@ -189,7 +170,7 @@ void nb_sparse_make_diagonal(nb_sparse_t* A, double diag_val)
 
 double nb_sparse_get(const nb_sparse_t *const A, uint32_t i, uint32_t j)
 {
-	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	uint32_t index = nb_sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j)
 		return A->rows_values[i][index];
 	else
@@ -198,7 +179,7 @@ double nb_sparse_get(const nb_sparse_t *const A, uint32_t i, uint32_t j)
 
 double nb_sparse_get_and_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
-	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	uint32_t index = nb_sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
 		double val = A->rows_values[i][index];
 		A->rows_values[i][index] = value;
@@ -214,7 +195,7 @@ double nb_sparse_get_and_set(nb_sparse_t *A, uint32_t i, uint32_t j, double valu
 
 bool nb_sparse_is_non_zero(const nb_sparse_t *const A, uint32_t i, uint32_t j)
 {
-	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	uint32_t index = nb_sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if(A->rows_index[i][index] == j)
 		return true;
 	else
@@ -232,7 +213,7 @@ uint32_t nb_sparse_memory_used(const nb_sparse_t *const A)
 
 void nb_sparse_add(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 {
-	uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	uint32_t index = nb_sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
 	if (A->rows_index[i][index] == j) {
 		A->rows_values[i][index] += value;
 	} else {
@@ -301,7 +282,7 @@ void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 		uint32_t j = perm[i];
 		for (uint32_t k = 0; k < A->rows_size[j]; k++) {
 			uint32_t m = iperm[A->rows_index[j][k]];
-			uint32_t idx = sparse_bsearch_row(Ar, i, m, 0, Ar->rows_size[i]-1);
+			uint32_t idx = nb_sparse_bsearch_row(Ar, i, m, 0, Ar->rows_size[i]-1);
 			Ar->rows_values[i][idx] = A->rows_values[j][k];
 		}
 	}
@@ -340,7 +321,7 @@ void nb_sparse_transpose(nb_sparse_t *A)
 	for (uint32_t i = 0; i < A->N; i++) {
 		for (uint32_t q = 0; A->rows_index[i][q] < i; q++) {
 			uint32_t j = A->rows_index[i][q];
-			uint32_t jc = sparse_bsearch_row(A, j, i, 0,
+			uint32_t jc = nb_sparse_bsearch_row(A, j, i, 0,
 							 A->rows_size[j]-1);
 			double aux = A->rows_values[i][q];
 			A->rows_values[i][q] = A->rows_values[j][jc];
@@ -370,7 +351,7 @@ double nb_sparse_get_asym(const nb_sparse_t *const A)
 		for (uint32_t j = 0; A->rows_index[i][j] < i; j++) {
 			double Aij = A->rows_values[i][j];
 			uint32_t k = A->rows_index[i][j];
-			uint32_t l = sparse_bsearch_row(A, k, i, 0,
+			uint32_t l = nb_sparse_bsearch_row(A, k, i, 0,
 							A->rows_size[k]-1);
 			double Aji = 0.0;
 			if (A->rows_index[k][l] == i)
@@ -993,7 +974,7 @@ static void cholesky_symbolic(const nb_sparse_t * const A,
 	for (uint32_t j = 0; j < A->N; j++) { 
 		sc_set* lj = NULL;
 		uint32_t lj_size = 1;
-		uint32_t _i = sparse_bsearch_row(A, j, j, 0,
+		uint32_t _i = nb_sparse_bsearch_row(A, j, j, 0,
 						 A->rows_size[j]-1);
 
 		/* lj <- aj ************************************************/
@@ -1180,72 +1161,6 @@ int nb_sparse_alloc_LU
 	return 0;
 }
 
-int nb_sparse_decompose_Cholesky(const nb_sparse_t *const A,
-				  nb_sparse_t *L,             /* Out */
-				  nb_sparse_t* Lt,            /* Out */
-				  uint32_t omp_parallel_threads)
-{
-	/* "L" must be a lower triangular matrix with the main diagonal 
-	 * complete, and "Lt" must be an upper triangular matrix with
-	 * the main diagonal complete.
-	 * The structure of L must be congrous with Lt, since Lt = L'.
-	 */
-    
-	/* Compute the decomposition */
-	for(uint32_t j=0; j< A->N; j++){
-		L->rows_values[j][L->rows_size[j]-1] = nb_sparse_get(A, j, j);
-    
-		double sum = 0;
-		for(uint32_t q = 0; q < L->rows_size[j]-1; q++)
-			sum += POW2(L->rows_values[j][q]);
-      
-		L->rows_values[j][L->rows_size[j]-1] -= sum;
-
-		if(L->rows_values[j][L->rows_size[j]-1] <= 0.0)
-			return 1;
-              
-		double valuejj = sqrt(L->rows_values[j][L->rows_size[j]-1]);
-		L->rows_values[j][L->rows_size[j]-1] = valuejj;
-		Lt->rows_values[j][0] = valuejj;
-
-#pragma omp parallel for  num_threads(omp_parallel_threads) schedule(guided)
-		for(uint32_t q = 1; q < Lt->rows_size[j]; q++){
-			uint32_t i = Lt->rows_index[j][q];
-			/*** L_ij <- A_ij ********************************************************/
-			uint32_t L_jindex = sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);     /**/
-			L->rows_values[i][L_jindex] = nb_sparse_get(A, i, j);                     /**/
-			/*************************************************************************/
-			uint32_t r = 0;
-			uint32_t s = 0;
-			uint32_t _ro = L->rows_index[i][r];
-			uint32_t _sigma = L->rows_index[j][s];
-			bool flag = true;   /* Flag to know when to stop the cylce */
-			while(flag){
-				while(_ro < _sigma)
-					_ro = L->rows_index[i][++r];
-				while(_ro > _sigma)
-					_sigma = L->rows_index[j][++s];
-				while(_ro == _sigma){
-					if(_ro == j){
-						flag = false;   /* Finish the cycle */
-						break;
-					}
-					double vir = L->rows_values[i][r];
-					double vjs = L->rows_values[j][s];
-					L->rows_values[i][L_jindex] -= vir*vjs;
-					_ro = L->rows_index[i][++r];
-					_sigma = L->rows_index[j][++s];
-				}
-			}
-
-			L->rows_values[i][L_jindex] /= L->rows_values[j][L->rows_size[j]-1];
-			Lt->rows_values[j][q] = L->rows_values[i][L_jindex];
-		}
-	}
-
-	/* Successful exit */
-	return 0;
-}
 
 void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 			     nb_sparse_t *L, nb_sparse_t* U,
@@ -1273,7 +1188,7 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 		for(uint32_t q = 1; q < U->rows_size[j]; q++){
 			uint32_t i = U->rows_index[j][q];
 			/*** L_ij <- A_ij *******************************************************/
-			uint32_t L_jindex = sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);/**/
+			uint32_t L_jindex = nb_sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);/**/
 			L->rows_values[i][L_jindex] = nb_sparse_get(Ar, i, j);               /**/
 			/************************************************************************/
 			/*** U_ji <- A_ji *******************************************************/
@@ -1325,28 +1240,6 @@ void  nb_sparse_solve_LU(const nb_sparse_t *const L,
 	nb_sparse_forward_solve(L, b, z);
 	nb_sparse_backward_solve(U, z, _x);
 	nb_free_mem(z);
-}
-
-int nb_sparse_solve_Cholesky(const nb_sparse_t *const A,
-			      const double *const b,
-			      double* x,  /* Out */
-			      uint32_t omp_parallel_threads){
-	nb_sparse_t *L = NULL; 
-	nb_sparse_t *U = NULL;
-	nb_sparse_alloc_LU(A, &L, &U);
-	if (NULL == L)
-		return 10;
-	
-	int solver_status = nb_sparse_decompose_Cholesky(A, L, U, 
-							  omp_parallel_threads);
-
-	if (0 == solver_status)
-		nb_sparse_solve_LU(L, U, b, x);
-
-	nb_sparse_destroy(L);
-	nb_sparse_destroy(U);
-
-	return solver_status;
 }
 
 int nb_sparse_solve_using_LU(const nb_sparse_t *const A,
@@ -1406,7 +1299,7 @@ void nb_sparse_backward_solve(const nb_sparse_t *const U,
 		_x[i] = b[i];
 		uint32_t idx = 0;
 		if(U->rows_index[i][0] != i)
-			idx = sparse_bsearch_row(U, i, i, 0, U->rows_size[i]-1);
+			idx = nb_sparse_bsearch_row(U, i, i, 0, U->rows_size[i]-1);
 		for(int q = idx+1; q < U->rows_size[i]; q++)
 			_x[i] -= U->rows_values[i][q]*_x[U->rows_index[i][q]];
     
