@@ -2,7 +2,6 @@
 #define __NB_BOTS_H__
 
 #include "nb/sysinfo.h"
-#include "nb/exceptions.h"
 #include "nb/memory_bot.h"
 
 #include "nb/math_bot.h"

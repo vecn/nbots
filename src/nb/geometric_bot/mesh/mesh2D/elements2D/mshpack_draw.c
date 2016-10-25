@@ -150,3 +150,11 @@ void nb_mshpack_fill_nodes_classes(const void *msh,
 {
 	;/* NULL statement */
 }
+
+void nb_mshpack_draw_level_set(const void *msh,
+			       nb_graphics_context_t *g,
+			       const double *field_on_nodes,
+			       double level_set)
+{
+	; /* NULL statement */
+}

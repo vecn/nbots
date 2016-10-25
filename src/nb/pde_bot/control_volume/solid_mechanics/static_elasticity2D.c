@@ -245,7 +245,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	assemble_global_stiffness(K, part, intmsh, faces, material,
 				  analysis2D, params2D);
-	
 	nb_cvfa_set_bconditions(part, material, analysis2D, 
 				K, F, bcond, 1.0);
 
@@ -413,14 +412,24 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	}
 
 	if (0 == end_trg) {
-		for (uint16_t i = 0; i < N_trg; i++) {
-			bool inside =
-				add_subface_if_its_inside_trg(membank, intmsh,
-							      trg_adj, faces,
-							      i, face_id,
-							      subfaces);
-			if (inside)
-				break;
+		uint8_t N_sf = nb_container_get_length(subfaces);
+		if (0 == N_sf) {
+			for (uint16_t i = 0; i < N_trg; i++) {
+				bool inside =
+					add_subface_if_its_inside_trg(membank,
+								      intmsh,
+								      trg_adj,
+								      faces, i,
+								      face_id,
+								      subfaces);
+				if (inside)
+					break;
+			}
+		} else {
+			add_subface_in_closest_trg(membank, intmsh, faces,
+						   face_id, subfaces);
+			add_subface_in_closest_trg(membank, intmsh, faces,
+						   face_id, subfaces);		
 		}
 	}
 

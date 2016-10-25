@@ -46,4 +46,9 @@ void nb_msh3trg_draw_subdomain(const void *msh3trg_ptr,
 			       uint32_t k_part, const uint32_t *const part,
 			       uint32_t k_to_draw, double scale_subdomains);
 
+void nb_msh3trg_draw_level_set(const void *msh,
+			       nb_graphics_context_t *g,
+			       const double *field_on_nodes,
+			       double level_set);
+
 #endif

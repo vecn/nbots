@@ -100,7 +100,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_POLY,
+	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
@@ -123,7 +123,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 5000, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 2000, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -467,6 +467,8 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 	nb_mesh2D_export_draw(part, "../../../CVFA_Sxx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
+	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Sxx.png",
+				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+1];
@@ -474,6 +476,8 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 	nb_mesh2D_export_draw(part, "../../../CVFA_Syy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
+	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Syy.png",
+				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+2];
@@ -481,6 +485,8 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 	nb_mesh2D_export_draw(part, "../../../CVFA_Sxy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
+	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Sxy.png",
+				    1000, 800, vm_stress, 20, false);
 
 	nb_soft_free_mem(memsize, memblock);
 }

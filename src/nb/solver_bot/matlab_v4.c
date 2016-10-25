@@ -16,152 +16,169 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define POW2(a) ((a)*(a))
 
+static bool read_object(nb_sparse_t *A, const char *label,
+			FILE *fp, const int32_t info[5]);
+static void read_sparse(nb_sparse_t *A, FILE *fp,
+			const int32_t info[5]);
 static int meta_compare_data_bycol(const void *a, const void *b);
 
-void nb_sparse_read_mat4(nb_sparse_t *A, const char *url, char *label)
+void nb_sparse_read_mat4(nb_sparse_t *A, const char *url, 
+			 const char *label)
+/* Read a nb_sparse_t matrix named [label] from matlab v4 file */
 {
-	/* Read a nb_sparse_t matrix named [label] from matlab v4 file */
  
-	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"rb");
+	if (fp == NULL) {
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
-	/* Init int32[5] to store info */
+
 	int32_t info[5];
-	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
-		uint32_t i;
-		/* info[0] <- Type of structure and type of data
-		 *  __________________________
-		 *  |   0 := Complete matrix |
-		 *  |   1 := Text            |
-		 *  |   2 := Sparse matrix   |
-		 *  |  +0 := double          |
-		 *  | +10 := float           |
-		 *  | +20 := int             |
-		 *  | +30 := short           |
-		 *  | +40 := unsigned short  |
-		 *  | +50 := unsigned char   |
-		 *  |________________________|
-		 *
-		 * info[4] <- Name length + 1
-		 */
-		char* name = nb_allocate_mem(info[4] * sizeof(char));
-		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
+	bool founded = false;
+	while (fread(info, 4, 5, fp) != 0 && !founded)
+		founded = read_object(A, label, fp, info);
+
+	fclose(fp);
+
+
+	if (!founded) {
+		printf("ERROR: Sparse matrix \"%s\" not found in \"%s\".\n",
+		       label, url);
+		exit(1);
+	}
+}
+
+static bool read_object(nb_sparse_t *A, const char *label,
+			FILE *fp, const int32_t info[5])
+{
+	/* info[0] <- Type of structure and type of data
+	 *  __________________________
+	 *  |   0 := Complete matrix |
+	 *  |   1 := Text            |
+	 *  |   2 := Sparse matrix   |
+	 *  |  +0 := double          |
+	 *  | +10 := float           |
+	 *  | +20 := int             |
+	 *  | +30 := short           |
+	 *  | +40 := unsigned short  |
+	 *  | +50 := unsigned char   |
+	 *  |________________________|
+	 *
+	 * info[4] <- Name length + 1
+	 */
+	bool founded = false;
+	char* name = nb_allocate_mem(info[4] * sizeof(char));
+	/* Read name */
+	if (fread(name, sizeof(char), info[4], fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+	if (info[0] == 0) {
+		/* Jump to the next structure */
+		if(fseek(fp, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
 			exit(1);
 		}
-		if(info[0] == 0){
-			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
+	} else if (info[0] == 2) {
+		/* Vcn_Sparse_T matrix
+		 *
+		 *  info[1] <- Number of non-zero entries (nnz) +1
+		 *  info[2] <- Type of values {0(Real) | 1(Complex)}
+		 *  info[3] <- Zero
+		 */
+		if (strcmp(name,label) == 1) {
+			/* If "name" and "label" are not equal
+			 * then jump to the next structure 
+			 */
+			if (fseek(fp, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0) {
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
-		}else if(info[0] == 2){
-			/* Vcn_Sparse_T matrix
-			 *
-			 *  info[1] <- Number of non-zero entries (nnz) +1
-			 *  info[2] <- Type of values {0(Real) | 1(Complex)}
-			 *  info[3] <- Zero
-			 */
-			if(strcmp(name,label) == 1){
-				/* If "name" and "label" are not equal
-				 * then jump to the next structure 
-				 */
-				if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-			}else{
-				found = 1;
-
-				uint32_t nnz = (uint32_t)(info[1]-1);
-				/* Verification of use of real numbers */
-				if(info[2] == 4){
-					printf("ERROR: Complex numbers unsupported.\n");
-					exit(1);
-				}
-				double *irows = (double*)nb_allocate_mem(nnz*sizeof(double));
-				double *icols = (double*)nb_allocate_mem(nnz*sizeof(double));
-				double *values = (double*)nb_allocate_mem(nnz*sizeof(double));
-				double N;
-				/* Read row's index */
-				if(fread(irows, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				/* Read number of rows */
-				if(fread(&N, sizeof(double), 1, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				A->N = (uint32_t)N;
-				A->rows_values = (double**)nb_allocate_mem(A->N*sizeof(void*));
-				A->rows_index = (uint32_t**)nb_allocate_mem(A->N*sizeof(void*));
-				A->rows_size = (uint32_t*)nb_allocate_zero_mem(A->N * sizeof(uint32_t));
-
-				/* Read col's index */
-				if(fread(icols, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				/* Read number of rows */
-				if(fread(&N, sizeof(double), 1, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-				A->N = (uint32_t)N;
-
-				/* Read values */
-				if(fread(values, sizeof(double), nnz, pfile) == 0){
-					printf("ERROR: The matlab v4 file is corrupted.\n");
-					exit(1);
-				}
-
-				uint32_t* rows_icol = nb_allocate_zero_mem(N * sizeof(uint32_t));
-				for(i=0; i< nnz; i++)
-					A->rows_size[(uint32_t)irows[i]-1]++;
-	
-				for(i=0; i< N; i++){
-					A->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(uint32_t));
-					A->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(double));
-				}
-
-				for(i=0; i<nnz; i++){
-					uint32_t irow = irows[i]-1;
-					A->rows_index[irow][rows_icol[irow]] = (uint32_t)icols[i]-1;
-					A->rows_values[irow][rows_icol[irow]] = values[i];
-					rows_icol[irow] ++;
-				}
-
-				/* Sort data by columns */
-				for(i=0; i<A->N; i++)
-					nb_qsort(A->rows_index[i], A->rows_size[i], 
-						  sizeof(uint32_t), nb_compare_uint32);
-
-				/* Free memory */
-				nb_free_mem(irows);
-				nb_free_mem(icols);
-				nb_free_mem(values);
-				nb_free_mem(rows_icol);
-			}
-		}else{
-			printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
-			exit(1);
+		} else {
+			founded = true;
+			read_sparse(A, fp, info);			
 		}
-		/* Free memory */
-		nb_free_mem(name);
-	}
-	/* Close file */
-	fclose(pfile);
-
-	if(found != 1){
-		printf("ERROR: Sparse matrix \"%s\" not found in \"%s\".\n",label,url);
+	} else {
+		printf("ERROR: Support only for complete and sparse matrix with double precision.\n");
 		exit(1);
 	}
+	/* Free memory */
+	nb_free_mem(name);
+	return founded;
+}
+
+static void read_sparse(nb_sparse_t *A, FILE *fp,
+			const int32_t info[5])
+{
+	uint32_t nnz = (uint32_t)(info[1] - 1);
+	/* Verification of use of real numbers */
+	if(info[2] == 4) {
+		printf("ERROR: Complex numbers unsupported.\n");
+		exit(1);
+	}
+	double *irows = nb_allocate_mem(nnz * sizeof(double));
+	double *icols = nb_allocate_mem(nnz * sizeof(double));
+	double *values = nb_allocate_mem(nnz * sizeof(double));
+	double N;
+	/* Read row's index */
+	if (fread(irows, sizeof(double), nnz, fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+	/* Read number of rows */
+	if (fread(&N, sizeof(double), 1, fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+	A->N = (uint32_t)N;
+	A->rows_values = (double**)nb_allocate_mem(A->N*sizeof(void*));
+	A->rows_index = (uint32_t**)nb_allocate_mem(A->N*sizeof(void*));
+	A->rows_size = (uint32_t*)nb_allocate_zero_mem(A->N * sizeof(uint32_t));
+
+	/* Read col's index */
+	if (fread(icols, sizeof(double), nnz, fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+	/* Read number of rows */
+	if (fread(&N, sizeof(double), 1, fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+	A->N = (uint32_t)N;
+
+	/* Read values */
+	if (fread(values, sizeof(double), nnz, fp) == 0) {
+		printf("ERROR: The matlab v4 file is corrupted.\n");
+		exit(1);
+	}
+
+	uint32_t* rows_icol = nb_allocate_zero_mem(N * sizeof(uint32_t));
+	for (uint32_t i = 0; i < nnz; i++)
+		A->rows_size[(uint32_t)irows[i]-1]++;
+	
+	for (uint32_t i = 0; i < N; i++) {
+		A->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(uint32_t));
+		A->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] * sizeof(double));
+	}
+
+	for (uint32_t i = 0; i < nnz; i++) {
+		uint32_t irow = irows[i]-1;
+		A->rows_index[irow][rows_icol[irow]] = (uint32_t)icols[i]-1;
+		A->rows_values[irow][rows_icol[irow]] = values[i];
+		rows_icol[irow] ++;
+	}
+
+	/* Sort data by columns */
+	for (uint32_t i = 0; i < A->N; i++)
+		nb_qsort(A->rows_index[i], A->rows_size[i], 
+			 sizeof(uint32_t), nb_compare_uint32);
+
+	/* Free memory */
+	nb_free_mem(irows);
+	nb_free_mem(icols);
+	nb_free_mem(values);
+	nb_free_mem(rows_icol);
 }
 
 void nb_sparse_save_mat4(const nb_sparse_t *const A,
@@ -170,8 +187,8 @@ void nb_sparse_save_mat4(const nb_sparse_t *const A,
 {
 	uint32_t i, j;
 	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"ab");
+	if (fp == NULL) {
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
@@ -184,11 +201,11 @@ void nb_sparse_save_mat4(const nb_sparse_t *const A,
 	int name_length = strlen(label);
 	info[4] = name_length+1;
 	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
+	fwrite(info, 4, 5, fp);
 	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
+	fwrite(label, sizeof(char), name_length, fp);
 	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
+	fwrite(&end_label, sizeof(char), 1, fp);
 	/* Write sparse matrix data */
 	double** data = (double**)nb_allocate_mem(nnz*sizeof(void*));
 	for(i=0; i<nnz; i++)
@@ -215,21 +232,21 @@ void nb_sparse_save_mat4(const nb_sparse_t *const A,
 		values[i] = data[i][2];
 	}
 	/* Write row's index */
-	fwrite(irows, sizeof(double), nnz, pfile);
+	fwrite(irows, sizeof(double), nnz, fp);
 	/* Write number of rows */
 	double N = (double)A->N;
-	fwrite(&N, sizeof(double), 1, pfile);
+	fwrite(&N, sizeof(double), 1, fp);
 	/* Write col's index */
-	fwrite(icols, sizeof(double), nnz, pfile);
+	fwrite(icols, sizeof(double), nnz, fp);
 	/* Write number of cols */
-	fwrite(&N, sizeof(double), 1, pfile);
+	fwrite(&N, sizeof(double), 1, fp);
 	/* Write values */
-	fwrite(values, sizeof(double), nnz, pfile);
+	fwrite(values, sizeof(double), nnz, fp);
 	/* Write a zero value for octave compability */
 	double zero = 0;
-	fwrite(&zero, sizeof(double), 1, pfile);
+	fwrite(&zero, sizeof(double), 1, fp);
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 }
 
 static int meta_compare_data_bycol(const void *a, const void *b)
@@ -247,15 +264,15 @@ void nb_mat4_printf(const char *url)
 	 * about stored objects.
 	 */
 	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"rb");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
 	/* Init int32[5] to store info */
 	int32_t info[5];
 	/* Read items */
-	while(fread(info, 4, 5, pfile) != 0){
+	while(fread(info, 4, 5, fp) != 0){
 		/* info[0] <- Type of structure and type of data
 		 *  __________________________
 		 *  |   0 := Complete matrix |
@@ -273,7 +290,7 @@ void nb_mat4_printf(const char *url)
 		 */
 		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
+		if(fread(name, sizeof(char), info[4], fp) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
 			exit(1);
 		}
@@ -298,7 +315,7 @@ void nb_mat4_printf(const char *url)
 			else
 				printf("%s <- Complete matrix (size: %dx%d)\n", name, info[1],info[2]);
 			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -317,22 +334,22 @@ void nb_mat4_printf(const char *url)
 			}
 			double N;
 			/* Jump to get number of rows */
-			if(fseek(pfile, nnz*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, nnz*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
 			/* Read number of rows */
-			if(fread(&N, sizeof(double), 1, pfile) == 0){
+			if(fread(&N, sizeof(double), 1, fp) == 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
 			/* Jump to get number of cols */
-			if(fseek(pfile, nnz*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, nnz*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
 			/* Read number of rows */
-			if(fread(&N, sizeof(double), 1, pfile) == 0){
+			if(fread(&N, sizeof(double), 1, fp) == 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -340,7 +357,7 @@ void nb_mat4_printf(const char *url)
 			printf("%s <- Vcn_Sparse_T matrix (size: %ix%i, nnz: %d).\n",
 			       name, (uint32_t)N, (uint32_t)N, info[1]);
 			/* Jump to the next structure */
-			if(fseek(pfile, (nnz+1)*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, (nnz+1)*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -352,7 +369,7 @@ void nb_mat4_printf(const char *url)
 		nb_free_mem(name);
 	}
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 }
 
 short nb_mat4_exist(const char *url, char* label)
@@ -362,15 +379,15 @@ short nb_mat4_exist(const char *url, char* label)
 	 */
 	short found = 0;
 	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"rb");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
 	/* Init int32[5] to store info */
 	int32_t info[5];
 	/* Read items */
-	while(fread(info, 4, 5, pfile) != 0 && found == 0){
+	while(fread(info, 4, 5, fp) != 0 && found == 0){
 		/* info[0] <- Type of structure and type of data
 		 *  __________________________
 		 *  |   0 := Complete matrix |
@@ -388,7 +405,7 @@ short nb_mat4_exist(const char *url, char* label)
 		 */
 		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
+		if(fread(name, sizeof(char), info[4], fp) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
 			exit(1);
 		}
@@ -396,13 +413,13 @@ short nb_mat4_exist(const char *url, char* label)
 			found = 1;
 		else if(info[0] == 0){
 			/* Jump to the next structure */
-			if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
 		}else if(info[0] == 2){
 			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -414,15 +431,15 @@ short nb_mat4_exist(const char *url, char* label)
 		nb_free_mem(name);
 	}
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 
 	return found;
 }
 
 void nb_mat4_clear(const char *url)
 {
-	FILE *pfile = fopen(url,"wb");
-	fclose(pfile);
+	FILE *fp = fopen(url,"wb");
+	fclose(fp);
 }
 
 void nb_mat4_read_vec(const char *url, char *label, double *_x)
@@ -430,15 +447,15 @@ void nb_mat4_read_vec(const char *url, char *label, double *_x)
 	/* Read a vector named [label] from matlab v4 file */
  
 	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"rb");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
 	/* Init int32[5] to store info */
 	int32_t info[5];
 	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
+	while(fread(info, 4, 5, fp) != 0 && found != 1){
 		/* info[0] <- Type of structure and type of data
 		 *  __________________________
 		 *  |   0 := Complete matrix |
@@ -456,7 +473,7 @@ void nb_mat4_read_vec(const char *url, char *label, double *_x)
 		 */
 		char* name = nb_allocate_mem(info[4]*sizeof(char));
 		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
+		if(fread(name, sizeof(char), info[4], fp) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
 			exit(1);
 		}
@@ -472,7 +489,7 @@ void nb_mat4_read_vec(const char *url, char *label, double *_x)
 				/* If "name" and "label" are not equal
 				 * then jump to the next structure 
 				 */
-				if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
+				if(fseek(fp, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
 				}
@@ -490,14 +507,14 @@ void nb_mat4_read_vec(const char *url, char *label, double *_x)
 				else
 					size = info[1];
 				_x = (double*)nb_allocate_zero_mem(size * sizeof(double));
-				if(fread(_x, sizeof(double), size, pfile) == 0){
+				if(fread(_x, sizeof(double), size, fp) == 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
 				}
 			}
 		}else if(info[0] == 2){
 			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -509,7 +526,7 @@ void nb_mat4_read_vec(const char *url, char *label, double *_x)
 		nb_free_mem(name);
 	}
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 
 	if(found != 1){
 		printf("ERROR: Vector \"%s\" not found in \"%s\".\n",label,url);
@@ -522,8 +539,8 @@ void nb_mat4_save_vec(const char *url, char *label,
 	/* Write a sparse matrix named [label] in matlab v4 format */
 
 	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"ab");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
@@ -535,30 +552,30 @@ void nb_mat4_save_vec(const char *url, char *label,
 	int name_length = strlen(label);
 	info[4] = name_length+1;
 	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
+	fwrite(info, 4, 5, fp);
 	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
+	fwrite(label, sizeof(char), name_length, fp);
 	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
+	fwrite(&end_label, sizeof(char), 1, fp);
 	/* Write vector values */
-	fwrite(x, sizeof(double), N, pfile);
+	fwrite(x, sizeof(double), N, fp);
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 }
 
 void nb_mat4_read_mtx(const char *url, char *label, double *_A){
 	/* Read a vector named [label] from matlab v4 file */
  
 	/* Open file */
-	FILE *pfile = fopen(url,"rb");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"rb");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
 	/* Init int32[5] to store info */
 	int32_t info[5];
 	short found = 0;
-	while(fread(info, 4, 5, pfile) != 0 && found != 1){
+	while(fread(info, 4, 5, fp) != 0 && found != 1){
 		/* info[0] <- Type of structure and type of data
 		 *  __________________________
 		 *  |   0 := Complete matrix |
@@ -577,7 +594,7 @@ void nb_mat4_read_mtx(const char *url, char *label, double *_A){
 		char* name = nb_allocate_mem(info[4]*sizeof(char));
 
 		/* Read name */
-		if(fread(name, sizeof(char), info[4], pfile) == 0){
+		if(fread(name, sizeof(char), info[4], fp) == 0){
 			printf("ERROR: The matlab v4 file is corrupted.\n");
 			exit(1);
 		}
@@ -593,7 +610,7 @@ void nb_mat4_read_mtx(const char *url, char *label, double *_A){
 				/* If "name" and "label" are not equal
 				 * then jump to the next structure 
 				 */
-				if(fseek(pfile, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
+				if(fseek(fp, info[1]*info[2]*sizeof(double), SEEK_CUR) != 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
 				}
@@ -607,14 +624,14 @@ void nb_mat4_read_mtx(const char *url, char *label, double *_A){
 				/* Initialize vector */
 				uint32_t N = info[1];
 				_A = nb_allocate_zero_mem(POW2(N) * sizeof(double));
-				if(fread(_A, sizeof(double), N*N, pfile) == 0){
+				if(fread(_A, sizeof(double), N*N, fp) == 0){
 					printf("ERROR: The matlab v4 file is corrupted.\n");
 					exit(1);
 				}
 			}
 		}else if(info[0] == 2){
 			/* Jump to the next structure */
-			if(fseek(pfile, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
+			if(fseek(fp, (3*(info[1]-1)+3)*sizeof(double), SEEK_CUR) != 0){
 				printf("ERROR: The matlab v4 file is corrupted.\n");
 				exit(1);
 			}
@@ -626,7 +643,7 @@ void nb_mat4_read_mtx(const char *url, char *label, double *_A){
 		nb_free_mem(name);
 	}
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 
 	if(found != 1){
 		printf("ERROR: Complete matrix \"%s\" not found in \"%s\".\n",label,url);
@@ -639,8 +656,8 @@ void nb_mat4_write_mtx(const char *url, char *label,
 	/* Write a matrix named [label] in matlab v4 format */
 
 	/* Open file */
-	FILE *pfile = fopen(url,"ab");
-	if(pfile == NULL){
+	FILE *fp = fopen(url,"ab");
+	if(fp == NULL){
 		printf("ERROR: Impossible to open matlab v4 file.\n");
 		exit(1);
 	}
@@ -652,11 +669,11 @@ void nb_mat4_write_mtx(const char *url, char *label,
 	int name_length = strlen(label);
 	info[4] = name_length+1;
 	/* Write headers of struct */
-	fwrite(info, 4, 5, pfile);
+	fwrite(info, 4, 5, fp);
 	/* Write label of struct */
-	fwrite(label, sizeof(char), name_length, pfile);
+	fwrite(label, sizeof(char), name_length, fp);
 	char end_label = '\0';
-	fwrite(&end_label, sizeof(char), 1, pfile);
+	fwrite(&end_label, sizeof(char), 1, fp);
 	/* Transpose matrix */
 	double* At = nb_allocate_zero_mem(POW2(N) * sizeof(double));
 	uint32_t i, j;
@@ -665,8 +682,8 @@ void nb_mat4_write_mtx(const char *url, char *label,
 			At[i*N + j] = A[j*N + i];
 
 	/* Write matrix values */
-	fwrite(At, sizeof(double), N*N, pfile);
+	fwrite(At, sizeof(double), N*N, fp);
 	nb_free_mem(At);
 	/* Close file */
-	fclose(pfile);
+	fclose(fp);
 }

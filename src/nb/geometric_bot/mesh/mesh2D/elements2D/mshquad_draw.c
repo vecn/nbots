@@ -37,6 +37,13 @@ static void fill_nodes(const nb_mshquad_t *msh,
 					  nb_graphics_context_t *g,
 					  uint32_t i, void *data));
 
+static void draw_trg_level_set_intersection(nb_graphics_context_t *g,
+					    const double t1[2],
+					    const double t2[2],
+					    const double t3[2],
+					    double v1, double v2, double v3,
+					    double level_set);
+
 void nb_mshquad_draw_wires(const void *msh,
 			   nb_graphics_context_t *g)
 {
@@ -288,3 +295,60 @@ void nb_mshquad_fill_nodes_classes(const void *msh,
 	fill_nodes(msh, g, data, set_source_classes);
 }
 
+void nb_mshquad_draw_level_set(const void *msh,
+			       nb_graphics_context_t *g,
+			       const double *field_on_nodes,
+			       double level_set)
+{
+	uint32_t N_elems = nb_mshquad_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		uint32_t n1 = nb_mshquad_elem_get_adj(msh, i, 0);
+		double x1[2];
+		x1[0] = nb_mshquad_node_get_x(msh, n1);
+		x1[1] = nb_mshquad_node_get_y(msh, n1);
+		double v1 = field_on_nodes[n1];
+		
+		uint32_t n2 = nb_mshquad_elem_get_adj(msh, i, 1);
+		double x2[2];
+		x2[0] = nb_mshquad_node_get_x(msh, n2);
+		x2[1] = nb_mshquad_node_get_y(msh, n2);
+		double v2 = field_on_nodes[n2];
+
+		uint32_t n3 = nb_mshquad_elem_get_adj(msh, i, 2);
+		double x3[2];
+		x3[0] = nb_mshquad_node_get_x(msh, n3);
+		x3[1] = nb_mshquad_node_get_y(msh, n3);
+		double v3 = field_on_nodes[n3];
+
+		draw_trg_level_set_intersection(g, x1, x2, x3, v1,
+						v2, v3, level_set);
+
+		if (nb_mshquad_elem_is_quad(msh, i)) {
+			uint32_t n4 = nb_mshquad_elem_get_adj(msh, i, 3);
+			double x4[2];
+			x4[0] = nb_mshquad_node_get_x(msh, n4);
+			x4[1] = nb_mshquad_node_get_y(msh, n4);
+			double v4 = field_on_nodes[n4];
+
+			draw_trg_level_set_intersection(g, x1, x3, x4, v1,
+							v3, v4, level_set);
+		}
+	}
+}
+
+static void draw_trg_level_set_intersection(nb_graphics_context_t *g,
+					    const double t1[2],
+					    const double t2[2],
+					    const double t3[2],
+					    double v1, double v2, double v3,
+					    double level_set)
+{
+	if (nb_utils2D_level_set_intersects_trg(v1, v2, v3, level_set)) {
+		double a[2], b[2];
+		nb_utils2D_get_trg_level_set_intersection(t1, t2, t3, v1, v2,
+							  v3, level_set, a, b);
+		nb_graphics_move_to(g, a[0], a[1]);
+		nb_graphics_line_to(g, b[0], b[1]);
+		nb_graphics_stroke(g);
+	}
+}
