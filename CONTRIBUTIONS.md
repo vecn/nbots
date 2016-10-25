@@ -45,7 +45,7 @@
 ## Detailed contributions
 
 | Project task                                | Bot |  Developers  |
-|------------------------------------------ --|-----|--------------|
+|---------------------------------------------|-----|--------------|
 |Bots integration                             | all |vic           |
 |System macros                                | all |mvf           |
 |Documentation                                | all |vic, mvf, eot |
