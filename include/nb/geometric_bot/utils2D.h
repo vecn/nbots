@@ -121,6 +121,15 @@ bool nb_utils2D_sgm_intersects_circle(const double circumcenter[2],
 				      const double s1[2],
 				      const double s2[2]);
 
+bool nb_utils2D_level_set_intersects_trg(double v1, double v2, double v3,
+					 double level_set);
+void nb_utils2D_get_trg_level_set_intersection(const double t1[2],
+					       const double t2[2],
+					       const double t3[2],
+					       double v1, double v2, double v3,
+					       double level_set,
+					       double a[2], double b[2]);
+
 bool nb_utils2D_pnt_lies_on_sgm(const double s1[2],
 				const double s2[2],
 				const double p[2]);

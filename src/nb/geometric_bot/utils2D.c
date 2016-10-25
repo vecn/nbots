@@ -19,6 +19,14 @@
 static void init_robust_predicates_if_not(void);
 static char init_id = 0;
 
+static inline bool level_set_intersects_sgm(double v1, double v2,
+					    double level_set);
+static void get_sgm_level_set_intersection(const double s1[2],
+					   const double s2[2],
+					   double v1, double v2,
+					   double level_set,
+					   double p[2]);
+
 static double det_circumcircle(const double t1[2],
 			       const double t2[2],
 			       const double t3[2],
@@ -496,6 +504,62 @@ bool nb_utils2D_sgm_intersects_circle(const double circumcenter[2],
 	nb_utils2D_get_closest_pnt_to_sgm(s1, s2, circumcenter, p);
 	return (POW2(radius) - nb_utils2D_get_dist2(circumcenter, p) >
 		NB_GEOMETRIC_TOL);
+}
+
+bool nb_utils2D_level_set_intersects_trg(double v1, double v2, double v3,
+					 double level_set)
+{
+	bool out = true;
+	if (level_set > v1) {
+		if (level_set > v2)
+			if (level_set > v3)
+				out = false;
+	} else {
+		if (level_set < v2)
+			if (level_set < v3)
+				out = false;
+	}
+	return out;
+}
+
+void nb_utils2D_get_trg_level_set_intersection(const double t1[2],
+					       const double t2[2],
+					       const double t3[2],
+					       double v1, double v2, double v3,
+					       double level_set,
+					       double a[2], double b[2])
+{
+	if (level_set_intersects_sgm(v1, v2, level_set)) {
+		get_sgm_level_set_intersection(t1, t2, v1, v2, level_set, a);
+		if (level_set_intersects_sgm(v2, v3, level_set))
+			get_sgm_level_set_intersection(t2, t3, v2, v3,
+						       level_set, b);
+		else
+			get_sgm_level_set_intersection(t1, t3, v1, v3,
+						       level_set, b);
+	} else {
+		get_sgm_level_set_intersection(t2, t3, v2, v3, level_set, a);
+		get_sgm_level_set_intersection(t1, t3, v1, v3, level_set, b);
+	}
+}
+
+static inline bool level_set_intersects_sgm(double v1, double v2,
+					    double level_set)
+{
+	return (level_set > v1 && level_set < v2) ||
+		(level_set > v2 && level_set < v1);
+}
+
+static void get_sgm_level_set_intersection(const double s1[2],
+					   const double s2[2],
+					   double v1, double v2,
+					   double level_set,
+					   double p[2])
+{
+	double w = (level_set - v1) / (v2 - v1);
+	p[0] = (1.0 - w) * s1[0] + w * s2[0];
+	p[1] = (1.0 - w) * s1[1] + w * s2[1];
+		
 }
 
 bool nb_utils2D_pnt_lies_on_sgm(const double s1[2], const double s2[2],

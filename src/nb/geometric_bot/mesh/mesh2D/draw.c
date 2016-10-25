@@ -26,6 +26,7 @@
 #define COLOR_CLASS_7 NB_CHARTREUSE
 #define COLOR_CLASS_8 NB_LIGHT_GRAY
 #define COLOR_CLASS_9 NB_AQUAMARIN
+#define COLOR_LEVEL_SET NB_BLACK
 
 #define PALETTE_W 30
 #define PALETTE_H 250
@@ -38,6 +39,13 @@ typedef struct {
 	nb_mesh2D_array_type vals_type;
 	bool draw_wires;
 } draw_data;
+
+typedef struct {
+	const nb_mesh2D_t *part;
+	const double *field;
+	uint16_t N_ls;
+	bool draw_wires;
+} level_set_data;
 
 static void init_draw_data(draw_data *data,
 			   const nb_mesh2D_t *part,
@@ -84,6 +92,14 @@ static void add_palette(const nb_mesh2D_t *part,
 static void get_min_max(const nb_mesh2D_t *part,
 			const draw_data *data,
 			double *min, double *max);
+static void init_level_set_data(level_set_data *data,
+				const nb_mesh2D_t *part,
+				const double *field, uint16_t N_ls,
+				bool draw_wires);
+static void draw_level_sets(nb_graphics_context_t *g, int width, int height,
+			    const void *draw_data);
+static void process_level_sets(const level_set_data *data,
+			       nb_graphics_context_t *g);
 
 void nb_mesh2D_export_draw(const nb_mesh2D_t *part,
 			      const char *filename,
@@ -97,8 +113,7 @@ void nb_mesh2D_export_draw(const nb_mesh2D_t *part,
 	init_draw_data(&data, part, vals_entity,
 		       vals_type, values, draw_wires);
 
-	nb_graphics_export(filename, width, height,
-			   draw, &data);
+	nb_graphics_export(filename, width, height, draw, &data);
 }
 
 static void init_draw_data(draw_data *data,
@@ -193,7 +208,7 @@ static void normalize_values(double *normalized_values,
 	uint32_t max_id;
 	nb_array_get_min_max_ids(values, N, sizeof(*values),
 				  nb_compare_double,
-				  &(min_id), &(max_id));
+				  &min_id, &max_id);
 
 	double min = values[min_id];
 	double range = values[max_id] - min;
@@ -314,8 +329,72 @@ static void get_min_max(const nb_mesh2D_t *part,
 	}
 }
 
+void nb_mesh2D_export_level_sets(const nb_mesh2D_t *part,
+				 const char *filename, int width, int height,
+				 const void *field, uint16_t N_ls,
+				 bool draw_wires)
+{
+	level_set_data data;
+	init_level_set_data(&data, part, field, N_ls, draw_wires);
+
+	nb_graphics_export(filename, width, height, draw_level_sets, &data);
+}
+
+static void init_level_set_data(level_set_data *data,
+				const nb_mesh2D_t *part,
+				const double *field, uint16_t N_ls,
+				bool draw_wires)
+{
+	data->part = part;
+	data->field = field;
+	data->N_ls = N_ls;
+	data->draw_wires = draw_wires;
+}
+
+static void draw_level_sets(nb_graphics_context_t *g, int width, int height,
+			    const void *draw_data)
+{
+	const level_set_data *data = draw_data;
+	const nb_mesh2D_t *part = data->part;
+
+	if (!nb_graphics_is_camera_enabled(g))
+		set_camera(g, width, height, part);
+
+	process_level_sets(data, g);
+
+	if (data->draw_wires)
+		draw_wires(part, g);
+
+	draw_boundaries(part, g);
+}
+
+static void process_level_sets(const level_set_data *data,
+			       nb_graphics_context_t *g)
+{
+	const nb_mesh2D_t *part = data->part;
+	const double *field = data->field;
+
+	nb_graphics_set_source(g, COLOR_LEVEL_SET);
+	nb_graphics_set_line_width(g, 1.5);
+
+	uint32_t min_id;
+	uint32_t max_id;
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
+	nb_array_get_min_max_ids(field, N_nodes, sizeof(double),
+				 nb_compare_double, &min_id, &max_id);
+	double min = field[min_id];
+	double max = field[max_id];
+
+	uint16_t N = data->N_ls;
+	double level_set_step = (max - min) / (N - 1.0);
+	for (uint16_t i = 0; i < N; i++) {
+		double level_set = min + i * level_set_step;
+		nb_mesh2D_draw_level_set(part, g, field, level_set);
+	}
+}
+
 void nb_mesh2D_draw_wires(const nb_mesh2D_t *part,
-			     nb_graphics_context_t *g)
+			  nb_graphics_context_t *g)
 {
 	part->graphics.draw_wires(part->msh, g);
 }
@@ -374,4 +453,13 @@ void nb_mesh2D_fill_nodes_classes(const nb_mesh2D_t *part,
 {
 	part->graphics.fill_nodes_classes(part->msh, g, class,
 					  N_colors, colors);
+}
+
+void nb_mesh2D_draw_level_set(const nb_mesh2D_t *part,
+			      nb_graphics_context_t *g,
+			      const double *field_on_nodes,
+			      double level_set)
+{
+	part->graphics.draw_level_set(part->msh, g, field_on_nodes,
+				      level_set);
 }

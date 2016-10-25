@@ -33,6 +33,10 @@ typedef struct {
 				   nb_graphics_context_t *g,
 				   const uint8_t *class, uint8_t N_colors,
 				   const nb_graphics_color_t *colors);
+	void (*draw_level_set)(const void *msh,
+			       nb_graphics_context_t *g,
+			       const double *field_on_nodes,
+			       double level_set);
 } nb_mesh2D_graphics_i;
 
 struct nb_mesh2D_s {
