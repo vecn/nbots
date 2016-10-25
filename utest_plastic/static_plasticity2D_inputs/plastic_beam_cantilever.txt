@@ -31,7 +31,7 @@
 # Num of load conditions over vertices:		#
  1						#
 # Load conditions over vertices definition:	#					#
- 3 0 1 -1.4e6                                   #
+ 2 0 1 -1400000                                 #
 # Num of displacement conditions over lines:    #
  0						#
 # Num of load conditions over lines:            #
@@ -52,10 +52,10 @@
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
-# Analysis params (Thickness axis of rev)       #
- 0.2  	                                        #
 # ProbType(z P stress o P strain t SRev) 	#
  0						#
+# Analysis params (Thickness axis of rev)       #
+ 0.2  	                                        #
 # -----------------End of file------------------#
 # Void value					#
  0						#

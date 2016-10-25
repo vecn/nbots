@@ -36,12 +36,19 @@ int compute_internal_forces
          const nb_fem_elem_t *const elem)
 {
 int status = 1;
+N_nod = nb_fem_elem_get_N_nodes(elem);
+fprintf("%d", N_nod);
 	for (uint32_t i = 0; i < N_elem; i++) {
 
         int status_element = assemble_internal_forces_element(elem, i, stress, part, material, analysis2D, params2D, N_nod, FI);
 		if (0 != status_element)
 			goto EXIT;
 	}
+	/* TEMPORAL */
+	printf("\nInternal forces vector: \n");
+    for (int i = 0; i < 2*N_nod; i++) {
+            printf("%lf ", FI[i]);
+    }
 	status = 0;
 EXIT:
 	return status;
@@ -64,8 +71,8 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
 	if (0 != status)
 		goto CLEANUP;
 
-    add_internal_force_to_global_system
-                    (elem, id, part, FI, FIe, N_nod);
+    add_internal_forces_to_global_system
+                    (elem, id, part, FI, FIe);
 CLEANUP:
 	nb_free_mem(FIe);
 
@@ -95,11 +102,10 @@ int integrate_elemental_FIe_vector
 			goto EXIT;
 
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
-
-		double thickness = params2D->thickness;
-		internal_force_sum_gauss_point(elem, j, thickness,
-					 detJ, part, dNi_dx, dNi_dy, stress,
-					 FIe, N_nod);
+        double thickness = params2D->thickness;
+        internal_forces_sum_gauss_point(elem, j, thickness,
+                                       detJ, part, dNi_dx, dNi_dy,
+                                       stress, FIe);
 	}
 	status = 0;
 
@@ -109,10 +115,10 @@ EXIT:
 	return status;
 }
 
-void internal_force_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
+void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
 			      double thickness, double detJ, const nb_mesh2D_t *part,
 			      double *dNi_dx, double *dNi_dy,
-			      double *stress, double *FIe, uint32_t N_nod)
+			      double *stress, double *FIe)
 {
 	/* Compute elemental stiffness matrix
 	 *       _            _         _   _                   _                           _
@@ -122,23 +128,28 @@ void internal_force_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 	 */
 	double wp = nb_fem_elem_weight_gp(elem, gp_id);
 
-	for (uint32_t i = 0; i < N_nod; i++) {
+    uint8_t N_elem_node = nb_fem_elem_get_N_nodes(elem);
+
+	for (uint32_t i = 0; i < N_elem_node; i++) {
         uint32_t v1 = nb_mesh2D_elem_get_adj(part, gp_id, i);
-		FIe[v1*2] += (dNi_dx[i]*stress[3*gp_id]+dNi_dy[i]*stress[3*gp_id+2]) *
-		detJ * thickness * wp;//*area_element??;
-        FIe[v1*2+1] += (dNi_dy[i]*stress[3*gp_id+1]+dNi_dx[i]*stress[3*gp_id]) *
-		detJ * thickness * wp;//*area_element;
+		FIe[v1] += (dNi_dx[i]*stress[3*gp_id] + dNi_dy[i]*stress[3*gp_id + 2]) *
+		detJ * thickness * wp;
+		printf("FIe_x %d: %lf", i, FIe[v1]); /* TEMPORAL */
+        FIe[v1+1] += (dNi_dy[i]*stress[3*gp_id +1] + dNi_dx[i]*stress[3*gp_id]) *
+		detJ * thickness * wp;
+		printf("FIe_y %d: %lf", i, FIe[v1+1]); /* TEMPORAL */
 	}
 }
 
-void add_internal_force_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
+void add_internal_forces_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
 				   const nb_mesh2D_t *part, double *FI,
-				   double *FIe, uint32_t N_nod)
+				   double *FIe)
 {
-	for (uint32_t i = 0; i < N_nod; i++) {
+    uint8_t N_elem_node = nb_fem_elem_get_N_nodes(elem);
+	for (uint32_t i = 0; i < N_elem_node; i++) {
 		uint32_t v1 = nb_mesh2D_elem_get_adj(part, id, i);
 		/* Add to global internal forces vector */
-		FI[v1 * 2] += FIe[i * 2];
-		FI[v1*2+1] += FIe[i*2+1];
+		FI[v1 ] += FIe[i * 2];
+		FI[v1 + 1] += FIe[i * 2 + 1];
 	}
 }

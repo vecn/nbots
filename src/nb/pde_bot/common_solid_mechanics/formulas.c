@@ -55,22 +55,31 @@ void nb_pde_get_plastified_constitutive_matrix(double D[4],
 	double E = nb_material_get_elasticity_module(material);
 	double Ep = nb_material_get_plasticity_module(material);
 	double v = nb_material_get_poisson_module(material);
-
     switch (analysis2D) {
 	case NB_PLANE_STRESS:
 	    switch (elem_reg) {
         case NB_ELASTIC:
             set_plane_stress(D, E, v);
+            break;
         case NB_PLASTIC:
             set_plane_stress(D, Ep, v);
+            break;
+        default:
+            set_plane_stress(D, E, v);
 	    }
+	    break;
 	case NB_PLANE_STRAIN:
 	    switch (elem_reg) {
         case NB_ELASTIC:
             set_plane_strain(D, E, v);
+            break;
         case NB_PLASTIC:
             set_plane_strain(D, Ep, v);
+            break;
+        default:
+            set_plane_strain(D, E, v);
 	    }
+	    break;
 	default:
 		set_plane_stress(D, E, v);
 	}

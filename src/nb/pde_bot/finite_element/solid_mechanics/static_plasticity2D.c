@@ -29,6 +29,8 @@
 #define POW2(a) ((a)*(a))
 
 void print_system_of_equations(double *K, double *F, uint32_t N_nod); /* TEMPORAL */
+void non_zero_values(double *K, double *F, uint32_t N_nod); /* TEMPORAL */
+void non_zero_stresses(double *stress, uint32_t N_elem, uint32_t i); /* TEMPORAL */
 
 int fem_compute_plastic_2D_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
@@ -73,13 +75,14 @@ int fem_compute_plastic_2D_Solid_Mechanics
 					 enable_self_weight, gravity,
 					 analysis2D, params2D,
 					 elements_enabled);
-   print_system_of_equations(K, F, N_nod); /* TEMPORAL */
 	if (0 != status_assemble) {
 		status = 1;
 		goto CLEANUP_LINEAR_SYSTEM;
 	}
 
 	nb_fem_set_bconditions(part, K, F, bcond, 1.0);
+	printf("Force vector after BC: \n"); /* TEMPORAL */
+	print_system_of_equations(K, F, N_nod); /* TEMPORAL */
 
     nb_plastified_analysis2D *elem_regime = nb_allocate_mem(N_elem*10*sizeof(char));
 
@@ -91,7 +94,6 @@ int fem_compute_plastic_2D_Solid_Mechanics
 
     double *dF_basic = nb_soft_allocate_mem(F_memsize);
     memset(dF_basic, 0, F_memsize);
-
 	for (int i = 0; i < 2*N_nod; i++) {
         dF_basic[i] = F[i] / N_force_steps;
     }
@@ -101,19 +103,19 @@ int fem_compute_plastic_2D_Solid_Mechanics
 
     /* Apply the force recursively step by step */
     for (int i = 0; i < N_force_steps; i++) {
-
         for (int j = 0; j < 2*N_nod; j++)
         {
             dF[j] += dF_basic[j];
         }
 
     int solver_status = plastic_solver(K, dF, displacement);
+    // printf("Displacement node 3: %lf\n", displacement[1875]); /* TEMPORAL */
 
     if (0 != solver_status) {
         status = 2;
         goto CLEANUP_LINEAR_SYSTEM;
     }
-    //add_elastic_displacements(displacement, elastic_displacement, elem_regime, elemtype, N_elem, N_nod);
+
     /* Compute strains of the elastic displacements. The strains are stored in the elastic strain vector if and just if the
     element has not plastified yet: */
 	pipeline_compute_strain(strain, part, displacement, elemtype);
@@ -124,8 +126,10 @@ int fem_compute_plastic_2D_Solid_Mechanics
 
 	/* Compute stresses from total strain. The elastic elements stresses are computed with the elastic constitutive matrix and
 	the plastic elements with the plastic constitutive matrix with the plastic module Ep: */
-	void nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
+	nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
                                            elements_enabled, stress, elem_regime);
+
+    //non_zero_stresses(stress, N_elem, i); /* TEMPORAL */
 
     /* Compute Von Mises stress for each non plastified element:*/
     double yield_stress = nb_material_get_yield_stress(material);
@@ -145,7 +149,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
     double *FI = nb_soft_allocate_mem(F_memsize);
     if (regime_status) {
         /* Recalculate the stresses of the elements taking into account the new plastified elements: */
-        void nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
+        nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
                                                        elements_enabled, stress, elem_regime);
 
         /* Compute internal forces: */
@@ -179,7 +183,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
             add_plastic_strain(strain, plastic_strain, N_elem);
             add_total_strain(total_strain, elastic_strain, plastic_strain, N_elem);
 
-            void nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
+            nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D, total_strain,
                                                             elements_enabled, stress, elem_regime);
 
             /* Recompute internal forces from stresses and setup the new tolerance: */
@@ -196,7 +200,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
     }
     CLEANUP_RECURSIVE_SYSTEM:
     nb_soft_free_mem(F_memsize, FI);
-    if (status = 3){
+    if (status == 3){
     goto CLEANUP_LINEAR_SYSTEM;
     }
 }
@@ -231,11 +235,20 @@ void nb_fem_compute_plastic_stress_from_strain
 	for (uint32_t i = 0; i < N_elements; i++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		if (pipeline_elem_is_enabled(elements_enabled, i))
-			nb_pde_get_plastified_constitutive_matrix(D, material,
+        nb_pde_get_plastified_constitutive_matrix(D, material,
 						       analysis2D, elem_regime[i]);
-
+        /* TEMPORAL
+        switch(elem_regime[i]) {
+        case NB_ELASTIC:
+            break;
+        case NB_PLASTIC:
+            printf("\n D plastic matrix of element %d: ", i);
+            for(int j = 0; j < 3; j++) {
+                printf("%lf ", D[j]);
+            }
+        }
+        */
 		uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
-		memset(stress, 0, N_gp*sizeof(double));
 		for (int j = 0; j < N_gp; j++) {
 			uint32_t id = i * N_gp + j;
 			stress[id * 3] = strain[id * 3] * D[0] +
@@ -270,15 +283,17 @@ void residual_force(double *res_force, double *dF, double *FI, uint32_t N_nod) {
 void add_elastic_strain(double *strain, double *elastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem) {
 
     for (int i = 0; i < N_elem; i++) {
-        if(elem_regime[i] = NB_ELASTIC){
-                elastic_strain[3*i] = strain[3*i];
-                elastic_strain[3*i+1] = strain[3*i+1];
-                elastic_strain[3*i+2] = strain[3*i+2];
-        }
-        else {
-                elastic_strain[3*i] += 0;
-                elastic_strain[3*i+1] += 0;
-                elastic_strain[3*i+2] += 0;
+        switch(elem_regime[i]){
+        case NB_ELASTIC:
+            elastic_strain[3*i] = strain[3*i];
+            elastic_strain[3*i+1] = strain[3*i+1];
+            elastic_strain[3*i+2] = strain[3*i+2];
+            break;
+        case NB_PLASTIC:
+            elastic_strain[3*i] += 0;
+            elastic_strain[3*i+1] += 0;
+            elastic_strain[3*i+2] += 0;
+            break;
         }
     }
 }
@@ -317,7 +332,7 @@ int plastic_solver(const nb_sparse_t *const A,
 /* TEMPORAL*/
 void print_system_of_equations(double *K, double *F, uint32_t N_nod) {
 
-    for (int i = 0; i < 2*N_nod; i++) {
+    /*for (int i = 0; i < 2*N_nod; i++) {
         for (int j = 0; j < 2*N_nod; j++) {
             printf("%lf ", K[(i*2) + (j*2)]);
             printf("%lf ", K[(i*2) + (j*2+1)]);
@@ -326,5 +341,39 @@ void print_system_of_equations(double *K, double *F, uint32_t N_nod) {
         }
         printf("\n");
     }
+    */
+    double max = 0;
+    for (int i = 0; i < 2*N_nod; i++) {
+        if(i == 1675){
+        printf("%d %lf\n",i, F[i]);
+        }
+        if(fabs(F[i]) > fabs(max)) {
+            max = F[i];
+
+        }
+    }
+    printf("The maximum value is: %lf \n", max);
 }
 
+void non_zero_values(double *K, double *F, uint32_t N_nod) {
+    uint32_t nz_K = 0;
+    uint64_t nz_F = 0;
+   for (int i = 0; i < 2*N_nod; i++) {
+        if(abs(F[i]) > 1e-6)
+            nz_F += 1;
+    }
+printf("Stiffness matrix K: %d\n", nz_K);
+printf("Force vector F: %d\n", nz_F);
+}
+
+void non_zero_stresses(double *stress, uint32_t N_elem, uint32_t i) {
+    printf("Non zero stresses of iteration %d:\n", i);
+    for(int i = 0; i < N_elem; i++) {
+        if(fabs(stress[3*i]) > 1e-6)
+            printf("%lf",stress[3*i]);
+        if(fabs(stress[3*i + 1]) > 1e-6)
+            printf("%lf",stress[3*i + 1]);
+        if(fabs(stress[3*i + 2]) > 1e-6)
+            printf("%lf",stress[3*i + 2]);
+    }
+}

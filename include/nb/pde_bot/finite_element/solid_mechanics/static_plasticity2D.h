@@ -13,9 +13,9 @@
 void add_elastic_strain(double *strain, double *elastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
 void add_plastic_strain(double *strain, double *plastic_strain, uint32_t N_elem);
 void add_total_strain(double *total_strain, double *elastic_strain, double *plastic_strain, uint32_t N_elem);
-void add_internal_force_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
+void add_internal_forces_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
                 const nb_mesh2D_t *part, double *FI,
-                double *FIe, uint32_t N_nod);
+                double *FIe);
 int assemble_internal_forces_element(const nb_fem_elem_t *elem,
                 uint32_t id, double *stress,
 			    const nb_mesh2D_t *part,
@@ -40,10 +40,10 @@ int integrate_elemental_FIe_vector
                 nb_analysis2D_params *params2D,
                 uint32_t N_nod,
                 double *FIe);
-void internal_force_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
+void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
                 double thickness, double detJ, const nb_mesh2D_t *part,
                 double *dNi_dx, double *dNi_dy,
-                double *stress, double *FIe, uint32_t N_nod);
+                double *stress, double *FIe);
 double force_tolerance (double *F, double *FI, uint32_t N_nod);
 void nb_fem_compute_plastic_stress_from_strain
                 (uint32_t N_elements,
