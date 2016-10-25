@@ -468,7 +468,7 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Sxx.png",
-				    1000, 800, vm_stress, 20, true);
+				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+1];
@@ -477,7 +477,7 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Syy.png",
-				    1000, 800, vm_stress, 20, true);
+				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+2];
@@ -486,7 +486,7 @@ static void TEMPORAL2(nb_mesh2D_t *part, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 	nb_mesh2D_export_level_sets(part, "../../../CVFA_ls_Sxy.png",
-				    1000, 800, vm_stress, 20, true);
+				    1000, 800, vm_stress, 20, false);
 
 	nb_soft_free_mem(memsize, memblock);
 }

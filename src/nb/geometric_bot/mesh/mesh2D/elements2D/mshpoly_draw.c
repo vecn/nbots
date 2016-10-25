@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "nb/math_bot.h"
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graphics_bot.h"
 
@@ -336,13 +337,32 @@ void nb_mshpoly_draw_level_set(const void *msh,
 static double get_centroid_val(const void *msh,
 			       const double *field, uint32_t elem_id)
 {
-	double val = 0;
-	uint16_t N_adj = nb_mshpoly_elem_get_N_adj(msh, elem_id);
-	for (uint16_t j = 0; j < N_adj; j++) {
+	uint16_t N = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+
+	uint32_t memsize = N * 3 * sizeof(double);
+	char *memblock = nb_soft_allocate_mem(memsize);
+	double *w = (void*) memblock;
+	double *xi = (void*) (memblock + N * sizeof(double));
+
+	for (uint16_t j = 0; j < N; j++) {
 		uint32_t nid = nb_mshpoly_elem_get_adj(msh, elem_id, j);
-		val += field[nid];
+		xi[j * 2] = nb_mshpoly_node_get_x(msh, nid);
+		xi[j*2+1] = nb_mshpoly_node_get_y(msh, nid);
 	}
-	return val / N_adj;
+	double xc[2];
+	xc[0] = nb_mshpoly_elem_get_x(msh, elem_id);
+	xc[1] = nb_mshpoly_elem_get_y(msh, elem_id);
+
+	nb_nonpolynomial_eval(N, 2, xi, NULL, xc, w);
+
+	double val = 0;
+	for (uint16_t j = 0; j < N; j++) {
+		uint32_t nid = nb_mshpoly_elem_get_adj(msh, elem_id, j);
+		val += w[j] * field[nid];
+	}
+
+	nb_soft_free_mem(memsize, memblock);
+	return val;
 }
 
 static void draw_trg_level_set_intersection(nb_graphics_context_t *g,

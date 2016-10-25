@@ -510,14 +510,16 @@ bool nb_utils2D_level_set_intersects_trg(double v1, double v2, double v3,
 					 double level_set)
 {
 	bool out = true;
-	if (level_set > v1) {
-		if (level_set > v2)
-			if (level_set > v3)
+	if (level_set - v1 > -1e-6) {
+		if (level_set - v2 > -1e-6)
+			if (level_set - v3 > -1e-6)
 				out = false;
-	} else {
-		if (level_set < v2)
-			if (level_set < v3)
-				out = false;
+	}
+	if (out) {
+		if (level_set - v1 < 1e-6)
+			if (level_set - v2 < 1e-6)
+				if (level_set - v3 < 1e-6)
+					out = false;
 	}
 	return out;
 }
