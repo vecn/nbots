@@ -360,6 +360,8 @@ static void TEMPORAL1(nb_mesh2D_t *part, results_t *results)
 	nb_mesh2D_export_draw(part, "../../../CVFA_dy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
+	nb_mesh2D_export_draw(part, "../../../poly.png", 600, 600,
+				 NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
 
 	nb_free_mem(disp);
 	nb_free_mem(disp_nodes);
