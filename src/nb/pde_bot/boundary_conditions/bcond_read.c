@@ -32,7 +32,6 @@ static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
 	unsigned int N;
 	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto EXIT;
-    printf("N: %d\n", N); /* TEMPORAL */
 	for (unsigned int i = 0; i < N; i++) {
 		bc_atom_t *bc = bc_atom_create(N_dof);
 		nb_container_insert(cnt, bc);
@@ -43,7 +42,6 @@ static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
 							&(bc->mask[j])))
 				goto CLEANUP;
 		}
-		printf("N_dof: %d\n", N_dof); /* TEMPORAL */
 		for (uint8_t j = 0; j < N_dof; j++) {
 			if (bc->mask[j]) {
 				double value = 0.0;
@@ -51,7 +49,6 @@ static int read_conditions(nb_container_t *cnt, uint8_t N_dof,
 								  &value))
 					goto CLEANUP;
 				bc->val[j] = value;
-				printf("%lf ", bc->val[j]); /* TEMPORAL */
 			}
 		}
 	}

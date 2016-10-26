@@ -28,8 +28,6 @@
 
 #define POW2(a) ((a)*(a))
 
-void print_system_of_equations(double *K, double *F, uint32_t N_nod); /* TEMPORAL */
-void non_zero_values(double *K, double *F, uint32_t N_nod); /* TEMPORAL */
 void non_zero_stresses(double *stress, uint32_t N_elem, uint32_t i); /* TEMPORAL */
 
 int fem_compute_plastic_2D_Solid_Mechanics
@@ -81,8 +79,6 @@ int fem_compute_plastic_2D_Solid_Mechanics
 	}
 
 	nb_fem_set_bconditions(part, K, F, bcond, 1.0);
-	printf("Force vector after BC: \n"); /* TEMPORAL */
-	print_system_of_equations(K, F, N_nod); /* TEMPORAL */
 
     nb_plastified_analysis2D *elem_regime = nb_allocate_mem(N_elem*10*sizeof(char));
 
@@ -162,7 +158,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
         }
         /* Compute the maximum difference between the internal and the external forces as the tolerance: */
         double tolerance = force_tolerance(dF, FI, N_nod);
-
+        uint32_t iter = 0; /* TEMPORAL */
         /* Recursive process to balance the actual external forces with internal ones */
         while(tolerance > accepted_tol) {
             double *res_force = nb_soft_allocate_mem(F_memsize);
@@ -195,6 +191,8 @@ int fem_compute_plastic_2D_Solid_Mechanics
                 goto CLEANUP_RECURSIVE_SYSTEM;
             }
             double tolerance = force_tolerance(dF, FI, N_nod);
+            iter++; /* TEMPORAL */
+            printf("Tolerance %d: %lf\n", iter, tolerance); /* TEMPORAL */
         }
 
     }
@@ -233,21 +231,13 @@ void nb_fem_compute_plastic_stress_from_strain
     #pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
 
 	for (uint32_t i = 0; i < N_elements; i++) {
+
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
+
 		if (pipeline_elem_is_enabled(elements_enabled, i))
         nb_pde_get_plastified_constitutive_matrix(D, material,
 						       analysis2D, elem_regime[i]);
-        /* TEMPORAL
-        switch(elem_regime[i]) {
-        case NB_ELASTIC:
-            break;
-        case NB_PLASTIC:
-            printf("\n D plastic matrix of element %d: ", i);
-            for(int j = 0; j < 3; j++) {
-                printf("%lf ", D[j]);
-            }
-        }
-        */
+
 		uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 		for (int j = 0; j < N_gp; j++) {
 			uint32_t id = i * N_gp + j;
@@ -302,8 +292,8 @@ void add_plastic_strain(double *strain, double *plastic_strain, uint32_t N_elem)
 
     for (int i = 0; i < 3*N_elem; i += 3) {
                 plastic_strain[i] += strain[i];
-                plastic_strain[i+1] += strain[i+1];
-                plastic_strain[i+2] += strain[i+2];
+                plastic_strain[i + 1] += strain[i + 1];
+                plastic_strain[i + 2] += strain[i + 2];
     }
 }
 
@@ -328,42 +318,6 @@ int plastic_solver(const nb_sparse_t *const A,
 	else
 		out = 1; /* Tolerance not reached in CG Jacobi */
 	return out;
-}
-/* TEMPORAL*/
-void print_system_of_equations(double *K, double *F, uint32_t N_nod) {
-
-    /*for (int i = 0; i < 2*N_nod; i++) {
-        for (int j = 0; j < 2*N_nod; j++) {
-            printf("%lf ", K[(i*2) + (j*2)]);
-            printf("%lf ", K[(i*2) + (j*2+1)]);
-            printf("%lf ", K[(i*2+1) + (j*2)]);
-            printf("%lf ", K[(i*2+1) + (j*2+1)]);
-        }
-        printf("\n");
-    }
-    */
-    double max = 0;
-    for (int i = 0; i < 2*N_nod; i++) {
-        if(i == 1675){
-        printf("%d %lf\n",i, F[i]);
-        }
-        if(fabs(F[i]) > fabs(max)) {
-            max = F[i];
-
-        }
-    }
-    printf("The maximum value is: %lf \n", max);
-}
-
-void non_zero_values(double *K, double *F, uint32_t N_nod) {
-    uint32_t nz_K = 0;
-    uint64_t nz_F = 0;
-   for (int i = 0; i < 2*N_nod; i++) {
-        if(abs(F[i]) > 1e-6)
-            nz_F += 1;
-    }
-printf("Stiffness matrix K: %d\n", nz_K);
-printf("Force vector F: %d\n", nz_F);
 }
 
 void non_zero_stresses(double *stress, uint32_t N_elem, uint32_t i) {

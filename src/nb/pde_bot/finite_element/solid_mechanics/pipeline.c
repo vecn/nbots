@@ -63,7 +63,7 @@ int pipeline_assemble_system
 
 	for (uint32_t i = 0; i < N_elem; i++) {
 		bool is_enabled = pipeline_elem_is_enabled(elements_enabled, i);
-    /*printf("%s\n", is_enabled ? "true" : "false");*/
+        /*printf("%s\n", is_enabled ? "true" : "false");*/
 		int status_element =
 			assemble_element(elem, i, part, material, is_enabled,
 					 analysis2D, params2D,
@@ -142,7 +142,6 @@ static int integrate_elemental_system
 		fx = gravity[0] * density;
 		fy = gravity[1] * density;
 	}
-	//fprintf("Gravity: %lf", fx); /* TEMPORAL */
 
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	memset(Ke, 0, 4 * POW2(N_nodes) * sizeof(*Ke));

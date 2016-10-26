@@ -64,7 +64,7 @@ int main() {
 
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 1000,
+        run_test("%s/plastic_beam_cantilever.txt", 50,
         check_beam_cantilever);
 }
 static void check_beam_cantilever(const void *part,

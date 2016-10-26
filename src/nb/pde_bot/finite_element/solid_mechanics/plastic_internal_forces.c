@@ -37,18 +37,13 @@ int compute_internal_forces
 {
 int status = 1;
 N_nod = nb_fem_elem_get_N_nodes(elem);
-fprintf("%d", N_nod);
+
 	for (uint32_t i = 0; i < N_elem; i++) {
 
         int status_element = assemble_internal_forces_element(elem, i, stress, part, material, analysis2D, params2D, N_nod, FI);
 		if (0 != status_element)
 			goto EXIT;
 	}
-	/* TEMPORAL */
-	printf("\nInternal forces vector: \n");
-    for (int i = 0; i < 2*N_nod; i++) {
-            printf("%lf ", FI[i]);
-    }
 	status = 0;
 EXIT:
 	return status;
@@ -63,7 +58,8 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
 			    uint32_t N_nod,
 			    double *FI)
 {
-    double *FIe = nb_allocate_zero_mem(2*N_nod*sizeof(FIe));
+    double *FIe = nb_soft_allocate_mem(2*N_nod*sizeof(FIe));
+    memset(FIe, 0, 2*N_nod*sizeof(FIe));
 
     int status = integrate_elemental_FIe_vector
                     (elem, id, part, stress, params2D, N_nod, FIe);
@@ -74,7 +70,7 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
     add_internal_forces_to_global_system
                     (elem, id, part, FI, FIe);
 CLEANUP:
-	nb_free_mem(FIe);
+	nb_soft_free_mem(2*N_nod*sizeof(FIe), FIe);
 
 	return status;
 }
@@ -89,9 +85,13 @@ int integrate_elemental_FIe_vector
 	int status = 1;
 	/* Allocate Cartesian derivatives for each Gauss Point */
 	uint32_t deriv_memsize = N_nod * sizeof(double);
-	char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
+	/*char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
-	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
+	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);*/
+	double *dNi_dx = nb_soft_allocate_mem(deriv_memsize);
+	memset(dNi_dx, 0, deriv_memsize);
+	double *dNi_dy = nb_soft_allocate_mem(deriv_memsize);
+    memset(dNi_dy, 0, deriv_memsize);
 
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	for (uint32_t j = 0; j < N_gp; j++) {
@@ -102,6 +102,7 @@ int integrate_elemental_FIe_vector
 			goto EXIT;
 
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
+
         double thickness = params2D->thickness;
         internal_forces_sum_gauss_point(elem, j, thickness,
                                        detJ, part, dNi_dx, dNi_dy,
@@ -110,7 +111,9 @@ int integrate_elemental_FIe_vector
 	status = 0;
 
 EXIT:
-	nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
+	//nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
+	nb_soft_free_mem(deriv_memsize, dNi_dx);
+	nb_soft_free_mem(deriv_memsize, dNi_dy);
 
 	return status;
 }
@@ -132,12 +135,11 @@ void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
 
 	for (uint32_t i = 0; i < N_elem_node; i++) {
         uint32_t v1 = nb_mesh2D_elem_get_adj(part, gp_id, i);
-		FIe[v1] += (dNi_dx[i]*stress[3*gp_id] + dNi_dy[i]*stress[3*gp_id + 2]) *
+
+		FIe[i] += (dNi_dx[i]*stress[3*gp_id] + dNi_dy[i]*stress[3*gp_id + 2]) *
 		detJ * thickness * wp;
-		printf("FIe_x %d: %lf", i, FIe[v1]); /* TEMPORAL */
-        FIe[v1+1] += (dNi_dy[i]*stress[3*gp_id +1] + dNi_dx[i]*stress[3*gp_id]) *
+		FIe[i + 1] += (dNi_dy[i]*stress[3*gp_id + 1] + dNi_dx[i]*stress[3*gp_id]) *
 		detJ * thickness * wp;
-		printf("FIe_y %d: %lf", i, FIe[v1+1]); /* TEMPORAL */
 	}
 }
 
@@ -149,7 +151,7 @@ void add_internal_forces_to_global_system(const nb_fem_elem_t *elem, uint32_t id
 	for (uint32_t i = 0; i < N_elem_node; i++) {
 		uint32_t v1 = nb_mesh2D_elem_get_adj(part, id, i);
 		/* Add to global internal forces vector */
-		FI[v1 ] += FIe[i * 2];
+		FI[v1] += FIe[i * 2];
 		FI[v1 + 1] += FIe[i * 2 + 1];
 	}
 }
