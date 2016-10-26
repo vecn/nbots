@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 #include "nb/math_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
@@ -8,7 +9,11 @@
 
 void* nb_graphics_eps_create_context(int width, int height)
 {
-	return 0;
+	printf("/*******************************************/\n");
+	printf("/* NB GRAPHICS EPS IS NOT YET IMPLEMENTED. */\n");
+	printf("/* EPS OUTPUT NOT GENERATED.               */\n");
+	printf("/*******************************************/\n");
+	return NULL;
 }
 
 void nb_graphics_eps_destroy_context(void *ctx)
