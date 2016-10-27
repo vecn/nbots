@@ -11,7 +11,7 @@
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
 
 void add_elastic_strain(double *strain, double *elastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
-void add_plastic_strain(double *strain, double *plastic_strain, uint32_t N_elem);
+void add_plastic_strain(double *strain, double *plastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
 void add_total_strain(double *total_strain, double *elastic_strain, double *plastic_strain, uint32_t N_elem);
 void add_internal_forces_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
                 const nb_mesh2D_t *part, double *FI,
@@ -40,7 +40,7 @@ int integrate_elemental_FIe_vector
                 nb_analysis2D_params *params2D,
                 uint32_t N_nod,
                 double *FIe);
-void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
+void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id, uint8_t GP,
                 double thickness, double detJ, const nb_mesh2D_t *part,
                 double *dNi_dx, double *dNi_dy,
                 double *stress, double *FIe);

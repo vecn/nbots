@@ -35,8 +35,8 @@ int compute_internal_forces
          nb_analysis2D_params *params2D,
          const nb_fem_elem_t *const elem)
 {
-int status = 1;
-N_nod = nb_fem_elem_get_N_nodes(elem);
+    int status = 1;
+    N_nod = nb_fem_elem_get_N_nodes(elem);
 
 	for (uint32_t i = 0; i < N_elem; i++) {
 
@@ -45,6 +45,11 @@ N_nod = nb_fem_elem_get_N_nodes(elem);
 			goto EXIT;
 	}
 	status = 0;
+	/* TEMPORAL */
+	for (int k = 0; k < nb_mesh2D_get_N_nodes(part); k++){
+        printf("FIx[%d]: %lf\t", k, FI[2*k]);
+        printf("FIy[%d]: %lf\n", k, FI[2*k+1]);
+	}
 EXIT:
 	return status;
 }
@@ -58,8 +63,7 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
 			    uint32_t N_nod,
 			    double *FI)
 {
-    double *FIe = nb_soft_allocate_mem(2*N_nod*sizeof(FIe));
-    memset(FIe, 0, 2*N_nod*sizeof(FIe));
+    double *FIe = nb_allocate_zero_mem(2*N_nod*sizeof(FIe));
 
     int status = integrate_elemental_FIe_vector
                     (elem, id, part, stress, params2D, N_nod, FIe);
@@ -70,7 +74,7 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
     add_internal_forces_to_global_system
                     (elem, id, part, FI, FIe);
 CLEANUP:
-	nb_soft_free_mem(2*N_nod*sizeof(FIe), FIe);
+	nb_free_mem(FIe);
 
 	return status;
 }
@@ -84,8 +88,9 @@ int integrate_elemental_FIe_vector
 {
 	int status = 1;
 	/* Allocate Cartesian derivatives for each Gauss Point */
-	uint32_t deriv_memsize = N_nod * sizeof(double);
-	/*char *deriv_memblock = nb_soft_allocate_mem(2 * deriv_memsize);
+	uint32_t N_elem_nod = nb_fem_elem_get_N_nodes(elem);
+	uint32_t deriv_memsize = N_elem_nod * sizeof(double);
+	/*char *deriv_memblock = nb_allocate_mem(2 * deriv_memsize);
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);*/
 	double *dNi_dx = nb_soft_allocate_mem(deriv_memsize);
@@ -104,21 +109,21 @@ int integrate_elemental_FIe_vector
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
 
         double thickness = params2D->thickness;
-        internal_forces_sum_gauss_point(elem, j, thickness,
+        internal_forces_sum_gauss_point(elem, id, j, thickness,
                                        detJ, part, dNi_dx, dNi_dy,
                                        stress, FIe);
 	}
 	status = 0;
 
 EXIT:
-	//nb_soft_free_mem(2 * deriv_memsize, deriv_memblock);
+	//nb_free_mem(2 * deriv_memsize, deriv_memblock);
 	nb_soft_free_mem(deriv_memsize, dNi_dx);
 	nb_soft_free_mem(deriv_memsize, dNi_dy);
 
 	return status;
 }
 
-void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
+void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id, uint8_t GP,
 			      double thickness, double detJ, const nb_mesh2D_t *part,
 			      double *dNi_dx, double *dNi_dy,
 			      double *stress, double *FIe)
@@ -129,16 +134,16 @@ void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id,
 	 * Bi = |       dNi/dy |   S = | Sy  |  Fi[i] = B'*S = |                             |
 	 *      |dNi/dy dNi/dx_|       |_Sxy_|                 |_ (dNi/dy)*sy + (dNi/dx)*sx _|
 	 */
-	double wp = nb_fem_elem_weight_gp(elem, gp_id);
+	double wp = nb_fem_elem_weight_gp(elem, GP);
 
     uint8_t N_elem_node = nb_fem_elem_get_N_nodes(elem);
-
+    memset(FIe, 0, 2*N_elem_node*sizeof(FIe));
 	for (uint32_t i = 0; i < N_elem_node; i++) {
         uint32_t v1 = nb_mesh2D_elem_get_adj(part, gp_id, i);
 
-		FIe[i] += (dNi_dx[i]*stress[3*gp_id] + dNi_dy[i]*stress[3*gp_id + 2]) *
+		FIe[2*i] = (dNi_dx[i]*stress[3*gp_id] + dNi_dy[i]*stress[3*gp_id + 2]) *
 		detJ * thickness * wp;
-		FIe[i + 1] += (dNi_dy[i]*stress[3*gp_id + 1] + dNi_dx[i]*stress[3*gp_id]) *
+		FIe[2*i + 1] = (dNi_dy[i]*stress[3*gp_id + 1] + dNi_dx[i]*stress[3*gp_id]) *
 		detJ * thickness * wp;
 	}
 }
@@ -151,7 +156,7 @@ void add_internal_forces_to_global_system(const nb_fem_elem_t *elem, uint32_t id
 	for (uint32_t i = 0; i < N_elem_node; i++) {
 		uint32_t v1 = nb_mesh2D_elem_get_adj(part, id, i);
 		/* Add to global internal forces vector */
-		FI[v1] += FIe[i * 2];
-		FI[v1 + 1] += FIe[i * 2 + 1];
+		FI[2*v1] += FIe[2*i];
+		FI[2*v1 + 1] += FIe[2*i + 1];
 	}
 }
