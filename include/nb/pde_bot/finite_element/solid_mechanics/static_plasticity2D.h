@@ -45,6 +45,14 @@ void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id, 
                 double *dNi_dx, double *dNi_dy,
                 double *stress, double *FIe);
 double force_tolerance (double *F, double *FI, uint32_t N_nod);
+void nb_fem_compute_elastic_stress_from_strain
+			(uint32_t N_elements,
+			 const nb_fem_elem_t *const elem,
+			 const nb_material_t *const material,
+			 nb_analysis2D_t analysis2D,
+			 double* strain,
+			 const bool* elements_enabled,
+			 double* stress);
 void nb_fem_compute_plastic_stress_from_strain
                 (uint32_t N_elements,
                 const nb_fem_elem_t *const elem,
@@ -54,8 +62,24 @@ void nb_fem_compute_plastic_stress_from_strain
                 const bool* elements_enabled /* NULL to enable all */,
                 double* stress /* Output */,
                 nb_plastified_analysis2D *elem_regime);
+void nb_fem_compute_plastic_stress_from_strain_bis
+			(uint32_t N_elements,
+			 const nb_fem_elem_t *const elem,
+			 const nb_material_t *const material,
+			 nb_analysis2D_t analysis2D,
+			 double* strain,
+			 const bool* elements_enabled ,
+			 double* stress ,
+			 nb_plastified_analysis2D *elem_regime,
+			 double *elastic_strain);
+void nb_fem_compute_diference_of_stresses(double *residual_stress, double *elastic_stress,
+                                          double *plastic_stress, uint32_t N_elements,
+                                          nb_plastified_analysis2D *elem_regime);
 void residual_force(double *res_force, double *dF, double *FI, uint32_t N_nod);
+void nb_compute_plastic_strain(double *plastic_strain, double *total_strain, double *last_elastic_strain,
+                               uint32_t N_elem, nb_plastified_analysis2D *elem_regime);
 int plastic_solver(const nb_sparse_t *const A, const double *const b, double* x);
+double stress_max_tolerance(double *plastic_stress, nb_plastified_analysis2D *elem_regime, uint32_t N_elements);
 int fem_compute_plastic_2D_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elemtype,

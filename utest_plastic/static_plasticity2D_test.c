@@ -158,10 +158,10 @@ static int simulate(const char *problem_data,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
 	uint32_t N_force_steps = 100;
-	double accepted_tol = 1e-3;
+	double accepted_tol = 1;
 	double gravity[2] = {0, -9.81};
 	bool *elements_enabled = nb_allocate_mem(N_elems*sizeof(elements_enabled));
-    int status_fem = fem_compute_plastic_2D_Solid_Mechanics (part, elem, material,
+    int status_fem = fem_compute_plastic_2D_Solid_Mechanics_bis(part, elem, material,
                                                              bcond, true, gravity,
                                                              analysis2D, &params2D, elements_enabled, results->strain, results->stress,
                                                              results->disp, N_force_steps,

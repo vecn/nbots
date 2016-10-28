@@ -45,11 +45,6 @@ int compute_internal_forces
 			goto EXIT;
 	}
 	status = 0;
-	/* TEMPORAL */
-	for (int k = 0; k < nb_mesh2D_get_N_nodes(part); k++){
-        printf("FIx[%d]: %lf\t", k, FI[2*k]);
-        printf("FIy[%d]: %lf\n", k, FI[2*k+1]);
-	}
 EXIT:
 	return status;
 }
@@ -63,7 +58,7 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
 			    uint32_t N_nod,
 			    double *FI)
 {
-    double *FIe = nb_allocate_zero_mem(2*N_nod*sizeof(FIe));
+    double *FIe = nb_soft_allocate_mem(2*N_nod*sizeof(FIe));
 
     int status = integrate_elemental_FIe_vector
                     (elem, id, part, stress, params2D, N_nod, FIe);
@@ -74,7 +69,7 @@ int assemble_internal_forces_element(const nb_fem_elem_t *elem,
     add_internal_forces_to_global_system
                     (elem, id, part, FI, FIe);
 CLEANUP:
-	nb_free_mem(FIe);
+	nb_soft_free_mem(2*N_nod*sizeof(FIe), FIe);
 
 	return status;
 }
@@ -137,7 +132,6 @@ void internal_forces_sum_gauss_point(const nb_fem_elem_t *elem, uint32_t gp_id, 
 	double wp = nb_fem_elem_weight_gp(elem, GP);
 
     uint8_t N_elem_node = nb_fem_elem_get_N_nodes(elem);
-    memset(FIe, 0, 2*N_elem_node*sizeof(FIe));
 	for (uint32_t i = 0; i < N_elem_node; i++) {
         uint32_t v1 = nb_mesh2D_elem_get_adj(part, gp_id, i);
 
