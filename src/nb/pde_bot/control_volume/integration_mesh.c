@@ -75,8 +75,7 @@ void nb_cvfa_init_integration_mesh(nb_mesh2D_t *intmsh)
 	nb_mesh2D_init(intmsh, INTEGRATOR_TYPE);
 }
 
-void nb_cvfa_load_integration_mesh(const nb_mesh2D_t *part,
-				   nb_mesh2D_t *intmsh)
+void nb_cvfa_load_integration_mesh(nb_mesh2D_t *intmsh, const double *xc)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 

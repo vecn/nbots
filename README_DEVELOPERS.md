@@ -13,9 +13,7 @@ Since the library implementation begins in 2009, old code does not follow all th
 
 - About dependencies
     * The code must not depend on any library.
-    * The code must be ANSI C (ISO C89). 
-        - `for` statement does not allow inline variable declaration.
-        - `bool` not supported.
+    * The code must be Standrad ISO C99. 
 - Coding Style and format
     * Write your code using 80 columns at most (increase readability).
     * Write  functions of 40 rows at most (to compile with the mind).
