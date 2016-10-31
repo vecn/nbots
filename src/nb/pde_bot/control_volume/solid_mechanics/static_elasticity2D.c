@@ -33,7 +33,8 @@ typedef struct {
 } face_t;
 
 struct subface_s {
-	uint8_t N_int;
+	uint8_t N_int;/*     Zero: Pairwise      */
+                      /* Not zero: Simplex-wise  */
 	double x1[2], x2[2];
 	uint32_t trg_id;
 };
@@ -63,14 +64,20 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  face_t **faces, uint32_t elem_trg_id,
 					  uint32_t face_id,
 					  nb_container_t *subfaces);
-static bool add_subface_if_its_inside_trg(nb_membank_t *membank,
-					  const nb_mesh2D_t *intmsh,
-					  const uint32_t *trg_adj,
-					  face_t **faces, uint32_t elem_trg_id,
-					  uint32_t face_id,
-					  nb_container_t *subfaces);
-static void add_subface_in_closest_trg(nb_membank_t *membank,
-				       const nb_mesh2D_t *intmsh,
+
+static bool is_subface_inside_trg(const nb_mesh2D_t *intmsh,
+				  uint16_t N_trg, const uint32_t *trg_adj,
+				  face_t **faces, uint32_t face_id,
+				  uint32_t *trg_id);
+static void add_subface_inside_trg(nb_membank_t *membank, face_t **faces,
+				   uint32_t face_id, uint32_t trg_id,
+				   nb_container_t *subfaces);
+static void add_subface_outside_trg(nb_membank_t *membank, face_t **faces,
+				    uint32_t face_id, nb_container_t *subfaces);
+static void add_subfaces_pairwise_ends(nb_membank_t *membank,
+				       face_t **faces, uint32_t face_id,
+				       nb_container_t *subfaces);
+static void add_subface_pairwise(nb_membank_t *membank,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces);
 
@@ -108,16 +115,17 @@ static void assemble_face(nb_sparse_t *K,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D);
-static void assemble_internal_face(nb_sparse_t *K,
-				   const nb_mesh2D_t *const part,
-				   const nb_mesh2D_t *intmsh,
-				   face_t *face, const double D[4],
-				   nb_analysis2D_params *params2D);
 static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_mesh2D_t *const part,
 			       const nb_mesh2D_t *intmsh,
 			       face_t *face, const double D[4],
 			       nb_analysis2D_params *params2D);
+static void integrate_subface_simplexwise(nb_sparse_t *K,
+					  const nb_mesh2D_t *const part,
+					  const nb_mesh2D_t *intmsh,
+					  face_t *face, uint16_t subface_id,
+					  const double D[4],
+					  nb_analysis2D_params *params2D);
 static void integrate_Kf(const nb_mesh2D_t *const part,
 			 const nb_mesh2D_t *intmsh, face_t *face,
 			 uint16_t subface_id, const double D[4],
@@ -146,16 +154,18 @@ static void subface_get_nodal_contribution(const double D[4],
 static void add_Kf_to_K(face_t *face, const nb_mesh2D_t *intmsh,
 			uint16_t subface_id, const double Kf[12],
 			nb_sparse_t *K);
-static void integrate_pairwise(nb_sparse_t *K,
-			       const nb_mesh2D_t *const part,
-			       face_t *faces, const double D[4],
-			       nb_analysis2D_params *params2D);
+static void integrate_subface_pairwise(nb_sparse_t *K,
+				       const nb_mesh2D_t *const part,
+				       face_t *faces, uint16_t subface_id,
+				       const double D[4],
+				       nb_analysis2D_params *params2D);
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const part,
-				  face_t *face, const double D[4],
+				  face_t *face, uint16_t subface_id,
+				  const double D[4],
 				  nb_analysis2D_params *params2D,
 				  double Kf[8]);
 static void face_get_grad_pairwise(const double c1[2], const double c2[2],
-				      double grad[2]);
+				   double grad[2]);
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
 				 nb_sparse_t *K);
 static int solver(const nb_sparse_t *const A,
@@ -414,28 +424,25 @@ static void load_subfaces(face_t **faces, uint32_t face_id,
 	if (0 == end_trg) {
 		uint8_t N_sf = nb_container_get_length(subfaces);
 		if (0 == N_sf) {
-			for (uint16_t i = 0; i < N_trg; i++) {
-				bool inside =
-					add_subface_if_its_inside_trg(membank,
-								      intmsh,
-								      trg_adj,
-								      faces, i,
-								      face_id,
-								      subfaces);
-				if (inside)
-					break;
-			}
+			uint32_t trg_id;
+			bool inside = is_subface_inside_trg(intmsh, N_trg,
+							    trg_adj, faces,
+							    face_id, &trg_id);
+			if (inside)
+				add_subface_inside_trg(membank, faces, face_id,
+						       trg_id, subfaces);
+
+			else
+				add_subface_outside_trg(membank, faces, face_id,
+							subfaces);
 		} else {
-			add_subface_in_closest_trg(membank, intmsh, faces,
-						   face_id, subfaces);
-			add_subface_in_closest_trg(membank, intmsh, faces,
-						   face_id, subfaces);		
+			add_subfaces_pairwise_ends(membank, faces, face_id,
+						   subfaces);
 		}
 	}
 
 	if (1 == end_trg)
-		add_subface_in_closest_trg(membank, intmsh, faces,
-					   face_id, subfaces);
+		add_subface_pairwise(membank, faces, face_id, subfaces);
 
 	set_subfaces(membank, faces[face_id], subfaces);
 
@@ -451,6 +458,13 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 					  uint32_t face_id,
 					  nb_container_t *subfaces)
 {
+	/*   o---------o---------o
+	 *    \       / \       /
+	 *     \  +--/---\--+  /   Find face intersections.
+	 *      \   /     \   /
+	 *       \ /       \ /
+	 *        o --------o
+	 */
 	face_t *face = faces[face_id];
 	uint32_t trg_id = trg_adj[elem_trg_id];
 
@@ -503,38 +517,101 @@ static uint8_t add_subface_if_intersected(nb_membank_t *membank,
 	return N_int;
 }
 
-static bool add_subface_if_its_inside_trg(nb_membank_t *membank,
-					  const nb_mesh2D_t *intmsh,
-					  const uint32_t *trg_adj,
-					  face_t **faces, uint32_t elem_trg_id,
-					  uint32_t face_id,
-					  nb_container_t *subfaces)
+static bool is_subface_inside_trg(const nb_mesh2D_t *intmsh,
+				  uint16_t N_trg, const uint32_t *trg_adj,
+				  face_t **faces, uint32_t face_id,
+				  uint32_t *trg_id)
 {
 	face_t *face = faces[face_id];
-	uint32_t trg_id = trg_adj[elem_trg_id];
 
-	double t1[2], t2[2], t3[2];
-	load_triangle_points(intmsh, trg_id, t1, t2, t3);
+	*trg_id = nb_mesh2D_get_N_elems(intmsh);
+	bool inside = false;
+	for (uint16_t i = 0; i < N_trg; i++) {
+		uint32_t id = trg_adj[i];
 
-	bool s1_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x1);
-	bool s2_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x2);
+		double t1[2], t2[2], t3[2];
+		load_triangle_points(intmsh, id, t1, t2, t3);
 
-	if (s1_in && s2_in) {
-		subface_t *subface = nb_membank_allocate_mem(membank);
-		subface->N_int = 0;
-		memcpy(subface->x1, face->x1, 2 * sizeof(*(face->x1)) );
-		memcpy(subface->x2, face->x2, 2 * sizeof(*(face->x2)) );
-		subface->trg_id = trg_id;
-		nb_container_insert(subfaces, subface);
+		bool s1_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x1);
+		bool s2_in = nb_utils2D_pnt_lies_in_trg(t1, t2, t3, face->x2);
+
+		if (s1_in && s2_in) {
+			inside = true;
+			*trg_id = id;
+			break;
+		}
 	}
-	return s1_in && s2_in;
+	return inside;
 }
 
-static void add_subface_in_closest_trg(nb_membank_t *membank,
-				       const nb_mesh2D_t *intmsh,
+static void add_subface_inside_trg(nb_membank_t *membank, face_t **faces,
+				   uint32_t face_id, uint32_t trg_id,
+				   nb_container_t *subfaces)
+{
+	/*   o---------o
+	 *    \ +---+ /
+	 *     \     /   Face contained in trg.
+	 *      \   /
+	 *       \ /
+	 *        o
+	 */
+	face_t *face = faces[face_id];
+
+	subface_t *subface = nb_membank_allocate_mem(membank);
+	subface->N_int = 1;
+	memcpy(subface->x1, face->x1, 2 * sizeof(*(face->x1)) );
+	memcpy(subface->x2, face->x2, 2 * sizeof(*(face->x2)) );
+	subface->trg_id = trg_id;
+	nb_container_insert(subfaces, subface);
+}
+
+static void add_subface_outside_trg(nb_membank_t *membank, face_t **faces,
+				   uint32_t face_id, nb_container_t *subfaces)
+{
+	/*   o---------o
+	 *    \       /
+	 *     \     /   Face not contained in
+	 *      \   /    any trg
+	 * +---+ \ / 
+	 *        o
+	 */
+	face_t *face = faces[face_id];
+
+	subface_t *subface = nb_membank_allocate_mem(membank);
+	subface->N_int = 0;
+	memcpy(subface->x1, face->x1, 2 * sizeof(*(face->x1)) );
+	memcpy(subface->x2, face->x2, 2 * sizeof(*(face->x2)) );
+	subface->trg_id = 0;
+	nb_container_insert(subfaces, subface);
+}
+
+static void add_subfaces_pairwise_ends(nb_membank_t *membank,
 				       face_t **faces, uint32_t face_id,
 				       nb_container_t *subfaces)
 {
+	/*   o---------o
+	 *    \       /
+	 *     \     /     Face intersected by trg with
+	 *    +-\---/-+    both ending points outside.
+	 *       \ /
+	 *        o
+	 */
+	add_subface_pairwise(membank, faces, face_id, subfaces);
+	add_subface_pairwise(membank, faces, face_id, subfaces);
+
+}
+
+static void add_subface_pairwise(nb_membank_t *membank,
+				 face_t **faces, uint32_t face_id,
+				 nb_container_t *subfaces)
+{
+	/*   o---------o
+	 *    \       /
+	 *     \     /     Face intersected by trg with
+	 *    +-\-+ /      an ending point outside.
+	 *       \ /
+	 *        o
+	 */
 	face_t *face = faces[face_id];
 
 	double alone[2];
@@ -546,7 +623,7 @@ static void add_subface_in_closest_trg(nb_membank_t *membank,
 							alone, p);
 
 	subface_t *subface = nb_membank_allocate_mem(membank);
-	subface->N_int = 1;
+	subface->N_int = 0;
 	memcpy(subface->x1, p, 2 * sizeof(*p));
 	memcpy(subface->x2, alone, 2 * sizeof(*alone));
 	subface->trg_id = closest_id;
@@ -702,20 +779,7 @@ static void assemble_face(nb_sparse_t *K,
 
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	if (face->elems[1] < N_elems)
-		assemble_internal_face(K, part, intmsh, face,
-				       D, params2D);
-}
-
-static void assemble_internal_face(nb_sparse_t *K,
-				   const nb_mesh2D_t *const part,
-				   const nb_mesh2D_t *intmsh,
-				   face_t *face, const double D[4],
-				   nb_analysis2D_params *params2D)
-{
-	if (0 < face->N_sf)
 		integrate_subfaces(K, part, intmsh, face, D, params2D);
-	else
-		integrate_pairwise(K, part, face, D, params2D);
 }
 
 static void integrate_subfaces(nb_sparse_t *K,
@@ -723,14 +787,30 @@ static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_mesh2D_t *intmsh,
 			       face_t *face, const double D[4],
 			       nb_analysis2D_params *params2D)
-{	
-	double Kf[12];
+{
 	uint16_t N_sf = face->N_sf;
 	for (uint16_t i = 0; i < N_sf; i++) {
-		integrate_Kf(part, intmsh, face, i, D, params2D, Kf);
-		add_Kf_to_K(face, intmsh, i, Kf, K);
+		subface_t *subface = face->subfaces[i];
+		if (subface->N_int > 0)
+			integrate_subface_simplexwise(K, part, intmsh, face,
+						      i, D, params2D);
+		else
+			integrate_subface_pairwise(K, part, face, i,
+						   D, params2D);
 	}
 
+}
+
+static void integrate_subface_simplexwise(nb_sparse_t *K,
+					  const nb_mesh2D_t *const part,
+					  const nb_mesh2D_t *intmsh,
+					  face_t *face, uint16_t subface_id,
+					  const double D[4],
+					  nb_analysis2D_params *params2D)
+{
+	double Kf[12];
+	integrate_Kf(part, intmsh, face, subface_id, D, params2D, Kf);
+	add_Kf_to_K(face, intmsh, subface_id, Kf, K);
 }
 
 static void integrate_Kf(const nb_mesh2D_t *const part,
@@ -884,18 +964,20 @@ static void add_Kf_to_K(face_t *face, const nb_mesh2D_t *intmsh,
 	}
 }
 
-static void integrate_pairwise(nb_sparse_t *K,
-			       const nb_mesh2D_t *part,
-			       face_t *face, const double D[4],
-			       nb_analysis2D_params *params2D)
+static void integrate_subface_pairwise(nb_sparse_t *K,
+				       const nb_mesh2D_t *const part,
+				       face_t *faces, uint16_t subface_id,
+				       const double D[4],
+				       nb_analysis2D_params *params2D)
 {
 	double Kf[8];
-	integrate_Kf_pairwise(part, face, D, params2D, Kf);
-	add_Kf_to_K_pairwise(face, Kf, K);
+	integrate_Kf_pairwise(part, faces, subface_id, D, params2D, Kf);
+	add_Kf_to_K_pairwise(faces, Kf, K);
 }
 
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const part,
-				  face_t *face, const double D[4],
+				  face_t *face, uint16_t subface_id,
+				  const double D[4],
 				  nb_analysis2D_params *params2D,
 				  double Kf[8])
 {
@@ -905,7 +987,8 @@ static void integrate_Kf_pairwise(const nb_mesh2D_t *const part,
 	c2[0] = nb_mesh2D_elem_get_x(part, face->elems[1]);
 	c2[1] = nb_mesh2D_elem_get_y(part, face->elems[1]);
 
-	double lf = nb_utils2D_get_dist(face->x1, face->x2);
+	subface_t *subface = face->subfaces[subface_id];
+	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 	double factor = lf * params2D->thickness;
 	for (uint8_t i = 0; i < 2; i++) {
 		double grad[2];
@@ -932,6 +1015,7 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 	nc[0] = -xdiff / dist;
 	nc[1] = -ydiff / dist;
 	double denom = xdiff * nc[0] + ydiff * nc[1];
+	/* PENDING to simplify: denom = dist */
 
 	grad[0] = nc[0] / denom;
 	grad[1] = nc[1] / denom;

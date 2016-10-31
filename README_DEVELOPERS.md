@@ -11,6 +11,11 @@ Since the library implementation begins in 2009, old code does not follow all th
 
 ## Fast checklist
 
+- About dependencies
+    * The code must not depend on any library.
+    * The code must be ANSI C (ISO C89). 
+        - `for` statement does not allow inline variable declaration.
+        - `bool` not supported.
 - Coding Style and format
     * Write your code using 80 columns at most (increase readability).
     * Write  functions of 40 rows at most (to compile with the mind).
@@ -47,8 +52,8 @@ Since the library implementation begins in 2009, old code does not follow all th
       exist at least one file with the same name under 'src' and 'utest'.
 - Error handling
     * Return an integer error code  (zero if success).
-    * Use `assert()` for check developer exclusive errors.
-    * For large verifications using only assert, check `#ifndef  NDEBUG`
+    * Use `nb_assert()` for check developer exclusive errors.
+    * For large verifications using only assert, check `#ifndef  NB_DEBUG`
 - Memory management
     * Make just one memory allocation per function when required.
     * Never use `malloc()`, `calloc()` and `realloc()` directly.
