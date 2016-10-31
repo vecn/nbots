@@ -137,6 +137,7 @@ static void set_msh3trg_main_interface(nb_mesh2D_t *mesh)
 	mesh->elem_get_adj = nb_msh3trg_elem_get_adj;
 	mesh->elem_get_ngb = nb_msh3trg_elem_get_ngb;
 	mesh->elem_has_ngb = nb_msh3trg_elem_has_ngb;
+	mesh->elem_is_boundary = nb_msh3trg_elem_is_boundary;
 	mesh->get_invtx = nb_msh3trg_get_invtx;
 	mesh->insgm_get_N_nodes = nb_msh3trg_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_msh3trg_insgm_get_node;
@@ -200,6 +201,7 @@ static void set_mshquad_main_interface(nb_mesh2D_t *mesh)
 	mesh->elem_get_adj = nb_mshquad_elem_get_adj;
 	mesh->elem_get_ngb = nb_mshquad_elem_get_ngb;
 	mesh->elem_has_ngb = nb_mshquad_elem_has_ngb;
+	mesh->elem_is_boundary = nb_mshquad_elem_is_boundary;
 	mesh->get_invtx = nb_mshquad_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshquad_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshquad_insgm_get_node;
@@ -263,6 +265,7 @@ static void set_mshpoly_main_interface(nb_mesh2D_t *mesh)
 	mesh->elem_get_adj = nb_mshpoly_elem_get_adj;
 	mesh->elem_get_ngb = nb_mshpoly_elem_get_ngb;
 	mesh->elem_has_ngb = nb_mshpoly_elem_has_ngb;
+	mesh->elem_is_boundary = nb_mshpoly_elem_is_boundary;
 	mesh->get_invtx = nb_mshpoly_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshpoly_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshpoly_insgm_get_node;
@@ -326,6 +329,7 @@ static void set_mshpack_main_interface(nb_mesh2D_t *mesh)
 	mesh->elem_get_adj = nb_mshpack_elem_get_adj;
 	mesh->elem_get_ngb = nb_mshpack_elem_get_ngb;
 	mesh->elem_has_ngb = nb_mshpack_elem_has_ngb;
+	mesh->elem_is_boundary = nb_mshpack_elem_is_boundary;
 	mesh->get_invtx = nb_mshpack_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshpack_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshpack_insgm_get_node;
@@ -585,6 +589,11 @@ bool nb_mesh2D_elem_has_ngb(const nb_mesh2D_t *mesh, uint32_t elem_id,
 			       uint16_t face_id)
 {
 	return mesh->elem_has_ngb(mesh->msh, elem_id, face_id);
+}
+
+bool nb_mesh2D_elem_is_boundary(const nb_mesh2D_t *mesh, uint32_t elem_id)
+{
+	return mesh->elem_is_boundary(mesh->msh, elem_id);
 }
 
 uint32_t nb_mesh2D_get_invtx(const nb_mesh2D_t *mesh, uint32_t id)

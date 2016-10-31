@@ -453,6 +453,22 @@ bool nb_msh3trg_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_msh3trg_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	bool out = false;
+	if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 0))
+		out = true;
+	if (!out) {
+		if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 1))
+			out = true;
+	}
+	if (!out) {
+		if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 2))
+			out = true;
+	}
+	return out;
+}
+
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;

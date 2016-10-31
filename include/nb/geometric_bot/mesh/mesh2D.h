@@ -74,6 +74,7 @@ uint32_t nb_mesh2D_elem_get_ngb(const nb_mesh2D_t *mesh,
 				uint32_t elem_id, uint8_t ngb_id);
 bool nb_mesh2D_elem_has_ngb(const nb_mesh2D_t *mesh, uint32_t elem_id,
 			    uint16_t face_id);
+bool nb_mesh2D_elem_is_boundary(const nb_mesh2D_t *mesh, uint32_t elem_id);
 uint32_t nb_mesh2D_get_invtx(const nb_mesh2D_t *mesh, uint32_t id);
 uint32_t nb_mesh2D_insgm_get_N_nodes(const nb_mesh2D_t *mesh, uint32_t id);
 uint32_t nb_mesh2D_insgm_get_N_subsgm(const nb_mesh2D_t *mesh, uint32_t id);

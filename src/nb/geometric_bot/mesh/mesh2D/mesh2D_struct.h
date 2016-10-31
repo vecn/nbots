@@ -85,6 +85,7 @@ struct nb_mesh2D_s {
 				 uint32_t elem_id, uint8_t ngb_id);
 	bool (*elem_has_ngb)(const void *msh, uint32_t elem_id,
 			     uint16_t face_id);
+	bool (*elem_is_boundary)(const void *msh, uint32_t elem_id);
 	uint32_t (*get_invtx)(const void *msh, uint32_t id);
 	uint32_t (*insgm_get_N_nodes)(const void *msh, uint32_t id);
 	uint32_t (*insgm_get_node)(const void *msh, uint32_t sgm_id,

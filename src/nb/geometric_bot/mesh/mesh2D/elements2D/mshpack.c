@@ -279,6 +279,11 @@ bool nb_mshpack_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_mshpack_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	return false;
+}
+
 uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
