@@ -22,6 +22,7 @@
 #include "set_bconditions.h"
 
 #define POW2(a) ((a)*(a))
+#define SMOOTH 0
 
 typedef struct subface_s subface_t;
 
@@ -115,22 +116,27 @@ static void assemble_face(nb_sparse_t *K,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D);
-static void integrate_subfaces(nb_sparse_t *K,
-			       const nb_mesh2D_t *const mesh,
-			       const nb_mesh2D_t *intmsh,
-			       const double *xc, face_t *face,
-			       const double D[4],
-			       nb_analysis2D_params *params2D);
+static void integrate_subface(nb_sparse_t *K,
+			      const nb_mesh2D_t *const mesh,
+			      const nb_mesh2D_t *intmsh,
+			      const double *xc, face_t *face,
+			      const double D[4],
+			      nb_analysis2D_params *params2D,
+			      uint16_t subface_id);
 static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const nb_mesh2D_t *const mesh,
 					  const nb_mesh2D_t *intmsh,
 					  face_t *face, uint16_t subface_id,
 					  const double D[4],
-					  nb_analysis2D_params *params2D);
+					  nb_analysis2D_params *params2D,
+					  const nb_glquadrature_t *glq,
+					  uint8_t q);
 static void integrate_Kf(const nb_mesh2D_t *const mesh,
 			 const nb_mesh2D_t *intmsh, face_t *face,
 			 uint16_t subface_id, const double D[4],
-			 nb_analysis2D_params *params2D, double Kf[12]);
+			 nb_analysis2D_params *params2D, double Kf[12],
+			 const nb_glquadrature_t *glq,
+			 uint8_t q);
 static void load_triangle_points(const nb_mesh2D_t *intmsh,
 				 uint32_t trg_id, double t1[2],
 				 double t2[2], double t3[2]);
@@ -160,13 +166,17 @@ static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const double *xc, face_t *faces,
 				       uint16_t subface_id,
 				       const double D[4],
-				       nb_analysis2D_params *params2D);
+				       nb_analysis2D_params *params2D,
+				       const nb_glquadrature_t *glq,
+				       uint8_t q);
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh,
 				  const double *xc, face_t *face,
 				  uint16_t subface_id,
 				  const double D[4],
 				  nb_analysis2D_params *params2D,
-				  double Kf[8]);
+				  double Kf[8],
+				  const nb_glquadrature_t *glq,
+				  uint8_t q);
 static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 				   double grad[2]);
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
@@ -785,27 +795,47 @@ static void assemble_face(nb_sparse_t *K,
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	if (face->elems[1] < N_elems)
-		integrate_subfaces(K, mesh, intmsh, xc, face, D, params2D);
+	if (face->elems[1] < N_elems) {
+		uint16_t N_sf = face->N_sf;
+		for (uint16_t i = 0; i < N_sf; i++) {
+			integrate_subface(K, mesh, intmsh, xc,
+					  face, D, params2D, i);
+		}
+	}
 }
 
-static void integrate_subfaces(nb_sparse_t *K,
-			       const nb_mesh2D_t *const mesh,
-			       const nb_mesh2D_t *intmsh,
-			       const double *xc, face_t *face,
-			       const double D[4],
-			       nb_analysis2D_params *params2D)
+static void integrate_subface(nb_sparse_t *K,
+			      const nb_mesh2D_t *const mesh,
+			      const nb_mesh2D_t *intmsh,
+			      const double *xc, face_t *face,
+			      const double D[4],
+			      nb_analysis2D_params *params2D,
+			      uint16_t subface_id)
 {
-	uint16_t N_sf = face->N_sf;
-	for (uint16_t i = 0; i < N_sf; i++) {
-		subface_t *subface = face->subfaces[i];
-		if (subface->N_int > 0)
+	uint8_t Nq = SMOOTH + 1;
+	uint32_t glq_size = sizeof(nb_glquadrature_t);
+	uint32_t memsize = 3 * Nq * sizeof(double) + glq_size;
+	char *memblock = nb_soft_allocate_mem(memsize);
+	nb_glquadrature_t *glq = (void*) memblock;
+	glq->w = (void*) (memblock + glq_size);
+	glq->x = (void*) (memblock + glq_size + Nq * sizeof(double));
+	nb_glquadrature_load(glq, Nq);
+
+	subface_t *subface = face->subfaces[subface_id];
+	if (subface->N_int > 0) {
+		for (uint8_t q = 0; q < Nq; q++)
 			integrate_subface_simplexwise(K, mesh, intmsh, face,
-						      i, D, params2D);
-		else
-			integrate_subface_pairwise(K, mesh, xc, face, i,
-						   D, params2D);
+						      subface_id, D, params2D,
+						      glq, q);
+	} else {
+		for (uint8_t q = 0; q < Nq; q++)
+			integrate_subface_pairwise(K, mesh, xc, face,
+						   subface_id, D, params2D,
+						   glq, q);
 	}
+
+
+	nb_soft_free_mem(memsize, memblock);
 
 }
 
@@ -814,17 +844,23 @@ static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const nb_mesh2D_t *intmsh,
 					  face_t *face, uint16_t subface_id,
 					  const double D[4],
-					  nb_analysis2D_params *params2D)
+					  nb_analysis2D_params *params2D,
+					  const nb_glquadrature_t *glq,
+					  uint8_t q)
 {
+
 	double Kf[12];
-	integrate_Kf(mesh, intmsh, face, subface_id, D, params2D, Kf);
+	integrate_Kf(mesh, intmsh, face, subface_id, D,
+		     params2D, Kf, glq, q);
 	add_Kf_to_K(face, intmsh, subface_id, Kf, K);
 }
 
 static void integrate_Kf(const nb_mesh2D_t *const mesh,
 			 const nb_mesh2D_t *intmsh, face_t *face,
 			 uint16_t subface_id, const double D[4],
-			 nb_analysis2D_params *params2D, double Kf[12])
+			 nb_analysis2D_params *params2D, double Kf[12],
+			 const nb_glquadrature_t *glq,
+			 uint8_t q)
 {
 	subface_t *subface = face->subfaces[subface_id];
 
@@ -977,10 +1013,13 @@ static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const double *xc, face_t *faces,
 				       uint16_t subface_id,
 				       const double D[4],
-				       nb_analysis2D_params *params2D)
+				       nb_analysis2D_params *params2D,
+				       const nb_glquadrature_t *glq,
+				       uint8_t q)
 {
 	double Kf[8];
-	integrate_Kf_pairwise(mesh, xc, faces, subface_id, D, params2D, Kf);
+	integrate_Kf_pairwise(mesh, xc, faces, subface_id, D,
+			      params2D, Kf, glq, q);
 	add_Kf_to_K_pairwise(faces, Kf, K);
 }
 
@@ -989,7 +1028,9 @@ static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh,
 				  uint16_t subface_id,
 				  const double D[4],
 				  nb_analysis2D_params *params2D,
-				  double Kf[8])
+				  double Kf[8],
+				  const nb_glquadrature_t *glq,
+				  uint8_t q)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
