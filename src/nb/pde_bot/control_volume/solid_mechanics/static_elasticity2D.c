@@ -17,6 +17,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
+#include "../calculation_points.h"
 #include "../integration_mesh.h"
 #include "set_bconditions.h"
 
@@ -44,11 +45,6 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   uint32_t N_faces, double **xc, double **F,
 				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
 				   face_t ***faces);
-static void set_calculation_points(const nb_mesh2D_t *mesh, double *xc);
-static void set_elem_cpoint_bnd(const nb_mesh2D_t *mesh, double *xc,
-				uint32_t elem_id);
-static void set_elem_cpoint_cen(const nb_mesh2D_t *mesh, double *xc,
-				uint32_t elem_id);
 static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 			       const nb_mesh2D_t *intmsh);
 static void load_faces(const nb_mesh2D_t *mesh,
@@ -108,21 +104,22 @@ static void integrate_elem_force(const nb_mesh2D_t *mesh,
 static void assemble_global_stiffness(nb_sparse_t *K,
 				      const nb_mesh2D_t *const mesh,
 				      const nb_mesh2D_t *intmsh,
-				      face_t **faces,
+				      const double *xc, face_t **faces,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D);
 static void assemble_face(nb_sparse_t *K,
 			  const nb_mesh2D_t *const mesh,
 			  const nb_mesh2D_t *intmsh,
-			  face_t *face,
+			  const double *xc, face_t *face,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D);
 static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_mesh2D_t *const mesh,
 			       const nb_mesh2D_t *intmsh,
-			       face_t *face, const double D[4],
+			       const double *xc, face_t *face,
+			       const double D[4],
 			       nb_analysis2D_params *params2D);
 static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const nb_mesh2D_t *const mesh,
@@ -160,11 +157,13 @@ static void add_Kf_to_K(face_t *face, const nb_mesh2D_t *intmsh,
 			nb_sparse_t *K);
 static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const nb_mesh2D_t *const mesh,
-				       face_t *faces, uint16_t subface_id,
+				       const double *xc, face_t *faces,
+				       uint16_t subface_id,
 				       const double D[4],
 				       nb_analysis2D_params *params2D);
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh,
-				  face_t *face, uint16_t subface_id,
+				  const double *xc, face_t *face,
+				  uint16_t subface_id,
 				  const double D[4],
 				  nb_analysis2D_params *params2D,
 				  double Kf[8]);
@@ -181,12 +180,13 @@ static void vector_permutation(uint32_t N, const double *v,
 static void compute_strain(double *strain, char *boundary_mask,
 			   face_t **faces,
 			   const nb_mesh2D_t *const mesh,
-			   const nb_mesh2D_t *intmsh,
+			   const nb_mesh2D_t *intmsh, const double *xc,
 			   const nb_bcond_t *const bcond,
 			   const double *disp);
 static void get_face_strain(face_t **faces, uint32_t face_id,
 			    const nb_mesh2D_t *const mesh,
 			    const nb_mesh2D_t *intmsh,
+			    const double *xc,
 			    const nb_bcond_t *const bcond,
 			    const double *disp,
 			    double *strain,
@@ -194,6 +194,7 @@ static void get_face_strain(face_t **faces, uint32_t face_id,
 static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_mesh2D_t *const mesh,
 				     const nb_mesh2D_t *intmsh,
+				     const double *xc,
 				     const double *disp, double *strain);
 
 static void get_subfaces_strain(face_t **faces, uint32_t face_id,
@@ -211,7 +212,7 @@ static void subface_sum_strain_pairwise(const nb_mesh2D_t *const mesh,
 					const subface_t *subface,
 					const double *disp, double *strain);
 static void get_pairwise_strain(face_t **faces, uint32_t face_id,
-				const nb_mesh2D_t *mesh,
+				const nb_mesh2D_t *mesh, const double *xc,
 				const double *disp, double *strain);
 static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_mesh2D_t *const mesh,
@@ -243,9 +244,9 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &F,
 			       &intmsh, &trg_x_vol, &faces);
 
-	set_calculation_points(mesh, xc);
+	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(intmsh, xc);
+	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc);
 
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,
@@ -259,7 +260,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	assemble_global_forces(F, mesh, material, enable_self_weight,
 			       gravity);
 
-	assemble_global_stiffness(K, mesh, intmsh, faces, material,
+	assemble_global_stiffness(K, mesh, intmsh, xc, faces, material,
 				  analysis2D, params2D);
 	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 				K, F, bcond, 1.0);
@@ -271,7 +272,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	}
 
 	compute_strain(strain, boundary_mask, faces, mesh,
-		       intmsh, bcond, displacement);
+		       intmsh, xc, bcond, displacement);
 
 	status = 0;
 CLEANUP_LINEAR_SYSTEM:
@@ -312,61 +313,6 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 		(*faces)[i] = (void*) (memblock + i * sizeof(face_t));
 		memset((*faces)[i], 0, sizeof(face_t));
 	}
-}
-
-static void set_calculation_points(const nb_mesh2D_t *mesh, double *xc)
-{
-	uint32_t N = nb_mesh2D_get_N_elems(mesh);
-	for (uint32_t i = 0; i < N; i++) {
-		if (nb_mesh2D_elem_is_boundary(mesh, i))
-			set_elem_cpoint_bnd(mesh, xc, i);
-		else
-			set_elem_cpoint_cen(mesh, xc, i);
-	}
-}
-
-static void set_elem_cpoint_bnd(const nb_mesh2D_t *mesh, double *xc,
-				uint32_t elem_id)
-{
-	uint16_t N = nb_mesh2D_elem_get_N_adj(mesh, elem_id);
-	uint32_t id[2];
-	uint16_t bnd_id = N;
-	for (uint16_t i = 0; i < N; i++) {
-		if (!nb_mesh2D_elem_has_ngb(mesh, elem_id, i)) {
-			id[0] = nb_mesh2D_elem_get_adj(mesh, elem_id, i);
-			id[1] = nb_mesh2D_elem_get_adj(mesh, elem_id,
-						       (i + 1) % N);
-			bnd_id = i;
-			break;
-		}
-	}
-	if (N != bnd_id) {
-		uint16_t prev = (bnd_id == 0) ? (N - 1) : (bnd_id - 1);
-		uint16_t next = (bnd_id + 1) % N;
-		if (!nb_mesh2D_elem_has_ngb(mesh, elem_id, prev)) {
-			xc[elem_id * 2] = nb_mesh2D_node_get_x(mesh, id[0]);
-			xc[elem_id*2+1] = nb_mesh2D_node_get_y(mesh, id[0]);
-		} else if (!nb_mesh2D_elem_has_ngb(mesh, elem_id, next)) {
-			xc[elem_id * 2] = nb_mesh2D_node_get_x(mesh, id[1]);
-			xc[elem_id*2+1] = nb_mesh2D_node_get_y(mesh, id[1]);
-		} else {
-			xc[elem_id * 2] = 0.5 *
-				(nb_mesh2D_node_get_x(mesh, id[0]) +
-				 nb_mesh2D_node_get_x(mesh, id[1]));
-			xc[elem_id*2+1] = 0.5 *
-				(nb_mesh2D_node_get_y(mesh, id[0]) +
-				 nb_mesh2D_node_get_y(mesh, id[1]));
-		}
-	} else {
-		set_elem_cpoint_cen(mesh, xc, elem_id);
-	}
-}
-
-static void set_elem_cpoint_cen(const nb_mesh2D_t *mesh, double *xc,
-				uint32_t elem_id)
-{
-	xc[elem_id * 2] = nb_mesh2D_elem_get_x(mesh, elem_id);
-	xc[elem_id*2+1] = nb_mesh2D_elem_get_y(mesh, elem_id);
 }
 
 static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
@@ -814,7 +760,7 @@ static void integrate_elem_force(const nb_mesh2D_t *mesh,
 static void assemble_global_stiffness(nb_sparse_t *K,
 				      const nb_mesh2D_t *const mesh,
 				      const nb_mesh2D_t *intmsh,
-				      face_t **faces,
+				      const double *xc, face_t **faces,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D)
@@ -822,7 +768,7 @@ static void assemble_global_stiffness(nb_sparse_t *K,
 	nb_sparse_reset(K);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		assemble_face(K, mesh, intmsh, faces[i], material,
+		assemble_face(K, mesh, intmsh, xc, faces[i], material,
 			      analysis2D, params2D);
 	}
 }
@@ -830,7 +776,7 @@ static void assemble_global_stiffness(nb_sparse_t *K,
 static void assemble_face(nb_sparse_t *K,
 			  const nb_mesh2D_t *const mesh,
 			  const nb_mesh2D_t *intmsh,
-			  face_t *face,
+			  const double *xc, face_t *face,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D)
@@ -840,13 +786,14 @@ static void assemble_face(nb_sparse_t *K,
 
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	if (face->elems[1] < N_elems)
-		integrate_subfaces(K, mesh, intmsh, face, D, params2D);
+		integrate_subfaces(K, mesh, intmsh, xc, face, D, params2D);
 }
 
 static void integrate_subfaces(nb_sparse_t *K,
 			       const nb_mesh2D_t *const mesh,
 			       const nb_mesh2D_t *intmsh,
-			       face_t *face, const double D[4],
+			       const double *xc, face_t *face,
+			       const double D[4],
 			       nb_analysis2D_params *params2D)
 {
 	uint16_t N_sf = face->N_sf;
@@ -856,7 +803,7 @@ static void integrate_subfaces(nb_sparse_t *K,
 			integrate_subface_simplexwise(K, mesh, intmsh, face,
 						      i, D, params2D);
 		else
-			integrate_subface_pairwise(K, mesh, face, i,
+			integrate_subface_pairwise(K, mesh, xc, face, i,
 						   D, params2D);
 	}
 
@@ -1027,26 +974,30 @@ static void add_Kf_to_K(face_t *face, const nb_mesh2D_t *intmsh,
 
 static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const nb_mesh2D_t *const mesh,
-				       face_t *faces, uint16_t subface_id,
+				       const double *xc, face_t *faces,
+				       uint16_t subface_id,
 				       const double D[4],
 				       nb_analysis2D_params *params2D)
 {
 	double Kf[8];
-	integrate_Kf_pairwise(mesh, faces, subface_id, D, params2D, Kf);
+	integrate_Kf_pairwise(mesh, xc, faces, subface_id, D, params2D, Kf);
 	add_Kf_to_K_pairwise(faces, Kf, K);
 }
 
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh,
-				  face_t *face, uint16_t subface_id,
+				  const double *xc, face_t *face,
+				  uint16_t subface_id,
 				  const double D[4],
 				  nb_analysis2D_params *params2D,
 				  double Kf[8])
 {
+	uint32_t id1 = face->elems[0];
+	uint32_t id2 = face->elems[1];
 	double c1[2], c2[2];
-	c1[0] = nb_mesh2D_elem_get_x(mesh, face->elems[0]);
-	c1[1] = nb_mesh2D_elem_get_y(mesh, face->elems[0]);
-	c2[0] = nb_mesh2D_elem_get_x(mesh, face->elems[1]);
-	c2[1] = nb_mesh2D_elem_get_y(mesh, face->elems[1]);
+	c1[0] = xc[id1 * 2];
+	c1[1] = xc[id1*2+1];
+	c2[0] = xc[id2 * 2];
+	c2[1] = xc[id2*2+1];
 
 	subface_t *subface = face->subfaces[subface_id];
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
@@ -1150,14 +1101,14 @@ static void vector_permutation(uint32_t N, const double *v,
 static void compute_strain(double *strain, char *boundary_mask,
 			   face_t **faces,
 			   const nb_mesh2D_t *const mesh,
-			   const nb_mesh2D_t *intmsh,
+			   const nb_mesh2D_t *intmsh, const double *xc,
 			   const nb_bcond_t *const bcond,
 			   const double *disp)
 {
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 
  	for (uint32_t i = 0; i < N_faces; i++) {
-		get_face_strain(faces, i, mesh, intmsh, bcond,
+		get_face_strain(faces, i, mesh, intmsh, xc, bcond,
 				disp, strain, boundary_mask);
 	}
 }
@@ -1165,6 +1116,7 @@ static void compute_strain(double *strain, char *boundary_mask,
 static void get_face_strain(face_t **faces, uint32_t face_id,
 			    const nb_mesh2D_t *const mesh,
 			    const nb_mesh2D_t *intmsh,
+			    const double *xc,
 			    const nb_bcond_t *const bcond,
 			    const double *disp,
 			    double *strain,
@@ -1174,7 +1126,7 @@ static void get_face_strain(face_t **faces, uint32_t face_id,
 	if (faces[face_id]->elems[1] < N_elems) {
 		boundary_mask[face_id] = 0;
 		get_internal_face_strain(faces, face_id, mesh, intmsh,
-					 disp, strain);
+					 xc, disp, strain);
 	} else {
 		boundary_mask[face_id] = 1;
 		get_boundary_face_strain(faces, face_id, mesh,
@@ -1185,13 +1137,14 @@ static void get_face_strain(face_t **faces, uint32_t face_id,
 static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_mesh2D_t *const mesh,
 				     const nb_mesh2D_t *intmsh,
+				     const double *xc,
 				     const double *disp, double *strain)
 {
 	if (0 < faces[face_id]->N_sf)
 		get_subfaces_strain(faces, face_id, mesh, intmsh,
 				    disp, strain);
 	else
-		get_pairwise_strain(faces, face_id, mesh, disp, strain);
+		get_pairwise_strain(faces, face_id, mesh, xc, disp, strain);
 }
 
 static void get_subfaces_strain(face_t **faces, uint32_t face_id,
@@ -1247,16 +1200,18 @@ static void subface_sum_strain_in_trg(const nb_mesh2D_t *const mesh,
 }
 
 static void get_pairwise_strain(face_t **faces, uint32_t face_id,
-				const nb_mesh2D_t *mesh,
+				const nb_mesh2D_t *mesh, const double *xc,
 				const double *disp, double *strain)
 {
 	face_t *face = faces[face_id];
 
+	uint32_t id1 = face->elems[0];
+	uint32_t id2 = face->elems[1];
 	double c1[2], c2[2];
-	c1[0] = nb_mesh2D_elem_get_x(mesh, face->elems[0]);
-	c1[1] = nb_mesh2D_elem_get_y(mesh, face->elems[0]);
-	c2[0] = nb_mesh2D_elem_get_x(mesh, face->elems[1]);
-	c2[1] = nb_mesh2D_elem_get_y(mesh, face->elems[1]);
+	c1[0] = xc[id1 * 2];
+	c1[1] = xc[id1*2+1];
+	c2[0] = xc[id2 * 2];
+	c2[1] = xc[id2*2+1];
 
 	double lf = nb_utils2D_get_dist(face->x1, face->x2);
 
