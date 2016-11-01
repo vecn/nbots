@@ -25,8 +25,6 @@
 #define POW3(a) ((a)*(a)*(a))
 #define SMOOTH 0
 
-int TEMP;
-
 typedef struct subface_s subface_t;
 
 typedef struct {
@@ -240,7 +238,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 			 double *strain,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
-	TEMP = 0;
 	int status;
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
@@ -288,9 +285,6 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 		       intmsh, xc, bcond, displacement, &glq);
 
 	status = 0;
-
-	printf("-- Int pts: %i %i\n", TEMP,
-	       nb_mesh2D_get_N_elems(mesh));/* TEMPORAL */
 CLEANUP_LINEAR_SYSTEM:
 	finish_faces(N_faces, faces);
 	nb_sparse_destroy(K);
@@ -841,7 +835,6 @@ static void integrate_subface(nb_sparse_t *K,
 						   subface_id, D, params2D,
 						   glq, q);
 	}
-	TEMP += glq->N;
 }
 
 static void integrate_subface_simplexwise(nb_sparse_t *K,
@@ -980,15 +973,17 @@ static void get_normalized_point(const double x1[2], const double x2[2],
 static void subface_get_normalized_grad(uint8_t i, const double xi[2],
 					double grad_xi[2])
 {
-	double dPx = get_deriv_spline(xi[0]);
-	double dPy = get_deriv_spline(xi[1]);
 	if (0 == i) {
+		double dPx = get_deriv_spline(xi[0]);
+		double dPy = get_deriv_spline(xi[1]);
 		grad_xi[0] = -dPx;
 		grad_xi[1] = -dPy;
 	} else if (1 == i) {
+		double dPx = get_deriv_spline(xi[0]);
 		grad_xi[0] = dPx;
 		grad_xi[1] = 0;
 	} else {
+		double dPy = get_deriv_spline(xi[1]);
 		grad_xi[0] = 0;
 		grad_xi[1] = dPy;
 	}
@@ -1136,8 +1131,8 @@ static void face_get_grad_pairwise(const double c1[2], const double c2[2],
 
 	double dPz = get_deriv_spline(z);
 
-	grad[0] = dPz * xdiff / d2;
-	grad[1] = dPz * ydiff / d2;
+	grad[0] = -dPz * xdiff / d2;
+	grad[1] = -dPz * ydiff / d2;
 }
 
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
@@ -1262,8 +1257,9 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 							  glq, q);
 		} else {
 			for (uint8_t q = 0; q < glq->N; q++)
-				subface_sum_strain_pairwise(faces, face_id, subface,
-							    xc, disp, strain, glq, q);
+				subface_sum_strain_pairwise(faces, face_id,
+							    subface, xc, disp,
+							    strain, glq, q);
 		}
 	}
 	double length = nb_utils2D_get_dist(face->x1, face->x2);

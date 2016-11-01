@@ -242,10 +242,15 @@ static bool vol_intersects_trg(const nb_mesh2D_t *mesh,
 		uint16_t N_adj2 = nb_mesh2D_elem_get_N_adj(intmsh, trg_id);
 		for (uint16_t j = 0; j < N_adj2; j++) {
 			mesh_load_sgm_from_adj(intmsh, trg_id, j, b1, b2);
-			out = nb_utils2D_are_sgm_intersected(a1, a2, b1,
-							      b2, NULL);
-			if (out)
+			
+			nb_intersect_t status =
+				nb_utils2D_get_sgm_intersection(a1, a2, b1,
+								b2, NULL);
+			if (NB_INTERSECTED == status ||
+			    NB_PARALLEL == status) {
+				out = true;
 				goto EXIT;
+			}
 		}
 	}
 EXIT:
