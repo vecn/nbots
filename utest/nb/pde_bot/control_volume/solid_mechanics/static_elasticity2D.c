@@ -124,7 +124,7 @@ static void check_beam_cantilever(const void *mesh,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 19000, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 190, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -142,6 +142,10 @@ static void check_plate_with_hole(const void *mesh,
 	printf("-- AVG XY ERROR: %e\n", error[2]); /* TEMPORAL */
 	printf("-- AVG VM ERROR: %e\n", avg_error); /* TEMPORAL */
 	printf("--        ELEMS: %i\n", nb_mesh2D_get_N_elems(mesh)); /* TEMPORAL */
+	double area = (nb_mesh2D_elem_get_area(mesh, 0) +
+		       nb_mesh2D_elem_get_area(mesh, 1) +
+		       nb_mesh2D_elem_get_area(mesh, 2)) / 3;
+	printf("--      Delta X: %e\n", area); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
 }
 
