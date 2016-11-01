@@ -124,7 +124,7 @@ static void check_beam_cantilever(const void *mesh,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 190, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 50, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -142,10 +142,12 @@ static void check_plate_with_hole(const void *mesh,
 	printf("-- AVG XY ERROR: %e\n", error[2]); /* TEMPORAL */
 	printf("-- AVG VM ERROR: %e\n", avg_error); /* TEMPORAL */
 	printf("--        ELEMS: %i\n", nb_mesh2D_get_N_elems(mesh)); /* TEMPORAL */
-	double area = (nb_mesh2D_elem_get_area(mesh, 0) +
-		       nb_mesh2D_elem_get_area(mesh, 1) +
-		       nb_mesh2D_elem_get_area(mesh, 2)) / 3;
-	printf("--      Delta X: %e\n", area); /* TEMPORAL */
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	double length = 0;
+	for (uint32_t i = 0; i < N_faces; i++)
+		length += nb_mesh2D_edge_get_length(mesh, i);
+	length /= N_faces;
+	printf("--      Delta X: %e\n", length); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
 }
 
@@ -188,11 +190,11 @@ static void TEMPORAL3(const void *mesh, const double analytic_stress[3],
 	nb_mesh2D_edge_get_normal(mesh, face_id, nf);  /* TEMPORAL */
 	uint32_t id = face_id;                         /* TEMPORAL */
 	double error[15];                              /* TEMPORAL */
-	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /      /**/
 			CHECK_ZERO(analytic_stress[0]));         /**/
-	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /      /**/
 			CHECK_ZERO(analytic_stress[1]));         /**/
-	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /      /**/
 			CHECK_ZERO(analytic_stress[2]));         /**/
 	double Sn[2];                                  /* TEMPORAL */
 	Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
