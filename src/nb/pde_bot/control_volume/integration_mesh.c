@@ -88,7 +88,7 @@ void nb_cvfa_load_integration_mesh(nb_mesh2D_t *intmsh, uint32_t N,
 
 	nb_tessellator2D_init(t2d);
 	nb_tessellator2D_get_smallest_ns_alpha_complex(t2d, N, xc, 0.666);
-	nb_mesh2D_load_from_mesh(intmsh, t2d);
+	nb_mesh2D_load_from_tessellator2D(intmsh, t2d);
 	nb_tessellator2D_finish(t2d);
 
 	for (uint32_t i = 0; i < N; i++) {

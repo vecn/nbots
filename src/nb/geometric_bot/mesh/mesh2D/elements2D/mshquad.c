@@ -609,7 +609,7 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 	return mshquad->nod_x_sgm[sgm_id][node_id];
 }
 
-void nb_mshquad_load_from_mesh(void *mshquad, nb_tessellator2D_t *mesh)
+void nb_mshquad_load_from_tessellator2D(void *mshquad, nb_tessellator2D_t *mesh)
 {
 	if (0 == nb_tessellator2D_get_N_trg(mesh))
 		goto EXIT;

@@ -9,7 +9,7 @@
 static int suite_init(void);
 static int suite_clean(void);
 
-static void test_load_from_mesh(void);
+static void test_load_from_tessellator2D(void);
 
 void cunit_nb_mshpoly(void)
 {
@@ -17,7 +17,7 @@ void cunit_nb_mshpoly(void)
 		CU_add_suite("nb/geometric_bot/mesh/mesh2D/"\
 			     "elements2D/mshpoly.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "load_from_mesh()", test_load_from_mesh);
+	CU_add_test(suite, "load_from_mesh()", test_load_from_tessellator2D);
 }
 
 static int suite_init(void)
@@ -30,7 +30,7 @@ static int suite_clean(void)
 	return 0;
 }
 
-static void test_load_from_mesh(void)
+static void test_load_from_tessellator2D(void)
 {
 	nb_model_t *model = nb_model_create_polygon(1, 0, 0, 6);
 	nb_tessellator2D_t* mesh = nb_tessellator2D_create();
@@ -42,7 +42,7 @@ static void test_load_from_mesh(void)
 
 	void *poly = nb_allocate_on_stack(nb_mshpoly_get_memsize());
 	nb_mshpoly_init(poly);
-	nb_mshpoly_load_from_mesh(poly, mesh);
+	nb_mshpoly_load_from_tessellator2D(poly, mesh);
 	nb_tessellator2D_destroy(mesh);
 
 	/* TEMPORAL FAIL: Produce different triangles each time */

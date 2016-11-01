@@ -381,7 +381,7 @@ static bool all_trg_are_delaunay(nb_tessellator2D_t *mesh)
 	uint32_t memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = nb_allocate_on_stack(memsize);
 	nb_msh3trg_init(msh3trg);
-	nb_msh3trg_load_from_mesh(msh3trg, mesh);
+	nb_msh3trg_load_from_tessellator2D(msh3trg, mesh);
 
 	bool (*inside)(const double v1[2], const double v2[2],
 		       const double v3[2], const double p[2]) =

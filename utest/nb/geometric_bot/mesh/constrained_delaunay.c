@@ -305,7 +305,7 @@ static bool all_trg_are_cdelaunay(nb_tessellator2D_t *mesh, input_t *input)
 	uint32_t memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = nb_allocate_on_stack(memsize);
 	nb_msh3trg_init(msh3trg);
-	nb_msh3trg_load_from_mesh(msh3trg, mesh);
+	nb_msh3trg_load_from_tessellator2D(msh3trg, mesh);
 
 	bool all_delaunay = true;
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh3trg);

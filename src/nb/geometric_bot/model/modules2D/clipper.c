@@ -1344,7 +1344,7 @@ static void delete_isolated_elements(nb_model_t *model)
 		uint32_t msh_memsize = nb_mesh2D_get_memsize(NB_TRIAN);
 		nb_mesh2D_t* part = nb_allocate_on_stack(msh_memsize);
 		nb_mesh2D_init(part, NB_TRIAN);
-		nb_mesh2D_load_from_mesh(part, mesh);
+		nb_mesh2D_load_from_tessellator2D(part, mesh);
 
 		nb_mesh2D_build_model(part, model);
 		nb_mesh2D_finish(part);

@@ -141,7 +141,7 @@ static void set_msh3trg_main_interface(nb_mesh2D_t *mesh)
 	mesh->get_invtx = nb_msh3trg_get_invtx;
 	mesh->insgm_get_N_nodes = nb_msh3trg_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_msh3trg_insgm_get_node;
-	mesh->load_from_mesh = nb_msh3trg_load_from_mesh;
+	mesh->load_from_mesh = nb_msh3trg_load_from_tessellator2D;
 	mesh->set_nodal_permutation = nb_msh3trg_set_nodal_permutation;
 	mesh->get_enveloping_box = nb_msh3trg_get_enveloping_box;
 	mesh->is_vtx_inside = nb_msh3trg_is_vtx_inside;
@@ -205,7 +205,7 @@ static void set_mshquad_main_interface(nb_mesh2D_t *mesh)
 	mesh->get_invtx = nb_mshquad_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshquad_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshquad_insgm_get_node;
-	mesh->load_from_mesh = nb_mshquad_load_from_mesh;
+	mesh->load_from_mesh = nb_mshquad_load_from_tessellator2D;
 	mesh->set_nodal_permutation = nb_mshquad_set_nodal_permutation;
 	mesh->get_enveloping_box = nb_mshquad_get_enveloping_box;
 	mesh->is_vtx_inside = nb_mshquad_is_vtx_inside;
@@ -269,7 +269,7 @@ static void set_mshpoly_main_interface(nb_mesh2D_t *mesh)
 	mesh->get_invtx = nb_mshpoly_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshpoly_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshpoly_insgm_get_node;
-	mesh->load_from_mesh = nb_mshpoly_load_from_mesh;
+	mesh->load_from_mesh = nb_mshpoly_load_from_tessellator2D;
 	mesh->set_nodal_permutation = nb_mshpoly_set_nodal_permutation;
 	mesh->get_enveloping_box = nb_mshpoly_get_enveloping_box;
 	mesh->is_vtx_inside = nb_mshpoly_is_vtx_inside;
@@ -333,7 +333,7 @@ static void set_mshpack_main_interface(nb_mesh2D_t *mesh)
 	mesh->get_invtx = nb_mshpack_get_invtx;
 	mesh->insgm_get_N_nodes = nb_mshpack_insgm_get_N_nodes;
 	mesh->insgm_get_node = nb_mshpack_insgm_get_node;
-	mesh->load_from_mesh = nb_mshpack_load_from_mesh;
+	mesh->load_from_mesh = nb_mshpack_load_from_tessellator2D;
 	mesh->set_nodal_permutation = nb_mshpack_set_nodal_permutation;
 	mesh->get_enveloping_box = nb_mshpack_get_enveloping_box;
 	mesh->is_vtx_inside = nb_mshpack_is_vtx_inside;
@@ -646,7 +646,7 @@ double nb_mesh2D_insgm_subsgm_get_length(const nb_mesh2D_t *mesh,
 	return sqrt(POW2(x1 - x2) + POW2(y1 - y2));
 }
 
-void nb_mesh2D_load_from_mesh(nb_mesh2D_t *mesh,
+void nb_mesh2D_load_from_tessellator2D(nb_mesh2D_t *mesh,
 			      nb_tessellator2D_t *t2D)
 {
 	mesh->load_from_mesh(mesh->msh, t2D);

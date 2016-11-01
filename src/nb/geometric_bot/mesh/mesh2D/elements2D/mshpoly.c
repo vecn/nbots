@@ -692,7 +692,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 	/* PENDING */
 }
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_tessellator2D_t *mesh)
+void nb_mshpoly_load_from_tessellator2D(void *mshpoly, nb_tessellator2D_t *mesh)
 {
 	if (nb_tessellator2D_get_N_trg(mesh) > 0) {
 		split_exterior_trg(mesh);

@@ -508,7 +508,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 	return is_inside;
 }
 
-void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, nb_tessellator2D_t *mesh)
+void nb_msh3trg_load_from_tessellator2D(void *msh3trg_ptr, nb_tessellator2D_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 

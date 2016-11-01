@@ -123,7 +123,7 @@ static void check_beam_cantilever(const void *mesh,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 1500, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 1500, NB_QUAD,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -593,7 +593,7 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 						  NB_GEOMETRIC_TOL);
 	nb_tessellator2D_generate_from_model(t2d, model);
 
-	nb_mesh2D_load_from_mesh(mesh, t2d);
+	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
 }
 
