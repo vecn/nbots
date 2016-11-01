@@ -56,12 +56,13 @@ uint32_t nb_msh3trg_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
 bool nb_msh3trg_elem_has_ngb(const void *msh, uint32_t elem_id,
 			     uint16_t ngb_id);
+bool nb_msh3trg_elem_is_boundary(const void *msh, uint32_t elem_id);
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_msh3trg_insgm_get_node(const void *msh, uint32_t sgm_id,
 				     uint32_t node_id);
 
-void nb_msh3trg_load_from_mesh(void *msh3trg, nb_tessellator2D_t *mesh);
+void nb_msh3trg_load_from_tessellator2D(void *msh3trg, nb_tessellator2D_t *mesh);
 void nb_msh3trg_set_nodal_permutation(void *msh, const uint32_t *perm);
 /**
  * @brief Disable the elements sharing single point connections.

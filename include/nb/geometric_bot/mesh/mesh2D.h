@@ -74,6 +74,7 @@ uint32_t nb_mesh2D_elem_get_ngb(const nb_mesh2D_t *mesh,
 				uint32_t elem_id, uint8_t ngb_id);
 bool nb_mesh2D_elem_has_ngb(const nb_mesh2D_t *mesh, uint32_t elem_id,
 			    uint16_t face_id);
+bool nb_mesh2D_elem_is_boundary(const nb_mesh2D_t *mesh, uint32_t elem_id);
 uint32_t nb_mesh2D_get_invtx(const nb_mesh2D_t *mesh, uint32_t id);
 uint32_t nb_mesh2D_insgm_get_N_nodes(const nb_mesh2D_t *mesh, uint32_t id);
 uint32_t nb_mesh2D_insgm_get_N_subsgm(const nb_mesh2D_t *mesh, uint32_t id);
@@ -88,7 +89,7 @@ void nb_mesh2D_insgm_get_elem_adj(const nb_mesh2D_t *mesh,
 void nb_mesh2D_load_graph(const nb_mesh2D_t *mesh, nb_graph_t *graph,
 			  nb_mesh2D_graph_type type);
 
-void nb_mesh2D_load_from_mesh(nb_mesh2D_t *mesh, nb_tessellator2D_t *t2D);
+void nb_mesh2D_load_from_tessellator2D(nb_mesh2D_t *mesh, nb_tessellator2D_t *t2D);
 void nb_mesh2D_set_nodal_permutation(nb_mesh2D_t *mesh,
 				     const uint32_t *perm);
 void nb_mesh2D_get_enveloping_box(const nb_mesh2D_t *mesh, double box[4]);

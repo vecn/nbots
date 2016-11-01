@@ -10,14 +10,14 @@
 static int suite_init(void);
 static int suite_clean(void);
 
-static void test_load_from_mesh(void);
+static void test_load_from_tessellator2D(void);
 
 void cunit_nb_msh3trg(void)
 {
 	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/mesh2D/"\
 				       "elements2D/msh3trg.c",
 				       suite_init, suite_clean);
-	CU_add_test(suite, "load_from_mesh()", test_load_from_mesh);
+	CU_add_test(suite, "load_from_mesh()", test_load_from_tessellator2D);
 }
 
 static int suite_init(void)
@@ -30,7 +30,7 @@ static int suite_clean(void)
 	return 0;
 }
 
-static void test_load_from_mesh(void)
+static void test_load_from_tessellator2D(void)
 {
 	nb_model_t *model  = nb_allocate_on_stack(nb_model_get_memsize());
 	model->N = 5;
@@ -58,7 +58,7 @@ static void test_load_from_mesh(void)
 	uint32_t msh_memsize = nb_msh3trg_get_memsize();
 	void *msh3trg = nb_allocate_on_stack(msh_memsize);
 	nb_msh3trg_init(msh3trg);
-	nb_msh3trg_load_from_mesh(msh3trg, mesh);
+	nb_msh3trg_load_from_tessellator2D(msh3trg, mesh);
 
 	nb_tessellator2D_finish(mesh);
 	

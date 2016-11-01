@@ -139,7 +139,8 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);
 
-	fill(mesh, g, data);
+	if (NB_NULL != data->vals_entity)
+		fill(mesh, g, data);
 
 	if (data->draw_wires)
 		draw_wires(mesh, g);
@@ -179,7 +180,6 @@ static void fill(const nb_mesh2D_t *mesh,
 
 	else if (NB_ELEMENT == enty && NB_CLASS == type)
 		fill_elems_classes(mesh, g, data->values);
-
 	else
 		fill_elems(mesh, g);
 }

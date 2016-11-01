@@ -279,6 +279,11 @@ bool nb_mshpack_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_mshpack_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	return false;
+}
+
 uint32_t nb_mshpack_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_mshpack_t *pack = msh;
@@ -340,7 +345,7 @@ static double get_max_displacement(uint32_t N, double *disp)
 	return sqrt(max);
 }
 
-void nb_mshpack_load_from_mesh_with_overlap(void *msh, nb_tessellator2D_t *mesh,
+void nb_mshpack_load_from_tessellator2D_with_overlap(void *msh, nb_tessellator2D_t *mesh,
 					    double ov_factor)
 {
 	nb_mshpack_t *pack = msh;
@@ -812,9 +817,9 @@ static void pack_update_disks(const nb_tessellator2D_t *const mesh,
 }
 
 
-void nb_mshpack_load_from_mesh(void *msh, nb_tessellator2D_t *mesh)
+void nb_mshpack_load_from_tessellator2D(void *msh, nb_tessellator2D_t *mesh)
 {
-	nb_mshpack_load_from_mesh_with_overlap(msh, mesh, 0.0);
+	nb_mshpack_load_from_tessellator2D_with_overlap(msh, mesh, 0.0);
 }
 
 void nb_mshpack_set_nodal_permutation(void *msh, const uint32_t *perm)

@@ -57,6 +57,7 @@ uint32_t nb_mshpoly_elem_get_ngb(const void *msh,
 				 uint32_t elem_id, uint8_t ngb_id);
 bool nb_mshpoly_elem_has_ngb(const void *msh, uint32_t elem_id,
 			     uint16_t ngb_id);
+bool nb_mshpoly_elem_is_boundary(const void *msh, uint32_t elem_id);
 uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_insgm_get_N_nodes(const void *msh, uint32_t id);
 uint32_t nb_mshpoly_insgm_get_node(const void *msh, uint32_t sgm_id,
@@ -71,7 +72,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_tessellator2D_t *mesh);
+void nb_mshpoly_load_from_tessellator2D(void *mshpoly, nb_tessellator2D_t *mesh);
 void nb_mshpoly_set_nodal_permutation(void *msh, const uint32_t *perm);
 void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,
 				double (*density)(const double[2],

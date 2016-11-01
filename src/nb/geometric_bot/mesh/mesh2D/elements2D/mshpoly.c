@@ -630,6 +630,20 @@ bool nb_mshpoly_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_mshpoly_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	uint16_t i;
+	uint16_t N = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	bool out = false;
+	for (i = 0; i < N; i++) {
+		if (!nb_mshpoly_elem_has_ngb(msh, elem_id, i)) {
+			out = true;
+			break;
+		}
+	}
+	return out;
+}
+
 uint32_t nb_mshpoly_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_mshpoly_t *poly = msh;
@@ -678,7 +692,7 @@ void nb_mshpoly_build_model_disabled_elems(const void *msh,
 	/* PENDING */
 }
 
-void nb_mshpoly_load_from_mesh(void *mshpoly, nb_tessellator2D_t *mesh)
+void nb_mshpoly_load_from_tessellator2D(void *mshpoly, nb_tessellator2D_t *mesh)
 {
 	if (nb_tessellator2D_get_N_trg(mesh) > 0) {
 		split_exterior_trg(mesh);

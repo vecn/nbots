@@ -453,6 +453,22 @@ bool nb_msh3trg_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_msh3trg_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	bool out = false;
+	if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 0))
+		out = true;
+	if (!out) {
+		if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 1))
+			out = true;
+	}
+	if (!out) {
+		if (!nb_msh3trg_elem_has_ngb(msh, elem_id, 2))
+			out = true;
+	}
+	return out;
+}
+
 uint32_t nb_msh3trg_get_invtx(const void *msh, uint32_t id)
 {
 	const nb_msh3trg_t *msh3trg = msh;
@@ -492,7 +508,7 @@ bool nb_msh3trg_is_vtx_inside(const void *msh3trg_ptr, double x, double y)
 	return is_inside;
 }
 
-void nb_msh3trg_load_from_mesh(void *msh3trg_ptr, nb_tessellator2D_t *mesh)
+void nb_msh3trg_load_from_tessellator2D(void *msh3trg_ptr, nb_tessellator2D_t *mesh)
 {
 	nb_msh3trg_t *msh3trg = msh3trg_ptr;
 

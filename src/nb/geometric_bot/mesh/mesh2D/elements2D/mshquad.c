@@ -562,6 +562,28 @@ bool nb_mshquad_elem_has_ngb(const void *msh, uint32_t elem_id,
 	return id < N_elems;
 }
 
+bool nb_mshquad_elem_is_boundary(const void *msh, uint32_t elem_id)
+{
+	bool out = false;
+	if (!nb_mshquad_elem_has_ngb(msh, elem_id, 0))
+		out = true;
+	if (!out) {
+		if (!nb_mshquad_elem_has_ngb(msh, elem_id, 1))
+			out = true;
+	}
+	if (!out) {
+		if (!nb_mshquad_elem_has_ngb(msh, elem_id, 2))
+			out = true;
+	}
+	if (!out) {
+		if (nb_mshquad_elem_is_quad(msh, elem_id)) {
+			if (!nb_mshquad_elem_has_ngb(msh, elem_id, 3))
+				out = true;
+		}
+	}
+	return out;
+}
+
 bool nb_mshquad_elem_is_quad(const void *msh, uint32_t elem_id)
 {
 	const nb_mshquad_t *mshquad = msh;
@@ -587,7 +609,7 @@ uint32_t nb_mshquad_insgm_get_node(const void *msh, uint32_t sgm_id,
 	return mshquad->nod_x_sgm[sgm_id][node_id];
 }
 
-void nb_mshquad_load_from_mesh(void *mshquad, nb_tessellator2D_t *mesh)
+void nb_mshquad_load_from_tessellator2D(void *mshquad, nb_tessellator2D_t *mesh)
 {
 	if (0 == nb_tessellator2D_get_N_trg(mesh))
 		goto EXIT;

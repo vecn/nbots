@@ -152,8 +152,8 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 	}
 }
 
-static void set_neumann(const nb_mesh2D_t *part,
-			uint8_t N_dof, double* F, double factor,
+static void set_neumann(const nb_mesh2D_t *part, uint8_t N_dof,
+			double* F, double factor,
 			nb_bcond_iter_t *iter,
 			uint32_t vtx_id)
 {
@@ -169,8 +169,7 @@ static void set_neumann(const nb_mesh2D_t *part,
 	}
 }
 
-static void set_neumann_vtx(const nb_mesh2D_t *part,
-			    double* F, 
+static void set_neumann_vtx(const nb_mesh2D_t *part, double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor)
 {

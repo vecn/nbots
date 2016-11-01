@@ -330,7 +330,7 @@ static void get_mesh(const nb_model_t *model, void *part,
 					  NB_GEOMETRIC_TOL);
 	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_mesh2D_load_from_mesh(part, mesh);
+	nb_mesh2D_load_from_tessellator2D(part, mesh);
 	nb_tessellator2D_finish(mesh);
 }
 
