@@ -124,7 +124,7 @@ static void check_beam_cantilever(const void *mesh,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 50, NB_POLY,
+	run_test("%s/plate_with_hole.txt", 1000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }
@@ -141,7 +141,7 @@ static void check_plate_with_hole(const void *mesh,
 	printf("-- AVG YY ERROR: %e\n", error[1]); /* TEMPORAL */
 	printf("-- AVG XY ERROR: %e\n", error[2]); /* TEMPORAL */
 	printf("-- AVG VM ERROR: %e\n", avg_error); /* TEMPORAL */
-	printf("--        ELEMS: %i\n", nb_mesh2D_get_N_elems(mesh)); /* TEMPORAL */
+	printf("--        ELEMS: %i\n", nb_mesh2D_get_N_elems(mesh)); /* TEMP */
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	double length = 0;
 	for (uint32_t i = 0; i < N_faces; i++)
@@ -156,12 +156,12 @@ static double get_error_avg_pwh(const void *mesh,
 				const char *boundary_mask,
 				double error[3])
 {
-	FILE *fp = fopen("../../../stress.txt", "w");                /* TEMPORAL */
-	fprintf(fp,                                                  /* TEMPORAL */
+	FILE *fp = fopen("../../../stress.txt", "w");             /* TEMPORAL */
+	fprintf(fp,                                               /* TEMPORAL */
 		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2 " \
 		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2 " \
 		"Ax Ay Axy Anx Any Atx Aty |An| |At| Ann Ant Atn Att A1 A2\n");/**/
-	fclose(fp);                                                  /* TEMPORAL */
+	fclose(fp);                                               /* TEMPORAL */
 	double avg = 0.0;
 	memset(error, 0, 3 * sizeof(*error));
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
