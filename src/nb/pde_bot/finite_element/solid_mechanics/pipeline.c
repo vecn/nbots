@@ -127,7 +127,7 @@ CLEANUP:
 }
 
 static int integrate_elemental_system
-		       	(const nb_fem_elem_t *elem, uint32_t id,
+            (const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
 			 const nb_mesh2D_t *part,
 			 nb_analysis2D_params *params2D,

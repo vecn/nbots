@@ -10,6 +10,8 @@
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/common_solid_mechanics/formulas.h"
 
+void add_displacements(double *total_displacement, double *displacement, uint32_t N_nod);
+void substract_displacement(double *total_displacement, double *displacement, uint32_t N_nod);
 void add_elastic_strain(double *strain, double *elastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
 void add_plastic_strain(double *strain, double *plastic_strain, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
 void add_total_strain(double *total_strain, double *elastic_strain, double *plastic_strain, uint32_t N_elem);
@@ -93,7 +95,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double *total_strain, /* Output*/
 			 double *stress,
 			 double *displacement, /* Output, just the last computed plastic displacement */
-			 double N_force_steps,
+			 uint32_t N_force_steps,
 			 double accepted_tol);
 
 #endif // STATIC_PLASTICITY2D_H_INCLUDED

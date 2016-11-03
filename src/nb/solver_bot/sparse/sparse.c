@@ -20,11 +20,11 @@ static int meta_compare_data_bycol(const void *a, const void *b);
 static inline nb_sparse_t* sparse_allocate(uint32_t N);
 
 static void cholesky_symbolic(const nb_sparse_t *const A,
-			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
+			      nb_sparse_t *_L, nb_sparse_t* _Lt,
 			      uint32_t ktrunc);
 
 static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-				   uint32_t i, uint32_t col, 
+				   uint32_t i, uint32_t col,
 				   int imin, int imax);
 
 static inline double get_norm(double* x, uint32_t N)
@@ -52,19 +52,19 @@ nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 	nb_sparse_t* A = sparse_allocate(graph->N * vars_per_node);
 
 	for (uint32_t i = 0; i < graph->N; i++) {
-		uint32_t row_size = (graph->N_adj[i] + 1) * vars_per_node;    
+		uint32_t row_size = (graph->N_adj[i] + 1) * vars_per_node;
 		for (uint32_t k1 = 0; k1 < vars_per_node; k1++) {
 			uint32_t irow;
 			if (NULL != perm)
 				irow = perm[i] * vars_per_node + k1;
-			else 
+			else
 				irow = i * vars_per_node + k1;
 
 			A->rows_size[irow] = row_size;
-			A->rows_values[irow] = 
+			A->rows_values[irow] =
 				nb_allocate_zero_mem(row_size *
 				       sizeof(*(A->rows_values[irow])));
-			A->rows_index[irow] = 
+			A->rows_index[irow] =
 				nb_allocate_mem(row_size *
 				       sizeof(*(A->rows_index[irow])));
 
@@ -79,7 +79,7 @@ nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 				uint32_t icol = i * vars_per_node + k2;
 				A->rows_index[irow][graph->N_adj[i] * vars_per_node + k2] = icol ;
 			}
-			nb_qsort(A->rows_index[irow], A->rows_size[irow], 
+			nb_qsort(A->rows_index[irow], A->rows_size[irow],
 				  sizeof(uint32_t), nb_compare_uint32);
 		}
 	}
@@ -92,7 +92,7 @@ nb_sparse_t* nb_sparse_clone(nb_sparse_t* A)
 	for (uint32_t i = 0; i < A->N; i++) {
 		Acopy->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					      sizeof(**(Acopy->rows_index)));
-		memcpy(Acopy->rows_index[i], A->rows_index[i], 
+		memcpy(Acopy->rows_index[i], A->rows_index[i],
 		       A->rows_size[i] * sizeof(**(Acopy->rows_index)));
 
 		Acopy->rows_values[i] = nb_allocate_zero_mem(A->rows_size[i] *
@@ -134,7 +134,7 @@ void nb_sparse_destroy(nb_sparse_t* A)
 }
 
 static uint32_t sparse_bsearch_row(const nb_sparse_t *const A,
-				   uint32_t i, uint32_t col, 
+				   uint32_t i, uint32_t col,
 				   int imin, int imax)
 {
 	uint32_t index = (imin + imax) / 2;
@@ -152,7 +152,7 @@ void nb_sparse_reset(nb_sparse_t *A)
 {
 	for(uint32_t i = 0; i < A->N; i++)
 		memset(A->rows_values[i], 0,
-		       A->rows_size[i] * sizeof(*(A->rows_values)));  
+		       A->rows_size[i] * sizeof(*(A->rows_values)));
 }
 
 void nb_sparse_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
@@ -179,7 +179,7 @@ void nb_sparse_set_identity_row(nb_sparse_t* A, uint32_t row)
 void nb_sparse_make_diagonal(nb_sparse_t* A, double diag_val)
 {
 	for (uint32_t i = 0; i < A->N; i++){
-		memset(A->rows_values[i], 0, 
+		memset(A->rows_values[i], 0,
 		       A->rows_size[i] * sizeof(**(A->rows_values)));
 		nb_sparse_set(A, i, i, diag_val);
 	}
@@ -242,6 +242,20 @@ void nb_sparse_add(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
 	}
 }
 
+void nb_sparse_substract(nb_sparse_t *A, uint32_t i, uint32_t j, double value)
+{
+    uint32_t index = sparse_bsearch_row(A, i, j, 0, A->rows_size[i]-1);
+	if (A->rows_index[i][index] == j) {
+		A->rows_values[i][index] -= value;
+	} else {
+		/* OPPORTUNITY: Send this to some logfile */
+		printf("ERROR: Entry of sparse matrix is not allocated.\n");
+		printf("    -> nb_sparse_add(*A=%p, i=%i, j=%i, value=%lf)\n",
+		       (void*) A, i, j, value);
+		exit(1);
+	}
+}
+
 void nb_sparse_scale(nb_sparse_t *A, double factor)
 {
 	for (uint32_t i = 0; i < A->N; i++) {
@@ -249,18 +263,18 @@ void nb_sparse_scale(nb_sparse_t *A, double factor)
 			A->rows_values[i][j] *= factor;
 	}
 }
- 
+
 nb_sparse_t* nb_sparse_create_permutation
 (const nb_sparse_t *const A,
  const uint32_t *const perm,
  const uint32_t *const iperm)
 {
-	/* Use the vectors perm and iperm to compute Ar = PAP'. */ 
+	/* Use the vectors perm and iperm to compute Ar = PAP'. */
 	nb_sparse_t* _Ar = sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
 		uint32_t j = perm[i];
 		_Ar->rows_size[i] = A->rows_size[j];
-		_Ar->rows_index[i] = 
+		_Ar->rows_index[i] =
 			nb_allocate_zero_mem(_Ar->rows_size[i] *
 					     sizeof(**(_Ar->rows_index)));
 		_Ar->rows_values[i] =
@@ -275,7 +289,7 @@ nb_sparse_t* nb_sparse_create_permutation
 			data2sort[k][0] = (double)m; /* OPPORTUNITY */
 			data2sort[k][1] = A->rows_values[j][k];
 		}
-		qsort(data2sort, _Ar->rows_size[i], sizeof(*data2sort), 
+		qsort(data2sort, _Ar->rows_size[i], sizeof(*data2sort),
 		      meta_compare_data_bycol);/* TEMPORAL: use nb_qsort*/
 		for (uint32_t k=0; k< A->rows_size[j]; k++) {
 			_Ar->rows_index[i][k] = (uint32_t)data2sort[k][0];
@@ -289,7 +303,7 @@ nb_sparse_t* nb_sparse_create_permutation
 	return _Ar;
 }
 
-void nb_sparse_fill_permutation(const nb_sparse_t *const A, 
+void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 				 nb_sparse_t* Ar,
 				 const uint32_t *const perm,
 				 const uint32_t *const iperm)
@@ -306,7 +320,7 @@ void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 }
 
 double* nb_sparse_create_vector_permutation
-(const double *const b, 
+(const double *const b,
  const uint32_t *const perm,
  uint32_t N){
 	double* br = (double*)nb_allocate_mem(N * sizeof(double));
@@ -374,7 +388,7 @@ double nb_sparse_get_asym(const nb_sparse_t *const A)
 			if (A->rows_index[k][l] == i)
 				Aji = A->rows_values[k][l];
 
-			sum += POW2(Aij - Aji); 
+			sum += POW2(Aij - Aji);
 		}
 	}
 	return sqrt(sum);
@@ -387,7 +401,7 @@ double nb_sparse_get_frobenius_norm(const nb_sparse_t *const A)
 		uint32_t N_cols = A->rows_size[i];
 		for (uint32_t j = 0; j < N_cols; j++) {
 			double Aij = A->rows_values[i][j];
-			sum += POW2(Aij); 
+			sum += POW2(Aij);
 		}
 	}
 	return sqrt(sum);
@@ -432,7 +446,7 @@ void nb_sparse_set_Dirichlet_condition(nb_sparse_t* A, double* RHS,
 }
 
 int nb_sparse_solve_Gauss_Seidel
-(const nb_sparse_t *const A, 
+(const nb_sparse_t *const A,
  const double *const b,
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
@@ -477,15 +491,15 @@ int nb_sparse_solve_Gauss_Seidel
 
 	if(tolerance_reached != NULL)
 		*tolerance_reached = sqrt(error);
-  
+
 	if(error > tolerance*tolerance)
 		return 1;
 	return 0;
 }
 
 int nb_sparse_solve_conjugate_gradient
-(const nb_sparse_t *const A, 
- const double *const b, 
+(const nb_sparse_t *const A,
+ const double *const b,
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
  uint32_t* niter_performed,     /* Out (NULL if not required) */
@@ -538,7 +552,7 @@ int nb_sparse_solve_conjugate_gradient
 	nb_free_mem(g);
 	nb_free_mem(p);
 	nb_free_mem(w);
-  
+
 	if(niter_performed != NULL) niter_performed[0]= k;
 
 	if(tolerance_reached != NULL) *tolerance_reached = sqrt(dot_gg);
@@ -550,7 +564,7 @@ int nb_sparse_solve_conjugate_gradient
 }
 
 int nb_sparse_solve_CG_precond_Jacobi
-(const nb_sparse_t *const A, 
+(const nb_sparse_t *const A,
  const double *const b,
  double *_x,                /* Out */
  uint32_t max_iter, double tolerance,
@@ -561,7 +575,7 @@ int nb_sparse_solve_CG_precond_Jacobi
 {
 	/* Solve Ax = b with Conjugate Gradient preconditioned with jacobi */
 	uint32_t vec_size = A->N * sizeof(double);
-	char *memblock = nb_allocate_zero_mem(5 * vec_size);	
+	char *memblock = nb_allocate_zero_mem(5 * vec_size);
 	double* g = (void*) memblock;
 	double* p = (void*) (memblock + vec_size);
 	double* q = (void*) (memblock + 2 * vec_size);
@@ -597,7 +611,7 @@ int nb_sparse_solve_CG_precond_Jacobi
 		}
 		double alphak = dot_gq/dot_pw;
 		double dot_gkqk = 0;
-		
+
 #pragma omp parallel for reduction(+:dot_gkqk) num_threads(omp_parallel_threads)
 		for (uint32_t i=0; i< A->N; i++) {
 			_x[i] += alphak*p[i];
@@ -607,7 +621,7 @@ int nb_sparse_solve_CG_precond_Jacobi
 		}
 
 		double betak = dot_gkqk/dot_gq;
-		
+
 #pragma omp parallel for num_threads(omp_parallel_threads)
 		for (uint32_t i=0; i< A->N; i++)
 			p[i] = -q[i]+betak*p[i];
@@ -630,7 +644,7 @@ int nb_sparse_solve_CG_precond_Jacobi
 
 int nb_sparse_solve_CG_precond_Cholesky
 (const nb_sparse_t *const A,
- const double *const b, 
+ const double *const b,
  double *_x,                /* Out */
  uint32_t ktrunc,
  uint32_t max_iter, double tolerance,
@@ -639,7 +653,7 @@ int nb_sparse_solve_CG_precond_Cholesky
  uint32_t omp_parallel_threads)
 /* Return the num of iterations */
 {
-	/* Solve Ax = b with Conjugate Gradient preconditioned with 
+	/* Solve Ax = b with Conjugate Gradient preconditioned with
 	 * Cholesky truncated.
 	 */
 	double* g = nb_allocate_zero_mem(A->N * sizeof(double));
@@ -648,7 +662,7 @@ int nb_sparse_solve_CG_precond_Cholesky
 	double* w = nb_allocate_zero_mem(A->N * sizeof(double));
 
 	double dot_gg = 0;
-  
+
 #pragma omp parallel for reduction(+:dot_gg) num_threads(omp_parallel_threads) schedule(guided)
 	for(uint32_t i=0; i< A->N; i++){
 		double sum = 0;
@@ -732,8 +746,8 @@ int nb_sparse_solve_CG_precond_fsai
  uint32_t omp_parallel_threads)
 /* Return the num of iterations */
 {
-	/* Conjugate gradient preconditioned with "Factorized sparse 
-	 * approximated inverse" 
+	/* Conjugate gradient preconditioned with "Factorized sparse
+	 * approximated inverse"
 	 */
 	double *D = nb_allocate_zero_mem(A->N * sizeof(double));
 	double *siD = nb_allocate_zero_mem(A->N * sizeof(double));
@@ -741,7 +755,7 @@ int nb_sparse_solve_CG_precond_fsai
 	nb_sparse_t* G  = sparse_allocate(A->N);
 	nb_sparse_t* Gt = sparse_allocate(A->N);
 	/* Generate D diagonal matrix as
-	 *           
+	 *
 	 *     Dii = |Aii|,   if |Aii| > 0
 	 *            1       otherwise
 	 */
@@ -754,8 +768,8 @@ int nb_sparse_solve_CG_precond_fsai
 		/* Compute D^(-1/2) */
 		siD[i] = 1/sqrt(D[i]);
 	}
-  
-	/* Generate structure of G lower triangular matrix 
+
+	/* Generate structure of G lower triangular matrix
 	 *
 	 *    G = 1 ,  if (i == j) or (|[D^(-1/2) A D^(-1/2)]_ij| > threshold)
 	 *        0 ,  otherwise
@@ -768,7 +782,7 @@ int nb_sparse_solve_CG_precond_fsai
 #pragma omp parallel for reduction(+:isize,isizet) num_threads(omp_parallel_threads)
 		for(uint32_t q=0; q< A->rows_size[i]; q++){
 			uint32_t j = A->rows_index[i][q];
-			if(i == j || 
+			if(i == j ||
 			   fabs(siD[i] * A->rows_values[i][q] * siD[j])
 			   > threshold){
 				if(i > j)
@@ -807,14 +821,14 @@ int nb_sparse_solve_CG_precond_fsai
 		uint32_t k = 0;
 		for(uint32_t q = 0; q < A->rows_size[i]; q++){
 			uint32_t j = A->rows_index[i][q];
-			if(i == j || 
+			if(i == j ||
 			   fabs(siD[i] * A->rows_values[i][q] * siD[j]) > threshold){
 				if(i >= j){
 					G->rows_index[i][k] = j;
 					for(uint32_t l=0; l<k; l++){
-						subA[k*G->rows_size[i] + l] = 
+						subA[k*G->rows_size[i] + l] =
 							nb_sparse_get(A,j,G->rows_index[i][l]);
-						subA[l*G->rows_size[i] + k] = 
+						subA[l*G->rows_size[i] + k] =
 							nb_sparse_get(A,G->rows_index[i][l],j);
 					}
 					subA[k*G->rows_size[i] + k] = nb_sparse_get(A,j,j);
@@ -951,20 +965,20 @@ typedef struct{
 	/* OPPORTUNITY: Use libre_dstructs */
 	/* Symbolic Cholesky Set
 	 * This structure is going to be useful to create
-	 * lists that represent sets to implement the 
+	 * lists that represent sets to implement the
 	 * "symbolic cholesky factorization" algorithm.
 	 */
 	uint32_t index;
 	void *next;
 }sc_set;
 
-static void cholesky_symbolic(const nb_sparse_t * const A, 
-			      nb_sparse_t *_L, nb_sparse_t* _Lt, 
+static void cholesky_symbolic(const nb_sparse_t * const A,
+			      nb_sparse_t *_L, nb_sparse_t* _Lt,
 			      uint32_t ktrunc)
 {
 	/* The algorithm is going to store in "l" the index of
 	 * columns that must have each column of the lower triangular
-	 * matrix "L" from A = LL' (without the index of the column "Lii"), 
+	 * matrix "L" from A = LL' (without the index of the column "Lii"),
 	 * using only 'ktrunc' diagonals from A.
 	 * It could look something like:
 	 *   l[0]:   1 -> 2 -> 3 -> 5 -> NULL
@@ -979,8 +993,8 @@ static void cholesky_symbolic(const nb_sparse_t * const A,
 	 * be allocated in row compress format (nb_sparse_t structure).
 	 *
 	 * Reference:
-	 *  GALLIVAN, Heath, Ng, Ortega, Peyton, Plemmons, Romine, 
-	 *    Sameh & Voigt. 
+	 *  GALLIVAN, Heath, Ng, Ortega, Peyton, Plemmons, Romine,
+	 *    Sameh & Voigt.
 	 *    "Parallel Algorithms for Matrix Computations"
 	 *    SIAM 1990 p86-88
 	 */
@@ -988,7 +1002,7 @@ static void cholesky_symbolic(const nb_sparse_t * const A,
 
 	sc_set** r = nb_allocate_zero_mem(A->N * sizeof(*r));
 
-	for (uint32_t j = 0; j < A->N; j++) { 
+	for (uint32_t j = 0; j < A->N; j++) {
 		sc_set* lj = NULL;
 		uint32_t lj_size = 1;
 		uint32_t _i = sparse_bsearch_row(A, j, j, 0,
@@ -1128,7 +1142,7 @@ static void cholesky_symbolic(const nb_sparse_t * const A,
 			nb_free_mem(lj_free);                                                 /**/
 		}                                                                /**/
 		/*******************************************************************/
-    
+
 	}
 	/****************************** Allocate "L" ****************************/
 	for(uint32_t i=0; i<_L->N; i++){                                 /**/
@@ -1171,7 +1185,7 @@ int nb_sparse_alloc_LU
 {
 	*L = sparse_allocate(A->N);
 	*U = sparse_allocate(A->N);
-  
+
 	/* Run cholesky symbolic to allocate L and Lt */
 	cholesky_symbolic(A, *L, *U, A->N);
 
@@ -1183,25 +1197,25 @@ int nb_sparse_decompose_Cholesky(const nb_sparse_t *const A,
 				  nb_sparse_t* Lt,            /* Out */
 				  uint32_t omp_parallel_threads)
 {
-	/* "L" must be a lower triangular matrix with the main diagonal 
+	/* "L" must be a lower triangular matrix with the main diagonal
 	 * complete, and "Lt" must be an upper triangular matrix with
 	 * the main diagonal complete.
 	 * The structure of L must be congrous with Lt, since Lt = L'.
 	 */
-    
+
 	/* Compute the decomposition */
 	for(uint32_t j=0; j< A->N; j++){
 		L->rows_values[j][L->rows_size[j]-1] = nb_sparse_get(A, j, j);
-    
+
 		double sum = 0;
 		for(uint32_t q = 0; q < L->rows_size[j]-1; q++)
 			sum += POW2(L->rows_values[j][q]);
-      
+
 		L->rows_values[j][L->rows_size[j]-1] -= sum;
 
 		if(L->rows_values[j][L->rows_size[j]-1] <= 0.0)
 			return 1;
-              
+
 		double valuejj = sqrt(L->rows_values[j][L->rows_size[j]-1]);
 		L->rows_values[j][L->rows_size[j]-1] = valuejj;
 		Lt->rows_values[j][0] = valuejj;
@@ -1262,11 +1276,11 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 #pragma omp parallel for schedule(guided) reduction(+:sum) num_threads(omp_parallel_threads)
 		for(uint32_t q=0; q< L->rows_size[j]-1; q++)
 			sum += L->rows_values[j][q] * Ut->rows_values[j][q];
-    
+
 
 		U->rows_values[j][0] -= sum;
 		Ut->rows_values[j][Ut->rows_size[j]-1] = U->rows_values[j][0];
-        
+
 #pragma omp parallel for schedule(guided) num_threads(omp_parallel_threads)
 		for(uint32_t q = 1; q < U->rows_size[j]; q++){
 			uint32_t i = U->rows_index[j][q];
@@ -1306,7 +1320,7 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 			}
 
 			L->rows_values[i][L_jindex] /= U->rows_values[j][0];
-      
+
 			Ut->rows_values[i][L_jindex] = U->rows_values[j][q];
 		}
 	}
@@ -1314,7 +1328,7 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 	nb_sparse_destroy(Ut);
 }
 
-void  nb_sparse_solve_LU(const nb_sparse_t *const L, 
+void  nb_sparse_solve_LU(const nb_sparse_t *const L,
 			  const nb_sparse_t *const U,
 			  const double *const b,
 			  double* _x  /* Out */)
@@ -1329,13 +1343,13 @@ int nb_sparse_solve_Cholesky(const nb_sparse_t *const A,
 			      const double *const b,
 			      double* x,  /* Out */
 			      uint32_t omp_parallel_threads){
-	nb_sparse_t *L = NULL; 
+	nb_sparse_t *L = NULL;
 	nb_sparse_t *U = NULL;
 	nb_sparse_alloc_LU(A, &L, &U);
 	if (NULL == L)
 		return 10;
-	
-	int solver_status = nb_sparse_decompose_Cholesky(A, L, U, 
+
+	int solver_status = nb_sparse_decompose_Cholesky(A, L, U,
 							  omp_parallel_threads);
 
 	if (0 == solver_status)
@@ -1352,7 +1366,7 @@ int nb_sparse_solve_using_LU(const nb_sparse_t *const A,
 			      double* x,  /* Out */
 			      uint32_t omp_parallel_threads)
 {
-	nb_sparse_t *L = NULL; 
+	nb_sparse_t *L = NULL;
 	nb_sparse_t *U = NULL;
 	nb_sparse_alloc_LU(A, &L, &U);
 	if(NULL == L)
@@ -1369,7 +1383,7 @@ int nb_sparse_solve_using_LU(const nb_sparse_t *const A,
 }
 
 void nb_sparse_forward_solve(const nb_sparse_t *const L,
-			      const double *const b, 
+			      const double *const b,
 			      double* _x /* Out */)
 /* Solve the system Lx = b, where L is a lower triangular matrix.
  * If L is not a lower triangular matrix, the program are going to
@@ -1383,7 +1397,7 @@ void nb_sparse_forward_solve(const nb_sparse_t *const L,
 		while(L->rows_index[i][q] < i){
 			_x[i] -= L->rows_values[i][q] * _x[L->rows_index[i][q]];
 			q++;
-		}    
+		}
 		if(L->rows_index[i][L->rows_size[i]-1] == i)
 			_x[i] /= L->rows_values[i][L->rows_size[i]-1];
 		else
@@ -1407,13 +1421,13 @@ void nb_sparse_backward_solve(const nb_sparse_t *const U,
 			idx = sparse_bsearch_row(U, i, i, 0, U->rows_size[i]-1);
 		for(int q = idx+1; q < U->rows_size[i]; q++)
 			_x[i] -= U->rows_values[i][q]*_x[U->rows_index[i][q]];
-    
+
 		_x[i] /= U->rows_values[i][idx];
 	}
 }
 
 void nb_sparse_eigen_power(const nb_sparse_t* const A, int h,
-			    double **_eigenvecs,/* Out */ 
+			    double **_eigenvecs,/* Out */
 			    double *_eigenvals, /* Out */
 			    int *it,            /* Out */
 			    double tolerance,
@@ -1424,10 +1438,10 @@ void nb_sparse_eigen_power(const nb_sparse_t* const A, int h,
 	 *  > _eigenvals is an array of size h to store the h greatest
 	 *    eigenvalues approximated.
 	 *  > h is the number of eigenvalues to be computed.
-	 *  > '*it' will store (after computation) the iterations needed 
+	 *  > '*it' will store (after computation) the iterations needed
 	 *    to compute each eigenvalue (is a return value).
 	 */
-		
+
 	/* Declare structures and variables to be used */
 	uint32_t i, j, c, d; /* Iterative variables */
 	double pnorm, rnorm2;
@@ -1495,8 +1509,8 @@ void nb_sparse_eigen_power(const nb_sparse_t* const A, int h,
 
 int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 			    nb_solver_t solver,
-			    int h, double mu, 
-			    double **_eigenvecs,/* Out */ 
+			    int h, double mu,
+			    double **_eigenvecs,/* Out */
 			    double *_eigenvals, /* Out */
 			    int* it,            /* Out */
 			    double tolerance,
@@ -1508,7 +1522,7 @@ int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 	 *  > _eigenvals is an array of size h to store the h
 	 *    eigenvalues approximated.
 	 *  > h is the number of eigenvalues to be computed.
-	 *  > '*it' will store (after computation) the iterations needed 
+	 *  > '*it' will store (after computation) the iterations needed
 	 *    to compute each eigenvalue (is a return value).
 	 */
 
@@ -1553,13 +1567,13 @@ int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 			    NB_SOLVER_LUD == solver)
 				nb_sparse_solve_LU(L, U, _eigenvecs[i], p);
 			else if (NB_SOLVER_CGJ == solver)
-				nb_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p, 
-								   nb_sparse_get_size(A)*10, 1e-3, 
+				nb_sparse_solve_CG_precond_Jacobi(A,_eigenvecs[i], p,
+								   nb_sparse_get_size(A)*10, 1e-3,
 								   NULL, NULL,
 								   omp_parallel_threads);
 			else
-				nb_sparse_solve_conjugate_gradient(A,_eigenvecs[i], p, 
-								    nb_sparse_get_size(A)*10, 1e-3, 
+				nb_sparse_solve_conjugate_gradient(A,_eigenvecs[i], p,
+								    nb_sparse_get_size(A)*10, 1e-3,
 								    NULL, NULL,
 								    omp_parallel_threads);
 			/* Step 2 */
@@ -1608,7 +1622,7 @@ int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 	if (mu != 0.0)
 		for (c = 0; c < A->N; c++)
 			nb_sparse_add(A_ptr_copy, c, c, mu);  /* A = M + mu*I */
-    
+
 	/* Destroy LU decomposition */
 	if (NB_SOLVER_CHK == solver || NB_SOLVER_LUD == solver) {
 		nb_sparse_destroy(U);
@@ -1623,7 +1637,7 @@ int nb_sparse_eigen_ipower(const nb_sparse_t *const A,
 
 
 void nb_sparse_eigen_lanczos(const nb_sparse_t* const A,
-			      double *_eigenmax,/* Out */ 
+			      double *_eigenmax,/* Out */
 			      double *_eigenmin,/* Out */
 			      int* it,          /* Out */
 			      double tolerance,
@@ -1635,7 +1649,7 @@ void nb_sparse_eigen_lanczos(const nb_sparse_t* const A,
 	 *  > _eigenvals is an array of size h to store the h greatest
 	 *    eigenvalues approximated.
 	 *  > h is the number of eigenvalues to be computed.
-	 *  > '*it' will store (after computation) the iterations needed 
+	 *  > '*it' will store (after computation) the iterations needed
 	 *    to compute each eigenvalue (is a return value).
 	 */
 	/* Declare structures and variables to be used */
@@ -1688,7 +1702,7 @@ void nb_sparse_eigen_lanczos(const nb_sparse_t* const A,
 			double delta_eigk = *_eigenmin;
 			nb_sparse_eigen_givens(alpha, beta, 1, _eigenmax, tolerance, *it);
 			nb_sparse_eigen_givens(alpha, beta, *it, _eigenmin, tolerance, *it);
-      
+
 			delta_eigen = fabs(delta_eig1-*_eigenmax);
 			double tmp = fabs(delta_eigk-*_eigenmin);
 			if (tmp > delta_eigen)
@@ -1707,17 +1721,17 @@ void nb_sparse_eigen_lanczos(const nb_sparse_t* const A,
 	nb_free_mem(v_prev);
 }
 
-void nb_sparse_eigen_givens(const double* const main_diag, 
+void nb_sparse_eigen_givens(const double* const main_diag,
 			     const double* const uplw_diag,
 			     int i, double *_eigenvalue,
 			     double tolerance, uint32_t N)
 {
-	/* Compute the eigen values of a symmetric tridiagonal 
+	/* Compute the eigen values of a symmetric tridiagonal
 	 * matrix (using Givens method), where
 	 *   > *main_diag is the main diagonal of the matrix.
 	 *   > *uplw_diag is the upper and lower diagonal, the
 	 *     first value will be ignored.
-	 *   > 'i' is the position of the eigen value to compute, 
+	 *   > 'i' is the position of the eigen value to compute,
 	 *     assuming:
 	 *        l1 > l2 > l2 > ... > ln
 	 *     where li is the ith eigenvalue.

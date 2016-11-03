@@ -17,7 +17,7 @@ typedef enum {
  * @brief Sparse matrix in "Compress Row Storage" format.
  */
 typedef struct nb_sparse_s nb_sparse_t;
-  
+
 /**
  * @brief Create a sparse matrix from a graph.
  * @param[in] graph Create sparse matrix from a graph.
@@ -41,6 +41,7 @@ double nb_sparse_get_and_set(nb_sparse_t *A, uint32_t i, uint32_t j, double valu
 bool nb_sparse_is_non_zero(const nb_sparse_t *const A, uint32_t i, uint32_t j);
 uint32_t nb_sparse_memory_used(const nb_sparse_t *const A);
 void nb_sparse_add(nb_sparse_t *A, uint32_t i, uint32_t j, double value);
+void nb_sparse_substract(nb_sparse_t *A, uint32_t i, uint32_t j, double value);
 void nb_sparse_scale(nb_sparse_t *A, double factor);
 void nb_sparse_get_transpose(const nb_sparse_t *A, nb_sparse_t *_At);
 void nb_sparse_transpose(nb_sparse_t *A);
@@ -53,7 +54,7 @@ void nb_sparse_multiply_scalar(nb_sparse_t* A, double scalar,
 				uint32_t omp_parallel_threads);
 void nb_sparse_multiply_vector(const nb_sparse_t* A, const double* in,
 				double* out, uint32_t omp_parallel_threads);
-  
+
 void nb_sparse_get_graph(const nb_sparse_t* A, nb_graph_t *graph);
 
 /* Set Dirichlet condition in the system */
@@ -66,14 +67,14 @@ nb_sparse_t* nb_sparse_create_permutation
  const uint32_t *const perm,
  const uint32_t *const iperm);
 
-void nb_sparse_fill_permutation(const nb_sparse_t *const A, 
+void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 				 nb_sparse_t* Ar,
 				 const uint32_t *const perm,
 				 const uint32_t *const iperm);
 
 double* nb_sparse_create_vector_permutation
 (const double *const b,
- const uint32_t *const perm, 
+ const uint32_t *const perm,
  uint32_t N);
 
 #endif

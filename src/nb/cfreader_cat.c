@@ -20,7 +20,7 @@ struct nb_cfreader_s {
 	 * open_close_string (of several chars, e.g. open/close string with << >>),
 	 * etc
 	 */
-	char line_comment_token[TEMPORAL_TOKEN_LENGTH]; 
+	char line_comment_token[TEMPORAL_TOKEN_LENGTH];
 	char open_string_token;
 	char close_string_token;
 	FILE *fp;
@@ -65,7 +65,7 @@ char nb_cfreader_next_line(nb_cfreader_t* cfreader)
 
 		if (strlen(cfreader->line) == 0)
 			continue;
-    
+
 		/* The line contains information */
 		return 0;
 	}
@@ -245,7 +245,7 @@ char* nb_cfreader_read_and_allocate_string(nb_cfreader_t* cfreader)
 	}
 	if (ptr[0] == cfreader->close_string_token)
 		cfreader->line = &(cfreader->line[1]);
-  
+
 	/* Forward char pointer in the line */
 	while (cfreader->line[0] == ' ' || cfreader->line[0] == '\t')
 		cfreader->line = &(cfreader->line[1]);
