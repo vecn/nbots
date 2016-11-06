@@ -363,10 +363,10 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	nb_mesh2D_export_draw(mesh, "../../../mesh.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "../../../mesh.eps", 1000, 800,
 			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
 
-	nb_cvfa_draw_integration_mesh(mesh, "../../../CVFA_alpha_x.png",/*T*/
+	nb_cvfa_draw_integration_mesh(mesh, "../../../CVFA_alpha_x.eps",/*T*/
 				      1000, 800);              /* TEMPORAL */
 
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
@@ -499,7 +499,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxx.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxx.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
@@ -508,7 +508,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Syy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Syy.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Syy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
@@ -517,7 +517,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxy.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	nb_soft_free_mem(memsize, memblock);
