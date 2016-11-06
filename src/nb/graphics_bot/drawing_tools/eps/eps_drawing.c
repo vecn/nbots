@@ -10,7 +10,10 @@
 #include "eps_drawing.h"
 
 typedef struct {
-	FILE *fp; /* TEMPORAL FILE stream */	
+	FILE *fp; /* TEMPORAL FILE stream */
+	const char *font;
+	uint16_t font_size;
+	int w, h;
 } context_t;
 
 static void set_eps_header(context_t *ctx);
@@ -21,6 +24,10 @@ void* nb_graphics_eps_create_context(int width, int height)
 	char * memblock = nb_allocate_mem(memsize);
 	context_t *ctx = (void*) memblock;
 	ctx->fp = fopen("../../../TEMPORAL.eps", "w");
+	ctx->font = "Times-Roman";
+	ctx->font_size = 10;
+	ctx->w = width;
+	ctx->h = height;
 	set_eps_header(ctx);
 	return ctx;
 }
@@ -32,9 +39,8 @@ static void set_eps_header(context_t *c)
 	fprintf(c->fp, "%%%%Title: NBots -> Graphic Bot\n");      /* TEMPORAL */
 	fprintf(c->fp, "%%%%CreationDate: 04/06/2016 16:48:04\n");/* TEMPORAL */
 	fprintf(c->fp, "%%%%DocumentData: Clean7Bit\n");          /* TEMPORAL */
-	fprintf(c->fp, "%%%%Origin: 0 0\n");                      /* TEMPORAL */
-	fprintf(c->fp, "%%%%BoundingBox: 0 0 1000 800\n");        /* TEMPORAL */
-	fprintf(c->fp, "%%%%EndCommens\n");
+	fprintf(c->fp, "%%%%BoundingBox: 0 0 %i %i\n", c->w, c->h);
+	fprintf(c->fp, "%%%%EndComments\n");
 }
 
 void nb_graphics_eps_destroy_context(void *ctx)
@@ -64,29 +70,31 @@ void nb_graphics_eps_move_to(void *ctx, float x, float y)
 {
 	context_t *c = ctx;
 	fprintf(c->fp, "newpath\n");
-	fprintf(c->fp, "%g %g moveto\n", x, y);
+	fprintf(c->fp, "%.2f %.2f moveto\n", x, c->h - y);
 }
 
 void nb_graphics_eps_line_to(void *ctx, float x, float y)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%g %g lineto\n", x, y);
+	fprintf(c->fp, "%.2f %.2f lineto\n", x, c->h - y);
 }
 
 void nb_graphics_eps_qcurve_to(void *ctx, float x, float y,
 			       float xcontrol, float ycontrol)
 {
 	context_t *c = ctx;/* TEMPORAL BAD APPROX */
-	fprintf(c->fp, "%g %g %g %g %g %g curveto\n",
-		xcontrol, ycontrol, xcontrol, ycontrol, x, y);
+	fprintf(c->fp, "%.2f %.2f %.2f %.2f %.2f %.2f curveto\n",
+		xcontrol, c->h - ycontrol,
+		xcontrol, c->h - ycontrol, x, c->h - y);
 }
 
 void nb_graphics_eps_qrcurve_to(void *ctx, float x, float y,
 				float xcontrol, float ycontrol, float w)
 {
 	context_t *c = ctx;/* TEMPORAL BAD APPROX */
-	fprintf(c->fp, "%g %g %g %g %g %g curveto\n",
-		xcontrol, ycontrol, xcontrol, ycontrol, x, y);
+	fprintf(c->fp, "%.2f %.2f %.2f %.2f %.2f %.2f curveto\n",
+		xcontrol, c->h - ycontrol,
+		xcontrol, c->h - ycontrol, x, c->h - y);
 }
 
 void nb_graphics_eps_curve_to(void *ctx, float x, float y,
@@ -94,8 +102,9 @@ void nb_graphics_eps_curve_to(void *ctx, float x, float y,
 			      float x1_control, float y1_control)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%g %g %g %g %g %g curveto\n",
-		x0_control, y0_control, x1_control, y1_control, x, y);
+	fprintf(c->fp, "%.2f %.2f %.2f %.2f %.2f %.2f curveto\n",
+		x0_control, c->h - y0_control,
+		x1_control, c->h - y1_control, x, c->h - y);
 }
 
 void nb_graphics_eps_close_path(void *ctx)
@@ -107,14 +116,14 @@ void nb_graphics_eps_close_path(void *ctx)
 void nb_graphics_eps_set_line_width(void *ctx, float w)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%g setlinewidth\n", w);
+	fprintf(c->fp, "%.2f setlinewidth\n", w);
 }
 
 void nb_graphics_eps_set_source_rgb(void *ctx,
 				    uint8_t r, uint8_t g, uint8_t b)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%g %g %g setrgbcolor\n",
+	fprintf(c->fp, "%.2f %.2f %.2f setrgbcolor\n",
 		r / 255.0, g / 255.0, b / 255.0);
 }
 
@@ -122,7 +131,7 @@ void nb_graphics_eps_set_source_rgba(void *ctx, uint8_t r, uint8_t g,
 				     uint8_t b, uint8_t a)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%g %g %g setrgbcolor\n",
+	fprintf(c->fp, "%.2f %.2f %.2f setrgbcolor\n",
 		r / 255.0, g / 255.0, b / 255.0);
 }
 
@@ -132,8 +141,8 @@ void nb_graphics_eps_set_source_grad(void *ctx,
 				     float x2, float y2,
 				     nb_palette_t *pat)
 {
-	context_t *c = ctx;
-	fprintf(c->fp, "%g %g %g setrgbcolor\n", 1.0f, 1.0f, 1.0f);
+	context_t *c = ctx;/* TEMPORAL */
+	fprintf(c->fp, "%.2f %.2f %.2f setrgbcolor\n", 1.0f, 1.0f, 1.0f);
 }
 
 void nb_graphics_eps_set_source_trg(void *ctx,
@@ -145,10 +154,10 @@ void nb_graphics_eps_set_source_trg(void *ctx,
 				    const uint8_t rgba3[4])
 {
 	context_t *c = ctx;
-	float r = (rgba1[0] / 255.0 + rgba2[0] / 255.0 + rgba3[0] / 255.0);
-	float g = (rgba1[1] / 255.0 + rgba2[1] / 255.0 + rgba3[1] / 255.0);
-	float b = (rgba1[2] / 255.0 + rgba2[2] / 255.0 + rgba3[2] / 255.0);
-	fprintf(c->fp, "%g %g %g setrgbcolor\n", r, g, b);
+	float r = (rgba1[0] / 255.0 + rgba2[0] / 255.0 + rgba3[0] / 255.0)/3.0;
+	float g = (rgba1[1] / 255.0 + rgba2[1] / 255.0 + rgba3[1] / 255.0)/3.0;
+	float b = (rgba1[2] / 255.0 + rgba2[2] / 255.0 + rgba3[2] / 255.0)/3.0;
+	fprintf(c->fp, "%.2f %.2f %.2f setrgbcolor\n", r, g, b);
 }
 
 void nb_graphics_eps_fill(void *ctx)
@@ -182,20 +191,24 @@ void nb_graphics_eps_stroke_preserve(void *ctx)
 void nb_graphics_eps_set_font_type(void *ctx, const char *type)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "/%s findfont\n");
+	c->font = type;
 }
 
 void nb_graphics_eps_set_font_size(void *ctx, uint16_t size)
 {
 	context_t *c = ctx;
-	fprintf(c->fp, "%i scalefont\n", size);
+	c->font_size = size;
 }
 
 void nb_graphics_eps_show_text(void *ctx, int x, int y, const char *str)
 {
 	context_t *c = ctx;
+	fprintf(c->fp, "/%s findfont\n", c->font);
+	fprintf(c->fp, "%i scalefont\n", c->font_size);
 	fprintf(c->fp, "setfont\n");
-	fprintf(c->fp, "(%s) show\n");
+	fprintf(c->fp, "newpath\n");
+	fprintf(c->fp, "%i %i moveto\n", x, c->h - y);
+	fprintf(c->fp, "(%s) show\n", str);
 }
 
 void nb_graphics_eps_get_text_attr(const void *ctx, const char *label,
