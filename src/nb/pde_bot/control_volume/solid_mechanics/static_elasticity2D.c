@@ -23,7 +23,7 @@
 
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
-#define SMOOTH 6
+#define SMOOTH 0
 
 typedef struct subface_s subface_t;
 
@@ -148,6 +148,11 @@ static double subface_get_inverse_jacobian(const double t1[2],
 					   const double t3[2],
 					   double iJ[4],
 					   const double xi[2]);
+static void get_jacobian(const double t1[2],
+			 const double t2[2],
+			 const double t3[2],
+			 double J[4],
+			 const double xi[2]);
 static void get_normalized_point(const double x1[2], const double x2[2],
 				 const double x3[2], const double xq[2],
 				 double xi[2]);
@@ -918,56 +923,67 @@ static double subface_get_inverse_jacobian(const double t1[2],
 					   double iJ[4],
 					   const double xi[2])
 {
-	/* Jacobian = (D_{psi} x)^T */
-	if (0 == SMOOTH) {
-		iJ[0] = t2[0] - t1[0];
-		iJ[1] = t2[1] - t1[1];
-		iJ[2] = t3[0] - t1[0];
-		iJ[3] = t3[1] - t1[1];
-	} else {
-		memset(iJ, 0, 4 * sizeof(*iJ));
-		double grad_xi[2];
-		subface_get_normalized_grad(0, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t1[0];
-		iJ[1] += grad_xi[0] * t1[1];
-		iJ[2] += grad_xi[1] * t1[0];
-		iJ[3] += grad_xi[1] * t1[1];
+	get_jacobian(t1, t2, t3, iJ, xi);
 
-		subface_get_normalized_grad(1, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t2[0];
-		iJ[1] += grad_xi[0] * t2[1];
-		iJ[2] += grad_xi[1] * t2[0];
-		iJ[3] += grad_xi[1] * t2[1];
+	double aux = iJ[1];
+	iJ[1] = iJ[2];
+	iJ[2] = aux;
 
-		subface_get_normalized_grad(2, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t3[0];
-		iJ[1] += grad_xi[0] * t3[1];
-		iJ[2] += grad_xi[1] * t3[0];
-		iJ[3] += grad_xi[1] * t3[1];
-	}
 	double det = nb_matrix_2X2_inverse_destructive(iJ);
 
 	return det;
+}
+
+static void get_jacobian(const double t1[2],
+			 const double t2[2],
+			 const double t3[2],
+			 double J[4],
+			 const double xi[2])
+{
+	/* Jacobian = D_{psi} x*/
+	if (0 == SMOOTH) {
+		J[0] = t2[0] - t1[0];
+		J[1] = t3[0] - t1[0];
+		J[2] = t2[1] - t1[1];
+		J[3] = t3[1] - t1[1];
+	} else {
+		memset(J, 0, 4 * sizeof(*J));
+		double grad_xi[2];
+		subface_get_normalized_grad(0, xi, grad_xi);
+		J[0] += grad_xi[0] * t1[0];
+		J[1] += grad_xi[1] * t1[0];
+		J[2] += grad_xi[0] * t1[1];
+		J[3] += grad_xi[1] * t1[1];
+
+		subface_get_normalized_grad(1, xi, grad_xi);
+		J[0] += grad_xi[0] * t2[0];
+		J[1] += grad_xi[1] * t2[0];
+		J[2] += grad_xi[0] * t2[1];
+		J[3] += grad_xi[1] * t2[1];
+
+		subface_get_normalized_grad(2, xi, grad_xi);
+		J[0] += grad_xi[0] * t3[0];
+		J[1] += grad_xi[1] * t3[0];
+		J[2] += grad_xi[0] * t3[1];
+		J[3] += grad_xi[1] * t3[1];
+	}
 }
 
 static void get_normalized_point(const double x1[2], const double x2[2],
 				 const double x3[2], const double xq[2],
 				 double xi[2])
 {
-	double A[4];
-	A[0] = x2[0] - x1[0];
-	A[1] = x3[0] - x1[0];
-	A[2] = x2[1] - x1[1];
-	A[3] = x3[1] - x1[1];
+	double J[4];
+	get_jacobian(x1, x2, x3, J, xi);// AQUI VOY
 	
 	double b[2];
 	b[0] = xq[0] - x1[0];
 	b[1] = xq[1] - x1[1];
 
-	nb_matrix_2X2_inverse_destructive(A);
+	nb_matrix_2X2_inverse_destructive(J);
 
-	xi[0] = A[0] * b[0] + A[1] * b[1];
-	xi[1] = A[2] * b[0] + A[3] * b[1];
+	xi[0] = J[0] * b[0] + J[1] * b[1];
+	xi[1] = J[2] * b[0] + J[3] * b[1];
 }
 
 static void subface_get_normalized_grad(uint8_t i, const double xi[2],
