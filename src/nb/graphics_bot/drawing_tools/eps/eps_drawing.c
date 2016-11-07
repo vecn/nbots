@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-<<<<<<< HEAD
 #include <stdio.h>
-=======
 #include <string.h>
->>>>>>> cvfa
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
@@ -24,13 +21,6 @@ static void set_eps_header(context_t *ctx);
 
 void* nb_graphics_eps_create_context(int width, int height)
 {
-<<<<<<< HEAD
-	printf("/*******************************************/\n");
-	printf("/* NB GRAPHICS EPS IS NOT YET IMPLEMENTED. */\n");
-	printf("/* EPS OUTPUT NOT GENERATED.               */\n");
-	printf("/*******************************************/\n");
-	return NULL;
-=======
 	uint32_t memsize = sizeof(context_t);
 	char * memblock = nb_allocate_mem(memsize);
 	context_t *ctx = (void*) memblock;
@@ -52,7 +42,6 @@ static void set_eps_header(context_t *c)
 	fprintf(c->fp, "%%%%DocumentData: Clean7Bit\n");          /* TEMPORAL */
 	fprintf(c->fp, "%%%%BoundingBox: 0 0 %i %i\n", c->w, c->h);
 	fprintf(c->fp, "%%%%EndComments\n");
->>>>>>> cvfa
 }
 
 void nb_graphics_eps_destroy_context(void *ctx)
