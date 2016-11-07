@@ -11,7 +11,6 @@
 
 #include "drawing_tools/pix/pix_drawing.h"
 #include "drawing_tools/eps/eps_drawing.h"
-#include "drawing_tools/asy/asy_drawing.h"
 
 #define SQRT3 (1.73205080756887729352)
 
@@ -43,7 +42,7 @@
 	} while(0)
 
 enum {
-	PIX, EPS, ASY, UNKNOWN
+	PIX, EPS, UNKNOWN
 };
 
 struct nb_graphics_context_s {
@@ -99,7 +98,6 @@ static void full_pipeline(const char* filename, int width, int height,
 			  const void *const data);
 static void set_pix_tools(nb_graphics_context_t *g);
 static void set_eps_tools(nb_graphics_context_t *g);
-static void set_asy_tools(nb_graphics_context_t *g);
 static void init_gctx(nb_graphics_context_t *g, int width, int height);
 static void write_gctx(nb_graphics_context_t *g, const char *filename);
 static void clear_gctx(nb_graphics_context_t *g);
@@ -142,9 +140,6 @@ void nb_graphics_export(const char* filename, int width, int height,
 	case EPS:
 		tools = set_eps_tools;
 		break;
-	case ASY:
-		tools = set_asy_tools;
-		break;
 	default:
 		tools = set_pix_tools;
 	}
@@ -166,8 +161,6 @@ static int get_format(const char *filename)
 		format = PIX;
 	else if (0 == strcmp(ext, "eps"))
 		format = EPS;
-	else if (0 == strcmp(ext, "asy"))
-		format = ASY;
 	else
 		format = UNKNOWN;
 	return format;
@@ -239,32 +232,6 @@ static void set_eps_tools(nb_graphics_context_t *g)
 	g->set_font_size = nb_graphics_eps_set_font_size;
 	g->show_text = nb_graphics_eps_show_text;
 	g->get_text_attr = nb_graphics_eps_get_text_attr;
-}
-
-static void set_asy_tools(nb_graphics_context_t *g)
-{
-	g->create_context = nb_graphics_asy_create_context;
-	g->destroy_context = nb_graphics_asy_destroy_context;
-	g->export_context = nb_graphics_asy_export_context;
-	g->move_to = nb_graphics_asy_move_to;
-	g->line_to = nb_graphics_asy_line_to;
-	g->qcurve_to = nb_graphics_asy_qcurve_to;
-	g->qrcurve_to = nb_graphics_asy_qrcurve_to;
-	g->curve_to = nb_graphics_asy_curve_to;
-	g->close_path = nb_graphics_asy_close_path;
-	g->set_line_width = nb_graphics_asy_set_line_width;
-	g->set_source_rgb = nb_graphics_asy_set_source_rgb;
-	g->set_source_rgba = nb_graphics_asy_set_source_rgba;
-	g->set_source_grad = nb_graphics_asy_set_source_grad;
-	g->set_source_trg = nb_graphics_asy_set_source_trg;
-	g->fill = nb_graphics_asy_fill;
-	g->fill_preserve = nb_graphics_asy_fill_preserve;
-	g->stroke = nb_graphics_asy_stroke;
-	g->stroke_preserve = nb_graphics_asy_stroke_preserve;
-	g->set_font_type = nb_graphics_asy_set_font_type;
-	g->set_font_size = nb_graphics_asy_set_font_size;
-	g->show_text = nb_graphics_asy_show_text;
-	g->get_text_attr = nb_graphics_asy_get_text_attr;
 }
 
 static void init_gctx(nb_graphics_context_t *g, int width, int height)

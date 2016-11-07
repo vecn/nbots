@@ -38,9 +38,10 @@ static void test_plate_with_hole(void);
 static void check_plate_with_hole(const void *mesh,
 				  const results_t *results);
 static double get_error_avg_pwh(const void *mesh, const double *stress,
-				const char *boundary_mask);
+				const char *boundary_mask,
+				double error[3]);
 static double get_face_error_avg_pwh(const void *mesh, const double *stress,
-				     uint32_t face_id);
+				     uint32_t face_id, double error[3]);
 static void get_face_avg_of_analytic_stress_pwh(const nb_mesh2D_t *mesh,
 						uint32_t face_id,
 						double stress_avg[3]);
@@ -131,30 +132,54 @@ static void test_plate_with_hole(void)
 static void check_plate_with_hole(const void *mesh,
 				  const results_t *results)
 {
+	double error[3];
 	double avg_error = get_error_avg_pwh(mesh, results->stress,
-					     results->boundary_mask);
+					     results->boundary_mask,
+					     error);
 
-	printf("-- AVG ERROR: %e\n", avg_error); /* TEMPORAL */
+	printf("-- AVG XX ERROR: %e\n", error[0]); /* TEMPORAL */
+	printf("-- AVG YY ERROR: %e\n", error[1]); /* TEMPORAL */
+	printf("-- AVG XY ERROR: %e\n", error[2]); /* TEMPORAL */
+	printf("-- AVG VM ERROR: %e\n", avg_error); /* TEMPORAL */
+	printf("--        ELEMS: %i\n", nb_mesh2D_get_N_elems(mesh)); /* TEMP */
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	double length = 0;
+	for (uint32_t i = 0; i < N_faces; i++)
+		length += nb_mesh2D_edge_get_length(mesh, i);
+	length /= N_faces;
+	printf("--      Delta X: %e\n", length); /* TEMPORAL */
 	CU_ASSERT(avg_error < 9.7e-3);
 }
 
 static double get_error_avg_pwh(const void *mesh,
 				const double *stress,
-				const char *boundary_mask)
+				const char *boundary_mask,
+				double error[3])
 {
-	FILE *fp = fopen("../../../stress.txt", "w");                /* TEMPORAL */
-	fprintf(fp,                                                  /* TEMPORAL */
+	FILE *fp = fopen("../../../stress.txt", "w");             /* TEMPORAL */
+	fprintf(fp,                                               /* TEMPORAL */
 		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2 " \
 		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2 " \
 		"Ax Ay Axy Anx Any Atx Aty |An| |At| Ann Ant Atn Att A1 A2\n");/**/
-	fclose(fp);                                                  /* TEMPORAL */
+	fclose(fp);                                               /* TEMPORAL */
 	double avg = 0.0;
+	memset(error, 0, 3 * sizeof(*error));
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		if (!(boundary_mask[i]))
-			avg += get_face_error_avg_pwh(mesh, stress, i);
+		double face_err[3];
+		if (!(boundary_mask[i])) {
+			avg += get_face_error_avg_pwh(mesh, stress,
+						      i, face_err);
+			error[0] += face_err[0];
+			error[1] += face_err[1];
+			error[2] += face_err[2];
+		}
+		
 	}
-	return avg /= N_faces;
+	error[0] /= N_faces;
+	error[1] /= N_faces;
+	error[2] /= N_faces;
+	return avg / N_faces;
 }
 
 static void TEMPORAL3(const void *mesh, const double analytic_stress[3],
@@ -165,11 +190,11 @@ static void TEMPORAL3(const void *mesh, const double analytic_stress[3],
 	nb_mesh2D_edge_get_normal(mesh, face_id, nf);  /* TEMPORAL */
 	uint32_t id = face_id;                         /* TEMPORAL */
 	double error[15];                              /* TEMPORAL */
-	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /  /**/
+	error[0] = fabs((analytic_stress[0] - stress[id * 3]) /      /**/
 			CHECK_ZERO(analytic_stress[0]));         /**/
-	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /  /**/
+	error[1] = fabs((analytic_stress[1] - stress[id*3+1]) /      /**/
 			CHECK_ZERO(analytic_stress[1]));         /**/
-	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /  /**/
+	error[2] = fabs((analytic_stress[2] - stress[id*3+2]) /      /**/
 			CHECK_ZERO(analytic_stress[2]));         /**/
 	double Sn[2];                                  /* TEMPORAL */
 	Sn[0] = stress[id * 3]*nf[0] + 0.5*stress[id*3+2]*nf[1]; /**/
@@ -236,12 +261,16 @@ static void TEMPORAL3(const void *mesh, const double analytic_stress[3],
 }
 
 static double get_face_error_avg_pwh(const void *mesh, const double *stress,
-				     uint32_t face_id)
+				     uint32_t face_id, double error[3])
 {
 	
 	double analytic_stress[3];
 	get_face_avg_of_analytic_stress_pwh(mesh, face_id,
 					    analytic_stress);
+	
+	error[0] = fabs(1.0 - stress[face_id * 3] / analytic_stress[0]);
+	error[1] = fabs(1.0 - stress[face_id*3+1] / analytic_stress[1]);
+	error[2] = fabs(1.0 - stress[face_id*3+2] / analytic_stress[2]);
 
 	TEMPORAL3(mesh, analytic_stress, stress, face_id);
 
@@ -334,10 +363,10 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	nb_mesh2D_export_draw(mesh, "../../../mesh.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "../../../mesh.eps", 1000, 800,
 			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
 
-	nb_cvfa_draw_integration_mesh(mesh, "../../../CVFA_alpha_x.png",/*T*/
+	nb_cvfa_draw_integration_mesh(mesh, "../../../CVFA_alpha_x.eps",/*T*/
 				      1000, 800);              /* TEMPORAL */
 
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
@@ -472,7 +501,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxx.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxx.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
@@ -481,7 +510,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Syy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Syy.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Syy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
@@ -490,7 +519,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxy.png",
+	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	nb_soft_free_mem(memsize, memblock);
@@ -588,7 +617,7 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 	nb_tessellator2D_t* t2d = nb_allocate_on_stack(t2d_memsize);
 	nb_tessellator2D_init(t2d);
 	nb_tessellator2D_set_size_constraint(t2d,
-					     NB_MESH_SIZE_CONSTRAINT_MAX_VTX,
+					     NB_MESH_SIZE_CONSTRAINT_MAX_TRG,
 					     N_vtx);
 	nb_tessellator2D_set_geometric_constraint(t2d,
 						  NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH,

@@ -23,7 +23,7 @@
 
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
-#define SMOOTH 0
+#define SMOOTH 6
 
 typedef struct subface_s subface_t;
 
