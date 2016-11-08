@@ -64,7 +64,7 @@ int main() {
 
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever_axial.txt", 100,
+        run_test("%s/plastic_continuous_beam.txt", 1000,
         check_beam_cantilever);
 }
 static void check_beam_cantilever(const void *part,
@@ -115,6 +115,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	nb_mesh2D_init(part, NB_TRIAN);
 
 	int status = simulate(problem_data, part, &results, N_vtx);
+
     printf("Simulation status: %i\n", status); /* TEMPORAL */
 	if (status == 0) {
         printf("The simulation ran properly. \n");
@@ -158,7 +159,7 @@ static int simulate(const char *problem_data,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init(results, N_nodes, N_elems);
 	uint32_t N_force_steps = 100;
-	double accepted_tol = 1e-3;
+	double accepted_tol = 1;
 	double gravity[2] = {0, -9.81};
 	bool *elements_enabled = nb_allocate_mem(N_elems*sizeof(elements_enabled));
     int status_fem = fem_compute_plastic_2D_Solid_Mechanics_bis(part, elem, material,

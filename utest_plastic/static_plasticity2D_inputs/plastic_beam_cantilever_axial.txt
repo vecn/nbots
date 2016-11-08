@@ -33,21 +33,21 @@
  3 1 1 0 0                                      #
 # Num of load conditions over lines:            #
  1                                              #
-# Load conditions over vertices definition:	#					
+# Load conditions over lines definition:	#					
  1 1 0 14e7                                 	#
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0						#
+ 0.3						#
 # Elasticity module				#
  2.1e11	                                        #
 # Plasticity module			        #
- 2.1e11                                         #
+ 0.3e11                                         #
 # Yield stress		                        #
  400e6                                          #
 # Density					#
- 0						#
+ 7850						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

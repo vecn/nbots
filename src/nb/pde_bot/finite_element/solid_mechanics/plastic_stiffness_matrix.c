@@ -25,6 +25,58 @@
 
 #define POW2(a) ((a)*(a))
 
+int updated_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D *elem_regime,
+                        const bool *elements_enabled, const nb_mesh2D_t *part,
+                        const nb_fem_elem_t *elem,
+                        const nb_material_t *material,
+                        nb_analysis2D_t analysis2D,
+                        nb_analysis2D_params *params2D,
+                        double *elastic_strain,
+                        uint32_t *simultaneous_elements,
+                        double *aux_strain,
+                        uint32_t *N_simultaneous_plastic_elem,
+                        uint32_t *plastified_elem,
+                        uint32_t *N_plastic_elem)
+{
+    int update_status;
+    uint32_t sim_element;
+    if(N_simultaneous_plastic_elem[0] > 1) {
+        for(int j = 0; j < N_simultaneous_plastic_elem[0]; j++) {
+            sim_element = simultaneous_elements[j];
+            update_status = updated_plastified_stiffness_matrix(K, elem_regime[sim_element],
+                                                                elements_enabled[sim_element], part,
+                                                                sim_element, elem, material,
+                                                                analysis2D, params2D);
+            if(update_status != 0) {
+                update_status = 4;
+                return update_status;
+            }
+            elastic_strain[3*sim_element] = aux_strain[3*sim_element];
+            elastic_strain[3*sim_element + 1] = aux_strain[3*sim_element+ 1];
+            elastic_strain[3*sim_element + 2] = aux_strain[3*sim_element+ 2];
+            elem_regime[sim_element] = NB_PLASTIC;
+        }
+    }
+    else {
+        update_status = updated_plastified_stiffness_matrix(K, elem_regime[plastified_elem[0]],
+                                                            elements_enabled[plastified_elem[0]], part,
+                                                            plastified_elem[0], elem, material,
+                                                            analysis2D, params2D);
+        if(update_status != 0) {
+            update_status = 4;
+            return update_status;
+        }
+
+        elastic_strain[3*plastified_elem[0]] = aux_strain[3*plastified_elem[0]];
+        elastic_strain[3*plastified_elem[0] + 1] = aux_strain[3*plastified_elem[0] + 1];
+        elastic_strain[3*plastified_elem[0] + 2] = aux_strain[3*plastified_elem[0] + 2];
+        elem_regime[plastified_elem[0]] = NB_PLASTIC;
+    }
+    N_plastic_elem[0] -= 1;
+
+    return update_status;
+}
+
 int updated_plastified_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D elem_regime,
                                     bool is_enabled, const nb_mesh2D_t *part,
                                     uint32_t plastified_elem,
