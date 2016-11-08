@@ -5,13 +5,14 @@
 
 typedef struct {
 	/* STereoLithography (STL) */
-	uint32_t N_vtx;
-	double *vtx;
+	uint32_t N_vtx;                   /*Number of vertex*/
+	double *vtx;                      /*Train of vertexes*/
 
-	uint32_t N_face;
-	double *nf;
-	uint32_t *adj;
+	uint32_t N_face;                  /*Number of faces*/
+	double *nf;                       /*Trainf of normal for face*/
+	uint32_t *adj;                    /*Train of node index by face*/
 	
 } nb_model3D_t;
+
 
 #endif
