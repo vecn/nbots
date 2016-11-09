@@ -82,8 +82,18 @@ void nb_model3D_load_box(void *model_ptr,
 
 int nb_model3D_save(const void *model, const char* filename)
 {
-        
-      	return 1;
+  FILE *fp;
+  fp=fopen(filename,"w");
+  nb_model3D_t *src_model;
+  src_model = model;
+  fprintf(fp,"solid name\n");
+  uint32_t n_faces = nb_model3D_get_N_face( src_model );
+  for(int i_face = 0 ; i_face < n_faces ; i_face++ ){
+    nb_model3D_print_face_in_file( fp , i_face , src_model );
+  }
+  fprintf(fp,"endsolid name\n");
+  fclose(fp);
+  return 1;
 }
 
 void nb_model3D_get_enveloping_box(const void *const model, double box[6])
@@ -264,7 +274,30 @@ uint32_t nb_model3D_get_adj(int position, void *boundary_t){
         return model->adj[ position ];
 }
 
-
+void nb_model3D_print_face_in_file( FILE *fp , int i_face , const void *model ){
+        nb_model3D_t *src_model;
+        src_model = model;
+        fprintf(fp,"\tfacet normal\t");
+        for(int i_normal = 0  ;  i_normal < 3  ;  i_normal++  ){
+          int position = ( ( i_face * 3 ) + i_normal );
+          double normal = nb_model3D_get_nf( position , src_model );
+          fprintf( fp , "%lf\t" , normal );
+        }
+        fprintf(fp,"\n\t\touter loop\n");
+        for(  int i_vertex = 0  ;  i_vertex < 3  ;  i_vertex++  ){
+          fprintf( fp , "\t\t\tvertex\t" );
+          int position = ( i_face * 3) + i_vertex;
+          uint32_t coord_index = nb_model3D_get_adj( position , src_model );
+          for(  int i_coord=0  ;  i_coord < 3  ;  i_coord++  ){
+            int coord_position = ( ( (int)coord_index ) * 3 ) + i_coord;
+            double coord = nb_model3D_get_vtx( coord_position , src_model );
+            fprintf( fp , "%lf\t" , coord );
+          }
+          fprintf(fp,"\n");
+        }
+        fprintf(fp,"\t\tendloop\n");
+        fprintf(fp,"\tendfacet\n");
+}
 
 
 

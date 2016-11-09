@@ -46,4 +46,8 @@ void nb_model3D_set_N_face(uint32_t value, void *boundary_t);
 double nb_model3D_get_nf(int position, void *boundary_t);
 double nb_model3D_get_vtx(int position, void *boundary_t);
 uint32_t nb_model3D_get_adj(int position, void *boundary_t);
+
+void nb_model3D_print_face_in_file( FILE *fp , int i_face , const void *model );
+
+
 #endif
