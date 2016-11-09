@@ -98,7 +98,37 @@ int nb_model3D_save(const void *model, const char* filename)
 
 void nb_model3D_get_enveloping_box(const void *const model, double box[6])
 {
-	;
+
+  nb_model3D_t *src_model;
+  src_model = model;
+  box[ 0 ] = 1e20;    box[ 1 ] = -1e20;
+  box[ 2 ] = 1e20;    box[ 3 ] = -1e20;
+  box[ 4 ] = 1e20;    box[ 5 ] = -1e20;
+  uint32_t n_faces = nb_model3D_get_N_face( src_model );
+  uint32_t n_coords = n_faces * 3;
+  for(  int i_coord = 0  ;  i_coord < n_coords  ;  i_coord++  ){
+        double x_coord = nb_model3D_get_vtx( ( i_coord * 3 ), src_model );
+        double y_coord = nb_model3D_get_vtx( ( i_coord * 3 ) + 1, src_model );
+        double z_coord = nb_model3D_get_vtx( ( i_coord * 3 ) + 2, src_model );
+        if( x_coord < box[ 0 ] ){
+          box[ 0 ] = x_coord;
+        }
+        if( x_coord > box[ 1 ] ){
+          box[ 1 ] = x_coord;
+        }
+        if( y_coord < box[ 2 ] ){
+          box[ 2 ] = y_coord;
+        }
+        if( y_coord > box[ 3 ] ){
+          box[ 3 ] = y_coord;
+        }
+        if( z_coord < box[ 4 ] ){
+          box[ 4 ] = z_coord;
+        }
+        if( z_coord > box[ 5 ] ){
+          box[ 5 ] = z_coord;
+        }
+  }
 }
 
 uint32_t nb_model3D_get_N_vtx(const void *const model)
