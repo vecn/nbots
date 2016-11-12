@@ -24,7 +24,7 @@
 #define INV3 0.33333333333333333333334
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
-#define SMOOTH 0
+#define SMOOTH 6
 
 typedef struct subface_s subface_t;
 
@@ -164,6 +164,7 @@ static void get_interpolated_point(const double x1[2], const double x2[2],
 				   double xq[2]);
 static double get_spline(double x);
 static double get_deriv_spline(double x);
+static double get_spline_inv(double x);
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
 			     double grad[2]);
 static void subface_get_nodal_contribution(const double D[4],
@@ -997,21 +998,20 @@ static void get_normalized_point(const double x1[2], const double x2[2],
 				 const double x3[2], const double xq[2],
 				 double xi[2])
 {
-	double xic[2] = {INV3, INV3};
-	double J[4];
-	get_jacobian(x1, x2, x3, J, xic);
+	double Jd[4];
+	Jd[0] = x2[0] - x1[0];
+	Jd[1] = x3[0] - x1[0];
+	Jd[2] = x2[1] - x1[1];
+	Jd[3] = x3[1] - x1[1];
 	
-	double xc[2];
-	get_interpolated_point(x1, x2, x3, xic, xc);
-
 	double b[2];
-	b[0] = xq[0] - xc[0];
-	b[1] = xq[1] - xc[1];
+	b[0] = xq[0] - x1[0];
+	b[1] = xq[1] - x1[1];
 
-	nb_matrix_2X2_inverse_destructive(J);
+	nb_matrix_2X2_inverse_destructive(Jd);
 
-	xi[0] = J[0] * b[0] + J[1] * b[1] + xic[0];
-	xi[1] = J[2] * b[0] + J[3] * b[1] + xic[1];
+	xi[0] = get_spline_inv(Jd[0] * b[0] + Jd[1] * b[1]);
+	xi[1] = get_spline_inv(Jd[2] * b[0] + Jd[3] * b[1]);
 }
 
 static void get_interpolated_point(const double x1[2], const double x2[2],
@@ -1100,6 +1100,35 @@ static double get_deriv_spline(double x)
 	}
 	return deriv;
 }
+
+static double get_spline_inv(double x)
+{
+	double inv;
+	switch (SMOOTH) {
+	case 0:
+		inv = x;
+		break;
+	case 1:
+		inv = 1.66667 * x - 2 * POW2(x) + 1.33334 * POW3(x);
+		break;
+	case 2:
+		inv = 1.9333 * x - 2.8 * POW2(x) + (28.0/15.0) * POW3(x);
+		break;
+	case 3:
+		inv = 2.0867 * x - 3.2571 * POW2(x) + 2.1714 * POW3(x);
+		break;
+	case 4:
+		inv = 2.1873 * x - 3.5619 * POW2(x) + 2.3746 * POW3(x);
+		break;
+	case 5:
+		inv = 2.26 * x - 3.7825 * POW2(x) + 2.5223 * POW3(x);
+		break;
+	default:
+		inv = 2.3180 * x - 7.908 * POW2(x) + 7.908 * POW3(x);
+	}
+	return inv;
+}
+
 
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
 			     double grad[2])
