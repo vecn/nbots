@@ -21,6 +21,7 @@
 #include "../integration_mesh.h"
 #include "set_bconditions.h"
 
+#define INV3 0.33333333333333333333334
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
 #define SMOOTH 6
@@ -148,12 +149,22 @@ static double subface_get_inverse_jacobian(const double t1[2],
 					   const double t3[2],
 					   double iJ[4],
 					   const double xi[2]);
+static void get_jacobian(const double t1[2],
+			 const double t2[2],
+			 const double t3[2],
+			 double J[4],
+			 const double xi[2]);
+static void subface_get_normalized_grad(uint8_t i, const double xi[2],
+					double grad_xi[2]);
 static void get_normalized_point(const double x1[2], const double x2[2],
 				 const double x3[2], const double xq[2],
 				 double xi[2]);
-static void subface_get_normalized_grad(uint8_t i, const double xi[2],
-					double grad_xi[2]);
+static void get_interpolated_point(const double x1[2], const double x2[2],
+				   const double x3[2], const double xi[2],
+				   double xq[2]);
+static double get_spline(double x);
 static double get_deriv_spline(double x);
+static double get_spline_inv(double x);
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
 			     double grad[2]);
 static void subface_get_nodal_contribution(const double D[4],
@@ -918,56 +929,50 @@ static double subface_get_inverse_jacobian(const double t1[2],
 					   double iJ[4],
 					   const double xi[2])
 {
-	/* Jacobian = (D_{psi} x)^T */
-	if (0 == SMOOTH) {
-		iJ[0] = t2[0] - t1[0];
-		iJ[1] = t2[1] - t1[1];
-		iJ[2] = t3[0] - t1[0];
-		iJ[3] = t3[1] - t1[1];
-	} else {
-		memset(iJ, 0, 4 * sizeof(*iJ));
-		double grad_xi[2];
-		subface_get_normalized_grad(0, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t1[0];
-		iJ[1] += grad_xi[0] * t1[1];
-		iJ[2] += grad_xi[1] * t1[0];
-		iJ[3] += grad_xi[1] * t1[1];
+	get_jacobian(t1, t2, t3, iJ, xi);
 
-		subface_get_normalized_grad(1, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t2[0];
-		iJ[1] += grad_xi[0] * t2[1];
-		iJ[2] += grad_xi[1] * t2[0];
-		iJ[3] += grad_xi[1] * t2[1];
+	double aux = iJ[1];
+	iJ[1] = iJ[2];
+	iJ[2] = aux;
 
-		subface_get_normalized_grad(2, xi, grad_xi);
-		iJ[0] += grad_xi[0] * t3[0];
-		iJ[1] += grad_xi[0] * t3[1];
-		iJ[2] += grad_xi[1] * t3[0];
-		iJ[3] += grad_xi[1] * t3[1];
-	}
 	double det = nb_matrix_2X2_inverse_destructive(iJ);
 
 	return det;
 }
 
-static void get_normalized_point(const double x1[2], const double x2[2],
-				 const double x3[2], const double xq[2],
-				 double xi[2])
+static void get_jacobian(const double t1[2],
+			 const double t2[2],
+			 const double t3[2],
+			 double J[4],
+			 const double xi[2])
 {
-	double A[4];
-	A[0] = x2[0] - x1[0];
-	A[1] = x3[0] - x1[0];
-	A[2] = x2[1] - x1[1];
-	A[3] = x3[1] - x1[1];
-	
-	double b[2];
-	b[0] = xq[0] - x1[0];
-	b[1] = xq[1] - x1[1];
+	/* Jacobian = D_{psi} x*/
+	if (0 == SMOOTH) {
+		J[0] = t2[0] - t1[0];
+		J[1] = t3[0] - t1[0];
+		J[2] = t2[1] - t1[1];
+		J[3] = t3[1] - t1[1];
+	} else {
+		memset(J, 0, 4 * sizeof(*J));
+		double grad_xi[2];
+		subface_get_normalized_grad(0, xi, grad_xi);
+		J[0] += grad_xi[0] * t1[0];
+		J[1] += grad_xi[1] * t1[0];
+		J[2] += grad_xi[0] * t1[1];
+		J[3] += grad_xi[1] * t1[1];
 
-	nb_matrix_2X2_inverse_destructive(A);
+		subface_get_normalized_grad(1, xi, grad_xi);
+		J[0] += grad_xi[0] * t2[0];
+		J[1] += grad_xi[1] * t2[0];
+		J[2] += grad_xi[0] * t2[1];
+		J[3] += grad_xi[1] * t2[1];
 
-	xi[0] = A[0] * b[0] + A[1] * b[1];
-	xi[1] = A[2] * b[0] + A[3] * b[1];
+		subface_get_normalized_grad(2, xi, grad_xi);
+		J[0] += grad_xi[0] * t3[0];
+		J[1] += grad_xi[1] * t3[0];
+		J[2] += grad_xi[0] * t3[1];
+		J[3] += grad_xi[1] * t3[1];
+	}
 }
 
 static void subface_get_normalized_grad(uint8_t i, const double xi[2],
@@ -987,6 +992,77 @@ static void subface_get_normalized_grad(uint8_t i, const double xi[2],
 		grad_xi[0] = 0;
 		grad_xi[1] = dPy;
 	}
+}
+
+static void get_normalized_point(const double x1[2], const double x2[2],
+				 const double x3[2], const double xq[2],
+				 double xi[2])
+{
+	double Jd[4];
+	Jd[0] = x2[0] - x1[0];
+	Jd[1] = x3[0] - x1[0];
+	Jd[2] = x2[1] - x1[1];
+	Jd[3] = x3[1] - x1[1];
+	
+	double b[2];
+	b[0] = xq[0] - x1[0];
+	b[1] = xq[1] - x1[1];
+
+	nb_matrix_2X2_inverse_destructive(Jd);
+
+	xi[0] = get_spline_inv(Jd[0] * b[0] + Jd[1] * b[1]);
+	xi[1] = get_spline_inv(Jd[2] * b[0] + Jd[3] * b[1]);
+}
+
+static void get_interpolated_point(const double x1[2], const double x2[2],
+				   const double x3[2], const double xi[2],
+				   double xq[2])
+{
+	double Px = get_spline(xi[0]);
+	double Py = get_spline(xi[1]);
+
+	xq[0] = (1 - Px - Py) * x1[0];
+	xq[1] = (1 - Px - Py) * x1[1];
+
+	xq[0] += Px * x2[0];
+	xq[1] += Px * x2[1];
+
+	xq[0] += Py * x3[0];
+	xq[1] += Py * x3[1];
+}
+
+static double get_spline(double x)
+{
+	double spline;
+	switch (SMOOTH) {
+	case 0:
+		spline = x;
+		break;
+	case 1:
+		spline = 3 * POW2(x) - 2 * POW3(x);
+		break;
+	case 2:
+		spline = 10 * POW3(x) - 15 * pow(x, 4) + 6 * pow(x, 5);
+		break;
+	case 3:
+		spline = 35 * pow(x, 4) - 84 * pow(x, 5) +
+			70 * pow(x, 6) - 20 * pow(x, 7);
+		break;
+	case 4:
+		spline = 126 * pow(x, 5) - 420 * pow(x, 6) +
+			540 * pow(x, 7) - 315 * pow(x, 8) + 70 * pow(x, 9);
+		break;
+	case 5:
+		spline = 462 * pow(x, 6) - 1980 * pow(x, 7) + 3465 * pow(x, 8) -
+			3080 * pow(x, 9) + 1386 * pow(x, 10) - 252 * pow(x, 11);
+		break;
+	default:
+		spline = 1716 * pow(x, 7) - 9009 * pow(x, 8) +
+			20020 * pow(x, 9) - 24024 * pow(x, 10) +
+			16380 * pow(x, 11) - 6006 * pow(x, 12) +
+			924 * pow(x, 13);
+	}
+	return spline;
 }
 
 static double get_deriv_spline(double x)
@@ -1024,6 +1100,35 @@ static double get_deriv_spline(double x)
 	}
 	return deriv;
 }
+
+static double get_spline_inv(double x)
+{
+	double inv;
+	switch (SMOOTH) {
+	case 0:
+		inv = x;
+		break;
+	case 1:
+		inv = 1.66667 * x - 2 * POW2(x) + 1.33334 * POW3(x);
+		break;
+	case 2:
+		inv = 1.9333 * x - 2.8 * POW2(x) + (28.0/15.0) * POW3(x);
+		break;
+	case 3:
+		inv = 2.0867 * x - 3.2571 * POW2(x) + 2.1714 * POW3(x);
+		break;
+	case 4:
+		inv = 2.1873 * x - 3.5619 * POW2(x) + 2.3746 * POW3(x);
+		break;
+	case 5:
+		inv = 2.26 * x - 3.7825 * POW2(x) + 2.5223 * POW3(x);
+		break;
+	default:
+		inv = 2.3180 * x - 7.908 * POW2(x) + 7.908 * POW3(x);
+	}
+	return inv;
+}
+
 
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
 			     double grad[2])
