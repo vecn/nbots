@@ -265,9 +265,9 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
 	/*******************************************************************/
-	double* displacement = nb_allocate_zero_mem(2 * N_nod, sizeof(double));
-	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp, sizeof(double));
-	double* damage = nb_allocate_zero_mem(N_elem * N_gp, sizeof(double));
+	double* displacement = nb_allocate_zero_mem(2 * N_nod * sizeof(double));
+	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp * sizeof(double));
+	double* damage = nb_allocate_zero_mem(N_elem * N_gp * sizeof(double));
 	double* r_dmg = nb_allocate_mem(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
@@ -290,10 +290,10 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 
   
 	/* Allocate force vectors and displacement increment */
-	double* F = nb_allocate_zero_mem(N_system_size, sizeof(double));
-	double* P = nb_allocate_zero_mem(N_system_size, sizeof(double));
-	double* residual = nb_allocate_zero_mem(N_system_size, sizeof(double));
-	double* du = nb_allocate_zero_mem(N_system_size, sizeof(double));
+	double* F = nb_allocate_zero_mem(N_system_size * sizeof(double));
+	double* P = nb_allocate_zero_mem(N_system_size * sizeof(double));
+	double* residual = nb_allocate_zero_mem(N_system_size * sizeof(double));
+	double* du = nb_allocate_zero_mem(N_system_size * sizeof(double));
 
 	/* Allocate damage parameter 'r' */
 	double* r_dmg_prev = nb_allocate_mem(N_gp * N_elem * sizeof(double));
@@ -502,11 +502,11 @@ static void DMG_pipeline_assemble_system
 	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elems; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
-		double density = nb_material_get_density(material);
+		double density = 1e-6;
 		if (pipeline_elem_is_enabled(elements_enabled, k)) {
 			nb_pde_get_constitutive_matrix(D, material,
 						       analysis2D);
-			density = 1e-6;
+			density = nb_material_get_density(material);
 		}
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
