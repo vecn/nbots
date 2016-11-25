@@ -17,7 +17,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 #include "nb/pde_bot/boundary_conditions/bcond_iter.h"
 
-#include "nb/pde_bot/control_volume/solid_mechanics/static_elasticity2D.h"
+#include "nb/pde_bot/control_volume/solid_mechanics/static_damage_phase_field.h"
 
 #include "../calculation_points.h"
 #include "../integration_mesh.h"
@@ -240,7 +240,7 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const double *disp, double *strain);
 static void finish_faces(uint32_t N_faces, face_t **faces);
 
-int nb_cvfa_compute_2D_Solid_Mechanics
+int nb_cvfa_compute_2D_damage_phase_field
 			(const nb_mesh2D_t *const mesh,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
@@ -1466,25 +1466,6 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const double *disp, double *strain)
 {
 	memset(&(strain[face_id * 3]), 0, 3 * sizeof(*strain));
-}
-
-void nb_cvfa_compute_stress_from_strain(const nb_mesh2D_t *mesh,
-					const nb_material_t *const material,
-					nb_analysis2D_t analysis2D,
-					const double* strain,
-					double* stress /* Output */)
-{
-	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
-	for (uint32_t i = 0; i < N_faces; i++) {
-		double D[4];
-		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-		
-		stress[i * 3] = (strain[i * 3] * D[0] +
-				 strain[i*3+1] * D[1]);
-		stress[i*3+1] = (strain[i * 3] * D[1] +
-				 strain[i*3+1] * D[2]);
-		stress[i*3+2] = strain[i*3+2] * D[3];
-	}
 }
 
 static void finish_faces(uint32_t N_faces, face_t **faces)
