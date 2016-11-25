@@ -110,10 +110,21 @@ static void test_convection_eq(void)
 	uint32_t memsize = N * sizeof(double);
 	double *sol = nb_soft_allocate_mem(memsize);
 
-	nb_fd_solve_ode_h2(N, 2, unity, convection, NULL, unity,
+	nb_fd_solve_ode_h2(N, 1, unity, convection, NULL, unity,
 			   0.0, 0.0, sol);
+	FILE *fp = fopen("../../../TEMPORAL_ode.txt", "w"); /**/
+	/* Gnuplot 
+	   f(x,A,D,k,a,c)=A + c*(k/a**2) - B(A,D,k,a,c)*(k/a) + (c/a)*x + (B(A,D,k,a,c)-(k/a)-c*(k/a**2))*exp((a/k)*x)
+	   B(A,D,k,a,c)= (D-A-(c/a)*(1+k/a)+(k/a)*(1+c/a)*exp(a/k)) / (exp(a/k) - k/a)
+
+	 */
+	for (int i = 0; i < N; i++) {
+		double x = i * 1.0/(N-1);
+		fprintf(fp, "%lf %lf\n", x, sol[i]);
+	}                                                   /**/
+	fclose(fp);                                         /**/
 	
-	CU_ASSERT(fabs(sol[15]-9.999390e-02) < 1e-8);
+	CU_ASSERT(fabs(sol[15] - 4.936130e-02) < 1e-8);
 
 	nb_soft_free_mem(memsize, sol);
 }
