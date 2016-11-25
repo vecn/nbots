@@ -11,5 +11,6 @@
 #include "nb/pde_bot/finite_element.h"
 #include "nb/pde_bot/control_volume.h"
 #include "nb/pde_bot/control_volume/draw.h"
+#include "nb/pde_bot/finite_differences/generic_ode.h"
 
 #endif

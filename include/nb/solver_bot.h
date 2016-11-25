@@ -5,6 +5,7 @@
 #include "nb/solver_bot/matrix/matrix2X2.h"
 #include "nb/solver_bot/matrix/matrix3X3.h"
 #include "nb/solver_bot/matrix/triangular.h"
+#include "nb/solver_bot/matrix/tridiagonal_solver.h"
 #include "nb/solver_bot/matrix/cholesky.h"
 #include "nb/solver_bot/matrix/cond.h"
 #include "nb/solver_bot/matrix/svd.h"

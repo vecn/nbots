@@ -2,6 +2,7 @@
 #define __NB_PDE_BOT_BOUNDARY_CONDITIONS_BCOND_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
 	NB_DIRICHLET,
