@@ -146,7 +146,7 @@ void nb_analytic_fd_solve_diffusion_convection
 		ld[i] = ep - 1.0;
 		md[i] = 1.0;
 		ud[i] = -ep;
-		rhs[i] = (cx/ax) * (h - 2*h*ep);
+		rhs[i] = h * (cx/ax) * (1 - 2*ep);
 	}
 	double p0 = eval_func(a, h) / eval_func(k, h);
 	double ep0 = 1.0 / (exp(p0*h) + 1);
@@ -198,7 +198,7 @@ void nb_analytic_fem_solve_diffusion_convection
 		ld[i] = - (1 - ep);
 		md[i] = 1.0;
 		ud[i] = - (ep);
-		rhs[i] = ep * (cx*h)/(ax) * ((1.5/p)*aux - h);
+		rhs[i] = h * (cx/ax) * (1 - 2*ep);
 	}
 	double p0 = eval_func(a, h) / eval_func(k, h);
 	double ep0 = 1.0 / (exp(p0*h) + 1);

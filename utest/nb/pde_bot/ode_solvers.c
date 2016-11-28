@@ -178,21 +178,8 @@ static void test_afem_convection_eq(void)
 	nb_analytic_fem_solve_diffusion_convection(N, 1, unity,
 						    afd_convection, unity,
 						    0.0, 0.0, sol);
-	FILE *fp = fopen("../../../TEMPORAL_ode.txt", "w");  /**/
-	for (int i = 0; i < N; i++) {                        /**/
-		double x = i * 1.0/(N-1);                    /**/
-		fprintf(fp, "%lf %lf\n", x, sol[i]);         /**/
-	}                                                    /**/
-	fclose(fp);                                          /**/
-	printf("-- ODE SOLUTION: %e \n", sol[25]); /* TEMPORAL */
 	
 	CU_ASSERT(fabs(sol[25] - 0.0) < 1e-8);
 
 	nb_soft_free_mem(memsize, sol);
-	/* GNUPLOT:
-	   plot f(x, 0.0, 1.0, 1.0, 300.0, 0.0) ti 'Analytical sol', 'FD_p300.txt' u 1:2 w l ti 'Linear FEM = FD', 'Analytical_FD_p300.txt' u 1:2 w l ti 'Analytic FD', 'TEMPORAL_ode.txt' u 1:2 w p ti 'Analytic FEM'
-	   plot f(x, 0.0, 0.0, 1.0, 300.0, 1.0) ti 'Analytical sol', 'TEMPORAL_ode.txt' u 1:2 w p ti 'Analytic FEM'
-	   ep(x,p) = (exp(p*x) - 1.0)/(exp(p*1.0)-1.0)
-	   f(x,f0,f1,k,a,c) = f0 * (1-ep(x, a/k)) + f1 * ep(x, a/k) + (c/a) * (x - ep(x, a/k))
-	*/
 }
