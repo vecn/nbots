@@ -40,12 +40,12 @@ int updated_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D *elem_regi
 {
     int update_status;
     uint32_t sim_element;
-    if(N_simultaneous_plastic_elem[0] > 1) {
-        for(int j = 0; j < N_simultaneous_plastic_elem[0]; j++) {
+    if(N_simultaneous_plastic_elem > 1) {
+        for(int j = 0; j < N_simultaneous_plastic_elem; j++) {
             sim_element = simultaneous_elements[j];
             update_status = updated_plastified_stiffness_matrix(K, elem_regime[sim_element],
-                                                                elements_enabled[sim_element], part,
-                                                                sim_element, elem, material,
+                                                                pipeline_elem_is_enabled(elements_enabled, sim_element),
+                                                                part, sim_element, elem, material,
                                                                 analysis2D, params2D);
             if(update_status != 0) {
                 update_status = 4;
@@ -59,7 +59,7 @@ int updated_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D *elem_regi
     }
     else {
         update_status = updated_plastified_stiffness_matrix(K, elem_regime[plastified_elem[0]],
-                                                            elements_enabled[plastified_elem[0]], part,
+                                                            pipeline_elem_is_enabled(elements_enabled, sim_element), part,
                                                             plastified_elem[0], elem, material,
                                                             analysis2D, params2D);
         if(update_status != 0) {
@@ -100,7 +100,6 @@ int updated_plastified_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D
 EXIT:
 	return status;
 }
-
 
 static int assemble_plastified_element(const nb_fem_elem_t *elem, uint32_t id,
 			    const nb_mesh2D_t *part,

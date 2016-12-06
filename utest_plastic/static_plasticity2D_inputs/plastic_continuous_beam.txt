@@ -36,8 +36,8 @@
 # Num of load conditions over vertices:		#
  2						#
 # Num of load conditions over vertices: 	#
- 4 0 1 -1400000 				#
- 5 0 1 -1400000					#
+ 4 0 1 -4000000					#
+ 5 0 1 -4000000					#
 # Num of displacement conditions over lines:    #
  2                                              #
 # Load conditions over lines definition:	#					#
@@ -53,9 +53,9 @@
 # Elasticity module				#
  2.1e11	                                        #
 # Plasticity module			        #
- 2.1e11                                         #
+ 0.3e11                                         #
 # Yield stress		                        #
- 180e6                                          #
+ 400e8                                          #
 # Density					#
  7850						#
 #-----------------------------------------------#

@@ -152,7 +152,7 @@ void nb_sparse_reset(nb_sparse_t *A)
 {
 	for(uint32_t i = 0; i < A->N; i++)
 		memset(A->rows_values[i], 0,
-		       A->rows_size[i] * sizeof(*(A->rows_values)));
+		       A->rows_size[i] * sizeof(**(A->rows_values)));
 }
 
 void nb_sparse_set(nb_sparse_t *A, uint32_t i, uint32_t j, double value)

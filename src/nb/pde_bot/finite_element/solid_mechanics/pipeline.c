@@ -203,14 +203,17 @@ void pipeline_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 				(dNi_dx[i]*dNi_dx[j]*D[0] +
 				 dNi_dy[i]*dNi_dy[j]*D[3]) *
 				detJ * thickness * wp;
+
 			Ke[(i * 2)*(2 * N_nodes) + (j*2+1)] +=
 				(dNi_dx[i]*dNi_dy[j]*D[1] +
 				 dNi_dy[i]*dNi_dx[j]*D[3]) *
 				detJ * thickness * wp;
+
 			Ke[(i*2+1)*(2 * N_nodes) + (j * 2)] +=
 				(dNi_dy[i]*dNi_dx[j]*D[1] +
 				 dNi_dx[i]*dNi_dy[j]*D[3]) *
 				detJ * thickness * wp;
+
 			Ke[(i*2+1)*(2 * N_nodes) + (j*2+1)] +=
 				(dNi_dy[i]*dNi_dy[j]*D[2] +
 				 dNi_dx[i]*dNi_dx[j]*D[3]) *

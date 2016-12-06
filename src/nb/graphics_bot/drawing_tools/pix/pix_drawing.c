@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct {
 	const char *type;
-	uint16_t size;	
+	uint16_t size;
 } font_t;
 
 typedef struct {
@@ -181,14 +181,14 @@ void* nb_graphics_pix_create_context(int width, int height)
 	memset(ctx->pen_stencil, 0, rp_size);
 
 	ctx->line_width = 1.0;
-	
+
 	ctx->source = (void*) (memblock + ctx_size + img_size +
 			       pix_size + trt_size + rp_size);
 	source_set_rgba(ctx->source, 0, 0, 0, 255);
-	
+
 	ctx->font = (void*) (memblock + ctx_size + img_size +
 			     pix_size + trt_size + rp_size + src_size);
-	ctx->font->type = "FreeSans";
+	ctx->font->type = "FreeSerifItalic"; //Antes era FreeSans
 	ctx->font->size = 18;
 
 	return ctx;
@@ -366,13 +366,13 @@ static void set_pen_stencil_w3(pixmask_t *pen_stencil, float thickness)
 }
 
 static void set_pen_stencil_w4(pixmask_t *pen_stencil, float thickness)
-{	
+{
 	uint32_t memsize = sizeof(turtle_t);
 	turtle_t *turtle_stencil = nb_soft_allocate_mem(memsize);
 
 	memset(turtle_stencil, 0, sizeof(turtle_t));
 	set_turtle_stencil(turtle_stencil, thickness);
-	
+
 	pen_stencil->xmin = 0;
 	pen_stencil->ymin = 0;
 	pen_stencil->width = (int)thickness;
@@ -448,7 +448,7 @@ static void source_set_grad(source_t *source,
 	source->vtx[1] = y1;
 	source->vtx[2] = x2 - x1;
 	source->vtx[3] = y2 - y1;
-	source->vtx[4] = sqrt(POW2(source->vtx[2]) + 
+	source->vtx[4] = sqrt(POW2(source->vtx[2]) +
 			      POW2(source->vtx[3]));
 	source->vtx[2] /= source->vtx[4];
 	source->vtx[3] /= source->vtx[4];
@@ -559,7 +559,7 @@ static void pixmask_init(pixmask_t *pixmask, const turtle_t *turtle)
 	pixmask->height = ymax - pixmask->ymin + 3;
 	pixmask->xmin -= 1;
 	pixmask->ymin -= 1;
-	
+
 	pixmask_alloc_pix(pixmask);
 }
 
@@ -880,7 +880,7 @@ static void set_pixel(int x, int y, uint8_t i, void* context)
 	}
 }
 
-static void source_get_color(const source_t *source, int x, int y, 
+static void source_get_color(const source_t *source, int x, int y,
 			     uint8_t pix[4])
 {
 	switch (source->source_type) {
@@ -985,7 +985,7 @@ static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
 			float d3 = sqrt(POW2(x - x2) + POW2(y - y2));
 			lambda[0] = d3 / (d2 + d3);
 			lambda[1] = 1.0f - lambda[0];
-	} 
+	}
 }
 
 static void draw_line(context_t *c, int x0, int y0, int x1, int y1)
@@ -1047,7 +1047,7 @@ void nb_graphics_pix_show_text(void *ctx, int x, int y, const char *str)
 	mask->width = attr.width;
 	mask->height = attr.height;
 	pixmask_alloc_pix(mask);
-	
+
 	nb_graphics_truetype_rasterizer_bake(str, c->font->type,
 					     c->font->size,
 					     mask->pix);

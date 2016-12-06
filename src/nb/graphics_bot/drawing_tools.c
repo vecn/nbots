@@ -682,7 +682,7 @@ void nb_palette_get_rgba(const nb_palette_t *const palette,
 				  uint8_t rgba[4])
 {
 	if (factor != factor) {
-		memcpy(rgba, palette->rgba, 4);		
+		memcpy(rgba, palette->rgba, 4);
 	} if (factor <= palette->tics[0]) {
 		memcpy(rgba, palette->rgba, 4);
 	} else if (factor >= palette->tics[palette->ntics-1]) {
@@ -775,7 +775,7 @@ static void palette_draw_rectangle(nb_graphics_context_t *g,
 				   const nb_palette_t *const palette,
 				   float x, float y, float w, float h,
 				   float border)
-{  
+{
 	if (0.0f < border) {
 		nb_graphics_set_source(g, NB_BLACK);
 		nb_graphics_set_rectangle(g, x-border, y-border,
@@ -798,7 +798,7 @@ static void palette_draw_zero_mark(nb_graphics_context_t *g,
 		float factor = - min_v / (max_v - min_v);
 		uint8_t rgba[4];
 		nb_palette_get_rgba(palette, factor, rgba);
-	
+
 		rgba[0] = (rgba[0] + 128) % 256;
 		rgba[1] = (rgba[1] + 128) % 256;
 		rgba[2] = (rgba[2] + 128) % 256;
@@ -817,7 +817,7 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 				float font_size, float x, float y,
 				float w, float h, float min_v, float max_v)
 {
-	nb_graphics_set_font_type(g, "FreeSans");
+	nb_graphics_set_font_type(g, "FreeSerifItalic");//Previous font type FreeSans
 	nb_graphics_set_font_size(g, font_size);
 	nb_graphics_text_attr_t text_attr;
 	nb_graphics_set_source(g, NB_BLACK);
@@ -829,8 +829,8 @@ static void palette_draw_labels(nb_graphics_context_t *g,
 		sprintf(label, "%.3e", max_v - i * step_v);
 		nb_graphics_get_text_attr(g, label, &text_attr);
 
-		nb_graphics_show_text(g, x + w + 5.0f, 
-				      y + text_attr.height/2.0 + 
+		nb_graphics_show_text(g, x + w + 5.0f,
+				      y + text_attr.height/2.0 +
 				      i * h / (n_labels-1.0),
 				      label);
 	}

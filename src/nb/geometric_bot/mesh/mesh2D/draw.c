@@ -178,7 +178,7 @@ static void fill_elems_field_on_nodes(const nb_mesh2D_t *part,
 	double *normalized_values = nb_soft_allocate_mem(memsize);
 
 	normalize_values(normalized_values, values, N);
-	
+
 	part->graphics.fill_elems_field_on_nodes(part->msh, g,
 						 normalized_values,
 						 PALETTE_FIELD);
@@ -210,7 +210,7 @@ static void fill_elems_field_on_elems(const nb_mesh2D_t *part,
 	double *normalized_values = nb_soft_allocate_mem(memsize);
 
 	normalize_values(normalized_values, values, N);
-	
+
 	part->graphics.fill_elems_field_on_elems(part->msh, g,
 						 normalized_values,
 						 PALETTE_FIELD);
@@ -281,8 +281,8 @@ static void add_palette(const nb_mesh2D_t *part,
 		nb_palette_create_preset(PALETTE_FIELD);
 	double min, max;
 	get_min_max(part, data, &min, &max);
-	
-	float label_width = 55;
+
+	float label_width = 120;/*antes era 55*/
 	nb_palette_draw(g, palette,
 				 width - PALETTE_W - PALETTE_MARGIN -
 				 label_width,

@@ -9,10 +9,10 @@
 # Number of vertices				#
  4						#
 # Vertices coordinates                          #
-  0.0 0.0					#
-  5.0 0.0					#
-  5.0 0.5					#
-  0.0 0.5					#
+ 0.0 0.0					#
+ 5.0 0.0					#
+ 5.0 0.5					#
+ 0.0 0.5					#
 # Number of segments				#
  4						#
 # Segments (Vertices pairs IDs)			#
@@ -27,12 +27,12 @@
  0						#
 # Num of load conditions over vertices:		#
  1						#
-# Load conditions over vertices definition:	#
+# Load conditions over vertices definition:	#					
  2 0 1 -1400000	                                #
-# Num displacements conditions over lines:    	#
+# Num of displacement conditions over lines:    #
  1						#
-# Displacement conditions definition over lines	#
- 3 1 1 0 0                                      #
+# Displacement conditions definition            #
+  3 1 1 0 0                                     #
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
@@ -42,10 +42,10 @@
  0.3						#
 # Elasticity module				#
  2.1e11	                                        #
-# Plasticity module			        #
- 0.3e11                                         #
-# Yield stress		                        #
+# Limit traction stress			        #
  400e6                                          #
+# Fracture Energy				#
+ 50e6						#
 # Density					#
  7850						#
 #-----------------------------------------------#
