@@ -685,9 +685,9 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
-	nb_cfreader_destroy(cfreader);
 	status = 0;
 EXIT:
+	nb_cfreader_destroy(cfreader);
 	return status;
 }
 
