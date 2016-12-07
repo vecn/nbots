@@ -272,9 +272,8 @@ static int damage_read_problem_data
 	}
 	status = 0;
 EXIT:
+    nb_cfreader_destroy(cfreader);
 	return status;
-
-nb_cfreader_destroy(cfreader);
 }
 
 static int damage_read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)

@@ -3,8 +3,6 @@
 # 2010-2016					#
 # Description: Beam fixed on both sides		#
 #################################################
-
-
 #-------------- Geometry definition ------------#
 # Number of vertices				#
  4						#
@@ -21,7 +19,6 @@
  2 3						#
  3 0						#
 #-----------------------------------------------#
-
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
  0						#
@@ -36,7 +33,6 @@
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
-
 #-------------- Material properties ------------#
 # Poisson module				#
  0.3						#
@@ -49,7 +45,6 @@
 # Density					#
  7850						#
 #-----------------------------------------------#
-
 #---------------- Analysis ---------------------#
 # ProbType(z P stress o P strain t SRev) 	#
  0						#

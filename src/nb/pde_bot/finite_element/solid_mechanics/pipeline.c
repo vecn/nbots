@@ -280,7 +280,6 @@ void pipeline_compute_strain(double *strain,
 
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(strain, 0, 3 * N_gp * N_elem * sizeof(*strain));
-
 	for (uint32_t i = 0; i < N_elem; i++)
 		get_element_strain(i, strain, part, displacement, elem);
 }
@@ -299,25 +298,46 @@ static int get_element_strain(uint32_t id, double *strain,
 	double *dNi_dx = (void*) (deriv_memblock);
 	double *dNi_dy = (void*) (deriv_memblock + deriv_memsize);
 
+	//printf("N nodes: %d\n", N_nodes);
+	//printf("Deriv memsize: %d\n", deriv_memsize);
 	/* Integrate domain */
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
+	//printf("N gauss points: %d\n", N_gp);
 	for (uint32_t j = 0; j < N_gp; j++) {
 		double Jinv[4];
 		double detJ = nb_fem_get_jacobian(elem, id, part, j, Jinv);
+        //printf("Det J: %lf\n", detJ);
 
-		if (nb_fem_elem_is_distorted(detJ))
-			goto EXIT;
+       // printf("Jinv[%d]: %lf\t Jinv[%d]: %lf\t Jinv[%d]: %lf\t Jinv[%d]: %lf\n", j, Jinv[0], j, Jinv[1], j, Jinv[2], j, Jinv[3]);
+
+		if (nb_fem_elem_is_distorted(detJ)) {
+            printf("Element %d is too distorted to be computed.\n", id);
+            goto EXIT;
+		}
 
 		nb_fem_get_derivatives(elem, j, Jinv, dNi_dx, dNi_dy);
 
+		for(int k = 0; k < N_nodes; k++){
+           // printf("dNi_dx[%d, %d]: %lf\t", j, k, dNi_dx[k]);
+           // printf("dNi_dy[%d, %d]: %lf\n", j, k, dNi_dy[k]);
+		}
+
 		uint32_t idx = id * N_gp + j;
+		//printf("Idx: %d\n", idx);
+
 		/* Compute Strain at Gauss Point */
 		for (uint32_t i = 0; i < N_nodes; i++) {
 			uint32_t inode = nb_mesh2D_elem_get_adj(part, id, i);
+			//printf("I node: %d\n", inode);
+			//printf("Dx[%d]: %lf\t", i, displacement[2*inode]);
+			//printf("Dy[%d]: %lf\n", i, displacement[2*inode +1]);
 			strain[idx * 3] += dNi_dx[i] * displacement[inode * 2];
 			strain[idx*3+1] += dNi_dy[i] * displacement[inode*2+1];
 			strain[idx*3+2] += (dNi_dy[i] * displacement[inode * 2] +
 					    dNi_dx[i] * displacement[inode*2+1]);
+           // printf("Ex: %lf\t", strain[3*idx]);
+            //printf("Ey: %lf\t", strain[3*idx +1]);
+            //printf("Exy: %lf\n", strain[3*idx +2]);
 		}
 	}
 	status = 0;

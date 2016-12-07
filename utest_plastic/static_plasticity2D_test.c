@@ -56,15 +56,13 @@ void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
 
 
 int main() {
-
     test_beam_cantilever();
-
     return 0;
 }
 
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 500,
+        run_test("%s/plastic_beam_cantilever.txt", 1000,
         check_beam_cantilever);
 }
 static void check_beam_cantilever(const void *part,
@@ -128,6 +126,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	//check_results(part, &results);
 
 	nb_mesh2D_finish(part);
+	nb_free_mem(part);
     results_finish(&results);
 }
 
@@ -203,6 +202,7 @@ static void get_mesh(const nb_model_t *model, void *part,
 
 	nb_mesh2D_load_from_mesh(part, mesh);
 	nb_tessellator2D_finish(mesh);
+	nb_free_mem(mesh);
 }
 
 static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg)
@@ -210,7 +210,7 @@ static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
 	uint32_t total_size = size_disp + 2 * size_strain;
-	char *memblock = malloc(total_size);
+	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
 	results->N_trg = N_trg;
@@ -222,8 +222,8 @@ static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_
 static inline void results_finish(plastic_results_t *results)
 {
 	nb_free_mem(results->disp);
-	nb_free_mem(results->strain);
-	nb_free_mem(results->stress);
+	//nb_free_mem(results->strain);
+	//nb_free_mem(results->stress);
 }
 
 static int read_problem_data
@@ -264,9 +264,8 @@ static int read_problem_data
 	}
 	status = 0;
 EXIT:
+    nb_cfreader_destroy(cfreader);
 	return status;
-
-nb_cfreader_destroy(cfreader);
 }
 
 static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
@@ -281,7 +280,7 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 		goto EXIT;
 	model->N = N;
 
-	model->vertex = malloc(2 * model->N * sizeof(*(model->vertex)));
+	model->vertex = nb_allocate_mem(2 * model->N * sizeof(*(model->vertex)));
 	for (uint32_t i = 0; i < 2 * model->N; i++) {
 		if (0 != nb_cfreader_read_double(cfreader, &(model->vertex[i])))
 			goto CLEANUP_VERTICES;
@@ -294,7 +293,7 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 	if (1 > N) {
 		goto CLEANUP_VERTICES;}
 	model->M = N;
-	model->edge = malloc(2 * model->M * sizeof(*model->edge));
+	model->edge = nb_allocate_mem(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
 		if (0 != nb_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;

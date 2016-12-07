@@ -31,7 +31,7 @@ double nb_fem_get_jacobian(const nb_fem_elem_t *elem, uint32_t id,
 
 	/* Compute Jacobian inverse and determinant */
 	double detJ = dx_dpsi * dy_deta - dy_dpsi * dx_deta;
-      
+
 	Jinv[0] =  dy_deta / detJ;
 	Jinv[1] = -dy_dpsi / detJ;
 	Jinv[2] = -dx_deta / detJ;

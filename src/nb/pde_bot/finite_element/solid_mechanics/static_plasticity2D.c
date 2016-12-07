@@ -68,7 +68,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double stress_tolerance)
 {
 	int status = 0;
-	nb_graph_t *graph = malloc(nb_graph_get_memsize());
+	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_mesh2D_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	nb_sparse_t *K = nb_sparse_create(graph, NULL, 2);
@@ -81,7 +81,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
     uint32_t F_elemsize = 3 * N_elem * sizeof(double);
     uint32_t F_memsize = 2 * N_nod * sizeof(double);
 
-    /*uint32_t displacement_size = F_memsize;
+    uint32_t displacement_size = F_memsize;
     uint32_t elastic_strain_size = F_elemsize;
     uint32_t elem_regime_size = 10 * N_elem * sizeof(char);
     uint32_t dF_size = F_memsize;
@@ -94,23 +94,24 @@ int fem_compute_plastic_2D_Solid_Mechanics
     uint64_t memsize = displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size + dF_basic_size +
                         dF_increment_size + F_size + strain_size;
 
-    char* memblock = malloc(memsize);*/
+    char* memblock = malloc(memsize);
 
-    double *displacement = nb_allocate_mem(F_memsize); //(void*)memblock;
-    double *elastic_strain = nb_allocate_mem(F_elemsize); //(void*)(memblock + displacement_size);
+    double *displacement = (void*)memblock; //nb_allocate_mem(F_memsize); //
+    double *elastic_strain = (void*)(memblock + displacement_size); //nb_allocate_mem(F_elemsize); //
     nb_plastified_analysis2D *elem_regime = nb_allocate_mem(10 * N_elem * sizeof(char)); //(void*)(memblock + displacement_size + elastic_strain_size);
-	double *dF = nb_allocate_mem(F_memsize); //(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size);
-    double *dFaux = nb_allocate_mem(F_memsize); //(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size);
-    double *dF_basic = nb_allocate_mem(F_memsize); //(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size);
-    double *dF_increment = nb_allocate_mem(F_memsize); /*(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
-                                   dF_basic_size);*/
-    double *F = nb_allocate_mem(F_memsize); /*(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
-                        dF_basic_size + dF_increment_size);*/
-	double *strain = nb_allocate_mem(F_elemsize); /*(void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
-                             dF_basic_size + dF_increment_size + F_size);*/
+	double *dF = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size); //nb_allocate_mem(F_memsize); //
+    double *dFaux = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size); //nb_allocate_mem(F_memsize); //
+    double *dF_basic = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size); //nb_allocate_mem(F_memsize); //
+    double *dF_increment = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
+                                   dF_basic_size); //nb_allocate_mem(F_memsize);
+    double *F = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
+                        dF_basic_size + dF_increment_size); //nb_allocate_mem(F_memsize);
+	double *strain = (void*)(memblock + displacement_size + elastic_strain_size + elem_regime_size + dF_size + dFaux_size +
+                             dF_basic_size + dF_increment_size + F_size); //nb_allocate_mem(F_elemsize);
 	memset(F, 0, F_memsize);
 	memset(total_strain, 0, F_elemsize);
 	memset(displacement, 0, F_memsize);
+	memset(total_displacement, 0, F_memsize);
 
 	int status_assemble =
 	pipeline_assemble_system(K, NULL, F, part, elemtype, material,
@@ -132,16 +133,16 @@ int fem_compute_plastic_2D_Solid_Mechanics
     memset(dF, 0, F_memsize);
 
     double yield_stress = nb_material_get_yield_stress(material);
-        int iteration = 0;
-        uint8_t first_plastic_solver_status = 0;
-        iteration = get_first_plastic_element(K, dF_basic, displacement, N_nod, total_displacement, part, strain,
-                                            elemtype, material, analysis2D, elements_enabled, stress, elem_regime,
-                                            elastic_strain, iteration, N_force_steps, &first_plastic_solver_status);
+    int iteration = 0;
+    uint8_t first_plastic_solver_status = 0;
+    iteration = get_first_plastic_element(K, dF_basic, displacement, N_nod, total_displacement, part, strain,
+                                          elemtype, material, analysis2D, elements_enabled, stress, elem_regime,
+                                          elastic_strain, iteration, N_force_steps, &first_plastic_solver_status);
 
-        if(0 != first_plastic_solver_status){
-            status = 2;
-            goto CLEANUP_LINEAR_SYSTEM;
-        }
+    if(0 != first_plastic_solver_status){
+        status = 2;
+        goto CLEANUP_LINEAR_SYSTEM;
+    }
 
     for (int i = iteration; i < N_force_steps; i++) {
         double max_vm_stress = 0;
@@ -189,16 +190,17 @@ int fem_compute_plastic_2D_Solid_Mechanics
     print_results_on_graph(N_nod, N_elem, total_displacement, stress, elem_regime, total_strain, part);
 
     CLEANUP_LINEAR_SYSTEM:
+    nb_free_mem(memblock);
     nb_sparse_destroy(K);
-    //nb_free_mem(memblock);
-    nb_free_mem(displacement);
+    /*nb_free_mem(displacement);
     nb_free_mem(elastic_strain);
+    nb_free_mem(elem_regime);
     nb_free_mem(dF);
     nb_free_mem(dFaux);
     nb_free_mem(dF_basic);
     nb_free_mem(dF_increment);
     nb_free_mem(F);
-    nb_free_mem(strain);
+    nb_free_mem(strain);*/
 
 	return status;
 }
@@ -277,19 +279,20 @@ int add_elastic_displacements(double *total_displacement, double* displacement, 
                               const nb_mesh2D_t *const part,double *strain, const nb_fem_elem_t *const elemtype,
                               const nb_material_t *const material, nb_analysis2D_t analysis2D,
                               const bool* elements_enabled,double *stress, nb_plastified_analysis2D *elem_regime,
-                              double *elastic_strain, int i, uint32_t N_force_steps) {
+                              double *elastic_strain, int i, uint32_t N_force_steps)
+{
     uint32_t N_elem = nb_mesh2D_get_N_elems(part);
     double yield_stress = nb_material_get_yield_stress(material);
-    double vm_stress = 0;
+    double VM_stress = 0;
     while(i < N_force_steps) {
         add_displacements(total_displacement, displacement, N_nod);
         pipeline_compute_strain(strain, part, total_displacement, elemtype);
         nb_fem_compute_plastic_stress_from_strain(N_elem, elemtype, material, analysis2D,
                                                     strain, elements_enabled, stress, elem_regime, elastic_strain);
         for(int j = 0; j < N_elem; j++){
-            vm_stress = nb_pde_get_vm_stress(stress[3*j], stress[3*j +1], stress[3*j +2]);
-            if(vm_stress > yield_stress){
-                printf("VM[%d]: %lf\n", j, vm_stress); /* TEMPORAL */
+            VM_stress = nb_pde_get_vm_stress(stress[3*j], stress[3*j +1], stress[3*j +2]);
+            if(VM_stress > yield_stress){
+                printf("VM[%d]: %lf\n", j, VM_stress); /* TEMPORAL */
                 substract_displacement(total_displacement, displacement, N_nod);
                 return i;
             }
@@ -304,9 +307,10 @@ void get_stress_params(double *max_vm_stress, uint32_t *N_plastic_elem,
                        uint32_t *plastified_elem, uint32_t *N_simultaneous_plastic_elem, double *stress, double yield_stress,
                        nb_plastified_analysis2D *elem_regime,
                        uint32_t N_elem, double stress_tolerance) {
-    double vm_stress;
-    memset(max_vm_stress, 0, sizeof(double));
-    memset(N_plastic_elem, 0, sizeof(uint32_t));
+    double vm_stress = 0;
+    max_vm_stress[0] = 0;    //memset(max_vm_stress, 0, sizeof(double));
+    N_plastic_elem[0] = 0;
+    //memset(N_plastic_elem, 0, sizeof(uint32_t));
     N_plastic_elem[0] = 1;
     for(int j = 0; j < N_elem; j++) {
         vm_stress = nb_pde_get_vm_stress(stress[3*j], stress[3*j +1], stress[3*j +2]);
@@ -318,7 +322,8 @@ void get_stress_params(double *max_vm_stress, uint32_t *N_plastic_elem,
             }
         }
     }
-    memset(N_simultaneous_plastic_elem, 0, sizeof(uint32_t));
+    N_simultaneous_plastic_elem[0] = 0;
+    //memset(N_simultaneous_plastic_elem, 0, sizeof(uint32_t));
     for(int j = 0; j < N_elem; j++) {
         vm_stress = nb_pde_get_vm_stress(stress[3*j], stress[3*j + 1], stress[3*j + 2]);
         if((vm_stress - max_vm_stress[0]) < 0 && (vm_stress - max_vm_stress[0]) > -stress_tolerance){
@@ -365,8 +370,10 @@ void find_new_plastic_elem(uint32_t N_elem,
                            uint32_t *N_plastic_elem)
 {
     uint32_t N_plastic_elem_aux = 0;
-    memset(plastified_elem, 0, sizeof(uint32_t));
-    memset(max_vm_stress, 0, sizeof(double));
+    plastified_elem[0] = 0;
+    max_vm_stress[0] = 0;
+    //memset(plastified_elem, 0, sizeof(uint32_t));
+    //memset(max_vm_stress, 0, sizeof(double));
     double vm_stress;
 
     for(int j = 0; j < N_elem; j++) {
@@ -484,10 +491,6 @@ int get_first_plastic_element(const nb_sparse_t *const K, double *dF_basic, doub
                               uint32_t i, uint32_t N_force_steps, uint8_t *status)
 {
     status[0] = plastic_solver(K, dF_basic, displacement, N_nod);
-    for (int k = 0; k < N_nod; k++){
-        printf("Dx[%d]: %lf\t", k, displacement[2*k]);
-        printf("Dy[%d]: %lf\n", k, displacement[2*k +1]);
-    }
 
     i = add_elastic_displacements(total_displacement, displacement, N_nod, part, strain, elemtype,
                                 material, analysis2D, elements_enabled, stress, elem_regime,
@@ -521,7 +524,8 @@ int adjust_plastic_elem_to_yield_stress(double stress_tolerance, double *displac
     int status = 0;
     while(N_plastic_elem[0] != 0) {
         double limit_stress = 0;
-        memset(max_vm_stress, 0, sizeof(double));
+        max_vm_stress[0] = 0;
+        //memset(max_vm_stress, 0, sizeof(double));
         max_vm_stress[0] = nb_pde_get_vm_stress(stress[3*plastified_elem[0]], stress[3*plastified_elem[0] + 1], stress[3*plastified_elem[0] + 2]);
         limit_stress = max_vm_stress[0] - yield_stress;
         double *aux_strain = nb_allocate_mem(F_elemsize);
@@ -623,7 +627,7 @@ void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displ
         Sy[j] = stress[3*j + 1];
         Sxy[j] = stress[3*j +2];
     }
-    bool *plastic_elements = nb_allocate_mem(N_elem * sizeof(*plastic_elements)); /*(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
+    bool *plastic_elements = nb_allocate_mem(N_elem * sizeof(bool)); /*(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
                                      Sx_size + Sy_size + Sxy_size);*/
     for(int j = 0; j < N_elem; j++) {
         switch(elem_regime[j]){
@@ -638,7 +642,7 @@ void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displ
         }
     }
     /* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    //nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
+    nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
     nb_mesh2D_export_draw(part, "cantilever_beam_plastic_elements.png", 1200, 800, NB_ELEMENT, NB_CLASS, plastic_elements, true);
     nb_mesh2D_export_draw(part,"cantilever_beam_avg_disp.png", 1200, 800, NB_NODE, NB_FIELD, avg_displacement, true);
     nb_mesh2D_export_draw(part,"cantilever_beam_disp_x.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_x, true);
