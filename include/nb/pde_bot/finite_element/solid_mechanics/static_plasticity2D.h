@@ -97,7 +97,8 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double *stress,
 			 double *displacement, /* Output, just the last computed plastic displacement */
 			 uint32_t N_force_steps,
-			 double accepted_tol);
+			 double accepted_tol,
+			 bool *plastic_elements);
 double stress_max_tolerance(double *plastic_stress, nb_plastified_analysis2D *elem_regime, uint32_t N_elem);
 int add_elastic_displacements(double *total_displacement, double* displacement, uint32_t N_nod, const nb_mesh2D_t *const part,
                               double *strain, const nb_fem_elem_t *const elemtype, const nb_material_t *const material,

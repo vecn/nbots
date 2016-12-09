@@ -49,7 +49,8 @@ int adjust_plastic_elem_to_yield_stress(double stress_tolerance, double *displac
                                         uint32_t *simultaneous_elements, uint32_t *N_simultaneous_plastic_elem, double *dF_basic,
                                         double *strain);
 void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
-                            nb_plastified_analysis2D *elem_regime, double *total_strain, const nb_mesh2D_t *const part);
+                            nb_plastified_analysis2D *elem_regime, double *total_strain, const nb_mesh2D_t *const part,
+                            bool *plastic_elements);
 
 int fem_compute_plastic_2D_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
@@ -65,7 +66,8 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 double *stress, /*Output*/
 			 double *total_displacement, /* Output */
 			 uint32_t N_force_steps,
-			 double stress_tolerance)
+			 double stress_tolerance,
+			 bool *plastic_elements)
 {
 	int status = 0;
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
@@ -187,7 +189,7 @@ int fem_compute_plastic_2D_Solid_Mechanics
 
     add_total_strain_plastic(strain, total_strain, N_elem);
 
-    print_results_on_graph(N_nod, N_elem, total_displacement, stress, elem_regime, total_strain, part);
+    print_results_on_graph(N_nod, N_elem, total_displacement, stress, elem_regime, total_strain, part, plastic_elements);
 
     CLEANUP_LINEAR_SYSTEM:
     nb_free_mem(memblock);
@@ -586,49 +588,48 @@ int adjust_plastic_elem_to_yield_stress(double stress_tolerance, double *displac
 }
 
 void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
-                       nb_plastified_analysis2D *elem_regime, double *total_strain, const nb_mesh2D_t *const part)
+                       nb_plastified_analysis2D *elem_regime, double *total_strain, const nb_mesh2D_t *const part,
+                       bool *plastic_elements)
 {
     uint32_t nodesize = N_nod * sizeof(double);
-    printf("Node size: %d\n", nodesize);
     uint32_t elemsize = N_elem * sizeof(double);
-    printf("Elem size: %d\n", elemsize);
 
-    /*uint32_t avg_displacement_size = nodesize;
+    uint32_t avg_displacement_size = nodesize;
     uint32_t total_displacement_x_size = nodesize;
     uint32_t total_displacement_y_size = nodesize;
     uint32_t Sx_size = elemsize;
     uint32_t Sy_size = elemsize;
     uint32_t Sxy_size = elemsize;
-    uint32_t plastic_elements_size = N_elem * sizeof(bool);
+    //uint32_t plastic_elements_size = N_elem * sizeof(bool);
 
     uint64_t memsize = avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
-                        Sx_size + Sy_size + Sxy_size + plastic_elements_size;
+                        Sx_size + Sy_size + Sxy_size;// + plastic_elements_size;
 
-    char* memblock = malloc(memsize);*/
+    char* memblock = malloc(memsize);
 
-    double *avg_displacement = nb_allocate_mem(nodesize); //(void*)memblock;
+    double *avg_displacement = (void*)memblock; //nb_allocate_mem(nodesize);
     for(int i = 1; i < N_nod; i++){
         avg_displacement[i] = sqrt(POW2(total_displacement[2*i])+ POW2(total_displacement[2*i +1]));
     }
 
-    double *total_displacement_x = nb_allocate_mem(nodesize); //(void*)(memblock + avg_displacement_size);
-    double *total_displacement_y = nb_allocate_mem(nodesize); //(void*)(memblock + avg_displacement_size + total_displacement_x_size);
+    double *total_displacement_x = (void*)(memblock + avg_displacement_size); //nb_allocate_mem(nodesize);
+    double *total_displacement_y = (void*)(memblock + avg_displacement_size + total_displacement_x_size); //nb_allocate_mem(nodesize);
 
     for(int j = 0; j < N_nod; j++){
         total_displacement_x[j] = total_displacement[2*j];
         total_displacement_y[j] = total_displacement[2*j +1];
     }
-    double *Sx = nb_allocate_mem(elemsize); //(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size);
-    double *Sy = nb_allocate_mem(elemsize); //(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size);
-    double *Sxy = nb_allocate_mem(elemsize); /*(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
-                          Sy_size);*/
+    double *Sx = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size); //nb_allocate_mem(elemsize);
+    double *Sy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size); // nb_allocate_mem(elemsize);
+    double *Sxy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size); // nb_allocate_mem(elemsize);
     for(int j = 0; j < N_elem; j++) {
         Sx[j] = stress[3*j];
         Sy[j] = stress[3*j + 1];
         Sxy[j] = stress[3*j +2];
     }
-    bool *plastic_elements = nb_allocate_mem(N_elem * sizeof(bool)); /*(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
-                                     Sx_size + Sy_size + Sxy_size);*/
+    /*bool *plastic_elements = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
+                                     Sx_size + Sy_size + Sxy_size); //nb_allocate_mem(N_elem * sizeof(bool));*/
     for(int j = 0; j < N_elem; j++) {
         switch(elem_regime[j]){
             case NB_ELASTIC:
@@ -651,12 +652,12 @@ void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displ
     nb_mesh2D_export_draw(part,"cantilever_Sy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sy, true);
     nb_mesh2D_export_draw(part,"cantilever_Sxy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sxy, true);
 
-    //nb_free_mem(memblock);
-    nb_free_mem(avg_displacement);
+    nb_free_mem(memblock);
+    /*nb_free_mem(avg_displacement);
     nb_free_mem(total_displacement_x);
     nb_free_mem(total_displacement_y);
     nb_free_mem(Sx);
     nb_free_mem(Sy);
     nb_free_mem(Sxy);
-    nb_free_mem(plastic_elements);
+    nb_free_mem(plastic_elements);*/
 }

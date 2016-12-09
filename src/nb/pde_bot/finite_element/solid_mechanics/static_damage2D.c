@@ -259,7 +259,8 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 nb_fem_implicit_t* params,
-			 const char* logfile)
+			 const char* logfile,
+			 double *damage)
 /* Quasistatic formulation */
 {
 	uint64_t N_nod = nb_mesh2D_get_N_nodes(part);
@@ -298,7 +299,8 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 	/*******************************************************************/
 	double* displacement = nb_allocate_zero_mem(2 * N_nod * sizeof(double));
 	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp*sizeof(double));
-	double* damage = nb_allocate_zero_mem(N_elem * N_gp * sizeof(double));
+	memset(damage, 0, N_elem * N_gp * sizeof(double));
+	//double* damage = nb_allocate_zero_mem(N_elem * N_gp * sizeof(double));
 	double* r_dmg = nb_allocate_mem(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */

@@ -22,6 +22,8 @@ typedef struct {
 	double *disp;
 	double *strain;
 	double *stress;
+	bool *plastic_elements;
+	double *damage;
     uint32_t N_vtx;
 	uint32_t N_trg;
 } plastic_results_t;
@@ -37,7 +39,7 @@ static int simulate(const char *problem_data,
 		    uint32_t N_vtx);
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
-static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
+static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
 static void results_finish(plastic_results_t *results);
 static int read_problem_data
 		(const char* filename,
@@ -47,13 +49,12 @@ static int read_problem_data
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D);
 static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model);
-static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
+static int read_plastic_material(nb_cfreader_t *cfreader, nb_material_t *mat);
 static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
 void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
                     nb_analysis2D_params *params2D);
-
 
 int main() {
     test_beam_cantilever();
@@ -62,7 +63,7 @@ int main() {
 
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 1000,
+        run_test("%s/plastic_beam_cantilever.txt", 500,
         check_beam_cantilever);
 }
 static void check_beam_cantilever(const void *part,
@@ -161,7 +162,7 @@ static int simulate(const char *problem_data,
 
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
-	results_init(results, N_nodes, N_elems);
+	results_init_plastic(results, N_nodes, N_elems);
 	uint32_t N_force_steps = 100;
 	double accepted_tol = 1.0;
 	double gravity[2] = {0.0 , -9.81};
@@ -169,7 +170,7 @@ static int simulate(const char *problem_data,
                                                              bcond, true, gravity,
                                                              analysis2D, &params2D, NULL, results->strain, results->stress,
                                                              results->disp, N_force_steps,
-                                                             accepted_tol);
+                                                             accepted_tol, results->plastic_elements);
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
 	status = 0;
@@ -205,11 +206,13 @@ static void get_mesh(const nb_model_t *model, void *part,
 	nb_free_mem(mesh);
 }
 
-static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg)
+static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg)
 {
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
-	uint32_t total_size = size_disp + 2 * size_strain;
+	uint32_t size_plastic_elements = N_trg * sizeof(*(results->plastic_elements));
+	//uint32_t size_damage = N_trg * sizeof(*(results->damage));
+	uint32_t total_size = size_disp + 2 * size_strain + size_plastic_elements;// + size_damage;
 	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
@@ -217,13 +220,13 @@ static void results_init(plastic_results_t *results, uint32_t N_vtx, uint32_t N_
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);
+	results->plastic_elements = (void*)(memblock + size_disp + 2 * size_strain);
+	results->damage = NULL;//void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
 }
 
 static inline void results_finish(plastic_results_t *results)
 {
 	nb_free_mem(results->disp);
-	//nb_free_mem(results->strain);
-	//nb_free_mem(results->stress);
 }
 
 static int read_problem_data
@@ -252,7 +255,7 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_material(cfreader, mat)) {
+	if (0 != read_plastic_material(cfreader, mat)) {
 		printf("\nERROR: Material contains errors in %s.\n",
 		       filename);
 		goto EXIT;
@@ -314,7 +317,7 @@ EXIT:
 	return status;
 }
 
-static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat)
+static int read_plastic_material(nb_cfreader_t *cfreader, nb_material_t *mat)
 {
 	int status = 1;
 	double poisson_module;

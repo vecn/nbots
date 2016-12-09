@@ -42,7 +42,8 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 		 nb_analysis2D_t analysis2D,
 		 nb_analysis2D_params *params2D,
 		 nb_fem_implicit_t* params,
-		 const char* logfile);
+		 const char* logfile,
+		 double *damage);
 
 
 #endif

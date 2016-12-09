@@ -24,6 +24,8 @@ typedef struct {
 	double *disp;
 	double *strain;
 	double *stress;
+	bool *plastic_elements;
+	double *damage;
     uint32_t N_vtx;
 	uint32_t N_trg;
 } damage_results_t;
@@ -66,7 +68,8 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 nb_fem_implicit_t* params,
-			 const char* logfile);
+			 const char* logfile,
+			 double *damage);
 
 /*int main() {
 
@@ -185,7 +188,7 @@ static int damage_simulate(const char *problem_data,
 
 	nb_fem_compute_2D_Damage_Solid_Mechanics
                             (part, elem, material, bcond, true, gravity,
-                             false, analysis2D, &params2D, params, problem_data);
+                             false, analysis2D, &params2D, params, problem_data, results->damage);
 
 CLEANUP_FEM:
 	nb_fem_elem_destroy(elem);
@@ -219,14 +222,17 @@ static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint3
 {
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
-	uint32_t total_size = size_disp + 2 * size_strain;
-	char *memblock = malloc(total_size);
+	uint32_t size_damage = N_trg * sizeof(*(results->damage));
+	uint32_t total_size = size_disp + 2 * size_strain + size_damage;
+	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
 	results->N_trg = N_trg;
 	results->disp = (void*) memblock;
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);
+	results->damage = (void*)(memblock + size_disp + 2 * size_strain);
+	results->plastic_elements = NULL;
 }
 
 static inline void damage_results_finish(damage_results_t *results)
