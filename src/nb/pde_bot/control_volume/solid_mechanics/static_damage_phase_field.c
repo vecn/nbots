@@ -249,6 +249,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 nb_analysis2D_params *params2D,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
+			 double *damage,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
 	int status;

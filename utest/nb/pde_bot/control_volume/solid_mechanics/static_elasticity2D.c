@@ -364,10 +364,10 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	double *disp = malloc(N_elems * sizeof(*disp));
+	double *disp = nb_allocate_mem(N_elems * sizeof(*disp));
 
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
-	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
+	double *disp_nodes = nb_allocate_mem(N_nodes * sizeof(*disp_nodes));
 
 	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.5);
 
@@ -627,7 +627,7 @@ static void results_init(results_t *results, uint32_t N_faces,
 	uint32_t size_strain = N_faces * 3 * sizeof(*(results->strain));
 	uint32_t size_mask = N_faces * sizeof(*(results->boundary_mask));
 	uint32_t total_size = size_disp + 2 * size_strain + size_mask;
-	char *memblock = malloc(total_size);
+	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_faces = N_faces;
 	results->N_elems = N_elems;
@@ -697,7 +697,7 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 		goto EXIT;
 	model->N = N;
 
-	model->vertex = malloc(2 * model->N * sizeof(*(model->vertex)));
+	model->vertex = nb_allocate_mem(2 * model->N * sizeof(*(model->vertex)));
 	for (uint32_t i = 0; i < 2 * model->N; i++) {
 		if (0 != nb_cfreader_read_double(cfreader, &(model->vertex[i])))
 			goto CLEANUP_VERTICES;
@@ -711,7 +711,7 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 		goto CLEANUP_VERTICES;
 	model->M = N;
 
-	model->edge = malloc(2 * model->M * sizeof(*model->edge));
+	model->edge = nb_allocate_mem(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
 		if (0 != nb_cfreader_read_uint(cfreader, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
@@ -724,7 +724,8 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 
 	model->holes = NULL;
 	if (0 < model->H) {
-		model->holes = malloc(2 * model->H * sizeof(*(model->holes)));
+		model->holes = nb_allocate_mem(2 * model->H *
+					       sizeof(*(model->holes)));
 		for (uint32_t i = 0; i < 2 * model->H; i++) {
 			if (0 != nb_cfreader_read_double(cfreader,
 							  &(model->holes[i])))

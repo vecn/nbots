@@ -56,7 +56,7 @@ typedef struct {
 } nb_trg_exporter_interface_t;
 
 void nb_tessellator2D_export(const nb_tessellator2D_t *const mesh,
-		     nb_trg_exporter_interface_t *exp);
+			     nb_trg_exporter_interface_t *exp);
 
 
 #endif
