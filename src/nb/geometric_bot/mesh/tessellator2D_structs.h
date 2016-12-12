@@ -106,7 +106,9 @@ struct nb_tessellator2D_s {
 
 	/* Geometric constrains */
 	double cr2se_ratio;
+	bool has_edge_length_constraint;
 	double max_edge_length;
+	bool has_subsgm_length_constraint;
 	double max_subsgm_length;
 
 	/* Density data */

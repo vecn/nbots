@@ -84,7 +84,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
 	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
@@ -118,7 +118,7 @@ static void check_beam_cantilever(const void *mesh,
 	}
 	max_disp = sqrt(max_disp);
 	printf("--- MAX DISP: %e\n", max_disp); /* TEMPORAL */
-	CU_ASSERT(fabs(max_disp - 1.000109e-1) < 1e-6);
+	CU_ASSERT(fabs(max_disp - 1.000109e-1) < 1e-3);
 }
 
 
@@ -363,12 +363,6 @@ static void pwh_BC_SGM_cond(const double *x, double t, double *out)
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	nb_mesh2D_export_draw(mesh, "../../../mesh.eps", 1000, 800,
-			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
-
-	nb_cvfa_draw_integration_mesh(mesh, "../../../CVFA_alpha_x.eps",/*T*/
-				      1000, 800);              /* TEMPORAL */
-
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	double *disp = malloc(N_elems * sizeof(*disp));
 
@@ -687,9 +681,9 @@ static int read_problem_data
 		       filename);
 		goto EXIT;
 	}
-	nb_cfreader_destroy(cfreader);
 	status = 0;
 EXIT:
+	nb_cfreader_destroy(cfreader);
 	return status;
 }
 

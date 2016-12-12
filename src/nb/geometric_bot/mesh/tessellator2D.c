@@ -80,6 +80,8 @@ void nb_tessellator2D_init(nb_tessellator2D_t *mesh)
 	mesh->scale = 1.0;
 
 	set_angle_constraint(mesh, NB_MESH_MAX_ANGLE);
+	mesh->has_edge_length_constraint = false;
+	mesh->has_subsgm_length_constraint = false;
 
 	init_tasks(mesh);
 
@@ -261,9 +263,11 @@ void nb_tessellator2D_set_geometric_constraint(nb_tessellator2D_t *mesh, int typ
 		set_angle_constraint(mesh, value);
 		break;
 	case NB_MESH_GEOM_CONSTRAINT_MAX_EDGE_LENGTH:
+		mesh->has_edge_length_constraint = true;
 		mesh->max_edge_length = value;
 		break;
 	case NB_MESH_GEOM_CONSTRAINT_MAX_SUBSGM_LENGTH:
+		mesh->has_subsgm_length_constraint = true;
 		mesh->max_subsgm_length = value;
 		break;
 	}

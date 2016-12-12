@@ -48,6 +48,7 @@ int nb_fem_compute_2D_Solid_Mechanics
 	nb_mesh2D_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
 	nb_sparse_t *K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
+	nb_free_mem(graph);
 
 	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
 	uint32_t F_memsize = 2 * N_nod * sizeof(double);
