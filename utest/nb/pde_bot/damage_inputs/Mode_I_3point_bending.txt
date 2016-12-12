@@ -42,7 +42,7 @@
  5 0 1 0.0                                      #
 # Num of load conditions over vertices:		#
  1						#
- 7 0 1 1e-3                                     #
+ 7 0 1 -1e-3                                    #
 # Num of displacement conditions over lines:    #
  0						#
 # Num of load conditions over lines:            #

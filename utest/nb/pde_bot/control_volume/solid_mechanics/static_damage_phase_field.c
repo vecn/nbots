@@ -80,7 +80,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 1000, NB_QUAD,
+	run_test("%s/Mode_I_3point_bending.txt", 2000, NB_QUAD,
 		 check_mode_I);
 }
 
@@ -247,7 +247,6 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
-	goto CLEANUP;/* TEMPORAL */
 
 	int status_cvfa = nb_cvfa_compute_2D_damage_phase_field(mesh, material,
 								bcond,
