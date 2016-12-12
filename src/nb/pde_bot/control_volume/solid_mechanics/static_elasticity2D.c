@@ -26,7 +26,7 @@
 #define INV3 0.33333333333333333333334
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
-#define SMOOTH 6
+#define SMOOTH 2
 
 typedef struct subface_s subface_t;
 

@@ -70,11 +70,11 @@ void cunit_nb_geometric_bot_tessellator2D(void)
 	CU_add_test(suite,
 	 	    "generate_from_model() with triangles constraint",
 	 	    test_generate_from_model_trg_constraint);
-	CU_add_test(suite, "generate_from_model(),"\
+	CU_add_test(suite, "generate_from_model(),"			\
 		    "resulting from the difference of two models",
 	 	    test_generate_from_difference);
 	CU_add_test(suite, "is_vtx_inside()", test_is_vtx_inside);
-	 CU_add_test(suite, "set_density()", test_set_density);
+	CU_add_test(suite, "set_density()", test_set_density);
 }
 
 static int suite_init(void)

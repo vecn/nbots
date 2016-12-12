@@ -166,7 +166,6 @@ static void circumcenter_rejected(nb_tessellator2D_t *mesh,
 				  hash_trg_t *poor_quality_trg,
 				  nb_container_t *sgm_encroached_by_cc,
 				  msh_vtx_t *cc, msh_trg_t *trg);
-static bool has_edge_length_constrained(const nb_tessellator2D_t *const mesh);
 static bool edge_violates_constrain(const nb_tessellator2D_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
 				    double *big_ratio);
@@ -1230,12 +1229,6 @@ static void get_subsgm_cluster(const msh_edge_t *const sgm,
 		*smallest_angle = 0.0;
 }
 
-static inline bool has_edge_length_constrained(const nb_tessellator2D_t *const mesh)
-{
-	return mesh->max_edge_length * mesh->scale > NB_GEOMETRIC_TOL ||
-		mesh->max_subsgm_length * mesh->scale > NB_GEOMETRIC_TOL;
-}
-
 static bool edge_violates_constrain(const nb_tessellator2D_t *const restrict mesh,
 				    const msh_edge_t *const restrict sgm,
 				    double *big_ratio)
@@ -1244,11 +1237,12 @@ static bool edge_violates_constrain(const nb_tessellator2D_t *const restrict mes
 	double d = nb_utils2D_get_dist(sgm->v1->x, sgm->v2->x);
 	*big_ratio = d;
 	double edge_max = mesh->max_edge_length * mesh->scale;
-	if (edge_max > NB_GEOMETRIC_TOL && edge_max < d) {
+	if (d > NB_GEOMETRIC_TOL && edge_max < d &&
+	    mesh->has_edge_length_constraint) {
 		violates_constrain = true;
-	} else if (medge_is_subsgm(sgm)) {
+	} else if (medge_is_subsgm(sgm) && mesh->has_subsgm_length_constraint) {
 		double sgm_max = mesh->max_subsgm_length * mesh->scale;
-		if (sgm_max > NB_GEOMETRIC_TOL && sgm_max < d) {
+		if (d > NB_GEOMETRIC_TOL && sgm_max < d) {
 			violates_constrain = true;
 		}
 	}
@@ -1340,7 +1334,8 @@ static inline bool mtrg_is_too_big(const nb_tessellator2D_t *const restrict mesh
 {
 	double size_ratio = 1.0;
 	bool is_too_big = false;
-	if (has_edge_length_constrained(mesh)) {
+	if (mesh->has_edge_length_constraint ||
+	    mesh->has_subsgm_length_constraint) {
 		is_too_big = edge_violates_constrain(mesh, trg->s1, &size_ratio);
 		if (!is_too_big)
 			is_too_big = edge_violates_constrain(mesh, trg->s2,

@@ -178,8 +178,7 @@ static void test_afem_convection_eq(void)
 	nb_analytic_fem_solve_diffusion_convection(N, 1, unity,
 						    afd_convection, unity,
 						    0.0, 0.0, sol);
-	
-	CU_ASSERT(fabs(sol[25] - 0.0) < 1e-8);
+	CU_ASSERT(fabs(sol[25] - 2.777778e-3) < 1e-8);
 
 	nb_soft_free_mem(memsize, sol);
 }
