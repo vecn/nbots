@@ -39,6 +39,9 @@ static int simulate(const char *problem_data,
 		    uint32_t N_vtx);
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
+void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
+                    double *total_strain, const nb_mesh2D_t *const part,
+                    bool *plastic_elements, const char *problem_data);
 static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
 static void results_finish(plastic_results_t *results);
 static int read_problem_data
@@ -55,15 +58,15 @@ static int read_plasticity2D_params(nb_cfreader_t *cfreader,
 				    nb_analysis2D_params *params2D);
 void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
                     nb_analysis2D_params *params2D);
-
+/*
 int main() {
     test_beam_cantilever();
     return 0;
 }
-
+*/
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 500,
+        run_test("%s/plastic_beam_cantilever.txt", 100,
         check_beam_cantilever);
 }
 static void check_beam_cantilever(const void *part,
@@ -171,6 +174,10 @@ static int simulate(const char *problem_data,
                                                              analysis2D, &params2D, NULL, results->strain, results->stress,
                                                              results->disp, N_force_steps,
                                                              accepted_tol, results->plastic_elements);
+
+    print_plastic_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
+                          part, results->plastic_elements, problem_data);
+
 	if (0 != status_fem)
 		goto CLEANUP_FEM;
 	status = 0;
@@ -404,3 +411,75 @@ void check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
     }
 }
 
+void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
+                            double *total_strain, const nb_mesh2D_t *const part,
+                            bool *plastic_elements, const char *problem_data)
+{
+    uint32_t nodesize = N_nod * sizeof(double);
+    uint32_t elemsize = N_elem * sizeof(double);
+
+    uint32_t avg_displacement_size = nodesize;
+    uint32_t total_displacement_x_size = nodesize;
+    uint32_t total_displacement_y_size = nodesize;
+    uint32_t Sx_size = elemsize;
+    uint32_t Sy_size = elemsize;
+    uint32_t Sxy_size = elemsize;
+    uint32_t Ex_size = elemsize;
+    uint32_t Ey_size = elemsize;
+    uint32_t Exy_size = elemsize;
+
+    uint64_t memsize = avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
+                        Sx_size + Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size;
+
+    char* memblock = malloc(memsize);
+
+    double *avg_displacement = (void*)memblock;
+    for(int i = 1; i < N_nod; i++){
+        avg_displacement[i] = sqrt(POW2(total_displacement[2*i])+ POW2(total_displacement[2*i +1]));
+    }
+
+    double *total_displacement_x = (void*)(memblock + avg_displacement_size);
+    double *total_displacement_y = (void*)(memblock + avg_displacement_size + total_displacement_x_size);
+
+    for(int j = 0; j < N_nod; j++){
+        total_displacement_x[j] = total_displacement[2*j];
+        total_displacement_y[j] = total_displacement[2*j +1];
+    }
+    double *Sx = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size);
+    double *Sy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size);
+    double *Sxy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size);
+    for(int j = 0; j < N_elem; j++) {
+        Sx[j] = stress[3*j];
+        Sy[j] = stress[3*j + 1];
+        Sxy[j] = stress[3*j +2];
+    }
+
+    double *Ex = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size + Sxy_size);
+    double *Ey = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size + Sxy_size + Ex_size);
+    double *Exy = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size + Sxy_size + Ex_size + Ey_size);
+
+    for(int j = 0; j < N_elem; j++) {
+        Ex[j] = total_strain[3*j];
+        Ey[j] = total_strain[3*j + 1];
+        Exy[j] = total_strain[3*j +2];
+    }
+
+    /* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
+    nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
+    nb_mesh2D_export_draw(part, "plastified_elements.png", 1200, 800, NB_ELEMENT, NB_CLASS, plastic_elements, true);
+    nb_mesh2D_export_draw(part, "plastic_avg_disp.png", 1200, 800, NB_NODE, NB_FIELD, avg_displacement, true);
+    nb_mesh2D_export_draw(part, "plastic_disp_x.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_x, true);
+    nb_mesh2D_export_draw(part, "plastic_disp_y.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_y, true);
+    nb_mesh2D_export_draw(part, "plastic_Sx.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sx, true);
+    nb_mesh2D_export_draw(part, "plastic_Sy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sy, true);
+    nb_mesh2D_export_draw(part, "plastic_Sxy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sxy, true);
+    nb_mesh2D_export_draw(part, "plastic_Ex.png", 1200, 800, NB_ELEMENT, NB_FIELD, Ex, true);
+    nb_mesh2D_export_draw(part, "plastic_Ey.png", 1200, 800, NB_ELEMENT, NB_FIELD, Ey, true);
+    nb_mesh2D_export_draw(part, "plastic_Exy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Exy, true);
+
+    nb_free_mem(memblock);
+}

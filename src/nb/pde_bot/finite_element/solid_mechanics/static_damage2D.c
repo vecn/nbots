@@ -248,7 +248,7 @@ static double tension_truncated_damage
 }
 */
 
-void nb_fem_compute_2D_Damage_Solid_Mechanics
+uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elem,
 			 const nb_material_t *const material,
@@ -260,9 +260,13 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 			 nb_analysis2D_params *params2D,
 			 nb_fem_implicit_t* params,
 			 const char* logfile,
-			 double *damage)
+			 double *damage,
+			 double *displacement,
+			 double *strain,
+			 double *stress)
 /* Quasistatic formulation */
 {
+    uint8_t status = 1;
 	uint64_t N_nod = nb_mesh2D_get_N_nodes(part);
 	uint64_t N_elem = nb_mesh2D_get_N_elems(part);
 
@@ -276,31 +280,13 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 
-    /*******************************************************************/
-	/*********************** > Get reaction nodes **********************/
-	/*******************************************************************/
-	/*uint32_t react_node;// = nb_mesh2D_get_invtx(part, 1);
-	double x_react;
-	double y_react;
-	for(int i = 0; i < N_nod; i++) {
-	    x_react = nb_mesh2D_elem_get_x(part, i);
-	    y_react = nb_mesh2D_elem_get_y(part, i);
-        if(fabs(0.225 - x_react) < 1e-2 && fabs(0.1 - y_react) < 1e-2)
-            react_node = i;
-	}
-	printf("Reaction node: %d\n", react_node);
-	printf("X coordinate reaction node: %lf\n", nb_mesh2D_elem_get_x(part, react_node));
-	printf("Y coordinate reaction node: %lf\n", nb_mesh2D_elem_get_y(part, react_node));
-	double* reaction = nb_allocate_zero_mem(nb_fem_implicit_get_N_steps(params) * sizeof(double));
-	double* react_displacement = nb_allocate_zero_mem(nb_fem_implicit_get_N_steps(params) * sizeof(double));
-
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
 	/*******************************************************************/
-	double* displacement = nb_allocate_zero_mem(2 * N_nod * sizeof(double));
-	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp*sizeof(double));
+	memset(displacement, 0, 2 * N_nod * sizeof(*displacement));
+	memset(strain, 0, 3 * N_elem * sizeof(*strain));
 	memset(damage, 0, N_elem * N_gp * sizeof(double));
-	//double* damage = nb_allocate_zero_mem(N_elem * N_gp * sizeof(double));
+	memset(stress, 0, 3 * N_elem * sizeof(*stress));
 	double* r_dmg = nb_allocate_mem(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
@@ -385,10 +371,7 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 			/*******************************************/
 			/* Compute P increment */
 			nb_sparse_multiply_vector(K, displacement, P, omp_parallel_threads);
-			/*for(int k = 0; k < N_nod; k++){
-             printf("Px[%d]: %lf\t", k, P[2*k]);
-             printf("Py[%d]: %lf\n", k, P[2*k + 1]);
-			}
+
 			/* Compute residual norm */
 			residual_norm = 0;
 			for(int i = 0; i < N_system_size; i++){
@@ -396,7 +379,6 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 				residual_norm += POW2(residual[i]);
 			}
 			residual_norm = sqrt(residual_norm);
-			//printf("residual norm: %lf (%d, %d)\n", residual_norm, n, residual_iter);
 
 			/* Check if residual is minimized */
 			if(residual_iter == 0){
@@ -451,98 +433,17 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 			/* Increase iterator */
 			residual_iter ++;
 		}
-		/*TEMPORAL*/
-		/*nb_sparse_multiply_vector(K, displacement, P, omp_parallel_threads);
-		reaction[n] = sqrt(POW2(P[2*react_node]) + POW2(P[2*react_node + 1]));
-		//printf("Reaction: %lf\n",  reaction[n]);
-		react_displacement[n] = displacement[2*react_node + 1];
-		//printf("Displacement: %lf\n", react_displacement[n]);*/
 	}
-    /*****************************************************************/
-	/******************** > Print Results TEMPORAL *******************/
-	/*****************************************************************/
-    FILE *f = fopen("reaction_results.txt", "w");
-    /*f (f == NULL)
-    {
-        printf("Error opening file!\n");
-        exit(1);
-    }*/
-    /* print some text */
-    const char *text = "Results for the reaction point: \n Force \t Displacement\n";
-    fprintf(f, "%s\n", text);
 
-    /* print integers and floats */
-   /* for (int k = 0; k < nb_fem_implicit_get_N_steps(params); k++){
-       fprintf(f, " %lf\t %lf\n", reaction[k], react_displacement[k]);
-    }*/
-
-    fclose(f);
-    /*****************************************************************/
-	/******************** > Print Results ****************************/
-	/*****************************************************************/
-    double *avg_displacement = nb_allocate_mem(N_nod*sizeof(double));
-    for(int i = 1; i < N_nod; i++){
-        avg_displacement[i] = sqrt(POW2(displacement[2*i])+ POW2(displacement[2*i +1]));
-    }
-    double *total_displacement_y = nb_allocate_mem(N_nod*sizeof(double));
-    double *total_displacement_x = nb_allocate_mem(N_nod*sizeof(double));
-    for(int j = 0; j < N_nod; j++){
-        total_displacement_x[j] = displacement[2*j];
-        total_displacement_y[j] = displacement[2*j +1];
-    }
-    double *stress = nb_allocate_mem(3*N_elem*sizeof(double));
     nb_fem_compute_damage_stress_from_strain(N_elem, elem, material, analysis2D, strain,
                                              NULL, stress, damage, true);
-    double *Sx = nb_allocate_mem(N_elem*sizeof(double));
-    double *Sy = nb_allocate_mem(N_elem*sizeof(double));
-    double *Sxy = nb_allocate_mem(N_elem*sizeof(double));
-    for(int j = 0; j < N_elem; j++) {
-        for(int k = 0; k < N_gp; k++) {
-        Sx[j + k] = stress[3*j + k];
-        Sy[j + k] = stress[3*j + k + 1];
-        Sxy[j + k] = stress[3*j + k + 2];
-        }
-    }
-    double *strainX = nb_allocate_mem(N_elem*sizeof(double));
-    double *strainY = nb_allocate_mem(N_elem*sizeof(double));
-    double *strainXY = nb_allocate_mem(N_elem*sizeof(double));
-    for(int i = 0; i < N_elem; i++){
-        for(int j = 0; j < N_gp; j++){
-            strainX[i + j] = strain[3*i + j];
-            strainY[i + j] = strain[3*i + j + 1];
-            strainXY[i + j] = strain[3*i + j + 2];
-        }
-    }
-    /* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    nb_mesh2D_distort_with_field(part, NB_NODE, displacement, 0.01);
-    nb_mesh2D_export_draw(part, "DMG_failure2_damaged_elements.png", 1200, 800, NB_ELEMENT, NB_FIELD, damage, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_avg_disp.png", 1200, 800, NB_NODE, NB_FIELD, avg_displacement, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_disp_x.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_x, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_disp_y.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_y, true);
-    nb_mesh2D_export_draw(part, "DMG_failure2_strainX.png", 1200, 800, NB_ELEMENT, NB_FIELD, strainX, true);
-    nb_mesh2D_export_draw(part, "DMG_failure2_strainY.png", 1200, 800, NB_ELEMENT, NB_FIELD, strainY, true);
-    nb_mesh2D_export_draw(part, "DMG_failure2_strainXY.png", 1200, 800, NB_ELEMENT, NB_FIELD, strainXY, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_Sx.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sx, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_Sy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sy, true);
-    nb_mesh2D_export_draw(part,"DMG_failure2_Sxy.png", 1200, 800, NB_ELEMENT, NB_FIELD, Sxy, true);
 
 	/*****************************************************************/
 	/******************** > Free memory ******************************/
 	/*****************************************************************/
-	END_OF_PROCESS:
-	nb_free_mem(displacement);
-	nb_free_mem(strain);
-	nb_free_mem(damage);
-	nb_free_mem(avg_displacement);
-	nb_free_mem(total_displacement_x);
-	nb_free_mem(total_displacement_y);
-	nb_free_mem(strainX);
-	nb_free_mem(strainY);
-	nb_free_mem(strainXY);
-	nb_free_mem(Sx);
-	nb_free_mem(Sy);
-	nb_free_mem(Sxy);
+	status = 0;
 
+	END_OF_PROCESS:
 	nb_sparse_destroy(K);
 	if(enable_Cholesky_solver){
 		nb_sparse_destroy(L);
@@ -556,6 +457,8 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 
 	nb_free_mem(r_dmg_prev);
 	nb_free_mem(r_dmg);
+
+	return status;
 }
 
 static void DMG_pipeline_assemble_system

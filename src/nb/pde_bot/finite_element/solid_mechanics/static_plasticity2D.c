@@ -39,6 +39,7 @@ int get_first_plastic_element(const nb_sparse_t *const K, double *dF_basic, doub
                               uint32_t i, uint32_t N_force_steps, uint8_t *status);
 void get_dFaux_increment(double *dFaux, double *dF_increment, double *dF_basic, uint32_t F_memsize, uint32_t *N_plastic_elem,
                         double *total_displacement, double *displacement, uint32_t N_nod);
+void get_plastic_elements(uint32_t N_elem, nb_plastified_analysis2D *elem_regime, bool *plastic_elements);
 int adjust_plastic_elem_to_yield_stress(double stress_tolerance, double *displacement, double *total_displacement,
                                         uint32_t F_memsize, uint32_t F_elemsize, uint32_t N_nod, uint32_t N_elem, double yield_stress,
                                         double *dF_increment, double *dFaux, double *max_vm_stress, uint32_t *plastified_elem,
@@ -189,7 +190,9 @@ int fem_compute_plastic_2D_Solid_Mechanics
 
     add_total_strain_plastic(strain, total_strain, N_elem);
 
-    print_results_on_graph(N_nod, N_elem, total_displacement, stress, elem_regime, total_strain, part, plastic_elements);
+    get_plastic_elements(N_elem, elem_regime, plastic_elements);
+
+    //print_results_on_graph(N_nod, N_elem, total_displacement, stress, elem_regime, total_strain, part, plastic_elements);
 
     CLEANUP_LINEAR_SYSTEM:
     nb_free_mem(memblock);
@@ -586,6 +589,22 @@ int adjust_plastic_elem_to_yield_stress(double stress_tolerance, double *displac
     EXIT:
     return status;
 }
+
+void get_plastic_elements(uint32_t N_elem, nb_plastified_analysis2D *elem_regime, bool *plastic_elements) {
+    for(int j = 0; j < N_elem; j++) {
+        switch(elem_regime[j]){
+            case NB_ELASTIC:
+                plastic_elements[j] = false;
+                break;
+            case NB_PLASTIC:
+                plastic_elements[j] = true;
+                break;
+            default:
+                plastic_elements[j] = false;
+        }
+    }
+}
+
 
 void print_results_on_graph(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
                        nb_plastified_analysis2D *elem_regime, double *total_strain, const nb_mesh2D_t *const part,

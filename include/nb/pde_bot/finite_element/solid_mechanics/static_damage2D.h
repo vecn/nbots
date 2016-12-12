@@ -31,7 +31,7 @@ uint32_t nb_fem_implicit_get_N_max_iter_without_enhance
 double nb_fem_implicit_get_residual_tolerance
 (nb_fem_implicit_t* isparams);
 
-void nb_fem_compute_2D_Damage_Solid_Mechanics
+uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 		(const nb_mesh2D_t *const part,
 		 const nb_fem_elem_t *const elemtype,
 		 const nb_material_t *const material,
@@ -43,7 +43,10 @@ void nb_fem_compute_2D_Damage_Solid_Mechanics
 		 nb_analysis2D_params *params2D,
 		 nb_fem_implicit_t* params,
 		 const char* logfile,
-		 double *damage);
+		 double *damage,
+		 double *displacement,
+		 double *strain,
+		 double *stress);
 
 
 #endif
