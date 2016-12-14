@@ -9,6 +9,7 @@
 #include "nb/container_bot.h"
 #include "nb/solver_bot/sparse/sparse.h"
 #include "nb/solver_bot/sparse/solvers/lu.h"
+#include "nb/solver_bot/sparse/solvers/cholesky.h"
 #include "nb/solver_bot/sparse/solvers/cg_precond_chol.h"
 
 #include "../sparse_struct.h"
@@ -43,8 +44,8 @@ int nb_sparse_solve_CG_precond_Cholesky(const nb_sparse_t *const A,
 		dot_gg += g[i]*g[i];
 	}
 	/* Solve H Ht q = g for q */
-	nb_sparse_t *H = sparse_allocate(A->N);
-	nb_sparse_t *Ht = sparse_allocate(A->N);
+	nb_sparse_t *H = nb_sparse_allocate(A->N);
+	nb_sparse_t *Ht = nb_sparse_allocate(A->N);
 	nb_sparse_cholesky_symbolic(A, H, Ht, ktrunc);
 
 	nb_sparse_decompose_Cholesky(A,H,Ht, omp_parallel_threads);

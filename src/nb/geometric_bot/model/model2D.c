@@ -217,9 +217,9 @@ nb_model_t* nb_model_create_rectangle(double x_min, double y_min,
 }
 
 nb_model_t* nb_model_create_polygon(double radius,
-				      double x_center,
-				      double y_center,
-				      uint32_t N_sides)
+				    double x_center,
+				    double y_center,
+				    uint32_t N_sides)
 {
 	nb_model_t *model = nb_model_create();
 	double angle_step = (NB_MATH_PI * 2.0) / N_sides;

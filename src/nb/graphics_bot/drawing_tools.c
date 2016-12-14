@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
 
 #include "palette_struct.h"

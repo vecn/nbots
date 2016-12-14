@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"

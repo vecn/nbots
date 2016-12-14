@@ -52,6 +52,7 @@ static void test_get_union_h(void);
 static void test_get_substractionA_h(void);
 static void test_get_substractionB_h(void);
 static void test_get_difference_h(void);
+static void test_get_combination_polygons(void);
 
 void cunit_nb_geometric_bot_model2D_clipper(void)
 {
@@ -128,6 +129,8 @@ void cunit_nb_geometric_bot_model2D_clipper(void)
 		    test_get_substractionB_h);
 	CU_add_test(suite, "get_difference() of h",
 		    test_get_difference_h);
+	CU_add_test(suite, "get_combination() of h",
+		    test_get_combination_polygons);
 }
 
 static int suite_init(void)
@@ -863,5 +866,29 @@ static void test_get_difference_h(void)
 	CU_ASSERT(104 == model->M);
 	CU_ASSERT(1 == model->H);
 	CU_ASSERT(23 == N_areas);
+	nb_model_destroy(model);
+}
+
+static void test_get_combination_polygons(void)
+{
+	nb_model_t *model1 = nb_model_create_polygon(1.0, 0.0, 0.0, 0.5);
+	nb_model_t *model2 = nb_model_create_polygon(1.0, 1.0, 0.0, 0.5);
+	nb_model_t *model = nb_model_create();
+
+	nb_model_get_combination(model, model1, model2);
+
+	nb_model_destroy(model1);
+	nb_model_destroy(model2);
+
+	uint16_t N_areas = nb_model_get_N_subareas(model);
+	printf(" ----> COMBINATION: %i %i %i %i\n", model->N,
+	       model->M, model->H, N_areas);/* TEMPORAL */
+	nb_model_draw("../../../build/AATEMPORAL.png", 500, 400);/* TEMPORAL */
+
+	CU_ASSERT(16 == model->N);
+	CU_ASSERT(24 == model->M);
+	CU_ASSERT(0 == model->H);
+	CU_ASSERT(9 == N_areas);
+
 	nb_model_destroy(model);
 }
