@@ -645,10 +645,10 @@ static ipack_t* get_intersection_pack(const edge_t *sgm1,
 static bool is_true_intersection(const edge_t *sgm1, const edge_t *sgm2,
 				 nb_intersect_t status)
 {
-	bool out;
+	bool out = true;
 	switch (status) {
 	case NB_INTERSECTED:
-		out = true;
+		/* Do nothing */
 		break;
 	case NB_NOT_INTERSECTED:
 		out = false;

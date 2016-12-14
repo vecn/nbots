@@ -871,8 +871,8 @@ static void test_get_difference_h(void)
 
 static void test_get_combination_polygons(void)
 {
-	nb_model_t *model1 = nb_model_create_polygon(1.0, 0.0, 0.0, 0.5);
-	nb_model_t *model2 = nb_model_create_polygon(1.0, 1.0, 0.0, 0.5);
+	nb_model_t *model1 = nb_model_create_circle(1.0, 0.0, 0.0, 0.5);
+	nb_model_t *model2 = nb_model_create_circle(1.0, 1.0, 0.0, 0.5);
 	nb_model_t *model = nb_model_create();
 
 	nb_model_get_combination(model, model1, model2);
@@ -881,14 +881,11 @@ static void test_get_combination_polygons(void)
 	nb_model_destroy(model2);
 
 	uint16_t N_areas = nb_model_get_N_subareas(model);
-	printf(" ----> COMBINATION: %i %i %i %i\n", model->N,
-	       model->M, model->H, N_areas);/* TEMPORAL */
-	nb_model_draw("../../../build/AATEMPORAL.png", 500, 400);/* TEMPORAL */
 
-	CU_ASSERT(16 == model->N);
-	CU_ASSERT(24 == model->M);
+	CU_ASSERT(28 == model->N);
+	CU_ASSERT(30 == model->M);
 	CU_ASSERT(0 == model->H);
-	CU_ASSERT(9 == N_areas);
+	CU_ASSERT(3 == N_areas);
 
 	nb_model_destroy(model);
 }

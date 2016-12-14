@@ -24,14 +24,22 @@ if (OPENMP_FOUND)
 endif()
 
 include_directories(include)
-add_library(nbots ${NB_SOURCES})
+
+add_library(nbots SHARED ${NB_SOURCES})
 target_compile_options(nbots PUBLIC -std=c99 -Wall)
-file(COPY ${data} DESTINATION res)
 
-install(TARGETS nbots DESTINATION /home/victor/Desktop)
-install(DIRECTORY res DESTINATION /home/victor/Desktop)
+add_library(nbots_static STATIC ${NB_SOURCES})
+target_compile_options(nbots_static PUBLIC -std=c99 -Wall)
+set_target_properties(nbots_static PROPERTIES OUTPUT_NAME nbots)
 
-set(CPACK_PACKAGE_NAME "nbots")
-set(CPACK_PACKAGE_VERSION "0.3.0")
-set(CPACK_MONOLITHIC_INSTALL 1)
-include(CPack)
+#file(COPY ${data} DESTINATION res)
+
+#include(CTest)
+
+#install(TARGETS nbots DESTINATION /home/victor/Desktop)
+#install(DIRECTORY res DESTINATION /home/victor/Desktop)
+
+#set(CPACK_PACKAGE_NAME "nbots")
+#set(CPACK_PACKAGE_VERSION "0.3.0")
+#set(CPACK_MONOLITHIC_INSTALL 1)
+#include(CPack)
