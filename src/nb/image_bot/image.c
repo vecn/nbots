@@ -8,28 +8,30 @@
 #include "nb/memory_bot.h"
 #include "nb/image_bot/image.h"
 
-#define STBI_MALLOC(sz)           nb_allocate_mem(sz)
-#define STBI_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
-#define STBI_FREE(p)              nb_free_mem(p)
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
+    #define STBI_MALLOC(sz)           nb_allocate_mem(sz)
+    #define STBI_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
+    #define STBI_FREE(p)              nb_free_mem(p)
 
-#define STB_IMAGE_STATIC
-#define STB_IMAGE_IMPLEMENTATION
-#include "imported_libs/stb_image.h"
+    #define STB_IMAGE_STATIC
+    #define STB_IMAGE_IMPLEMENTATION
+    #include "imported_libs/stb_image.h"
 
-#define STBIW_MALLOC(sz)           nb_allocate_mem(sz)
-#define STBIW_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
-#define STBIW_FREE(p)              nb_free_mem(p)
+    #define STBIW_MALLOC(sz)           nb_allocate_mem(sz)
+    #define STBIW_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
+    #define STBIW_FREE(p)              nb_free_mem(p)
 
-#define STB_IMAGE_WRITE_STATIC
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "imported_libs/stb_image_write.h"
+    #define STB_IMAGE_WRITE_STATIC
+    #define STB_IMAGE_WRITE_IMPLEMENTATION
+    #include "imported_libs/stb_image_write.h"
 
-#define STBIR_MALLOC(sz, c)         nb_allocate_mem(sz)
-#define STBIR_FREE(p, c)            nb_free_mem(p)
+    #define STBIR_MALLOC(sz, c)         nb_allocate_mem(sz)
+    #define STBIR_FREE(p, c)            nb_free_mem(p)
 
-#define STB_IMAGE_RESIZE_STATIC
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "imported_libs/stb_image_resize.h"
+    #define STB_IMAGE_RESIZE_STATIC
+    #define STB_IMAGE_RESIZE_IMPLEMENTATION
+    #include "imported_libs/stb_image_resize.h"
+#endif
 
 #define _LUMA_R_WEIGHT 0.299
 #define _LUMA_G_WEIGHT 0.587
@@ -89,8 +91,10 @@ void nb_image_finish(nb_image_t *img)
 
 void nb_image_clear(nb_image_t *img)
 {
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	if (NULL != img->pixels)
 		stbi_image_free(img->pixels);
+#endif
 	uint32_t memsize = nb_image_get_memsize();
 	memset(img, 0, memsize);
 }
@@ -101,13 +105,14 @@ void nb_image_init_white(nb_image_t *img,
 {
 	img->width = width;
 	img->height = height;
-	img->comp_x_pixel;
+	img->comp_x_pixel = comp_x_pixel;
 	uint32_t memsize = width * height * comp_x_pixel;
 	img->pixels = nb_allocate_zero_mem(memsize);
 }
 
 void nb_image_read(nb_image_t *img, const char* filename)
 {
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int w, h, n;
 	uint8_t *const restrict pixels = stbi_load(filename, &w, &h, &n, 0);
 
@@ -117,6 +122,7 @@ void nb_image_read(nb_image_t *img, const char* filename)
 		img->height = h;
 		img->comp_x_pixel = n;
 	}
+#endif
 }
 
 inline uint32_t nb_image_get_width(const nb_image_t *const img)
@@ -256,6 +262,7 @@ void nb_image_resize(const nb_image_t *input_img,
 		      nb_image_t *output_img,
 		      int out_width, int out_height)
 {
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	output_img->width = out_width;
 	output_img->height = out_height;
 	output_img->comp_x_pixel = input_img->comp_x_pixel;
@@ -273,6 +280,7 @@ void nb_image_resize(const nb_image_t *input_img,
 					output_stride_in_bytes,
 					input_img->comp_x_pixel);
 	assert(0 != status);
+#endif
 }
 
 void nb_image_write(const nb_image_t *img, const char *filename)
@@ -331,6 +339,7 @@ static void image_write_default(const nb_image_t *img, const char *filename)
 
 void nb_image_write_png(const nb_image_t *img, const char *filename)
 {  
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int stride_in_bytes = img->width * img->comp_x_pixel;
 	int status = stbi_write_png(filename,
 				    img->width,
@@ -339,26 +348,31 @@ void nb_image_write_png(const nb_image_t *img, const char *filename)
 				    img->pixels,
 				    stride_in_bytes);
 	assert(0 != status);
+#endif
 }
 
 void nb_image_write_bmp(const nb_image_t *img, const char *filename)
-{  
+{
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int status = stbi_write_bmp(filename,
 				    img->width,
 				    img->height,
 				    img->comp_x_pixel,
 				    img->pixels);
 	assert(0 != status);
+#endif
 }
 
 void nb_image_write_tga(const nb_image_t *img, const char *filename)
-{  
+{
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int status = stbi_write_tga(filename,
 				    img->width,
 				    img->height,
 				    img->comp_x_pixel,
 				    img->pixels);
 	assert(0 != status);
+#endif
 }
 
 void nb_image_write_ascii(const nb_image_t *img, const char *filename,

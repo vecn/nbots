@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/geometric_bot/mesh/tessellator2D.h"
-#include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
+#include "nb/geometric_bot.h"
 
 #include "../tessellator2D_structs.h"
 

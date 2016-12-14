@@ -7,9 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graphics_bot.h"
-
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshquad.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshquad_draw.h"
+#include "nb/geometric_bot.h"
 
 static void draw_sgm(const nb_mshquad_t *msh,
 		     nb_graphics_context_t *g,

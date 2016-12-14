@@ -7,10 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/solvers/lu.h"
-#include "nb/solver_bot/sparse/solvers/cholesky.h"
-#include "nb/solver_bot/sparse/solvers/cg_precond_chol.h"
+#include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
 #include "cholesky_symbolic.h"

@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "nb/memory_bot.h"
-
-#include "nb/pde_bot/ode_solvers.h"
+#include "nb/solver_bot.h"
+#include "nb/pde_bot.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -193,7 +194,6 @@ void nb_analytic_fem_solve_diffusion_convection
 		double ax = eval_func(a, x);
 		double cx = eval_func(c, x);
 		double p = ax / kx;
-		double aux = exp(p*h) - 1;
 		double ep = 1.0 / (exp(p*h) + 1);
 		ld[i] = - (1 - ep);
 		md[i] = 1.0;

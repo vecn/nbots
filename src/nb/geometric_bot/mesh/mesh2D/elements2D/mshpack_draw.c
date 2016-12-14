@@ -17,11 +17,11 @@ static void set_source_null(const nb_mshpack_t *msh,
 			    nb_graphics_context_t *g,
 			    uint32_t i, void *data);
 
-static void set_source_field(const nb_msh3trg_t *msh,
+static void set_source_field(const nb_mshpack_t *msh,
 			     nb_graphics_context_t *g,
 			     uint32_t i, void *data);
 
-static void set_source_classes(const nb_msh3trg_t *msh,
+static void set_source_classes(const nb_mshpack_t *msh,
 			       nb_graphics_context_t *g,
 			       uint32_t i, void *data);
 
@@ -87,7 +87,7 @@ void nb_mshpack_fill_elems_field_on_elems(const void *msh,
 					  const double *normalized_field,
 					  nb_palette_preset palette)
 {
-	const void *data[2];
+	void *data[2];
 	data[0] = (void*) normalized_field;
 	data[1] = nb_palette_create_preset(palette);
 	
@@ -96,7 +96,7 @@ void nb_mshpack_fill_elems_field_on_elems(const void *msh,
 	nb_palette_destroy(data[1]);
 }
 
-static void set_source_field(const nb_msh3trg_t *msh,
+static void set_source_field(const nb_mshpack_t *msh,
 			     nb_graphics_context_t *g,
 			     uint32_t i, void *data)
 {
@@ -121,7 +121,7 @@ void nb_mshpack_fill_elems_classes(const void *msh,
 	draw_disks(msh, g, true, data, set_source_classes);
 }
 
-static void set_source_classes(const nb_msh3trg_t *msh,
+static void set_source_classes(const nb_mshpack_t *msh,
 			       nb_graphics_context_t *g,
 			       uint32_t i, void *data)
 {

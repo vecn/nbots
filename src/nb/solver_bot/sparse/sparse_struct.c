@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
+
 #include "sparse_struct.h"
 
 uint32_t nb_sparse_bsearch_row(const nb_sparse_t *const A,

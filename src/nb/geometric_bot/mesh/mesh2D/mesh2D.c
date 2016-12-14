@@ -3,20 +3,11 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/graphics_bot.h"
-#include "nb/geometric_bot/mesh/tessellator2D.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/msh3trg.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/msh3trg_draw.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshquad.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshquad_draw.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpoly.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpoly_draw.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpack.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpack_draw.h"
+#include "nb/geometric_bot.h"
 
-#include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/mesh2D/info.h"
 #include "mesh2D_struct.h"
 
 #define POW2(a) ((a)*(a))
@@ -93,9 +84,8 @@ static void set_msh_interface(nb_mesh2D_t *mesh, nb_mesh2D_type  type)
 }
 
 void nb_mesh2D_init_from_msh(nb_mesh2D_t *mesh, void *msh,
-				nb_mesh2D_type  type)
+			     nb_mesh2D_type  type)
 {
-	char *memblock = (void*) mesh;
 	mesh->msh = msh;
 	mesh->type = type;
 	set_msh_interface(mesh, type);

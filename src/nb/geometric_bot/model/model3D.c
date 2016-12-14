@@ -58,15 +58,15 @@ void nb_model3D_get_enveloping_box(const void *const model, double box[6])
 
 uint32_t nb_model3D_get_N_vtx(const void *const model)
 {
-	;
+	return 0;
 }
 
 uint32_t nb_model3D_get_N_edges(const void *const model)
 {
-	;
+	return 0;
 }
 
 uint32_t nb_model3D_get_N_faces(const void *const model)
 {
-	;
+	return 0;
 }

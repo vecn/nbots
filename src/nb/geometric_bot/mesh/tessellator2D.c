@@ -686,8 +686,6 @@ nb_tessellator2D_t* nb_tessellator2D_clone(const nb_tessellator2D_t* const mesh)
 	msh_edge_t** segments = (void*)(memblock + vtx_memsize + trg_memsize);
 
 	/* Clone grid of vertices */
-
-	double bins_size = nb_bins2D_get_size_of_bins(mesh->ug_vtx);
 	uint32_t id = 0;
 	nb_bins2D_iter_t* giter = nb_allocate_on_stack(nb_bins2D_iter_get_memsize());
 	nb_bins2D_iter_init(giter);

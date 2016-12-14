@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
+#include "nb/math_bot.h"
 #include "nb/solver_bot/matrix/svd.h"
 
 void nb_matrix_svd_decomposition(double *A, /* Overwritten wit U */

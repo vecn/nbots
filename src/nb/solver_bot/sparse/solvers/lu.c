@@ -7,9 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/solvers/triangular.h"
-#include "nb/solver_bot/sparse/solvers/lu.h"
+#include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
 #include "cholesky_symbolic.h"
@@ -17,8 +15,8 @@
 int nb_sparse_alloc_LU(const nb_sparse_t *const restrict A,
 		       nb_sparse_t** L, nb_sparse_t** U)
 {
-	*L = sparse_allocate(A->N);
-	*U = sparse_allocate(A->N);
+	*L = nb_sparse_allocate(A->N);
+	*U = nb_sparse_allocate(A->N);
   
 	nb_sparse_cholesky_symbolic(A, *L, *U, A->N);
 

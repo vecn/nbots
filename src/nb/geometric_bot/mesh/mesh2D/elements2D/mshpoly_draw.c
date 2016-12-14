@@ -8,9 +8,7 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graphics_bot.h"
-
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpoly.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpoly_draw.h"
+#include "nb/geometric_bot.h"
 
 static void draw_sgm(const nb_mshpoly_t *poly,
 		     nb_graphics_context_t *g,

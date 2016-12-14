@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/pde_bot/boundary_conditions/bcond.h"
-#include "nb/pde_bot/boundary_conditions/bcond_iter.h"
+#include "nb/pde_bot.h"
 
 #include "bc_atom.h"
 #include "bc_get_container.h"

@@ -1,9 +1,9 @@
 #include <stdlib.h>
+#include <string.h>
 
+#include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/geometric_bot/point2D.h"
-#include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/knn/bins2D_iterator.h"
+#include "nb/geometric_bot.h"
 
 #include "bins2D_structs.h"
 

@@ -59,7 +59,6 @@ struct nb_membank_s {
 static void* block_data_calloc(block_t *block, uint16_t type_size);
 static int get_first_free_id(const char *mask);
 static block_t *block_create(uint16_t type_size, uint16_t N_max);
-static void set_backward_aligner(block_t *block, int i);
 static bool block_is_in_buffer(const block_t *block,
 			       uint16_t type_size, char *mem);
 static void block_data_free(block_t *block, uint16_t type_size,

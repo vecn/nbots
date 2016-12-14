@@ -131,8 +131,8 @@ void mvtx_destroy(nb_tessellator2D_t *mesh, void *vtx);
 void mvtx_set_id(msh_vtx_t *vtx, uint32_t id);
 uint32_t mvtx_get_id(const msh_vtx_t *const vtx);
 
-bool mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin);
-bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
+void mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin);
+void mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location);
 bool mvtx_is_type_origin(const msh_vtx_t *const vtx, mvtx_origin_t origin);
 bool mvtx_is_type_location(const msh_vtx_t *const vtx, mvtx_location_t location);
 

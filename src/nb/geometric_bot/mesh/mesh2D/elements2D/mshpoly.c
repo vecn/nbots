@@ -6,14 +6,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
-#include "nb/geometric_bot/point2D.h"
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/tessellator2D.h"
-#include "nb/geometric_bot/mesh/dewall.h"
-#include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpoly.h"
+#include "nb/geometric_bot.h"
 
 #include "../../tessellator2D_structs.h"
 #include "../../ruppert/ruppert.h"
@@ -675,7 +668,7 @@ void nb_mshpoly_get_enveloping_box(const void *msh, double box[4])
 
 bool nb_mshpoly_is_vtx_inside(const void *msh, double x, double y)
 {
-	/* PENDING */
+	return false;/* PENDING */
 }
 
 void nb_mshpoly_build_model(const void *msh, nb_model_t *model)
@@ -964,8 +957,6 @@ static void insert_adj_sorted_by_angle(vgraph_t *vgraph,
 static void counting_edg_in_vinfo(vinfo_t *vinfo, const vgraph_t *vgraph,
 				  const msh_edge_t *edge, bool is_cc)
 {
-	uint32_t id1 = mvtx_get_id(edge->v1);
-	uint32_t id2 = mvtx_get_id(edge->v2);
 	bool extremes_onsegment =
 		mvtx_is_type_location(edge->v1, ONSEGMENT) &&
 		mvtx_is_type_location(edge->v2, ONSEGMENT);
