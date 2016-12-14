@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "nb/memory_bot.h"
 #include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
@@ -499,7 +500,6 @@ static void DMG_pipeline_assemble_system
 	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(double));
 
 	/* Assembly global system */
-	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elems; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = 1e-6;

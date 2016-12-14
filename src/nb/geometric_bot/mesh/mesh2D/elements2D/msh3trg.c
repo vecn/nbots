@@ -406,7 +406,6 @@ double nb_msh3trg_elem_face_get_normal(const void *msh, uint32_t elem_id,
 double nb_msh3trg_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 				      uint16_t ngb_id, double normal[2])
 {
-	const nb_msh3trg_t *msh3trg = msh;
 	uint32_t N_elems = nb_msh3trg_get_N_elems(msh);
 	uint32_t nid = nb_msh3trg_elem_get_ngb(msh, elem_id, ngb_id);
 	memset(normal, 0, 2 * sizeof(double));

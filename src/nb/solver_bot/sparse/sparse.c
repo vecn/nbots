@@ -22,7 +22,7 @@ nb_sparse_t* nb_sparse_create(const nb_graph_t *const restrict graph,
 				uint32_t vars_per_node)
 {
 	verify_graph(graph);
-	nb_sparse_t*A = sparse_allocate(graph->N * vars_per_node);
+	nb_sparse_t*A = nb_sparse_allocate(graph->N * vars_per_node);
 
 	for (uint32_t i = 0; i < graph->N; i++) {
 		uint32_t row_size = (graph->N_adj[i] + 1) * vars_per_node;    
@@ -77,7 +77,7 @@ static void verify_graph(const nb_graph_t *graph)
 
 nb_sparse_t* nb_sparse_clone(nb_sparse_t* A)
 {
-	nb_sparse_t* Acopy = sparse_allocate(A->N);
+	nb_sparse_t* Acopy = nb_sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
 		Acopy->rows_index[i] = nb_allocate_zero_mem(A->rows_size[i] *
 					      sizeof(**(Acopy->rows_index)));
@@ -232,7 +232,7 @@ nb_sparse_t* nb_sparse_create_permutation
  const uint32_t *const iperm)
 {
 	/* Use the vectors perm and iperm to compute Ar = PAP'. */ 
-	nb_sparse_t* _Ar = sparse_allocate(A->N);
+	nb_sparse_t* _Ar = nb_sparse_allocate(A->N);
 	for (uint32_t i = 0; i < A->N; i++) {
 		uint32_t j = perm[i];
 		_Ar->rows_size[i] = A->rows_size[j];

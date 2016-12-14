@@ -2,14 +2,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "nb/graphics_bot.h"
-
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/mesh2D/info.h"
-#include "nb/geometric_bot/mesh/mesh2D/draw.h"
+#include "nb/graphics_bot.h"
+#include "nb/geometric_bot.h"
+
 #include "mesh2D_struct.h"
 
 #define COLOR_EDGE NB_DARK_GRAY
@@ -139,7 +136,7 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);
 
-	if (NB_NULL != data->vals_entity)
+	if (NB_ENTITY_DEFAULT != data->vals_entity)
 		fill(mesh, g, data);
 
 	if (data->draw_wires)

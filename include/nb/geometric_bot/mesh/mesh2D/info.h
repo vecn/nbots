@@ -3,7 +3,8 @@
 
 typedef enum {
 	NB_ELEMENT,
-	NB_NODE
+	NB_NODE,
+	NB_ENTITY_DEFAULT
 } nb_mesh2D_entity;
 
 typedef enum {

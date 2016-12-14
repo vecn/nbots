@@ -28,7 +28,8 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 				       const nb_bcond_iter_t *const iter,
 				       double factor);
 static void set_neumann(const nb_mesh2D_t *part, uint8_t N_dof,
-			double* F, double factor, nb_bcond_iter_t *iter,
+			double* F, double factor,
+			const nb_bcond_iter_t *iter,
 			uint32_t vtx_id);
 static void set_neumann_vtx(const nb_mesh2D_t *part,
 			    double* F, 
@@ -154,7 +155,7 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 
 static void set_neumann(const nb_mesh2D_t *part, uint8_t N_dof,
 			double* F, double factor,
-			nb_bcond_iter_t *iter,
+			const nb_bcond_iter_t *iter,
 			uint32_t vtx_id)
 {
 	double x_dummy[2] = {0, 0};

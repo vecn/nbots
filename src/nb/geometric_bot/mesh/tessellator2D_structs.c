@@ -60,13 +60,13 @@ uint32_t mvtx_get_id(const msh_vtx_t *const vtx)
 	return vtx_attr->id;
 }
 
-bool mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin)
+void mvtx_set_type_origin(msh_vtx_t *vtx, mvtx_origin_t origin)
 {
 	vtx_attr_t *attr = vtx->attr;
 	attr->ori = origin;
 }
 
-bool mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location)
+void mvtx_set_type_location(msh_vtx_t *vtx, mvtx_location_t location)
 {
 	vtx_attr_t *attr = vtx->attr;
 	attr->loc = location;

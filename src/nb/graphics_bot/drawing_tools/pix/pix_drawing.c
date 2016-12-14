@@ -93,14 +93,6 @@ static void set_line_pixel(int x, int y, uint8_t i, void* context);
 static void set_pen_pixel(int x, int y, uint8_t i, void* context);
 static turtle_step *turtle_ref_step(turtle_t *turtle, uint16_t i);
 static void turtle_reset(turtle_t *turtle);
-static void set_pixel(int x, int y, uint8_t i, void* context);
-static void draw_line(context_t *c, int x0, int y0, int x1, int y1);
-static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
-			int cx, int cy);
-static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
-			 int cx, int cy, float w);
-static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
-		       float c0x, float c0y, float c1x, float c1y);
 static void source_set_rgba(source_t *source, uint8_t r,
 			    uint8_t g, uint8_t b, uint8_t a);
 static void source_set_grad(source_t *source,
@@ -868,18 +860,6 @@ static void turtle_reset(turtle_t *turtle)
 	turtle->N = 0;
 }
 
-static void set_pixel(int x, int y, uint8_t i, void* context)
-{
-	context_t *c = context;
-	if (x >= 0 && x < c->img->width && y >= 0 && y < c->img->height) {
-		uint8_t pix[4];
-		source_get_color(c->source, x, y, pix);
-		pix[3] = (uint8_t)(255.0f * (pix[3]/255.0f) * (i/255.0f) + 0.5);
-		if (pix[3] > 0)
-			nb_image_blend_pixel_rgba(c->img, y, x, pix);
-	}
-}
-
 static void source_get_color(const source_t *source, int x, int y, 
 			     uint8_t pix[4])
 {
@@ -986,39 +966,6 @@ static void get_barycentric_coordinates(float x1, float y1, float x2, float y2,
 			lambda[0] = d3 / (d2 + d3);
 			lambda[1] = 1.0f - lambda[0];
 	} 
-}
-
-static void draw_line(context_t *c, int x0, int y0, int x1, int y1)
-{
-	nb_graphics_rasterizer_line(x0, y0, x1, y1,
-				    ANTIALIASING,
-				    set_pixel, c);
-}
-
-static void draw_qcurve(context_t *c, int x0, int y0, int x1, int y1,
-			int cx,	int cy)
-{
-	nb_graphics_rasterizer_quad_bezier(x0, y0, x1, y1, cx, cy,
-					   ANTIALIASING,
-					   set_pixel, c);
-}
-
-static void draw_qrcurve(context_t *c, int x0, int y0, int x1, int y1,
-			 int cx, int cy, float w)
-{
-	nb_graphics_rasterizer_quad_rational_bezier(x0, y0, x1, y1,
-						    cx, cy, w,
-						    ANTIALIASING,
-						    set_pixel, c);
-}
-
-static void draw_curve(context_t *c, int x0, int y0, int x1, int y1,
-		       float c0x, float c0y, float c1x, float c1y)
-{
-	nb_graphics_rasterizer_cubic_bezier(x0, y0, x1, y1,
-					    c0x, c0y, c1x, c1y,
-					    ANTIALIASING,
-					    set_pixel, c);
 }
 
 void nb_graphics_pix_set_font_type(void *ctx, const char *type)

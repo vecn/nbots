@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "nb/memory_bot.h"
+
 #include "sparse_struct.h"
 
 uint32_t nb_sparse_bsearch_row(const nb_sparse_t *const A,
@@ -18,7 +20,7 @@ uint32_t nb_sparse_bsearch_row(const nb_sparse_t *const A,
 	return index;
 }
 
-nb_sparse_t* sparse_allocate(uint32_t N)
+nb_sparse_t* nb_sparse_allocate(uint32_t N)
 {
 	nb_sparse_t* A = nb_allocate_mem(sizeof(*A));
 	A->rows_values = nb_allocate_mem(N * sizeof(*(A->rows_values)));

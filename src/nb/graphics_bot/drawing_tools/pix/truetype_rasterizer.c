@@ -9,9 +9,13 @@
 #define NB_GRAPHICS_PIX_LETTER_SPACING 0
 #define NB_GRAPHICS_PIX_LEADING 125
 
-#define STBTT_STATIC
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "tiny_libs/stb_truetype.h"
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
+    #define STBTT_STATIC
+    #define STB_TRUETYPE_IMPLEMENTATION
+    #include "imported_libs/stb_truetype.h"
+#else
+    typedef int stbtt_fontinfo;
+#endif
 
 #include "font_bitmap.h"
 
@@ -66,6 +70,7 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 					      const char *type, uint16_t size,
 					      int *w, int *h)
 {
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
 		stbtt_fontinfo *font = nb_allocate_on_stack(sizeof(stbtt_fontinfo));
@@ -76,12 +81,17 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 	} else {
 		get_size_bitmap_font(string, size, w, h);
 	}
+#else
+	*w = size * strlen(string);
+	*h = size;
+#endif
 }
 
 static void get_size_truetype_font(stbtt_fontinfo *font,
 				   const char *string, uint16_t size,
 				   int *w, int *h)
 {
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	float scale = stbtt_ScaleForPixelHeight(font, size);
 
 	*w = 0;
@@ -115,6 +125,7 @@ static void get_size_truetype_font(stbtt_fontinfo *font,
 	float leading = NB_GRAPHICS_PIX_LEADING / 100.0f;
 	int line_spaces = N_rows * ((int)(leading * size) - size);
 	*h = size * N_rows + line_spaces;
+#endif
 }
 
 static void get_size_bitmap_font(const char *string, uint16_t size,
@@ -179,13 +190,17 @@ static void bake_truetype_font(const char *ttf_memblock,
 			       uint8_t *bitmap)
 {
 	stbtt_fontinfo *font = nb_allocate_on_stack(sizeof(stbtt_fontinfo));
+
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock,0);
 	stbtt_InitFont(font, ttf_memblock, font_idx);
 	float scale = stbtt_ScaleForPixelHeight(font, size);
+#endif
 
       	int bm_w, bm_h;
 	get_size_truetype_font(font, string, size, &bm_w, &bm_h);
 
+#ifndef NB_EXCLUDE_IMPORTED_LIBS
 	int ascent;
 	stbtt_GetFontVMetrics(font, &ascent, 0, 0);
 	int baseline = (int) (scale * ascent);
@@ -227,6 +242,7 @@ static void bake_truetype_font(const char *ttf_memblock,
 		}
 		c += 1;
 	}
+#endif
 }
 
 static void bake_bitmap_font(const char *string, uint16_t size,
@@ -235,7 +251,7 @@ static void bake_bitmap_font(const char *string, uint16_t size,
 	int bm_w, bm_h;
 	get_size_bitmap_font(string, size, &bm_w, &bm_h);
 
-	char *font8x8 = (char*) font8x8_basic; 
+	char *font8x8 = (char*) nb_font8x8_basic; 
 
 	int col = 0;
 	int row = 0;

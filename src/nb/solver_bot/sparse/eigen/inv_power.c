@@ -5,9 +5,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h"
-#include "nb/solver_bot/vector.h"
-#include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/eigen/inv_power.h"
+#include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
 

@@ -7,6 +7,7 @@
 #include "nb/memory_bot.h"
 #include "nb/graph_bot/graph.h"
 #include "nb/graph_bot/labeling/amd.h"
+#include "nb/graph_bot/labeling/nested_dissection.h"
 
 
 static void allocate_and_copy_graph(nb_graph_t *graph,

@@ -7,8 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/solvers/cg_precond_fsai.h"
+#include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
 
@@ -31,8 +30,8 @@ int nb_sparse_solve_CG_precond_fsai
 	double *D = nb_allocate_zero_mem(A->N * sizeof(double));
 	double *siD = nb_allocate_zero_mem(A->N * sizeof(double));
 
-	nb_sparse_t* G  = sparse_allocate(A->N);
-	nb_sparse_t* Gt = sparse_allocate(A->N);
+	nb_sparse_t* G  = nb_sparse_allocate(A->N);
+	nb_sparse_t* Gt = nb_sparse_allocate(A->N);
 	/* Generate D diagonal matrix as
 	 *           
 	 *     Dii = |Aii|,   if |Aii| > 0

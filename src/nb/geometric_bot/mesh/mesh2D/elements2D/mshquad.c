@@ -7,12 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/tessellator2D.h"
-#include "nb/geometric_bot/mesh/modules2D/graph_generator.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshquad.h"
+#include "nb/geometric_bot.h"
 
 #include "mshquad_struct.h"
 #include "../../tessellator2D_structs.h"
@@ -509,7 +504,6 @@ double nb_mshquad_elem_face_get_normal(const void *msh, uint32_t elem_id,
 double nb_mshquad_elem_ngb_get_normal(const void *msh, uint32_t elem_id,
 				      uint16_t ngb_id, double normal[2])
 {
-	const nb_mshquad_t *mshquad = msh;
 	uint32_t N_elems = nb_mshquad_get_N_elems(msh);
 	uint32_t nid = nb_mshquad_elem_get_ngb(msh, elem_id, ngb_id);
 	memset(normal, 0, 2 * sizeof(double));
@@ -648,7 +642,6 @@ static void set_quad_quality_as_weights(const nb_tessellator2D_t *const mesh,
 	nb_iterator_t *iter = nb_allocate_on_stack(iter_size);
 	nb_iterator_init(iter);
 	nb_iterator_set_container(iter, mesh->ht_trg);
-	uint32_t elem_id = 0;
 	while (nb_iterator_has_more(iter)) {
 		const msh_trg_t* trg = nb_iterator_get_next(iter);
 		uint32_t id = trg->id;

@@ -144,7 +144,6 @@ static void init_containers_trg_x_vol(nb_container_t **all_trg_x_vol,
 	nb_graph_init(trg_x_vtx);
 	nb_mesh2D_load_graph(intmsh, trg_x_vtx, NB_ELEMS_CONNECTED_TO_NODES);
 
-	uint32_t N = 0;
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	char *block = ((char*) all_trg_x_vol) + N_elems * sizeof(void*);
 	uint32_t cnt_size = nb_container_get_memsize(cnt_type);

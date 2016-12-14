@@ -12,10 +12,7 @@
 #include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/graph_bot.h"
-#include "nb/pde_bot/material.h"
-#include "nb/pde_bot/finite_element/element.h"
-#include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
-#include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
+#include "nb/pde_bot.h"
 
 #include "../utils.h"
 #include "pipeline.h"

@@ -647,6 +647,12 @@ static bool is_true_intersection(const edge_t *sgm1, const edge_t *sgm2,
 {
 	bool out = true;
 	switch (status) {
+	case NB_INTERSECTED:
+		/* Do nothing */
+		break;
+	case NB_NOT_INTERSECTED:
+		out = false;
+		break;
 	case NB_PARALLEL:
 		if (if_collinear_sgm_are_not_intersected(sgm1, sgm2))
 			out = false;
@@ -709,6 +715,9 @@ static void process_ipack(ipack_t* ipack,
 	case NB_INTERSECTED:
 		process_intersected_sgm(ipack, avl_sgm,
 					sgm_intersect, ht_vtx);
+		break;
+	case NB_NOT_INTERSECTED:
+		/* Do nothing */
 		break;
 	case NB_PARALLEL:
 		process_collinear_sgm(ipack, avl_sgm, sgm_intersect);

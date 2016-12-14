@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "nb/memory_bot.h"
 #include "nb/pde_bot/finite_element/element.h"
 
 #include "element_struct.h"

@@ -19,7 +19,7 @@
 static void get_alpha_complex(nb_tessellator2D_t *mesh, double alpha);
 static double get_minmax_radius(const nb_tessellator2D_t *mesh);
 static void get_max_length_x_trg(const nb_tessellator2D_t *mesh, double *max_t);
-static double trg_get_max_length(msh_trg_t *trg);
+static double trg_get_max_length(const msh_trg_t *trg);
 static void get_min_trg_x_vtx(const nb_tessellator2D_t *mesh, const double *max_t,
 			      msh_trg_t **min_v);
 static void verify_min_on_vtx(const double *max_t, const msh_trg_t *trg,
@@ -124,7 +124,7 @@ static void get_max_length_x_trg(const nb_tessellator2D_t *mesh, double *max_t)
 	nb_iterator_finish(iter);
 }
 
-static double trg_get_max_length(msh_trg_t *trg)
+static double trg_get_max_length(const msh_trg_t *trg)
 {
 	double l1 = POW2(trg->v1->x[0] - trg->v2->x[0]) +
 		POW2(trg->v1->x[1] - trg->v2->x[1]);
@@ -158,12 +158,12 @@ static void verify_min_on_vtx(const double *max_t, const msh_trg_t *trg,
 {
 	uint32_t tid = trg->id;
 	if (NULL == min_v[vid]) {
-		min_v[vid] = trg;
+		min_v[vid] = (msh_trg_t*) trg;
 	} else {
 		msh_trg_t *trg_check = min_v[vid];
 		uint32_t id_check = trg_check->id;
 		if (max_t[tid] < max_t[id_check])
-			min_v[vid] = trg;
+			min_v[vid] = (msh_trg_t*) trg;
 	}
 }
 

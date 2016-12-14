@@ -9,11 +9,7 @@
 #include "nb/math_bot.h"
 #include "nb/container_bot.h"
 #include "nb/solver_bot.h"
-#include "nb/geometric_bot/utils2D.h"
-#include "nb/geometric_bot/knn/bins2D.h"
-#include "nb/geometric_bot/knn/bins2D_iterator.h"
-#include "nb/geometric_bot/mesh/mesh2D.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/mshpack.h"
+#include "nb/geometric_bot.h"
 
 #include "../../tessellator2D_structs.h"
 #include "mshpack_struct.h"
@@ -145,8 +141,6 @@ void nb_mshpack_edge_get_midpoint(const void *msh,
 				  uint32_t face_id,
 				  double w, double midpoint[2])
 {
-	uint32_t elem_i = 0;/* TEMPORAL */
-	uint32_t elem_j = 0;/* TEMPORAL */
 	/*
 	double ri = nb_mshpack_elem_get_radius(msh, elem_i);
 	double rj = nb_mshpack_elem_get_radius(msh, elem_j);

@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "nb/memory_bot.h"
+
 #include "../container_struct.h"
 #include "../iterator_struct.h"
 

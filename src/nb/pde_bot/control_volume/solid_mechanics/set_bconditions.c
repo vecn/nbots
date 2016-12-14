@@ -49,8 +49,6 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 static void set_neumann(const nb_mesh2D_t *part, uint32_t elem_id, 
 			uint8_t N_dof, double* F,
 			double factor, double val[2], bool mask[2]);
-static double get_dist_elem_face(const nb_mesh2D_t *part,
-				 uint32_t elem_id, uint16_t face_id);
 static void set_neumann_vtx(const nb_mesh2D_t *part,
 			    uint32_t **elem_adj, double* F, 
 			    const nb_bcond_t *const bcond, 
@@ -268,14 +266,8 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 	double *val = nb_allocate_on_stack(N_dof * sizeof(double));
 
 	uint32_t model_id = nb_bcond_iter_get_id(iter);
-	double sgm_length = nb_mesh2D_insgm_get_length(part, model_id);
-
 	uint32_t N = nb_mesh2D_insgm_get_N_subsgm(part, model_id);
 	for (uint32_t i = 0; i < N; i++) {
-		double subsgm_length =
-			nb_mesh2D_insgm_subsgm_get_length(part, model_id, i);
-		double w = subsgm_length / sgm_length;
-
 		uint32_t elem_id = elem_adj[model_id][i];
 
 		double x_dummy[2] = {0, 0};
@@ -284,9 +276,6 @@ static void set_neumann_sgm_integrated(const nb_mesh2D_t *part,
 		bool mask[2] = {nb_bcond_iter_get_mask(iter, 0),
 				nb_bcond_iter_get_mask(iter, 1)};
 
-		uint32_t v1 = nb_mesh2D_insgm_get_node(part, model_id, i);
-		uint32_t v2 = nb_mesh2D_insgm_get_node(part, model_id,
-							  i + 1);
 		set_neumann(part, elem_id, N_dof, F, factor, val, mask);
 	}
 }
@@ -301,31 +290,6 @@ static void set_neumann(const nb_mesh2D_t *part, uint32_t elem_id,
 			F[mtx_id] += factor * val[j];
 		}
 	}
-}
-
-static double get_dist_elem_face(const nb_mesh2D_t *part,
-				 uint32_t elem_id, uint16_t face_id)
-{
-	double c[2];
-	c[0] = nb_mesh2D_elem_get_x(part, elem_id);
-	c[1] = nb_mesh2D_elem_get_x(part, elem_id);
-	
-	uint16_t N_adj = nb_mesh2D_elem_get_N_adj(part, elem_id);
-	uint32_t n1 = nb_mesh2D_elem_get_adj(part, elem_id, face_id);
-	uint32_t n2 = nb_mesh2D_elem_get_adj(part, elem_id,
-						(face_id + 1) % N_adj);
-	double s1[2];
-	s1[0] = nb_mesh2D_node_get_x(part, n1);
-	s1[1] = nb_mesh2D_node_get_y(part, n1);
-
-	double s2[2];
-	s2[0] = nb_mesh2D_node_get_x(part, n2);
-	s2[1] = nb_mesh2D_node_get_y(part, n2);
-
-	double cp[2];
-	nb_utils2D_get_closest_pnt_to_sgm(s1, s2, c, cp);
-
-	return nb_utils2D_get_dist(c, cp);
 }
 
 static void set_neumann_vtx(const nb_mesh2D_t *part,

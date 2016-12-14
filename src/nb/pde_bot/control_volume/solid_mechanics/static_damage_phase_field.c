@@ -161,10 +161,6 @@ static void subface_get_normalized_grad(uint8_t i, const double xi[2],
 static void get_normalized_point(const double x1[2], const double x2[2],
 				 const double x3[2], const double xq[2],
 				 double xi[2]);
-static void get_interpolated_point(const double x1[2], const double x2[2],
-				   const double x3[2], const double xi[2],
-				   double xq[2]);
-static double get_spline(double x);
 static double get_deriv_spline(double x);
 static double get_spline_inv(double x);
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
@@ -249,6 +245,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 nb_analysis2D_params *params2D,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
+			 double *damage,       /* Output */
 			 char *boundary_mask   /* Output */)
 {
 	int status;
@@ -1014,57 +1011,6 @@ static void get_normalized_point(const double x1[2], const double x2[2],
 
 	xi[0] = get_spline_inv(Jd[0] * b[0] + Jd[1] * b[1]);
 	xi[1] = get_spline_inv(Jd[2] * b[0] + Jd[3] * b[1]);
-}
-
-static void get_interpolated_point(const double x1[2], const double x2[2],
-				   const double x3[2], const double xi[2],
-				   double xq[2])
-{
-	double Px = get_spline(xi[0]);
-	double Py = get_spline(xi[1]);
-
-	xq[0] = (1 - Px - Py) * x1[0];
-	xq[1] = (1 - Px - Py) * x1[1];
-
-	xq[0] += Px * x2[0];
-	xq[1] += Px * x2[1];
-
-	xq[0] += Py * x3[0];
-	xq[1] += Py * x3[1];
-}
-
-static double get_spline(double x)
-{
-	double spline;
-	switch (SMOOTH) {
-	case 0:
-		spline = x;
-		break;
-	case 1:
-		spline = 3 * POW2(x) - 2 * POW3(x);
-		break;
-	case 2:
-		spline = 10 * POW3(x) - 15 * pow(x, 4) + 6 * pow(x, 5);
-		break;
-	case 3:
-		spline = 35 * pow(x, 4) - 84 * pow(x, 5) +
-			70 * pow(x, 6) - 20 * pow(x, 7);
-		break;
-	case 4:
-		spline = 126 * pow(x, 5) - 420 * pow(x, 6) +
-			540 * pow(x, 7) - 315 * pow(x, 8) + 70 * pow(x, 9);
-		break;
-	case 5:
-		spline = 462 * pow(x, 6) - 1980 * pow(x, 7) + 3465 * pow(x, 8) -
-			3080 * pow(x, 9) + 1386 * pow(x, 10) - 252 * pow(x, 11);
-		break;
-	default:
-		spline = 1716 * pow(x, 7) - 9009 * pow(x, 8) +
-			20020 * pow(x, 9) - 24024 * pow(x, 10) +
-			16380 * pow(x, 11) - 6006 * pow(x, 12) +
-			924 * pow(x, 13);
-	}
-	return spline;
 }
 
 static double get_deriv_spline(double x)

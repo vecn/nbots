@@ -8,9 +8,7 @@
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graphics_bot.h"
-
-#include "nb/geometric_bot/mesh/mesh2D/info.h"
-#include "nb/geometric_bot/mesh/mesh2D/elements2D/msh3trg.h"
+#include "nb/geometric_bot.h"
 
 typedef struct {
 	const void *msh3trg;
@@ -128,12 +126,7 @@ static void draw_sgm(const nb_msh3trg_t *msh3trg,
 }
 
 void nb_msh3trg_fill_elems(const void *msh,
-			   nb_graphics_context_t *g,
-			   const void* source_data,
-			   void (*set_source)(const void *msh,
-					      void *g,
-					      uint32_t elem_id,
-					      const void *data))
+			   nb_graphics_context_t *g)
 {
 	fill_elems(msh, g, NULL, set_source_null);
 }

@@ -315,7 +315,7 @@ static void remove_redundant_entries(nb_container_t** adj_variables,
 	nb_iterator_set_container(iter, adj_variables[p]);
 	while (nb_iterator_has_more(iter)) {
 		const int* vtx_j = nb_iterator_get_next(iter);
-		int *del = nb_container_delete(adj_variables[i], vtx_j);
+		nb_container_delete(adj_variables[i], vtx_j);
 	}
 	nb_iterator_finish(iter);
 	nb_soft_free_mem(iter_size, iter);
@@ -453,7 +453,7 @@ static void find_supervars(uint32_t p, nb_container_t *supervars,
 		uint32_t *key = (void*) (memblock + 2 * sizeof(void*));
 		*key = get_hash_key(*vtx_i, N_adj_elements, adj_elements,
 				    adj_variables);
-		var[0] = vtx_i;
+		var[0] = (int*) vtx_i;
 		var[1] = key;
 		nb_container_insert(supervars, var);
 	}
@@ -851,7 +851,7 @@ void nb_graph_labeling_mmd(const nb_graph_t *const graph,
 			uint32_t *key = (void*) (memblock + 2 * sizeof(void*));
 			*key = get_hash_key(*vtx_i, N_adj_elements, adj_elements,
 					    adj_variables);
-			var[0] = vtx_i;
+			var[0] = (int*) vtx_i;
 			var[1] = key;
 			nb_container_insert(hash_supervariables, var);
 		}
