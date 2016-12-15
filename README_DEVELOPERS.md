@@ -45,9 +45,9 @@ Since the library implementation begins in 2009, old code does not follow all th
     * Produce files with no more than 500 rows (aims a modular code).
     * Declare static those functions used just in a single file.
     * Add the prefix 'nb_' to those functions visible to every file.
-    * The directory structure of 'include', 'src' and 'utest' dirs must
-      be the same. For each header-file under 'include' dir, it must
-      exist at least one file with the same name under 'src' and 'utest'.
+    * The directory structure of 'headers', 'sources' dirs must
+      be the same. For each header-file under 'headers' dir, it must
+      exist at least one file with the same name under 'src' and 'utest/sources/nb'.
 - Error handling
     * Return an integer error code  (zero if success).
     * Use `nb_assert()` for check developer exclusive errors.
@@ -75,11 +75,23 @@ The `create()`, `destroy()` and `clone()` functions can be built upon these stan
 
 ## Building the library
 
-To build the project we use **Gradle**, one of the most used building tools for big projects.
+To build the project we use **Cmake**, one of the most used building tools for
+C/C++ big projects.
 
-To build the library run `gradle assemble`.
-To build the library and execute the unit tests run `gradle build`.
-If you do not have **gradle** installed in your system, use the wrapper, `./gradlew.sh` on unix/like systems or `gradlew.bat` on windows.
+Create a **build** directory and inside the directory run
+
+```
+build$> cmake [nbots dir]
+build$> make
+```
+
+To build the library and execute the unit tests execute
+
+```
+build$> cmake [nbots dir]
+build$> make
+build$> make test
+```
 
 ## Three laws of Test Driven Development (TDD)
 1. You are not allowed to write any production code until you have first written a failing unit test.
@@ -88,7 +100,7 @@ If you do not have **gradle** installed in your system, use the wrapper, `./grad
 
 ## Final comments
 - This library has been tested on Windows, Max OS, Linux and Android.
-- We use CUNIT to perform the unit tests via Gradle.
+- We use CUNIT to perform the unit tests.
 - We will incorporate Frama-C for code analysis.
 - Please read the book 'Clean code' written by Robert Cecil Martin
   (and if possible read also 'Clean coder')
@@ -100,4 +112,4 @@ Best regards,
 
 Victor Eduardo Cardoso Nungaray.
 
-Guanajuato, Gto. Mexico, October 18, 2016.
+Guanajuato, Gto. Mexico, December, 2016.
