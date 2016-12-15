@@ -11,11 +11,14 @@ several interdependent specialized modules, which are referred as bots.
 
 ## Compilation
 
-Run the script
+Create a **build** directory and inside the directory run
 
-`./gradlew assemble`
+```
+build$> cmake [nbots dir]
+build$> make
+```
 
-Use `gradlew.bat` if you are on Windows.
+where **nbots dir** is the route to the project.
 
 ## Numerical bots
 

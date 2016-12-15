@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(NBots)
 
 # Build Library
-file(GLOB_RECURSE NB_SOURCES "src/*.c")
+file(GLOB_RECURSE NB_SOURCES "sources/*.c")
 
 set(NB_EXCLUDE_IMPORTED_LIBS false)
 if (NB_EXCLUDE_IMPORTED_LIBS)
@@ -23,7 +23,7 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-include_directories(include)
+include_directories("headers")
 
 add_library(objlib OBJECT ${NB_SOURCES})
 target_compile_options(objlib PUBLIC -std=c99 -Wall)
@@ -32,16 +32,20 @@ add_library(nbots SHARED $<TARGET_OBJECTS:objlib>)
 add_library(nbots_static STATIC $<TARGET_OBJECTS:objlib>)
 set_target_properties(nbots_static PROPERTIES OUTPUT_NAME nbots)
 
-#file(GLOB_RECURSE sources_test utest/*.c)
+# Build CUnit
+file(GLOB_RECURSE CUNIT_SOURCES "utest/sources/cunit/*.c")
 
-#file(COPY ${data} DESTINATION res)
+include_directories("utest/headers/cunit")
+add_library(cunit STATIC ${CUNIT_SOURCES})
+
+# Build Unit Tests
+include_directories("utest/headers")
+file(GLOB_RECURSE sources_utests "utest/sources/nb/*.c")
+add_executable(utests ${sources_utests} utest/cunit_register.c)
+target_compile_options(utests PUBLIC -std=c99 -Wall)
+target_link_libraries(utests cunit nbots m)
 
 #include(CTest)
+enable_testing()
 
-#install(TARGETS nbots DESTINATION /home/victor/Desktop)
-#install(DIRECTORY res DESTINATION /home/victor/Desktop)
-
-#set(CPACK_PACKAGE_NAME "nbots")
-#set(CPACK_PACKAGE_VERSION "0.3.0")
-#set(CPACK_MONOLITHIC_INSTALL 1)
-#include(CPack)
+add_test(unit_tests utests)
