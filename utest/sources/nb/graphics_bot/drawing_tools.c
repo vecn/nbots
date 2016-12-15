@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/graphics_bot/drawing_tools.h"
@@ -47,7 +47,7 @@ static int suite_clean(void)
 static void test_drawing(void)
 {
 	/* TEMPORAL FAIL */
-	nb_graphics_export("../../../test_drawing.png",
+	nb_graphics_export("./test_drawing.png",
 			   200, 180, draw_test1, NULL);
 	CU_ASSERT(true);
 }
@@ -225,7 +225,7 @@ static void draw_test1(nb_graphics_context_t *g, int w, int h,
 static void test_show_text(void)
 {
 	/* TEMPORAL FAIL */
-	nb_graphics_export("../../../test_show_text.png",
+	nb_graphics_export("./test_show_text.png",
 			   1000, 500, show_text, NULL);
 	CU_ASSERT(true);
 }
@@ -305,7 +305,7 @@ static void show_text(nb_graphics_context_t *g, int w, int h,
 static void test_show_text_tt(void)
 {
 	/* TEMPORAL FAIL */
-	nb_graphics_export("../../../test_show_text_tt.png",
+	nb_graphics_export("./test_show_text_tt.png",
 			   1000, 500, show_text_tt, NULL);
 	CU_ASSERT(true);
 }

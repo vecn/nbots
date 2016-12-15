@@ -4,13 +4,13 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
 #include "nb/geometric_bot.h"
 
-#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/tessellator2D_inputs"
+#define INPUTS_DIR "../utest/sources/nb/geometric_bot/mesh/tessellator2D_inputs"
 
 static int suite_init(void);
 static int suite_clean(void);
@@ -36,7 +36,7 @@ static double density_func(const double *const x, const void * const data);
 
 void cunit_nb_geometric_bot_tessellator2D(void)
 {
-	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/mesh2D.c",
+	CU_pSuite suite = CU_add_suite("nb/geometric_bot/mesh/tessellator2D.c",
 				       suite_init, suite_clean);
 	CU_add_test(suite, "generate_from_model() with angle constraint",
 		    test_generate_from_model_angle_constraint);

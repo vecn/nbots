@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/geometric_bot.h"

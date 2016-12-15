@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"

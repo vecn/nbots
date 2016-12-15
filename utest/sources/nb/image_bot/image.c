@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/image_bot/image.h"
 
-#define INPUTS_DIR "../../../../utest/nb/image_bot/image_inputs"
+#define INPUTS_DIR "../utest/sources/nb/image_bot/image_inputs"
 
 
 static int suite_init(void);
@@ -43,10 +43,10 @@ static void test_render_ascii(void)
 	nb_image_t *img = nb_allocate_on_stack(nb_image_get_memsize());
 	nb_image_init(img);
 	nb_image_read(img, filename);
-	nb_image_write_ascii(img, "../../../jessica030.txt", 30);
-	nb_image_write_ascii(img, "../../../jessica050.txt", 50);
-	nb_image_write_ascii(img, "../../../jessica075.txt", 75);
-	nb_image_write_ascii(img, "../../../jessica100.txt", 100);
+	nb_image_write_ascii(img, "./jessica030.txt", 30);
+	nb_image_write_ascii(img, "./jessica050.txt", 50);
+	nb_image_write_ascii(img, "./jessica075.txt", 75);
+	nb_image_write_ascii(img, "./jessica100.txt", 100);
 	nb_image_finish(img);
 	/* TEMPORAL: this test is not checked */
 	CU_ASSERT(true);

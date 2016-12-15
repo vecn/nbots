@@ -4,12 +4,12 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/geometric_bot.h"
 
-#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/modules2D/image_density_inputs"
+#define INPUTS_DIR "../utest/sources/nb/geometric_bot/mesh/modules2D/image_density_inputs"
 
 static int suite_init(void);
 static int suite_clean(void);

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
@@ -12,7 +12,7 @@
 
 #define POW2(a) ((a)*(a))
 
-#define INPUTS_DIR "../../../../utest/nb/geometric_bot/mesh/dewall_inputs"
+#define INPUTS_DIR "../utest/sources/nb/geometric_bot/mesh/dewall_inputs"
 
 static int suite_init(void);
 static int suite_clean(void);

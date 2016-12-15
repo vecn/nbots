@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
@@ -13,7 +13,7 @@
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 
-#define INPUTS_DIR "../../../../utest/nb/pde_bot/static_elasticity2D_inputs"
+#define INPUTS_DIR "../utest/sources/nb/pde_bot/static_elasticity2D_inputs"
 
 #define POW2(a) ((a)*(a))
 #define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
@@ -156,7 +156,7 @@ static double get_error_avg_pwh(const void *mesh,
 				const char *boundary_mask,
 				double error[3])
 {
-	FILE *fp = fopen("../../../stress.txt", "w");             /* TEMPORAL */
+	FILE *fp = fopen("./stress.txt", "w");             /* TEMPORAL */
 	fprintf(fp,                                               /* TEMPORAL */
 		"# Ex Ey Exy Enx Eny Etx Ety |En| |Et| Enn Ent Etn Ett E1 E2 " \
 		"Sx Sy Sxy Snx Sny Stx Sty |Sn| |St| Snn Snt Stn Stt S1 S2 " \
@@ -185,7 +185,7 @@ static double get_error_avg_pwh(const void *mesh,
 static void TEMPORAL3(const void *mesh, const double analytic_stress[3],
 		      const double *stress, uint32_t face_id)
 {
-	FILE *fp = fopen("../../../stress.txt", "a");  /* TEMPORAL */
+	FILE *fp = fopen("./stress.txt", "a");  /* TEMPORAL */
 	double nf[2];                                  /* TEMPORAL */
 	nb_mesh2D_edge_get_normal(mesh, face_id, nf);  /* TEMPORAL */
 	uint32_t id = face_id;                         /* TEMPORAL */
@@ -375,7 +375,7 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 		disp[i] = results->disp[i*2];
 
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_dx.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_dx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
 
@@ -383,7 +383,7 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 		disp[i] = results->disp[i*2+1];
 
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_dy.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_dy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 disp_nodes, true);/* TEMPORAL */
 
@@ -459,7 +459,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		vm_stress[i] = MIN(1,fabs((s[0]-stress[i*3])/CHECK_ZERO(s[0])));
 	}
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_xErr.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_xErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
@@ -471,7 +471,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		vm_stress[i] = MIN(1,fabs((s[1]-stress[i*3+1])/CHECK_ZERO(s[1])));
 	}
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_yErr.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_yErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
@@ -483,35 +483,35 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		vm_stress[i] = MIN(1,fabs((s[2]-stress[i*3+2])/CHECK_ZERO(s[2])));
 	}
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_xyErr.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_xyErr.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3];
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxx.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_Sxx.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxx.eps",
+	nb_mesh2D_export_level_sets(mesh, "./CVFA_ls_Sxx.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+1];
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_Syy.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_Syy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Syy.eps",
+	nb_mesh2D_export_level_sets(mesh, "./CVFA_ls_Syy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+2];
 
-	nb_mesh2D_export_draw(mesh, "../../../CVFA_Sxy.png", 1000, 800,
+	nb_mesh2D_export_draw(mesh, "./CVFA_Sxy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-	nb_mesh2D_export_level_sets(mesh, "../../../CVFA_ls_Sxy.eps",
+	nb_mesh2D_export_level_sets(mesh, "./CVFA_ls_Sxy.eps",
 				    1000, 800, vm_stress, 20, false);
 
 	nb_soft_free_mem(memsize, memblock);

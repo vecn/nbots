@@ -45,7 +45,7 @@ add_executable(utests ${sources_utests} utest/cunit_register.c)
 target_compile_options(utests PUBLIC -std=c99 -Wall)
 target_link_libraries(utests cunit nbots m)
 
-#include(CTest)
+# include(CTest)
 enable_testing()
 
 add_test(unit_tests utests)

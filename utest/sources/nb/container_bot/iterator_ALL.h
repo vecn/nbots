@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/container_bot/container.h"
 #include "nb/container_bot/iterator.h"

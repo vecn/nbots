@@ -1,4 +1,5 @@
 #include "cunit/CUnit.h"
+#include "cunit/Basic.h"
 #include "nbots.h"
 
 #include "nb/container_bot_utests.h"
@@ -10,10 +11,16 @@
 
 int main(int argc, char *argv[])
 {
+	CU_initialize_registry();
+
 	cunit_suites_nb_container_bot();
 	cunit_suites_nb_geometric_bot();
 	cunit_suites_nb_image_bot();
 	cunit_suites_nb_pde_bot();
 	cunit_suites_nb_graphics_bot();
-	return 0;
+	
+	CU_basic_set_mode(CU_BRM_VERBOSE);
+	CU_basic_run_tests();
+	CU_cleanup_registry();
+	return CU_get_error();
 }

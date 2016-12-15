@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include "nb/geometric_bot/utils2D.h"
 

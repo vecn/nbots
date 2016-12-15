@@ -4,13 +4,13 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <CUnit/Basic.h>
+#include "cunit/Basic.h"
 
 #include  "nb/math_bot.h"
 #include  "nb/geometric_bot/mesh/mesh2D.h"
 #include  "nb/geometric_bot/model/modules2D/verifier.h"
 
-#define INPUTS_DIR "../../../../utest/nb/geometric_bot/model/modules2D/verifier_inputs"
+#define INPUTS_DIR "../utest/sources/nb/geometric_bot/model/modules2D/verifier_inputs"
 
 static int suite_init(void);
 static int suite_clean(void);
