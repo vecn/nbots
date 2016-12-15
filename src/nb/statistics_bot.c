@@ -1,7 +1,3 @@
-/******************************************************************************
- *   Statistics Cat: Statistics utilities.                                    *
- ******************************************************************************/
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
@@ -27,7 +23,7 @@ inline uint32_t nb_statistics_lcg(uint32_t seed)
 }
 
 void nb_statistics_random_permutation(uint32_t N, void *base, 
-				       uint16_t type_size)
+				      uint16_t type_size)
 {	
 	uint32_t rseed = nb_statistics_get_seed();
 	for (uint32_t i = 0; i < N; i++) {

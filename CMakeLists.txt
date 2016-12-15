@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(NBots)
 
+# Build Library
 file(GLOB_RECURSE NB_SOURCES "src/*.c")
-#file(GLOB_RECURSE sources_test utest/*.c)
 
 set(NB_EXCLUDE_IMPORTED_LIBS false)
 if (NB_EXCLUDE_IMPORTED_LIBS)
@@ -25,12 +25,14 @@ endif()
 
 include_directories(include)
 
-add_library(nbots SHARED ${NB_SOURCES})
-target_compile_options(nbots PUBLIC -std=c99 -Wall)
-
-add_library(nbots_static STATIC ${NB_SOURCES})
-target_compile_options(nbots_static PUBLIC -std=c99 -Wall)
+add_library(objlib OBJECT ${NB_SOURCES})
+target_compile_options(objlib PUBLIC -std=c99 -Wall)
+set_property(TARGET objlib PROPERTY POSITION_INDEPENDENT_CODE 1) # -fPIC
+add_library(nbots SHARED $<TARGET_OBJECTS:objlib>)
+add_library(nbots_static STATIC $<TARGET_OBJECTS:objlib>)
 set_target_properties(nbots_static PROPERTIES OUTPUT_NAME nbots)
+
+#file(GLOB_RECURSE sources_test utest/*.c)
 
 #file(COPY ${data} DESTINATION res)
 
