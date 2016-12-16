@@ -1,8 +1,7 @@
 # System temporary files
 *~
 
-# Gradle files
-.gradle/
+# Build directories
 *build/
 
 # Object files
