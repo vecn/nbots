@@ -103,8 +103,6 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				     nb_analysis2D_t analysis2D,
 				     nb_analysis2D_params *params2D,
 				     double *displacement, /* Output */
-				     double *strain,       /* Output */
-				     char *boundary_mask,  /* Output */
 				     const nb_mesh2D_t *intmsh,
 				     const double *xc,
 				     face_t **faces,
@@ -286,14 +284,30 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	load_faces(mesh, intmsh, trg_x_vol, faces);
 
-	int status = solve_elasticity_equation(mesh, material, bcond,
-					       enable_self_weight, gravity,
-					       analysis2D, params2D,
-					       displacement, strain,
-					       boundary_mask, intmsh, xc,
-					       faces, F, K);
-	if (status != 0)
-		goto CLEAN_AND_EXIT;
+	int status = 0;
+	while (1) {
+		status = solve_elasticity_equation(mesh, material, bcond,
+						       enable_self_weight,
+						       gravity,
+						       analysis2D, params2D,
+						       displacement, intmsh,
+						       xc, faces, F, K);
+		if (status != 0)
+			goto CLEAN_AND_EXIT;
+
+		status = solve_damage_equation(mesh, material, damage_var,
+					       intmsh, xc, faces, F, K);/* AQUI VOY */
+		if (status != 0)
+			goto CLEAN_AND_EXIT;
+
+		if (/* Residual equal to zero*/1)
+			break;
+	}
+
+	compute_strain(strain, boundary_mask, faces, mesh,
+		       intmsh, xc, bcond, displacement, &glq);
+	compute_damage(damage, faces, mesh, intmsh, xc, bcond,
+		       damage_var);/* AQUI VOY */
 
 CLEAN_AND_EXIT:
 	finish_faces(N_faces, faces);
@@ -756,8 +770,6 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				     nb_analysis2D_t analysis2D,
 				     nb_analysis2D_params *params2D,
 				     double *displacement, /* Output */
-				     double *strain,       /* Output */
-				     char *boundary_mask,  /* Output */
 				     const nb_mesh2D_t *intmsh,
 				     const double *xc,
 				     face_t **faces,
@@ -780,12 +792,7 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				K, F, bcond, 1.0);
 
 	int status = solver(K, F, displacement);
-	if (0 != status)
-		goto CLEAN_AND_EXIT;
-
-	compute_strain(strain, boundary_mask, faces, mesh,
-		       intmsh, xc, bcond, displacement, &glq);
-CLEAN_AND_EXIT:
+	
 	nb_soft_free_mem(memsize, memblock);
 	return status;
 }
