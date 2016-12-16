@@ -76,4 +76,7 @@
 - (geo) Robust predicates.
   Jonathan Richard Shewchuk
   ([Web page](https://www.cs.cmu.edu/~quake/robust.html))
+- (grp) Nested Dissection.
+  George Karypis.
+  ([Web page](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview))
     
