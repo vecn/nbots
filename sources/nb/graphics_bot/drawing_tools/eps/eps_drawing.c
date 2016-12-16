@@ -23,7 +23,7 @@ void* nb_graphics_eps_create_context(int width, int height)
 	uint32_t memsize = sizeof(context_t);
 	char * memblock = nb_allocate_mem(memsize);
 	context_t *ctx = (void*) memblock;
-	ctx->fp = fopen("../../../TEMPORAL.eps", "w");
+	ctx->fp = fopen("TEMPORAL.eps", "w");
 	ctx->font = "Times-Roman";
 	ctx->font_size = 10;
 	ctx->w = width;
@@ -56,7 +56,7 @@ void nb_graphics_eps_export_context(const void *ctx, const char *filename)
 	fclose(c->fp);
 
 	/* TEMPORAL (COPY TO EXIT FILE) ****************************/
-	FILE *source = fopen("../../../TEMPORAL.eps", "r");	 /**/
+	FILE *source = fopen("TEMPORAL.eps", "r");	 /**/
 	FILE *target = fopen(filename, "w");			 /**/
 	char ch;						 /**/
 	while (( ch = fgetc(source) ) != EOF )			 /**/
