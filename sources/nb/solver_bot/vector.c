@@ -12,3 +12,10 @@ double nb_vector_get_norm(const double* x, uint32_t N)
 		n += POW2(x[i]);
 	return sqrt(n);
 }
+
+void nb_vector_permutation(uint32_t N, const double *v,
+			   const uint32_t *perm, double *vp)
+{
+	for (uint32_t i = 0; i < N; i++)
+		vp[i] = v[perm[i]];
+}

@@ -22,26 +22,12 @@
 #define POW2(a) ((a)*(a))
 #define POW3(a) ((a)*(a)*(a))
 
-static void assemble_global_forces(double *F,
-				   const nb_mesh2D_t *const mesh,
-				   const nb_material_t *material,
-				   bool enable_self_weight,
-				   double gravity[2]);
 static void integrate_elem_force(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 bool enable_self_weight,
 				 double gravity[2],
 				 uint32_t elem_id,
 				 double *F);
-static void assemble_global_stiffness(nb_sparse_t *K,
-				      const nb_mesh2D_t *const mesh,
-				      int smooth,
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc, face_t **faces,
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      const nb_glquadrature_t *glq);
 static void assemble_face(nb_sparse_t *K,
 			  const nb_mesh2D_t *const mesh,
 			  int smooth,
@@ -122,12 +108,6 @@ static void face_get_grad_pairwise(int smooth,
 				   double grad[2], const double x[2]);
 static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
 				 nb_sparse_t *K);
-static int solver(const nb_sparse_t *const A,
-		  const double *const b, double* x);
-static void get_permutation(const nb_sparse_t *const A,
-			    uint32_t *perm, uint32_t *iperm);
-static void vector_permutation(uint32_t N, const double *v,
-			       const uint32_t *perm, double *vp);
 static void get_face_strain(face_t **faces, uint32_t face_id,
 			    const nb_mesh2D_t *const mesh,
 			    int smooth,
@@ -165,39 +145,11 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_bcond_t *bcond,
 				     const double *disp, double *strain);
 
-int nb_cvfa_solve_elasticity_equation(const nb_mesh2D_t *mesh,
-				      const nb_material_t *material,
-				      const nb_bcond_t *bcond,
-				      int smooth,
-				      bool enable_self_weight,
-				      double gravity[2],
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      double *displacement, /* Output */
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc,
-				      face_t **faces,
-				      double *F, nb_sparse_t *K,
-				      nb_glquadrature_t *glq)
-{
-	assemble_global_forces(F, mesh, material, enable_self_weight,
-			       gravity);
-
-	assemble_global_stiffness(K, mesh, smooth, intmsh, xc, faces, material,
-				  analysis2D, params2D, glq);
-	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
-				K, F, bcond, 1.0);
-
-	int status = solver(K, F, displacement);
-
-	return status;
-}
-
-static void assemble_global_forces(double *F,
-				   const nb_mesh2D_t *const mesh,
-				   const nb_material_t *material,
-				   bool enable_self_weight,
-				   double gravity[2])
+void nb_cvfa_assemble_global_forces(double *F,
+				    const nb_mesh2D_t *const mesh,
+				    const nb_material_t *material,
+				    bool enable_self_weight,
+				    double gravity[2])
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	memset(F, 0, N_elems * 2 * sizeof(*F));
@@ -222,15 +174,15 @@ static void integrate_elem_force(const nb_mesh2D_t *mesh,
 	}
 }
 
-static void assemble_global_stiffness(nb_sparse_t *K,
-				      const nb_mesh2D_t *const mesh,
-				      int smooth,
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc, face_t **faces,
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      const nb_glquadrature_t *glq)
+void nb_cvfa_assemble_global_stiffness(nb_sparse_t *K,
+				       const nb_mesh2D_t *const mesh,
+				       int smooth,
+				       const nb_mesh2D_t *intmsh,
+				       const double *xc, face_t **faces,
+				       const nb_material_t *material,
+				       nb_analysis2D_t analysis2D,
+				       nb_analysis2D_params *params2D,
+				       const nb_glquadrature_t *glq)
 {
 	nb_sparse_reset(K);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
@@ -633,52 +585,6 @@ static void add_Kf_to_K_pairwise(face_t *face, const double Kf[8],
 		nb_sparse_add(K, j*2+1, k * 2, Kf[4 + m * 2]);
 		nb_sparse_add(K, j*2+1, k*2+1, Kf[4 + m*2+1]);
 	}
-}
-
-static int solver(const nb_sparse_t *const A,
-		  const double *const b, double* x)
-{
-	uint32_t N = nb_sparse_get_size(A);
-	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
-	char *memblock = nb_soft_allocate_mem(memsize);
-	uint32_t *perm = (void*) memblock;
-	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
-	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
-	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
-			      N * sizeof(double));
-
-	get_permutation(A, perm, iperm);
-
-	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
-	vector_permutation(N, b, perm, br);
-
-	int status = nb_sparse_solve_using_LU(Ar, br, xr, 1);
-
-	vector_permutation(N, xr, iperm, x);
-	
-	nb_sparse_destroy(Ar);
-	nb_soft_free_mem(memsize, memblock);
-	return status;
-}
-
-static void get_permutation(const nb_sparse_t *const A,
-			    uint32_t *perm, uint32_t *iperm)
-{
-	uint16_t memsize = nb_graph_get_memsize();
-	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
-	nb_graph_init(graph);
-	nb_sparse_get_graph(A, graph);
-	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
-	nb_graph_finish(graph);
-
-	nb_soft_free_mem(memsize, graph);
-}
-
-static void vector_permutation(uint32_t N, const double *v,
-			       const uint32_t *perm, double *vp)
-{
-	for (uint32_t i = 0; i < N; i++)
-		vp[i] = v[perm[i]];
 }
 
 void nb_cvfa_compute_strain(double *strain, char *boundary_mask,

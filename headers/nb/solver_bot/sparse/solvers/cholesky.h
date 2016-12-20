@@ -31,5 +31,9 @@ int nb_sparse_solve_Cholesky(const nb_sparse_t *const A,
 			      double* x,  /* Out */
 			      uint32_t omp_parallel_threads);
 
+int nb_sparse_relabel_and_solve_Cholesky(const nb_sparse_t *const A,
+					 const double *const b,
+					 double* x,  /* Out */
+					 uint32_t omp_parallel_threads);
 
 #endif

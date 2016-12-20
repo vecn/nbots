@@ -7,6 +7,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
+#include "nb/graph_bot.h"
 #include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
@@ -25,7 +26,8 @@ int nb_sparse_alloc_LU(const nb_sparse_t *const restrict A,
 
 void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 			     nb_sparse_t *L, nb_sparse_t* U,
-			     uint32_t omp_parallel_threads){
+			     uint32_t omp_parallel_threads)
+{
 
 	/* Create Ut to compute faster the decomposition */
 	nb_sparse_t* Ut = nb_sparse_clone(L);
@@ -122,4 +124,33 @@ int nb_sparse_solve_using_LU(const nb_sparse_t *const A,
 	nb_sparse_destroy(U);
 
 	return 0;
+}
+
+int nb_sparse_relabel_and_solve_using_LU(const nb_sparse_t *const A,
+					 const double *const b,
+					 double* x,  /* Out */
+					 uint32_t omp_parallel_threads)
+{
+	uint32_t N = nb_sparse_get_size(A);
+	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
+	char *memblock = nb_soft_allocate_mem(memsize);
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
+	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+			      N * sizeof(double));
+
+	nb_sparse_calculate_permutation(A, perm, iperm);
+
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
+	nb_vector_permutation(N, b, perm, br);
+
+	int status = nb_sparse_solve_using_LU(Ar, br, xr,
+					      omp_parallel_threads);
+
+	nb_vector_permutation(N, xr, iperm, x);
+	
+	nb_sparse_destroy(Ar);
+	nb_soft_free_mem(memsize, memblock);
+	return status;
 }
