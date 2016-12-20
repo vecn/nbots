@@ -48,8 +48,9 @@ struct subface_s {
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   uint32_t N_faces, double **xc, double **F,
+				   double **nodal_damage,
 				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
-				   face_t ***faces);
+				   face_t ***faces, nb_glquadrature_t *glq);
 static void init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 			       const nb_mesh2D_t *intmsh);
 static void load_faces(const nb_mesh2D_t *mesh,
@@ -106,7 +107,8 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				     const nb_mesh2D_t *intmsh,
 				     const double *xc,
 				     face_t **faces,
-				     double *F, nb_sparse_t *K);
+				     double *F, nb_sparse_t *K,
+				     nb_glquadrature_t *glq);
 static void assemble_global_forces(double *F,
 				   const nb_mesh2D_t *const mesh,
 				   const nb_material_t *material,
@@ -207,6 +209,14 @@ static void get_permutation(const nb_sparse_t *const A,
 			    uint32_t *perm, uint32_t *iperm);
 static void vector_permutation(uint32_t N, const double *v,
 			       const uint32_t *perm, double *vp);
+static int solve_damage_equation(const nb_mesh2D_t *mesh,
+				 const nb_material_t *material,
+				 double *nodal_damage, /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces,
+				 double *H, nb_sparse_t *D,
+				 nb_glquadrature_t *glq);
 static void compute_strain(double *strain, char *boundary_mask,
 			   face_t **faces,
 			   const nb_mesh2D_t *const mesh,
@@ -246,6 +256,12 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_mesh2D_t *const mesh,
 				     const nb_bcond_t *bcond,
 				     const double *disp, double *strain);
+static void compute_damage(double *damage, face_t **faces,
+			   const nb_mesh2D_t *const mesh,
+			   const nb_mesh2D_t *intmsh, const double *xc,
+			   const double *nodal_damage,
+			   const double *disp,
+			   const nb_glquadrature_t *glq);
 static void finish_faces(uint32_t N_faces, face_t **faces);
 
 int nb_cvfa_compute_2D_damage_phase_field
@@ -265,12 +281,17 @@ int nb_cvfa_compute_2D_damage_phase_field
 	uint32_t memsize = get_cvfa_memsize(N_elems, N_faces);
 	char *memblock = nb_soft_allocate_mem(memsize);
 	double *xc;
-	double *F;
+	double *rhs;
+	double *nodal_damage;
 	nb_mesh2D_t *intmsh;
 	nb_graph_t *trg_x_vol;
 	face_t **faces;
-	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &F,
-			       &intmsh, &trg_x_vol, &faces);
+	nb_glquadrature_t glq;
+	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &rhs,
+			       &nodal_damage, &intmsh, &trg_x_vol,
+			       &faces, &glq);
+
+	nb_glquadrature_load(&glq, SMOOTH + 1);
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
@@ -279,24 +300,24 @@ int nb_cvfa_compute_2D_damage_phase_field
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,
 						    trg_x_vol);
-  	nb_sparse_t *K;
-	init_global_matrix(&K, trg_x_vol, intmsh);
+  	nb_sparse_t *A;
+	init_global_matrix(&A, trg_x_vol, intmsh);
 
 	load_faces(mesh, intmsh, trg_x_vol, faces);
 
 	int status = 0;
 	while (1) {
 		status = solve_elasticity_equation(mesh, material, bcond,
-						       enable_self_weight,
-						       gravity,
-						       analysis2D, params2D,
-						       displacement, intmsh,
-						       xc, faces, F, K);
+						   enable_self_weight,
+						   gravity,
+						   analysis2D, params2D,
+						   displacement, intmsh,
+						   xc, faces, rhs, A, &glq);
 		if (status != 0)
 			goto CLEAN_AND_EXIT;
 
-		status = solve_damage_equation(mesh, material, damage_var,
-					       intmsh, xc, faces, F, K);/* AQUI VOY */
+		status = solve_damage_equation(mesh, material, nodal_damage,
+					       intmsh, xc, faces, rhs, A, &glq);
 		if (status != 0)
 			goto CLEAN_AND_EXIT;
 
@@ -306,12 +327,12 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	compute_strain(strain, boundary_mask, faces, mesh,
 		       intmsh, xc, bcond, displacement, &glq);
-	compute_damage(damage, faces, mesh, intmsh, xc, bcond,
-		       damage_var);/* AQUI VOY */
+	compute_damage(damage, faces, mesh, intmsh, xc,
+		       nodal_damage, displacement, &glq);
 
 CLEAN_AND_EXIT:
 	finish_faces(N_faces, faces);
-	nb_sparse_destroy(K);
+	nb_sparse_destroy(A);
 	nb_graph_finish(trg_x_vol);
 	nb_mesh2D_finish(intmsh);
 	nb_soft_free_mem(memsize, memblock);
@@ -320,29 +341,41 @@ CLEAN_AND_EXIT:
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces)
 {
-	uint32_t system_size = 4 * N_elems * sizeof(double);
+	uint32_t system_size = 5 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
+	uint16_t Nq = SMOOTH + 1;
+	uint32_t glq_size = 2 * Nq * sizeof(double);
 	uint32_t faces_size = N_faces * (sizeof(void*) + sizeof(face_t));
-	return graph_size + system_size + intmsh_size + faces_size;
+	return graph_size + system_size + intmsh_size + faces_size + glq_size;
 }
 
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
-				   uint32_t N_faces, double **xc, double **F,
+				   uint32_t N_faces, double **xc, double **rhs,
+				   double **nodal_damage,
 				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
-				   face_t ***faces)
+				   face_t ***faces, nb_glquadrature_t *glq)
 {
-	uint32_t system_size = 2 * N_elems * sizeof(double);
+	uint32_t elem_size = N_elems * sizeof(double);
+	uint32_t system_size = 2 * elem_size;
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
-	*F = (void*) memblock;
+	uint16_t Nq = SMOOTH + 1;
+	uint32_t glq_size = 2 * Nq * sizeof(double);
+	*rhs = (void*) memblock;
 	*xc = (void*) (memblock + system_size);
-	*intmsh = (void*) (memblock + 2 * system_size);
-	*trg_x_vol = (void*) (memblock + 2 * system_size + intmsh_size);
-	*faces = (void*) (memblock + 2 * system_size +
+	*nodal_damage = (void*) (memblock + 2 * system_size);
+	*intmsh = (void*) (memblock + 2 * system_size + elem_size);
+	*trg_x_vol = (void*) (memblock + 2 * system_size +
+			      elem_size + intmsh_size);
+	glq->x = (void*) (memblock + 2 * system_size + elem_size +
 			  intmsh_size + graph_size);
-	memblock +=  2 * system_size + intmsh_size + graph_size +
-		N_faces * sizeof(void*);
+	glq->w = (void*) (memblock + 2 * system_size + elem_size +
+			  intmsh_size + graph_size + Nq * sizeof(double));
+	*faces = (void*) (memblock + 2 * system_size + elem_size +
+			  intmsh_size + graph_size + glq_size);
+	memblock +=  2 * system_size + elem_size + intmsh_size + graph_size +
+		glq_size + N_faces * sizeof(void*);
 	for (uint32_t i = 0; i < N_faces; i++) {
 		(*faces)[i] = (void*) (memblock + i * sizeof(face_t));
 		memset((*faces)[i], 0, sizeof(face_t));
@@ -773,16 +806,9 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				     const nb_mesh2D_t *intmsh,
 				     const double *xc,
 				     face_t **faces,
-				     double *F, nb_sparse_t *K)
+				     double *F, nb_sparse_t *K,
+				     nb_glquadrature_t *glq)
 {
-	nb_glquadrature_t glq;
-	uint16_t Nq = SMOOTH + 1;
-	uint32_t memsize = 2 * Nq * sizeof(double);
-	char *memblock = nb_soft_allocate_mem(memsize);
-	glq.x = (void*) (memblock);
-	glq.w = (void*) (memblock + Nq * sizeof(double));
-	nb_glquadrature_load(&glq, SMOOTH + 1);
-
 	assemble_global_forces(F, mesh, material, enable_self_weight,
 			       gravity);
 
@@ -792,8 +818,7 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 				K, F, bcond, 1.0);
 
 	int status = solver(K, F, displacement);
-	
-	nb_soft_free_mem(memsize, memblock);
+
 	return status;
 }
 
@@ -1294,6 +1319,18 @@ static void vector_permutation(uint32_t N, const double *v,
 		vp[i] = v[perm[i]];
 }
 
+static int solve_damage_equation(const nb_mesh2D_t *mesh,
+				 const nb_material_t *material,
+				 double *nodal_damage, /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces,
+				 double *H, nb_sparse_t *D,
+				 nb_glquadrature_t *glq)
+{
+	return 0;/* TEMPORAL */
+}
+
 static void compute_strain(double *strain, char *boundary_mask,
 			   face_t **faces,
 			   const nb_mesh2D_t *const mesh,
@@ -1453,6 +1490,16 @@ static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const double *disp, double *strain)
 {
 	memset(&(strain[face_id * 3]), 0, 3 * sizeof(*strain));
+}
+
+static void compute_damage(double *damage, face_t **faces,
+			   const nb_mesh2D_t *const mesh,
+			   const nb_mesh2D_t *intmsh, const double *xc,
+			   const double *nodal_damage,
+			   const double *disp,
+			   const nb_glquadrature_t *glq)
+{
+	/* TEMPORAL */
 }
 
 static void finish_faces(uint32_t N_faces, face_t **faces)
