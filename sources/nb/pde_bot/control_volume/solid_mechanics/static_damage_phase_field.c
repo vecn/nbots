@@ -813,7 +813,7 @@ static int solve_elasticity_equation(const nb_mesh2D_t *mesh,
 			       gravity);
 
 	assemble_global_stiffness(K, mesh, intmsh, xc, faces, material,
-				  analysis2D, params2D, &glq);
+				  analysis2D, params2D, glq);
 	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 				K, F, bcond, 1.0);
 
