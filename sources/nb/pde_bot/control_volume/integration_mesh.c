@@ -494,3 +494,21 @@ static void adj_graph_set_adj(nb_graph_t *graph,
 	nb_membank_finish(membank);
 	nb_soft_free_mem(memsize, memblock);
 }
+
+void nb_cvfa_load_trg_points(const nb_mesh2D_t *intmsh,
+			     uint32_t trg_id, double t1[2],
+			     double t2[2], double t3[2])
+{
+	uint32_t id1 = nb_mesh2D_elem_get_adj(intmsh, trg_id, 0);
+	uint32_t id2 = nb_mesh2D_elem_get_adj(intmsh, trg_id, 1);
+	uint32_t id3 = nb_mesh2D_elem_get_adj(intmsh, trg_id, 2);
+
+	t1[0] = nb_mesh2D_node_get_x(intmsh, id1);
+	t1[1] = nb_mesh2D_node_get_y(intmsh, id1);
+
+	t2[0] = nb_mesh2D_node_get_x(intmsh, id2);
+	t2[1] = nb_mesh2D_node_get_y(intmsh, id2);
+
+	t3[0] = nb_mesh2D_node_get_x(intmsh, id3);
+	t3[1] = nb_mesh2D_node_get_y(intmsh, id3);
+}
