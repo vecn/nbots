@@ -565,7 +565,7 @@ CU_EXPORT char * CU_get_run_results_string(void)
 {
   CU_pRunSummary pRunSummary = &f_run_summary;
   CU_pTestRegistry pRegistry = CU_get_registry();
-  size_t width[9];
+  int width[9];
   size_t len;
   char *result;
 

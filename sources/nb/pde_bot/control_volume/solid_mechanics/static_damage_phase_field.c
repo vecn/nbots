@@ -21,12 +21,28 @@
 
 #define SMOOTH 2
 
+typedef struct {
+	const double *displacement;
+	const nb_mesh2D_t *intmsh;
+	const int smooth;
+} eval_damage_data_t;
+
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   uint32_t N_faces, double **xc, double **F,
 				   double **nodal_damage,
 				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
 				   face_t ***faces, nb_glquadrature_t *glq);
+static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
+			  const nb_mesh2D_t *intmsh,
+			  const double *displacement);
+static double get_damage(const face_t *face, uint16_t subface_id,
+			 uint8_t gp, const nb_glquadrature_t *glq,
+			 const void *data);
+static void get_stress(const nb_material_t *material,
+		       nb_analysis2D_t analysis2D,
+		       const double strain[3],
+		       double stress[3]);
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 double *nodal_damage, /* Output */
@@ -41,6 +57,7 @@ static void compute_damage(double *damage, face_t **faces,
 			   const double *nodal_damage,
 			   const double *disp,
 			   const nb_glquadrature_t *glq);
+static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg);
 
 int nb_cvfa_compute_2D_damage_phase_field
 			(const nb_mesh2D_t *const mesh,
@@ -83,6 +100,9 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	nb_cvfa_load_faces(mesh, intmsh, trg_x_vol, faces);
 
+	nb_cvfa_eval_damage_t eval_dmg;
+	init_eval_dmg(&eval_dmg, SMOOTH, intmsh, displacement);
+
 	nb_cvfa_assemble_global_forces(rhs, mesh, material, enable_self_weight,
 				       gravity);
 
@@ -90,7 +110,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	while (1) {
 		nb_cvfa_assemble_global_stiffness(A, mesh, SMOOTH, intmsh, xc,
 						  faces, material, analysis2D,
-						  params2D, &glq);/* AQUI VOY */
+						  params2D, &glq, &eval_dmg);
 		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 					A, rhs, bcond, 1.0);
 		
@@ -101,7 +121,8 @@ int nb_cvfa_compute_2D_damage_phase_field
 			goto CLEAN_AND_EXIT;
 
 		status = solve_damage_equation(mesh, material, nodal_damage,
-					       intmsh, xc, faces, rhs, A, &glq);
+					       intmsh, xc, faces,
+					       rhs, A, &glq);
 		if (status != 0)
 			goto CLEAN_AND_EXIT;
 
@@ -119,6 +140,7 @@ CLEAN_AND_EXIT:
 	nb_graph_finish(trg_x_vol);
 	nb_mesh2D_finish(intmsh);
 	nb_soft_free_mem(memsize, memblock);
+	finish_eval_dmg(&eval_dmg);
 	return status;
 }
 
@@ -165,6 +187,46 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 	}
 }
 
+static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
+			  const nb_mesh2D_t *intmsh,
+			  const double *displacement)
+{
+	eval_damage_data_t *data = nb_allocate_mem(sizeof(*data));
+	data->displacement = displacement;
+	data->intmsh = intmsh;
+	eval_dmg->data = data;
+	eval_dmg->get_damage = get_damage;
+}
+
+static double get_damage(const face_t *face, uint16_t subface_id,
+			 uint8_t gp, const nb_glquadrature_t *glq,
+			 const void *data)
+{
+	
+	double strain[3];
+	memset(strain, 0, 3 * sizeof(*strain));
+	nb_cvfa_subface_sum_strain(smooth, intmsh, face, subface, xc,
+				   disp, glq, gq, strain);
+	double stress[3];
+	get_stress(material, analysis2D, strain, stress);
+
+	double vm_stress = nb_pde_get_vm_stress(stress[0], stress[1], stress[2]);
+	return (vm_stress>1)?1:vm_stress;
+}
+
+static void get_stress(const nb_material_t *material,
+		       nb_analysis2D_t analysis2D,
+		       const double strain[3],
+		       double stress[3])
+{
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+	
+	stress[0] = (strain[0] * D[0] + strain[1] * D[1]);
+	stress[1] = (strain[0] * D[1] + strain[1] * D[2]);
+	stress[2] =  strain[2] * D[3];
+}
+
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 double *nodal_damage, /* Output */
@@ -185,4 +247,9 @@ static void compute_damage(double *damage, face_t **faces,
 			   const nb_glquadrature_t *glq)
 {
 	/* TEMPORAL */
+}
+
+static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg)
+{
+	nb_free_mem(eval_dmg->data);
 }
