@@ -37,12 +37,12 @@
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 2						#
+ 3						#
  0 1 1 0.0 0.0                                  #
  5 0 1 0.0                                      #
-# Num of load conditions over vertices:		#
- 1						#
  7 0 1 -1e-3                                    #
+# Num of load conditions over vertices:		#
+ 0                                              #
 # Num of displacement conditions over lines:    #
  0						#
 # Num of load conditions over lines:            #

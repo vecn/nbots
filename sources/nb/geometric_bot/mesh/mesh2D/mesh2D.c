@@ -152,6 +152,8 @@ static void set_msh3trg_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_msh3trg_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_msh3trg_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_msh3trg_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_msh3trg_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_msh3trg_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_msh3trg_draw_level_set;
 }
 
@@ -216,6 +218,8 @@ static void set_mshquad_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshquad_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshquad_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshquad_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshquad_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshquad_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshquad_draw_level_set;
 }
 
@@ -280,6 +284,8 @@ static void set_mshpoly_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshpoly_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshpoly_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshpoly_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshpoly_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshpoly_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshpoly_draw_level_set;
 }
 
@@ -344,6 +350,8 @@ static void set_mshpack_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshpack_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshpack_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshpack_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshpack_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshpack_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshpack_draw_level_set;
 }
 

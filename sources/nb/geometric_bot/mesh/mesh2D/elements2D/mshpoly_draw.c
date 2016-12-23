@@ -299,6 +299,61 @@ void nb_mshpoly_fill_nodes_classes(const void *msh,
 	fill_nodes(msh, g, data, set_source_classes);
 }
 
+void nb_mshpoly_draw_field_on_faces(const void *msh,
+				    nb_graphics_context_t *g,
+				    const double *normalized_field,
+				    nb_palette_preset palette)
+{
+	nb_palette_t *pal = 
+		nb_palette_create_preset(palette);
+	uint8_t c[4];
+
+	uint32_t N_edg = nb_mshpoly_get_N_edges(msh);
+	for (uint32_t i = 0; i < N_edg; i++) {
+		nb_palette_get_rgba(pal, normalized_field[i], c);
+		nb_graphics_set_source_rgba(g, c[0], c[1], c[2], c[3]);
+
+		uint32_t n1 = nb_mshpoly_edge_get_1n(msh, i);
+		uint32_t n2 = nb_mshpoly_edge_get_2n(msh, i);
+
+		double x = nb_mshpoly_node_get_x(msh, n1);
+		double y = nb_mshpoly_node_get_y(msh, n1);
+		nb_graphics_move_to(g, x, y);
+
+		x = nb_mshpoly_node_get_x(msh, n2);
+		y = nb_mshpoly_node_get_y(msh, n2);
+		nb_graphics_line_to(g, x, y);
+
+		nb_graphics_stroke(g);
+	}
+	nb_palette_destroy(pal);
+}
+
+void nb_mshpoly_draw_classes_on_faces(const void *msh,
+				      nb_graphics_context_t *g,
+				      const uint8_t *class, uint8_t N_colors,
+				      const nb_graphics_color_t *colors)
+{
+	uint32_t N_edg = nb_mshpoly_get_N_edges(msh);
+	for (uint32_t i = 0; i < N_edg; i++) {
+		int kcolor = class[i] % N_colors;
+		nb_graphics_set_source(g, colors[kcolor]);
+
+		uint32_t n1 = nb_mshpoly_edge_get_1n(msh, i);
+		uint32_t n2 = nb_mshpoly_edge_get_2n(msh, i);
+
+		double x = nb_mshpoly_node_get_x(msh, n1);
+		double y = nb_mshpoly_node_get_y(msh, n1);
+		nb_graphics_move_to(g, x, y);
+
+		x = nb_mshpoly_node_get_x(msh, n2);
+		y = nb_mshpoly_node_get_y(msh, n2);
+		nb_graphics_line_to(g, x, y);
+
+		nb_graphics_stroke(g);
+	}
+}
+
 void nb_mshpoly_draw_level_set(const void *msh,
 			       nb_graphics_context_t *g,
 			       const double *field_on_nodes,

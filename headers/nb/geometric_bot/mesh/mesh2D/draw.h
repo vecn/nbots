@@ -42,6 +42,14 @@ void nb_mesh2D_fill_nodes_classes(const nb_mesh2D_t *mesh,
 				  nb_graphics_context_t *g,
 				  const uint8_t *class, uint8_t N_colors,
 				  const nb_graphics_color_t *colors);
+void nb_mesh2D_draw_field_on_faces(const nb_mesh2D_t *mesh,
+				   nb_graphics_context_t *g,
+				   const double *normalized_field,
+				   nb_palette_preset palette);
+void nb_mesh2D_draw_classes_on_faces(const nb_mesh2D_t *mesh,
+				     nb_graphics_context_t *g,
+				     const uint8_t *class, uint8_t N_colors,
+				     const nb_graphics_color_t *colors);
 void nb_mesh2D_draw_level_set(const nb_mesh2D_t *mesh,
 			      nb_graphics_context_t *g,
 			      const double *field_on_nodes,

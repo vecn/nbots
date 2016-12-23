@@ -267,13 +267,13 @@ static void integrate_subface_simplexwise(nb_sparse_t *K,
 	if (NULL != eval_dmg)
 		damage = eval_dmg->get_damage(face, subface_id,
 					      q, glq, eval_dmg->data);
-	if (damage > 0.0) {
+	if (damage < 1.0) {
 		double Kf[12];
 		integrate_Kf(mesh, smooth, intmsh, face, subface_id, D,
 			     params2D, Kf, glq, q);
 
-		for (uint8_t i = 0; i < 12; i++)
-			Kf[i] *= (1 - damage);
+		if (damage > 0.0)
+			nb_vector_scale(12, Kf, 1.0 - damage);
 
 		add_Kf_to_K(face, intmsh, subface_id, Kf, K);
 	}
@@ -534,13 +534,12 @@ static void integrate_subface_pairwise(nb_sparse_t *K,
 	if (NULL != eval_dmg)
 		damage = eval_dmg->get_damage(face, subface_id,
 					      q, glq, eval_dmg->data);
-	if (damage > 0.0) {
+	if (damage < 1.0) {
 		double Kf[8];
 		integrate_Kf_pairwise(mesh, smooth, xc, face, subface_id, D,
 				      params2D, Kf, glq, q);
-
-		for (uint8_t i = 0; i < 8; i++)
-			Kf[i] *= (1 - damage);
+		if (damage > 0.0)
+			nb_vector_scale(8, Kf, 1.0 - damage);
 
 		add_Kf_to_K_pairwise(face, Kf, K);
 	}

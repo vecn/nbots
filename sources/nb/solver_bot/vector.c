@@ -19,3 +19,27 @@ void nb_vector_permutation(uint32_t N, const double *v,
 	for (uint32_t i = 0; i < N; i++)
 		vp[i] = v[perm[i]];
 }
+
+void nb_vector_sum(uint32_t N, double *a, const double *b)
+{
+	for (uint32_t i = 0; i < N; i++)
+		a[i] += b[i];
+}
+
+void nb_vector_substract(uint32_t N, double *a, const double *b)
+{
+	for (uint32_t i = 0; i < N; i++)
+		a[i] -= b[i];
+}
+
+void nb_vector_substract_to(uint32_t N, double *a, const double *b)
+{
+	for (uint32_t i = 0; i < N; i++)
+		a[i] = b[i] - a[i];
+}
+
+void nb_vector_scale(uint32_t N, double *a, double factor)
+{
+	for (uint32_t i = 0; i < N; i++)
+		a[i] *= factor;
+}

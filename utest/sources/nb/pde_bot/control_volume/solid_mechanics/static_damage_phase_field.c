@@ -106,7 +106,7 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.5);
+	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 20.0);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
@@ -134,8 +134,8 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint16_t));
 	char *memblock = nb_soft_allocate_mem(memsize);
 	double *stress = (void*) memblock;
-	double *vm_stress = (void*) (memblock + N_nodes* 3 * sizeof(double));
-	uint16_t *counter = (void*) (memblock + N_nodes* 4 * sizeof(double));
+	double *vm_stress = (void*) (memblock + N_nodes * 3 * sizeof(double));
+	uint16_t *counter = (void*) (memblock + N_nodes * 4 * sizeof(double));
 
 	memset(stress, 0, 3 * N_nodes * sizeof(*stress));
 	memset(counter, 0, N_nodes * sizeof(*counter));
@@ -194,7 +194,7 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
-			      NB_NODE, NB_FIELD,
+			      NB_FACE, NB_FIELD,
 			      results->damage, true);/* TEMPORAL */
 
 	nb_soft_free_mem(memsize, memblock);

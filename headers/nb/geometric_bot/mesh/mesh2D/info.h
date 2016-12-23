@@ -2,9 +2,10 @@
 #define __NB_GEOMETRIC_BOT_MESH_MESH2D_INFO_H__
 
 typedef enum {
+	NB_ENTITY_DEFAULT,
 	NB_ELEMENT,
 	NB_NODE,
-	NB_ENTITY_DEFAULT
+	NB_FACE
 } nb_mesh2D_entity;
 
 typedef enum {

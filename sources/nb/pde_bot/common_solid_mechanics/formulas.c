@@ -1,9 +1,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "nb/pde_bot/material.h"
-#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
-#include "nb/pde_bot/common_solid_mechanics/formulas.h"
+#include "nb/pde_bot.h"
 
 #define POW2(a) ((a)*(a))
 

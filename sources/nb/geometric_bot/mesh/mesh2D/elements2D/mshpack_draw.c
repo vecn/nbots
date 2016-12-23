@@ -151,6 +151,22 @@ void nb_mshpack_fill_nodes_classes(const void *msh,
 	;/* NULL statement */
 }
 
+void nb_mshpack_draw_field_on_faces(const void *msh,
+				    nb_graphics_context_t *g,
+				    const double *normalized_field,
+				    nb_palette_preset palette)
+{
+	;/* NULL statement */
+}
+
+void nb_mshpack_draw_classes_on_faces(const void *msh,
+				      nb_graphics_context_t *g,
+				      const uint8_t *class, uint8_t N_colors,
+				      const nb_graphics_color_t *colors)
+{
+	;/* NULL statement */
+}
+
 void nb_mshpack_draw_level_set(const void *msh,
 			       nb_graphics_context_t *g,
 			       const double *field_on_nodes,
