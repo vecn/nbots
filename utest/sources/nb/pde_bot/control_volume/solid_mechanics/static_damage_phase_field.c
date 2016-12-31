@@ -81,7 +81,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 2000, NB_QUAD,
+	run_test("%s/Mode_I_3point_bending.txt", 5000, NB_QUAD,
 		 check_mode_I);
 }
 
@@ -192,7 +192,14 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
-
+	double max_dmg = 0;
+	for (uint32_t i = 0; i < N_faces; i++) {
+		if (max_dmg < results->damage[i])
+			max_dmg = results->damage[i];
+	}
+	printf("====> MAX DAMAGE: %e\n", max_dmg);/* TEMPORAL */
+	for (uint32_t i = 0; i < N_faces && 0; i++)
+		results->damage[i] /= max_dmg;
 	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
 			      NB_FACE, NB_FIELD,
 			      results->damage, true);/* TEMPORAL */

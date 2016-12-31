@@ -49,6 +49,26 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data);
+static int minimize_residual(const nb_mesh2D_t *const mesh,
+			     const nb_material_t *const material,
+			     const nb_bcond_t *const bcond,
+			     bool enable_self_weight, double gravity[2],
+			     nb_analysis2D_t analysis2D,
+			     nb_analysis2D_params *params2D,
+			     double *displacement, /* Output */
+			     double *strain,       /* Output */
+			     double *elem_damage,  /* Output */
+			     const nb_mesh2D_t *intmsh,
+			     const double *xc,
+			     face_t **faces,
+			     nb_sparse_t *A,
+			     nb_glquadrature_t *glq,
+			     const nb_cvfa_eval_damage_t *eval_dmg,
+			     double *F,
+			     double *delta_disp,
+			     double *residual,
+			     double *rhs_damage,
+			     double bc_factor);
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 double *nodal_damage, /* Output */
@@ -125,50 +145,26 @@ int nb_cvfa_compute_2D_damage_phase_field
 	init_eval_dmg(&eval_dmg, SMOOTH, intmsh, displacement, xc,
 		      material, analysis2D);
 
-	int iter = 0;
-	double rnorm = 1;
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
-	while (iter < MAX_ITER) {
-		nb_cvfa_assemble_global_forces(F, mesh, material,
-					       enable_self_weight,
-					       gravity);
-		nb_cvfa_assemble_global_stiffness(A, mesh, SMOOTH, intmsh, xc,
-						  faces, material, analysis2D,
-						  params2D, &glq, &eval_dmg);
-
-		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
-					A, F, bcond, 1.0);
-		
-		nb_sparse_multiply_vector(A, displacement, residual, 1);
-		nb_vector_substract_to(2 * N_elems, residual, F);
-		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
-		if (rnorm < 1e-6)
-			break;
-
-		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
-							      delta_disp, 1);
+	for (int i = 0; i < 1; i++) {
+		double bc_factor = (i+1)*1;
+		status = minimize_residual(mesh, material, bcond,
+					   enable_self_weight,
+					   gravity, analysis2D, params2D,
+					   displacement, strain, elem_damage,
+					   intmsh, xc, faces, A, &glq,
+					   &eval_dmg, F, delta_disp, residual,
+					   rhs_damage, bc_factor);
 		if (status != 0)
 			goto CLEAN_AND_EXIT;
-
-		nb_vector_sum(2 * N_elems, displacement, delta_disp);
-
-		status = solve_damage_equation(mesh, material, elem_damage,
-					       intmsh, xc, faces,
-					       rhs_damage, A, &glq);
-		if (status != 0)
-			goto CLEAN_AND_EXIT;
-		
-		iter ++;
-		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
 	}
+
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
 			       intmsh, xc, bcond, displacement, &glq);
 	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
 
 CLEAN_AND_EXIT:
-	printf(" >>>>> [%i] DAMAGE ITER: %i (%e)\n",
-	       status, iter, rnorm);/* TEMPORAL */
 	nb_cvfa_finish_faces(N_faces, faces);
 	nb_sparse_destroy(A);
 	nb_graph_finish(trg_x_vol);
@@ -268,7 +264,71 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 
 	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_fracture_energy(dmg_data->material);
-	return h * energy / G;
+	return 60*h * energy / G;
+}
+
+static int minimize_residual(const nb_mesh2D_t *const mesh,
+			     const nb_material_t *const material,
+			     const nb_bcond_t *const bcond,
+			     bool enable_self_weight, double gravity[2],
+			     nb_analysis2D_t analysis2D,
+			     nb_analysis2D_params *params2D,
+			     double *displacement, /* Output */
+			     double *strain,       /* Output */
+			     double *elem_damage,  /* Output */
+			     const nb_mesh2D_t *intmsh,
+			     const double *xc,
+			     face_t **faces,
+			     nb_sparse_t *A,
+			     nb_glquadrature_t *glq,
+			     const nb_cvfa_eval_damage_t *eval_dmg,
+			     double *F,
+			     double *delta_disp,
+			     double *residual,
+			     double *rhs_damage,
+			     double bc_factor)
+{
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	int status = 0;
+	int iter = 0;
+	double rnorm = 1;
+	while (iter < MAX_ITER) {
+		nb_cvfa_assemble_global_forces(F, mesh, material,
+					       enable_self_weight,
+					       gravity);
+		nb_cvfa_assemble_global_stiffness(A, mesh, SMOOTH, intmsh, xc,
+						  faces, material, analysis2D,
+						  params2D, glq, eval_dmg);
+
+		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
+					A, F, bcond, bc_factor);
+		
+		nb_sparse_multiply_vector(A, displacement, residual, 1);
+		nb_vector_substract_to(2 * N_elems, residual, F);
+		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
+		if (rnorm < 1e-6)
+			break;
+
+		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
+							      delta_disp, 1);
+		if (status != 0)
+			goto EXIT;
+
+		nb_vector_sum(2 * N_elems, displacement, delta_disp);
+
+		status = solve_damage_equation(mesh, material, elem_damage,
+					       intmsh, xc, faces,
+					       rhs_damage, A, glq);
+		if (status != 0)
+			goto EXIT;
+		
+		iter ++;
+		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
+	}
+EXIT:
+	printf(" >>>>> [%i] DAMAGE ITER: %i (%e)\n",
+	       status, iter, rnorm);/* TEMPORAL */
+	return status;
 }
 
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
@@ -321,7 +381,7 @@ static void get_internal_face_damage(double *damage,
 	for (uint16_t i = 0; i < face->N_sf; i++) {
 		for (uint8_t q = 0; q < glq->N; q++)
 			damage[face_id] += eval_dmg->get_damage(face, i, q, glq,
-							       eval_dmg->data);
+								eval_dmg->data);
 	}
 	double length = nb_utils2D_get_dist(face->x1, face->x2);
 	damage[face_id] /= length;

@@ -31,7 +31,7 @@ EXIT:
 }
 
 void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void);
-int main()
+int main()/* TEMPORAL MAIN */
 {
 	CU_initialize_registry();
 	

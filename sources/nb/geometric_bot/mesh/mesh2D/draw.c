@@ -286,9 +286,16 @@ static void draw_field_on_faces(const nb_mesh2D_t *mesh,
 				nb_graphics_context_t *g,
 				const double *values)
 {
-	nb_graphics_set_line_width(g, 1.5);
-	mesh->graphics.draw_field_on_faces(mesh->msh, g, values,
+	uint32_t N = mesh->get_N_edges(mesh->msh);
+	uint32_t memsize = N * sizeof(double);
+	double *normalized_values = nb_soft_allocate_mem(memsize);
+
+	normalize_values(normalized_values, values, N);
+	mesh->graphics.draw_field_on_faces(mesh->msh, g,
+					   normalized_values,
 					   PALETTE_FIELD);
+
+	nb_soft_allocate_mem(memsize);
 }
 
 static void draw_classes_on_faces(const nb_mesh2D_t *mesh,
@@ -337,12 +344,12 @@ static void add_palette(const nb_mesh2D_t *mesh,
 	
 	float label_width = 55;
 	nb_palette_draw(g, palette,
-				 width - PALETTE_W - PALETTE_MARGIN -
-				 label_width,
-				 height - PALETTE_H - PALETTE_MARGIN,
-				 PALETTE_W,
-				 PALETTE_H,
-				 1, min, max);
+			width - PALETTE_W - PALETTE_MARGIN -
+			label_width,
+			height - PALETTE_H - PALETTE_MARGIN,
+			PALETTE_W,
+			PALETTE_H,
+			1, min, max);
 	nb_palette_destroy(palette);
 }
 
@@ -351,10 +358,19 @@ static void get_min_max(const nb_mesh2D_t *mesh,
 			double *min, double *max)
 {
 	uint32_t N;
-	if (NB_ELEMENT == data->vals_entity)
+	switch (data->vals_entity) {
+	case NB_ELEMENT:
 		N = nb_mesh2D_get_N_elems(mesh);
-	else
+		break;
+	case NB_NODE:
 		N = nb_mesh2D_get_N_nodes(mesh);
+		break;
+	case NB_FACE:
+		N = nb_mesh2D_get_N_edges(mesh);
+		break;
+	default:
+		N = 0;
+	}
 
 	const double *values = data->values;
 	*min = values[0];
