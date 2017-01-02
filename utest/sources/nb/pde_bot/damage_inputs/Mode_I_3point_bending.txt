@@ -52,10 +52,10 @@
 #-------------- Material properties ------------#
 # Poisson module				#
  0.2						#
-# Elasticity module				#
+# Elasticity module (Pa)			#
  2e10	                                        #
-# Fracture energy                               #
- 113						#
+# Fracture energy (J/m^2)                       #
+ 1e-3						#
 # Compression limit stress                      #
  0						#
 # Traction limit stress                         #

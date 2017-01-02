@@ -132,14 +132,14 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 				     const double *xc,
 				     const double *disp, double *strain,
 				     const nb_glquadrature_t *glq);
-static void subface_sum_strain_simplexwise
+static void subface_get_strain_simplexwise
 			(int smooth,
 			 const nb_mesh2D_t *intmsh,
 			 const subface_t *subface,
 			 const double *disp,
 			 const nb_glquadrature_t *glq,
 			 uint8_t q, double *strain);
-static void subface_sum_strain_pairwise
+static void subface_get_strain_pairwise
 			(int smooth,
 			 const face_t *face,
 			 const subface_t *subface,
@@ -670,10 +670,18 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 	face_t *face = faces[face_id];
 	for (uint16_t i = 0; i < face->N_sf; i++) {
 		subface_t *subface = face->subfaces[i];
-		for (uint8_t q = 0; q < glq->N; q++)
-			nb_cvfa_subface_sum_strain(smooth, intmsh, face,
+		double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
+		for (uint8_t q = 0; q < glq->N; q++) {
+			double gp_strain[3];
+			nb_cvfa_subface_get_strain(smooth, intmsh, face,
 						   subface, xc, disp, glq, q,
-						   &(strain[face_id * 3]));
+						   gp_strain);
+			double wq = lf * glq->w[q] * 0.5;
+			double factor = wq /* * params2D->thickness*/;/* TEMP */
+			strain[face_id * 3] += factor * gp_strain[0];
+			strain[face_id*3+1] += factor * gp_strain[1];
+			strain[face_id*3+2] += factor * gp_strain[2];
+		}
 	}
 	double length = nb_utils2D_get_dist(face->x1, face->x2);
 	strain[face_id * 3] /= length;
@@ -681,7 +689,7 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 	strain[face_id*3+2] /= length;
 }
 
-void nb_cvfa_subface_sum_strain(int smooth,
+void nb_cvfa_subface_get_strain(int smooth,
 				const nb_mesh2D_t *intmsh,
 				const face_t *face,
 				const subface_t *subface,
@@ -691,14 +699,14 @@ void nb_cvfa_subface_sum_strain(int smooth,
 				uint8_t q, double *strain)
 {
 	if (subface->N_int > 0)
-		subface_sum_strain_simplexwise(smooth, intmsh, subface,
+		subface_get_strain_simplexwise(smooth, intmsh, subface,
 					       disp, glq, q, strain);
 	else
-		subface_sum_strain_pairwise(smooth, face, subface, xc,
+		subface_get_strain_pairwise(smooth, face, subface, xc,
 					    disp, glq, q, strain);
 }
 
-static void subface_sum_strain_simplexwise
+static void subface_get_strain_simplexwise
 			(int smooth,
 			 const nb_mesh2D_t *intmsh,
 			 const subface_t *subface,
@@ -709,8 +717,6 @@ static void subface_sum_strain_simplexwise
 	double t1[2], t2[2], t3[2];
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
-	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
-
 	double xq[2];
 	double xstep = (glq->x[q] + 1) / 2.0;
 	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
@@ -720,8 +726,8 @@ static void subface_sum_strain_simplexwise
 
 	double iJ[4];
 	subface_get_inverse_jacobian(smooth, t1, t2, t3, iJ, xi);
-	
-	double factor = lf * glq->w[q] * 0.5/* * params2D->thickness*/;/* TEMPORAL */
+
+	memset(strain, 0, 3 * sizeof(*strain));
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(smooth, i, xi, grad_xi);
@@ -734,13 +740,13 @@ static void subface_sum_strain_simplexwise
 		double u = disp[elem_id * 2];
 		double v = disp[elem_id * 2 + 1];
 
-		strain[0] += factor * (grad[0] * u);
-		strain[1] += factor * (grad[1] * v);
-		strain[2] += factor * (grad[1] * u + grad[0] * v);
+		strain[0] += (grad[0] * u);
+		strain[1] += (grad[1] * v);
+		strain[2] += (grad[1] * u + grad[0] * v);
 	}
 }
 
-static void subface_sum_strain_pairwise
+static void subface_get_strain_pairwise
 			(int smooth,
 			 const face_t *face,
 			 const subface_t *subface,
@@ -757,15 +763,12 @@ static void subface_sum_strain_pairwise
 	c2[0] = xc[id2 * 2];
 	c2[1] = xc[id2*2+1];
 
-	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 	double xq[2];
 	double xstep = (glq->x[q] + 1) / 2.0;
 	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
 	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
 	
-	double wq = lf * glq->w[q] * 0.5;
-
-	double factor = wq /* * params2D->thickness*/;
+	memset(strain, 0, 3 * sizeof(*strain));
 	for (uint8_t i = 0; i < 2; i++) {
 		double grad[2];
 		if (0 == i)
@@ -777,9 +780,9 @@ static void subface_sum_strain_pairwise
 		double u = disp[elem_id * 2];
 		double v = disp[elem_id * 2 + 1];
 
-		strain[0] += factor * (grad[0] * u);
-		strain[1] += factor * (grad[1] * v);
-		strain[2] += factor * (grad[1] * u + grad[0] * v);
+		strain[0] += (grad[0] * u);
+		strain[1] += (grad[1] * v);
+		strain[2] += (grad[1] * u + grad[0] * v);
 	}
 }
 

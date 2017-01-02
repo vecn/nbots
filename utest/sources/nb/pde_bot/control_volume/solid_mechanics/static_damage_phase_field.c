@@ -81,7 +81,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 5000, NB_QUAD,
+	run_test("%s/Mode_I_3point_bending.txt", 5000, NB_POLY,
 		 check_mode_I);
 }
 

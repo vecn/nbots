@@ -41,7 +41,7 @@ void nb_cvfa_compute_strain(double *strain, char *boundary_mask,
 			    const double *disp,
 			    const nb_glquadrature_t *glq);
 
-void nb_cvfa_subface_sum_strain(int smooth,
+void nb_cvfa_subface_get_strain(int smooth,
 				const nb_mesh2D_t *intmsh,
 				const face_t *face,
 				const subface_t *subface,

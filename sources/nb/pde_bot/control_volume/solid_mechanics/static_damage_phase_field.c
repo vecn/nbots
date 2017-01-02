@@ -20,7 +20,7 @@
 #include "set_bconditions.h"
 
 #define MAX_ITER 100
-#define SMOOTH 2
+#define SMOOTH 1
 
 #define POW2(a) ((a)*(a))
 
@@ -239,6 +239,7 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 	eval_dmg->get_damage = get_damage;
 }
 
+#define MIN(a,b) (((a)<(b))?(a):(b)) /* TEMPORAL */
 static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data)
@@ -246,8 +247,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 	const eval_damage_data_t* dmg_data = data;
 
 	double strain[3];
-	memset(strain, 0, 3 * sizeof(*strain));
-	nb_cvfa_subface_sum_strain(dmg_data->smooth,
+	nb_cvfa_subface_get_strain(dmg_data->smooth,
 				   dmg_data->intmsh,
 				   face, face->subfaces[subface_id],
 				   dmg_data->xc,
@@ -264,7 +264,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 
 	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_fracture_energy(dmg_data->material);
-	return 60*h * energy / G;
+	return MIN(1, h * energy / G);
 }
 
 static int minimize_residual(const nb_mesh2D_t *const mesh,
@@ -306,7 +306,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		nb_sparse_multiply_vector(A, displacement, residual, 1);
 		nb_vector_substract_to(2 * N_elems, residual, F);
 		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
-		if (rnorm < 1e-6)
+		if (rnorm < 1e-6 || rnorm != rnorm)
 			break;
 
 		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
@@ -379,9 +379,14 @@ static void get_internal_face_damage(double *damage,
 	damage[face_id] = 0.0;
 	face_t *face = faces[face_id];
 	for (uint16_t i = 0; i < face->N_sf; i++) {
-		for (uint8_t q = 0; q < glq->N; q++)
-			damage[face_id] += eval_dmg->get_damage(face, i, q, glq,
-								eval_dmg->data);
+		subface_t *subface = face->subfaces[i];
+		double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
+		for (uint8_t q = 0; q < glq->N; q++) {
+			double dmg = eval_dmg->get_damage(face, i, q, glq,
+							  eval_dmg->data);
+			double wq = lf * glq->w[q] * 0.5;
+			damage[face_id] += wq * dmg;
+		}
 	}
 	double length = nb_utils2D_get_dist(face->x1, face->x2);
 	damage[face_id] /= length;
