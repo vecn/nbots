@@ -24,6 +24,11 @@
 
 #define POW2(a) ((a)*(a))
 
+enum {
+	NB_ELASTIC_SOLVER_FAILS = 1,
+	NB_DAMAGE_SOLVER_FAILS
+};
+
 typedef struct {
 	int smooth;
 	const nb_mesh2D_t *intmsh;
@@ -68,7 +73,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     double *delta_disp,
 			     double *residual,
 			     double *rhs_damage,
-			     double bc_factor);
+			     double bc_factor,
+			     uint32_t id_elem_monitor,
+			     double *monitor_reaction);
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 double *nodal_damage, /* Output */
@@ -77,6 +84,10 @@ static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 face_t **faces,
 				 double *H, nb_sparse_t *D,
 				 nb_glquadrature_t *glq);
+
+static void show_error_message(int status);
+static void save_reaction_log(const char *logfile, uint32_t iter,
+			      double factor, double reaction);
 static void compute_damage(double *damage, face_t **faces,
 			   const nb_mesh2D_t *const mesh,
 			   const double *elem_damage,
@@ -149,15 +160,22 @@ int nb_cvfa_compute_2D_damage_phase_field
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	for (int i = 0; i < 1; i++) {
 		double bc_factor = (i+1)*0.01;
+		uint32_t id_elem_monitor = 100;
+		double reaction = 0;
 		status = minimize_residual(mesh, material, bcond,
 					   enable_self_weight,
 					   gravity, analysis2D, params2D,
 					   displacement, strain, elem_damage,
 					   intmsh, xc, faces, A, &glq,
 					   &eval_dmg, F, delta_disp, residual,
-					   rhs_damage, bc_factor);
-		if (status != 0)
+					   rhs_damage, bc_factor,
+					   id_elem_monitor, &reaction);
+		if (status != 0) {
+			show_error_message(status);
 			goto CLEAN_AND_EXIT;
+		}
+
+		save_reaction_log("Reaction.log", i, bc_factor, reaction);
 	}
 
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
@@ -286,7 +304,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     double *delta_disp,
 			     double *residual,
 			     double *rhs_damage,
-			     double bc_factor)
+			     double bc_factor,
+			     uint32_t id_elem_monitor,
+			     double *monitor_reaction)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	int status = 0;
@@ -311,20 +331,26 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 
 		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
 							      delta_disp, 2);
-		if (status != 0)
+		if (status != 0) {
+			status = NB_ELASTIC_SOLVER_FAILS;
 			goto EXIT;
+		}
 
 		nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
 		status = solve_damage_equation(mesh, material, elem_damage,
 					       intmsh, xc, faces,
 					       rhs_damage, A, glq);
-		if (status != 0)
+		if (status != 0) {
+			status = NB_DAMAGE_SOLVER_FAILS;
 			goto EXIT;
+		}
 		
 		iter ++;
 		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
 	}
+	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
+					 residual[id_elem_monitor*2+1]);
 EXIT:
 	printf(" >>>>> [%i] DAMAGE ITER: %i (%e)\n",
 	       status, iter, rnorm);/* TEMPORAL */
@@ -341,6 +367,43 @@ static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 nb_glquadrature_t *glq)
 {
 	return 0;/* TEMPORAL */
+}
+
+static void show_error_message(int status)
+{
+	fprintf(stderr, " NB >> Sorry, something goes wrong :(\n");
+	fprintf(stderr, " NB >> at PDE_BOT::CONTROL_VOLUME::"	\
+		"SOLID_MECHANICS::DAMAGE_PHASE_FIELD\n");
+	fprintf(stderr, " NB >> Description: ");
+	switch(status) {
+	case NB_ELASTIC_SOLVER_FAILS:
+		fprintf(stderr, "Elastic solver fails");
+		break;
+	case NB_DAMAGE_SOLVER_FAILS:
+		fprintf(stderr, "Damage solver fails");
+		break;
+	default:
+		fprintf(stderr, "UNKNOWN ERROR");		
+	}
+	fprintf(stderr, "\n");
+}
+
+static void save_reaction_log(const char *logfile, uint32_t iter,
+			      double factor, double reaction)
+{
+	FILE *fp;
+	if (0 == iter)
+		fp = fopen(logfile, "w");
+	else
+		fp = fopen(logfile, "a");
+
+	if (NULL == fp)
+		goto EXIT;
+
+	fprintf(fp, "%e %e\n", factor, reaction);
+	fclose(fp);
+EXIT:
+	return;
 }
 
 static void compute_damage(double *damage, face_t **faces,
