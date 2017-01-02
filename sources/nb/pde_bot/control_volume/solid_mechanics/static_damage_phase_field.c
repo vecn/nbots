@@ -148,7 +148,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	for (int i = 0; i < 1; i++) {
-		double bc_factor = (i+1)*1;
+		double bc_factor = (i+1)*0.01;
 		status = minimize_residual(mesh, material, bcond,
 					   enable_self_weight,
 					   gravity, analysis2D, params2D,
@@ -264,7 +264,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 
 	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_fracture_energy(dmg_data->material);
-	return MIN(1, h * energy / G);
+	return MIN(1.0, h * energy / G);
 }
 
 static int minimize_residual(const nb_mesh2D_t *const mesh,
@@ -310,7 +310,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			break;
 
 		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
-							      delta_disp, 1);
+							      delta_disp, 2);
 		if (status != 0)
 			goto EXIT;
 

@@ -646,8 +646,7 @@ void nb_palette_add_rgba(nb_palette_t* palette, float tic,
 }
 
 void nb_palette_get_rgba(const nb_palette_t *const palette,
-				  float factor,
-				  uint8_t rgba[4])
+			 float factor, uint8_t rgba[4])
 {
 	if (factor != factor) {
 		memcpy(rgba, palette->rgba, 4);		

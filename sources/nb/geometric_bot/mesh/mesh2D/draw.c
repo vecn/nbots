@@ -72,7 +72,8 @@ static void fill_elems_classes(const nb_mesh2D_t *mesh,
 			       const uint8_t *class);
 static void set_class_colors(nb_graphics_color_t color[10]);
 static void fill_elems(const nb_mesh2D_t *mesh,
-		       nb_graphics_context_t *g);
+		       nb_graphics_context_t *g,
+		       const draw_data *data);
 
 static void draw_faces(const nb_mesh2D_t *mesh,
 		       nb_graphics_context_t *g,
@@ -179,14 +180,12 @@ static void fill(const nb_mesh2D_t *mesh,
 
 	if (NB_NODE == enty && NB_FIELD == type)
 		fill_elems_field_on_nodes(mesh, g, data->values);
-
 	else if (NB_ELEMENT == enty && NB_FIELD == type)
 		fill_elems_field_on_elems(mesh, g, data->values);
-
 	else if (NB_ELEMENT == enty && NB_CLASS == type)
 		fill_elems_classes(mesh, g, data->values);
 	else
-		fill_elems(mesh, g);
+		fill_elems(mesh, g, data);
 }
 
 static void fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
@@ -262,9 +261,22 @@ static void set_class_colors(nb_graphics_color_t color[10])
 }
 
 static void fill_elems(const nb_mesh2D_t *mesh,
-		       nb_graphics_context_t *g)
+		       nb_graphics_context_t *g,
+		       const draw_data *data)
 {
-	nb_graphics_set_source(g, COLOR_ELEM);
+	nb_mesh2D_entity enty = data->vals_entity;
+	nb_mesh2D_array_type type = data->vals_type;
+	if (NB_FACE == enty && NB_FIELD == type) {
+		nb_palette_t *palette =
+			nb_palette_create_preset(PALETTE_FIELD);
+		uint8_t color[4];
+		nb_palette_get_rgba(palette, 0.0, color);
+		nb_graphics_set_source_rgba(g, color[0], color[1], color[2],
+					    color[3]);
+		nb_palette_destroy(palette);
+	} else {
+		nb_graphics_set_source(g, COLOR_ELEM);
+	}
 	mesh->graphics.fill_elems(mesh->msh, g);
 }
 
