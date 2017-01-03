@@ -21,4 +21,11 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 double *damage,       /* Output */
 			 char *boundary_mask   /* Output */);
 
+void nb_cvfa_compute_stress_from_damage_and_strain
+					(const nb_mesh2D_t *mesh,
+					 const nb_material_t *const material,
+					 nb_analysis2D_t analysis2D,
+					 const double* strain,
+					 const double* damage,
+					 double* stress /* Output */);
 #endif

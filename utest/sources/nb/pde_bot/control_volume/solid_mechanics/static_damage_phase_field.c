@@ -156,9 +156,11 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		}
 	}
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		stress[i * 3] /= counter[i];
-		stress[i*3+1] /= counter[i];
-		stress[i*3+2] /= counter[i];
+		if (counter[i] > 0) {
+			stress[i * 3] /= counter[i];
+			stress[i*3+1] /= counter[i];
+			stress[i*3+2] /= counter[i];
+		}
 	}
 
 	for (uint32_t i = 0; i < N_nodes; i++) {
@@ -197,7 +199,6 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		if (max_dmg < results->damage[i])
 			max_dmg = results->damage[i];
 	}
-	printf("====> MAX DAMAGE: %e\n", max_dmg);/* TEMPORAL */
 	for (uint32_t i = 0; i < N_faces && 0; i++)
 		results->damage[i] /= max_dmg;
 	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
@@ -259,24 +260,27 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
 
-	int status_cvfa = nb_cvfa_compute_2D_damage_phase_field(mesh, material,
-								bcond,
-								false, NULL,
-								analysis2D,
-								&params2D,
-								results->disp,
-								results->strain,
-								results->damage,
-								results->boundary_mask);
+	int status_cvfa = 
+		nb_cvfa_compute_2D_damage_phase_field(mesh, material,
+						      bcond,
+						      false, NULL,
+						      analysis2D,
+						      &params2D,
+						      results->disp,
+						      results->strain,
+						      results->damage,
+						      results->boundary_mask);
 
 	if (0 != status_cvfa) {
 		show_cvfa_error_msg(status_cvfa);
 		goto CLEANUP;
 	}
 
-	nb_cvfa_compute_stress_from_strain(mesh,  material, analysis2D,
-					   results->strain,
-					   results->stress);
+	nb_cvfa_compute_stress_from_damage_and_strain(mesh, material,
+						      analysis2D,
+						      results->strain,
+						      results->damage,
+						      results->stress);
 
 	status = 0;
 CLEANUP:
@@ -412,7 +416,8 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 
 	model->holes = NULL;
 	if (0 < model->H) {
-		model->holes = nb_allocate_mem(2 * model->H * sizeof(*(model->holes)));
+		model->holes = nb_allocate_mem(2 * model->H *
+					       sizeof(*(model->holes)));
 		for (uint32_t i = 0; i < 2 * model->H; i++) {
 			if (0 != nb_cfreader_read_double(cfreader,
 							  &(model->holes[i])))

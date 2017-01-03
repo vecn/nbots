@@ -534,3 +534,24 @@ static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg)
 {
 	nb_free_mem(eval_dmg->data);
 }
+
+void nb_cvfa_compute_stress_from_damage_and_strain
+					(const nb_mesh2D_t *mesh,
+					 const nb_material_t *const material,
+					 nb_analysis2D_t analysis2D,
+					 const double* strain,
+					 const double* damage,
+					 double* stress /* Output */)
+{
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	for (uint32_t i = 0; i < N_faces; i++) {
+		double D[4];
+		nb_pde_get_constitutive_matrix(D, material, analysis2D);
+		
+		stress[i * 3] = (1 - damage[i]) *
+			(strain[i * 3] * D[0] + strain[i*3+1] * D[1]);
+		stress[i*3+1] = (1 - damage[i]) *
+			(strain[i * 3] * D[1] + strain[i*3+1] * D[2]);
+		stress[i*3+2] =  (1 - damage[i]) * strain[i*3+2] * D[3];
+	}
+}
