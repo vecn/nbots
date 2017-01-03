@@ -41,11 +41,11 @@ typedef struct {
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
-				   uint32_t N_faces, double **xc, double **F,
-				   double **delta_disp, double **residual,
-				   double **nodal_damage, double **rhs_damage,
+				   uint32_t N_faces, double **xc,
+				   double **nodal_damage,
 				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
-				   face_t ***faces, nb_glquadrature_t *glq);
+				   face_t ***faces, nb_glquadrature_t *glq,
+				   char **minimize_residuals_memblock);
 static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 			  const nb_mesh2D_t *intmsh,
 			  const double *displacement,
@@ -55,6 +55,7 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data);
+static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems);
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
 			     const nb_bcond_t *const bcond,
@@ -70,13 +71,16 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     nb_sparse_t *A,
 			     nb_glquadrature_t *glq,
 			     const nb_cvfa_eval_damage_t *eval_dmg,
-			     double *F,
-			     double *delta_disp,
-			     double *residual,
-			     double *rhs_damage,
 			     double bc_factor,
 			     uint32_t id_elem_monitor,
-			     double *monitor_reaction);
+			     double *monitor_reaction,
+			     char *memblock);
+static int solve_elastic_linear_system(const nb_sparse_t *A,
+				       const uint32_t *perm,
+				       const uint32_t *iperm,
+				       nb_sparse_t *Ar,
+				       double *residual,
+				       double *delta_disp);
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 const nb_material_t *material,
 				 double *nodal_damage, /* Output */
@@ -125,19 +129,15 @@ int nb_cvfa_compute_2D_damage_phase_field
 	uint32_t memsize = get_cvfa_memsize(N_elems, N_faces);
 	char *memblock = nb_soft_allocate_mem(memsize);
 	double *xc;
-	double *F;
-	double *delta_disp;
-	double *residual;
-	double *rhs_damage;
 	double *elem_damage;
 	nb_mesh2D_t *intmsh;
 	nb_graph_t *trg_x_vol;
 	face_t **faces;
 	nb_glquadrature_t glq;
-	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &F,
-			       &delta_disp, &residual, &elem_damage, 
-			       &rhs_damage, &intmsh, &trg_x_vol,
-			       &faces, &glq);
+	char *minimize_residual_memblock;
+	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc,
+			       &elem_damage, &intmsh, &trg_x_vol,
+			       &faces, &glq, &minimize_residual_memblock);
 
 	nb_glquadrature_load(&glq, SMOOTH + 1);
 
@@ -173,9 +173,9 @@ int nb_cvfa_compute_2D_damage_phase_field
 					   gravity, analysis2D, params2D,
 					   displacement, strain, elem_damage,
 					   intmsh, xc, faces, A, &glq,
-					   &eval_dmg, F, delta_disp, residual,
-					   rhs_damage, bc_factor,
-					   id_elem_monitor[0], &reaction);
+					   &eval_dmg, bc_factor,
+					   id_elem_monitor[0], &reaction,
+					   minimize_residual_memblock);
 		if (status != 0) {
 			show_error_message(status);
 			goto CLEAN_AND_EXIT;
@@ -200,21 +200,23 @@ CLEAN_AND_EXIT:
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces)
 {
-	uint32_t system_size = 10 * N_elems * sizeof(double);
+	uint32_t system_size = 3 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
 	uint16_t Nq = SMOOTH + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
 	uint32_t faces_size = N_faces * (sizeof(void*) + sizeof(face_t));
-	return graph_size + system_size + intmsh_size + faces_size + glq_size;
+	uint32_t minimize_residual = get_memsize_for_minimize_residual(N_elems);
+	return graph_size + system_size + intmsh_size + faces_size +
+		glq_size + minimize_residual;
 }
 
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
-				   uint32_t N_faces, double **xc, double **F,
-				   double **delta_disp, double **residual,
-				   double **elem_damage, double **rhs_damage,
-				   nb_mesh2D_t **intmsh, nb_graph_t **trg_x_vol,
-				   face_t ***faces, nb_glquadrature_t *glq)
+				   uint32_t N_faces, double **xc,
+				   double **elem_damage, nb_mesh2D_t **intmsh,
+				   nb_graph_t **trg_x_vol,
+				   face_t ***faces, nb_glquadrature_t *glq,
+				   char **minimize_residuals_memblock)
 {
 	uint32_t elem_size = N_elems * sizeof(double);
 	uint32_t system_size = 2 * elem_size;
@@ -222,27 +224,25 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 	uint32_t graph_size = nb_graph_get_memsize();
 	uint16_t Nq = SMOOTH + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
-	*F = (void*) memblock;
-	*xc = (void*) (memblock + system_size);
-	*delta_disp = (void*) (memblock + 2 * system_size);
-	*residual = (void*) (memblock + 3 * system_size);
-	*elem_damage = (void*) (memblock + 4 * system_size);
-	*rhs_damage = (void*) (memblock + 4 * system_size + elem_size);
-	*intmsh = (void*) (memblock + 4 * system_size + 2 * elem_size);
-	*trg_x_vol = (void*) (memblock + 4 * system_size +
-			      2 * elem_size + intmsh_size);
-	glq->x = (void*) (memblock + 4 * system_size + 2 * elem_size +
+	*xc = (void*) memblock;
+	*elem_damage = (void*) (memblock + system_size);
+	*intmsh = (void*) (memblock + system_size + elem_size);
+	*trg_x_vol = (void*) (memblock + system_size +
+			      elem_size + intmsh_size);
+	glq->x = (void*) (memblock + system_size + elem_size +
 			  intmsh_size + graph_size);
-	glq->w = (void*) (memblock + 4 * system_size + 2 * elem_size +
+	glq->w = (void*) (memblock + system_size + elem_size +
 			  intmsh_size + graph_size + Nq * sizeof(double));
-	*faces = (void*) (memblock + 4 * system_size + 2 * elem_size +
+	*faces = (void*) (memblock + system_size + elem_size +
 			  intmsh_size + graph_size + glq_size);
-	memblock +=  4 * system_size + 2 * elem_size + intmsh_size +
+	memblock +=  system_size + elem_size + intmsh_size +
 		graph_size + glq_size + N_faces * sizeof(void*);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		(*faces)[i] = (void*) (memblock + i * sizeof(face_t));
+		(*faces)[i] = (void*) memblock;
+		memblock += sizeof(face_t);
 		memset((*faces)[i], 0, sizeof(face_t));
 	}
+	*minimize_residuals_memblock = (void*) memblock;
 }
 
 static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
@@ -291,9 +291,16 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 	return MIN(1.0, h * energy / G);
 }
 
+static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
+{
+	uint32_t memsize = 4 * N_elems * sizeof(uint32_t) +
+		7 * N_elems * sizeof(double);
+	return memsize;
+}
+
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
-			     const nb_bcond_t *const bcond,
+			     const nb_bcond_t *const bcond,		     
 			     bool enable_self_weight, double gravity[2],
 			     nb_analysis2D_t analysis2D,
 			     nb_analysis2D_params *params2D,
@@ -306,16 +313,29 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     nb_sparse_t *A,
 			     nb_glquadrature_t *glq,
 			     const nb_cvfa_eval_damage_t *eval_dmg,
-			     double *F,
-			     double *delta_disp,
-			     double *residual,
-			     double *rhs_damage,
 			     double bc_factor,
 			     uint32_t id_elem_monitor,
-			     double *monitor_reaction)
+			     double *monitor_reaction,
+			     char *memblock)
 {
+	uint32_t N = nb_sparse_get_size(A);
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+	double *F = (void*) (memblock + 2 * N * sizeof(uint32_t));
+	double *delta_disp = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				      N * sizeof(double));
+	double *residual = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				    2 * N * sizeof(double));
+	double *rhs_damage = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				      3 * N * sizeof(double));
+
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
+
+	nb_sparse_calculate_permutation(A, perm, iperm);
+
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
+
 	nb_bcond_init(numeric_bcond, 2);
 	nb_cvfa_get_numeric_bconditions(mesh, material, analysis2D, bcond,
 					bc_factor, numeric_bcond);
@@ -345,8 +365,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			goto EXIT;
 		}
 
-		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
-							      delta_disp, 2);
+		status = solve_elastic_linear_system(A, perm, iperm, Ar,
+						     residual, delta_disp);
+
 		if (status != 0) {
 			status = ELASTIC_SOLVER_FAILS;
 			goto EXIT;
@@ -366,6 +387,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
 	}
 GET_REACTION:
+	nb_cvfa_assemble_global_stiffness(A, mesh, SMOOTH, intmsh, xc,
+					  faces, material, analysis2D,
+					  params2D, glq, eval_dmg);
 	nb_sparse_multiply_vector(A, displacement, residual, 1);
 	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
 					 residual[id_elem_monitor*2+1]);
@@ -374,7 +398,28 @@ EXIT:
 	       status, iter, rnorm);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
+	nb_sparse_destroy(Ar);
+
 	nb_soft_free_mem(bcond_size, numeric_bcond);
+	return status;
+}
+
+static int solve_elastic_linear_system(const nb_sparse_t *A,
+				       const uint32_t *perm,
+				       const uint32_t *iperm,
+				       nb_sparse_t *Ar,
+				       double *residual,
+				       double *delta_disp)
+{
+	uint32_t N = nb_sparse_get_size(A);
+	nb_vector_permutation(N, residual, perm, delta_disp);
+	memcpy(residual, delta_disp, N * sizeof(*residual));
+
+	nb_sparse_fill_permutation(A, Ar, perm, iperm);
+	int status = nb_sparse_solve_using_LU(Ar, residual, delta_disp, 2);
+
+	nb_vector_permutation(N, delta_disp, iperm, residual);
+	memcpy(delta_disp, residual, N * sizeof(*residual));
 	return status;
 }
 

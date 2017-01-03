@@ -149,7 +149,7 @@ int nb_sparse_relabel_and_solve_using_LU(const nb_sparse_t *const A,
 					      omp_parallel_threads);
 
 	nb_vector_permutation(N, xr, iperm, x);
-	
+
 	nb_sparse_destroy(Ar);
 	nb_soft_free_mem(memsize, memblock);
 	return status;

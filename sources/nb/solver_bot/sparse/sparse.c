@@ -296,7 +296,8 @@ void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 		uint32_t j = perm[i];
 		for (uint32_t k = 0; k < A->rows_size[j]; k++) {
 			uint32_t m = iperm[A->rows_index[j][k]];
-			uint32_t idx = nb_sparse_bsearch_row(Ar, i, m, 0, Ar->rows_size[i]-1);
+			uint32_t idx = nb_sparse_bsearch_row(Ar, i, m, 0,
+							     Ar->rows_size[i]-1);
 			Ar->rows_values[i][idx] = A->rows_values[j][k];
 		}
 	}

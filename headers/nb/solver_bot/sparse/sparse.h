@@ -67,7 +67,6 @@ nb_sparse_t* nb_sparse_create_permutation
 (const nb_sparse_t *const A,
  const uint32_t *const perm,
  const uint32_t *const iperm);
-
 void nb_sparse_fill_permutation(const nb_sparse_t *const A, 
 				 nb_sparse_t* Ar,
 				 const uint32_t *const perm,
