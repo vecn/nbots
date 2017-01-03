@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define MAX_ITER 100
+#define MAX_ITER 10
 #define SMOOTH 1
 
 #define POW2(a) ((a)*(a))
@@ -27,7 +27,8 @@
 enum {
 	ELASTIC_SOLVER_FAILS = 1,
 	DAMAGE_SOLVER_FAILS,
-	NO_INVERSE
+	NO_INVERSE,
+	MAX_ITER_REACHED
 };
 
 typedef struct {
@@ -163,10 +164,11 @@ int nb_cvfa_compute_2D_damage_phase_field
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 
-	uint32_t N_steps = 5;
-	double step_factor = 1.0 / N_steps;
-	for (int i = 0; i < N_steps; i++) {
-		double bc_factor = (i+1) * step_factor;
+	uint32_t iter = 0;
+	double bc_factor_increment = 0.5;
+	double bc_factor = 0;
+	while (bc_factor < 1.0) {
+		bc_factor += bc_factor_increment;
 		double reaction;
 		status = minimize_residual(mesh, material, bcond,
 					   enable_self_weight,
@@ -176,12 +178,19 @@ int nb_cvfa_compute_2D_damage_phase_field
 					   &eval_dmg, bc_factor,
 					   id_elem_monitor[0], &reaction,
 					   minimize_residual_memblock);
-		if (status != 0) {
-			show_error_message(status);
-			goto CLEAN_AND_EXIT;
-		}
+		if (status == MAX_ITER_REACHED) {
+			bc_factor -= bc_factor_increment;
+			bc_factor_increment /= 2;
+		} else {
+			if (status != 0) {
+				show_error_message(status);
+				goto CLEAN_AND_EXIT;
+			}
 
-		save_reaction_log("Reaction.log", i, bc_factor, reaction);
+			save_reaction_log("Reaction.log", iter, bc_factor,
+					  reaction);
+			iter ++;
+		}
 	}
 
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
@@ -344,7 +353,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 	int status = 0;
 	int iter = 0;
 	double rnorm = 1;
-	while (iter < MAX_ITER) {
+	while (1) {
 		nb_cvfa_assemble_global_forces(F, mesh, material,
 					       enable_self_weight,
 					       gravity);
@@ -384,6 +393,10 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		}
 		
 		iter ++;
+		if (iter >= MAX_ITER) {
+			status = MAX_ITER_REACHED;
+			goto EXIT;
+		}
 		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
 	}
 GET_REACTION:
@@ -394,8 +407,8 @@ GET_REACTION:
 	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
 					 residual[id_elem_monitor*2+1]);
 EXIT:
-	printf(" >>>>> [%i] DAMAGE ITER: %i (%e)\n",
-	       status, iter, rnorm);/* TEMPORAL */
+	printf(" >>>>> [%i] DAMAGE ITER: %i (%e) ... %e\n",
+	       status, iter, rnorm, bc_factor);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
 	nb_sparse_destroy(Ar);
@@ -469,7 +482,7 @@ static void save_reaction_log(const char *logfile, uint32_t iter,
 	if (NULL == fp)
 		goto EXIT;
 
-	fprintf(fp, "%e %e\n", factor, reaction);
+	fprintf(fp, "%i %e %e\n", iter, factor, reaction);
 	fclose(fp);
 EXIT:
 	return;

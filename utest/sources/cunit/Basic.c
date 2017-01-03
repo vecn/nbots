@@ -161,7 +161,7 @@ static CU_ErrorCode basic_initialize(void)
   if (CU_BRM_SILENT != f_run_mode)
     fprintf(stdout, "\n\n     %s" CU_VERSION
                       "\n     %s\n\n",
-                    _("CUnit - A unit testing framework for C - Version "),
+                    _("CUnit for NBots - A unit testing framework for C - Version "),
                     _("http://cunit.sourceforge.net/"));
 
   CU_set_test_start_handler(basic_test_start_message_handler);
