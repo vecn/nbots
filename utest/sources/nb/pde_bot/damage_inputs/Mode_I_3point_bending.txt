@@ -7,11 +7,12 @@
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 9						#
+ 10						#
 # Vertices coordinates                          #
    0.0   0.0					#
  222.5   0.0					#
  222.5  50.0					#
+ 225.0  50.0                                    #
  227.5  50.0					#
  227.5   0.0					#
  450.0   0.0					#
@@ -20,7 +21,7 @@
    0.0 100.0					#
 						#
 # Number of segments				#
- 9						#
+ 10						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
@@ -30,7 +31,8 @@
  5 6						#
  6 7						#
  7 8						#
- 8 0						#
+ 8 9						#
+ 9 0                                            #
 # Number of holes				#
  0						#
 #-----------------------------------------------#
@@ -39,8 +41,8 @@
 # Num displacement conditions over vertices:    #
  3						#
  0 1 1 0.0 0.0                                  #
- 5 0 1 0.0                                      #
- 7 0 1 -1e-3                                    #
+ 6 0 1 0.0                                      #
+ 8 0 1 -1e-3                                    #
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
@@ -55,12 +57,12 @@
 # Elasticity module (Pa)			#
  2e10	                                        #
 # Fracture energy (J/m^2)                       #
- 1e-3						#
+ 5e-4						#
 # Compression limit stress                      #
  0						#
 # Traction limit stress                         #
  0						#
-# Tensile stength 2.4e6
+# Tensile stength 2.4e6                         #
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

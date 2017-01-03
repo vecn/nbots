@@ -25,8 +25,9 @@
 #define POW2(a) ((a)*(a))
 
 enum {
-	NB_ELASTIC_SOLVER_FAILS = 1,
-	NB_DAMAGE_SOLVER_FAILS
+	ELASTIC_SOLVER_FAILS = 1,
+	DAMAGE_SOLVER_FAILS,
+	NO_INVERSE
 };
 
 typedef struct {
@@ -156,12 +157,17 @@ int nb_cvfa_compute_2D_damage_phase_field
 	init_eval_dmg(&eval_dmg, SMOOTH, intmsh, displacement, xc,
 		      material, analysis2D);
 
+	uint32_t id_elem_monitor[2];
+	nb_cvfa_get_elem_adj_to_model_node(mesh, 8, id_elem_monitor);
+
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
-	for (int i = 0; i < 1; i++) {
-		double bc_factor = (i+1)*0.01;
-		uint32_t id_elem_monitor = 100;
-		double reaction = 0;
+
+	uint32_t N_steps = 5;
+	double step_factor = 1.0 / N_steps;
+	for (int i = 0; i < N_steps; i++) {
+		double bc_factor = (i+1) * step_factor;
+		double reaction;
 		status = minimize_residual(mesh, material, bcond,
 					   enable_self_weight,
 					   gravity, analysis2D, params2D,
@@ -169,7 +175,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 					   intmsh, xc, faces, A, &glq,
 					   &eval_dmg, F, delta_disp, residual,
 					   rhs_damage, bc_factor,
-					   id_elem_monitor, &reaction);
+					   id_elem_monitor[0], &reaction);
 		if (status != 0) {
 			show_error_message(status);
 			goto CLEAN_AND_EXIT;
@@ -308,6 +314,12 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     uint32_t id_elem_monitor,
 			     double *monitor_reaction)
 {
+	uint16_t bcond_size = nb_bcond_get_memsize(2);
+	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
+	nb_bcond_init(numeric_bcond, 2);
+	nb_cvfa_get_numeric_bconditions(mesh, material, analysis2D, bcond,
+					bc_factor, numeric_bcond);
+
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	int status = 0;
 	int iter = 0;
@@ -320,19 +332,23 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 						  faces, material, analysis2D,
 						  params2D, glq, eval_dmg);
 
-		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
-					A, F, bcond, bc_factor);
+		nb_cvfa_set_numeric_bconditions(A, F, mesh, numeric_bcond);
 		
 		nb_sparse_multiply_vector(A, displacement, residual, 1);
 		nb_vector_substract_to(2 * N_elems, residual, F);
 		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
-		if (rnorm < 1e-6 || rnorm != rnorm)
-			break;
+		if (rnorm < 1e-6)
+			goto GET_REACTION;
+
+		if (rnorm != rnorm) {
+			status = NO_INVERSE;
+			goto EXIT;
+		}
 
 		status = nb_sparse_relabel_and_solve_using_LU(A, residual,
 							      delta_disp, 2);
 		if (status != 0) {
-			status = NB_ELASTIC_SOLVER_FAILS;
+			status = ELASTIC_SOLVER_FAILS;
 			goto EXIT;
 		}
 
@@ -342,18 +358,23 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					       intmsh, xc, faces,
 					       rhs_damage, A, glq);
 		if (status != 0) {
-			status = NB_DAMAGE_SOLVER_FAILS;
+			status = DAMAGE_SOLVER_FAILS;
 			goto EXIT;
 		}
 		
 		iter ++;
 		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
 	}
+GET_REACTION:
+	nb_sparse_multiply_vector(A, displacement, residual, 1);
 	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
 					 residual[id_elem_monitor*2+1]);
 EXIT:
 	printf(" >>>>> [%i] DAMAGE ITER: %i (%e)\n",
 	       status, iter, rnorm);/* TEMPORAL */
+
+	nb_bcond_finish(numeric_bcond);
+	nb_soft_free_mem(bcond_size, numeric_bcond);
 	return status;
 }
 
@@ -376,14 +397,17 @@ static void show_error_message(int status)
 		"SOLID_MECHANICS::DAMAGE_PHASE_FIELD\n");
 	fprintf(stderr, " NB >> Description: ");
 	switch(status) {
-	case NB_ELASTIC_SOLVER_FAILS:
+	case ELASTIC_SOLVER_FAILS:
 		fprintf(stderr, "Elastic solver fails");
 		break;
-	case NB_DAMAGE_SOLVER_FAILS:
+	case DAMAGE_SOLVER_FAILS:
 		fprintf(stderr, "Damage solver fails");
 		break;
+	case NO_INVERSE:
+		fprintf(stderr, "Stiffness matrix is singular");
+		break;
 	default:
-		fprintf(stderr, "UNKNOWN ERROR");		
+		fprintf(stderr, "Unkown error");		
 	}
 	fprintf(stderr, "\n");
 }
