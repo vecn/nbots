@@ -19,16 +19,18 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define MAX_ITER 10
-#define SMOOTH 1
+#define SMOOTH 0
 
 #define POW2(a) ((a)*(a))
+#define MIN(a,b) (((a)<(b))?(a):(b))
 
 enum {
-	ELASTIC_SOLVER_FAILS = 1,
+	SUCCESS_RESIDUAL_MIN,
+	ELASTIC_SOLVER_FAILS,
 	DAMAGE_SOLVER_FAILS,
 	NO_INVERSE,
-	MAX_ITER_REACHED
+	MAX_ITER_REACHED,
+	LU_ALLOCATION_FAILS
 };
 
 typedef struct {
@@ -72,7 +74,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     nb_sparse_t *A,
 			     nb_glquadrature_t *glq,
 			     const nb_cvfa_eval_damage_t *eval_dmg,
-			     double bc_factor,
+			     double bc_factor, uint32_t max_iter,
 			     uint32_t id_elem_monitor,
 			     double *monitor_reaction,
 			     char *memblock);
@@ -80,6 +82,8 @@ static int solve_elastic_linear_system(const nb_sparse_t *A,
 				       const uint32_t *perm,
 				       const uint32_t *iperm,
 				       nb_sparse_t *Ar,
+				       nb_sparse_t *Lr,
+				       nb_sparse_t *Ur,
 				       double *residual,
 				       double *delta_disp);
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
@@ -164,8 +168,10 @@ int nb_cvfa_compute_2D_damage_phase_field
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 
-	uint32_t iter = 0;
-	double bc_factor_increment = 0.5;
+	save_reaction_log("Reaction.log", 0, 0, 0);
+	uint32_t iter = 1;
+	double bc_factor_increment = 0.25;
+	uint32_t max_iter = 20;
 	double bc_factor = 0;
 	while (bc_factor < 1.0) {
 		bc_factor += bc_factor_increment;
@@ -175,12 +181,15 @@ int nb_cvfa_compute_2D_damage_phase_field
 					   gravity, analysis2D, params2D,
 					   displacement, strain, elem_damage,
 					   intmsh, xc, faces, A, &glq,
-					   &eval_dmg, bc_factor,
+					   &eval_dmg,
+					   MIN(1.0, bc_factor),
+					   max_iter,
 					   id_elem_monitor[0], &reaction,
 					   minimize_residual_memblock);
 		if (status == MAX_ITER_REACHED) {
 			bc_factor -= bc_factor_increment;
 			bc_factor_increment /= 2;
+			max_iter *= 2;
 		} else {
 			if (status != 0) {
 				show_error_message(status);
@@ -189,6 +198,10 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 			save_reaction_log("Reaction.log", iter, bc_factor,
 					  reaction);
+			if (max_iter > 25) {
+				bc_factor_increment *= 2;
+				max_iter /= 2;
+			}
 			iter ++;
 		}
 	}
@@ -272,7 +285,6 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 	eval_dmg->get_damage = get_damage;
 }
 
-#define MIN(a,b) (((a)<(b))?(a):(b)) /* TEMPORAL */
 static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data)
@@ -303,7 +315,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
 {
 	uint32_t memsize = 4 * N_elems * sizeof(uint32_t) +
-		7 * N_elems * sizeof(double);
+		9 * N_elems * sizeof(double);
 	return memsize;
 }
 
@@ -322,11 +334,12 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     nb_sparse_t *A,
 			     nb_glquadrature_t *glq,
 			     const nb_cvfa_eval_damage_t *eval_dmg,
-			     double bc_factor,
+			     double bc_factor, uint32_t max_iter,
 			     uint32_t id_elem_monitor,
 			     double *monitor_reaction,
 			     char *memblock)
 {
+	int status = SUCCESS_RESIDUAL_MIN;
 	uint32_t N = nb_sparse_get_size(A);
 	uint32_t *perm = (void*) memblock;
 	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
@@ -335,22 +348,32 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 				      N * sizeof(double));
 	double *residual = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 				    2 * N * sizeof(double));
+	double *aux_disp = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				    3 * N * sizeof(double));
 	double *rhs_damage = (void*) (memblock + 2 * N * sizeof(uint32_t) +
-				      3 * N * sizeof(double));
+				      4 * N * sizeof(double));
 
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
-
-	nb_sparse_calculate_permutation(A, perm, iperm);
-
-	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
-
 	nb_bcond_init(numeric_bcond, 2);
 	nb_cvfa_get_numeric_bconditions(mesh, material, analysis2D, bcond,
 					bc_factor, numeric_bcond);
 
+	memcpy(aux_disp, displacement, N * sizeof(*aux_disp));
+
+	nb_sparse_calculate_permutation(A, perm, iperm);
+
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
+	nb_sparse_t *Lr = NULL; 
+	nb_sparse_t *Ur = NULL;
+	nb_sparse_alloc_LU(Ar, &Lr, &Ur);
+	if(NULL == Lr) {
+		status = LU_ALLOCATION_FAILS;
+		goto EXIT;
+	}
+
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	int status = 0;
+
 	int iter = 0;
 	double rnorm = 1;
 	while (1) {
@@ -374,7 +397,8 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			goto EXIT;
 		}
 
-		status = solve_elastic_linear_system(A, perm, iperm, Ar,
+		status = solve_elastic_linear_system(A, perm, iperm,
+						     Ar, Lr, Ur,
 						     residual, delta_disp);
 
 		if (status != 0) {
@@ -393,7 +417,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		}
 		
 		iter ++;
-		if (iter >= MAX_ITER) {
+		if (iter >= max_iter) {
 			status = MAX_ITER_REACHED;
 			goto EXIT;
 		}
@@ -407,11 +431,19 @@ GET_REACTION:
 	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
 					 residual[id_elem_monitor*2+1]);
 EXIT:
-	printf(" >>>>> [%i] DAMAGE ITER: %i (%e) ... %e\n",
-	       status, iter, rnorm, bc_factor);/* TEMPORAL */
+	if (SUCCESS_RESIDUAL_MIN != status)
+		memcpy(displacement, aux_disp, N * sizeof(*aux_disp));
+
+	printf(" >>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i\n",
+	       status, iter, rnorm, bc_factor, max_iter);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
 	nb_sparse_destroy(Ar);
+
+	if (LU_ALLOCATION_FAILS != status) {
+		nb_sparse_destroy(Lr);
+		nb_sparse_destroy(Ur);
+	}
 
 	nb_soft_free_mem(bcond_size, numeric_bcond);
 	return status;
@@ -421,6 +453,8 @@ static int solve_elastic_linear_system(const nb_sparse_t *A,
 				       const uint32_t *perm,
 				       const uint32_t *iperm,
 				       nb_sparse_t *Ar,
+				       nb_sparse_t *Lr,
+				       nb_sparse_t *Ur,
 				       double *residual,
 				       double *delta_disp)
 {
@@ -429,11 +463,14 @@ static int solve_elastic_linear_system(const nb_sparse_t *A,
 	memcpy(residual, delta_disp, N * sizeof(*residual));
 
 	nb_sparse_fill_permutation(A, Ar, perm, iperm);
-	int status = nb_sparse_solve_using_LU(Ar, residual, delta_disp, 2);
+
+	nb_sparse_decompose_LU(Ar, Lr, Ur, 2);
+
+	nb_sparse_solve_LU(Lr, Ur, residual, delta_disp);
 
 	nb_vector_permutation(N, delta_disp, iperm, residual);
 	memcpy(delta_disp, residual, N * sizeof(*residual));
-	return status;
+	return 0;
 }
 
 static int solve_damage_equation(const nb_mesh2D_t *mesh,
@@ -463,6 +500,9 @@ static void show_error_message(int status)
 		break;
 	case NO_INVERSE:
 		fprintf(stderr, "Stiffness matrix is singular");
+		break;
+	case LU_ALLOCATION_FAILS:
+		fprintf(stderr, "Allocation for LU decomposition fails");
 		break;
 	default:
 		fprintf(stderr, "Unkown error");		
