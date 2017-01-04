@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 0
+#define SMOOTH 1
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -38,6 +38,7 @@ typedef struct {
 	const nb_mesh2D_t *intmsh;
 	const double *disp;
 	const double *xc;
+	const double *elem_dmg;
 	const nb_material_t *material;
 	nb_analysis2D_t analysis2D;
 } eval_damage_data_t;
@@ -53,11 +54,33 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 			  const nb_mesh2D_t *intmsh,
 			  const double *displacement,
 			  const double *xc,
+			  const double *elem_dmg,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D);
 static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data);
+static double get_damage_shape(const face_t *face, uint16_t subface_id,
+			       uint8_t gp, const nb_glquadrature_t *glq,
+			       const eval_damage_data_t *dmg_data);
+static double get_internal_subface_damage(const face_t *face,
+					  uint16_t subface_id,
+					  uint8_t gp,
+					  const nb_glquadrature_t *glq,
+					  const eval_damage_data_t *dmg_data);
+static double subface_get_damage_simplexwise
+				(const subface_t *subface,
+				 uint8_t gp,
+				 const nb_glquadrature_t *glq,
+				 double dmg_shape,
+				 const eval_damage_data_t *dmg_data);
+static double eval_dmg_spline(int smooth, double x);
+static double subface_get_damage_pairwise(const face_t *face,
+					  const subface_t *subface,
+					  uint8_t gp,
+					  const nb_glquadrature_t *glq,
+					  double dmg_shape,
+					  const eval_damage_data_t *dmg_data);
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems);
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
@@ -160,13 +183,14 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	nb_cvfa_eval_damage_t eval_dmg;
 	init_eval_dmg(&eval_dmg, SMOOTH, intmsh, displacement, xc,
-		      material, analysis2D);
+		      elem_damage, material, analysis2D);
 
 	uint32_t id_elem_monitor[2];
 	nb_cvfa_get_elem_adj_to_model_node(mesh, 8, id_elem_monitor);
 
 	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
+	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
 
 	save_reaction_log("Reaction.log", 0, 0, 0);
 	uint32_t iter = 1;
@@ -271,6 +295,7 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 			  const nb_mesh2D_t *intmsh,
 			  const double *displacement,
 			  const double *xc,
+			  const double *elem_dmg,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D)
 {
@@ -279,6 +304,7 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 	data->intmsh = intmsh;
 	data->disp = displacement;
 	data->xc = xc;
+	data->elem_dmg = elem_dmg;
 	data->material = material;
 	data->analysis2D = analysis2D;
 	eval_dmg->data = data;
@@ -289,8 +315,44 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data)
 {
-	const eval_damage_data_t* dmg_data = data;
+	const eval_damage_data_t *dmg_data = data;
 
+	uint32_t N_elems = nb_mesh2D_get_N_nodes(dmg_data->intmsh);
+	double damage = 0.0;
+	if (face->elems[1] < N_elems) {
+		damage = get_internal_subface_damage(face, subface_id,
+						     gp, glq, dmg_data);
+	}
+	return damage;
+}
+
+static double get_internal_subface_damage(const face_t *face,
+					  uint16_t subface_id,
+					  uint8_t gp,
+					  const nb_glquadrature_t *glq,
+					  const eval_damage_data_t *dmg_data)
+{
+	subface_t *subface = face->subfaces[subface_id];
+
+	double dmg_shape = get_damage_shape(face, subface_id, gp,
+					    glq, dmg_data);
+	double damage;
+	if (subface->N_int > 0)
+		damage = subface_get_damage_simplexwise(subface, gp,
+							glq, dmg_shape,
+							dmg_data);
+	else
+		damage = subface_get_damage_pairwise(face, subface, gp,
+						     glq, dmg_shape,
+						     dmg_data);
+	return damage;
+}
+
+
+static double get_damage_shape(const face_t *face, uint16_t subface_id,
+			       uint8_t gp, const nb_glquadrature_t *glq,
+			       const eval_damage_data_t *dmg_data)
+{
 	double strain[3];
 	nb_cvfa_subface_get_strain(dmg_data->smooth,
 				   dmg_data->intmsh,
@@ -306,10 +368,93 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 	double norm2 = POW2(strain[0]) +
 		2 * POW2(0.5 * strain[2]) + POW2(strain[1]);
 	double energy = lame[0] * norm2 + 0.5 * lame[1] * POW2(tr);
-
-	double h = nb_material_get_damage_length_scale(dmg_data->material);
+  	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_fracture_energy(dmg_data->material);
-	return MIN(1.0, h * energy / G);
+	return h * energy / G;
+}
+
+static double subface_get_damage_simplexwise(const subface_t *subface,
+					     uint8_t gp,
+					     const nb_glquadrature_t *glq,
+					     double dmg_shape,
+					     const eval_damage_data_t *dmg_data)
+{	
+	double t1[2], t2[2], t3[2];
+	nb_cvfa_load_trg_points(dmg_data->intmsh,
+				subface->trg_id, t1, t2, t3);
+
+	double xq[2];
+	double xstep = (glq->x[gp] + 1) / 2.0;
+	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
+	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+	double xi[2];
+	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
+
+	double damage = 0.0;
+	double cak = 1.0;
+	for (uint8_t k = 0; k < 3; k++) {
+		uint32_t elem_id =
+			nb_mesh2D_elem_get_adj(dmg_data->intmsh, 
+					       subface->trg_id, k);
+		double xk;
+		if (k < 2)
+			xk = xi[k];
+		else
+			xk = 1.0 - xi[0] - xi[1];
+		double ak = eval_dmg_spline(dmg_data->smooth, xk);
+		cak -= ak;
+		damage += ak * dmg_data->elem_dmg[elem_id];
+	}
+	
+	damage += cak * dmg_shape;
+	return damage;
+}
+
+static double eval_dmg_spline(int smooth, double x)
+{
+	int g = 2 * smooth + 1;
+	return pow(x, g);
+}
+
+static double subface_get_damage_pairwise(const face_t *face,
+					  const subface_t *subface,
+					  uint8_t gp,
+					  const nb_glquadrature_t *glq,
+					  double dmg_shape,
+					  const eval_damage_data_t *dmg_data)
+{
+	uint32_t id1 = face->elems[0];
+	uint32_t id2 = face->elems[1];
+	double c1[2], c2[2];
+	c1[0] = dmg_data->xc[id1 * 2];
+	c1[1] = dmg_data->xc[id1*2+1];
+	c2[0] = dmg_data->xc[id2 * 2];
+	c2[1] = dmg_data->xc[id2*2+1];
+
+	double xq[2];
+	double xstep = (glq->x[gp] + 1) / 2.0;
+	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
+	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+
+	double xdiff = c2[0] - c1[0];
+	double ydiff = c2[1] - c1[1];
+	double d2 = nb_utils2D_get_dist2(c1, c2);
+	double dot = (xq[0] - c1[0]) * xdiff + (xq[1] - c1[1]) * ydiff;
+	double z = dot / d2;
+
+	double damage = 0.0;
+	double cak = 1.0;
+	for (uint8_t k = 0; k < 2; k++) {
+		uint32_t elem_id = face->elems[k];
+		if (k == 1)
+			z = 1 - z;
+		double ak = eval_dmg_spline(dmg_data->smooth, z);
+		cak -= ak;
+		damage += ak * dmg_data->elem_dmg[elem_id];
+	}
+	
+	damage += cak * dmg_shape;
+	return damage;
 }
 
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)

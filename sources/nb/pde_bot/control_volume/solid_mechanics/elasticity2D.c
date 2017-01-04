@@ -82,9 +82,6 @@ static void get_jacobian(int somooth,
 static void subface_get_normalized_grad(int smooth, uint8_t i,
 					const double xi[2],
 					double grad_xi[2]);
-static void get_normalized_point(int smooth, const double x1[2],
-				 const double x2[2], const double x3[2],
-				 const double xq[2], double xi[2]);
 static double get_deriv_spline(int smooth, double x);
 static double get_spline_inv(int smooth, double x);
 static void subface_get_grad(const double iJ[4], const double grad_xi[2],
@@ -298,7 +295,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
 	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
 	double xi[2];
-	get_normalized_point(smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 	
 	double wq = lf * glq->w[q] * 0.5;
 
@@ -394,9 +391,9 @@ static void subface_get_normalized_grad(int smooth, uint8_t i,
 	}
 }
 
-static void get_normalized_point(int smooth, const double x1[2],
-				 const double x2[2], const double x3[2],
-				 const double xq[2], double xi[2])
+void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
+				  const double x2[2], const double x3[2],
+				  const double xq[2], double xi[2])
 {
 	double Jd[4];
 	Jd[0] = x2[0] - x1[0];
@@ -722,7 +719,7 @@ static void subface_get_strain_simplexwise
 	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
 	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
 	double xi[2];
-	get_normalized_point(smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
 	double iJ[4];
 	subface_get_inverse_jacobian(smooth, t1, t2, t3, iJ, xi);

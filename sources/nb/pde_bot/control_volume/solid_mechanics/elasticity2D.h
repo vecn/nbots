@@ -33,6 +33,10 @@ void nb_cvfa_assemble_global_stiffness(nb_sparse_t *K,
 				                     /* NULL for no damage */
 				       const nb_cvfa_eval_damage_t* eval_dmg);
 
+void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
+				  const double x2[2], const double x3[2],
+				  const double xq[2], double xi[2]);
+
 void nb_cvfa_compute_strain(double *strain, char *boundary_mask,
 			    face_t **faces, 
 			    const nb_mesh2D_t *mesh, int smooth,
