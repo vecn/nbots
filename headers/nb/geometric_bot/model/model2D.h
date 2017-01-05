@@ -8,11 +8,6 @@
 
 #include "nb/geometric_bot/model/model2D_struct.h"
 
-/**
- * @brief Geometry model defining the domain.
- */
-typedef nb_model_t nb_model_t;/* TEMPORAL */
-
 uint16_t nb_model_get_memsize(void);
 void nb_model_init(void *model_ptr);
 void nb_model_copy(void *model_ptr, const void *src_model_ptr);

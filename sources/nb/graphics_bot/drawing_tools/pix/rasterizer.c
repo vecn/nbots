@@ -535,8 +535,9 @@ static void cubic_bezier_sgm(int x0, int y0, int x1, int y1,
 	if (xa == 0 && ya == 0) {
 		sx = floor((3*x0_control-x0+1)/2);
 		sy = floor((3*y0_control-y0+1)/2);
-		return quad_bezier_sgm(x0, y0, x1, y1, sx, sy,
-				       set_pixel, pixel_data);
+		quad_bezier_sgm(x0, y0, x1, y1, sx, sy,
+				set_pixel, pixel_data);
+		return;
 	}
 	x0_control = (x0_control-x0) * (x0_control-x0) +
 		(y0_control-y0) * (y0_control-y0) + 1;

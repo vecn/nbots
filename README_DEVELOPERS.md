@@ -72,7 +72,7 @@ build$> valgrind --xml=yes --xml-file=Valgrind-analysis.xml --read-inline-info=y
 ```
 
 ## Code Analysis
-Using **frama-c**
+Using **frama-c** (v14.0 Silicon, assumes __FRAMAC__ is defined)
 
 ```
 build$> find ../sources -name '*.c' | xargs frama-c -quiet -metrics -metrics-by-function -metrics-output=Frama-metrics.html -kernel-msg-key pp -cpp-extra-args="-I ../headers"
