@@ -75,7 +75,7 @@ Since the library implementation begins in 2009, old code does not follow all th
 Using **frama-c**
 
 ```
-build$> find ../sources -name '*.c' | xargs frama-c -quiet -metrics -metrics-by-function -metrics-output=Frama-metrics.html -cpp-extra-args="-I ../headers"
+build$> find ../sources -name '*.c' | xargs frama-c -quiet -metrics -metrics-by-function -metrics-output=Frama-metrics.html -kernel-msg-key pp -cpp-extra-args="-I ../headers"
 ```
 
 ## Library standard

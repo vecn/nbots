@@ -20,5 +20,5 @@ void *nb_reallocate_mem(void *mem, uint64_t new_size)
 
 void nb_free_mem(void *mem)
 {
-	return free(mem);
+	free(mem);
 }

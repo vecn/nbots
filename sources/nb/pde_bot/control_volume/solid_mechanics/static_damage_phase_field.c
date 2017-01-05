@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 1
+#define SMOOTH 0
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -220,7 +220,8 @@ int nb_cvfa_compute_2D_damage_phase_field
 				goto CLEAN_AND_EXIT;
 			}
 
-			save_reaction_log("Reaction.log", iter, bc_factor,
+			save_reaction_log("Reaction.log", iter,
+					  MIN(1.0, bc_factor),
 					  reaction);
 			if (max_iter > 25) {
 				bc_factor_increment *= 2;
@@ -627,7 +628,13 @@ static int solve_damage_equation(const nb_mesh2D_t *mesh,
 				 double *H, nb_sparse_t *D,
 				 nb_glquadrature_t *glq)
 {
-	return 0;/* TEMPORAL */
+	//assemble_global_rhs(H);
+	//assemble_global_damage_matrix(D);
+	//double asym = nb_sparse_get_asym(D);/* TEMPORAL */
+	//printf("=====> DAMAGE ASYM: %lf\n", asym);exit(1);/* TEMPORAL */
+	//nb_sparse_solve_CG_precond_Jacobi(D, H, elem_damage, N,
+	//				  1e-6, NULL, NULL, 2);
+	return 0;
 }
 
 static void show_error_message(int status)
