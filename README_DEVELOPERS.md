@@ -67,9 +67,9 @@ Since the library implementation begins in 2009, old code does not follow all th
       header (Using CUNIT).
     * All unit tests must run without memory leaks.
       Use `valgrind` with the following options
-      `--xml=yes --xml-file=<file> --main-stacksize=<number> --read-inline-info=yes --merge-recursive-frames=2`
-      and the memcheck tool with the options
-      `--tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --show-mismatched-frees=yes`
+```
+build$> valgrind --xml=yes --xml-file=Valgrind-analysis.xml --read-inline-info=yes --merge-recursive-frames=2 --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --show-mismatched-frees=yes ./utests
+```
 
 ## Code Analysis
 Using **frama-c**
