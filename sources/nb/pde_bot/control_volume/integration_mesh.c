@@ -555,7 +555,7 @@ void nb_cvfa_load_trg_points(const nb_mesh2D_t *intmsh,
 }
 
 void nb_cvfa_init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
-				const nb_mesh2D_t *intmsh)
+				const nb_mesh2D_t *intmsh, int dof)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
@@ -566,7 +566,7 @@ void nb_cvfa_init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
 	/* Force symmetry for LU decomposition */
 	nb_graph_force_symmetry(graph);
 
-	*K = nb_sparse_create(graph, NULL, 2);
+	*K = nb_sparse_create(graph, NULL, dof);
 
 	nb_graph_finish(graph);
 	nb_soft_free_mem(memsize, graph);
@@ -971,4 +971,10 @@ void nb_cvfa_finish_faces(uint32_t N_faces, face_t **faces)
 {
 	for (uint32_t i = 0; i < N_faces; i++)
 		nb_free_mem(faces[i]->subfaces);
+}
+
+bool nb_cvfa_face_is_internal(const face_t *face, const nb_mesh2D_t *mesh)
+{
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	return face->elems[1] < N_elems;
 }

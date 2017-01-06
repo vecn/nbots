@@ -212,8 +212,7 @@ static void assemble_face(nb_sparse_t *K,
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
-	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	if (face->elems[1] < N_elems) {
+	if (nb_cvfa_face_is_internal(face, mesh)) {
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
 			integrate_subface(K, mesh, smooth, intmsh, xc, face,
@@ -644,8 +643,7 @@ static void get_face_strain(face_t **faces, uint32_t face_id,
 			    char *boundary_mask,
 			    const nb_glquadrature_t *glq)
 {
-	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	if (faces[face_id]->elems[1] < N_elems) {
+	if (nb_cvfa_face_is_internal(faces[face_id], mesh)) {
 		boundary_mask[face_id] = 0;
 		get_internal_face_strain(faces, face_id, smooth,
 					 intmsh, xc, disp, strain, glq);
