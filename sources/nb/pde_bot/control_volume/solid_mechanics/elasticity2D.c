@@ -234,11 +234,12 @@ static void integrate_subface(nb_sparse_t *K,
 			      const nb_cvfa_eval_damage_t* eval_dmg)
 {
 	subface_t *subface = face->subfaces[subface_id];
-	if (subface->N_int > 0) {
+	if (nb_cvfa_subface_in_simplex(subface)) {
 		for (uint8_t q = 0; q < glq->N; q++)
 			integrate_subface_simplexwise(K, mesh, smooth, intmsh,
 						      face, subface_id, D,
-						      params2D, glq, q, eval_dmg);
+						      params2D, glq, q,
+						      eval_dmg);
 	} else {
 		for (uint8_t q = 0; q < glq->N; q++)
 			integrate_subface_pairwise(K, mesh, smooth, xc, face,
@@ -693,7 +694,7 @@ void nb_cvfa_subface_get_strain(int smooth,
 				const nb_glquadrature_t *glq,
 				uint8_t q, double *strain)
 {
-	if (subface->N_int > 0)
+	if (nb_cvfa_subface_in_simplex(subface))
 		subface_get_strain_simplexwise(smooth, intmsh, subface,
 					       disp, glq, q, strain);
 	else

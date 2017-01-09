@@ -978,3 +978,8 @@ bool nb_cvfa_face_is_internal(const face_t *face, const nb_mesh2D_t *mesh)
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	return face->elems[1] < N_elems;
 }
+
+bool nb_cvfa_subface_in_simplex(const subface_t *subface)
+{
+	return (subface->N_int > 0);
+}

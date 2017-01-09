@@ -53,5 +53,6 @@ void nb_cvfa_load_faces(const nb_mesh2D_t *mesh,
 void nb_cvfa_finish_faces(uint32_t N_faces, face_t **faces);
 
 bool nb_cvfa_face_is_internal(const face_t *face, const nb_mesh2D_t *mesh);
+bool nb_cvfa_subface_in_simplex(const subface_t *subface);
 
 #endif
