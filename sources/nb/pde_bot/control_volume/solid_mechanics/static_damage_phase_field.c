@@ -793,12 +793,17 @@ static void integrate_subface_simplexwise_gp_damage_rhs
 	for (uint8_t k = 0; k < 3; k++) {
 		uint32_t elem_id = nb_mesh2D_elem_get_adj(dmg_data->intmsh, 
 							  subface->trg_id, k);
-		double xk;
-		if (k < 2)
-			xk = xi[k];
-		else
-			xk = 1.0 - xi[0] - xi[1];
-		double bk = eval_dmg_deriv_spline(dmg_data->smooth, xk);
+		double bk;
+		if (k < 2) {
+			double xk = xi[k];
+			double d = eval_dmg_deriv_spline(dmg_data->smooth, xk);
+			bk = d * face->nf[k];
+		} else {
+			double xk = 1.0 - xi[0] - xi[1];
+			double d = eval_dmg_deriv_spline(dmg_data->smooth, xk);
+			bk = - d * (face->nf[0] + face->nf[1]);
+		}
+
 		Be += bk * energy;
 	}
 
@@ -873,12 +878,12 @@ static void integrate_subface_pairwise_gp_damage_rhs
 	double wq = lf * glq->w[q] * 0.5;
 
 	double energy = get_energy(face, id_subface, q,  glq, dmg_data);
+	double grad[2];
+	face_get_grad_dmg_pairwise(dmg_data->smooth, c1, c2, grad, xq);
 	double Be = 0;
 	for (uint8_t i = 0; i < 2; i++) {
 		double bk;
 		if (0 == i)
-			bk = face_get_grad_dmg_pairwise(dmg_data->smooth,
-							c1, c2, grad, xq);
 		else
 			bk = face_get_grad_dmg_pairwise(dmg_data->smooth,
 							c2, c1, grad, xq);
@@ -896,8 +901,8 @@ static void integrate_subface_pairwise_gp_damage_rhs
 }
 
 static void face_get_grad_dmg_pairwise(int smooth,
-				   const double c1[2], const double c2[2],
-				   double grad[2], const double x[2])
+				       const double c1[2], const double c2[2],
+				       double grad[2], const double x[2])
 {
 	double xdiff = c2[0] - c1[0];
 	double ydiff = c2[1] - c1[1];
