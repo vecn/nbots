@@ -25,12 +25,13 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 enum {
-	SUCCESS_RESIDUAL_MIN,
+	SUCCESS_RESIDUAL_MIN = 0,
 	ELASTIC_SOLVER_FAILS,
 	DAMAGE_SOLVER_FAILS,
 	NO_INVERSE,
 	MAX_ITER_REACHED,
-	LU_ALLOCATION_FAILS
+	LU_ALLOCATION_FAILS,
+	LU_ALLOCATION_FAILS_DMG
 };
 
 typedef struct {
@@ -71,7 +72,7 @@ static double get_energy(const face_t *face, uint16_t subface_id,
 			 const double xq[2],
 			 const eval_damage_data_t *dmg_data);
 static void get_grad_energy(const face_t *face, uint16_t subface_id,
-			    uint8_t gp, const nb_glquadrature_t *glq,
+			    const double xq[2],
 			    const eval_damage_data_t *dmg_data,
 			    double grad[2]);
 static double subface_get_damage_simplexwise
@@ -107,20 +108,14 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     uint32_t id_elem_monitor,
 			     double *monitor_reaction,
 			     char *memblock);
-static int solve_elastic_linear_system(const nb_sparse_t *K,
-				       const uint32_t *perm,
-				       const uint32_t *iperm,
-				       nb_sparse_t *Kr,
-				       nb_sparse_t *Lr,
-				       nb_sparse_t *Ur,
-				       double *residual,
-				       double *delta_disp);
-static int solve_damage_equation(const eval_damage_data_t *dmg_data,
-				 double *elem_damage, /* Output */
-				 face_t **faces,
-				 double *H, nb_sparse_t *D,
-				 const nb_glquadrature_t *glq);
-static void assemble_global_damage(const eval_damage_data_t *dmg_data,
+static int solve_linear_system(const nb_sparse_t *A,
+			       const uint32_t *perm,
+			       const uint32_t *iperm,
+			       nb_sparse_t *Ar,
+			       nb_sparse_t *Lr,
+			       nb_sparse_t *Ur,
+			       double *b, double *x);
+static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 				   face_t **faces,
 				   const nb_glquadrature_t *glq,
 				   nb_sparse_t *D, double *H);
@@ -356,7 +351,7 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 		memblock += sizeof(face_t);
 		memset((*faces)[i], 0, sizeof(face_t));
 	}
-	*minimize_residuals_memblock = (void*) memblock;
+	*minimize_residuals_memblock = memblock;
 }
 
 static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
@@ -370,7 +365,7 @@ static void init_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg, int smooth,
 {
 	eval_damage_data_t *data = nb_allocate_mem(sizeof(*data));
 	data->smooth = smooth;
-	data->intmsh = mesh;
+	data->mesh = mesh;
 	data->intmsh = intmsh;
 	data->disp = displacement;
 	data->xc = xc;
@@ -475,14 +470,10 @@ static double get_energy(const face_t *face, uint16_t subface_id,
 }
 
 static void get_grad_energy(const face_t *face, uint16_t subface_id,
-			    uint8_t gp, const nb_glquadrature_t *glq,
+			    const double xq[2],
 			    const eval_damage_data_t *dmg_data,
 			    double grad[2])
 {
-	const subface_t *subface = face->subfaces[subface_id];
-	double xq[2];
-	nb_cvfa_subface_get_xq(subface, glq, gp, xq);
-
 	double strain[3];
 	nb_cvfa_subface_get_strain(dmg_data->smooth,
 				   dmg_data->intmsh,
@@ -496,7 +487,7 @@ static void get_grad_energy(const face_t *face, uint16_t subface_id,
 					face, face->subfaces[subface_id],
 					dmg_data->xc,
 					dmg_data->disp,
-					glq, gp, grad_strain);
+					xq, grad_strain);
 	double lame[2];
 	nb_pde_get_lame_params(lame, dmg_data->material,
 			       dmg_data->analysis2D);
@@ -577,7 +568,7 @@ static double subface_get_damage_pairwise(const face_t *face,
 
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
 {
-	uint32_t memsize = 4 * N_elems * sizeof(uint32_t) +
+	uint32_t memsize = 6 * N_elems * sizeof(uint32_t) +
 		9 * N_elems * sizeof(double);
 	return memsize;
 }
@@ -613,8 +604,15 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 				    2 * N * sizeof(double));
 	double *aux_disp = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 				    3 * N * sizeof(double));
-	double *rhs_damage = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	uint32_t *dmg_perm = (void*) (memblock + 2 * N * sizeof(uint32_t) +
 				      4 * N * sizeof(double));
+	uint32_t *dmg_iperm = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				       4 * N * sizeof(double) +
+				       N_elems * sizeof(uint32_t));
+	double *rhs_damage = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+				      4 * N * sizeof(double) +
+				      2 * N_elems * sizeof(uint32_t));
 
 	uint16_t bcond_size = nb_bcond_get_memsize(2);
 	nb_bcond_t *numeric_bcond = nb_soft_allocate_mem(bcond_size);
@@ -635,7 +633,16 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		goto EXIT;
 	}
 
-	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	nb_sparse_calculate_permutation(D, dmg_perm, dmg_iperm);
+
+	nb_sparse_t *Dr = nb_sparse_create_permutation(D, dmg_perm, dmg_iperm);
+	nb_sparse_t *dmg_Lr = NULL; 
+	nb_sparse_t *dmg_Ur = NULL;
+	nb_sparse_alloc_LU(Dr, &dmg_Lr, &dmg_Ur);
+	if(NULL == dmg_Lr) {
+		status = LU_ALLOCATION_FAILS_DMG;
+		goto EXIT;
+	}
 
 	int iter = 0;
 	double rnorm = 1;
@@ -661,9 +668,8 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			goto EXIT;
 		}
 
-		status = solve_elastic_linear_system(K, perm, iperm,
-						     Kr, Lr, Ur,
-						     residual, delta_disp);
+		status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
+					     residual, delta_disp);
 
 		if (status != 0) {
 			status = ELASTIC_SOLVER_FAILS;
@@ -672,8 +678,10 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 
 		nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
-		status = solve_damage_equation(eval_dmg->data, elem_damage,
-					       faces, rhs_damage, D, glq);
+		assemble_global_damage(eval_dmg, faces, glq, D, rhs_damage);
+		status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
+					     dmg_Lr, dmg_Ur, rhs_damage,
+					     elem_damage);
 		if (status != 0) {
 			status = DAMAGE_SOLVER_FAILS;
 			goto EXIT;
@@ -702,63 +710,46 @@ EXIT:
 
 	nb_bcond_finish(numeric_bcond);
 	nb_sparse_destroy(Kr);
-
+	nb_sparse_destroy(Dr);
 	if (LU_ALLOCATION_FAILS != status) {
 		nb_sparse_destroy(Lr);
 		nb_sparse_destroy(Ur);
 	}
-
+	if (LU_ALLOCATION_FAILS_DMG != status) {
+		nb_sparse_destroy(Lr);
+		nb_sparse_destroy(Ur);
+	}
 	nb_soft_free_mem(bcond_size, numeric_bcond);
 	return status;
 }
 
-static int solve_elastic_linear_system(const nb_sparse_t *K,
-				       const uint32_t *perm,
-				       const uint32_t *iperm,
-				       nb_sparse_t *Kr,
-				       nb_sparse_t *Lr,
-				       nb_sparse_t *Ur,
-				       double *residual,
-				       double *delta_disp)
+static int solve_linear_system(const nb_sparse_t *A,
+			       const uint32_t *perm,
+			       const uint32_t *iperm,
+			       nb_sparse_t *Ar,
+			       nb_sparse_t *Lr,
+			       nb_sparse_t *Ur,
+			       double *b, double *x)
 {
-	uint32_t N = nb_sparse_get_size(K);
-	nb_vector_permutation(N, residual, perm, delta_disp);
-	memcpy(residual, delta_disp, N * sizeof(*residual));
+	uint32_t N = nb_sparse_get_size(A);
+	nb_vector_permutation(N, b, perm, x);
+	memcpy(b, x, N * sizeof(*b));
 
-	nb_sparse_fill_permutation(K, Kr, perm, iperm);
+	nb_sparse_fill_permutation(A, Ar, perm, iperm);
+	nb_sparse_decompose_LU(Ar, Lr, Ur, 2);
+	nb_sparse_solve_LU(Lr, Ur, b, x);
 
-	nb_sparse_decompose_LU(Kr, Lr, Ur, 2);
-
-	nb_sparse_solve_LU(Lr, Ur, residual, delta_disp);
-
-	nb_vector_permutation(N, delta_disp, iperm, residual);
-	memcpy(delta_disp, residual, N * sizeof(*residual));
+	nb_vector_permutation(N, x, iperm, b);
+	memcpy(x, b, N * sizeof(*x));
 	return 0;
 }
 
-static int solve_damage_equation(const eval_damage_data_t *dmg_data,
-				 double *elem_damage, /* Output */
-				 face_t **faces,
-				 double *H, nb_sparse_t *D,
-				 const nb_glquadrature_t *glq)
-{
-	uint32_t N_elems = nb_mesh2D_get_N_elems(dmg_data->mesh);
-
-	assemble_global_damage(dmg_data, faces, glq, D, H);
-
-	double asym = nb_sparse_get_asym(D);/* TEMPORAL */
-	printf("=====> DAMAGE ASYM: %lf\n", asym);exit(1);/* TEMPORAL */
-
-	nb_sparse_solve_CG_precond_Jacobi(D, H, elem_damage, N_elems,
-					  1e-6, NULL, NULL, 2);
-	return 0;
-}
-
-static void assemble_global_damage(const eval_damage_data_t *dmg_data,
+static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 				   face_t **faces,
 				   const nb_glquadrature_t *glq,
 				   nb_sparse_t *D, double *H)
 {
+	const eval_damage_data_t *dmg_data = eval_dmg->data;
 	uint32_t N_elems = nb_mesh2D_get_N_elems(dmg_data->mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(dmg_data->mesh);
 	memset(H, 0, N_elems * sizeof(*H));
@@ -1004,10 +995,11 @@ static void integrate_subface_simplexwise_gp_damage
 	double energy = get_energy(face, subface_id, xq, dmg_data);
 
 	double grad_energy[2];
-	get_grad_energy(face, subface_id, gp, glq, dmg_data, grad_energy);
+	get_grad_energy(face, subface_id, xq, dmg_data, grad_energy);
 
 	double directional_energy =  grad_energy[0] * face->nf[0] +
 		grad_energy[1] * face->nf[1];
+
 	double Cm = 1.0 - A;
 	double Ce = Cm * directional_energy;
 
@@ -1076,7 +1068,7 @@ static void integrate_subface_pairwise_gp_damage
 	double energy = get_energy(face, subface_id, xq, dmg_data);
 
 	double grad_energy[2];
-	get_grad_energy(face, subface_id, gp, glq, dmg_data, grad_energy);
+	get_grad_energy(face, subface_id, xq, dmg_data, grad_energy);
 	double directional_energy =  grad_energy[0] * face->nf[0] +
 		grad_energy[1] * face->nf[1];
 	double Cm = 1.0 - A;
@@ -1118,6 +1110,9 @@ static void show_error_message(int status)
 		break;
 	case LU_ALLOCATION_FAILS:
 		fprintf(stderr, "Allocation for LU decomposition fails");
+		break;
+	case LU_ALLOCATION_FAILS_DMG:
+		fprintf(stderr, "Allocation for damage LU decomp. fails");
 		break;
 	default:
 		fprintf(stderr, "Unkown error");		

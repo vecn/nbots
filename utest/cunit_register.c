@@ -30,7 +30,7 @@ EXIT:
 	return CU_get_error();
 }
 
-void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void);
+void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void);/* TEMPORAL */
 int main()/* TEMPORAL MAIN */
 {
 	CU_initialize_registry();

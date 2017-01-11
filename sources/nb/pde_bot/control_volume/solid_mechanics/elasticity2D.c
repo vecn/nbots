@@ -153,16 +153,16 @@ static void subface_get_grad_strain_simplexwise
 			 const nb_mesh2D_t *intmsh,
 			 const subface_t *subface,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *grad_strain);
+			 const double xq[2],
+			 double *grad_strain);
 static void subface_get_grad_strain_pairwise
 			(int smooth,
 			 const face_t *face,
 			 const subface_t *subface,
 			 const double *xc,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *grad_strain);
+			 const double xq[2],
+			 double *grad_strain);
 
 void nb_cvfa_assemble_global_forces(double *F,
 				    const nb_mesh2D_t *const mesh,
@@ -891,15 +891,15 @@ void nb_cvfa_subface_get_grad_strain(int smooth,
 				     const subface_t *subface,
 				     const double *xc,
 				     const double *disp,
-				     const nb_glquadrature_t *glq,
-				     uint8_t q, double *grad_strain)
+				     const double xq[2],
+				     double *grad_strain)
 {
 	if (nb_cvfa_subface_in_simplex(subface))
 		subface_get_grad_strain_simplexwise(smooth, intmsh, subface,
-						    disp, glq, q, grad_strain);
+						    disp, xq, grad_strain);
 	else
 		subface_get_grad_strain_pairwise(smooth, face, subface, xc,
-						 disp, glq, q, grad_strain);
+						 disp, xq, grad_strain);
 }
 
 static void subface_get_grad_strain_simplexwise
@@ -907,14 +907,12 @@ static void subface_get_grad_strain_simplexwise
 			 const nb_mesh2D_t *intmsh,
 			 const subface_t *subface,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *grad_strain)
+			 const double xq[2],
+			 double *grad_strain)
 {
 	double t1[2], t2[2], t3[2];
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
-	double xq[2];
-	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 	double xi[2];
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
@@ -936,7 +934,7 @@ static void subface_get_grad_strain_simplexwise
 	grad_strain[2] = 0;
 	grad_strain[3] = d2hy * (v2 - v3);
 	grad_strain[4] = d2hx * (v1 - v3);
-	grad_strain[6] = d2hy * (u2 - u3);
+	grad_strain[5] = d2hy * (u2 - u3);
 }
 
 static void subface_get_grad_strain_pairwise
@@ -945,8 +943,8 @@ static void subface_get_grad_strain_pairwise
 			 const subface_t *subface,
 			 const double *xc,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *grad_strain)
+			 const double xq[2],
+			 double *grad_strain)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
@@ -956,9 +954,6 @@ static void subface_get_grad_strain_pairwise
 	double cnorm2 = POW2(c[0]) + POW2(c[1]);
 	c[0] /= cnorm2;
 	c[1] /= cnorm2;
-
-	double xq[2];
-	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 
 	double z = c[0] * (xq[0] - xc[id1 * 2]) + c[1] * (xq[1] - xc[id1*2+1]);
 	double d2hz = get_second_deriv_spline(smooth, z);
