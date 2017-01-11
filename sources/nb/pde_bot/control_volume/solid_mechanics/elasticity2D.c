@@ -82,6 +82,7 @@ static void get_jacobian(int somooth,
 static void subface_get_normalized_grad(int smooth, uint8_t i,
 					const double xi[2],
 					double grad_xi[2]);
+static double get_spline(int smooth, double x);
 static double get_deriv_spline(int smooth, double x);
 static double get_second_deriv_spline(int smooth, double x);
 static double get_spline_inv(int smooth, double x);
@@ -426,6 +427,51 @@ void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
 
 	xi[0] = get_spline_inv(smooth, Jd[0] * b[0] + Jd[1] * b[1]);
 	xi[1] = get_spline_inv(smooth, Jd[2] * b[0] + Jd[3] * b[1]);
+}
+
+void nb_cvfa_get_interpolated_point(int smooth, const double x1[2],
+				    const double x2[2], const double x3[2],
+				    const double xi[2], double xq[2])
+{
+	double P1 = get_spline(smooth, xi[0]);
+	double P2 = get_spline(smooth, xi[1]);
+	double P3 = 1.0 - P1 - P2;
+	xq[0] = x1[0] * P1 + x2[0] * P2 + x3[0] * P3;
+	xq[1] = x1[1] * P1 + x2[1] * P2 + x3[1] * P3;
+}
+
+static double get_spline(int smooth, double x)
+{
+	double spline;
+	switch (smooth) {
+	case 0:
+		spline = x;
+		break;
+	case 1:
+		spline = 3 * POW2(x) - 2 * POW3(x);
+		break;
+	case 2:
+		spline = 10 * POW3(x) - 15 * pow(x, 4) + 6 * pow(x, 5);
+		break;
+	case 3:
+		spline = 35 * pow(x, 4) - 84 * pow(x, 5) +
+			70 * pow(x, 6) - 20 * pow(x, 7);
+		break;
+	case 4:
+		spline = 126 * pow(x, 5) - 420 * pow(x, 6) +
+			540 * pow(x, 7) - 315 * pow(x, 8) + 70 * pow(x, 9);
+		break;
+	case 5:
+		spline = 462 * pow(x, 6) - 1980 * pow(x, 7) + 3465 * pow(x, 8) -
+			3080 * pow(x, 9) + 1386 * pow(x, 10) - 252 * pow(x, 11);
+		break;
+	default:
+		spline = 1716 * pow(x, 7) - 9009 * pow(x, 8) +
+			20020 * pow(x, 9) - 24024 * pow(x, 10) +
+			16380 * pow(x, 11) - 6006 * pow(x, 12) +
+			924 * pow(x, 13);
+	}
+	return spline;
 }
 
 static double get_deriv_spline(int smooth, double x)

@@ -37,6 +37,10 @@ void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
 				  const double x2[2], const double x3[2],
 				  const double xq[2], double xi[2]);
 
+void nb_cvfa_get_interpolated_point(int smooth, const double x1[2],
+				    const double x2[2], const double x3[2],
+				    const double xi[2], double xq[2]);
+
 void nb_cvfa_compute_strain(double *strain, char *boundary_mask,
 			    face_t **faces, 
 			    const nb_mesh2D_t *mesh, int smooth,

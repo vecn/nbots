@@ -12,6 +12,14 @@
 typedef struct subface_s subface_t;
 
 typedef struct {
+	/* Face orientation:
+	 *
+	 *              x2
+	 *               \
+	 *  elem[0] +     \     + elem[1]
+	 *                 \
+	 *                  x1
+	 */
 	double nf[2];
 	uint32_t elems[2];
 	double x1[2], x2[2];
