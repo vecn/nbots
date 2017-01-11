@@ -54,4 +54,13 @@ void nb_cvfa_subface_get_strain(int smooth,
 				const nb_glquadrature_t *glq,
 				uint8_t q, double *strain);
 
+void nb_cvfa_subface_get_grad_strain(int smooth,
+				     const nb_mesh2D_t *intmsh,
+				     const face_t *face,
+				     const subface_t *subface,
+				     const double *xc,
+				     const double *disp,
+				     const nb_glquadrature_t *glq,
+				     uint8_t q, double *grad_strain);
+
 #endif
