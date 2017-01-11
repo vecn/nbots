@@ -57,7 +57,7 @@
 # Elasticity module (Pa)			#
  2e10	                                        #
 # Fracture energy (J/m^2)                       #
- 3 #5e-4						#
+ 3						#
 # Compression limit stress                      #
  0						#
 # Traction limit stress                         #

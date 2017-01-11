@@ -291,6 +291,9 @@ int nb_cvfa_compute_2D_damage_phase_field
 			iter ++;
 		}
 	}
+	nb_mesh2D_export_draw(mesh, "./CVFA_elem_dmg.png", 1000, 800,
+			      NB_ELEMENT, NB_FIELD,
+			      elem_damage, true);/* TEMPORAL */
 
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
 			       intmsh, xc, bcond, displacement, &glq);
@@ -404,6 +407,7 @@ static double get_internal_subface_damage(const face_t *face,
 	else
 		damage = subface_get_damage_pairwise(face, subface_id, gp,
 						     glq, dmg_data);
+	return 0;/* TEMPORAL */
 	return damage;
 }
 
@@ -516,7 +520,7 @@ static double eval_dmg_deriv_spline(int smooth, double x)
 {
 	int g = 2 * smooth + 1;
 	double out;
-	if (g < 2)
+	if (g == 1)
 		out = 1.0;
 	else
 		out = g * pow(x, g - 1);
@@ -757,6 +761,8 @@ static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 	for (uint32_t i = 0; i < N_faces; i++) {
 		assemble_face_damage(dmg_data, faces[i], glq, D, H);
 	}
+	double tmp = nb_vector_get_norm(H, N_elems);/* TEMPORAL */
+	printf("Frobenius: %lf\n", tmp);/* TEMPORAL */
 }
 
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
@@ -781,7 +787,7 @@ static void integrate_interior_subface_damage
 					 const nb_glquadrature_t *glq,
 					 nb_sparse_t *D, double *H)
 {
-	integrate_subvolume_damage(dmg_data, face, subface_id, glq, D, H);
+	//integrate_subvolume_damage(dmg_data, face, subface_id, glq, D, H);
 	integrate_subface_damage(dmg_data, face, subface_id, glq, D, H);
 }
 
@@ -878,7 +884,7 @@ static void integrate_svol_simplexwise_gp_dmg
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, elem_id, elem_k, ak);
+		nb_sparse_add(D, elem_id, elem_k, wq * ak);
 	}
 
 	double energy = get_energy(face, subface_id, xq, dmg_data);
@@ -918,7 +924,7 @@ static void integrate_svol_pairwise_gp_dmg
 		A += ak;
 
 		uint32_t elem_k = face->elems[k];
-		nb_sparse_add(D, elem_id, elem_k, ak);
+		nb_sparse_add(D, elem_id, elem_k, wq * ak);
 	}
 
 	double energy = get_energy(face, subface_id, xq, dmg_data);
@@ -964,6 +970,9 @@ static void integrate_subface_simplexwise_gp_damage
 	double xi[2];
 	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
 
+	double iJ[4];
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
+
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 	double wq = lf * glq->w[gp] * 0.5;
 
@@ -972,25 +981,31 @@ static void integrate_subface_simplexwise_gp_damage
 	double A = 0;
 	for (uint8_t k = 0; k < 3; k++) {
 		double ak;
-		double bk;
+		double grad_xi[2] = {0, 0};
 		if (k < 2) {
 			double xk = xi[k];
 			ak = eval_dmg_spline(dmg_data->smooth, xk);
 			double d = eval_dmg_deriv_spline(dmg_data->smooth, xk);
-			bk = d * face->nf[k];
+			grad_xi[k] = d;
 		} else {
 			double xk = 1.0 - xi[0] - xi[1];
 			ak = eval_dmg_spline(dmg_data->smooth, xk);
-			double d = eval_dmg_deriv_spline(dmg_data->smooth, xk);
-			bk = - d * (face->nf[0] + face->nf[1]);
+			double d = -eval_dmg_deriv_spline(dmg_data->smooth, xk);
+			grad_xi[0] = d;
+			grad_xi[1] = d;
 		}
+		double grad[2];
+		nb_cvfa_subface_get_grad(iJ, grad_xi, grad);
+
+		double bk = grad[0] * face->nf[0] + grad[1] * face->nf[1];
+
 		A += ak;
 		B += bk;
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, face->elems[0], elem_k, -POW2(h) * bk);
-		nb_sparse_add(D, face->elems[1], elem_k,  POW2(h) * bk);
+		nb_sparse_add(D, face->elems[0], elem_k,  -wq * POW2(h) * bk);
+		nb_sparse_add(D, face->elems[1], elem_k,   wq * POW2(h) * bk);
 	}
 	double energy = get_energy(face, subface_id, xq, dmg_data);
 
@@ -1008,8 +1023,8 @@ static void integrate_subface_simplexwise_gp_damage
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 
-	H[i] += wq * (h/G) * (B * energy * POW2(h) + Ce);
-	H[j] -= wq * (h/G) * (B * energy * POW2(h) + Ce);
+	H[i] += wq * (h/G) * POW2(h) * (-B * energy  + Ce);
+	H[j] -= wq * (h/G) * POW2(h) * (-B * energy  + Ce);
 }
 
 static void integrate_subface_pairwise_gp_damage
@@ -1062,8 +1077,8 @@ static void integrate_subface_pairwise_gp_damage
 		A += ak;
 
 		uint32_t elem_k = face->elems[k];
-		nb_sparse_add(D, face->elems[0], elem_k, -POW2(h) * bk);
-		nb_sparse_add(D, face->elems[1], elem_k,  POW2(h) * bk);
+		nb_sparse_add(D, face->elems[0], elem_k, -wq * POW2(h) * bk);
+		nb_sparse_add(D, face->elems[1], elem_k,  wq * POW2(h) * bk);
 	}
 	double energy = get_energy(face, subface_id, xq, dmg_data);
 
@@ -1079,8 +1094,8 @@ static void integrate_subface_pairwise_gp_damage
 	uint32_t i = face->elems[0];
 	uint32_t j = face->elems[1];
 
-	H[i] += wq * (h/G) * (B * energy * POW2(h) + Ce);
-	H[j] -= wq * (h/G) * (B * energy * POW2(h) + Ce);
+	H[i] += wq * (h/G) * POW2(h) * (-B * energy  + Ce);
+	H[j] -= wq * (h/G) * POW2(h) * (-B * energy  + Ce);
 }
 
 static void integrate_exterior_subface_damage

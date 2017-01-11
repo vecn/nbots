@@ -67,14 +67,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 			 uint16_t subface_id, const double D[4],
 			 nb_analysis2D_params *params2D, double Kf[12],
 			 const nb_glquadrature_t *glq, uint8_t q);
-static double subface_get_inverse_jacobian(int smooth,
-					   const double t1[2],
-					   const double t2[2],
-					   const double t3[2],
-					   double iJ[4],
-					   const double xi[2]);
-static void get_jacobian(int somooth,
-			 const double t1[2],
+static void get_jacobian(const double t1[2],
 			 const double t2[2],
 			 const double t3[2],
 			 double J[4],
@@ -86,8 +79,6 @@ static double get_spline(int smooth, double x);
 static double get_deriv_spline(int smooth, double x);
 static double get_second_deriv_spline(int smooth, double x);
 static double get_spline_inv(int smooth, double x);
-static void subface_get_grad(const double iJ[4], const double grad_xi[2],
-			     double grad[2]);
 static void subface_get_nodal_contribution(const double D[4],
 					   const double nf[2],
 					   const double grad[2],
@@ -315,14 +306,14 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	double wq = lf * glq->w[q] * 0.5;
 
 	double iJ[4];
-	subface_get_inverse_jacobian(smooth, t1, t2, t3, iJ, xi);
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
 
 	double factor = wq * params2D->thickness;
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(smooth, i, xi, grad_xi);
 		double grad[2];
-		subface_get_grad(iJ, grad_xi, grad);
+		nb_cvfa_subface_get_grad(iJ, grad_xi, grad);
 		double Kfi[4];
 		subface_get_nodal_contribution(D, face->nf, grad, Kfi);
 		Kf[i * 2] = factor * Kfi[0];
@@ -332,14 +323,13 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	}
 }
 
-static double subface_get_inverse_jacobian(int smooth,
-					   const double t1[2],
-					   const double t2[2],
-					   const double t3[2],
-					   double iJ[4],
-					   const double xi[2])
+double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
+					    const double t2[2],
+					    const double t3[2],
+					    double iJ[4],
+					    const double xi[2])
 {
-	get_jacobian(smooth, t1, t2, t3, iJ, xi);
+	get_jacobian(t1, t2, t3, iJ, xi);
 
 	double aux = iJ[1];
 	iJ[1] = iJ[2];
@@ -350,40 +340,17 @@ static double subface_get_inverse_jacobian(int smooth,
 	return det;
 }
 
-static void get_jacobian(int smooth,
-			 const double t1[2],
+static void get_jacobian(const double t1[2],
 			 const double t2[2],
 			 const double t3[2],
 			 double J[4],
 			 const double xi[2])
 {
 	/* Jacobian = D_{psi} x*/
-	if (0 == smooth) {
-		J[0] = t2[0] - t1[0];
-		J[1] = t3[0] - t1[0];
-		J[2] = t2[1] - t1[1];
-		J[3] = t3[1] - t1[1];
-	} else {
-		memset(J, 0, 4 * sizeof(*J));
-		double grad_xi[2];
-		subface_get_normalized_grad(smooth, 0, xi, grad_xi);
-		J[0] += grad_xi[0] * t1[0];
-		J[1] += grad_xi[1] * t1[0];
-		J[2] += grad_xi[0] * t1[1];
-		J[3] += grad_xi[1] * t1[1];
-
-		subface_get_normalized_grad(smooth, 1, xi, grad_xi);
-		J[0] += grad_xi[0] * t2[0];
-		J[1] += grad_xi[1] * t2[0];
-		J[2] += grad_xi[0] * t2[1];
-		J[3] += grad_xi[1] * t2[1];
-
-		subface_get_normalized_grad(smooth, 2, xi, grad_xi);
-		J[0] += grad_xi[0] * t3[0];
-		J[1] += grad_xi[1] * t3[0];
-		J[2] += grad_xi[0] * t3[1];
-		J[3] += grad_xi[1] * t3[1];
-	}
+	J[0] = t2[0] - t1[0];
+	J[1] = t3[0] - t1[0];
+	J[2] = t2[1] - t1[1];
+	J[3] = t3[1] - t1[1];
 }
 
 static void subface_get_normalized_grad(int smooth, uint8_t i,
@@ -573,9 +540,8 @@ static double get_spline_inv(int smooth, double x)
 	return inv;
 }
 
-
-static void subface_get_grad(const double iJ[4], const double grad_xi[2],
-			     double grad[2])
+void nb_cvfa_subface_get_grad(const double iJ[4], const double grad_xi[2],
+			      double grad[2])
 {
 	grad[0] = iJ[0] * grad_xi[0] + iJ[1] * grad_xi[1];
 	grad[1] = iJ[2] * grad_xi[0] + iJ[3] * grad_xi[1];
@@ -822,14 +788,14 @@ static void subface_get_strain_simplexwise(int smooth,
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
 	double iJ[4];
-	subface_get_inverse_jacobian(smooth, t1, t2, t3, iJ, xi);
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
 
 	memset(strain, 0, 3 * sizeof(*strain));
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(smooth, i, xi, grad_xi);
 		double grad[2];
-		subface_get_grad(iJ, grad_xi, grad);
+		nb_cvfa_subface_get_grad(iJ, grad_xi, grad);
 
 		uint32_t elem_id =
 			nb_mesh2D_elem_get_adj(intmsh, subface->trg_id, i);
