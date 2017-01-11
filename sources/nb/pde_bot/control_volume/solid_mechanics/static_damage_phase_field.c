@@ -716,8 +716,8 @@ EXIT:
 		nb_sparse_destroy(Ur);
 	}
 	if (LU_ALLOCATION_FAILS_DMG != status) {
-		nb_sparse_destroy(Lr);
-		nb_sparse_destroy(Ur);
+		nb_sparse_destroy(dmg_Lr);
+		nb_sparse_destroy(dmg_Ur);
 	}
 	nb_soft_free_mem(bcond_size, numeric_bcond);
 	return status;
