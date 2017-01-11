@@ -23,7 +23,6 @@
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
 
 enum {
 	SUCCESS_RESIDUAL_MIN,
@@ -121,24 +120,24 @@ static int solve_damage_equation(const eval_damage_data_t *dmg_data,
 				 face_t **faces,
 				 double *H, nb_sparse_t *D,
 				 const nb_glquadrature_t *glq);
-static void assemble_global_damage_rhs(const eval_damage_data_t *dmg_data,
-				       face_t **faces,
-				       const nb_glquadrature_t *glq,
-				       double *H);
-static void assemble_face_damage_rhs(const eval_damage_data_t *dmg_data,
-				     face_t *face,
-				     const nb_glquadrature_t *glq,
-				     double *H);
-static void integrate_interior_subface_damage_rhs
+static void assemble_global_damage(const eval_damage_data_t *dmg_data,
+				   face_t **faces,
+				   const nb_glquadrature_t *glq,
+				   nb_sparse_t *D, double *H);
+static void assemble_face_damage(const eval_damage_data_t *dmg_data,
+				 face_t *face,
+				 const nb_glquadrature_t *glq,
+				 nb_sparse_t *D, double *H);
+static void integrate_interior_subface_damage
 					(const eval_damage_data_t *dmg_data,
 					 face_t *face, uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 double *H);
-static void integrate_subvolume_damage_rhs(const eval_damage_data_t *dmg_data,
-					   face_t *face, uint16_t subface_id,
-					   const nb_glquadrature_t *glq,
-					   double *H);
-static void integrate_lateral_subvolume_damage_rhs
+					 nb_sparse_t *D, double *H);
+static void integrate_subvolume_damage(const eval_damage_data_t *dmg_data,
+				       face_t *face, uint16_t subface_id,
+				       const nb_glquadrature_t *glq,
+				       nb_sparse_t *D, double *H);
+static void integrate_lateral_subvolume_damage
 				(const double st1[2],
 				 const double st2[2],
 				 const double st3[2],
@@ -146,43 +145,42 @@ static void integrate_lateral_subvolume_damage_rhs
 				 const face_t *face, uint32_t subface_id,
 				 uint32_t elem_id,
 				 const nb_glquadrature_t *glq,
-				 double *H);
+				 nb_sparse_t *D, double *H);
 
-static void integrate_svol_simplexwise_gp_dmg_rhs
+static void integrate_svol_simplexwise_gp_dmg
 				(const eval_damage_data_t *dmg_data,
 				 const face_t *face, uint32_t subface_id,
-				 uint32_t elem_id,
-				 double wq, const double xq[2], double *H);
-static void integrate_svol_pairwise_gp_dmg_rhs
+				 uint32_t elem_id, double wq,
+				 const double xq[2],
+				 nb_sparse_t *D, double *H);
+static void integrate_svol_pairwise_gp_dmg
 				(const eval_damage_data_t *dmg_data,
 				 const face_t *face, uint32_t subface_id,
-				 uint32_t elem_id,
-				 double wq, const double xq[2], double *H);
-static void integrate_subface_damage_rhs(const eval_damage_data_t *dmg_data,
+				 uint32_t elem_id, double wq,
+				 const double xq[2],
+				 nb_sparse_t *D, double *H);
+static void integrate_subface_damage(const eval_damage_data_t *dmg_data,
+				     face_t *face, uint16_t subface_id,
+				     const nb_glquadrature_t *glq,
+				     nb_sparse_t *D, double *H);
+static void integrate_subface_simplexwise_gp_damage
+					(const eval_damage_data_t *dmg_data,
 					 face_t *face, uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 double *H);
-static void integrate_subface_simplexwise_gp_damage_rhs
+					 uint8_t gp,
+					 nb_sparse_t *D, double *H);
+static void integrate_subface_pairwise_gp_damage
 					(const eval_damage_data_t *dmg_data,
 					 face_t *face,
 					 uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 uint8_t gp, double *H);
-static void integrate_subface_pairwise_gp_damage_rhs
-					(const eval_damage_data_t *dmg_data,
-					 face_t *face,
-					 uint16_t subface_id,
-					 const nb_glquadrature_t *glq,
-					 uint8_t gp, double *H);
-static void integrate_exterior_subface_damage_rhs
+					 uint8_t gp,
+					 nb_sparse_t *D, double *H);
+static void integrate_exterior_subface_damage
 					(const eval_damage_data_t *dmg_data,
 					 face_t *face,
 					 const nb_glquadrature_t *glq,
-					 double *H);
-static void assemble_global_damage_matrix(const eval_damage_data_t *dmg_data,
-					  face_t **faces,
-					  const nb_glquadrature_t *glq,
-					  nb_sparse_t *D);
+					 nb_sparse_t *D, double *H);
 static void show_error_message(int status);
 static void save_reaction_log(const char *logfile, uint32_t iter,
 			      double factor, double reaction);
@@ -519,13 +517,13 @@ static void get_grad_energy(const face_t *face, uint16_t subface_id,
 
 static double eval_dmg_spline(int smooth, double x)
 {
-	int g = MAX(1, 2 * smooth);
+	int g = 2 * smooth + 1;
 	return pow(x, g);
 }
 
 static double eval_dmg_deriv_spline(int smooth, double x)
 {
-	int g = MAX(1, 2 * smooth);
+	int g = 2 * smooth + 1;
 	double out;
 	if (g < 2)
 		out = 1.0;
@@ -746,8 +744,8 @@ static int solve_damage_equation(const eval_damage_data_t *dmg_data,
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(dmg_data->mesh);
 
-	assemble_global_damage_rhs(dmg_data, faces, glq, H);
-	assemble_global_damage_matrix(dmg_data, faces, glq, D);
+	assemble_global_damage(dmg_data, faces, glq, D, H);
+
 	double asym = nb_sparse_get_asym(D);/* TEMPORAL */
 	printf("=====> DAMAGE ASYM: %lf\n", asym);exit(1);/* TEMPORAL */
 
@@ -756,51 +754,51 @@ static int solve_damage_equation(const eval_damage_data_t *dmg_data,
 	return 0;
 }
 
-static void assemble_global_damage_rhs(const eval_damage_data_t *dmg_data,
-				       face_t **faces,
-				       const nb_glquadrature_t *glq,
-				       double *H)
+static void assemble_global_damage(const eval_damage_data_t *dmg_data,
+				   face_t **faces,
+				   const nb_glquadrature_t *glq,
+				   nb_sparse_t *D, double *H)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(dmg_data->mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(dmg_data->mesh);
 	memset(H, 0, N_elems * sizeof(*H));
 	for (uint32_t i = 0; i < N_faces; i++) {
 		face_t *face = faces[i];
-		assemble_face_damage_rhs(dmg_data, face, glq, H);
+		assemble_face_damage(dmg_data, face, glq, D, H);
 	}
 }
 
-static void assemble_face_damage_rhs(const eval_damage_data_t *dmg_data,
-				     face_t *face,
-				     const nb_glquadrature_t *glq,
-				     double *H)
+static void assemble_face_damage(const eval_damage_data_t *dmg_data,
+				 face_t *face,
+				 const nb_glquadrature_t *glq,
+				 nb_sparse_t *D, double *H)
 {
 	if (nb_cvfa_face_is_internal(face, dmg_data->mesh)) {
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
-			integrate_interior_subface_damage_rhs(dmg_data, face,
-							      i, glq, H);
+			integrate_interior_subface_damage(dmg_data, face,
+							  i, glq, D, H);
 		}
 	} else {
-		integrate_exterior_subface_damage_rhs(dmg_data, face, glq, H);
+		integrate_exterior_subface_damage(dmg_data, face, glq, D, H);
 	}
 }
 
-static void integrate_interior_subface_damage_rhs
+static void integrate_interior_subface_damage
 					(const eval_damage_data_t *dmg_data,
 					 face_t *face,
 					 uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 double *H)
+					 nb_sparse_t *D, double *H)
 {
-	integrate_subvolume_damage_rhs(dmg_data, face, subface_id, glq, H);
-	integrate_subface_damage_rhs(dmg_data, face, subface_id, glq, H);
+	integrate_subvolume_damage(dmg_data, face, subface_id, glq, D, H);
+	integrate_subface_damage(dmg_data, face, subface_id, glq, D, H);
 }
 
-static void integrate_subvolume_damage_rhs(const eval_damage_data_t *dmg_data,
-					   face_t *face, uint16_t subface_id,
-					   const nb_glquadrature_t *glq,
-					   double *H)
+static void integrate_subvolume_damage(const eval_damage_data_t *dmg_data,
+				       face_t *face, uint16_t subface_id,
+				       const nb_glquadrature_t *glq,
+				       nb_sparse_t *D, double *H)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
@@ -811,15 +809,15 @@ static void integrate_subvolume_damage_rhs(const eval_damage_data_t *dmg_data,
 	c2[1] = dmg_data->xc[id2*2+1];
 
 	const subface_t *subface = face->subfaces[subface_id];
-	integrate_lateral_subvolume_damage_rhs(subface->x1, subface->x2, c1,
-					       dmg_data, face, subface_id,
-					       id1, glq, H);
-	integrate_lateral_subvolume_damage_rhs(subface->x2, subface->x1, c2,
-					       dmg_data, face, subface_id,
-					       id2, glq, H);
+	integrate_lateral_subvolume_damage(subface->x1, subface->x2, c1,
+					   dmg_data, face, subface_id,
+					   id1, glq, D, H);
+	integrate_lateral_subvolume_damage(subface->x2, subface->x1, c2,
+					   dmg_data, face, subface_id,
+					   id2, glq, D, H);
 }
 
-static void integrate_lateral_subvolume_damage_rhs
+static void integrate_lateral_subvolume_damage
 				(const double st1[2],
 				 const double st2[2],
 				 const double st3[2],
@@ -827,7 +825,7 @@ static void integrate_lateral_subvolume_damage_rhs
 				 const face_t *face, uint32_t subface_id,
 				 uint32_t elem_id,
 				 const nb_glquadrature_t *glq,
-				 double *H)
+				 nb_sparse_t *D, double *H)
 {
 	const subface_t *subface = face->subfaces[subface_id];
 	for (uint16_t q1 = 0; q1 < glq->N; q1++) {
@@ -844,27 +842,28 @@ static void integrate_lateral_subvolume_damage_rhs
 			nb_cvfa_get_interpolated_point(0, st1, st2, st3,
 						       sxi, xq);
 			if (nb_cvfa_subface_in_simplex(subface))
-				integrate_svol_simplexwise_gp_dmg_rhs(dmg_data,
-								      face,
-								      subface_id,
-								      elem_id,
-								      wq, xq,
-								      H);
+				integrate_svol_simplexwise_gp_dmg(dmg_data,
+								  face,
+								  subface_id,
+								  elem_id,
+								  wq, xq,
+								  D, H);
 			else
-				integrate_svol_pairwise_gp_dmg_rhs(dmg_data,
-								   face,
-								   subface_id,
-								   elem_id,
-								   wq, xq, H);
+				integrate_svol_pairwise_gp_dmg(dmg_data,
+							       face,
+							       subface_id,
+							       elem_id,
+							       wq, xq, D, H);
 		}
 	}
 }
 
-static void integrate_svol_simplexwise_gp_dmg_rhs
+static void integrate_svol_simplexwise_gp_dmg
 				(const eval_damage_data_t *dmg_data,
 				 const face_t *face, uint32_t subface_id,
-				 uint32_t elem_id,
-				 double wq, const double xq[2], double *H)
+				 uint32_t elem_id, double wq,
+				 const double xq[2],
+				 nb_sparse_t *D, double *H)
 {
 	const subface_t *subface = face->subfaces[subface_id];
 
@@ -894,11 +893,12 @@ static void integrate_svol_simplexwise_gp_dmg_rhs
 	H[elem_id] += wq * (h/G) * Ae;
 }
 
-static void integrate_svol_pairwise_gp_dmg_rhs
+static void integrate_svol_pairwise_gp_dmg
 				(const eval_damage_data_t *dmg_data,
 				 const face_t *face, uint32_t subface_id,
-				 uint32_t elem_id,
-				 double wq, const double xq[2], double *H)
+				 uint32_t elem_id, double wq,
+				 const double xq[2],
+				 nb_sparse_t *D, double *H)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
@@ -929,32 +929,32 @@ static void integrate_svol_pairwise_gp_dmg_rhs
 
 	H[elem_id] += wq * (h/G) * Ae;
 }
-static void integrate_subface_damage_rhs(const eval_damage_data_t *dmg_data,
-					 face_t *face, uint16_t subface_id,
-					 const nb_glquadrature_t *glq,
-					 double *H)
+static void integrate_subface_damage(const eval_damage_data_t *dmg_data,
+				     face_t *face, uint16_t subface_id,
+				     const nb_glquadrature_t *glq,
+				     nb_sparse_t *D, double *H)
 {
 	subface_t *subface = face->subfaces[subface_id];
 	for (uint8_t q = 0; q < glq->N; q++) {
 		if (nb_cvfa_subface_in_simplex(subface))
-			integrate_subface_simplexwise_gp_damage_rhs(dmg_data,
-								    face,
-								    subface_id,
-								    glq, q, H);
+			integrate_subface_simplexwise_gp_damage(dmg_data,
+								face,
+								subface_id,
+								glq, q, D, H);
 		else
-			integrate_subface_pairwise_gp_damage_rhs(dmg_data,
-								 face,
-								 subface_id,
-								 glq, q, H);
+			integrate_subface_pairwise_gp_damage(dmg_data,
+							     face,
+							     subface_id,
+							     glq, q, D, H);
 	}
 }
 
-static void integrate_subface_simplexwise_gp_damage_rhs
+static void integrate_subface_simplexwise_gp_damage
 					(const eval_damage_data_t *dmg_data,
-					 face_t *face,
-					 uint16_t subface_id,
+					 face_t *face, uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 uint8_t gp, double *H)
+					 uint8_t gp,
+					 nb_sparse_t *D, double *H)
 {
 	subface_t *subface = face->subfaces[subface_id];
 	double t1[2], t2[2], t3[2];
@@ -1006,12 +1006,12 @@ static void integrate_subface_simplexwise_gp_damage_rhs
 	H[j] -= wq * (h/G) * (Be * POW2(h) + Ce);
 }
 
-static void integrate_subface_pairwise_gp_damage_rhs
+static void integrate_subface_pairwise_gp_damage
 					(const eval_damage_data_t *dmg_data,
-					 face_t *face,
-					 uint16_t subface_id,
+					 face_t *face, uint16_t subface_id,
 					 const nb_glquadrature_t *glq,
-					 uint8_t gp, double *H)
+					 uint8_t gp,
+					 nb_sparse_t *D, double *H)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
@@ -1072,19 +1072,11 @@ static void integrate_subface_pairwise_gp_damage_rhs
 	H[j] -= wq * (h/G) * (Be * POW2(h) + Ce);
 }
 
-static void integrate_exterior_subface_damage_rhs
+static void integrate_exterior_subface_damage
 					(const eval_damage_data_t *dmg_data,
 					 face_t *face,
 					 const nb_glquadrature_t *glq,
-					 double *H)
-{
-	/* TEMPORAL */
-}
-
-static void assemble_global_damage_matrix(const eval_damage_data_t *dmg_data,
-					  face_t **faces,
-					  const nb_glquadrature_t *glq,
-					  nb_sparse_t *D)
+					 nb_sparse_t *D, double *H)
 {
 	/* TEMPORAL */
 }
