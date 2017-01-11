@@ -131,21 +131,19 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 				     const double *xc,
 				     const double *disp, double *strain,
 				     const nb_glquadrature_t *glq);
-static void subface_get_strain_simplexwise
-			(int smooth,
-			 const nb_mesh2D_t *intmsh,
-			 const subface_t *subface,
-			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *strain);
+static void subface_get_strain_simplexwise(int smooth,
+					   const nb_mesh2D_t *intmsh,
+					   const subface_t *subface,
+					   const double *disp,
+					   const double xq[2], double *strain);
 static void subface_get_strain_pairwise
 			(int smooth,
 			 const face_t *face,
 			 const subface_t *subface,
 			 const double *xc,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *strain);
+			 const double xq[2],
+			 double *strain);
 static void get_boundary_face_strain(face_t **faces, uint32_t face_id,
 				     const nb_bcond_t *bcond,
 				     const double *disp, double *strain);
@@ -309,9 +307,8 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
 	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+	nb_cvfa_subface_get_xq(subface, glq, q, xq);
+
 	double xi[2];
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 	
@@ -661,9 +658,7 @@ static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh, int smooth,
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 
 	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 	
 	double wq = lf * glq->w[q] * 0.5;
 
@@ -769,9 +764,11 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 		subface_t *subface = face->subfaces[i];
 		double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 		for (uint8_t q = 0; q < glq->N; q++) {
+			double xq[2];
+			nb_cvfa_subface_get_xq(subface, glq, q, xq);
 			double gp_strain[3];
 			nb_cvfa_subface_get_strain(smooth, intmsh, face,
-						   subface, xc, disp, glq, q,
+						   subface, xc, disp, xq,
 						   gp_strain);
 			double wq = lf * glq->w[q] * 0.5;
 			double factor = wq /* * params2D->thickness*/;/* TEMP */
@@ -786,38 +783,41 @@ static void get_internal_face_strain(face_t **faces, uint32_t face_id,
 	strain[face_id*3+2] /= length;
 }
 
+void nb_cvfa_subface_get_xq(const subface_t *subface,
+			    const nb_glquadrature_t *glq,
+			    uint8_t q, double xq[2])
+{
+	double xstep = (glq->x[q] + 1) / 2.0;
+	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
+	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+}
+
 void nb_cvfa_subface_get_strain(int smooth,
 				const nb_mesh2D_t *intmsh,
 				const face_t *face,
 				const subface_t *subface,
 				const double *xc,
 				const double *disp,
-				const nb_glquadrature_t *glq,
-				uint8_t q, double *strain)
+				const double xq[2],
+				double *strain)
 {
 	if (nb_cvfa_subface_in_simplex(subface))
 		subface_get_strain_simplexwise(smooth, intmsh, subface,
-					       disp, glq, q, strain);
+					       disp, xq, strain);
 	else
 		subface_get_strain_pairwise(smooth, face, subface, xc,
-					    disp, glq, q, strain);
+					    disp, xq, strain);
 }
 
-static void subface_get_strain_simplexwise
-			(int smooth,
-			 const nb_mesh2D_t *intmsh,
-			 const subface_t *subface,
-			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *strain)
+static void subface_get_strain_simplexwise(int smooth,
+					   const nb_mesh2D_t *intmsh,
+					   const subface_t *subface,
+					   const double *disp,
+					   const double xq[2], double *strain)
 {
 	double t1[2], t2[2], t3[2];
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
-	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
 	double xi[2];
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
@@ -849,8 +849,8 @@ static void subface_get_strain_pairwise
 			 const subface_t *subface,
 			 const double *xc,
 			 const double *disp,
-			 const nb_glquadrature_t *glq,
-			 uint8_t q, double *strain)
+			 const double xq[2],
+			 double *strain)
 {
 	uint32_t id1 = face->elems[0];
 	uint32_t id2 = face->elems[1];
@@ -859,11 +859,6 @@ static void subface_get_strain_pairwise
 	c1[1] = xc[id1*2+1];
 	c2[0] = xc[id2 * 2];
 	c2[1] = xc[id2*2+1];
-
-	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
 	
 	memset(strain, 0, 3 * sizeof(*strain));
 	for (uint8_t i = 0; i < 2; i++) {
@@ -919,9 +914,7 @@ static void subface_get_grad_strain_simplexwise
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 	double xi[2];
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
@@ -965,9 +958,7 @@ static void subface_get_grad_strain_pairwise
 	c[1] /= cnorm2;
 
 	double xq[2];
-	double xstep = (glq->x[q] + 1) / 2.0;
-	xq[0] = subface->x1[0] + xstep * (subface->x2[0] - subface->x1[0]);
-	xq[1] = subface->x1[1] + xstep * (subface->x2[1] - subface->x1[1]);
+	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 
 	double z = c[0] * (xq[0] - xc[id1 * 2]) + c[1] * (xq[1] - xc[id1*2+1]);
 	double d2hz = get_second_deriv_spline(smooth, z);
