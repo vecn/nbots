@@ -389,6 +389,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 		damage = get_internal_subface_damage(face, subface_id,
 						     gp, glq, dmg_data);
 	}
+	return (MIN(0.95,damage)<0)?0:MIN(0.95,damage);/* AQUI TEMPORAL */
 	return damage;
 }
 
