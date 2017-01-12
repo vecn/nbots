@@ -36,8 +36,7 @@ void nb_cvfa_assemble_global_stiffness(nb_sparse_t *K,
 double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 					    const double t2[2],
 					    const double t3[2],
-					    double iJ[4],
-					    const double xi[2]);
+					    double iJ[4]);
 
 void nb_cvfa_subface_get_grad(const double iJ[4], const double grad_xi[2],
 			      double grad[2]);

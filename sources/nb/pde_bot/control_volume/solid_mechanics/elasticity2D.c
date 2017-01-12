@@ -70,8 +70,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 static void get_jacobian(const double t1[2],
 			 const double t2[2],
 			 const double t3[2],
-			 double J[4],
-			 const double xi[2]);
+			 double J[4]);
 static void subface_get_normalized_grad(int smooth, uint8_t i,
 					const double xi[2],
 					double grad_xi[2]);
@@ -306,7 +305,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	double wq = lf * glq->w[q] * 0.5;
 
 	double iJ[4];
-	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
 	double factor = wq * params2D->thickness;
 	for (uint8_t i = 0; i < 3; i++) {
@@ -326,10 +325,9 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 					    const double t2[2],
 					    const double t3[2],
-					    double iJ[4],
-					    const double xi[2])
+					    double iJ[4])
 {
-	get_jacobian(t1, t2, t3, iJ, xi);
+	get_jacobian(t1, t2, t3, iJ);
 
 	double aux = iJ[1];
 	iJ[1] = iJ[2];
@@ -343,8 +341,7 @@ double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 static void get_jacobian(const double t1[2],
 			 const double t2[2],
 			 const double t3[2],
-			 double J[4],
-			 const double xi[2])
+			 double J[4])
 {
 	/* Jacobian = D_{psi} x*/
 	J[0] = t2[0] - t1[0];
@@ -788,7 +785,7 @@ static void subface_get_strain_simplexwise(int smooth,
 	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
 
 	double iJ[4];
-	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
 	memset(strain, 0, 3 * sizeof(*strain));
 	for (uint8_t i = 0; i < 3; i++) {

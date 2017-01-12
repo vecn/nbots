@@ -20,6 +20,7 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
+#define DMG_DEGREE (2*SMOOTH+1)
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -116,9 +117,7 @@ static int solve_linear_system(const nb_sparse_t *A,
 			       nb_sparse_t *Ur,
 			       double *b, double *x);
 static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
-				   face_t **faces,
-				   const nb_glquadrature_t *glq,
-				   nb_sparse_t *D, double *H);
+				   face_t **faces, nb_sparse_t *D, double *H);
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
 				 face_t *face,
 				 const nb_glquadrature_t *glq,
@@ -390,7 +389,6 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 		damage = get_internal_subface_damage(face, subface_id,
 						     gp, glq, dmg_data);
 	}
-	return 0;/* TEMPORAL */
 	return damage;
 }
 
@@ -512,13 +510,13 @@ static void get_grad_energy(const face_t *face, uint16_t subface_id,
 
 static double eval_dmg_spline(int smooth, double x)
 {
-	int g = 2 * smooth + 1;
+	int g = DMG_DEGREE;
 	return pow(x, g);
 }
 
 static double eval_dmg_deriv_spline(int smooth, double x)
 {
-	int g = 2 * smooth + 1;
+	int g = DMG_DEGREE;
 	double out;
 	if (g == 1)
 		out = 1.0;
@@ -682,7 +680,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 
 		nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
-		assemble_global_damage(eval_dmg, faces, glq, D, rhs_damage);
+		assemble_global_damage(eval_dmg, faces, D, rhs_damage);
 		status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
 					     dmg_Lr, dmg_Ur, rhs_damage,
 					     elem_damage);
@@ -749,20 +747,25 @@ static int solve_linear_system(const nb_sparse_t *A,
 }
 
 static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
-				   face_t **faces,
-				   const nb_glquadrature_t *glq,
-				   nb_sparse_t *D, double *H)
+				   face_t **faces, nb_sparse_t *D, double *H)
 {
+	nb_glquadrature_t glq;
+	uint16_t Nq = 4 * DMG_DEGREE * POW2(SMOOTH) + 1;
+	uint32_t memsize = Nq * (sizeof(*(glq.x)) + sizeof(*(glq.w)));
+	char *memblock = nb_soft_allocate_mem(memsize);
+	glq.x = (void*) memblock;
+	glq.w = (void*) (memblock + Nq *sizeof(*(glq.x)));
+	nb_glquadrature_load(&glq, Nq);
+
 	const eval_damage_data_t *dmg_data = eval_dmg->data;
 	uint32_t N_elems = nb_mesh2D_get_N_elems(dmg_data->mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(dmg_data->mesh);
 	memset(H, 0, N_elems * sizeof(*H));
 	nb_sparse_reset(D);
-	for (uint32_t i = 0; i < N_faces; i++) {
-		assemble_face_damage(dmg_data, faces[i], glq, D, H);
-	}
-	double tmp = nb_vector_get_norm(H, N_elems);/* TEMPORAL */
-	printf("Frobenius: %lf\n", tmp);/* TEMPORAL */
+	for (uint32_t i = 0; i < N_faces; i++)
+		assemble_face_damage(dmg_data, faces[i], &glq, D, H);
+	
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
@@ -823,6 +826,9 @@ static void integrate_lateral_subvolume_damage
 				 const nb_glquadrature_t *glq,
 				 nb_sparse_t *D, double *H)
 {
+	double iJ[4];
+	double detJ = nb_cvfa_subface_get_inverse_jacobian(st1, st2, st3, iJ);
+	
 	const subface_t *subface = face->subfaces[subface_id];
 	for (uint16_t q1 = 0; q1 < glq->N; q1++) {
 		double xaux[2];
@@ -836,7 +842,7 @@ static void integrate_lateral_subvolume_damage
 			nb_cvfa_get_interpolated_point(0, st1, st2, st3,
 						       sxi, xq);
 			double wq = glq->w[q1] * glq->w[q2] *
-				0.125 * (1.0 - xaux[0]);
+			  0.125 * (1.0 - xaux[0]) * detJ;
 			if (nb_cvfa_subface_in_simplex(subface))
 				integrate_svol_simplexwise_gp_dmg(dmg_data,
 								  face,
@@ -971,7 +977,7 @@ static void integrate_subface_simplexwise_gp_damage
 	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
 
 	double iJ[4];
-	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ, xi);
+	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
 	double wq = lf * glq->w[gp] * 0.5;

@@ -105,6 +105,7 @@ static uint32_t get_face_closest_intersection_to_intmsh
 					 double p[2]);
 static void set_subfaces(nb_membank_t *membank, face_t *face,
 			 nb_container_t *subfaces);
+static double get_subface_orientation(const face_t *face, const subface_t *sf);
 
 uint32_t nb_cvfa_get_integration_mesh_memsize(void)
 {
@@ -954,8 +955,19 @@ static void set_subfaces(nb_membank_t *membank, face_t *face,
 
 			sf->N_int = aux_sf->N_int;
 			sf->trg_id = aux_sf->trg_id;
-			memcpy(sf->x1, aux_sf->x1, 2 * sizeof(*(sf->x1)));
-			memcpy(sf->x2, aux_sf->x2, 2 * sizeof(*(sf->x2)));
+
+			double orient = get_subface_orientation(face, aux_sf);
+			if (orient > 0) {
+				memcpy(sf->x1, aux_sf->x1,
+				       2 * sizeof(*(sf->x1)));
+				memcpy(sf->x2, aux_sf->x2,
+				       2 * sizeof(*(sf->x2)));
+			} else {
+				memcpy(sf->x1, aux_sf->x2,
+				       2 * sizeof(*(sf->x1)));
+				memcpy(sf->x2, aux_sf->x1,
+				       2 * sizeof(*(sf->x2)));
+			}
 
 			face->subfaces[cnt] = sf;
 			cnt += 1;
@@ -965,6 +977,15 @@ static void set_subfaces(nb_membank_t *membank, face_t *face,
 	} else {
 		face->subfaces = NULL;
 	}
+}
+
+static double get_subface_orientation(const face_t *face, const subface_t *sf)
+{
+	double c[2];
+	c[0] =  (sf->x2[1] - sf->x1[1]);
+	c[1] = -(sf->x2[0] - sf->x1[0]);
+	double dot = c[0] * face->nf[0] + c[1] * face->nf[1];
+	return dot;
 }
 
 void nb_cvfa_finish_faces(uint32_t N_faces, face_t **faces)
