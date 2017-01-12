@@ -111,7 +111,7 @@ double nb_material_get_compression_limit_stress(const nb_material_t *const mat)
 
 double nb_material_get_damage_length_scale(const nb_material_t *const mat)
 {
-	return 0.1;
+	return 0.00001;
 }
 
 int nb_material_verify(nb_material_t* material)

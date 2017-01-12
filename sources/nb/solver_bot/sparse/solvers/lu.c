@@ -33,14 +33,14 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 	nb_sparse_t* Ut = nb_sparse_clone(L);
 
 	/* Compute the decomposition */
-	for(uint32_t j=0; j< Ar->N; j++){
+	for (uint32_t j = 0; j < Ar->N; j++) {
 		L->rows_values[j][L->rows_size[j]-1] = 1.0;
 		U->rows_values[j][0] = nb_sparse_get(Ar, j, j);
 
 		double sum = 0;
 
 #pragma omp parallel for schedule(guided) reduction(+:sum) num_threads(omp_parallel_threads)
-		for(uint32_t q=0; q< L->rows_size[j]-1; q++)
+		for (uint32_t q = 0; q < L->rows_size[j]-1; q++)
 			sum += L->rows_values[j][q] * Ut->rows_values[j][q];
     
 
@@ -48,27 +48,27 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 		Ut->rows_values[j][Ut->rows_size[j]-1] = U->rows_values[j][0];
         
 #pragma omp parallel for schedule(guided) num_threads(omp_parallel_threads)
-		for(uint32_t q = 1; q < U->rows_size[j]; q++){
+		for (uint32_t q = 1; q < U->rows_size[j]; q++) {
 			uint32_t i = U->rows_index[j][q];
-			/*** L_ij <- A_ij *******************************************************/
+			/*** L_ij <- A_ij ******************************************************/
 			uint32_t L_jindex = nb_sparse_bsearch_row(L, i, j, 0, L->rows_size[i]-1);/**/
 			L->rows_values[i][L_jindex] = nb_sparse_get(Ar, i, j);               /**/
-			/************************************************************************/
-			/*** U_ji <- A_ji *******************************************************/
+			/***********************************************************************/
+			/*** U_ji <- A_ji ******************************************************/
 			U->rows_values[j][q] = nb_sparse_get(Ar, j, i);                      /**/
-			/************************************************************************/
+			/***********************************************************************/
 			register uint32_t r = 0;
 			register uint32_t s = 0;
 			register uint32_t _ro =    L->rows_index[i][r];
 			register uint32_t _sigma = L->rows_index[j][s];
 			bool flag = true;   /* Flag to know when to stop the cylce */
-			while(flag){
-				while(_ro < _sigma)
+			while (flag) {
+				while (_ro < _sigma)
 					_ro = L->rows_index[i][++r];
-				while(_ro > _sigma)
+				while (_ro > _sigma)
 					_sigma = L->rows_index[j][++s];
-				while(_ro == _sigma){
-					if(_ro == j){
+				while (_ro == _sigma) {
+					if (_ro == j) {
 						flag = false;   /* Finish the cycle */
 						break;
 					}
@@ -78,7 +78,7 @@ void nb_sparse_decompose_LU(const nb_sparse_t *const Ar,
 
 					vjs = L->rows_values[j][s];
 					vir = Ut->rows_values[i][r];
-					U->rows_values[j][q] -= vir*vjs;
+					U->rows_values[j][q] -= vir * vjs;
 
 					_ro = L->rows_index[i][++r];
 					_sigma = L->rows_index[j][++s];
@@ -153,4 +153,33 @@ int nb_sparse_relabel_and_solve_using_LU(const nb_sparse_t *const A,
 	nb_sparse_destroy(Ar);
 	nb_soft_free_mem(memsize, memblock);
 	return status;
+}
+
+double nb_sparse_relabel_and_get_det_sign_using_LU(const nb_sparse_t *A)
+{
+	uint32_t N = nb_sparse_get_size(A);
+	uint32_t memsize = 2 * N * (sizeof(uint32_t));
+	char *memblock = nb_soft_allocate_mem(memsize);
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+
+	nb_sparse_calculate_permutation(A, perm, iperm);
+
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
+
+	nb_sparse_t *Lr = NULL; 
+	nb_sparse_t *Ur = NULL;
+	nb_sparse_alloc_LU(Ar, &Lr, &Ur);
+	if(NULL == Lr)
+		return 0;
+
+	nb_sparse_decompose_LU(Ar, Lr, Ur, 1);
+
+	double det = nb_sparse_triangular_get_det_sign(Ur);
+
+	nb_sparse_destroy(Ar);
+	nb_sparse_destroy(Lr);
+	nb_sparse_destroy(Ur);
+	nb_soft_free_mem(memsize, memblock);
+	return det;
 }

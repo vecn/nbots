@@ -389,7 +389,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 		damage = get_internal_subface_damage(face, subface_id,
 						     gp, glq, dmg_data);
 	}
-	return (MIN(0.95,damage)<0)?0:MIN(0.95,damage);/* AQUI TEMPORAL */
+	return 0;//(MIN(0.95,damage)<0)?0:MIN(0.95,damage);/* AQUI TEMPORAL */
 	return damage;
 }
 
@@ -763,10 +763,13 @@ static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 	uint32_t N_faces = nb_mesh2D_get_N_edges(dmg_data->mesh);
 	memset(H, 0, N_elems * sizeof(*H));
 	nb_sparse_reset(D);
+
 	for (uint32_t i = 0; i < N_faces; i++)
 		assemble_face_damage(dmg_data, faces[i], &glq, D, H);
 	
 	nb_soft_free_mem(memsize, memblock);
+	double det = nb_sparse_relabel_and_get_det_sign_using_LU(D);// TEMPORAL
+	printf(">>>>> DAMAGE DET: %e\n", det);                 // TEMPORAL
 }
 
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
@@ -1011,8 +1014,8 @@ static void integrate_subface_simplexwise_gp_damage
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, face->elems[0], elem_k,  -wq * POW2(h) * bk);
-		nb_sparse_add(D, face->elems[1], elem_k,   wq * POW2(h) * bk);
+		nb_sparse_add(D, face->elems[0], elem_k,  wq * POW2(h) * bk);
+		nb_sparse_add(D, face->elems[1], elem_k, -wq * POW2(h) * bk);
 	}
 	double energy = get_energy(face, subface_id, xq, dmg_data);
 

@@ -28,4 +28,6 @@ int nb_sparse_relabel_and_solve_using_LU(const nb_sparse_t *const A,
 					 double* x,  /* Out */
 					 uint32_t omp_parallel_threads);
 
+double nb_sparse_relabel_and_get_det_sign_using_LU(const nb_sparse_t *A);
+
 #endif

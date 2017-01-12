@@ -81,7 +81,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 3000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 4000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -131,13 +131,15 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
-	uint32_t memsize = N_nodes * (4 * sizeof(double) + sizeof(uint16_t));
+	uint32_t memsize = N_nodes * (7 * sizeof(double) + sizeof(uint16_t));
 	char *memblock = nb_soft_allocate_mem(memsize);
-	double *stress = (void*) memblock;
-	double *vm_stress = (void*) (memblock + N_nodes * 3 * sizeof(double));
-	uint16_t *counter = (void*) (memblock + N_nodes * 4 * sizeof(double));
+	double *strain = (void*) memblock;
+	double *stress = (void*) (memblock + N_nodes * 3 * sizeof(double));
+	double *vm_stress = (void*) (memblock + N_nodes * 6 * sizeof(double));
+	uint16_t *counter = (void*) (memblock + N_nodes * 7 * sizeof(double));
 
 	memset(stress, 0, 3 * N_nodes * sizeof(*stress));
+	memset(strain, 0, 3 * N_nodes * sizeof(*strain));
 	memset(counter, 0, N_nodes * sizeof(*counter));
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
@@ -147,11 +149,17 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 			stress[v1 * 3] += results->stress[i * 3];
 			stress[v1*3+1] += results->stress[i*3+1];
 			stress[v1*3+2] += results->stress[i*3+2];
+			strain[v1 * 3] += results->strain[i * 3];
+			strain[v1*3+1] += results->strain[i*3+1];
+			strain[v1*3+2] += results->strain[i*3+2];
 			counter[v1] += 1;
 
 			stress[v2 * 3] += results->stress[i * 3];
 			stress[v2*3+1] += results->stress[i*3+1];
 			stress[v2*3+2] += results->stress[i*3+2];
+			strain[v2 * 3] += results->strain[i * 3];
+			strain[v2*3+1] += results->strain[i*3+1];
+			strain[v2*3+2] += results->strain[i*3+2];
 			counter[v2] += 1;
 		}
 	}
@@ -160,6 +168,9 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 			stress[i * 3] /= counter[i];
 			stress[i*3+1] /= counter[i];
 			stress[i*3+2] /= counter[i];
+			strain[i * 3] /= counter[i];
+			strain[i*3+1] /= counter[i];
+			strain[i*3+2] /= counter[i];
 		}
 	}
 
@@ -191,6 +202,19 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 		vm_stress[i] = stress[i*3+2];
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_Sxy.png", 1000, 800,
+				 NB_NODE, NB_FIELD,
+				 vm_stress, true);/* TEMPORAL */
+
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		double tr = strain[i * 3] + strain[i*3+1];
+		double norm2 = POW2(strain[i * 3]) +
+		  2 * POW2(0.5 * strain[i*3+2]) + POW2(strain[i*3+1]);
+		double mu = 8.333333e+09;
+		double lambda = 4.166667e+09;
+		vm_stress[i] = mu * norm2 + 0.5 * lambda * POW2(tr);
+	}
+
+	nb_mesh2D_export_draw(mesh, "./CVFA_energy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
 
