@@ -33,8 +33,11 @@ static int suite_init(void);
 static int suite_clean(void);
 
 static void test_mode_I(void);
+static void test_mode_II(void);
 static void check_mode_I(const void *mesh,
-				  const results_t *results);
+			 const results_t *results);
+static void check_mode_II(const void *mesh,
+			  const results_t *results);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     nb_mesh2D_type mesh_type,
 		     void (*check_results)(const void*,
@@ -66,7 +69,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	CU_add_test(suite, "Mode II Phase field", test_mode_II);
 }
 
 static int suite_init(void)
@@ -81,11 +85,23 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 3000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 10000, NB_POLY,
 		 check_mode_I);
 }
 
 static void check_mode_I(const void *mesh,
+			 const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_mode_II(void)
+{
+	run_test("%s/Mode_II_4point_bending.txt", 6000, NB_POLY,
+		 check_mode_II);
+}
+
+static void check_mode_II(const void *mesh,
 			 const results_t *results)
 {
 	CU_ASSERT(true);/* TEMPORAL */
@@ -106,7 +122,7 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 20.0);
+	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.02);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
@@ -217,17 +233,6 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	nb_mesh2D_export_draw(mesh, "./CVFA_energy.png", 1000, 800,
 				 NB_NODE, NB_FIELD,
 				 vm_stress, true);/* TEMPORAL */
-
-	double max_dmg = 0;
-	for (uint32_t i = 0; i < N_faces; i++) {
-		if (max_dmg < results->damage[i])
-			max_dmg = results->damage[i];
-	}
-	for (uint32_t i = 0; i < N_faces && 0; i++)
-		results->damage[i] /= max_dmg;
-	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
-			      NB_FACE, NB_FIELD,
-			      results->damage, true);/* TEMPORAL */
 
 	nb_soft_free_mem(memsize, memblock);
 }
@@ -531,6 +536,7 @@ static int read_elasticity2D_params(nb_cfreader_t *cfreader,
 	/* FIX: Usable only for plane stress */
 	if (0 != nb_cfreader_read_double(cfreader, &(params2D->thickness)))
 		goto EXIT;
+
 	status = 0;
 EXIT:
 	return status;

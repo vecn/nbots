@@ -20,6 +20,7 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
+#define MIDPOINT_VOL_INTEGRALS true
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -148,6 +149,16 @@ static void integrate_exterior_subface_damage
 static void show_error_message(int status);
 static void save_reaction_log(const char *logfile, uint32_t iter,
 			      double factor, double reaction);
+static void save_simulation(const char *dir,
+			    const nb_mesh2D_t *mesh, const double *disp,
+			    const double *elem_damage,
+			    const double *face_damage, int iter, double time);
+static void save_data(const char *name,
+		      const nb_mesh2D_t *mesh,
+		      const double *disp,
+		      const double *elem_damage,
+		      const double *face_damage, int iter, double time,
+		      const char *mesh_name);
 static void compute_damage(double *damage, face_t **faces,
 			   const nb_mesh2D_t *const mesh,
 			   const double *elem_damage,
@@ -230,13 +241,13 @@ int nb_cvfa_compute_2D_damage_phase_field
 	while (bc_factor < 1.0) {
 		bc_factor += bc_factor_increment;
 		double reaction;
+		double trim_bc_factor = MIN(1.0, bc_factor);
 		status = minimize_residual(mesh, material, bcond,
 					   enable_self_weight,
 					   gravity, analysis2D, params2D,
 					   displacement, strain, elem_damage,
 					   intmsh, xc, faces, SMOOTH, K, D,
-					   &glq, &eval_dmg,
-					   MIN(1.0, bc_factor),
+					   &glq, &eval_dmg, trim_bc_factor,
 					   max_iter,
 					   id_elem_monitor[0], &reaction,
 					   minimize_residual_memblock);
@@ -257,16 +268,16 @@ int nb_cvfa_compute_2D_damage_phase_field
 				bc_factor_increment *= 2;
 				max_iter /= 2;
 			}
+			compute_damage(damage, faces, mesh, elem_damage,
+				       &glq, &eval_dmg);
+			save_simulation(".", mesh, displacement, elem_damage,
+					damage, iter, trim_bc_factor);
 			iter ++;
 		}
 	}
-	nb_mesh2D_export_draw(mesh, "./CVFA_elem_dmg.png", 1000, 800,
-			      NB_ELEMENT, NB_FIELD,
-			      elem_damage, true);/* TEMPORAL */
 
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
 			       intmsh, xc, bcond, displacement, &glq);
-	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
 
 CLEAN_AND_EXIT:
 	nb_cvfa_finish_faces(N_faces, faces);
@@ -359,7 +370,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 		damage = get_internal_subface_damage(face, subface_id,
 						     gp, glq, dmg_data);
 	}
-	return MIN(0.99, damage);
+	return damage;
 }
 
 static double get_internal_subface_damage(const face_t *face,
@@ -610,14 +621,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
 		assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
-		memcpy(residual, elem_damage, N_elems * sizeof(*elem_damage));
 		status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
 					     dmg_Lr, dmg_Ur, rhs_damage,
 					     elem_damage);
-		for (uint32_t i = 0; i < N_elems; i++) {
-			if (residual[i] > elem_damage[i])
-				elem_damage[i] = residual[i];
-		}
 
 		if (status != 0) {
 			status = DAMAGE_SOLVER_FAILS;
@@ -691,8 +697,10 @@ static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 	memset(H, 0, N_elems * sizeof(*H));
 	nb_sparse_reset(D);
 
+	//#ifdef MIDPOINT_VOL_INTEGRALS
 	for (uint32_t i = 0; i < N_elems; i++)
 		assemble_elem_damage(dmg_data, i, glq, D, H);
+	//#endif
 
 	for (uint32_t i = 0; i < N_faces; i++)
 		assemble_face_damage(dmg_data, faces[i], glq, D, H);
@@ -704,11 +712,12 @@ static void assemble_elem_damage(const eval_damage_data_t *dmg_data,
 				 nb_sparse_t *D, double *H)
 {
 	double area = nb_mesh2D_elem_get_area(dmg_data->mesh, elem_id);
-	nb_sparse_add(D, elem_id, elem_id, area);
 	double energy = get_elem_energy(elem_id, dmg_data);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_fracture_energy(dmg_data->material);
-	H[elem_id] += area * energy * h/G ;
+	double val = 2 * energy * h/G;
+	nb_sparse_add(D, elem_id, elem_id, area * (val + 1));
+	H[elem_id] += area * val;
 }
 
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
@@ -892,6 +901,87 @@ static void save_reaction_log(const char *logfile, uint32_t iter,
 	fclose(fp);
 EXIT:
 	return;
+}
+
+void TEMPORAL_DRAW(const nb_mesh2D_t *mesh, const double *elem_damage, 
+		   double *face_damage, int i)
+{
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
+	double *damage = nb_allocate_mem(N_nodes * sizeof(*damage));
+
+	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, elem_damage, damage);
+	char name[100];
+	sprintf(name, "./CVFA_elem_dmg_%i.png", i);
+	nb_mesh2D_export_draw(mesh, name, 1000, 700, NB_NODE, NB_FIELD,
+			      damage, true);
+	nb_free_mem(damage);
+
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	double max_dmg = 0;
+	for (uint32_t i = 0; i < N_faces; i++) {
+		if (max_dmg < face_damage[i])
+			max_dmg = face_damage[i];
+	}
+	for (uint32_t i = 0; i < N_faces; i++)
+		face_damage[i] /= max_dmg;
+	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
+			      NB_FACE, NB_FIELD,
+			      face_damage, true);
+}
+
+static void save_simulation(const char *dir,
+			    const nb_mesh2D_t *mesh, const double *disp,
+			    const double *elem_damage,
+			    const double *face_damage, int iter, double time)
+{
+	char mesh_name[50];
+	sprintf(mesh_name, "CVFA_DMG_mesh_%i.vtk", iter);
+	char name[100];
+	sprintf(name, "%s/%s", dir, mesh_name);
+	/*char vtk_header[256];
+	sprintf(vtk_header,
+		"CVFA->Damage->step[%i]->Time[%1.2e](Victor Cardoso)",
+		iter, time);
+	
+		nb_mesh2D_save_vtk(mesh, name, vtk_header);*/
+
+	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
+	save_data(name, mesh, disp, elem_damage, face_damage,
+		  iter, time, mesh_name);
+
+	TEMPORAL_DRAW(mesh, elem_damage, (void*)face_damage, iter);	
+}
+
+static void save_data(const char *name,
+		      const nb_mesh2D_t *mesh,
+		      const double *disp,
+		      const double *elem_damage,
+		      const double *face_damage, int iter, double time,
+		      const char *mesh_name)
+{
+	FILE *fp = fopen(name, "w");
+	
+	fprintf(fp, "# DAMAGE CVFA SIMULATION (cardoso.victore@gmail.com)\n");
+	fprintf(fp, "# MESH_FILE\n %s\n", mesh_name);
+	fprintf(fp, "# N_ITER\n %i\n", iter);
+	fprintf(fp, "# TIME\n %e\n\n", time);
+
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	fprintf(fp, "# N_ELEMS\n %i\n", N_elems);
+	fprintf(fp, "# DISPLACEMENT\n");
+	for (uint32_t i = 0; i < N_elems; i++)
+		fprintf(fp, "%e %e\n", disp[i * 2], disp[i*2+1]);
+	fprintf(fp, "# DAMAGE (ELEMENT INTEGRAL)\n");
+	for (uint32_t i = 0; i < N_elems; i++)
+		fprintf(fp, "%e\n", elem_damage[i]);
+
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	fprintf(fp, "# N_FACES\n %i\n", N_faces);
+	fprintf(fp, "# DAMAGE (FACE INTEGRAL)\n");
+	for (uint32_t i = 0; i < N_faces; i++)
+		fprintf(fp, "%e\n", face_damage[i]);
+
+	fclose(fp);
 }
 
 static void compute_damage(double *damage, face_t **faces,

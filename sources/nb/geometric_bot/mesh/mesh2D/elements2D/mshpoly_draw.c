@@ -171,10 +171,8 @@ void nb_mshpoly_fill_elems_field_on_nodes(const void *msh,
 			nb_graphics_close_path(g);
 			
 			uint8_t c1[4], c2[4];
-			nb_palette_get_rgba(pal, normalized_field[n1],
-						     c1);
-			nb_palette_get_rgba(pal, normalized_field[n2],
-						     c2);
+			nb_palette_get_rgba(pal, normalized_field[n1], c1);
+			nb_palette_get_rgba(pal, normalized_field[n2], c2);
 
 			nb_graphics_set_source_trg(g, xc, yc, x1, y1,
 						   x2, y2, cc, c1, c2);

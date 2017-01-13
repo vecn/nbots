@@ -18,7 +18,7 @@
  450.0   0.0					#
  450.0 100.0					#
  225.0 100.0					#
-   0.0 100.0					#
+  0.0  100.0					#
 						#
 # Number of segments				#
  10						#
@@ -57,7 +57,7 @@
 # Elasticity module (Pa)			#
  2e10	                                        #
 # Fracture energy (J/m^2)                       #
- 0.003						#
+ 0.001						#
 # Compression limit stress                      #
  0						#
 # Traction limit stress                         #
