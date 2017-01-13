@@ -30,6 +30,9 @@ static void set_mshpack_interface(nb_mesh2D_t *mesh);
 static void set_mshpack_main_interface(nb_mesh2D_t *mesh);
 static void set_mshpack_graphics_interface(nb_mesh2D_t *mesh);
 
+static void vtk_write_header(FILE *fp, const char *vtk_header);
+static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh);
+
 uint32_t nb_mesh2D_get_memsize(nb_mesh2D_type  type)
 {
 	uint32_t mem;
@@ -685,4 +688,37 @@ void nb_mesh2D_build_model_disabled_elems
 					 model,
 					 N_input_vtx,
 					 input_vtx);
+}
+
+int nb_mesh2D_save_vtk(const nb_mesh2D_t *mesh,
+		       const char *name, const char *vtk_header)
+{
+	int status;
+	FILE *fp = fopen(name, "w");
+	if (NULL == fp) {
+		status = 1;
+		goto EXIT;
+	}
+
+	vtk_write_header(fp, vtk_header);
+	vtk_write_data(fp, mesh);
+
+	fclose(fp);
+	status = 0;
+EXIT:
+	return status;
+}
+
+static void vtk_write_header(FILE *fp, const char *vtk_header)
+{
+	fprintf(fp, "# vtk DataFile Version 3.0\n");
+	fprintf(fp, "%s\n", vtk_header);
+	fprintf(fp, "ASCII\n");
+	fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
+}
+
+static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh)
+{
+	/* AQUI VOY */
+
 }

@@ -938,12 +938,12 @@ static void save_simulation(const char *dir,
 	sprintf(mesh_name, "CVFA_DMG_mesh_%i.vtk", iter);
 	char name[100];
 	sprintf(name, "%s/%s", dir, mesh_name);
-	/*char vtk_header[256];
+	char vtk_header[256];
 	sprintf(vtk_header,
 		"CVFA->Damage->step[%i]->Time[%1.2e](Victor Cardoso)",
 		iter, time);
 	
-		nb_mesh2D_save_vtk(mesh, name, vtk_header);*/
+	nb_mesh2D_save_vtk(mesh, name, vtk_header);
 
 	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
 	save_data(name, mesh, disp, elem_damage, face_damage,
@@ -960,6 +960,8 @@ static void save_data(const char *name,
 		      const char *mesh_name)
 {
 	FILE *fp = fopen(name, "w");
+	if (NULL == fp)
+		goto EXIT;
 	
 	fprintf(fp, "# DAMAGE CVFA SIMULATION (cardoso.victore@gmail.com)\n");
 	fprintf(fp, "# MESH_FILE\n %s\n", mesh_name);
@@ -982,6 +984,8 @@ static void save_data(const char *name,
 		fprintf(fp, "%e\n", face_damage[i]);
 
 	fclose(fp);
+EXIT:
+	return;
 }
 
 static void compute_damage(double *damage, face_t **faces,
