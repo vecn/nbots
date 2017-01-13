@@ -329,7 +329,7 @@ double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 {
 	get_jacobian(t1, t2, t3, iJ);
 
-	double aux = iJ[1];
+	double aux = iJ[1]; /* Transpose Jacobian */
 	iJ[1] = iJ[2];
 	iJ[2] = aux;
 
