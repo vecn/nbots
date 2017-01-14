@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
@@ -9,6 +10,7 @@
 #include "nb/geometric_bot.h"
 
 #include "mesh2D_struct.h"
+#include "mesh2D_private.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -32,6 +34,7 @@ static void set_mshpack_graphics_interface(nb_mesh2D_t *mesh);
 
 static void vtk_write_header(FILE *fp, const char *vtk_header);
 static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh);
+static int vtk_get_cell_type(int N_adj);
 
 uint32_t nb_mesh2D_get_memsize(nb_mesh2D_type  type)
 {
@@ -690,8 +693,7 @@ void nb_mesh2D_build_model_disabled_elems
 					 input_vtx);
 }
 
-int nb_mesh2D_save_vtk(const nb_mesh2D_t *mesh,
-		       const char *name, const char *vtk_header)
+int nb_mesh2D_save_vtk(const nb_mesh2D_t *mesh, const char *name)
 {
 	int status;
 	FILE *fp = fopen(name, "w");
@@ -711,14 +713,62 @@ EXIT:
 
 static void vtk_write_header(FILE *fp, const char *vtk_header)
 {
-	fprintf(fp, "# vtk DataFile Version 3.0\n");
-	fprintf(fp, "%s\n", vtk_header);
+	fprintf(fp, "# vtk DataFile Version 2.0\n");
+	fprintf(fp, "# nbots nb_mesh2D_t 1.0\n");
 	fprintf(fp, "ASCII\n");
 	fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
 }
 
 static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh)
 {
-	/* AQUI VOY */
+	nb_mesh2D_private_i priv;
+	nb_mesh2D_init_private_interface(&priv, mesh);
 
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
+	fprintf(fp, "POINTS %i float\n", N_nodes);
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		float x = nb_mesh2D_node_get_x(mesh, i);
+		float y = nb_mesh2D_node_get_y(mesh, i);
+		fprintf(fp, " %f %f 0\n", x, y);
+	}
+	
+	uint32_t N_total_adj = priv.get_N_total_adj(mesh->msh);
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	fprintf(fp, "CELLS %i %i\n", N_elems, N_total_adj + N_elems);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		int N_adj = nb_mesh2D_elem_get_N_adj(mesh, i);
+		fprintf(fp, " %i ", N_adj);
+		for (int j = 0; j < N_adj; j++) {
+			uint32_t id = nb_mesh2D_elem_get_adj(mesh, i, j);
+			fprintf(fp, "%i ", id);
+		}
+		fprintf(fp, "\n");
+	}
+	fprintf(fp, "CELL_TYPES %i\n", N_elems);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		int N_adj = nb_mesh2D_elem_get_N_adj(mesh, i);
+		int type = vtk_get_cell_type(N_adj);
+		fprintf(fp, " %i\n", type);
+	}
+}
+
+static int vtk_get_cell_type(int N_adj)
+{
+	int type;
+	switch (N_adj) {
+	case 3:
+		type = 5; /* VTK_TRIANGLE */
+		break;
+	case 4:
+		type = 9; /* VTK_QUAD */
+		break;
+	default:
+		type = 7; /* VTK_POLYGON */
+	}
+	return type;
+}
+
+int nb_mesh2D_read_vtk(nb_mesh2D_t *mesh, const char *name)
+{
+	/* AQUI VOY */
 }

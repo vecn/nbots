@@ -938,12 +938,8 @@ static void save_simulation(const char *dir,
 	sprintf(mesh_name, "CVFA_DMG_mesh_%i.vtk", iter);
 	char name[100];
 	sprintf(name, "%s/%s", dir, mesh_name);
-	char vtk_header[256];
-	sprintf(vtk_header,
-		"CVFA->Damage->step[%i]->Time[%1.2e](Victor Cardoso)",
-		iter, time);
 	
-	nb_mesh2D_save_vtk(mesh, name, vtk_header);
+	nb_mesh2D_save_vtk(mesh, name);
 
 	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
 	save_data(name, mesh, disp, elem_damage, face_damage,
