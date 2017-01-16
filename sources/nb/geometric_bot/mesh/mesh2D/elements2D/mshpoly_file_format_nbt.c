@@ -67,26 +67,31 @@ static void write_elems(FILE *fp, const nb_mshpoly_t *msh)
 	fprintf(fp, "  Centroids\n");
 	for (uint32_t i = 0; i < msh->N_elems; i++)
 		fprintf(fp, "    %e %e\n", msh->cen[i * 2], msh->cen[i*2+1]);
-	fprintf(fp, "\n");
+	fprintf(fp, "  End Centroids\n");
+
+	fprintf(fp, "  Types\n");
+	for (uint32_t i = 0; i < msh->N_elems; i++)
+		fprintf(fp, "    %i\n ", msh->N_adj[i]);
+	fprintf(fp, "  End Types\n");
 
 	fprintf(fp, "  Adjacencies\n");
 	for (uint32_t i = 0; i < msh->N_elems; i++) {
-		fprintf(fp, "    %i ", msh->N_adj[i]);
 		for (uint32_t j = 0; j < msh->N_adj[i]; j++)
 			fprintf(fp, "%i ", msh->adj[i][j] + 1);
 		fprintf(fp, "\n");
 	}
-	fprintf(fp, "\n");
+	fprintf(fp, "  End Adjacencies\n");
 
 	fprintf(fp, "  Neighbors\n");
 	fprintf(fp, "  # The null neighbors at the boundary have an ID\n");
 	fprintf(fp, "  # greater than the number of elements.\n");
 	for (uint32_t i = 0; i < msh->N_elems; i++) {
-		fprintf(fp, "    %i ", msh->N_adj[i]);
 		for (uint32_t j = 0; j < msh->N_adj[i]; j++)
 			fprintf(fp, "%i ", msh->ngb[i][j] + 1);
 		fprintf(fp, "\n");
 	}
+	fprintf(fp, "  End Neighbours\n");
+
 	fprintf(fp, "End Elems\n");
 }
 
@@ -190,10 +195,11 @@ static int read_nodes(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		if (0 != status)
 			goto EXIT;
 		msh->nod[i * 2] = val;
+
 		status = nb_cfreader_read_double(cfr, &val);
 		if (0 != status)
 			goto EXIT;
-		msh->nod[i * 2] = val;
+		msh->nod[i*2+1] = val;
 	}
 
 	status = nb_cfreader_check_line(cfr, "End Nodes");
@@ -205,7 +211,28 @@ EXIT:
 
 static int read_edges(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
-	return 1;
+	int status = nb_cfreader_check_line(cfr, "Edges");
+	if (0 != status)
+		goto EXIT;
+
+	for (uint32_t i = 0; i < msh->N_edg; i++) {
+		uint32_t val;
+		status = nb_cfreader_read_uint(cfr, &val);
+		if (0 != status)
+			goto EXIT;
+		msh->edg[i * 2] = val - 1;
+
+		status = nb_cfreader_read_uint(cfr, &val);
+		if (0 != status)
+			goto EXIT;
+		msh->edg[i*2+1] = val - 1;
+	}
+
+	status = nb_cfreader_check_line(cfr, "End Edges");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
 }
 
 static int read_elems(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
