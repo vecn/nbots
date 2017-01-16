@@ -122,6 +122,11 @@ double nb_material_get_compression_limit_stress(const nb_material_t *const mat)
 	return mat->compression_limit_stress;
 }
 
+double nb_material_get_energy_release_rate(const nb_material_t *const mat)
+{
+	return mat->energy_release_rate;
+}
+
 double nb_material_get_damage_length_scale(const nb_material_t *const mat)
 {
 	return mat->damage_length_scale;
