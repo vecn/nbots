@@ -438,7 +438,7 @@ static double subface_get_damage_simplexwise(const face_t *face,
 	double xq[2];
 	nb_cvfa_subface_get_xq(subface, glq, gp, xq);
 	double xi[2];
-	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	double damage = 0.0;
 	for (uint8_t k = 0; k < 3; k++) {
@@ -867,12 +867,13 @@ static void integrate_svol_simplexwise_gp_dmg
 				subface->trg_id, t1, t2, t3);
 
 	double xi[2];
-	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	double energy = get_subface_energy(face, subface_id, xq, dmg_data);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
 	double val = 2 * energy * h/G;
+	printf("--> ELEM(%i ", elem_id);/* TEMPORAL */double kk;
 	for (uint8_t k = 0; k < 3; k++) {
 		double Nk;
 		if (k < 2)
@@ -882,8 +883,10 @@ static void integrate_svol_simplexwise_gp_dmg
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
+		if(elem_k == elem_id)kk=Nk;/* TEMPORAL */
 		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
 	}
+	printf("%g)\n", kk);/* TEMPORAL */
 
 	H[elem_id] += wq * val;
 }
@@ -961,7 +964,7 @@ static void integrate_subface_simplexwise_gp_damage
 	double xq[2];
 	nb_cvfa_subface_get_xq(subface, glq, gp, xq);
 	double xi[2];
-	nb_cvfa_get_normalized_point(dmg_data->smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	double iJ[4];
 	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);

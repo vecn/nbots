@@ -40,7 +40,7 @@ double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 
 void nb_cvfa_subface_get_grad(const double iJ[4], const double grad_xi[2],
 			      double grad[2]);
-void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
+void nb_cvfa_get_normalized_point(const double x1[2],
 				  const double x2[2], const double x3[2],
 				  const double xq[2], double xi[2]);
 

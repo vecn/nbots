@@ -77,7 +77,6 @@ static void subface_get_normalized_grad(int smooth, uint8_t i,
 static double get_spline(int smooth, double x);
 static double get_deriv_spline(int smooth, double x);
 static double get_second_deriv_spline(int smooth, double x);
-static double get_spline_inv(int smooth, double x);
 static void subface_get_nodal_contribution(const double D[4],
 					   const double nf[2],
 					   const double grad[2],
@@ -300,7 +299,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	nb_cvfa_subface_get_xq(subface, glq, q, xq);
 
 	double xi[2];
-	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 	
 	double wq = lf * glq->w[q] * 0.5;
 
@@ -370,15 +369,12 @@ static void subface_get_normalized_grad(int smooth, uint8_t i,
 	}
 }
 
-void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
+void nb_cvfa_get_normalized_point(const double x1[2],
 				  const double x2[2], const double x3[2],
 				  const double xq[2], double xi[2])
 {
 	double Jd[4];
-	Jd[0] = x2[0] - x1[0];
-	Jd[1] = x3[0] - x1[0];
-	Jd[2] = x2[1] - x1[1];
-	Jd[3] = x3[1] - x1[1];
+	get_jacobian(x1, x2, x3, Jd);
 	
 	double b[2];
 	b[0] = xq[0] - x1[0];
@@ -386,8 +382,8 @@ void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
 
 	nb_matrix_2X2_inverse_destructive(Jd);
 
-	xi[0] = get_spline_inv(smooth, Jd[0] * b[0] + Jd[1] * b[1]);
-	xi[1] = get_spline_inv(smooth, Jd[2] * b[0] + Jd[3] * b[1]);
+	xi[0] = Jd[0] * b[0] + Jd[1] * b[1];
+	xi[1] = Jd[2] * b[0] + Jd[3] * b[1];
 }
 
 void nb_cvfa_get_interpolated_point(const double x1[2],
@@ -518,34 +514,6 @@ static double get_second_deriv_spline(int smooth, double x)
 	}
 	return deriv;
 
-}
-
-static double get_spline_inv(int smooth, double x)
-{
-	double inv;
-	switch (smooth) {
-	case 0:
-		inv = x;
-		break;
-	case 1:
-		inv = 1.66667 * x - 2 * POW2(x) + 1.33334 * POW3(x);
-		break;
-	case 2:
-		inv = 1.9333 * x - 2.8 * POW2(x) + (28.0/15.0) * POW3(x);
-		break;
-	case 3:
-		inv = 2.0867 * x - 3.2571 * POW2(x) + 2.1714 * POW3(x);
-		break;
-	case 4:
-		inv = 2.1873 * x - 3.5619 * POW2(x) + 2.3746 * POW3(x);
-		break;
-	case 5:
-		inv = 2.26 * x - 3.7825 * POW2(x) + 2.5223 * POW3(x);
-		break;
-	default:
-		inv = 2.3180 * x - 7.908 * POW2(x) + 7.908 * POW3(x);
-	}
-	return inv;
 }
 
 void nb_cvfa_subface_get_grad(const double iJ[4], const double grad_xi[2],
@@ -776,7 +744,7 @@ void nb_cvfa_subface_get_strain(int smooth,
 				double *strain)
 {
 	if (nb_cvfa_subface_in_simplex(subface))
-		subface_get_strain_simplexwise(smooth, intmsh, subface,
+	  subface_get_strain_simplexwise(smooth, intmsh, subface,
 					       disp, xq, strain);
 	else
 		subface_get_strain_pairwise(smooth, face, subface, xc,
@@ -793,7 +761,7 @@ static void subface_get_strain_simplexwise(int smooth,
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double xi[2];
-	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	double iJ[4];
 	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);
@@ -888,7 +856,7 @@ static void subface_get_grad_strain_simplexwise
 	nb_cvfa_load_trg_points(intmsh, subface->trg_id, t1, t2, t3);
 
 	double xi[2];
-	nb_cvfa_get_normalized_point(smooth, t1, t2, t3, xq, xi);
+	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	uint32_t e1 = nb_mesh2D_elem_get_adj(intmsh, subface->trg_id, 0);
 	double u1 = disp[e1 * 2];
