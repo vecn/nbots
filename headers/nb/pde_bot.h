@@ -13,5 +13,10 @@
 #include "nb/pde_bot/finite_element.h"
 #include "nb/pde_bot/control_volume.h"
 #include "nb/pde_bot/control_volume/draw.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/static_plasticity2D.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
+#include "../sources/nb/pde_bot/finite_element/solid_mechanics/set_bconditions.h"
+#include "../sources/nb/pde_bot/finite_element/solid_mechanics/pipeline.h"
+
 
 #endif

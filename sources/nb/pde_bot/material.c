@@ -6,6 +6,8 @@
 
 struct nb_material_s {
 	double elasticity_module;/* TEMPORAL: Modulus instead of module */
+	double plasticity_module;
+	double yield_stress;
 	double poisson_module;
 	double density;
 	double fracture_energy;
@@ -13,7 +15,7 @@ struct nb_material_s {
 	double compression_limit_stress;
 	/* Damage function return the damage in
 	 * the interval [0: No damage, 1: Full damage] */
-	double (*damage)(const nb_material_t *const mat, 
+	double (*damage)(const nb_material_t *const mat,
 			 double *strain,
 			 double *r_damage_prev,
 			 double *r_damage,
@@ -32,6 +34,8 @@ nb_material_t *nb_material_clone(nb_material_t* mat)
 {
 	nb_material_t *clone = nb_material_create();
 	clone->elasticity_module = mat->elasticity_module;
+	clone->plasticity_module = mat->plasticity_module;
+	clone->yield_stress = mat->yield_stress;
 	clone->poisson_module = mat->poisson_module;
 	clone->density = mat->density;
 	clone->fracture_energy = mat->fracture_energy;
@@ -52,6 +56,14 @@ void nb_material_set_poisson_module(nb_material_t* mat, double pmodule){
 
 void nb_material_set_elasticity_module(nb_material_t* mat, double emodule){
 	mat->elasticity_module = emodule;
+}
+
+void nb_material_set_plasticity_module(nb_material_t* mat, double pmodule){
+	mat->plasticity_module = pmodule;
+}
+
+void nb_material_set_yield_stress(nb_material_t* mat, double yield) {
+    mat->yield_stress = yield;
 }
 
 void nb_material_set_density(nb_material_t* mat, double density){
@@ -76,6 +88,14 @@ double nb_material_get_poisson_module(const nb_material_t *const mat){
 
 double nb_material_get_elasticity_module(const nb_material_t *const mat){
 	return mat->elasticity_module;
+}
+
+double nb_material_get_plasticity_module(const nb_material_t *const mat){
+	return mat->plasticity_module;
+}
+
+double nb_material_get_yield_stress(const nb_material_t *const mat) {
+    return mat->yield_stress;
 }
 
 double nb_material_get_density(const nb_material_t *const mat){

@@ -14,7 +14,7 @@ void pipeline_sum_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 			      double *dNi_dx, double *dNi_dy,
 			      double fx, double fy,
 			      double *Ke, double *Me, double *Fe);
-void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id,
+void pipeline_add_to_global_system(const nb_fem_elem_t *elem, uint32_t id, 
 				   const nb_mesh2D_t *part,
 				   double *Ke, double *Me, double *Fe,
 				   nb_sparse_t *K, double *M, double *F);

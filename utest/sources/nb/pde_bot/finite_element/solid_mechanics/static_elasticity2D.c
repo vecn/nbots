@@ -28,7 +28,7 @@ typedef struct {
 static int suite_init(void);
 static int suite_clean(void);
 
-static void test_beam_cantilever(void);
+static void test_problem(void);
 static void check_beam_cantilever(const void *part,
 				  const results_t *results);
 static void test_plate_with_hole(void);
@@ -81,7 +81,7 @@ void cunit_nb_pde_bot_fem_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	CU_add_test(suite, "Beam cantilever", test_problem);
 	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
@@ -96,7 +96,7 @@ static int suite_clean(void)
 }
 
 
-static void test_beam_cantilever(void)
+static void test_problem(void)
 {
 	run_test("%s/beam_cantilever.txt", 1000,
 		 check_beam_cantilever, NULL);

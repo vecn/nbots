@@ -21,7 +21,8 @@
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 
-#include "nb/pde_bot/finite_element/solid_mechanics/set_bconditions.h"
+//#include "nb/pde_bot/finite_element/solid_mechanics/set_bconditions.h"
+#include "set_bconditions.h"
 #include "pipeline.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_plasticity2D.h"

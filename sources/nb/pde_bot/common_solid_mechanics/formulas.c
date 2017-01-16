@@ -10,7 +10,7 @@
 static void set_plane_stress(double D[4], double E, double v);
 static void set_plane_strain(double D[4], double E, double v);
 
-void nb_pde_get_lame_params(double lame[2], 
+void nb_pde_get_lame_params(double lame[2],
 			    const nb_material_t *material,
 			    nb_analysis2D_t analysis2D)
 {
@@ -31,7 +31,7 @@ void nb_pde_get_lame_params(double lame[2],
 	lame[1] = (v * E) / ((1 + v) * (1 - c)); /* lambda */
 }
 
-void nb_pde_get_constitutive_matrix(double D[4], 
+void nb_pde_get_constitutive_matrix(double D[4],
 				    const nb_material_t *material,
 				    nb_analysis2D_t analysis2D)
 {
@@ -42,6 +42,44 @@ void nb_pde_get_constitutive_matrix(double D[4],
 		set_plane_stress(D, E, v);
 	case NB_PLANE_STRAIN:
 		set_plane_strain(D, E, v);
+	default:
+		set_plane_stress(D, E, v);
+	}
+}
+
+void nb_pde_get_plastified_constitutive_matrix(double D[4],
+				    const nb_material_t *material,
+				    nb_analysis2D_t analysis2D,
+				    nb_plastified_analysis2D elem_reg)
+{
+	double E = nb_material_get_elasticity_module(material);
+	double Ep = nb_material_get_plasticity_module(material);
+	double v = nb_material_get_poisson_module(material);
+    switch (analysis2D) {
+	case NB_PLANE_STRESS:
+	    switch (elem_reg) {
+        case NB_ELASTIC:
+            set_plane_stress(D, E, v);
+            break;
+        case NB_PLASTIC:
+            set_plane_stress(D, Ep, v);
+            break;
+        default:
+            set_plane_stress(D, E, v);
+	    }
+	    break;
+	case NB_PLANE_STRAIN:
+	    switch (elem_reg) {
+        case NB_ELASTIC:
+            set_plane_strain(D, E, v);
+            break;
+        case NB_PLASTIC:
+            set_plane_strain(D, Ep, v);
+            break;
+        default:
+            set_plane_strain(D, E, v);
+	    }
+	    break;
 	default:
 		set_plane_stress(D, E, v);
 	}

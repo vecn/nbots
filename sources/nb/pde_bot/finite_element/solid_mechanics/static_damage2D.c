@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "nb/memory_bot.h"
 #include "nb/solver_bot.h"
+#include "nb/memory_bot/allocate_mem.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot/material.h"
 #include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
@@ -16,7 +16,7 @@
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
-  
+
 #include "../utils.h"
 #include "set_bconditions.h"
 #include "pipeline.h"
@@ -31,18 +31,30 @@ struct nb_fem_implicit_s{
 	double residual_tolerance;
 };
 
+int damage_solver(const nb_sparse_t *const A,
+                   const double *const b, double* x);
 static double tension_damage_r0(const nb_material_t *const mat);
-static double tension_damage(const nb_material_t *const mat, 
+static double tension_damage(const nb_material_t *const mat,
 			     double *strain,
 			     double *r_damage_prev,
 			     double *r_damage,
 			     double characteristic_length_of_fractured_domain,
 			     nb_analysis2D_t analysis2D);
-/*
+void nb_fem_compute_damage_stress_from_strain
+			(uint32_t N_elements,
+			 const nb_fem_elem_t *const elem,
+			 const nb_material_t *const material,
+			 nb_analysis2D_t analysis2D,
+			 double* strain,
+			 const bool* elements_enabled /* NULL to enable all */,
+			 double* stress /* Output */,
+			 double *damage_elem,
+			 bool enable_computing_damage);
+/*bot
 SECOND OPTION
 static double tension_truncated_damage_r0(const nb_material_t *const mat);
 static double tension_truncated_damage
-			(const nb_material_t *const mat, 
+			(const nb_material_t *const mat,
 			 double *strain,
 			 double *r_damage_prev,
 			 double* r_damage,
@@ -131,7 +143,7 @@ static inline double tension_damage_r0(const nb_material_t *const mat)
 		sqrt(nb_material_get_elasticity_module(mat));
 }
 
-static double tension_damage(const nb_material_t *const mat, 
+static double tension_damage(const nb_material_t *const mat,
 			     double *strain,
 			     double *r_damage_prev,
 			     double *r_damage,
@@ -149,12 +161,12 @@ static double tension_damage(const nb_material_t *const mat,
 	effective_stress[0] = D[0] * strain[0] + D[1] * strain[1];
 	effective_stress[1] = D[1] * strain[0] + D[2] * strain[1];
 	effective_stress[2] = D[3] * strain[2];
-
 	/* Compute principal stress using Mohr's circle */
 	double sigma_avg = 0.5 * (effective_stress[0] + effective_stress[1]);
-	double R = sqrt(0.25 * 
+	double R = sqrt(0.25 *
 			POW2(effective_stress[0] - effective_stress[1]) +
 			POW2(effective_stress[2]));
+
 	double positive_stress1 = MAX(0, sigma_avg + R);
 	double positive_stress2 = MAX(0, sigma_avg - R);
 
@@ -165,22 +177,20 @@ static double tension_damage(const nb_material_t *const mat,
 	double id22 =  D[0]/detD2x2;
 	/* Compute stress ^T strain */
 	double sTs =
-		id11 * POW2(positive_stress1) + 
+		id11 * POW2(positive_stress1) +
 		2 * id12 * positive_stress1 * positive_stress2 +
 		id22 * POW2(positive_stress2);
-
 	/* Compute tau */
 	double tau = sqrt(sTs);
-
 	/* Compute and return damage */
 	double r0 = tension_damage_r0(mat);
 	r_damage[0] = MAX(r_damage_prev[0], tau);
-	double div =  
-		(Gf/characteristic_length_of_fractured_domain)*(E/POW2(ft));
+	double div =
+		(Gf*E)/(characteristic_length_of_fractured_domain*POW2(ft));
 	double A = 1.0 / (div - 0.5);
 	double G = 1.0 - (r0/r_damage[0])*exp(A*(1.0-(r_damage[0]/r0)));
 	return G;
-}
+	}
 
 /*
 SECOND OPTION
@@ -191,7 +201,7 @@ static inline double tension_truncated_damage_r0
 }
 
 static double tension_truncated_damage
-			(const nb_material_t *const mat, 
+			(const nb_material_t *const mat,
 			 double *strain,
 			 double *r_damage_prev,
 			 double* r_damage,
@@ -212,14 +222,14 @@ static double tension_truncated_damage
 
 // Compute principal stress using Mohr's circle
 	double sigma_avg = 0.5 * (effective_stress[0] + effective_stress[1]);
-	double R = sqrt(0.25 * 
+	double R = sqrt(0.25 *
 			POW2(effective_stress[0] - effective_stress[1]) +
 			POW2(effective_stress[2]));
 	double main_stress1 = sigma_avg + R;
 	double main_stress2 = sigma_avg - R;
 
 // Compute tau
-	double tau = MAX(0, main_stress1) + 
+	double tau = MAX(0, main_stress1) +
 		MAX(0, main_stress2);
 
 // Compute and return damage
@@ -236,7 +246,7 @@ static double tension_truncated_damage
 }
 */
 
-void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
+uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elem,
 			 const nb_material_t *const material,
@@ -247,28 +257,30 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
 			 nb_fem_implicit_t* params,
-			 const char* logfile)
+			 const char* logfile,
+			 double *damage,
+			 double *displacement,
+			 double *strain,
+			 double *stress)
 /* Quasistatic formulation */
 {
-	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
-	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
+    uint8_t status = 1;
+	uint64_t N_nod = nb_mesh2D_get_N_nodes(part);
+	uint64_t N_elem = nb_mesh2D_get_N_elems(part);
 
 	uint32_t omp_parallel_threads = 1;
 
-	FILE *log = fopen(logfile, "a");
-	fprintf(log, "FEM: Damage Model\n");
-	fclose(log);
-  
-	uint32_t N_system_size = N_nod * 2;
+	uint64_t N_system_size = 2*N_nod;
 
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 
 	/*******************************************************************/
 	/*********************** > ?????? **********************************/
 	/*******************************************************************/
-	double* displacement = nb_allocate_zero_mem(2 * N_nod * sizeof(double));
-	double* strain = nb_allocate_zero_mem(3 * N_elem * N_gp * sizeof(double));
-	double* damage = nb_allocate_zero_mem(N_elem * N_gp * sizeof(double));
+	memset(displacement, 0, 2 * N_nod * sizeof(*displacement));
+	memset(strain, 0, 3 * N_elem * sizeof(*strain));
+	memset(damage, 0, N_elem * N_gp * sizeof(double));
+	memset(stress, 0, 3 * N_elem * sizeof(*stress));
 	double* r_dmg = nb_allocate_mem(N_gp * N_elem * sizeof(double));
 
 	/* Initialize r parameter used for damage calculation */
@@ -279,33 +291,35 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 	/****************** > Allocate system ******************************/
 	/*******************************************************************/
 	/* Allocate global Stiffness Matrices */
-	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
+	nb_graph_t *graph = malloc(nb_graph_get_memsize());
 	nb_graph_init(graph);
 	nb_mesh2D_load_graph(part, graph, NB_NODES_LINKED_BY_ELEMS);
-	nb_sparse_t* K = nb_sparse_create(graph, NULL, 2);
+	nb_sparse_t *K = nb_sparse_create(graph, NULL, 2);
 	nb_graph_finish(graph);
 	nb_sparse_t *L = NULL;
 	nb_sparse_t *U = NULL;
 	/* Allocate the triangular matrices L and U using symbolic Cholesky */
-	nb_sparse_alloc_LU(K, &L, &U);
+	//nb_sparse_alloc_LU(K, &L, &U);
 
-  
+
 	/* Allocate force vectors and displacement increment */
-	double* F = nb_allocate_zero_mem(N_system_size * sizeof(double));
-	double* P = nb_allocate_zero_mem(N_system_size * sizeof(double));
-	double* residual = nb_allocate_zero_mem(N_system_size * sizeof(double));
-	double* du = nb_allocate_zero_mem(N_system_size * sizeof(double));
+	double* F = nb_allocate_zero_mem(N_system_size*sizeof(double));
+	double* P = nb_allocate_zero_mem(N_system_size*sizeof(double));
+	double* residual = nb_allocate_zero_mem(N_system_size*sizeof(double));
+	double* displacement_increment = nb_allocate_zero_mem(N_system_size*sizeof(double));
 
 	/* Allocate damage parameter 'r' */
 	double* r_dmg_prev = nb_allocate_mem(N_gp * N_elem * sizeof(double));
-  
+    bool react_known_node = false;
+    double max_y_force = 0;
 	/*******************************************************************/
 	/******************* > Start simulation of N steps *****************/
 	/*******************************************************************/
 	for (uint32_t n = 0; n < nb_fem_implicit_get_N_steps(params); n++) {
-		log = fopen(logfile, "a");
+        printf("Step %d\n", n);
+		/*log = fopen(logfile, "a");
 		fprintf(log, "  [ Load step %i]\n", n + 1);
-		fclose(log);
+		fclose(log);*/
 		memcpy(r_dmg_prev, r_dmg, N_gp * N_elem * sizeof(double));
 
 		/***********************************************************/
@@ -313,12 +327,14 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 		/***********************************************************/
 		/* Implicit integration scheme */
 		if(!enable_Cholesky_solver)
-			memset(du, 0, N_system_size * sizeof(double));
+			memset(displacement_increment, 0, N_system_size * sizeof(double));
 
 		double residual_norm = 1;
 		uint32_t residual_iter = 0;
 		uint32_t residual_iter_without_enhance = 0;
 		double residual_best;
+        uint32_t solver_status = 0; /* Default initialization (Must be initialized) */
+        memset(F, 0, N_system_size);
 		while(1) {
 			/**************************************************/
 			/********* > Assemble system **********************/
@@ -352,11 +368,10 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 
 			/* Compute residual norm */
 			residual_norm = 0;
-			for(uint32_t i=0; i < N_system_size; i++){
+			for(int i = 0; i < N_system_size; i++){
 				residual[i] = F[i] - P[i];
 				residual_norm += POW2(residual[i]);
 			}
-      
 			residual_norm = sqrt(residual_norm);
 
 			/* Check if residual is minimized */
@@ -375,67 +390,31 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 			    && residual_iter > 0) || residual_iter >= params->N_max_iter ||
 			   residual_iter_without_enhance >= params->N_max_iter_without_enhance){
 				/* Write logfile */
-				log = fopen(logfile, "a");
+				/*log = fopen(logfile, "a");
 				fprintf(log, "    [%i: Residual: %e ]\n",
 					residual_iter, residual_norm);
-				fclose(log);
+				fclose(log);*/
 				break;
 			}
 
 			/***********************************************/
 			/** > Solve system (to compute displacements) **/
 			/***********************************************/
-			char solver_status = 0; /* Default initialization (Must be initialized) */
-			if(enable_Cholesky_solver){
-				/* Decompose matrix */
-				solver_status = 
-					nb_sparse_decompose_Cholesky(K, L, U, omp_parallel_threads);
-
-				if(solver_status != 0)
-					nb_sparse_decompose_LU(K, L, U, omp_parallel_threads);
-  
-				/* Solve system */
-				nb_sparse_solve_LU(L, U, residual, du);
-			}
-			if(!enable_Cholesky_solver || solver_status != 0){
-				if(solver_status != 0){
-					log = fopen(logfile, "a");
-					fprintf(log, "    [Cholesky Fails (The stiffness matrix is not positive definite).]\n");
-					fprintf(log, "    [Solving with Conjugate Gradient (Tolerance: 1e-8)...]\n");
-					fclose(log);
-				}
-				double error = 0.0; /* Default initialization (Must be initialized) */
-				uint32_t iters = 0;     /* Default initialization (Must be initialized) */
-				solver_status = 
-					nb_sparse_solve_CG_precond_Jacobi(K, residual, du,
-									   nb_sparse_get_size(K),
-									   1e-8,
-									   &iters, &error,
-									   omp_parallel_threads);
-				if(solver_status != 0){
-					solver_status = nb_sparse_solve_Gauss_Seidel(K, residual, du,
-										      60 * nb_sparse_get_size(K),
-										      1e-8,
-										      &iters, &error,
-										      omp_parallel_threads);
-					if(solver_status != 0){
-						log = fopen(logfile, "a");
-						fprintf(log, "    [Conjugate Gradient (p. Jacobi) and Gauss-Seidel fails.]\n");
-						fprintf(log, "      [Gauss-Seidel iterations: %u]\n", iters);
-						fprintf(log, "      [Gauss-Seidel error: %e ]\n", error);
-						fclose(log);
-					}
-				}
-			}
+			solver_status = damage_solver(K, residual, displacement_increment);
+			/*damage_solver(K, L, U, N_system_size, residual, displacement_increment, solver_status,
+                                 enable_Cholesky_solver, omp_parallel_threads);*/
+            if(solver_status != 0){
+                goto END_OF_PROCESS;
+            }
 			/* Write logfile */
-			log = fopen(logfile, "a");
+			/*log = fopen(logfile, "a");
 			fprintf(log, "    [%i: Residual: %e]\n", residual_iter, residual_norm);
-			fclose(log);
+			fclose(log);*/
 
 			/* Update displacements, velocities and accelerations */
-			for(uint32_t i=0; i < N_system_size; i++)
-				displacement[i] += du[i];
-            
+			for(int i=0; i < N_system_size; i++){
+				displacement[i] += displacement_increment[i];
+			}
 
 			/**********************************************/
 			/***** > Compute Strain and Damage      *******/
@@ -449,13 +428,16 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 			residual_iter ++;
 		}
 	}
+
+    nb_fem_compute_damage_stress_from_strain(N_elem, elem, material, analysis2D, strain,
+                                             NULL, stress, damage, true);
+
 	/*****************************************************************/
 	/******************** > Free memory ******************************/
 	/*****************************************************************/
-	nb_free_mem(displacement);
-	nb_free_mem(strain);
-	nb_free_mem(damage);
+	status = 0;
 
+	END_OF_PROCESS:
 	nb_sparse_destroy(K);
 	if(enable_Cholesky_solver){
 		nb_sparse_destroy(L);
@@ -463,12 +445,14 @@ void nb_fem_compute_2D_Non_Linear_Solid_Mechanics
 	}
 
 	nb_free_mem(F);
-	nb_free_mem(du);
+	nb_free_mem(displacement_increment);
 	nb_free_mem(residual);
-	nb_free_mem(P); 
-  
+	nb_free_mem(P);
+
 	nb_free_mem(r_dmg_prev);
 	nb_free_mem(r_dmg);
+
+	return status;
 }
 
 static void DMG_pipeline_assemble_system
@@ -485,11 +469,12 @@ static void DMG_pipeline_assemble_system
 		 bool* elements_enabled /* NULL to enable all */)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
+	uint32_t N_nod = nb_mesh2D_get_N_nodes(part);
 
 	nb_sparse_reset(K);
 	if (NULL != M)
 		memset(M, 0, nb_sparse_get_size(K) * sizeof(double));
-	memset(F, 0, nb_sparse_get_size(K) * sizeof(double));
+	memset(F, 0, 2*N_nod*sizeof(double));
 
 	/* Allocate elemental Stiffness Matrix and Force Vector */
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
@@ -500,13 +485,14 @@ static void DMG_pipeline_assemble_system
 	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(double));
 
 	/* Assembly global system */
+	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elems; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = 1e-6;
 		if (pipeline_elem_is_enabled(elements_enabled, k)) {
+            density = nb_material_get_density(material);
 			nb_pde_get_constitutive_matrix(D, material,
 						       analysis2D);
-			density = nb_material_get_density(material);
 		}
 
 		/* Allocate Cartesian derivatives for each Gauss Point */
@@ -520,10 +506,10 @@ static void DMG_pipeline_assemble_system
 			fx = gravity[0] * density;
 			fy = gravity[1] * density;
 		}
-    
+
 		/* Integrate Ke and Fe using Gauss quadrature */
 		memset(Ke, 0, 4 * POW2(N_nodes) * sizeof(double));
-		if(M != NULL) 
+		if(M != NULL)
 			memset(Me, 0, 2 * N_nodes * sizeof(double));
 		memset(Fe, 0, 2 * N_nodes * sizeof(double));
 
@@ -563,7 +549,7 @@ static void DMG_pipeline_assemble_system
  EXIT:
 	/* Free elemental stiffness matrix and force vector */
 	nb_free_mem(Ke);
-	if (M != NULL) 
+	if (M != NULL)
 		nb_free_mem(Me);
 	nb_free_mem(Fe);
 }
@@ -585,7 +571,7 @@ static void DMG_pipeline_compute_strain
 	/* Initialize strains */
 	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 	memset(strain, 0, 3 * N_gp * N_elems * sizeof(double));
-
+    double max_damage = 0.0;
 	/* Iterate over elements to compute strain, stress and damage at nodes */
 	for (uint32_t k = 0 ; k < N_elems; k++) {
 		uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
@@ -596,7 +582,7 @@ static void DMG_pipeline_compute_strain
 		uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
 		for (uint32_t j = 0; j < N_gp; j++) {
 			double Jinv[4];
-			double detJ = nb_fem_get_jacobian(elem, k, part, j, Jinv);      
+			double detJ = nb_fem_get_jacobian(elem, k, part, j, Jinv);
 			if (nb_fem_elem_is_distorted(detJ))
 				goto EXIT;
 
@@ -614,13 +600,15 @@ static void DMG_pipeline_compute_strain
 			/* Compute damage */
 			if (enable_computing_damage) {
 				double clfd = get_clfd(part, k);
-      
-				damage[idx] = tension_damage(material, 
+
+				damage[idx] = tension_damage(material,
 							     &(strain[idx*3]),
 							     &(r_dmg_prev[idx]),
 							     &(r_dmg[idx]),
 							     clfd,
 							     analysis2D);
+                if(damage[idx] > max_damage) /*TEMPORAL*/
+                    max_damage = damage[idx];
 			}
 		}
 		nb_free_mem(dNi_dx);
@@ -644,4 +632,109 @@ static double get_clfd(const nb_mesh2D_t *part, uint32_t id_elem)
 	double y3 = nb_mesh2D_node_get_y(part, n3);
 	return sqrt((x2 - x1) * (y3 - y1) -
 		    (y2 - y1) * (x3 - x1));
+}
+int damage_solver(const nb_sparse_t *const A,
+		  const double *const b, double* x)
+{
+	uint32_t N = nb_sparse_get_size(A);
+	memset(x, 0, N * sizeof(*x));
+    double err;
+        uint32_t iter;
+	int status = nb_sparse_solve_CG_precond_Jacobi(A, b, x, N,
+							1e-8, &iter,
+							&err, 1);
+	int out;
+	if (0 == status || 1 == status)
+		out = 0;
+	else {
+        printf("Tolerance not reached in CG Jacobi.\n");
+        printf("Error: %lf\n",err);
+        printf("Iterations: %d\n", iter);
+		out = 1; // Tolerance not reached in CG Jacobi
+    }
+	return out;
+}
+
+//void damage_solver(const nb_sparse_t *K, nb_sparse_t *L, nb_sparse_t *U, uint32_t N_system_size, double *residual, double *displacement_increment,
+                   //uint32_t solver_status, bool enable_Cholesky_solver, uint32_t omp_parallel_threads) {
+   //if(enable_Cholesky_solver){
+        /* Decompose matrix */
+        //solver_status =
+          //  nb_sparse_decompose_Cholesky(K, L, U, omp_parallel_threads);
+
+        //if(solver_status != 0)
+           // nb_sparse_decompose_LU(K, L, U, omp_parallel_threads);
+
+            /* Solve system */
+        //nb_sparse_solve_LU(L, U, residual, displacement_increment);
+    //}
+
+   // if(!enable_Cholesky_solver || solver_status != 0){
+        //if(solver_status != 0){
+            /*log = fopen(logfile, "a");
+            fprintf(log, "    [Cholesky Fails (The stiffness matrix is not positive definite).]\n");
+            fprintf(log, "    [Solving with Conjugate Gradient (Tolerance: 1e-8)...]\n");
+            fclose(log);*/
+      //  }
+        //double error = 0.0; /* Default initialization (Must be initialized) */
+        //uint32_t iters = 0;     /* Default initialization (Must be initialized) */
+        //memset(displacement_increment, 0, N_system_size*sizeof(double));
+        //uint64_t N = nb_sparse_get_size(K);
+        //solver_status =
+          //  nb_sparse_solve_CG_precond_Jacobi(K, residual, displacement_increment, N, 1e-8,
+            //                    NULL, NULL, 1);
+        //if(solver_status != 0){
+          //  printf("Precond Jacobi solver failed!\n");
+            //solver_status = nb_sparse_solve_Gauss_Seidel(K, residual, displacement_increment,
+              //                          60 * N, 1e-8, NULL, NULL, 1);
+            //if(solver_status != 0){
+            //printf("Gauss seidel solver failed!\n");
+                /*log = fopen(logfile, "a");
+                fprintf(log, "    [Conjugate Gradient (p. Jacobi) and Gauss-Seidel fails.]\n");
+                fprintf(log, "      [Gauss-Seidel iterations: %u]\n", iters);
+                fprintf(log, "      [Gauss-Seidel error: %e ]\n", error);
+                fclose(log);*/
+        //    }
+        //}
+    //}
+//}
+
+void nb_fem_compute_damage_stress_from_strain
+			(uint32_t N_elements,
+			 const nb_fem_elem_t *const elem,
+			 const nb_material_t *const material,
+			 nb_analysis2D_t analysis2D,
+			 double* strain,
+			 const bool* elements_enabled /* NULL to enable all */,
+			 double* stress /* Output */,
+			 double *damage_elem,
+			 bool enable_computing_damage)
+{
+	/* Compute stress from element strain */
+	uint32_t omp_parallel_threads = 1;
+	uint8_t N_gp = nb_fem_elem_get_N_gpoints(elem);
+#pragma omp parallel for num_threads(omp_parallel_threads) schedule(guided)
+	for (uint32_t i = 0; i < N_elements; i++) {
+		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
+		if (pipeline_elem_is_enabled(elements_enabled, i))
+			nb_pde_get_constitutive_matrix(D, material,
+						       analysis2D);
+		for (uint32_t j = 0; j < N_gp; j++) {
+			/* Get constitutive model */
+			double Dr[4];
+			memcpy(Dr, D, 4 * sizeof(double));
+			if (enable_computing_damage) {
+				Dr[0] *= (1.0 - damage_elem[i * N_gp + j]);
+				Dr[1] *= (1.0 - damage_elem[i * N_gp + j]);
+				Dr[2] *= (1.0 - damage_elem[i * N_gp + j]);
+				Dr[3] *= (1.0 - damage_elem[i * N_gp + j]);
+			}
+			uint32_t id = i * N_gp + j;
+			stress[id * 3] = strain[id * 3] * Dr[0] +
+				strain[id*3+1] * Dr[1];
+			stress[id*3+1] = strain[id * 3] * Dr[1] +
+				strain[id*3+1] * Dr[2];
+			stress[id*3+2] = strain[id*3+2] * Dr[3];
+        }
+    }
 }

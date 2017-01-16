@@ -13,5 +13,6 @@
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_elasticity2D.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/static_plasticity2D.h"
 
 #endif
