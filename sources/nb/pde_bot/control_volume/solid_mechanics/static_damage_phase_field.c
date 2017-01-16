@@ -20,7 +20,7 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
-#define MIDPOINT_VOL_INTEGRALS false
+#define MIDPOINT_VOL_INTEGRALS true
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))

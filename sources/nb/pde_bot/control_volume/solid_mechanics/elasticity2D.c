@@ -343,10 +343,10 @@ static void get_jacobian(const double t1[2],
 			 double J[4])
 {
 	/* Jacobian = D_{psi} x*/
-	J[0] = t2[0] - t1[0];
-	J[1] = t3[0] - t1[0];
-	J[2] = t2[1] - t1[1];
-	J[3] = t3[1] - t1[1];
+	J[0] = t1[0] - t3[0];
+	J[1] = t2[0] - t3[0];
+	J[2] = t1[1] - t3[1];
+	J[3] = t2[1] - t3[1];
 }
 
 static void subface_get_normalized_grad(int smooth, uint8_t i,
@@ -355,17 +355,17 @@ static void subface_get_normalized_grad(int smooth, uint8_t i,
 {
 	if (0 == i) {
 		double dPx = get_deriv_spline(smooth, xi[0]);
-		double dPy = get_deriv_spline(smooth, xi[1]);
-		grad_xi[0] = -dPx;
-		grad_xi[1] = -dPy;
-	} else if (1 == i) {
-		double dPx = get_deriv_spline(smooth, xi[0]);
 		grad_xi[0] = dPx;
 		grad_xi[1] = 0;
-	} else {
+	} else if (1 == i) {
 		double dPy = get_deriv_spline(smooth, xi[1]);
 		grad_xi[0] = 0;
 		grad_xi[1] = dPy;
+	} else {
+		double dPx = get_deriv_spline(smooth, xi[0]);
+		double dPy = get_deriv_spline(smooth, xi[1]);
+		grad_xi[0] = -dPx;
+		grad_xi[1] = -dPy;
 	}
 }
 
@@ -377,8 +377,8 @@ void nb_cvfa_get_normalized_point(const double x1[2],
 	get_jacobian(x1, x2, x3, Jd);
 	
 	double b[2];
-	b[0] = xq[0] - x1[0];
-	b[1] = xq[1] - x1[1];
+	b[0] = xq[0] - x3[0];
+	b[1] = xq[1] - x3[1];
 
 	nb_matrix_2X2_inverse_destructive(Jd);
 
