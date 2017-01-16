@@ -20,7 +20,7 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
-#define MIDPOINT_VOL_INTEGRALS true
+#define MIDPOINT_VOL_INTEGRALS false
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -776,15 +776,17 @@ static void assemble_face_damage(const eval_damage_data_t *dmg_data,
 	if (nb_cvfa_face_is_internal(face, dmg_data->mesh)) {
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
-			if (!MIDPOINT_VOL_INTEGRALS) {
+			if (!MIDPOINT_VOL_INTEGRALS)
 				integrate_subvolume_damage(dmg_data, face,
 							   i, glq, D, H);
-			}
+
 			integrate_subface_damage(dmg_data, face,
 						 i, glq, D, H);
 		}
 	} else {
-		integrate_exterior_subface_damage(dmg_data, face, glq, D, H);
+		if (!MIDPOINT_VOL_INTEGRALS)
+			integrate_exterior_subface_damage(dmg_data, face,
+							  glq, D, H);
 	}
 }
 
@@ -873,7 +875,6 @@ static void integrate_svol_simplexwise_gp_dmg
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
 	double val = 2 * energy * h/G;
-	printf("--> ELEM(%i ", elem_id);/* TEMPORAL */double kk;
 	for (uint8_t k = 0; k < 3; k++) {
 		double Nk;
 		if (k < 2)
@@ -883,10 +884,8 @@ static void integrate_svol_simplexwise_gp_dmg
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		if(elem_k == elem_id)kk=Nk;/* TEMPORAL */
 		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
 	}
-	printf("%g)\n", kk);/* TEMPORAL */
 
 	H[elem_id] += wq * val;
 }
@@ -1048,7 +1047,13 @@ static void integrate_exterior_subface_damage
 					 const nb_glquadrature_t *glq,
 					 nb_sparse_t *D, double *H)
 {
-	/* TEMPORAL */
+	uint32_t id = face->elems[0];
+	double xc[2];
+	xc[0] = dmg_data->xc[id * 2];
+	xc[1] = dmg_data->xc[id*2+1];
+
+	double area = nb_utils2D_get_trg_area(face->x1, face->x2, xc);
+	nb_sparse_add(D, id, id, area);
 }
 
 static void show_error_message(int status)
