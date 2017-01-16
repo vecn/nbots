@@ -11,6 +11,8 @@ struct nb_material_s {
 	double fracture_energy;
 	double traction_limit_stress;
 	double compression_limit_stress;
+	double energy_release_rate;
+	double damage_length_scale;
 	/* Damage function return the damage in
 	 * the interval [0: No damage, 1: Full damage] */
 	double (*damage)(const nb_material_t *const mat, 
@@ -79,6 +81,17 @@ void nb_material_set_compression_limit_stress(nb_material_t* mat,
 	mat->compression_limit_stress = max_stress;
 }
 
+void nb_material_set_energy_release_rate(nb_material_t *mat, double energy_rr)
+{
+	mat->energy_release_rate = energy_rr;
+}
+
+void nb_material_set_damage_length_scale(nb_material_t *mat,
+					 double length_scale)
+{
+	mat->damage_length_scale = length_scale;
+}
+
 double nb_material_get_poisson_module(const nb_material_t *const mat)
 {
 	return mat->poisson_module;
@@ -111,7 +124,7 @@ double nb_material_get_compression_limit_stress(const nb_material_t *const mat)
 
 double nb_material_get_damage_length_scale(const nb_material_t *const mat)
 {
-	return 0.0001;
+	return mat->damage_length_scale;
 }
 
 int nb_material_verify(nb_material_t* material)

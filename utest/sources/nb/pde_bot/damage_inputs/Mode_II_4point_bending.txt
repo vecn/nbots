@@ -78,12 +78,10 @@
  0.2						#
 # Elasticity module				#
  2.5e10	                                        #
-# Fracture energy			        #
- 3	                                        #
-# ()                                            #
- 0						#
-# Density					#
- 0						#
+# Energy release rate                           #
+ 0.001						#
+# Length scale                                  #
+ 0.001						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

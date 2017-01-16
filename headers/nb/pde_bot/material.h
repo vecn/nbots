@@ -15,6 +15,9 @@ void nb_material_set_traction_limit_stress(nb_material_t* mat,
 					   double max_stress);
 void nb_material_set_compression_limit_stress(nb_material_t* mat,
 					      double max_stress);
+void nb_material_set_energy_release_rate(nb_material_t *mat, double energy_rr);
+void nb_material_set_damage_length_scale(nb_material_t *mat,
+					 double length_scale);
 
 double nb_material_get_poisson_module(const nb_material_t *const mat);
 double nb_material_get_elasticity_module(const nb_material_t *const mat);
@@ -22,6 +25,7 @@ double nb_material_get_density(const nb_material_t *const mat);
 double nb_material_get_fracture_energy(const nb_material_t *const mat);
 double nb_material_get_traction_limit_stress(const nb_material_t *const mat);
 double nb_material_get_compression_limit_stress(const nb_material_t *const mat);
+double nb_material_get_energy_release_rate(nb_material_t *mat);
 double nb_material_get_damage_length_scale(const nb_material_t *const mat);
 int nb_material_verify(nb_material_t* material);
 

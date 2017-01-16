@@ -56,13 +56,10 @@
  0.2						#
 # Elasticity module (Pa)			#
  2e10	                                        #
-# Fracture energy (J/m^2)                       #
+# Energy release rate                           #
  0.001						#
-# Compression limit stress                      #
- 0						#
-# Traction limit stress                         #
- 0						#
-# Tensile stength 2.4e6                         #
+# Length scale                                  #
+ 0.1						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

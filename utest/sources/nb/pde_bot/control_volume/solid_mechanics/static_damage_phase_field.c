@@ -70,8 +70,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
 }
 
 static int suite_init(void)
@@ -98,7 +98,7 @@ static void check_mode_I(const void *mesh,
 
 static void test_mode_II(void)
 {
-	run_test("%s/Mode_II_4point_bending.txt", 6000, NB_POLY,
+	run_test("%s/Mode_II_4point_bending.txt", 3000, NB_POLY,
 		 check_mode_II);
 }
 
@@ -123,7 +123,8 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.02);
+	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 20);
+	//nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.02);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
@@ -495,21 +496,15 @@ static int read_material(nb_cfreader_t *cfr, nb_material_t *mat)
 		goto EXIT;
 	nb_material_set_elasticity_module(mat, elasticity_module);
 
-	double fracture_energy;
-	if (0 != nb_cfreader_read_double(cfr, &fracture_energy))
+	double energy_release_rate;
+	if (0 != nb_cfreader_read_double(cfr, &energy_release_rate))
 		goto EXIT;
-	nb_material_set_fracture_energy(mat, fracture_energy);
+	nb_material_set_energy_release_rate(mat, energy_release_rate);
 
-	double compression_limit_stress;
-	if (0 != nb_cfreader_read_double(cfr, &compression_limit_stress))
+	double damage_length_scale;
+	if (0 != nb_cfreader_read_double(cfr, &damage_length_scale))
 		goto EXIT;
-	nb_material_set_compression_limit_stress(mat,
-						      compression_limit_stress);
-
-	double traction_limit_stress;
-	if (0 != nb_cfreader_read_double(cfr, &traction_limit_stress))
-		goto EXIT;
-	nb_material_set_traction_limit_stress(mat, traction_limit_stress);
+	nb_material_set_damage_length_scale(mat, damage_length_scale);
 	status = 0;
 EXIT:
 	return status;
