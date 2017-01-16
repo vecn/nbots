@@ -23,6 +23,7 @@
 #include "nb/geometric_bot/mesh/modules2D/extra_fem.h"
 #include "nb/geometric_bot/mesh/modules2D/drawing.h"
 #include "nb/geometric_bot/mesh/mesh2D.h"
+#include "nb/geometric_bot/mesh/mesh2D_file_format_vtk.h"
 #include "nb/geometric_bot/mesh/mesh2D/info.h"
 #include "nb/geometric_bot/mesh/mesh2D/draw.h"
 #include "nb/geometric_bot/mesh/mesh2D/elements2D/trg_exporter.h"

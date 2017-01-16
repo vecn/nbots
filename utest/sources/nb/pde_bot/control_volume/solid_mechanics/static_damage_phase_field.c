@@ -9,7 +9,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/cfreader_cat.h"
+#include "nb/cfreader_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 
@@ -27,6 +27,7 @@ typedef struct {
   	double *stress;
 	double *damage;
 	char *boundary_mask;
+	bool allocated;
 } results_t;
 
 static int suite_init(void);
@@ -56,9 +57,9 @@ static int read_problem_data
 		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D);
-static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model);
-static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
-static int read_elasticity2D_params(nb_cfreader_t *cfreader,
+static int read_geometry(nb_cfreader_t *cfr, nb_model_t *model);
+static int read_material(nb_cfreader_t *cfr, nb_material_t *mat);
+static int read_elasticity2D_params(nb_cfreader_t *cfr,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
 static void show_cvfa_error_msg(int cvfa_status);
@@ -243,6 +244,8 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 					   const results_t*))
 {
 	results_t results;
+	results.allocated = false;
+
 	uint32_t mesh_memsize = nb_mesh2D_get_memsize(mesh_type);
 	nb_mesh2D_t *mesh = nb_soft_allocate_mem(mesh_memsize);
 	nb_mesh2D_init(mesh, mesh_type);
@@ -357,11 +360,13 @@ static void results_init(results_t *results, uint32_t N_faces,
 	results->damage = (void*)(memblock + size_disp + 2 * size_strain);
 	results->boundary_mask = (void*)(memblock + size_disp +
 					 2 * size_strain + size_damage);
+	results->allocated = true;
 }
 
 static inline void results_finish(results_t *results)
 {
-	nb_free_mem(results->disp);
+	if (results->allocated)
+		nb_free_mem(results->disp);
 }
 
 static int read_problem_data
@@ -371,47 +376,48 @@ static int read_problem_data
 		 nb_material_t* mat,
 		 nb_analysis2D_t *analysis2D,
 		 nb_analysis2D_params *params2D)
-{      
-	int status = 1;
-	/* Initialize custom format to read file */
-	nb_cfreader_t* cfreader = nb_cfreader_create(filename, "#");
-	if (NULL == cfreader) {
+{
+	nb_cfreader_t* cfr = nb_cfreader_create();
+	nb_cfreader_add_line_comment_token(cfr, "#");
+	int status = nb_cfreader_open_file(cfr, filename);
+	if (0 != status) {
 		printf("\nERROR: Can not open file %s.\n",
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_geometry(cfreader, model)) {
+	if (0 != read_geometry(cfr, model)) {
 		printf("\nERROR: Geometry contains errors in %s.\n",
 		       filename);
 		goto EXIT;
 	}
-	if (0 != nb_bcond_read(bcond, cfreader)) {
+	if (0 != nb_bcond_read(bcond, cfr)) {
 		printf("\nERROR: Boundary C. contain errors in %s.\n",
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_material(cfreader, mat)) {
+	if (0 != read_material(cfr, mat)) {
 		printf("\nERROR: Material contains errors in %s.\n",
 		       filename);
 		goto EXIT;
 	}
-	if (0 != read_elasticity2D_params(cfreader, analysis2D, params2D)) {
+	if (0 != read_elasticity2D_params(cfr, analysis2D, params2D)) {
 		printf("\nERROR: Reading numerical params in %s.\n",
 		       filename);
 		goto EXIT;
 	}
 	status = 0;
 EXIT:
-	nb_cfreader_destroy(cfreader);
+	nb_cfreader_close_file(cfr);
+	nb_cfreader_destroy(cfr);
 	return status;
 }
 
-static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
+static int read_geometry(nb_cfreader_t *cfr, nb_model_t *model)
 {
 	int status = 1;
 	/* Read modele vertices */
 	uint32_t N = 0;
-	if (0 != nb_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfr, &N))
 		goto EXIT;
 
 	if (1 > N)
@@ -420,12 +426,12 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 
 	model->vertex = nb_allocate_mem(2 * model->N * sizeof(*(model->vertex)));
 	for (uint32_t i = 0; i < 2 * model->N; i++) {
-		if (0 != nb_cfreader_read_double(cfreader, &(model->vertex[i])))
+		if (0 != nb_cfreader_read_double(cfr, &(model->vertex[i])))
 			goto CLEANUP_VERTICES;
 	}
 	/* Read model segments */
 	N = 0;
-	if (0 != nb_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfr, &N))
 		goto CLEANUP_VERTICES;
 
 	if (1 > N)
@@ -434,12 +440,12 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 
 	model->edge = nb_allocate_mem(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
-		if (0 != nb_cfreader_read_uint(cfreader, &(model->edge[i])))
+		if (0 != nb_cfreader_read_uint(cfr, &(model->edge[i])))
 			goto CLEANUP_SEGMENTS;
 	}
 	/* Read model holes */
 	N = 0;
-	if (0 != nb_cfreader_read_uint(cfreader, &N))
+	if (0 != nb_cfreader_read_uint(cfr, &N))
 		goto CLEANUP_SEGMENTS;
 	model->H = N;
 
@@ -448,7 +454,7 @@ static int read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 		model->holes = nb_allocate_mem(2 * model->H *
 					       sizeof(*(model->holes)));
 		for (uint32_t i = 0; i < 2 * model->H; i++) {
-			if (0 != nb_cfreader_read_double(cfreader,
+			if (0 != nb_cfreader_read_double(cfr,
 							  &(model->holes[i])))
 				goto CLEANUP_HOLES;
 		}
@@ -476,32 +482,32 @@ EXIT:
 }
 
 
-static int read_material(nb_cfreader_t *cfreader, nb_material_t *mat)
+static int read_material(nb_cfreader_t *cfr, nb_material_t *mat)
 {
 	int status = 1;
 	double poisson_module;
-	if (0 != nb_cfreader_read_double(cfreader, &poisson_module))
+	if (0 != nb_cfreader_read_double(cfr, &poisson_module))
 		goto EXIT;
 	nb_material_set_poisson_module(mat, poisson_module);
 
 	double elasticity_module;
-	if (0 != nb_cfreader_read_double(cfreader, &elasticity_module))
+	if (0 != nb_cfreader_read_double(cfr, &elasticity_module))
 		goto EXIT;
 	nb_material_set_elasticity_module(mat, elasticity_module);
 
 	double fracture_energy;
-	if (0 != nb_cfreader_read_double(cfreader, &fracture_energy))
+	if (0 != nb_cfreader_read_double(cfr, &fracture_energy))
 		goto EXIT;
 	nb_material_set_fracture_energy(mat, fracture_energy);
 
 	double compression_limit_stress;
-	if (0 != nb_cfreader_read_double(cfreader, &compression_limit_stress))
+	if (0 != nb_cfreader_read_double(cfr, &compression_limit_stress))
 		goto EXIT;
 	nb_material_set_compression_limit_stress(mat,
 						      compression_limit_stress);
 
 	double traction_limit_stress;
-	if (0 != nb_cfreader_read_double(cfreader, &traction_limit_stress))
+	if (0 != nb_cfreader_read_double(cfr, &traction_limit_stress))
 		goto EXIT;
 	nb_material_set_traction_limit_stress(mat, traction_limit_stress);
 	status = 0;
@@ -510,13 +516,13 @@ EXIT:
 }
 
 
-static int read_elasticity2D_params(nb_cfreader_t *cfreader,
+static int read_elasticity2D_params(nb_cfreader_t *cfr,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D)
 {
 	int status = 1;
 	int iaux;
-	if (0 != nb_cfreader_read_int(cfreader, &iaux))
+	if (0 != nb_cfreader_read_int(cfr, &iaux))
 		goto EXIT;
 	
 	switch (iaux) {
@@ -534,7 +540,7 @@ static int read_elasticity2D_params(nb_cfreader_t *cfreader,
 	}
 
 	/* FIX: Usable only for plane stress */
-	if (0 != nb_cfreader_read_double(cfreader, &(params2D->thickness)))
+	if (0 != nb_cfreader_read_double(cfr, &(params2D->thickness)))
 		goto EXIT;
 
 	status = 0;

@@ -6,7 +6,7 @@
 
 #include "nb/math_bot.h"
 #include "nb/statistics_bot.h"
-#include "nb/cfreader_cat.h"
+#include "nb/cfreader_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
 #include "nb/solver_bot.h"

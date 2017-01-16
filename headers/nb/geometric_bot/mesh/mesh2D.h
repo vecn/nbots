@@ -1,5 +1,5 @@
-#ifndef __NB_GEOMETRIC_BOT_MESH_PARTITION_H__
-#define __NB_GEOMETRIC_BOT_MESH_PARTITION_H__
+#ifndef __NB_GEOMETRIC_BOT_MESH2D_H__
+#define __NB_GEOMETRIC_BOT_MESH2D_H__
 
 #include <stdint.h>
 
@@ -8,7 +8,7 @@
 #include "nb/geometric_bot/mesh/mesh2D/info.h"
 
 typedef enum {
-	NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
+  NB_TRIAN, NB_QUAD, NB_POLY, NB_DISK
 } nb_mesh2D_type;
 
 typedef struct nb_mesh2D_s nb_mesh2D_t;
@@ -16,7 +16,7 @@ typedef struct nb_mesh2D_s nb_mesh2D_t;
 uint32_t nb_mesh2D_get_memsize(nb_mesh2D_type  type);
 void nb_mesh2D_init(nb_mesh2D_t *mesh, nb_mesh2D_type  type);
 void nb_mesh2D_init_from_msh(nb_mesh2D_t *mesh, void *msh,
-				nb_mesh2D_type  type);
+			     nb_mesh2D_type  type);
 void nb_mesh2D_copy(nb_mesh2D_t *mesh, const nb_mesh2D_t* srcmesh);
 void nb_mesh2D_finish(nb_mesh2D_t *mesh);
 nb_mesh2D_t* nb_mesh2D_create(nb_mesh2D_type type);
@@ -121,8 +121,5 @@ void nb_mesh2D_build_model_disabled_elems(const nb_mesh2D_t *mesh,
 					  nb_model_t *model,
 					  uint32_t *N_input_vtx,
 					  uint32_t **input_vtx);
-
-int nb_mesh2D_save_vtk(const nb_mesh2D_t *mesh,  const char *name);
-int nb_mesh2D_read_vtk(nb_mesh2D_t *mesh, const char *name);
 
 #endif
