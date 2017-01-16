@@ -25,6 +25,7 @@ void nb_mesh2D_clear(nb_mesh2D_t* mesh);
 void nb_mesh2D_destroy(nb_mesh2D_t* mesh);
 
 nb_mesh2D_type nb_mesh2D_get_type(const nb_mesh2D_t *mesh);
+const char *nb_mesh2D_get_type_string(const nb_mesh2D_t *mesh);
 
 uint32_t nb_mesh2D_get_N_invtx(const nb_mesh2D_t *mesh);
 uint32_t nb_mesh2D_get_N_insgm(const nb_mesh2D_t *mesh);

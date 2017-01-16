@@ -13,7 +13,6 @@
 
 static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh,
 			     const char *extra_file);
-static void get_string_mesh_type(const nb_mesh2D_t *mesh, char type[10]);
 static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh);
 static int vtk_get_cell_type(int N_adj);
 static int vtk_read_header(nb_cfreader_t *cfr, nb_mesh2D_type *type);
@@ -49,31 +48,11 @@ static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh,
 			     const char *extra_file)
 {
 	fprintf(fp, "# vtk DataFile Version 2.0\n");
-	char type[10];
-	get_string_mesh_type(mesh, type);
+	const char *type = nb_mesh2D_get_type_string(mesh);
 	fprintf(fp, "# nbots nb_mesh2D_t 1.0 type=%s ", type);
 	fprintf(fp, "extra_file=%s\n", extra_file);
 	fprintf(fp, "ASCII\n");
 	fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
-}
-
-static void get_string_mesh_type(const nb_mesh2D_t *mesh, char type[10])
-{
-	nb_mesh2D_type t = nb_mesh2D_get_type(mesh);
-	switch (t) {
-	case NB_TRIAN:
-		sprintf(type, "NB_TRIAN");
-		break;
-	case NB_QUAD:
-		sprintf(type, "NB_QUAD");
-		break;
-	case NB_POLY:
-		sprintf(type, "NB_POLY");
-		break;
-	case NB_DISK:
-		sprintf(type, "NB_DISK");
-		break;
-	}
 }
 
 static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh)
@@ -162,7 +141,7 @@ static int vtk_read_header(nb_cfreader_t *cfr, nb_mesh2D_type *type)
 	if (!nb_cfreader_check_token(cfr, "# nbots nb_mesh2D_t 1.0"))
 		goto EXIT;
 	char var[100];
-	if (0 != nb_cfreader_read_var(cfr, var))
+	if (0 != nb_cfreader_read_token(cfr, var))
 		goto EXIT;
 	if (0 != get_mesh_type(var, type))
 		goto EXIT;
@@ -229,7 +208,7 @@ static int vtk_check_data_cell_types(nb_cfreader_t *cfr,
 	int status = 1;
 
 	char var[100];
-	if (0 != nb_cfreader_read_var(cfr, var))
+	if (0 != nb_cfreader_read_token(cfr, var))
 		goto EXIT;
 
 	if (strncmp(var, "CELL_TYPES", 10) != 0)

@@ -379,6 +379,7 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 	if (0 == var_size)
 		goto EXIT;
 
+	/* Jump assignment token */
 	cfr->line = pch + assignment_length;	
 	forward_pointer_in_the_line(cfr);
 

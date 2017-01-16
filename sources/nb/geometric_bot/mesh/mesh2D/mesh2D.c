@@ -401,6 +401,28 @@ nb_mesh2D_type nb_mesh2D_get_type(const nb_mesh2D_t *mesh)
 	return mesh->type;
 }
 
+
+const char *nb_mesh2D_get_type_string(const nb_mesh2D_t *mesh)
+{
+	nb_mesh2D_type t = nb_mesh2D_get_type(mesh);
+	const char *out;
+	switch (t) {
+	case NB_TRIAN:
+		out = "NB_TRIAN";
+		break;
+	case NB_QUAD:
+		out = "NB_QUAD";
+		break;
+	case NB_POLY:
+		out = "NB_POLY";
+		break;
+	case NB_DISK:
+		out = "NB_DISK";
+		break;
+	}
+	return out;
+}
+
 uint32_t nb_mesh2D_get_N_invtx(const nb_mesh2D_t *mesh)
 {
 	return mesh->get_N_invtx(mesh->msh);

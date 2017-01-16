@@ -169,11 +169,6 @@ static void integrate_subface_pairwise_gp_damage
 					 const nb_glquadrature_t *glq,
 					 uint8_t gp,
 					 nb_sparse_t *D, double *H);
-static void integrate_exterior_subface_damage
-					(const eval_damage_data_t *dmg_data,
-					 face_t *face,
-					 const nb_glquadrature_t *glq,
-					 nb_sparse_t *D, double *H);
 static void show_error_message(int status);
 static void get_reaction_log_name(const char *dir, char *reaction_log);
 static void save_reaction_log(const char *logfile, uint32_t iter,
@@ -745,10 +740,8 @@ static void assemble_global_damage(const nb_cvfa_eval_damage_t * eval_dmg,
 	memset(H, 0, N_elems * sizeof(*H));
 	nb_sparse_reset(D);
 	
-	if (MIDPOINT_VOL_INTEGRALS) {
-		for (uint32_t i = 0; i < N_elems; i++)
-			assemble_elem_damage(dmg_data, i, glq, D, H);
-	}
+	for (uint32_t i = 0; i < N_elems; i++)
+		assemble_elem_damage(dmg_data, i, glq, D, H);
 
 	for (uint32_t i = 0; i < N_faces; i++)
 		assemble_face_damage(dmg_data, faces[i], glq, D, H);
@@ -760,12 +753,15 @@ static void assemble_elem_damage(const eval_damage_data_t *dmg_data,
 				 nb_sparse_t *D, double *H)
 {
 	double area = nb_mesh2D_elem_get_area(dmg_data->mesh, elem_id);
-	double energy = get_elem_energy(elem_id, dmg_data);
-  	double h = nb_material_get_damage_length_scale(dmg_data->material);
-	double G = nb_material_get_energy_release_rate(dmg_data->material);
-	double val = 2 * energy * h/G;
-	nb_sparse_add(D, elem_id, elem_id, area * (val + 1));
-	H[elem_id] += area * val;
+	if (MIDPOINT_VOL_INTEGRALS) {
+		double energy = get_elem_energy(elem_id, dmg_data);
+		double h = nb_material_get_damage_length_scale(dmg_data->material);
+		double G = nb_material_get_energy_release_rate(dmg_data->material);
+		double val = 2 * energy * h/G;
+		H[elem_id] += area * val;
+		nb_sparse_add(D, elem_id, elem_id, area * val);
+	}
+	nb_sparse_add(D, elem_id, elem_id, area);
 }
 
 static void assemble_face_damage(const eval_damage_data_t *dmg_data,
@@ -783,10 +779,6 @@ static void assemble_face_damage(const eval_damage_data_t *dmg_data,
 			integrate_subface_damage(dmg_data, face,
 						 i, glq, D, H);
 		}
-	} else {
-		if (!MIDPOINT_VOL_INTEGRALS)
-			integrate_exterior_subface_damage(dmg_data, face,
-							  glq, D, H);
 	}
 }
 
@@ -884,7 +876,7 @@ static void integrate_svol_simplexwise_gp_dmg
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
+		nb_sparse_add(D, elem_id, elem_k, wq * val * Nk);
 	}
 
 	H[elem_id] += wq * val;
@@ -922,7 +914,7 @@ static void integrate_svol_pairwise_gp_dmg
 			Nk = z;
 
 		uint32_t elem_k = face->elems[k];
-		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
+		nb_sparse_add(D, elem_id, elem_k, wq * val * Nk);
 	}
 
 	H[elem_id] += wq * val;
@@ -1039,21 +1031,6 @@ static void integrate_subface_pairwise_gp_damage
 		nb_sparse_add(D, id1, elem_k, -wq * POW2(h) * gradn);
 		nb_sparse_add(D, id2, elem_k,  wq * POW2(h) * gradn);
 	}
-}
-
-static void integrate_exterior_subface_damage
-					(const eval_damage_data_t *dmg_data,
-					 face_t *face,
-					 const nb_glquadrature_t *glq,
-					 nb_sparse_t *D, double *H)
-{
-	uint32_t id = face->elems[0];
-	double xc[2];
-	xc[0] = dmg_data->xc[id * 2];
-	xc[1] = dmg_data->xc[id*2+1];
-
-	double area = nb_utils2D_get_trg_area(face->x1, face->x2, xc);
-	nb_sparse_add(D, id, id, area);
 }
 
 static void show_error_message(int status)
