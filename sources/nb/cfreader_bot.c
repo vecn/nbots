@@ -360,9 +360,9 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 	char *pch = NULL;
 	int assignment_length;
 	for (int i = 0; i < cfr->N_assign; i++) {
-		pch = strstr(cfr->line, assign_token[i]);
+		pch = strstr(cfr->line, cfr->assign_token[i]);
 		if (NULL != pch) {
-			assignment_length = strlen(assign_token[i]);
+			assignment_length = strlen(cfr->assign_token[i]);
 			break;
 		}
 	}
@@ -379,6 +379,7 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 	if (0 == var_size)
 		goto EXIT;
 
+	/* Jump assignment token */
 	cfr->line = pch + assignment_length;	
 	forward_pointer_in_the_line(cfr);
 
@@ -399,7 +400,7 @@ EXIT:
 static int trim_end_of_string(char *string, int size)
 {
 	while ((string[size - 1] == ' ' || string[size - 1] == '\t') &&
-	       && size > 0) {
+	       size > 0) {
 		string[size - 1] = '\0';
 		size -= 1;
 	}

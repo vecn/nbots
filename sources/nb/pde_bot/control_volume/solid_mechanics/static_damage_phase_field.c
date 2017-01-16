@@ -1124,7 +1124,7 @@ static void save_simulation(const char *dir,
 	char name[100];
 	sprintf(name, "%s/%s", dir, mesh_name);
 	
-	nb_mesh2D_save_vtk(mesh, name);
+	nb_mesh2D_save_nbt(mesh, name);
 
 	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
 	save_data(name, mesh, disp, elem_damage, face_damage,
