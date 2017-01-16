@@ -57,7 +57,7 @@
 # Elasticity module (Pa)			#
  2e10	                                        #
 # Energy release rate                           #
- 0.001						#
+ 0.05						#
 # Length scale                                  #
  0.1						#
 #-----------------------------------------------#

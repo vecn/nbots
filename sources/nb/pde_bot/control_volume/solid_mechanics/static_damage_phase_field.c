@@ -20,7 +20,7 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
-#define MIDPOINT_VOL_INTEGRALS true
+#define MIDPOINT_VOL_INTEGRALS false
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -175,6 +175,7 @@ static void integrate_exterior_subface_damage
 					 const nb_glquadrature_t *glq,
 					 nb_sparse_t *D, double *H);
 static void show_error_message(int status);
+static void get_reaction_log_name(const char *dir, char *reaction_log);
 static void save_reaction_log(const char *logfile, uint32_t iter,
 			      double factor, double reaction);
 static void save_simulation(const char *dir,
@@ -213,6 +214,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 bool enable_self_weight, double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
+			 const char *dir_to_save,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 double *damage,       /* Output */
@@ -261,7 +263,9 @@ int nb_cvfa_compute_2D_damage_phase_field
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
 
-	save_reaction_log("Reaction.log", 0, 0, 0);
+	char reaction_log[100];
+	get_reaction_log_name(dir_to_save, reaction_log);
+	save_reaction_log(reaction_log, 0, 0, 0);
 	uint32_t iter = 1;
 	double bc_factor_increment = 0.25;
 	uint32_t max_iter = 20;
@@ -289,7 +293,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 				goto CLEAN_AND_EXIT;
 			}
 
-			save_reaction_log("Reaction.log", iter,
+			save_reaction_log(reaction_log, iter,
 					  MIN(1.0, bc_factor),
 					  reaction);
 			if (max_iter > 25) {
@@ -298,7 +302,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			}
 			compute_damage(damage, faces, mesh, elem_damage,
 				       &glq, &eval_dmg);
-			save_simulation("dmg_tmp", mesh, displacement,
+			save_simulation(dir_to_save, mesh, displacement,
 					elem_damage, damage, iter,
 					trim_bc_factor);
 			iter ++;
@@ -829,8 +833,7 @@ static void integrate_lateral_subvolume_damage
 			sxi[0] = 0.5 * (1.0 + xaux[0]);
 			sxi[1] = 0.25 * (1.0 - xaux[0]) * (1.0 + xaux[1]);
 			double xq[2];
-			nb_cvfa_get_interpolated_point(0, st1, st2, st3,
-						       sxi, xq);
+			nb_cvfa_get_interpolated_point(st1, st2, st3, sxi, xq);
 			double wq = glq->w[q1] * glq->w[q2] *
 				0.125 * (1.0 - xaux[0]) * detJ;
 			if (nb_cvfa_subface_in_simplex(subface))
@@ -869,7 +872,7 @@ static void integrate_svol_simplexwise_gp_dmg
 	double energy = get_subface_energy(face, subface_id, xq, dmg_data);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
-	double scalar = 2*h*energy / G;
+	double val = 2 * energy * h/G;
 	for (uint8_t k = 0; k < 3; k++) {
 		double Nk;
 		if (k < 2)
@@ -879,10 +882,10 @@ static void integrate_svol_simplexwise_gp_dmg
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, elem_id, elem_k, wq * (scalar + 1) * Nk);
+		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
 	}
 
-	H[elem_id] += wq * scalar;
+	H[elem_id] += wq * val;
 }
 
 static void integrate_svol_pairwise_gp_dmg
@@ -908,7 +911,7 @@ static void integrate_svol_pairwise_gp_dmg
 	double energy = get_subface_energy(face, subface_id, xq, dmg_data);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
-	double scalar = 2*h*energy / G;
+	double val = 2 * energy * h/G;
 	for (uint8_t k = 0; k < 2; k++) {
 		double Nk;
 		if (0 == k)
@@ -917,10 +920,10 @@ static void integrate_svol_pairwise_gp_dmg
 			Nk = z;
 
 		uint32_t elem_k = face->elems[k];
-		nb_sparse_add(D, elem_id, elem_k, wq * (scalar + 1) * Nk);
+		nb_sparse_add(D, elem_id, elem_k, wq * (val + 1) * Nk);
 	}
 
-	H[elem_id] += wq * scalar;
+	H[elem_id] += wq * val;
 }
 
 static void integrate_subface_damage(const eval_damage_data_t *dmg_data,
@@ -986,8 +989,8 @@ static void integrate_subface_simplexwise_gp_damage
 
 		uint32_t elem_k = nb_mesh2D_elem_get_adj(dmg_data->intmsh,
 							 subface->trg_id, k);
-		nb_sparse_add(D, face->elems[0], elem_k,  wq * POW2(h) * gradn);
-		nb_sparse_add(D, face->elems[1], elem_k, -wq * POW2(h) * gradn);
+		nb_sparse_add(D, face->elems[0], elem_k, -wq * POW2(h) * gradn);
+		nb_sparse_add(D, face->elems[1], elem_k,  wq * POW2(h) * gradn);
 	}
 }
 
@@ -1071,6 +1074,14 @@ static void show_error_message(int status)
 		fprintf(stderr, "Unkown error");		
 	}
 	fprintf(stderr, "\n");
+}
+
+static void get_reaction_log_name(const char *dir, char *reaction_log)
+{
+	sprintf(reaction_log, "%s/", dir);
+	char *pch = strstr(reaction_log, "/");
+	pch = pch + 1;
+	sprintf(pch, "Reaction.log");
 }
 
 static void save_reaction_log(const char *logfile, uint32_t iter,

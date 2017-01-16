@@ -390,15 +390,26 @@ void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
 	xi[1] = get_spline_inv(smooth, Jd[2] * b[0] + Jd[3] * b[1]);
 }
 
-void nb_cvfa_get_interpolated_point(int smooth, const double x1[2],
+void nb_cvfa_get_interpolated_point(const double x1[2],
 				    const double x2[2], const double x3[2],
 				    const double xi[2], double xq[2])
+{
+	double P1 = xi[0];
+	double P2 = xi[1];
+	double P3 = 1.0 - P1 - P2;
+	xq[0] = x1[0] * P1 + x2[0] * P2 + x3[0] * P3;
+	xq[1] = x1[1] * P1 + x2[1] * P2 + x3[1] * P3;
+}
+
+void nb_cvfa_get_interpolated_disp(int smooth, const double u1[2],
+				   const double u2[2], const double u3[2],
+				   const double xi[2], double uq[2])
 {
 	double P1 = get_spline(smooth, xi[0]);
 	double P2 = get_spline(smooth, xi[1]);
 	double P3 = 1.0 - P1 - P2;
-	xq[0] = x1[0] * P1 + x2[0] * P2 + x3[0] * P3;
-	xq[1] = x1[1] * P1 + x2[1] * P2 + x3[1] * P3;
+	uq[0] = u1[0] * P1 + u2[0] * P2 + u3[0] * P3;
+	uq[1] = u1[1] * P1 + u2[1] * P2 + u3[1] * P3;
 }
 
 static double get_spline(int smooth, double x)

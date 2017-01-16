@@ -11,7 +11,8 @@
 #include "elements2D/mshpoly_vtk.h"
 #include "elements2D/mshpack_vtk.h"
 
-static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh);
+static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh,
+			     const char *extra_file);
 static void get_string_mesh_type(const nb_mesh2D_t *mesh, char type[10]);
 static void vtk_write_data(FILE *fp, const nb_mesh2D_t *mesh);
 static int vtk_get_cell_type(int N_adj);
@@ -23,14 +24,19 @@ static int vtk_check_data_cell_types(nb_cfreader_t *cfr,
 
 int nb_mesh2D_save_vtk(const nb_mesh2D_t *mesh, const char *name)
 {
-	int status;
+	int status = 1;
 	FILE *fp = fopen(name, "w");
-	if (NULL == fp) {
-		status = 1;
+	if (NULL == fp)
 		goto EXIT;
-	}
 
-	vtk_write_header(fp, mesh);
+	char extra_file[100];
+	sprintf(extra_file, "%s", name);
+	char *pch = strstr(extra_file, ".vtk");
+	if (NULL == pch)
+		goto EXIT;
+	sprintf(pch, "_extra.txt");
+
+	vtk_write_header(fp, mesh, extra_file);
 	vtk_write_data(fp, mesh);
 
 	fclose(fp);
@@ -39,12 +45,14 @@ EXIT:
 	return status;
 }
 
-static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh)
+static void vtk_write_header(FILE *fp, const nb_mesh2D_t *mesh,
+			     const char *extra_file)
 {
 	fprintf(fp, "# vtk DataFile Version 2.0\n");
 	char type[10];
 	get_string_mesh_type(mesh, type);
-	fprintf(fp, "# nbots nb_mesh2D_t 1.0 %s\n", type);
+	fprintf(fp, "# nbots nb_mesh2D_t 1.0 type=%s ", type);
+	fprintf(fp, "extra_file=%s\n", extra_file);
 	fprintf(fp, "ASCII\n");
 	fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
 }

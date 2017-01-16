@@ -16,6 +16,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 bool enable_self_weight, double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
+			 const char *dir_to_save,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 double *damage,       /* Output */

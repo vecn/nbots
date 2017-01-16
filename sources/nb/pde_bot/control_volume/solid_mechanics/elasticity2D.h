@@ -44,9 +44,13 @@ void nb_cvfa_get_normalized_point(int smooth, const double x1[2],
 				  const double x2[2], const double x3[2],
 				  const double xq[2], double xi[2]);
 
-void nb_cvfa_get_interpolated_point(int smooth, const double x1[2],
+void nb_cvfa_get_interpolated_point(const double x1[2],
 				    const double x2[2], const double x3[2],
 				    const double xi[2], double xq[2]);
+
+void nb_cvfa_get_interpolated_disp(int smooth, const double u1[2],
+				   const double u2[2], const double u3[2],
+				   const double xi[2], double uq[2]);
 
 void nb_cvfa_compute_strain(double *strain, char *boundary_mask,
 			    face_t **faces, 
