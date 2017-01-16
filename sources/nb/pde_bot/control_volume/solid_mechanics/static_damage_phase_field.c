@@ -181,8 +181,7 @@ static void save_data(const char *name,
 		      const nb_mesh2D_t *mesh,
 		      const double *disp,
 		      const double *elem_damage,
-		      const double *face_damage, int iter, double time,
-		      const char *mesh_name);
+		      const double *face_damage, int iter, double time);
 static void compute_damage(double *damage, face_t **faces,
 			   const nb_mesh2D_t *const mesh,
 			   const double *elem_damage,
@@ -1119,16 +1118,10 @@ static void save_simulation(const char *dir,
 			    const double *elem_damage,
 			    const double *face_damage, int iter, double time)
 {
-	char mesh_name[50];
-	sprintf(mesh_name, "CVFA_DMG_mesh_%i.vtk", iter);
 	char name[100];
-	sprintf(name, "%s/%s", dir, mesh_name);
-	
-	nb_mesh2D_save_nbt(mesh, name);
-
 	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
 	save_data(name, mesh, disp, elem_damage, face_damage,
-		  iter, time, mesh_name);
+		  iter, time);
 
 	TEMPORAL_DRAW(dir, mesh, elem_damage, (void*)face_damage, iter);	
 }
@@ -1137,15 +1130,13 @@ static void save_data(const char *name,
 		      const nb_mesh2D_t *mesh,
 		      const double *disp,
 		      const double *elem_damage,
-		      const double *face_damage, int iter, double time,
-		      const char *mesh_name)
+		      const double *face_damage, int iter, double time)
 {
 	FILE *fp = fopen(name, "w");
 	if (NULL == fp)
 		goto EXIT;
 	
-	fprintf(fp, "# DAMAGE CVFA SIMULATION (cardoso.victore@gmail.com)\n");
-	fprintf(fp, "# MESH_FILE\n %s\n", mesh_name);
+	fprintf(fp, "# DAMAGE CVFA SIMULATION\n");
 	fprintf(fp, "# N_ITER\n %i\n", iter);
 	fprintf(fp, "# TIME\n %e\n\n", time);
 

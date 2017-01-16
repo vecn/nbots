@@ -27,4 +27,6 @@ struct nb_mshpoly_s {
 	uint32_t **nod_x_sgm;
 };
 
+void nb_mshpoly_set_arrays_memory(nb_mshpoly_t *poly);
+
 #endif

@@ -11,12 +11,14 @@
 #define LINE_LENGTH 256
 #define MAX_LINE_COMMENT_TOKENS 5
 #define MAX_ASSIGNMENT_TOKENS 5
+#define READ_VAR_TOKEN_MAX_SIZE 20
 
 static int get_next_line(nb_cfreader_t* cfr);
 static void set_end_of_line(nb_cfreader_t* cfr);
 static void set_end_of_line_if_comment(nb_cfreader_t* cfr);
 static void trim_start_of_line(nb_cfreader_t* cfr);
 static void forward_pointer_in_the_line(nb_cfreader_t *cfr);
+static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val);
 static int trim_end_of_string(char *string, int size);
 
 struct nb_cfreader_s {
@@ -28,6 +30,8 @@ struct nb_cfreader_s {
 	uint8_t N_assign;                /* Number of assginment tokens */
 	const char *lc_token[MAX_LINE_COMMENT_TOKENS];
 	const char *assign_token[MAX_ASSIGNMENT_TOKENS];
+	const char *bool_tokens[8];/* = {"TRUE", "FALSE", "true", "false",
+				      "T", "F", "1", "0"};*/
 	char open_string_token;
 	char close_string_token;
 	FILE *fp;
@@ -165,7 +169,7 @@ static void forward_pointer_in_the_line(nb_cfreader_t *cfr)
 		cfr->line = &(cfr->line[1]);
 }
 
-int nb_cfreader_read_uint(nb_cfreader_t *cfr, unsigned int *val)
+int nb_cfreader_read_uint(nb_cfreader_t *cfr, uint32_t *val)
 {
 	int status = 1;
 	if (cfr->fp == NULL)
@@ -227,42 +231,34 @@ int nb_cfreader_read_bool(nb_cfreader_t* cfr, bool* val)
 	if(strlen(cfr->line) == 0)
 		get_next_line(cfr);
 
-	char* ptr = cfr->line;
-	uint32_t char_counter = 0;
-	while (ptr[0] != ' ' && ptr[0] != '\t' && ptr[0] != '\0') {
-		char_counter ++;
-		ptr = &(ptr[1]);
-	}
-	char* value = nb_allocate_mem(char_counter+1);
-	memcpy(value, cfr->line, char_counter);
-	value[char_counter] = '\0';
+	char token[256];
+	if (sscanf(cfr->line, "%s", token) != 1)
+		goto EXIT;
 
-	/* Read boolean value */
-	bool is_a_correct_value = true;
-	if (strcmp(value, "TRUE") == 0 || strcmp(value, "true") == 0 ||
-	    strcmp(value, "T") == 0 || strcmp(value, "1") == 0)
-		val[0] = true;
-	else if (strcmp(value, "FALSE") == 0 ||
-		 strcmp(value, "false") == 0 ||
-		 strcmp(value, "F") == 0 ||
-		 strcmp(value, "0") == 0)
-		val[0] = false;
-	else
-		is_a_correct_value = false;
+	status = cast_bool(cfr, token, val);
+	if (0 != status)
+		goto EXIT;
 
 	forward_pointer_in_the_line(cfr);
-
-	/* Show warning of wrong formating */
-	if (!is_a_correct_value) {
-		printf("WARNING Cfr: ");
-		printf("The boolean at line %i has an invalid value: \"%s\").\n",
-		       cfr->line_counter, value);
-	}
-	/* Free memory */
-	nb_free_mem(value);
-
-	status = 0;
 EXIT:
+	return status;
+}
+
+static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val)
+{
+	int status = 1;
+	for (int i = 0; i < 4; i++) {
+		if (0 == strcmp(string, cfr->bool_tokens[i * 2])) {
+			*val = true;
+			status = 0;
+			break;
+		}
+		if (0 == strcmp(string, cfr->bool_tokens[i*2+1])) {
+			*val = false;
+			status = 0;
+			break;
+		}
+	}
 	return status;
 }
 
@@ -353,6 +349,9 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 	if (cfr->fp == NULL)
 		goto EXIT;
 
+	if (0 == cfr->N_assign)
+		goto EXIT;
+
 	if (strlen(cfr->line) == 0)
 		get_next_line(cfr);
 
@@ -393,6 +392,116 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 	forward_pointer_in_the_line(cfr);
 
 	status = 0;
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_int(nb_cfreader_t *cfr, const char *var, int *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+
+	char *pch;
+	long int N = strtol(val_readed, &pch, 10);
+	if (pch == val_readed)
+		goto EXIT;
+
+	*val = N;
+	status = 0;
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_uint(nb_cfreader_t *cfr, const char *var,
+			      uint32_t *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+
+	char *pch;
+	unsigned long int N = strtoul(val_readed, &pch, 10);
+	if (pch == val_readed)
+		goto EXIT;
+
+	*val = N;
+	status = 0;
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_float(nb_cfreader_t *cfr, const char *var, float *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+
+	char *pch;
+	float N = strtof(val_readed, &pch);
+	if (pch == val_readed)
+		goto EXIT;
+
+	*val = N;
+	status = 0;
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_double(nb_cfreader_t *cfr, const char *var, double *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+
+	char *pch;
+	double N = strtod(val_readed, &pch);
+	if (pch == val_readed)
+		goto EXIT;
+
+	*val = N;
+	status = 0;
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_bool(nb_cfreader_t *cfr, const char *var, bool *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+
+	status = cast_bool(cfr, val_readed, val);
 EXIT:
 	return status;
 }

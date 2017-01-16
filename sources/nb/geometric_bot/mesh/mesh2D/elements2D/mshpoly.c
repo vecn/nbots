@@ -34,7 +34,6 @@ typedef struct {
 	uint32_t *trg_map;
 } vinfo_t;
 
-static void set_arrays_memory(nb_mshpoly_t *poly);
 static void copy_nodes(nb_mshpoly_t* poly,
 		       const nb_mshpoly_t *const src_poly);
 static void copy_edges(nb_mshpoly_t* poly,
@@ -178,7 +177,7 @@ void nb_mshpoly_copy(void *dest, const void *const src)
 	const nb_mshpoly_t *const src_poly = src;
 
 	if (poly->N_elems > 0) {
-		set_arrays_memory(poly);
+		nb_mshpoly_set_arrays_memory(poly);
 
 		copy_nodes(poly, src_poly);
 		copy_edges(poly, src_poly);
@@ -198,7 +197,7 @@ void nb_mshpoly_copy(void *dest, const void *const src)
 	}
 }
 
-static void set_arrays_memory(nb_mshpoly_t *poly)
+void nb_mshpoly_set_arrays_memory(nb_mshpoly_t *poly)
 {
 	uint32_t nod_size = poly->N_nod * 2 * sizeof(*(poly->nod));
 	uint32_t edg_size = poly->N_edg * 2 * sizeof(*(poly->edg));
@@ -1000,7 +999,7 @@ static void set_voronoi(nb_mshpoly_t *poly,
 {
 	set_quantities(poly, vinfo, mesh);
 	
-	set_arrays_memory(poly);
+	nb_mshpoly_set_arrays_memory(poly);
 
 	set_nodes_and_centroids(poly, vgraph, vinfo, mesh);
 	set_edges(poly, vgraph, vinfo, mesh);
