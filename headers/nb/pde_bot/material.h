@@ -9,6 +9,8 @@ void nb_material_destroy(nb_material_t* mat);
 
 void nb_material_set_poisson_module(nb_material_t* mat, double pmodule);
 void nb_material_set_elasticity_module(nb_material_t* mat, double emodule);
+void nb_material_set_plasticity_module(nb_material_t* mat, double pmodule);
+void nb_material_set_yield_stress(nb_material_t* mat, double yield);
 void nb_material_set_density(nb_material_t* mat, double density);
 void nb_material_set_fracture_energy(nb_material_t* mat, double frac_energy);
 void nb_material_set_traction_limit_stress(nb_material_t* mat,
@@ -21,6 +23,8 @@ void nb_material_set_damage_length_scale(nb_material_t *mat,
 
 double nb_material_get_poisson_module(const nb_material_t *const mat);
 double nb_material_get_elasticity_module(const nb_material_t *const mat);
+double nb_material_get_plasticity_module(const nb_material_t *const mat);
+double nb_material_get_yield_stress(const nb_material_t *const mat);
 double nb_material_get_density(const nb_material_t *const mat);
 double nb_material_get_fracture_energy(const nb_material_t *const mat);
 double nb_material_get_traction_limit_stress(const nb_material_t *const mat);
