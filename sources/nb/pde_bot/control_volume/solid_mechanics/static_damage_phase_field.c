@@ -1237,6 +1237,6 @@ void nb_cvfa_compute_stress_from_damage_and_strain
 			(strain[i * 3] * D[0] + strain[i*3+1] * D[1]);
 		stress[i*3+1] = (1 - damage[i]) *
 			(strain[i * 3] * D[1] + strain[i*3+1] * D[2]);
-		stress[i*3+2] =  (1 - damage[i]) * strain[i*3+2] * D[3];
+		stress[i*3+2] = (1 - damage[i]) * strain[i*3+2] * D[3];
 	}
 }
