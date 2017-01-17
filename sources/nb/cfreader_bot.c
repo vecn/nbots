@@ -13,6 +13,7 @@
 #define MAX_ASSIGNMENT_TOKENS 5
 #define READ_VAR_TOKEN_MAX_SIZE 20
 
+static void init_bool_tokens(nb_cfreader_t *cfr);
 static int get_next_line(nb_cfreader_t* cfr);
 static void set_end_of_line(nb_cfreader_t* cfr);
 static void set_end_of_line_if_comment(nb_cfreader_t* cfr);
@@ -30,8 +31,7 @@ struct nb_cfreader_s {
 	uint8_t N_assign;                /* Number of assginment tokens */
 	const char *lc_token[MAX_LINE_COMMENT_TOKENS];
 	const char *assign_token[MAX_ASSIGNMENT_TOKENS];
-	const char *bool_tokens[8];/* = {"TRUE", "FALSE", "true", "false",
-				      "T", "F", "1", "0"};*/
+	const char *bool_tokens[8];
 	char open_string_token;
 	char close_string_token;
 	FILE *fp;
@@ -49,12 +49,25 @@ void nb_cfreader_init(nb_cfreader_t *cfr)
 {
 	cfr->N_lct = 0;
 	cfr->N_assign = 0;
+	init_bool_tokens(cfr);
 	cfr->open_string_token  = '\"';
 	cfr->close_string_token = '\"';
 	cfr->fp = NULL;
 	cfr->buffer[0] = '\0';
 	cfr->line = cfr->buffer;
 	cfr->line_counter = 0;
+}
+
+static void init_bool_tokens(nb_cfreader_t *cfr)
+{
+	cfr->bool_tokens[0] = "TRUE";
+	cfr->bool_tokens[1] = "FALSE";
+	cfr->bool_tokens[2] = "true";
+	cfr->bool_tokens[3] = "false";
+	cfr->bool_tokens[4] = "T";
+	cfr->bool_tokens[5] = "F";
+	cfr->bool_tokens[6] = "1";
+	cfr->bool_tokens[7] = "0";
 }
 
 nb_cfreader_t* nb_cfreader_create(void)
@@ -396,6 +409,16 @@ EXIT:
 	return status;
 }
 
+static int trim_end_of_string(char *string, int size)
+{
+	while ((string[size - 1] == ' ' || string[size - 1] == '\t') &&
+	       size > 0) {
+		string[size - 1] = '\0';
+		size -= 1;
+	}
+	return size;
+}
+
 int nb_cfreader_read_var_int(nb_cfreader_t *cfr, const char *var, int *val)
 {
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
@@ -506,16 +529,6 @@ EXIT:
 	return status;
 }
 
-static int trim_end_of_string(char *string, int size)
-{
-	while ((string[size - 1] == ' ' || string[size - 1] == '\t') &&
-	       size > 0) {
-		string[size - 1] = '\0';
-		size -= 1;
-	}
-	return size;
-}
-
 bool nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
 {
 	bool out = false;
@@ -524,6 +537,8 @@ bool nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
 
 	if (strlen(cfr->line) == 0)
 		get_next_line(cfr);
+
+	trim_end_of_string(cfr->line, strlen(cfr->line));
 
 	out = (0 == strcmp(cfr->line, line));
 

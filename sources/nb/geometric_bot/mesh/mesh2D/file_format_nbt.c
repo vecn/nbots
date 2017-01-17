@@ -98,7 +98,9 @@ int nb_mesh2D_read_type_nbt(const char *name, nb_mesh2D_type *type)
 {
 	nb_cfreader_t *cfr = nb_cfreader_create();
 	nb_cfreader_add_line_comment_token(cfr, "#");
+	nb_cfreader_add_line_comment_token(cfr, "//");
 	nb_cfreader_add_assignment_token(cfr, "=");
+	nb_cfreader_add_assignment_token(cfr, "<-");
 	int status = nb_cfreader_open_file(cfr, name);
 	if (status != 0)
 		goto EXIT;

@@ -43,7 +43,6 @@ static void copy_centroids(nb_mshpoly_t* poly,
 static void copy_N_adj(nb_mshpoly_t* poly,
 			const nb_mshpoly_t *const src_poly);
 static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly);
-static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_adj_and_ngb(nb_mshpoly_t* poly,
 			     const nb_mshpoly_t *const src_poly);
 
@@ -52,7 +51,6 @@ static void copy_elem_vtx(nb_mshpoly_t* poly,
 static void copy_N_nod_x_sgm(nb_mshpoly_t* poly,
 			     const nb_mshpoly_t *const src_poly);
 static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly);
-static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize);
 static void copy_nod_x_sgm(nb_mshpoly_t* poly,
 			   const nb_mshpoly_t *const src_poly);
 static void* nb_allocate_mem_poly(void);
@@ -184,15 +182,13 @@ void nb_mshpoly_copy(void *dest, const void *const src)
 		copy_centroids(poly, src_poly);
 		copy_N_adj(poly, src_poly);
 
-		uint32_t memsize = get_size_of_adj_and_ngb(poly);
-		set_mem_of_adj_and_ngb(poly, memsize);
+		nb_mshpoly_set_mem_of_adj_and_ngb(poly);
 		copy_adj_and_ngb(poly, src_poly);
 
 		copy_elem_vtx(poly, src_poly);
 		copy_N_nod_x_sgm(poly, src_poly);
 
-		memsize = get_size_of_nod_x_sgm(poly);
-		set_mem_of_nod_x_sgm(poly, memsize);
+		nb_mshpoly_set_mem_of_nod_x_sgm(poly);
 		copy_nod_x_sgm(poly, src_poly);
 	}
 }
@@ -253,16 +249,9 @@ static void copy_N_adj(nb_mshpoly_t* poly, const nb_mshpoly_t *const src_poly)
 	       poly->N_elems * sizeof(*(poly->N_adj)));
 }
 
-static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly)
+void nb_mshpoly_set_mem_of_adj_and_ngb(nb_mshpoly_t *poly)
 {
-	uint32_t size = 0;
-	for (uint32_t i = 0; i < poly->N_elems; i++)
-		size += poly->N_adj[i];
-	return 2 * size * sizeof(**(poly->adj));
-}
-
-static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
-{
+	uint32_t memsize = get_size_of_adj_and_ngb(poly);
 	char *memblock1 = nb_allocate_mem(memsize);
 	char *memblock2 = memblock1 + memsize / 2;
 	for (uint32_t i = 0; i < poly->N_elems; i++) {
@@ -271,6 +260,14 @@ static void set_mem_of_adj_and_ngb(nb_mshpoly_t *poly, uint32_t memsize)
 		memblock1 += poly->N_adj[i] * sizeof(**(poly->adj));
 		memblock2 += poly->N_adj[i] * sizeof(**(poly->ngb));
 	}
+}
+
+static uint32_t get_size_of_adj_and_ngb(const nb_mshpoly_t *const poly)
+{
+	uint32_t size = 0;
+	for (uint32_t i = 0; i < poly->N_elems; i++)
+		size += poly->N_adj[i];
+	return 2 * size * sizeof(**(poly->adj));
 }
 
 static void copy_adj_and_ngb(nb_mshpoly_t* poly,
@@ -309,8 +306,9 @@ static uint32_t get_size_of_nod_x_sgm(const nb_mshpoly_t *const poly)
 	return size;
 }
 
-static void set_mem_of_nod_x_sgm(nb_mshpoly_t *poly, uint32_t memsize)
+void nb_mshpoly_set_mem_of_nod_x_sgm(nb_mshpoly_t *poly)
 {
+	uint32_t memsize = get_size_of_nod_x_sgm(poly);
 	char *memblock = nb_allocate_mem(memsize);
 	for (uint32_t i = 0; i < poly->N_sgm; i++) {
 		poly->nod_x_sgm[i] = (void*) memblock;
@@ -1005,15 +1003,13 @@ static void set_voronoi(nb_mshpoly_t *poly,
 	set_edges(poly, vgraph, vinfo, mesh);
 	set_N_adj(poly, vgraph, vinfo, mesh);
 	
-	uint32_t memsize = get_size_of_adj_and_ngb(poly);
-	set_mem_of_adj_and_ngb(poly, memsize);
+	nb_mshpoly_set_mem_of_adj_and_ngb(poly);
 	set_adj_and_ngb(poly, vgraph, vinfo, mesh);
 
 	set_elem_vtx(poly, vgraph, vinfo, mesh);
 	set_N_nod_x_sgm(poly, mesh);
 
-	memsize = get_size_of_nod_x_sgm(poly);
-	set_mem_of_nod_x_sgm(poly, memsize);
+	nb_mshpoly_set_mem_of_nod_x_sgm(poly);
 	set_nod_x_sgm(poly, vinfo, mesh);
 }
 

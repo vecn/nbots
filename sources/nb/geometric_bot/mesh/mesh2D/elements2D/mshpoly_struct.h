@@ -28,5 +28,7 @@ struct nb_mshpoly_s {
 };
 
 void nb_mshpoly_set_arrays_memory(nb_mshpoly_t *poly);
+void nb_mshpoly_set_mem_of_adj_and_ngb(nb_mshpoly_t *poly);
+void nb_mshpoly_set_mem_of_nod_x_sgm(nb_mshpoly_t *poly);
 
 #endif
