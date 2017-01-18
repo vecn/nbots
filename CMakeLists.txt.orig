@@ -53,3 +53,8 @@ target_link_libraries(utests cunit nbots m)
 enable_testing()
 
 add_test(unit_tests utests)
+<<<<<<< ced0721db929345438c27531c80a61e3ad77a2f4
+set_property(TEST unit_tests PROPERTY ENVIRONMENT
+  "NB_FONTS_DIR=${CMAKE_SOURCE_DIR}/resources/fonts")
+=======
+>>>>>>> unit test plasticos y de daño
