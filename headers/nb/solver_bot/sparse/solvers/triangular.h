@@ -18,4 +18,6 @@ void nb_sparse_backward_solve(const nb_sparse_t *const U,
 			       const double *const b,
 			       double* _x /* Out */);
 
+double nb_sparse_triangular_get_det_sign(const nb_sparse_t *Trg);
+
 #endif

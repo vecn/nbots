@@ -8,7 +8,7 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/solver_bot/sparse/sparse.h"
+#include "nb/solver_bot.h"
 
 #include "sparse_struct.h"
 
@@ -225,7 +225,20 @@ void nb_sparse_scale(nb_sparse_t *A, double factor)
 			A->rows_values[i][j] *= factor;
 	}
 }
- 
+
+void nb_sparse_calculate_permutation(const nb_sparse_t *const A,
+				     uint32_t *perm, uint32_t *iperm)
+{
+	uint16_t memsize = nb_graph_get_memsize();
+	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
+	nb_graph_init(graph);
+	nb_sparse_get_graph(A, graph);
+	nb_graph_labeling(graph, perm, iperm, NB_LABELING_ND);
+	nb_graph_finish(graph);
+
+	nb_soft_free_mem(memsize, graph);
+}
+
 nb_sparse_t* nb_sparse_create_permutation
 (const nb_sparse_t *const A,
  const uint32_t *const perm,
@@ -283,7 +296,8 @@ void nb_sparse_fill_permutation(const nb_sparse_t *const A,
 		uint32_t j = perm[i];
 		for (uint32_t k = 0; k < A->rows_size[j]; k++) {
 			uint32_t m = iperm[A->rows_index[j][k]];
-			uint32_t idx = nb_sparse_bsearch_row(Ar, i, m, 0, Ar->rows_size[i]-1);
+			uint32_t idx = nb_sparse_bsearch_row(Ar, i, m, 0,
+							     Ar->rows_size[i]-1);
 			Ar->rows_values[i][idx] = A->rows_values[j][k];
 		}
 	}

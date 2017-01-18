@@ -9,18 +9,35 @@
 #include "nb/graphics_bot_utests.h"
 
 
-int main(int argc, char *argv[])
+int main_(int argc, char *argv[])
 {
-	CU_initialize_registry();
+
+	CU_ErrorCode status = CU_initialize_registry();
+	if (CUE_SUCCESS != status)
+		goto EXIT;
 
 	cunit_suites_nb_container_bot();
 	cunit_suites_nb_geometric_bot();
 	cunit_suites_nb_image_bot();
-	cunit_suites_nb_pde_bot();
 	cunit_suites_nb_graphics_bot();
+	cunit_suites_nb_pde_bot();
 	
-	CU_basic_set_mode(CU_BRM_VERBOSE);
+	CU_basic_set_mode(CU_BRM_NORMAL);
 	CU_basic_run_tests();
 	CU_cleanup_registry();
+
+EXIT:
+	return CU_get_error();
+}
+
+void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void);/* TEMPORAL */
+int main()/* TEMPORAL MAIN */
+{
+	CU_initialize_registry();
+	
+	cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field();
+
+	CU_basic_set_mode(CU_BRM_NORMAL);
+	CU_basic_run_tests();
 	return CU_get_error();
 }

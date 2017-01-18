@@ -7,9 +7,8 @@
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/solver_bot/sparse/sparse.h"
-#include "nb/solver_bot/sparse/solvers/triangular.h"
-#include "nb/solver_bot/sparse/solvers/cholesky.h"
+#include "nb/graph_bot.h"
+#include "nb/solver_bot.h"
 
 #include "../sparse_struct.h"
 
@@ -92,14 +91,43 @@ int nb_sparse_solve_Cholesky(const nb_sparse_t *const A,
 	if (NULL == L)
 		return 10;
 	
-	int solver_status = nb_sparse_decompose_Cholesky(A, L, U, 
-							  omp_parallel_threads);
+	int status = nb_sparse_decompose_Cholesky(A, L, U, 
+						  omp_parallel_threads);
 
-	if (0 == solver_status)
+	if (0 == status)
 		nb_sparse_solve_LU(L, U, b, x);
 
 	nb_sparse_destroy(L);
 	nb_sparse_destroy(U);
 
-	return solver_status;
+	return status;
+}
+
+int nb_sparse_relabel_and_solve_Cholesky(const nb_sparse_t *const A,
+					       const double *const b,
+					       double* x,  /* Out */
+					       uint32_t omp_parallel_threads)
+{
+	uint32_t N = nb_sparse_get_size(A);
+	uint32_t memsize = 2 * N * (sizeof(uint32_t) + sizeof(double));
+	char *memblock = nb_soft_allocate_mem(memsize);
+	uint32_t *perm = (void*) memblock;
+	uint32_t *iperm = (void*) (memblock + N * sizeof(uint32_t));
+	double *br = (void*) (memblock + 2 * N * sizeof(uint32_t));
+	double *xr = (void*) (memblock + 2 * N * sizeof(uint32_t) +
+			      N * sizeof(double));
+
+	nb_sparse_calculate_permutation(A, perm, iperm);
+
+	nb_sparse_t *Ar = nb_sparse_create_permutation(A, perm, iperm);
+	nb_vector_permutation(N, b, perm, br);
+
+	int status = nb_sparse_solve_Cholesky(Ar, br, xr,
+					      omp_parallel_threads);
+
+	nb_vector_permutation(N, xr, iperm, x);
+	
+	nb_sparse_destroy(Ar);
+	nb_soft_free_mem(memsize, memblock);
+	return status;
 }

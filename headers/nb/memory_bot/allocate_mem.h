@@ -5,13 +5,19 @@
 
 #include "nb/sysinfo.h"
 
-#if defined(CC_Microsoft) || (defined(CC_GNU) && defined(OS_Windows))
-	#include <malloc.h>
-        #define nb_allocate_on_stack(size) _alloca(size)
+#ifdef __FRAMAC__
+        #define nb_allocate_on_stack(size) malloc(size)
+        #define nb_free_on_stack(ptr) free(ptr)
 #else
-
-	#include <alloca.h>
-	#define nb_allocate_on_stack(size) alloca(size)
+        #if defined(CC_Microsoft) || (defined(CC_GNU) && defined(OS_Windows))
+	        #include <malloc.h>
+                #define nb_allocate_on_stack(size) _alloca(size)
+                #define nb_free_on_stack(ptr) ((ptr)=0)
+        #else
+	        #include <alloca.h>
+	        #define nb_allocate_on_stack(size) alloca(size)
+                #define nb_free_on_stack(ptr) ((ptr)=0)
+        #endif
 #endif
 
 #define NB_MAX_STACK_MEM_ON_SOFT_ALLOCATION 1024 /* 1 kB */
@@ -22,7 +28,7 @@
 
 #define nb_soft_free_mem(size, ptr)				\
 	((NB_MAX_STACK_MEM_ON_SOFT_ALLOCATION < (size)) ?	\
-	 nb_free_mem(ptr):((ptr) = 0))
+	 nb_free_mem(ptr):nb_free_on_stack(ptr))
 
 void *nb_allocate_mem(uint64_t size);
 void *nb_allocate_zero_mem(uint64_t size);

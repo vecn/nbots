@@ -59,8 +59,24 @@ Since the library implementation begins in 2009, old code does not follow all th
     * If the allocated memory will be freed on the same function,
       use the `nb_soft_allocate_mem()` version.
     * Use `nb_membank_t` whether it is possible.
+- To merge a branch with the master
+    * Rebase the master.
+    * Pass all the quality assurance checklist.
+- Quality assurance 
     * Deliver at least one unit test for every function declared in the
       header (Using CUNIT).
+    * All unit tests must run without memory leaks.
+      Use `valgrind` with the following options
+```
+build$> valgrind --xml=yes --xml-file=Valgrind-analysis.xml --read-inline-info=yes --merge-recursive-frames=2 --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --show-mismatched-frees=yes ./utests
+```
+
+## Code Analysis
+Using **frama-c** (v14.0 Silicon, assumes __FRAMAC__ is defined)
+
+```
+build$> find ../sources -name '*.c' | xargs frama-c -quiet -metrics -metrics-by-function -metrics-output=Frama-metrics.html -kernel-msg-key pp -cpp-extra-args="-I ../headers"
+```
 
 ## Library standard
 The library uses objects (structs) to handle data, every object must have at least the following functions:

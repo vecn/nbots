@@ -7,7 +7,6 @@
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
-#include "nb/cfreader_cat.h"
 #include "nb/solver_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
@@ -67,7 +66,6 @@ int nb_fem_compute_2D_Solid_Mechanics
 
 	nb_fem_set_bconditions(part, K, F, bcond, 1.0);
 
-  
 	int solver_status = solver(K, F, displacement);
 	if (0 != solver_status) {
 		status = 2;

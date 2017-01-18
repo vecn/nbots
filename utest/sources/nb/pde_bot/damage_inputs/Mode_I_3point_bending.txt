@@ -7,20 +7,21 @@
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 9						#
+ 10						#
 # Vertices coordinates                          #
    0.0   0.0					#
  222.5   0.0					#
  222.5  50.0					#
+ 225.0  50.0                                    #
  227.5  50.0					#
  227.5   0.0					#
  450.0   0.0					#
  450.0 100.0					#
  225.0 100.0					#
-   0.0 100.0					#
+  0.0  100.0					#
 						#
 # Number of segments				#
- 9						#
+ 10						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
@@ -30,19 +31,20 @@
  5 6						#
  6 7						#
  7 8						#
- 8 0						#
+ 8 9						#
+ 9 0                                            #
 # Number of holes				#
  0						#
 #-----------------------------------------------#
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 2						#
+ 3						#
  0 1 1 0.0 0.0                                  #
- 5 0 1 0.0                                      #
+ 6 0 1 0.0                                      #
+ 8 0 1 -1e-3                                    #
 # Num of load conditions over vertices:		#
- 1						#
- 7 0 1 -1e-3                                    #
+ 0                                              #
 # Num of displacement conditions over lines:    #
  0						#
 # Num of load conditions over lines:            #
@@ -52,15 +54,12 @@
 #-------------- Material properties ------------#
 # Poisson module				#
  0.2						#
-# Elasticity module				#
+# Elasticity module (Pa)			#
  2e10	                                        #
-# Fracture energy                               #
- 113						#
-# Compression limit stress                      #
- 0						#
-# Traction limit stress                         #
- 0						#
-# Tensile stength 2.4e6
+# Energy release rate                           #
+ 0.05						#
+# Length scale                                  #
+ 0.1						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

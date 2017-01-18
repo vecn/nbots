@@ -8,6 +8,9 @@
 
 #include "../sparse_struct.h"
 
+#define TOL 1e-6
+#define SIGN(a) (((a)>TOL)?1:(((a)<TOL)?-1:0))
+
 void nb_sparse_forward_solve(const nb_sparse_t *const L,
 			      const double *const b, 
 			      double* _x /* Out */)
@@ -50,4 +53,13 @@ void nb_sparse_backward_solve(const nb_sparse_t *const U,
     
 		_x[i] /= U->rows_values[i][idx];
 	}
+}
+
+double nb_sparse_triangular_get_det_sign(const nb_sparse_t *Trg)
+{
+	uint32_t N = nb_sparse_get_size(Trg);
+	double det = 1;
+	for (uint32_t i = 0; i < N; i++)
+		det *= SIGN(nb_sparse_get(Trg, i, i));
+	return det;
 }

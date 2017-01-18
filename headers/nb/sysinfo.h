@@ -90,8 +90,6 @@ typedef __SIZE_TYPE__ size_t;
 
 #elif defined(CC_GNU)
 
-typedef __SIZE_TYPE__ size_t;
-
 #if defined(__x86_64)
 #define BITNESS_64
 #else

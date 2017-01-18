@@ -5,7 +5,7 @@
 
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
-#include "nb/cfreader_cat.h"
+#include "nb/io_bot.h"
 
 int nb_bcond_read(nb_bcond_t *bcond, nb_cfreader_t *cfreader);
 

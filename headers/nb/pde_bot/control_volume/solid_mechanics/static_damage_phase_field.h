@@ -16,9 +16,21 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 bool enable_self_weight, double gravity[2],
 			 nb_analysis2D_t analysis2D,
 			 nb_analysis2D_params *params2D,
+			 const char *dir_to_save,
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 double *damage,       /* Output */
 			 char *boundary_mask   /* Output */);
+
+void nb_cvfa_compute_stress_from_damage_and_strain
+					(const nb_mesh2D_t *mesh,
+					 const nb_material_t *const material,
+					 nb_analysis2D_t analysis2D,
+					 const double* strain,
+					 const double* damage,
+					 double* stress /* Output */);
+
+int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
+				   const char *dir_output);
 
 #endif

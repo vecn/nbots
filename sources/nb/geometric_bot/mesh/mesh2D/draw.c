@@ -72,8 +72,19 @@ static void fill_elems_classes(const nb_mesh2D_t *mesh,
 			       const uint8_t *class);
 static void set_class_colors(nb_graphics_color_t color[10]);
 static void fill_elems(const nb_mesh2D_t *mesh,
-		       nb_graphics_context_t *g);
+		       nb_graphics_context_t *g,
+		       const draw_data *data);
 
+static void draw_faces(const nb_mesh2D_t *mesh,
+		       nb_graphics_context_t *g,
+		       const draw_data *data);
+
+static void draw_field_on_faces(const nb_mesh2D_t *mesh,
+				nb_graphics_context_t *g,
+				const double *values);
+static void draw_classes_on_faces(const nb_mesh2D_t *mesh,
+				  nb_graphics_context_t *g,
+				  const uint8_t *class);
 static void draw_wires(const nb_mesh2D_t *mesh,
 		       nb_graphics_context_t *g);
 
@@ -136,11 +147,9 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);
 
-	if (NB_ENTITY_DEFAULT != data->vals_entity)
-		fill(mesh, g, data);
+	fill(mesh, g, data);
 
-	if (data->draw_wires)
-		draw_wires(mesh, g);
+	draw_faces(mesh, g, data);
 
 	draw_boundaries(mesh, g);
 
@@ -171,14 +180,12 @@ static void fill(const nb_mesh2D_t *mesh,
 
 	if (NB_NODE == enty && NB_FIELD == type)
 		fill_elems_field_on_nodes(mesh, g, data->values);
-
 	else if (NB_ELEMENT == enty && NB_FIELD == type)
 		fill_elems_field_on_elems(mesh, g, data->values);
-
 	else if (NB_ELEMENT == enty && NB_CLASS == type)
 		fill_elems_classes(mesh, g, data->values);
 	else
-		fill_elems(mesh, g);
+		fill_elems(mesh, g, data);
 }
 
 static void fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
@@ -254,10 +261,63 @@ static void set_class_colors(nb_graphics_color_t color[10])
 }
 
 static void fill_elems(const nb_mesh2D_t *mesh,
-		       nb_graphics_context_t *g)
+		       nb_graphics_context_t *g,
+		       const draw_data *data)
 {
-	nb_graphics_set_source(g, COLOR_ELEM);
+	nb_mesh2D_entity enty = data->vals_entity;
+	nb_mesh2D_array_type type = data->vals_type;
+	if (NB_FACE == enty && NB_FIELD == type) {
+		nb_palette_t *palette =
+			nb_palette_create_preset(PALETTE_FIELD);
+		uint8_t color[4];
+		nb_palette_get_rgba(palette, 0.0, color);
+		nb_graphics_set_source_rgba(g, color[0], color[1], color[2],
+					    color[3]);
+		nb_palette_destroy(palette);
+	} else {
+		nb_graphics_set_source(g, COLOR_ELEM);
+	}
 	mesh->graphics.fill_elems(mesh->msh, g);
+}
+
+static void draw_faces(const nb_mesh2D_t *mesh,
+		       nb_graphics_context_t *g,
+		       const draw_data *data)
+{
+	nb_mesh2D_entity enty = data->vals_entity;
+	nb_mesh2D_array_type type = data->vals_type;
+	if (NB_FACE == enty && NB_FIELD == type)
+		draw_field_on_faces(mesh, g, data->values);
+	else if (NB_FACE == enty && NB_CLASS == type)
+		draw_classes_on_faces(mesh, g, data->values);
+	else if (data->draw_wires)
+		draw_wires(mesh, g);
+}
+
+static void draw_field_on_faces(const nb_mesh2D_t *mesh,
+				nb_graphics_context_t *g,
+				const double *values)
+{
+	uint32_t N = mesh->get_N_edges(mesh->msh);
+	uint32_t memsize = N * sizeof(double);
+	double *normalized_values = nb_soft_allocate_mem(memsize);
+
+	normalize_values(normalized_values, values, N);
+	mesh->graphics.draw_field_on_faces(mesh->msh, g,
+					   normalized_values,
+					   PALETTE_FIELD);
+
+	nb_soft_allocate_mem(memsize);
+}
+
+static void draw_classes_on_faces(const nb_mesh2D_t *mesh,
+				  nb_graphics_context_t *g,
+				  const uint8_t *class)
+{
+	nb_graphics_color_t color[10];
+	set_class_colors(color);
+	nb_graphics_set_line_width(g, 1.5);
+	mesh->graphics.draw_classes_on_faces(mesh->msh, g, class, 10, color);
 }
 
 static void draw_wires(const nb_mesh2D_t *mesh,
@@ -296,12 +356,12 @@ static void add_palette(const nb_mesh2D_t *mesh,
 	
 	float label_width = 55;
 	nb_palette_draw(g, palette,
-				 width - PALETTE_W - PALETTE_MARGIN -
-				 label_width,
-				 height - PALETTE_H - PALETTE_MARGIN,
-				 PALETTE_W,
-				 PALETTE_H,
-				 1, min, max);
+			width - PALETTE_W - PALETTE_MARGIN -
+			label_width,
+			height - PALETTE_H - PALETTE_MARGIN,
+			PALETTE_W,
+			PALETTE_H,
+			1, min, max);
 	nb_palette_destroy(palette);
 }
 
@@ -310,10 +370,19 @@ static void get_min_max(const nb_mesh2D_t *mesh,
 			double *min, double *max)
 {
 	uint32_t N;
-	if (NB_ELEMENT == data->vals_entity)
+	switch (data->vals_entity) {
+	case NB_ELEMENT:
 		N = nb_mesh2D_get_N_elems(mesh);
-	else
+		break;
+	case NB_NODE:
 		N = nb_mesh2D_get_N_nodes(mesh);
+		break;
+	case NB_FACE:
+		N = nb_mesh2D_get_N_edges(mesh);
+		break;
+	default:
+		N = 0;
+	}
 
 	const double *values = data->values;
 	*min = values[0];
@@ -409,9 +478,9 @@ void nb_mesh2D_fill_elems(const nb_mesh2D_t *mesh,
 }
 
 void nb_mesh2D_fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
-					    nb_graphics_context_t *g,
-					    const double *normalized_field,
-					    nb_palette_preset palette)
+					 nb_graphics_context_t *g,
+					 const double *normalized_field,
+					 nb_palette_preset palette)
 {
 	mesh->graphics.fill_elems_field_on_nodes(mesh->msh, g,
 						 normalized_field,
@@ -438,18 +507,36 @@ void nb_mesh2D_fill_elems_classes(const nb_mesh2D_t *mesh,
 }
 
 void nb_mesh2D_fill_nodes(const nb_mesh2D_t *mesh,
-			     nb_graphics_context_t *g)
+			  nb_graphics_context_t *g)
 {
 	mesh->graphics.fill_nodes(mesh->msh, g);
 }
 
 void nb_mesh2D_fill_nodes_classes(const nb_mesh2D_t *mesh,
+				  nb_graphics_context_t *g,
+				  const uint8_t *class, uint8_t N_colors,
+				  const nb_graphics_color_t *colors)
+{
+	mesh->graphics.fill_nodes_classes(mesh->msh, g, class,
+					  N_colors, colors);
+}
+
+void nb_mesh2D_draw_field_on_faces(const nb_mesh2D_t *mesh,
+				   nb_graphics_context_t *g,
+				   const double *normalized_field,
+				   nb_palette_preset palette)
+{
+	mesh->graphics.draw_field_on_faces(mesh->msh, g, normalized_field,
+					   palette);
+}
+
+void nb_mesh2D_draw_classes_on_faces(const nb_mesh2D_t *mesh,
 				     nb_graphics_context_t *g,
 				     const uint8_t *class, uint8_t N_colors,
 				     const nb_graphics_color_t *colors)
 {
-	mesh->graphics.fill_nodes_classes(mesh->msh, g, class,
-					  N_colors, colors);
+	mesh->graphics.draw_classes_on_faces(mesh->msh, g, class,
+					     N_colors, colors);
 }
 
 void nb_mesh2D_draw_level_set(const nb_mesh2D_t *mesh,

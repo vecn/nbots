@@ -1,7 +1,9 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 #include "nb/memory_bot.h"
 #include "nb/graph_bot.h"
@@ -9,6 +11,7 @@
 #include "nb/geometric_bot.h"
 
 #include "mesh2D_struct.h"
+#include "mesh2D_private.h"
 
 #define POW2(a) ((a)*(a))
 
@@ -152,6 +155,8 @@ static void set_msh3trg_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_msh3trg_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_msh3trg_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_msh3trg_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_msh3trg_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_msh3trg_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_msh3trg_draw_level_set;
 }
 
@@ -216,6 +221,8 @@ static void set_mshquad_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshquad_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshquad_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshquad_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshquad_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshquad_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshquad_draw_level_set;
 }
 
@@ -280,6 +287,8 @@ static void set_mshpoly_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshpoly_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshpoly_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshpoly_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshpoly_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshpoly_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshpoly_draw_level_set;
 }
 
@@ -344,6 +353,8 @@ static void set_mshpack_graphics_interface(nb_mesh2D_t *mesh)
 	mesh->graphics.fill_elems_classes = nb_mshpack_fill_elems_classes;
 	mesh->graphics.fill_nodes = nb_mshpack_fill_nodes;
 	mesh->graphics.fill_nodes_classes = nb_mshpack_fill_nodes_classes;
+	mesh->graphics.draw_field_on_faces = nb_mshpack_draw_field_on_faces;
+	mesh->graphics.draw_classes_on_faces = nb_mshpack_draw_classes_on_faces;
 	mesh->graphics.draw_level_set = nb_mshpack_draw_level_set;
 }
 
@@ -388,6 +399,28 @@ void nb_mesh2D_destroy(nb_mesh2D_t* mesh)
 nb_mesh2D_type nb_mesh2D_get_type(const nb_mesh2D_t *mesh)
 {
 	return mesh->type;
+}
+
+
+const char *nb_mesh2D_get_type_string(const nb_mesh2D_t *mesh)
+{
+	nb_mesh2D_type t = nb_mesh2D_get_type(mesh);
+	const char *out;
+	switch (t) {
+	case NB_TRIAN:
+		out = "NB_TRIAN";
+		break;
+	case NB_QUAD:
+		out = "NB_QUAD";
+		break;
+	case NB_POLY:
+		out = "NB_POLY";
+		break;
+	case NB_DISK:
+		out = "NB_DISK";
+		break;
+	}
+	return out;
 }
 
 uint32_t nb_mesh2D_get_N_invtx(const nb_mesh2D_t *mesh)

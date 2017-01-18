@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
+
+set(CMAKE_C_COMPILER "gcc")
+# set(CMAKE_C_COMPILER "clang")
+
 project(NBots)
 
 # Build Library
@@ -49,3 +53,5 @@ target_link_libraries(utests cunit nbots m)
 enable_testing()
 
 add_test(unit_tests utests)
+set_property(TEST unit_tests PROPERTY ENVIRONMENT
+  "NB_FONTS_DIR=${CMAKE_SOURCE_DIR}/resources/fonts")

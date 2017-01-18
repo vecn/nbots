@@ -29,7 +29,14 @@ void nb_msh3trg_fill_nodes_classes(const void *msh,
 				   nb_graphics_context_t *g,
 				   const uint8_t *class, uint8_t N_colors,
 				   const nb_graphics_color_t *colors);
-
+void nb_msh3trg_draw_field_on_faces(const void *msh,
+				    nb_graphics_context_t *g,
+				    const double *normalized_field,
+				    nb_palette_preset palette);
+void nb_msh3trg_draw_classes_on_faces(const void *msh,
+				      nb_graphics_context_t *g,
+				      const uint8_t *class, uint8_t N_colors,
+				      const nb_graphics_color_t *colors);
 /**
  * @brief Export a PNG image of the partition ans its subdomains.
  * @param[in] part Partition to be displayed.

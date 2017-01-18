@@ -24,3 +24,8 @@ void nb_mshpack_elem_move_y(void *msh, uint32_t i, double y)
 	nb_mshpack_t *mshpack = msh;
 	mshpack->cen[i*2+1] += y;
 }
+
+uint32_t nb_mshpack_get_N_total_adj(const void *msh)
+{
+	return 0;
+}

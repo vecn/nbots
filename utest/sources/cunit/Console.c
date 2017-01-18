@@ -476,7 +476,7 @@ static void list_suites(CU_pTestRegistry pRegistry)
 {
   CU_pSuite pCurSuite = NULL;
   int i;
-  static size_t width[6];
+  static int width[6];
 
   if (NULL == pRegistry) {
     pRegistry = CU_get_registry();
@@ -533,7 +533,7 @@ static void list_tests(CU_pSuite pSuite)
 {
   CU_pTest pCurTest = NULL;
   unsigned int uiCount;
-  static size_t width[3];
+  static int width[3];
 
   assert(NULL != pSuite);
   assert(NULL != pSuite->pName);

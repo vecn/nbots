@@ -61,11 +61,12 @@ void nb_sparse_set_Dirichlet_condition(nb_sparse_t* A, double* RHS,
 					uint32_t idx, double value);
 
 /* Factorization solvers for sparse matrix */
+void nb_sparse_calculate_permutation(const nb_sparse_t *const A,
+				     uint32_t *perm, uint32_t *iperm);
 nb_sparse_t* nb_sparse_create_permutation
 (const nb_sparse_t *const A,
  const uint32_t *const perm,
  const uint32_t *const iperm);
-
 void nb_sparse_fill_permutation(const nb_sparse_t *const A, 
 				 nb_sparse_t* Ar,
 				 const uint32_t *const perm,
