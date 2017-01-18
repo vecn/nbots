@@ -14,7 +14,7 @@ int nb_cfreader_nbt_check_header(nb_cfreader_t *cfr, char *class)
 	if (0 != status)
 		goto EXIT;
 
-	status = nb_cfreader_read_var_string(cfr, "Class", class);
+	status = nb_cfreader_read_var_token(cfr, "Class", class);
 EXIT:
 	return status;
 

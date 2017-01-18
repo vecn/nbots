@@ -23,6 +23,8 @@
 #define SMOOTH 0
 #define MIDPOINT_VOL_INTEGRALS false
 
+#define STEP_READ_FINISH 100
+
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -217,6 +219,30 @@ static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg);
 static int check_header(nb_cfreader_t *cfr);
 static int check_mesh_correspondence(nb_cfreader_t *cfr,
 				     const nb_mesh2D_t *mesh);
+
+static int read_and_draw_all_steps(nb_cfreader_t *cfr,
+				   const nb_mesh2D_t *mesh,
+				   const char *dir_output);
+static int read_step_data(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh,
+			  double *disp, double *damage,
+			  int *step, double *time);
+static int read_disp_field(nb_cfreader_t *cfr,
+			   const nb_mesh2D_t *mesh,
+			   double *disp);
+static int read_vector(nb_cfreader_t *cfr, uint32_t id, double *vec);
+static int read_damage_field(nb_cfreader_t *cfr,
+			     const nb_mesh2D_t *mesh,
+			     double *damage);
+static int read_scalar(nb_cfreader_t *cfr, uint32_t id, double *scalar);
+static void draw_nodal_damage(const char *dir_output,
+			      const nb_mesh2D_t *mesh,
+			      const double *damage,
+			      int step);
+static void draw_face_damage(const char *dir_output,
+			     const nb_mesh2D_t *mesh,
+			     const double *disp,
+			     const double *damage,
+			     int step);
 
 int nb_cvfa_compute_2D_damage_phase_field
 			(const nb_mesh2D_t *const mesh,
@@ -1143,34 +1169,6 @@ EXIT:
 	return;
 }
 
-void TEMPORAL_DRAW(const char *dir,
-		   const nb_mesh2D_t *mesh,
-		   const double *elem_damage, 
-		   double *face_damage, int i)
-{
-	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
-	double *damage = nb_allocate_mem(N_nodes * sizeof(*damage));
-
-	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, elem_damage, damage);
-	char name[100];
-	sprintf(name, "%s/CVFA_elem_dmg_%i.png", dir, i);
-	nb_mesh2D_export_draw(mesh, name, 1000, 700, NB_NODE, NB_FIELD,
-			      damage, true);
-	nb_free_mem(damage);
-
-	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
-	double max_dmg = 0;
-	for (uint32_t i = 0; i < N_faces; i++) {
-		if (max_dmg < face_damage[i])
-			max_dmg = face_damage[i];
-	}
-	for (uint32_t i = 0; i < N_faces; i++)
-		face_damage[i] /= max_dmg;
-	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
-			      NB_FACE, NB_FIELD,
-			      face_damage, true);
-}
-
 static void save_simulation(const char *dir,
 			    const nb_mesh2D_t *mesh, const double *disp,
 			    const double *elem_damage, int iter, double time)
@@ -1204,6 +1202,7 @@ static void save_simulation(const char *dir,
 	fprintf(fp, "  Field\n");
 	fprintf(fp, "    Type = Vector\n");
 	fprintf(fp, "    Name = \"Displacement\"\n");
+	fprintf(fp, "    Support = Elements\n");
 	fprintf(fp, "    Data\n");
 	for (uint32_t i = 0; i < N_elems; i++)
 		fprintf(fp, "      %i <- [%e, %e]\n", i + 1,
@@ -1213,6 +1212,7 @@ static void save_simulation(const char *dir,
 	fprintf(fp, "  Field\n");
 	fprintf(fp, "    Type = Scalar\n");
 	fprintf(fp, "    Name = \"Damage\"\n");
+	fprintf(fp, "    Support = Elements\n");
 	fprintf(fp, "    Data\n");
 	for (uint32_t i = 0; i < N_elems; i++)
 		fprintf(fp, "      %i <- %e\n", i + 1, elem_damage[i]);
@@ -1330,10 +1330,14 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 	status = check_header(cfr);
 	if (0 != status)
 		goto EXIT;
+
 	status = check_mesh_correspondence(cfr, mesh);
 	if (0 != status)
 		goto EXIT;
 
+	status = read_and_draw_all_steps(cfr, mesh, dir_output);
+	if (0 != status)
+		goto EXIT;
 EXIT:
 	nb_mesh2D_finish(mesh);
 	nb_soft_free_mem(mesh_memsize, mesh);
@@ -1399,4 +1403,261 @@ static int check_mesh_correspondence(nb_cfreader_t *cfr,
 EXIT:
 	return status;
 
+}
+
+static int read_and_draw_all_steps(nb_cfreader_t *cfr,
+				   const nb_mesh2D_t *mesh,
+				   const char *dir_output)
+{
+	int status;
+	uint32_t N = nb_mesh2D_get_N_elems(mesh);
+	uint32_t memsize = 3 * N * sizeof(double);
+	char *memblock = nb_allocate_mem(memsize);
+	double *disp = (void*) memblock;
+	double *damage = (void*) (memblock + 2 * N * sizeof(*disp));
+	int step = 1;
+	while (1) {
+		int readed_step;
+		double time;
+		int read_status = read_step_data(cfr, mesh, disp, damage,
+						 &readed_step, &time);
+		if (STEP_READ_FINISH == read_status) {
+			status = 0;
+			goto EXIT;
+		} else if (0 != read_status) {
+			status = 1;
+			goto EXIT;
+		}
+		if (readed_step != step) {
+			status = 1;
+			goto EXIT;
+		}
+		draw_nodal_damage(dir_output, mesh, damage, step);
+		draw_face_damage(dir_output, mesh, disp, damage, step);
+		step += 1;
+	}
+EXIT:
+	nb_free_mem(memblock);
+	return status;
+}
+
+static int read_step_data(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh,
+			  double *disp, double *damage, int *step,
+			  double *time)
+{
+	int status = nb_cfreader_check_token(cfr, "Step");
+	if (0 != status) {
+		if (NB_CFREADER_EOF == status)
+			status = STEP_READ_FINISH;
+		else
+			status = 1;
+		goto EXIT;
+	}
+	
+	status = nb_cfreader_read_int(cfr, step);
+	if (0 != status)
+		goto EXIT;
+	
+	status = nb_cfreader_read_var_double(cfr, "Time", time);
+	if (0 != status)
+		goto EXIT;
+
+	status = read_disp_field(cfr, mesh, disp);
+	if (0 != status)
+		goto EXIT;
+
+	status = read_damage_field(cfr, mesh, damage);
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Step");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
+static int read_disp_field(nb_cfreader_t *cfr,
+			   const nb_mesh2D_t *mesh,
+			   double *disp)
+{
+	int status = nb_cfreader_check_line(cfr, "Field");
+	if (0 != status)
+		goto EXIT;
+	
+	status = nb_cfreader_check_line(cfr, "Type = Vector");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Name = \"Displacement\"");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Support = Elements");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Data");
+	if (0 != status)
+		goto EXIT;
+	
+	uint32_t N = nb_mesh2D_get_N_elems(mesh);
+	for (uint32_t i = 0; i < N; i++) {
+		status = read_vector(cfr, i, &(disp[i*2]));
+		if (0 != status)
+			goto EXIT;
+	}
+
+	status = nb_cfreader_check_line(cfr, "End Data");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Field");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
+static int read_vector(nb_cfreader_t *cfr, uint32_t id, double *vec)
+{
+	uint32_t id_read;
+	int status = nb_cfreader_read_uint(cfr, &id_read);
+	if (0 != status)
+		goto EXIT;
+	if (id_read != id + 1) {
+		status = 1;
+		goto EXIT;
+	}
+	
+	status = nb_cfreader_check_token(cfr, "<-");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_token(cfr, "[");
+	if (0 != status)
+		goto EXIT;
+
+	double val;
+	status = nb_cfreader_read_double(cfr, &val);
+	if (0 != status)
+		goto EXIT;
+	vec[0] = val;
+
+	status = nb_cfreader_check_token(cfr, ",");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_read_double(cfr, &val);
+	if (0 != status)
+		goto EXIT;
+	vec[1] = val;
+
+	status = nb_cfreader_check_token(cfr, "]");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
+static int read_damage_field(nb_cfreader_t *cfr,
+			     const nb_mesh2D_t *mesh,
+			     double *damage)
+{
+	int status = nb_cfreader_check_line(cfr, "Field");
+	if (0 != status)
+		goto EXIT;
+	
+	status = nb_cfreader_check_line(cfr, "Type = Scalar");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Name = \"Damage\"");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Support = Elements");
+	if (0 != status)
+		goto EXIT;
+	status = nb_cfreader_check_line(cfr, "Data");
+	if (0 != status)
+		goto EXIT;
+	
+	uint32_t N = nb_mesh2D_get_N_elems(mesh);
+	for (uint32_t i = 0; i < N; i++) {
+		status = read_scalar(cfr, i, damage);
+		if (0 != status)
+			goto EXIT;
+	}
+
+	status = nb_cfreader_check_line(cfr, "End Data");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Field");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
+static int read_scalar(nb_cfreader_t *cfr, uint32_t id, double *scalar)
+{
+	uint32_t id_read;
+	int status = nb_cfreader_read_uint(cfr, &id_read);
+	if (0 != status)
+		goto EXIT;
+	if (id_read != id + 1) {
+		status = 1;
+		goto EXIT;
+	}
+	
+	status = nb_cfreader_check_token(cfr, "<-");
+	if (0 != status)
+		goto EXIT;
+	double val;
+	status = nb_cfreader_read_double(cfr, &val);
+	if (0 != status)
+		goto EXIT;
+
+	*scalar = val;
+
+EXIT:
+	return status;
+}
+
+static void draw_nodal_damage(const char *dir_output,
+			      const nb_mesh2D_t *mesh,
+			      const double *damage,
+			      int step)
+{
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
+
+	double *node_damage = nb_allocate_mem(N_nodes * sizeof(*node_damage));
+	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, damage, node_damage);
+	
+	char name[100];
+	sprintf(name, "%s/damage_field_%i.png", dir_output, step);
+
+	nb_mesh2D_export_draw(mesh, name, 1000, 700, NB_NODE, NB_FIELD,
+			      node_damage, true);
+	nb_free_mem(node_damage);
+}
+
+static void draw_face_damage(const char *dir_output,
+			     const nb_mesh2D_t *mesh,
+			     const double *disp,
+			     const double *damage,
+			     int step)
+{
+	/*
+	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
+
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	double max_dmg = 0;
+	for (uint32_t i = 0; i < N_faces; i++) {
+		if (max_dmg < face_damage[i])
+			max_dmg = face_damage[i];
+	}
+	for (uint32_t i = 0; i < N_faces; i++)
+		face_damage[i] /= max_dmg;
+	nb_mesh2D_export_draw(mesh, "./CVFA_dmg.png", 1000, 800,
+			      NB_FACE, NB_FIELD,
+			      face_damage, true);
+	*/
 }

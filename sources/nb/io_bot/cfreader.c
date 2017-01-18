@@ -89,44 +89,50 @@ nb_cfreader_t* nb_cfreader_create(void)
 
 int nb_cfreader_open_file(nb_cfreader_t *cfr, const char* filename)
 {
-	int status = 1;
+	int status;
 	cfr->fp = fopen(filename, "r");
-	if (cfr->fp == NULL)
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_FILE_NOT_FOUND;
 		goto EXIT;
-	status = 0;
+	}
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 int nb_cfreader_add_line_comment_token(nb_cfreader_t *cfr, const char *token)
 {
-	int status = 1;
-	if (cfr->N_lct >= MAX_LINE_COMMENT_TOKENS)
+	int status;
+	if (cfr->N_lct >= MAX_LINE_COMMENT_TOKENS) {
+		status = NB_CFREADER_MAX_TOKENS_REACHED;
 		goto EXIT;
+	}
 
 	cfr->lc_token[cfr->N_lct] = token;
 	cfr->N_lct += 1;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 int nb_cfreader_add_assignment_token(nb_cfreader_t *cfr, const char *token)
 {
-	int status = 1;
-	if (cfr->N_assign >= MAX_ASSIGNMENT_TOKENS)
+	int status;
+	if (cfr->N_assign >= MAX_ASSIGNMENT_TOKENS) {
+		status = NB_CFREADER_MAX_TOKENS_REACHED;
 		goto EXIT;
+	}
 
 	cfr->assign_token[cfr->N_assign] = token;
 	cfr->N_assign += 1;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 static int get_next_line(nb_cfreader_t* cfr)
 {
-	int status = 1;
+	int status;
 	while (fgets(cfr->buffer, LINE_LENGTH, cfr->fp) != NULL) {
 		cfr->line_counter += 1;
 		set_end_of_line(cfr);
@@ -134,10 +140,12 @@ static int get_next_line(nb_cfreader_t* cfr)
 		trim_start_of_line(cfr);
 
 		if (strlen(cfr->line) > 0) {
-			status = 0;
-			break;
+			status = NB_CFREADER_SUCCESS;
+			goto EXIT;
 		}
 	}
+	status = NB_CFREADER_EOF;
+EXIT:
 	return status;
 }
 
@@ -166,18 +174,25 @@ static void trim_start_of_line(nb_cfreader_t* cfr)
 
 int nb_cfreader_read_int(nb_cfreader_t* cfr, int* val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	if (sscanf(cfr->line, "%i", val) != 1)
+	if (sscanf(cfr->line, "%i", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -193,91 +208,120 @@ static void forward_pointer_in_the_line(nb_cfreader_t *cfr)
 
 int nb_cfreader_read_uint(nb_cfreader_t *cfr, uint32_t *val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	if (sscanf(cfr->line, "%u", val) != 1)
+	if (sscanf(cfr->line, "%u", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 int nb_cfreader_read_float(nb_cfreader_t* cfr, float* val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	if (sscanf(cfr->line, "%f", val) != 1)
+	if (sscanf(cfr->line, "%f", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 int nb_cfreader_read_double(nb_cfreader_t* cfr, double* val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	if (sscanf(cfr->line, "%lf", val) != 1)
+	if (sscanf(cfr->line, "%lf", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 int nb_cfreader_read_bool(nb_cfreader_t* cfr, bool* val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if(strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
 	char token[256];
-	if (sscanf(cfr->line, "%s", token) != 1)
+	if (sscanf(cfr->line, "%s", token) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	status = cast_bool(cfr, token, val);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
 	forward_pointer_in_the_line(cfr);
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val)
 {
-	int status = 1;
+	int status = NB_CFREADER_BAD_INPUT;
 	for (int i = 0; i < 4; i++) {
 		if (0 == strcmp(string, cfr->bool_tokens[i * 2])) {
 			*val = true;
-			status = 0;
+			status = NB_CFREADER_SUCCESS;
 			break;
 		}
 		if (0 == strcmp(string, cfr->bool_tokens[i*2+1])) {
 			*val = false;
-			status = 0;
+			status = NB_CFREADER_SUCCESS;
 			break;
 		}
 	}
@@ -286,19 +330,24 @@ static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val)
 
 int nb_cfreader_read_string(nb_cfreader_t *cfr, char *val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (0 == strlen(cfr->line)) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
 	status = get_string_value(cfr, cfr->line, val);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 
@@ -324,22 +373,26 @@ static int get_string_value(nb_cfreader_t *cfr, char *line,
 			}
 		}
 	}
-	int status = 1;
-	if (NULL == pch_open)
+	int status;
+	if (NULL == pch_open) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	int len = strlen(cfr->string_tokens[token_id*2]);
 	pch_open += len;
 
 	char *pch_close = strstr(pch_open, cfr->string_tokens[token_id*2+1]);
-	if (NULL == pch_close)
+	if (NULL == pch_close) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 	
 	pch_close[0] = '\0';
 
 	strcpy(string, pch_open);
 
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -347,32 +400,46 @@ EXIT:
 int nb_cfreader_read_token(nb_cfreader_t *cfr, char *val)
 {
 	int status = 1;
-	if (cfr->fp == NULL)
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	if (sscanf(cfr->line, "%s", val) != 1)
+	if (sscanf(cfr->line, "%s", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	forward_pointer_in_the_line(cfr);
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
 
 int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 {
-	int status = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (0 == cfr->N_assign)
+	if (0 == cfr->N_assign) {
+		status = NB_CFREADER_ASSIGNMENT_TOKEN_UNDEF;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
 	/* Identify assignment */
 	char *pch = NULL;
@@ -384,8 +451,10 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 			break;
 		}
 	}
-	if (NULL == pch)
+	if (NULL == pch) {
+		status = NB_CFREADER_NO_ASSIGNMENT;
 		goto EXIT;
+	}
 	
 
 	/* Read variable name */
@@ -394,23 +463,28 @@ int nb_cfreader_read_tuple(nb_cfreader_t *cfr, char *var, char *val)
 
 	var_size = trim_end_of_string(var, var_size);
 
-	if (0 == var_size)
+	if (0 == var_size) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	/* Jump assignment token */
 	cfr->line = pch + assignment_length;	
 	forward_pointer_in_the_line(cfr);
 
 	/* Read value */
-	if (sscanf(cfr->line, "%s", val) != 1)
+	if (sscanf(cfr->line, "%s", val) != 1) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
-	if (0 == strlen(val))
+	if (0 == strlen(val)) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 	
 	forward_pointer_in_the_line(cfr);
-
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -430,20 +504,23 @@ int nb_cfreader_read_var_int(nb_cfreader_t *cfr, const char *var, int *val)
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 
 	char *pch;
 	long int N = strtol(val_readed, &pch, 10);
-	if (pch == val_readed)
+	if (pch == val_readed) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	*val = N;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -454,20 +531,23 @@ int nb_cfreader_read_var_uint(nb_cfreader_t *cfr, const char *var,
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 
 	char *pch;
 	unsigned long int N = strtoul(val_readed, &pch, 10);
-	if (pch == val_readed)
+	if (pch == val_readed) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	*val = N;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -477,20 +557,23 @@ int nb_cfreader_read_var_float(nb_cfreader_t *cfr, const char *var, float *val)
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 
 	char *pch;
 	float N = strtof(val_readed, &pch);
-	if (pch == val_readed)
+	if (pch == val_readed) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	*val = N;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -503,17 +586,20 @@ int nb_cfreader_read_var_double(nb_cfreader_t *cfr, const char *var, double *val
 	if (0 != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 
 	char *pch;
 	double N = strtod(val_readed, &pch);
-	if (pch == val_readed)
+	if (pch == val_readed) {
+		status = NB_CFREADER_BAD_INPUT;
 		goto EXIT;
+	}
 
 	*val = N;
-	status = 0;
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -523,12 +609,13 @@ int nb_cfreader_read_var_bool(nb_cfreader_t *cfr, const char *var, bool *val)
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 
 	status = cast_bool(cfr, val_readed, val);
 EXIT:
@@ -541,14 +628,16 @@ int nb_cfreader_read_var_token(nb_cfreader_t *cfr, const char *var, char *val)
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
+	}
 	
 	strcpy(val, val_readed);
+	status = NB_CFREADER_SUCCESS;
 EXIT:
 	return status;
 }
@@ -558,13 +647,13 @@ int nb_cfreader_read_var_string(nb_cfreader_t *cfr, const char *var, char *val)
 	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
 	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
 	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
-	if (0 != status)
+	if (NB_CFREADER_SUCCESS != status)
 		goto EXIT;
 
-	status = 1;
-	if (0 != strcmp(var_readed, var))
+	if (0 != strcmp(var_readed, var)) {
+		status = NB_CFREADER_DISTINCT_VARNAME;
 		goto EXIT;
-	
+	}
 	status = get_string_value(cfr, val_readed, val);
 EXIT:
 	return status;
@@ -572,41 +661,58 @@ EXIT:
 
 int nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
 {
-	int out = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
 	trim_end_of_string(cfr->line, strlen(cfr->line));
 
-	out = strcmp(cfr->line, line);
+	int cmp = strcmp(cfr->line, line);
 
-	if (0 == out)
-		get_next_line(cfr);
+	if (0 == cmp) {
+		cfr->line[0] = '\0';
+		status = NB_CFREADER_SUCCESS;
+	} else {
+		status = NB_CFREADER_BAD_INPUT;
+	}
 EXIT:
-	return out;
+	return status;
 }
 
 int nb_cfreader_check_token(nb_cfreader_t *cfr, const char *token)
 {
-	int out = 1;
-	if (cfr->fp == NULL)
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
 		goto EXIT;
+	}
 
-	if (strlen(cfr->line) == 0)
-		get_next_line(cfr);
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
 
-	out = strncmp(cfr->line, token, strlen(token));
+	int cmp = strncmp(cfr->line, token, strlen(token));
 
-	if (0 == out) {
+	if (0 == cmp) {
 		int len = strlen(token);
 		cfr->line += len;
 		forward_pointer_in_the_line(cfr);
+		status = NB_CFREADER_SUCCESS;
+	} else {
+		status = NB_CFREADER_BAD_INPUT;
 	}
 EXIT:
-	return out;
+	return cmp;
 }
 
 void nb_cfreader_close_file(nb_cfreader_t *cfr)
@@ -625,4 +731,38 @@ void nb_cfreader_finish(nb_cfreader_t *cfr)
 void nb_cfreader_destroy(nb_cfreader_t* cfr)
 {
 	nb_free_mem(cfr);
+}
+
+void nb_cfreader_get_error_message(int error, char **msg)
+{
+	switch (error) {
+	case NB_CFREADER_SUCCESS:
+		*msg = "Successful read";
+		break;
+	case NB_CFREADER_EOF:
+		*msg = "End of file";
+		break;
+	case NB_CFREADER_BAD_INPUT:
+		*msg = "Incorrect or unexpected input";
+		break;
+	case NB_CFREADER_NO_FILE_OPENED:
+		*msg = "There is not an open file";
+		break;
+	case NB_CFREADER_FILE_NOT_FOUND:
+		*msg = "File not found";
+		break;
+	case NB_CFREADER_MAX_TOKENS_REACHED:
+		*msg = "Max tokens reached";
+		break;
+	case NB_CFREADER_ASSIGNMENT_TOKEN_UNDEF:
+		*msg = "There are not assignment tokens defined";
+		break;
+	case NB_CFREADER_NO_ASSIGNMENT:
+		*msg = "There is not an assignment";
+		break;
+	case NB_CFREADER_DISTINCT_VARNAME:
+		*msg = "Distinct variable name";
+		break;
+	}
+
 }
