@@ -53,5 +53,3 @@ target_link_libraries(utests cunit nbots m)
 enable_testing()
 
 add_test(unit_tests utests)
-set_property(TEST unit_tests PROPERTY ENVIRONMENT
-  "NB_FONTS_DIR=${CMAKE_SOURCE_DIR}/resources/fonts")

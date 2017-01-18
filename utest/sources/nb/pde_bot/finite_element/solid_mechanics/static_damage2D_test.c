@@ -29,7 +29,7 @@ typedef struct {
 	double *stress;
 	bool *plastic_elements;
 	double *damage;
-    uint32_t N_vtx;
+    	uint32_t N_vtx;
 	uint32_t N_trg;
 } damage_results_t;
 
@@ -42,33 +42,42 @@ static void test_damage_f2(void);
 
 static void check_problem_results(const void *part,
 				  const damage_results_t *results);
+
 static void damage_run_test(const char *problem_data, uint32_t N_vtx,
 		     void (*check_results)(const void*,
 					   const damage_results_t*));
+
 static int damage_simulate(const char *problem_data,
 		    nb_mesh2D_t *part, damage_results_t *results,
 		    uint32_t N_vtx);
+
 static void damage_get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
+
 static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint32_t N_trg);
+
 static void damage_results_finish(damage_results_t *results);
-static int damage_read_problem_data
-		(const char* filename,
-		 nb_model_t *model,
-		 nb_bcond_t* bcond,
-		 nb_material_t* mat,
-		 nb_analysis2D_t *analysis2D,
-		 nb_analysis2D_params *params2D);
+
+static int damage_read_problem_data(const char* filename, nb_model_t *model,
+				 	nb_bcond_t* bcond, nb_material_t* mat,
+					nb_analysis2D_t *analysis2D,
+					nb_analysis2D_params *params2D);
+
 static int damage_read_geometry(nb_cfreader_t *cfreader, nb_model_t *model);
+
 static int damage_read_material(nb_cfreader_t *cfreader, nb_material_t *mat);
+
 static int damage_read_plasticity2D_params(nb_cfreader_t *cfreader,
-				    nb_analysis2D_t *analysis2D,
-				    nb_analysis2D_params *params2D);
+				    	nb_analysis2D_t *analysis2D,
+				   	nb_analysis2D_params *params2D);
+
 void damage_check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
                     nb_analysis2D_params *params2D);
+
 void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
                             double *total_strain, const nb_mesh2D_t *const part,
                             double *damage, const char *problem_data, const nb_fem_elem_t *const elem);
+
 uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			(const nb_mesh2D_t *const part,
 			 const nb_fem_elem_t *const elem,
@@ -86,7 +95,7 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			 double *strain,
 			 double *stress);
 
-void cunit_nb_pde_bot_fem_sm_static_elasticity(void)
+void cunit_nb_pde_bot_fem_sm_static_damage(void)
 {
 	CU_pSuite suite =
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/"\
@@ -154,13 +163,13 @@ static void check_problem_results(const void *part,
 
 static void test_damage_f2(void)
 {
-        damage_run_test("%s/damage_beam_failure_one.txt", 300,
+        damage_run_test("%s/damage_beam_failure_two.txt", 300,
         check_problem_results);
 }
 
 static void damage_run_test(const char *problem_data, uint32_t N_vtx,
-		     void (*check_results)(const void*,
-					   const damage_results_t*))
+		     	void (*check_results)(const void*,
+			const damage_results_t*))
 {
 	damage_results_t results;
 	nb_mesh2D_t *part = nb_allocate_on_stack(nb_mesh2D_get_memsize(NB_TRIAN));
@@ -168,10 +177,11 @@ static void damage_run_test(const char *problem_data, uint32_t N_vtx,
 
 	int status = damage_simulate(problem_data, part, &results, N_vtx);
 
-    printf("Simulation status: %i\n", status); /* TEMPORAL */
-	if (status == 0) {
-        printf("The simulation ran properly. \n");
+	if (status == 0) 
+	{
+        	printf("The simulation ran properly. \n");
 	}
+
 	check_results(part, &results);
 
 	nb_mesh2D_finish(part);
@@ -197,8 +207,8 @@ static int damage_simulate(const char *problem_data,
 	int read_status =
 		damage_read_problem_data(input, model, bcond, material,
 				  &analysis2D, &params2D);
-    printf("Read status: %i\n", read_status); /* TEMPORAL */
-    damage_check_input_values(material, analysis2D, &params2D);
+
+   	damage_check_input_values(material, analysis2D, &params2D);
 
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
@@ -210,8 +220,6 @@ static int damage_simulate(const char *problem_data,
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(part);
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	damage_results_init(results, N_nodes, N_elems);
-	uint32_t N_force_steps = 100;
-	double accepted_tol = 1;
 	double gravity[2] = {0, 0}; /*Antes era {0, -9.81}*/
 	bool *elements_enabled = nb_allocate_mem(N_elems*sizeof(elements_enabled));
 	nb_fem_implicit_t *params = nb_fem_implicit_create();
@@ -220,19 +228,22 @@ static int damage_simulate(const char *problem_data,
 	nb_fem_implicit_set_N_steps(params, 100);
 	nb_fem_implicit_set_residual_tolerance(params, 1);
 
-    status = nb_fem_compute_2D_Damage_Solid_Mechanics
+   	status = nb_fem_compute_2D_Damage_Solid_Mechanics
                             (part, elem, material, bcond, true, gravity,
                              false, analysis2D, &params2D, params, problem_data, results->damage,
                              results->disp, results->strain, results->stress);
-    print_damage_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
+	if (0 != status)
+		goto CLEANUP_FEM;
+
+    	print_damage_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
                          part, results->damage, problem_data, elem);
 
-CLEANUP_FEM:
-	nb_fem_elem_destroy(elem);
-CLEANUP_INPUT:
-	nb_model_finish(model);
-	nb_bcond_finish(bcond);
-	nb_material_destroy(material);
+	CLEANUP_FEM:
+		nb_fem_elem_destroy(elem);
+	CLEANUP_INPUT:
+		nb_model_finish(model);
+		nb_bcond_finish(bcond);
+		nb_material_destroy(material);
 
 	return status;
 }
@@ -251,7 +262,7 @@ static void damage_get_mesh(const nb_model_t *model, void *part,
 					  NB_GEOMETRIC_TOL);
 	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_mesh2D_load_from_mesh(part, mesh);
+	nb_mesh2D_load_from_tessellator2D(part, mesh);
 	nb_tessellator2D_finish(mesh);
 }
 
@@ -277,13 +288,10 @@ static inline void damage_results_finish(damage_results_t *results)
 	nb_free_mem(results->disp);
 }
 
-static int damage_read_problem_data
-		(const char* filename,
-		 nb_model_t *model,
-		 nb_bcond_t* bcond,
-		 nb_material_t* mat,
-		 nb_analysis2D_t *analysis2D,
-		 nb_analysis2D_params *params2D)
+static int damage_read_problem_data(const char* filename, nb_model_t *model,
+				 	nb_bcond_t* bcond, nb_material_t* mat,
+					nb_analysis2D_t *analysis2D,
+					nb_analysis2D_params *params2D)
 {
 	int status = 1;
 	/* Initialize custom format to read file */
@@ -341,8 +349,9 @@ static int damage_read_geometry(nb_cfreader_t *cfreader, nb_model_t *model)
 	if (0 != nb_cfreader_read_uint(cfreader, &N))
 		goto CLEANUP_VERTICES;
 
-	if (1 > N) {
-		goto CLEANUP_VERTICES;}
+	if (1 > N)
+		goto CLEANUP_VERTICES;
+	
 	model->M = N;
 	model->edge = malloc(2 * model->M * sizeof(*model->edge));
 	for (uint32_t i = 0; i < 2 * model->M; i++) {
@@ -515,7 +524,7 @@ void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_displac
         }
     }
     /* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.01);
+    //nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.01);
     nb_mesh2D_export_draw(part, "DMG_damaged_elements.png", 1200, 800, NB_ELEMENT, NB_FIELD, damage, true);
     nb_mesh2D_export_draw(part,"DMG_avg_disp.png", 1200, 800, NB_NODE, NB_FIELD, avg_displacement, true);
     nb_mesh2D_export_draw(part,"DMG_disp_x.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_x, true);

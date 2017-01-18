@@ -264,7 +264,7 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			 double *stress)
 /* Quasistatic formulation */
 {
-    uint8_t status = 1;
+    	uint8_t status = 1;
 	uint64_t N_nod = nb_mesh2D_get_N_nodes(part);
 	uint64_t N_elem = nb_mesh2D_get_N_elems(part);
 
@@ -310,13 +310,12 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 
 	/* Allocate damage parameter 'r' */
 	double* r_dmg_prev = nb_allocate_mem(N_gp * N_elem * sizeof(double));
-    bool react_known_node = false;
-    double max_y_force = 0;
+	
 	/*******************************************************************/
 	/******************* > Start simulation of N steps *****************/
 	/*******************************************************************/
 	for (uint32_t n = 0; n < nb_fem_implicit_get_N_steps(params); n++) {
-        printf("Step %d\n", n);
+       		printf("Step %d\n", n);
 		/*log = fopen(logfile, "a");
 		fprintf(log, "  [ Load step %i]\n", n + 1);
 		fclose(log);*/
@@ -333,8 +332,8 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 		uint32_t residual_iter = 0;
 		uint32_t residual_iter_without_enhance = 0;
 		double residual_best;
-        uint32_t solver_status = 0; /* Default initialization (Must be initialized) */
-        memset(F, 0, N_system_size);
+        	uint32_t solver_status = 0; /* Default initialization (Must be initialized) */
+       		memset(F, 0, N_system_size);
 		while(1) {
 			/**************************************************/
 			/********* > Assemble system **********************/
@@ -485,7 +484,6 @@ static void DMG_pipeline_assemble_system
 	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(double));
 
 	/* Assembly global system */
-	uint32_t N_negative_jacobians = 0;
 	for (uint32_t k = 0; k < N_elems; k++) {
 		double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 		double density = 1e-6;

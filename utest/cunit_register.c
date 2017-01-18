@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
 	cunit_suites_nb_image_bot();
 	cunit_suites_nb_graphics_bot();
 	cunit_suites_nb_pde_bot();
-	
+
+
 	CU_basic_set_mode(CU_BRM_NORMAL);
 	CU_basic_run_tests();
 	CU_cleanup_registry();

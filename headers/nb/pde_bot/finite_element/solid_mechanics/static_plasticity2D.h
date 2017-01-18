@@ -111,7 +111,7 @@ void get_stress_params(double *max_vm_stress, uint32_t *N_plastic_elem,
                        uint32_t N_elem, double stress_tolerance);
  void get_simultaneous_plastic_elements(uint32_t *simultaneous_elements,
                                         double *max_vm_stress, uint32_t *N_plastic_elem,
-                                        uint32_t *N_simultaneous_plastic_elem,
+                                        uint32_t N_simultaneous_plastic_elem,
                                         uint32_t N_elem,
                                         double stress_tolerance,
                                         double *stress);
