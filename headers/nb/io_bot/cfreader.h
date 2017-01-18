@@ -1,5 +1,5 @@
-#ifndef __NB_CFREADER_BOT_H__
-#define __NB_CFREADER_BOT_H__
+#ifndef __NB_IO_BOT_CFREADER_H__
+#define __NB_IO_BOT_CFREADER_H__
 
 #include <stdbool.h>
 #include <stdint.h>

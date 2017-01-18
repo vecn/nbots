@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "nb/cfreader_bot.h"
+#include "nb/io_bot.h"
 
 enum {
 	NB_MSHPOLY_READ_SUCCESS,

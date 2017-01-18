@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "nb/cfreader_bot.h"
+#include "nb/io_bot.h"
 
 void nb_mshpack_write_data_nbt(FILE *fp, const void *msh);
 int nb_mshpack_read_data_nbt(nb_cfreader_t *cfr, void *msh);

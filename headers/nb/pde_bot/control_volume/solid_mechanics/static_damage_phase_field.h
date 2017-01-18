@@ -29,4 +29,8 @@ void nb_cvfa_compute_stress_from_damage_and_strain
 					 const double* strain,
 					 const double* damage,
 					 double* stress /* Output */);
+
+int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
+				   const char *dir_output);
+
 #endif

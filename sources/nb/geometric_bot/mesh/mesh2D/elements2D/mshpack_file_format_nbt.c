@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "nb/cfreader_bot.h"
+#include "nb/io_bot.h"
 
 #include "mshpack_struct.h"
 #include "mshpack_file_format_nbt.h"

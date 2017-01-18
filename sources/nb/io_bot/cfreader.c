@@ -6,7 +6,7 @@
 
 #include "nb/memory_bot.h"
 
-#include "nb/cfreader_bot.h"
+#include "nb/io_bot.h"
 
 #define LINE_LENGTH 256
 #define MAX_LINE_COMMENT_TOKENS 5

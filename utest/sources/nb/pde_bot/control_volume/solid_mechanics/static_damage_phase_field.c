@@ -9,7 +9,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/cfreader_bot.h"
+#include "nb/io_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 
@@ -293,10 +293,7 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
 
-	nb_mesh2D_save_nbt(mesh, "dmg_tmp/CVFA_DMG_mesh.nbt");
-	nb_mesh2D_finish(mesh);/* TEMPORAL */
-	nb_mesh2D_init(mesh, NB_POLY);/* TEMPORAL */
-	nb_mesh2D_read_nbt(mesh, "dmg_tmp/CVFA_DMG_mesh.nbt");/* TEMPORAL */
+	nb_mesh2D_save_nbt(mesh, "dmg_tmp/mesh.nbt");
 
 	int status_cvfa = 
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,

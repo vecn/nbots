@@ -7,6 +7,7 @@
 
 #include "nb/math_bot.h"
 #include "nb/memory_bot.h"
+#include "nb/io_bot.h"
 #include "nb/container_bot.h"
 #include "nb/solver_bot.h"
 #include "nb/geometric_bot.h"
@@ -88,6 +89,25 @@ static double subface_get_damage_pairwise(const face_t *face,
 					  uint8_t gp,
 					  const nb_glquadrature_t *glq,
 					  const eval_damage_data_t *dmg_data);
+static int finite_increments_with_dynamic_step
+				(const nb_mesh2D_t *const mesh,
+				 const nb_material_t *const material,
+				 const nb_bcond_t *const bcond,		     
+				 bool enable_self_weight, double gravity[2],
+				 nb_analysis2D_t analysis2D,
+				 nb_analysis2D_params *params2D,
+				 const char *dir_to_save,
+				 double *displacement, /* Output */
+				 double *strain,       /* Output */
+				 double *elem_damage,  /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces, int smooth,
+				 nb_sparse_t *K, nb_sparse_t *D,
+				 const nb_glquadrature_t *glq,
+				 const nb_cvfa_eval_damage_t *eval_dmg,
+				 uint32_t id_elem_monitor,
+				 char *minimize_residual_memblock);
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems);
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
@@ -175,13 +195,7 @@ static void save_reaction_log(const char *logfile, uint32_t iter,
 			      double factor, double reaction);
 static void save_simulation(const char *dir,
 			    const nb_mesh2D_t *mesh, const double *disp,
-			    const double *elem_damage,
-			    const double *face_damage, int iter, double time);
-static void save_data(const char *name,
-		      const nb_mesh2D_t *mesh,
-		      const double *disp,
-		      const double *elem_damage,
-		      const double *face_damage, int iter, double time);
+			    const double *elem_damage, int iter, double time);
 static void compute_damage(double *damage, face_t **faces,
 			   const nb_mesh2D_t *const mesh,
 			   const double *elem_damage,
@@ -200,6 +214,7 @@ static void get_internal_face_damage(double *damage,
 static void get_boundary_face_damage(double *damage, face_t **faces,
 				     uint32_t face_id);
 static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg);
+static int read_header(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh);
 
 int nb_cvfa_compute_2D_damage_phase_field
 			(const nb_mesh2D_t *const mesh,
@@ -253,60 +268,31 @@ int nb_cvfa_compute_2D_damage_phase_field
 	uint32_t id_elem_monitor[2];
 	nb_cvfa_get_elem_adj_to_model_node(mesh, 8, id_elem_monitor);
 
-	int status = 0;
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
 
-	char reaction_log[100];
-	get_reaction_log_name(dir_to_save, reaction_log);
-	save_reaction_log(reaction_log, 0, 0, 0);
-	uint32_t iter = 1;
-	double bc_factor_increment = 0.25;
-	uint32_t max_iter = 20;
-	double bc_factor = 0;
-	while (bc_factor < 1.0) {
-		bc_factor += bc_factor_increment;
-		double reaction;
-		double trim_bc_factor = MIN(1.0, bc_factor);
-		status = minimize_residual(mesh, material, bcond,
-					   enable_self_weight,
-					   gravity, analysis2D, params2D,
-					   displacement, strain, elem_damage,
-					   intmsh, xc, faces, SMOOTH, K, D,
-					   &glq, &eval_dmg, trim_bc_factor,
-					   max_iter,
-					   id_elem_monitor[0], &reaction,
-					   minimize_residual_memblock);
-		if (status == MAX_ITER_REACHED) {
-			bc_factor -= bc_factor_increment;
-			bc_factor_increment /= 2;
-			max_iter *= 2;
-		} else {
-			if (status != 0) {
-				show_error_message(status);
-				goto CLEAN_AND_EXIT;
-			}
-
-			save_reaction_log(reaction_log, iter,
-					  MIN(1.0, bc_factor),
-					  reaction);
-			if (max_iter > 25) {
-				bc_factor_increment *= 2;
-				max_iter /= 2;
-			}
-			compute_damage(damage, faces, mesh, elem_damage,
-				       &glq, &eval_dmg);
-			save_simulation(dir_to_save, mesh, displacement,
-					elem_damage, damage, iter,
-					trim_bc_factor);
-			iter ++;
-		}
+	int status;
+	if (1) {
+		status = finite_increments_with_dynamic_step
+						(mesh, material, bcond,
+						 enable_self_weight,
+						 gravity, analysis2D,
+						 params2D, dir_to_save,
+						 displacement, strain,
+						 elem_damage, intmsh, xc,
+						 faces, SMOOTH, K, D,
+						 &glq, &eval_dmg,
+						 id_elem_monitor[0],
+						 minimize_residual_memblock);
 	}
+	if (0 != status)
+		goto EXIT;
 
 	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
 			       intmsh, xc, bcond, displacement, &glq);
+	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
 
-CLEAN_AND_EXIT:
+EXIT:
 	nb_cvfa_finish_faces(N_faces, faces);
 	nb_sparse_destroy(K);
 	nb_sparse_destroy(D);
@@ -548,6 +534,75 @@ static double subface_get_damage_pairwise(const face_t *face,
 		damage += z * dmg_data->elem_dmg[elem_id];
 	}
 	return damage;
+}
+
+static int finite_increments_with_dynamic_step
+				(const nb_mesh2D_t *const mesh,
+				 const nb_material_t *const material,
+				 const nb_bcond_t *const bcond,		     
+				 bool enable_self_weight, double gravity[2],
+				 nb_analysis2D_t analysis2D,
+				 nb_analysis2D_params *params2D,
+				 const char *dir_to_save,
+				 double *displacement, /* Output */
+				 double *strain,       /* Output */
+				 double *elem_damage,  /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces, int smooth,
+				 nb_sparse_t *K, nb_sparse_t *D,
+				 const nb_glquadrature_t *glq,
+				 const nb_cvfa_eval_damage_t *eval_dmg,
+				 uint32_t id_elem_monitor,
+				 char *minimize_residual_memblock)
+{
+	int status;
+	char reaction_log[100];
+	get_reaction_log_name(dir_to_save, reaction_log);
+	save_reaction_log(reaction_log, 0, 0, 0);
+	uint32_t iter = 0;
+	double bc_factor_increment = 0.25;
+	uint32_t max_iter = 20;
+	double bc_factor = 0;
+	while (bc_factor < 1.0) {
+		bc_factor += bc_factor_increment;
+		double reaction;
+		double trim_bc_factor = MIN(1.0, bc_factor);
+		status = minimize_residual(mesh, material, bcond,
+					   enable_self_weight, gravity,
+					   analysis2D, params2D,
+					   displacement, strain,
+					   elem_damage, intmsh, xc,
+					   faces, SMOOTH, K, D, glq,
+					   eval_dmg, trim_bc_factor,
+					   max_iter, id_elem_monitor,
+					   &reaction,
+					   minimize_residual_memblock);
+		if (status == MAX_ITER_REACHED) {
+			bc_factor -= bc_factor_increment;
+			bc_factor_increment /= 2;
+			max_iter *= 2;
+		} else {
+			if (status != 0) {
+				show_error_message(status);
+				goto EXIT;
+			}
+
+			save_reaction_log(reaction_log, iter,
+					  MIN(1.0, bc_factor),
+					  reaction);
+			if (max_iter > 25) {
+				bc_factor_increment *= 2;
+				max_iter /= 2;
+			}
+			save_simulation(dir_to_save, mesh, displacement,
+					elem_damage, iter, trim_bc_factor);
+			iter ++;
+		}
+	}
+	status = 0;
+EXIT:
+	return status;
 }
 
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
@@ -1080,14 +1135,15 @@ static void save_reaction_log(const char *logfile, uint32_t iter,
 	if (NULL == fp)
 		goto EXIT;
 
-	fprintf(fp, "%i %e %e\n", iter, factor, reaction);
+	fprintf(fp, "%i %e %e\n", iter + 1, factor, reaction);
 	fclose(fp);
 EXIT:
 	return;
 }
 
 void TEMPORAL_DRAW(const char *dir,
-		   const nb_mesh2D_t *mesh, const double *elem_damage, 
+		   const nb_mesh2D_t *mesh,
+		   const double *elem_damage, 
 		   double *face_damage, int i)
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
@@ -1115,45 +1171,52 @@ void TEMPORAL_DRAW(const char *dir,
 
 static void save_simulation(const char *dir,
 			    const nb_mesh2D_t *mesh, const double *disp,
-			    const double *elem_damage,
-			    const double *face_damage, int iter, double time)
+			    const double *elem_damage, int iter, double time)
 {
 	char name[100];
-	sprintf(name, "%s/CVFA_DMG_results_%i.log", dir, iter);
-	save_data(name, mesh, disp, elem_damage, face_damage,
-		  iter, time);
+	sprintf(name, "%s/results.nbt", dir);
 
-	TEMPORAL_DRAW(dir, mesh, elem_damage, (void*)face_damage, iter);	
-}
-
-static void save_data(const char *name,
-		      const nb_mesh2D_t *mesh,
-		      const double *disp,
-		      const double *elem_damage,
-		      const double *face_damage, int iter, double time)
-{
-	FILE *fp = fopen(name, "w");
-	if (NULL == fp)
-		goto EXIT;
+	FILE *fp;
+	if (0 == iter) {
+		fp = fopen(name, "w");
+		if (NULL == fp)
+			goto EXIT;
 	
-	fprintf(fp, "# DAMAGE CVFA SIMULATION\n");
-	fprintf(fp, "# N_ITER\n %i\n", iter);
-	fprintf(fp, "# TIME\n %e\n\n", time);
-
+		fprintf(fp, "[Numerical Bots File Format v1.0]\n");
+		fprintf(fp, "Class = mesh2D_field\n");
+		fprintf(fp, "Type = %s\n\n", nb_mesh2D_get_type_string(mesh));
+		fprintf(fp, "N_nodes = %i\n", nb_mesh2D_get_N_nodes(mesh));
+		fprintf(fp, "N_edges = %i\n", nb_mesh2D_get_N_edges(mesh));
+		fprintf(fp, "N_elems = %i\n", nb_mesh2D_get_N_elems(mesh));
+	} else {
+		fp = fopen(name, "a");
+		if (NULL == fp)
+			goto EXIT;
+	}
+	fprintf(fp, "\n");
+	
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	fprintf(fp, "# N_ELEMS\n %i\n", N_elems);
-	fprintf(fp, "# DISPLACEMENT\n");
-	for (uint32_t i = 0; i < N_elems; i++)
-		fprintf(fp, "%e %e\n", disp[i * 2], disp[i*2+1]);
-	fprintf(fp, "# DAMAGE (ELEMENT INTEGRAL)\n");
-	for (uint32_t i = 0; i < N_elems; i++)
-		fprintf(fp, "%e\n", elem_damage[i]);
 
-	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
-	fprintf(fp, "# N_FACES\n %i\n", N_faces);
-	fprintf(fp, "# DAMAGE (FACE INTEGRAL)\n");
-	for (uint32_t i = 0; i < N_faces; i++)
-		fprintf(fp, "%e\n", face_damage[i]);
+	fprintf(fp, "Step = %i\n", iter + 1);
+	fprintf(fp, "  Time = %e\n\n", time);
+	fprintf(fp, "  Field\n");
+	fprintf(fp, "    Type = Vector\n");
+	fprintf(fp, "    Name = \"Displacement\"\n");
+	fprintf(fp, "    Data\n");
+	for (uint32_t i = 0; i < N_elems; i++)
+		fprintf(fp, "      %i <- [%e, %e]\n", i + 1,
+			disp[i * 2], disp[i*2+1]);
+	fprintf(fp, "    End Data\n");
+	fprintf(fp, "  End Field\n\n");
+	fprintf(fp, "  Field\n");
+	fprintf(fp, "    Type = Scalar\n");
+	fprintf(fp, "    Name = \"Damage\"\n");
+	fprintf(fp, "    Data\n");
+	for (uint32_t i = 0; i < N_elems; i++)
+		fprintf(fp, "      %i <- %e\n", i + 1, elem_damage[i]);
+	fprintf(fp, "    End Data\n");
+	fprintf(fp, "  End Field\n");
+	fprintf(fp, "End Step\n");
 
 	fclose(fp);
 EXIT:
@@ -1239,4 +1302,40 @@ void nb_cvfa_compute_stress_from_damage_and_strain
 			(strain[i * 3] * D[1] + strain[i*3+1] * D[2]);
 		stress[i*3+2] = (1 - damage[i]) * strain[i*3+2] * D[3];
 	}
+}
+
+int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
+				   const char *dir_output)
+{
+	char name[100];
+	sprintf(name, "%s/mesh.nbt", dir_saved_results);
+	nb_mesh2D_type mesh_type;
+	int status = nb_mesh2D_read_type_nbt(name, &mesh_type);
+	if (0 != status)
+		goto EXIT;
+
+	uint32_t mesh_memsize = nb_mesh2D_get_memsize(mesh_type);
+	nb_mesh2D_t *mesh = nb_soft_allocate_mem(mesh_memsize);
+	nb_mesh2D_init(mesh, mesh_type);
+	status = nb_mesh2D_read_nbt(mesh, name);
+	if (0 != status)
+		goto EXIT;
+
+	nb_cfreader_t *cfr = nb_cfreader_create();
+
+	sprintf(name, "%s/results.nbt", dir_saved_results);
+	status = read_header(cfr, mesh);
+	if (0 != status)
+		goto EXIT;
+
+EXIT:
+	nb_mesh2D_finish(mesh);
+	nb_soft_free_mem(mesh_memsize, mesh);
+	nb_cfreader_destroy(cfr);
+	return status;
+}
+
+static int read_header(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh)
+{
+	return 1;
 }
