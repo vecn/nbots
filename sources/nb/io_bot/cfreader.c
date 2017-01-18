@@ -14,12 +14,15 @@
 #define READ_VAR_TOKEN_MAX_SIZE 20
 
 static void init_bool_tokens(nb_cfreader_t *cfr);
+static void init_string_tokens(nb_cfreader_t *cfr);
 static int get_next_line(nb_cfreader_t* cfr);
 static void set_end_of_line(nb_cfreader_t* cfr);
 static void set_end_of_line_if_comment(nb_cfreader_t* cfr);
 static void trim_start_of_line(nb_cfreader_t* cfr);
 static void forward_pointer_in_the_line(nb_cfreader_t *cfr);
 static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val);
+static int get_string_value(nb_cfreader_t *cfr, char *line,
+			    char *string);
 static int trim_end_of_string(char *string, int size);
 
 struct nb_cfreader_s {
@@ -32,8 +35,7 @@ struct nb_cfreader_s {
 	const char *lc_token[MAX_LINE_COMMENT_TOKENS];
 	const char *assign_token[MAX_ASSIGNMENT_TOKENS];
 	const char *bool_tokens[8];
-	char open_string_token;
-	char close_string_token;
+	const char *string_tokens[4];
 	FILE *fp;
 	char buffer[LINE_LENGTH];
 	char* line;
@@ -50,8 +52,7 @@ void nb_cfreader_init(nb_cfreader_t *cfr)
 	cfr->N_lct = 0;
 	cfr->N_assign = 0;
 	init_bool_tokens(cfr);
-	cfr->open_string_token  = '\"';
-	cfr->close_string_token = '\"';
+	init_string_tokens(cfr);
 	cfr->fp = NULL;
 	cfr->buffer[0] = '\0';
 	cfr->line = cfr->buffer;
@@ -68,6 +69,14 @@ static void init_bool_tokens(nb_cfreader_t *cfr)
 	cfr->bool_tokens[5] = "F";
 	cfr->bool_tokens[6] = "1";
 	cfr->bool_tokens[7] = "0";
+}
+
+static void init_string_tokens(nb_cfreader_t *cfr)
+{
+	cfr->string_tokens[0] = "\"";
+	cfr->string_tokens[1] = "\"";
+	cfr->string_tokens[2] = "'";
+	cfr->string_tokens[3] = "'";
 }
 
 nb_cfreader_t* nb_cfreader_create(void)
@@ -275,67 +284,64 @@ static int cast_bool(nb_cfreader_t *cfr, const char *string, bool *val)
 	return status;
 }
 
-char* nb_cfreader_read_and_allocate_string(nb_cfreader_t* cfr)
+int nb_cfreader_read_string(nb_cfreader_t *cfr, char *val)
 {
-	char* string = NULL;
+	int status = 1;
 	if (cfr->fp == NULL)
 		goto EXIT;
 
 	if (strlen(cfr->line) == 0)
 		get_next_line(cfr);
-	/* Allocate and read string */
-	bool throw_open_warning = false;
-	if (cfr->line[0] != cfr->open_string_token)
-		throw_open_warning = true;
-	else
-		cfr->line = &(cfr->line[1]);
 
-	char* ptr = cfr->line;
-	uint32_t char_counter = 0;
-	bool throw_close_warning = false;
-	while (ptr[0] != cfr->close_string_token) {
-		if (ptr[0] == '\0') {
-			throw_close_warning = true;
-			break;
-		}
-		char_counter ++;
-		ptr = &(ptr[1]);
-	}
+	status = get_string_value(cfr, cfr->line, val);
+	if (0 != status)
+		goto EXIT;
 
-	if (char_counter > 0) {
-		string = nb_allocate_mem(char_counter+1);
-		memcpy(string, cfr->line, char_counter);
-		string[char_counter] = '\0';
-		cfr->line = &(cfr->line[char_counter]);
-		/* Throw warnings */
-		if (throw_open_warning && throw_close_warning) {
-			printf("WARNING nb_cfreader: ");
-			printf("Missing open/close tokens '%c/%c' of string '%s' at line %i.\n",
-			       cfr->open_string_token,
-			       cfr->close_string_token,
-			       string,
-			       cfr->line_counter);
-		} else if (throw_open_warning) {
-			printf("WARNING nb_cfreader: ");
-			printf("Missing open token '%c' of string '%s' at line %i.\n",
-			       cfr->open_string_token,
-			       string,
-			       cfr->line_counter);
-		} else if (throw_close_warning) {
-			printf("WARNING nb_cfreader: ");
-			printf("Missing close token '%c' of string '%s' at line %i.\n",
-			       cfr->close_string_token,
-			       string,
-			       cfr->line_counter);
-		}
-	}
-	if (ptr[0] == cfr->close_string_token)
-		cfr->line = &(cfr->line[1]);
-  
 	forward_pointer_in_the_line(cfr);
-
+	status = 0;
 EXIT:
-	return string;
+	return status;
+
+}
+
+static int get_string_value(nb_cfreader_t *cfr, char *line,
+			    char *string)
+{
+	char *pch_open = NULL;
+	int token_id = 0;
+	for (int i = 0; i < 2; i++) {
+		char *aux;
+		aux = strstr(line, cfr->string_tokens[i * 2]);
+		if (aux != NULL) {
+			if (pch_open != NULL) {
+				if (aux < pch_open) {
+					token_id = i;
+					pch_open = aux;
+				}
+			} else {
+				token_id = i;
+				pch_open = aux;
+			}
+		}
+	}
+	int status = 1;
+	if (NULL == pch_open)
+		goto EXIT;
+
+	int len = strlen(cfr->string_tokens[token_id*2]);
+	pch_open += len;
+
+	char *pch_close = strstr(pch_open, cfr->string_tokens[token_id*2+1]);
+	if (NULL == pch_close)
+		goto EXIT;
+	
+	pch_close[0] = '\0';
+
+	strcpy(string, pch_open);
+
+	status = 0;
+EXIT:
+	return status;
 }
 
 int nb_cfreader_read_token(nb_cfreader_t *cfr, char *val)
@@ -525,6 +531,41 @@ int nb_cfreader_read_var_bool(nb_cfreader_t *cfr, const char *var, bool *val)
 		goto EXIT;
 
 	status = cast_bool(cfr, val_readed, val);
+EXIT:
+	return status;
+}
+
+
+int nb_cfreader_read_var_token(nb_cfreader_t *cfr, const char *var, char *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+	
+	strcpy(val, val_readed);
+EXIT:
+	return status;
+}
+
+int nb_cfreader_read_var_string(nb_cfreader_t *cfr, const char *var, char *val)
+{
+	char var_readed[READ_VAR_TOKEN_MAX_SIZE];
+	char val_readed[READ_VAR_TOKEN_MAX_SIZE];
+	int status = nb_cfreader_read_tuple(cfr, var_readed, val_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = 1;
+	if (0 != strcmp(var_readed, var))
+		goto EXIT;
+	
+	status = get_string_value(cfr, val_readed, val);
 EXIT:
 	return status;
 }

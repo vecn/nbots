@@ -214,7 +214,9 @@ static void get_internal_face_damage(double *damage,
 static void get_boundary_face_damage(double *damage, face_t **faces,
 				     uint32_t face_id);
 static void finish_eval_dmg(nb_cvfa_eval_damage_t * eval_dmg);
-static int read_header(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh);
+static int check_header(nb_cfreader_t *cfr);
+static int check_mesh_correspondence(nb_cfreader_t *cfr,
+				     const nb_mesh2D_t *mesh);
 
 int nb_cvfa_compute_2D_damage_phase_field
 			(const nb_mesh2D_t *const mesh,
@@ -1127,7 +1129,7 @@ static void save_reaction_log(const char *logfile, uint32_t iter,
 			      double factor, double reaction)
 {
 	FILE *fp;
-	if (0 == iter)
+	if (factor < 1e-12)
 		fp = fopen(logfile, "w");
 	else
 		fp = fopen(logfile, "a");
@@ -1182,7 +1184,7 @@ static void save_simulation(const char *dir,
 		if (NULL == fp)
 			goto EXIT;
 	
-		fprintf(fp, "[Numerical Bots File Format v1.0]\n");
+		fprintf(fp, "%s\n", NB_NBT_FILE_FORMAT_HEADER);
 		fprintf(fp, "Class = mesh2D_field\n");
 		fprintf(fp, "Type = %s\n\n", nb_mesh2D_get_type_string(mesh));
 		fprintf(fp, "N_nodes = %i\n", nb_mesh2D_get_N_nodes(mesh));
@@ -1325,7 +1327,10 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 	nb_cfreader_load_nbt_format(cfr);
 
 	sprintf(name, "%s/results.nbt", dir_saved_results);
-	status = read_header(cfr, mesh);
+	status = check_header(cfr);
+	if (0 != status)
+		goto EXIT;
+	status = check_mesh_correspondence(cfr, mesh);
 	if (0 != status)
 		goto EXIT;
 
@@ -1336,7 +1341,62 @@ EXIT:
 	return status;
 }
 
-static int read_header(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh)
+static int check_header(nb_cfreader_t *cfr)
 {
-	;
+	char class[50];
+	int status = nb_cfreader_nbt_check_header(cfr, class);
+	if (0 != status)
+		goto EXIT;
+
+	if (0 != strcmp(class, "mesh2D_field"))
+		status = 1;
+EXIT:
+	return status;
+}
+
+static int check_mesh_correspondence(nb_cfreader_t *cfr,
+				     const nb_mesh2D_t *mesh)
+{
+	char var[50];
+	int status = nb_cfreader_read_var_string(cfr, "Type", var);
+	if (0 != status)
+		goto EXIT;
+
+	const char *mesh_type = nb_mesh2D_get_type_string(mesh);
+	if (0 != strcmp(var, mesh_type)) {
+		status = 1;
+		goto EXIT;
+	}
+	
+	uint32_t N;
+	status = nb_cfreader_read_var_uint(cfr, "N_nodes", &N);
+	if (0 != status)
+		goto EXIT;
+
+	if (N != nb_mesh2D_get_N_nodes(mesh)) {
+		status = 1;
+		goto EXIT;
+	}
+
+	status = nb_cfreader_read_var_uint(cfr, "N_edges", &N);
+	if (0 != status)
+		goto EXIT;
+
+	if (N != nb_mesh2D_get_N_edges(mesh)) {
+		status = 1;
+		goto EXIT;
+	}
+
+	status = nb_cfreader_read_var_uint(cfr, "N_elems", &N);
+	if (0 != status)
+		goto EXIT;
+
+	if (N != nb_mesh2D_get_N_elems(mesh)) {
+		status = 1;
+		goto EXIT;
+	}
+	status = 0;
+EXIT:
+	return status;
+
 }

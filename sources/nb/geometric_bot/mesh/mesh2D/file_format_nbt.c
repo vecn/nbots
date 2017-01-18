@@ -11,8 +11,6 @@
 #include "elements2D/mshpoly_file_format_nbt.h"
 #include "elements2D/mshpack_file_format_nbt.h"
 
-#define NBT_FILE_FORMAT_HEADER "[Numerical Bots File Format v1.0]"
-
 typedef struct {
 	void (*write_data)(FILE *fp, const void *msh);
 	int (*read_data)(nb_cfreader_t *cfr, void *msh);
@@ -24,7 +22,6 @@ static void set_mshquad_interface(nbt_io *io);
 static void set_mshpoly_interface(nbt_io *io);
 static void set_mshpack_interface(nbt_io *io);
 static void write_header(FILE *fp, const nb_mesh2D_t *mesh);
-static void init_format_tokens(nb_cfreader_t *cfr);
 static int check_header(nb_cfreader_t *cfr);
 static int read_type(nb_cfreader_t *cfr, nb_mesh2D_type *type);
 
@@ -91,7 +88,7 @@ static void set_mshpack_interface(nbt_io *io)
 
 static void write_header(FILE *fp, const nb_mesh2D_t *mesh)
 {
-	fprintf(fp, "%s\n", NBT_FILE_FORMAT_HEADER);
+	fprintf(fp, "%s\n", NB_NBT_FILE_FORMAT_HEADER);
 	fprintf(fp, "Class = mesh2D\n");
 	const char *type = nb_mesh2D_get_type_string(mesh);
 	fprintf(fp, "Type = %s\n\n", type);	
@@ -100,7 +97,7 @@ static void write_header(FILE *fp, const nb_mesh2D_t *mesh)
 int nb_mesh2D_read_type_nbt(const char *name, nb_mesh2D_type *type)
 {
 	nb_cfreader_t *cfr = nb_cfreader_create();
-	init_format_tokens(cfr);
+	nb_cfreader_load_nbt_format(cfr);
 	int status = nb_cfreader_open_file(cfr, name);
 	if (status != 0)
 		goto EXIT;
@@ -121,21 +118,15 @@ EXIT:
 	return status;
 }
 
-static void init_format_tokens(nb_cfreader_t *cfr)
-{
-	nb_cfreader_add_line_comment_token(cfr, "#");
-	nb_cfreader_add_line_comment_token(cfr, "//");
-	nb_cfreader_add_assignment_token(cfr, "=");
-	nb_cfreader_add_assignment_token(cfr, "<-");
-}
-
 static int check_header(nb_cfreader_t *cfr)
 {
-	int status = nb_cfreader_check_line(cfr, NBT_FILE_FORMAT_HEADER);
+	char class[50];
+	int status = nb_cfreader_nbt_check_header(cfr, class);
 	if (0 != status)
 		goto EXIT;
 
-	status = nb_cfreader_check_line(cfr, "Class = mesh2D");
+	if (0 != strcmp(class, "mesh2D"))
+		status = 1;
 EXIT:
 	return status;
 }
@@ -170,7 +161,7 @@ EXIT:
 int nb_mesh2D_read_nbt(nb_mesh2D_t *mesh, const char *name)
 {
 	nb_cfreader_t *cfr = nb_cfreader_create();
-	init_format_tokens(cfr);
+	nb_cfreader_load_nbt_format(cfr);
 	int status = nb_cfreader_open_file(cfr, name);
 	if (status != 0)
 		goto EXIT;
