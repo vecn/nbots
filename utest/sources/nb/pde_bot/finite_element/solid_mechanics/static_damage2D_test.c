@@ -9,7 +9,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
-#include "nb/cfreader_cat.h"
+#include "nb/io_bot.h"
 #include "nb/geometric_bot.h"
 #include "nb/pde_bot.h"
 /*#include "nb/pde_bot/common_solid_mechanics/analysis2D.h"
@@ -295,8 +295,10 @@ static int damage_read_problem_data(const char* filename, nb_model_t *model,
 {
 	int status = 1;
 	/* Initialize custom format to read file */
-	nb_cfreader_t* cfreader = nb_cfreader_create(filename, "#");
-	if (NULL == cfreader) {
+	nb_cfreader_t* cfreader = nb_cfreader_create();
+	nb_cfreader_add_line_comment_token(cfreader, "#");
+	status = nb_cfreader_open_file(cfreader, filename);
+	if (0 != status) {
 		printf("\nERROR: Can not open file %s.\n",
 		       filename);
 		goto EXIT;
@@ -323,6 +325,7 @@ static int damage_read_problem_data(const char* filename, nb_model_t *model,
 	}
 	status = 0;
 EXIT:
+	nb_cfreader_close_file(cfreader);
     nb_cfreader_destroy(cfreader);
 	return status;
 }

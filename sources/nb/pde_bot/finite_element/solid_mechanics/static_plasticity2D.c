@@ -7,7 +7,7 @@
 
 #include "nb/memory_bot.h"
 #include "nb/math_bot.h"
-#include "nb/cfreader_cat.h"
+#include "nb/io_bot.h"
 #include "nb/solver_bot.h"
 #include "nb/container_bot.h"
 #include "nb/graph_bot.h"
