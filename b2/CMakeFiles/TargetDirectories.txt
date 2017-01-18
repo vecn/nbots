@@ -1,5 +1,0 @@
-/home/victor/repos/nbots/b2/CMakeFiles/nbots_static.dir
-/home/victor/repos/nbots/b2/CMakeFiles/objlib.dir
-/home/victor/repos/nbots/b2/CMakeFiles/nbots.dir
-/home/victor/repos/nbots/b2/CMakeFiles/cunit.dir
-/home/victor/repos/nbots/b2/CMakeFiles/utests.dir
