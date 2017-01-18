@@ -317,7 +317,7 @@ int nb_mshpoly_read_data_nbt(nb_cfreader_t *cfr, void *msh_ptr)
 	if (0 != status)
 		goto EXIT;
 
-	status = NB_MSHPOLY_SUCCESS;
+	status = NB_MSHPOLY_READ_SUCCESS;
 EXIT:
 	if (0 != status) {
 		if (NULL != msh->nod) {
@@ -336,35 +336,35 @@ static int read_header(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 	uint32_t N;
 	int status = nb_cfreader_read_var_uint(cfr, NNODES_VARNAME, &N);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NNODES_VARNAME;
+		status = NB_MSHPOLY_READ_ERROR_NNODES_VARNAME;
 		goto EXIT;
 	}
 	msh->N_nod = N;
 
 	status = nb_cfreader_read_var_uint(cfr, NEDGES_VARNAME, &N);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NEDGES_VARNAME;
+		status = NB_MSHPOLY_READ_ERROR_NEDGES_VARNAME;
 		goto EXIT;
 	}
 	msh->N_edg = N;
 
 	status = nb_cfreader_read_var_uint(cfr, NELEMS_VARNAME, &N);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NELEMS_VARNAME;
+		status = NB_MSHPOLY_READ_ERROR_NELEMS_VARNAME;
 		goto EXIT;
 	}
 	msh->N_elems = N;
 
 	status = nb_cfreader_read_var_uint(cfr, NINVTX_VARNAME, &N);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NINVTX_VARNAME;
+		status = NB_MSHPOLY_READ_ERROR_NINVTX_VARNAME;
 		goto EXIT;
 	}
 	msh->N_vtx = N;
 
 	status = nb_cfreader_read_var_uint(cfr, NINSGM_VARNAME, &N);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NINSGM_VARNAME;
+		status = NB_MSHPOLY_READ_ERROR_NINSGM_VARNAME;
 		goto EXIT;
 	}
 	msh->N_sgm = N;
@@ -377,7 +377,7 @@ static int read_nodes(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, NODES_OPEN_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NODES_OPEN_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_NODES_OPEN_SECTION;
 		goto EXIT;
 	}
 
@@ -385,14 +385,14 @@ static int read_nodes(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		double val;
 		status = nb_cfreader_read_double(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_NODES_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_NODES_BAD_INPUT;
 			goto EXIT;
 		}
 		msh->nod[i * 2] = val;
 
 		status = nb_cfreader_read_double(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_NODES_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_NODES_BAD_INPUT;
 			goto EXIT;
 		}
 		msh->nod[i*2+1] = val;
@@ -400,7 +400,7 @@ static int read_nodes(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, NODES_CLOSE_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_NODES_CLOSE_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_NODES_CLOSE_SECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -411,7 +411,7 @@ static int read_edges(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, EDGES_OPEN_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_EDGES_OPEN_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_EDGES_OPEN_SECTION;
 		goto EXIT;
 	}
 
@@ -419,22 +419,22 @@ static int read_edges(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		uint32_t val;
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_EDGES_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_EDGES_BAD_INPUT;
 			goto EXIT;
 		}
 		if (0 == val || val > msh->N_nod) {
-			status = NB_ERROR_MSHPOLY_READ_EDGES_OUT_OF_RANGE;
+			status = NB_MSHPOLY_READ_ERROR_EDGES_OUT_OF_RANGE;
 			goto EXIT;
 		}
 		msh->edg[i * 2] = val - 1;
 
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_EDGES_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_EDGES_BAD_INPUT;
 			goto EXIT;
 		}
 		if (0 == val || val > msh->N_nod) {
-			status = NB_ERROR_MSHPOLY_READ_EDGES_OUT_OF_RANGE;
+			status = NB_MSHPOLY_READ_ERROR_EDGES_OUT_OF_RANGE;
 			goto EXIT;
 		}
 		msh->edg[i*2+1] = val - 1;
@@ -442,7 +442,7 @@ static int read_edges(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, EDGES_CLOSE_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_EDGES_CLOSE_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_EDGES_CLOSE_SECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -453,7 +453,7 @@ static int read_elems(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, ELEMS_OPEN_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_OPEN_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_OPEN_SECTION;
 		goto EXIT;
 	}
 	status = read_elems_centroids(cfr, msh);
@@ -474,7 +474,7 @@ static int read_elems(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, ELEMS_CLOSE_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_CLOSE_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_CLOSE_SECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -485,7 +485,7 @@ static int read_elems_centroids(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, ELEMS_CEN_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_CEN_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_CEN_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
@@ -493,21 +493,21 @@ static int read_elems_centroids(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		double val;
 		status = nb_cfreader_read_double(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_ELEMS_CEN_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_ELEMS_CEN_BAD_INPUT;
 			goto EXIT;
 		}
 		msh->cen[i * 2] = val;
 
 		status = nb_cfreader_read_double(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_ELEMS_CEN_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_ELEMS_CEN_BAD_INPUT;
 			goto EXIT;
 		}
 		msh->cen[i*2+1] = val;
 	}
 	status = nb_cfreader_check_line(cfr, ELEMS_CEN_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_CEN_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_CEN_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -518,7 +518,7 @@ static int read_elems_N_sides(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, ELEMS_NSIDES_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NSIDES_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
@@ -526,11 +526,11 @@ static int read_elems_N_sides(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		uint32_t val;
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_ELEMS_NSIDES_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_BAD_INPUT;
 			goto EXIT;
 		}
 		if (0 == val) {
-			status = NB_ERROR_MSHPOLY_READ_ELEMS_NSIDES_OUT_RANGE;
+			status = NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_OUT_RANGE;
 			goto EXIT;
 		}
 		msh->N_adj[i] = val;
@@ -538,7 +538,7 @@ static int read_elems_N_sides(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, ELEMS_NSIDES_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NSIDES_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -549,7 +549,7 @@ static int read_elems_adj(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, ELEMS_ADJ_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_ADJ_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
@@ -563,7 +563,7 @@ static int read_elems_adj(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, ELEMS_ADJ_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_ADJ_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -576,11 +576,11 @@ static int read_elems_adj_id(nb_cfreader_t *cfr, nb_mshpoly_t *msh,
 	uint32_t val;
 	int status = nb_cfreader_read_uint(cfr, &val);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_ADJ_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_BAD_INPUT;
 		goto EXIT;
 	}
 	if (0 == val || val > msh->N_nod) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NSIDES_OUT_RANGE;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_OUT_RANGE;
 		goto EXIT;
 	}
 	msh->adj[i][j] = val - 1;
@@ -593,7 +593,7 @@ static int read_elems_ngb(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, ELEMS_NGB_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NGB_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NGB_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
@@ -607,7 +607,7 @@ static int read_elems_ngb(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, ELEMS_NGB_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NGB_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NGB_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -620,7 +620,7 @@ static int read_elems_ngb_id(nb_cfreader_t *cfr, nb_mshpoly_t *msh,
 	uint32_t val;
 	int status = nb_cfreader_read_uint(cfr, &val);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NGB_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NGB_BAD_INPUT;
 		goto EXIT;
 	}
 
@@ -629,7 +629,7 @@ static int read_elems_ngb_id(nb_cfreader_t *cfr, nb_mshpoly_t *msh,
 	} else if (val <= msh->N_elems) {
 		msh->ngb[i][j] = val - 1;
 	} else {
-		status = NB_ERROR_MSHPOLY_READ_ELEMS_NGB_OUT_RANGE;
+		status = NB_MSHPOLY_READ_ERROR_ELEMS_NGB_OUT_RANGE;
 		goto EXIT;
 	}
 	status = 0;
@@ -644,11 +644,11 @@ static int read_invtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		if (msh->N_vtx == 0)
 			status = 0;
 		else
-			status = NB_ERROR_MSHPOLY_READ_INVTX_OPEN_SECTION;
+			status = NB_MSHPOLY_READ_ERROR_INVTX_OPEN_SECTION;
 		goto EXIT;
 	} else {
 		if (msh->N_vtx == 0) {
-			status = NB_ERROR_MSHPOLY_READ_INVTX_NOT_DEFINED;
+			status = NB_MSHPOLY_READ_ERROR_INVTX_NOT_DEFINED;
 			goto EXIT;
 		}
 
@@ -662,7 +662,7 @@ static int read_invtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, INVTX_CLOSE_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_CLOSE_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_CLOSE_SECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -675,26 +675,26 @@ static int read_invtx_node(nb_cfreader_t *cfr, nb_mshpoly_t *msh, uint32_t i)
 	char val2[15];
 	int status = nb_cfreader_read_tuple(cfr, val1, val2);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_BAD_INPUT;
 		goto EXIT;
 	}
 		
 	char *pch;
 	unsigned int N = strtoul(val1, &pch, 10);
 	if (pch == val1) {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_BAD_INPUT;
 		goto EXIT;
 	}
 
 	if (0 == N || N > msh->N_vtx) {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_OUT_OF_RANGE;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_OUT_OF_RANGE;
 		goto EXIT;
 	}
 	uint32_t id = N-1;
 
 	N = strtoul(val2, &pch, 10);
 	if (pch == val1) {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_BAD_INPUT;
 		goto EXIT;
 	}
 
@@ -703,7 +703,7 @@ static int read_invtx_node(nb_cfreader_t *cfr, nb_mshpoly_t *msh, uint32_t i)
 	} else if (0 == N) {
 		msh->vtx[id] = msh->N_nod;
 	} else {
-		status = NB_ERROR_MSHPOLY_READ_INVTX_OUT_OF_RANGE;
+		status = NB_MSHPOLY_READ_ERROR_INVTX_OUT_OF_RANGE;
 		goto EXIT;
 	}
 	status = 0;
@@ -718,11 +718,11 @@ static int read_insgm(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		if (msh->N_sgm == 0)
 			status = 0;
 		else
-			status = NB_ERROR_MSHPOLY_READ_INSGM_OPEN_SECTION;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_OPEN_SECTION;
 		goto EXIT;
 	} else {
 		if (msh->N_sgm == 0) {
-			status = NB_ERROR_MSHPOLY_READ_INSGM_NOT_DEFINED;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_NOT_DEFINED;
 			goto EXIT;
 		}
 
@@ -740,7 +740,7 @@ static int read_insgm(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, INSGM_CLOSE_SECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_CLOSE_SECTION;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_CLOSE_SECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -751,7 +751,7 @@ static int read_insgm_size(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, INSGM_SIZE_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_SIZE_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_SIZE_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
@@ -759,7 +759,7 @@ static int read_insgm_size(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		uint32_t val;
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_INSGM_SIZE_BAD_INPUT;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_SIZE_BAD_INPUT;
 			goto EXIT;
 		}
 
@@ -768,7 +768,7 @@ static int read_insgm_size(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 
 	status = nb_cfreader_check_line(cfr, INSGM_SIZE_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_SIZE_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_SIZE_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -780,14 +780,14 @@ static int read_insgm_idvtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
 	int status = nb_cfreader_check_line(cfr, INSGM_IDNODE_OPEN_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_OPEN_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_OPEN_SUBSECTION;
 		goto EXIT;
 	}
 
 	for (uint32_t i = 0; i < msh->N_sgm; i++) {
 		int status = nb_cfreader_check_token(cfr, "[");
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_BAD_OPEN_BRK;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_OPEN_BRK;
 			goto EXIT;
 		}
 		for (uint32_t j = 0; j < msh->N_nod_x_sgm[i]; j++) {
@@ -797,14 +797,14 @@ static int read_insgm_idvtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		}
 		status = nb_cfreader_check_token(cfr, "]");
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_BAD_CLOSE_BRK;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_CLOSE_BRK;
 			goto EXIT;
 		}
 	}
 
 	status = nb_cfreader_check_line(cfr, INSGM_IDNODE_CLOSE_SUBSECTION);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_CLOSE_SUBSECTION;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_CLOSE_SUBSECTION;
 		goto EXIT;
 	}
 EXIT:
@@ -818,19 +818,19 @@ static int read_insgm_idvtx_node(nb_cfreader_t *cfr, nb_mshpoly_t *msh,
 	if (j > 0) {
 		status = nb_cfreader_check_token(cfr, "->");
 		if (0 != status) {
-			status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_BAD_LINK;
+			status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_LINK;
 			goto EXIT;
 		}
 	}
 	uint32_t val;
 	status = nb_cfreader_read_uint(cfr, &val);
 	if (0 != status) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_BAD_INPUT;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_INPUT;
 		goto EXIT;
 	}
 
 	if (0 == val || val > msh->N_nod) {
-		status = NB_ERROR_MSHPOLY_READ_INSGM_IDS_OUT_OF_RANGE;
+		status = NB_MSHPOLY_READ_ERROR_INSGM_IDS_OUT_OF_RANGE;
 		goto EXIT;
 	}
 
@@ -842,5 +842,159 @@ EXIT:
 
 void nb_mshpoly_get_error_message(int error, char **msg)
 {
-	*msg = "HOla";
+	switch (error) {
+	case NB_MSHPOLY_READ_SUCCESS:
+		*msg = "Success";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NNODES_VARNAME:
+		*msg = NNODES_VARNAME		\
+			" is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NEDGES_VARNAME:
+		*msg = NEDGES_VARNAME		\
+			" is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NELEMS_VARNAME:
+		*msg = NELEMS_VARNAME		\
+			" is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NINVTX_VARNAME:
+		*msg = NINVTX_VARNAME		\
+			" is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NINSGM_VARNAME:
+		*msg = NINSGM_VARNAME		\
+			" is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NODES_OPEN_SECTION:
+		*msg = "Nodes section opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NODES_BAD_INPUT:
+		*msg = "Bad coordinates definition in nodes section";
+		break;
+	case NB_MSHPOLY_READ_ERROR_NODES_CLOSE_SECTION:
+		*msg = "Nodes section closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_EDGES_OPEN_SECTION:
+		*msg = "Edges section opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_EDGES_BAD_INPUT:
+		*msg = "Bad node ID definition in edges section";
+		break;
+	case NB_MSHPOLY_READ_ERROR_EDGES_OUT_OF_RANGE:
+		*msg = "Node ID is out of range in edges section";
+		break;
+	case NB_MSHPOLY_READ_ERROR_EDGES_CLOSE_SECTION:
+		*msg = "Edges section closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_OPEN_SECTION:
+		*msg = "Elements section opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_CEN_OPEN_SUBSECTION:
+		*msg = "Elements centroids subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_CEN_BAD_INPUT:
+		*msg = "Bad coordinates in elements centroids subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_CEN_CLOSE_SUBSECTION:
+		*msg = "Elements centroids subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_OPEN_SUBSECTION:
+		*msg = "Elements N-sides subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_BAD_INPUT:
+		*msg = "Bad N-sides definition in elements N-sides subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_OUT_RANGE:
+		*msg = "N-sides is out of range in elements N-sides subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NSIDES_CLOSE_SUBSECTION:
+		*msg = "Elements N-sides subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_OPEN_SUBSECTION:
+		*msg = "Elements adjacencies subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_BAD_INPUT:
+		*msg = "Bad node ID definition in elements adj. subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_OUT_RANGE:
+		*msg = "Node ID is out of range in elements adj. subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_ADJ_CLOSE_SUBSECTION:
+		*msg = "Elements adjacencies subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NGB_OPEN_SUBSECTION:
+		*msg = "Elements neighbors subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NGB_BAD_INPUT:
+		*msg = "Bad elem. ID definition in elem. neighbors subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NGB_OUT_RANGE:
+		*msg = "Elem. ID is out of range in elem. neighbor subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_NGB_CLOSE_SUBSECTION:
+		*msg = "Elements neighbors subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_ELEMS_CLOSE_SECTION:
+		*msg = "Elements section closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INVTX_OPEN_SECTION:
+		*msg = "Input vertices section opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INVTX_NOT_DEFINED:
+		*msg = "Input vertices section exists but "	\
+			NINVTX_VARNAME				\
+			" = 0";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INVTX_BAD_INPUT:
+		*msg = "Bad node ID definition in input vertices section";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INVTX_OUT_OF_RANGE:
+		*msg = "Node ID is out of range in input vertices section";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INVTX_CLOSE_SECTION:
+		*msg = "Input vertices section closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_OPEN_SECTION:
+		*msg = "Input segments section opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_NOT_DEFINED:
+		*msg = "Input segment section exists but "	\
+			NINSGM_VARNAME				\
+			" = 0";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_SIZE_OPEN_SUBSECTION:
+		*msg = "Input segments size subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_SIZE_BAD_INPUT:
+		*msg = "Bad size definition in input sgm size subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_SIZE_CLOSE_SUBSECTION:
+		*msg = "Input segments size subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_OPEN_SUBSECTION:
+		*msg = "Input segments IDs subsection opening is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_OUT_OF_RANGE:
+		*msg = "Node ID is out of range in input sgm IDs subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_OPEN_BRK:
+		*msg = "List opening is not def. in input sgm IDs subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_INPUT:
+		*msg = "Bad node ID definition in input sgm IDs subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_LINK:
+		*msg = "Bad link definition in input sgm IDs subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_BAD_CLOSE_BRK:
+		*msg = "List closing is not def. in input sgm IDs subsection";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_IDS_CLOSE_SUBSECTION:
+		*msg = "Input segments IDs subsection closing is not defined";
+		break;
+	case NB_MSHPOLY_READ_ERROR_INSGM_CLOSE_SECTION:
+		*msg = "Input segments section closing is not defined";
+		break;
+	}
 }
