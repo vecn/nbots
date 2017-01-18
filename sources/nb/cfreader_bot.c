@@ -529,9 +529,9 @@ EXIT:
 	return status;
 }
 
-bool nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
+int nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
 {
-	bool out = false;
+	int out = 1;
 	if (cfr->fp == NULL)
 		goto EXIT;
 
@@ -540,26 +540,26 @@ bool nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line)
 
 	trim_end_of_string(cfr->line, strlen(cfr->line));
 
-	out = (0 == strcmp(cfr->line, line));
+	out = strcmp(cfr->line, line);
 
-	if (out)
+	if (0 == out)
 		get_next_line(cfr);
 EXIT:
 	return out;
 }
 
-bool nb_cfreader_check_token(nb_cfreader_t *cfr, const char *token)
+int nb_cfreader_check_token(nb_cfreader_t *cfr, const char *token)
 {
-	bool out = false;
+	int out = 1;
 	if (cfr->fp == NULL)
 		goto EXIT;
 
 	if (strlen(cfr->line) == 0)
 		get_next_line(cfr);
 
-	out = (0 == strcmp(cfr->line, token));
+	out = strncmp(cfr->line, token, strlen(token));
 
-	if (out) {
+	if (0 == out) {
 		int len = strlen(token);
 		cfr->line += len;
 		forward_pointer_in_the_line(cfr);

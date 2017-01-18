@@ -28,8 +28,8 @@ int nb_cfreader_read_var_float(nb_cfreader_t *cfr, const char *var, float *val);
 int nb_cfreader_read_var_double(nb_cfreader_t *cfr, const char *var, double *val);
 int nb_cfreader_read_var_bool(nb_cfreader_t *cfr, const char *var, bool *val);
 
-bool nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line);
-bool nb_cfreader_check_token(nb_cfreader_t *cfr, const char *token);
+int nb_cfreader_check_line(nb_cfreader_t *cfr, const char *line);
+int nb_cfreader_check_token(nb_cfreader_t *cfr, const char *token);
 void nb_cfreader_close_file(nb_cfreader_t *cfr);
 void nb_cfreader_finish(nb_cfreader_t *cfr);
 void nb_cfreader_destroy(nb_cfreader_t *cfr);

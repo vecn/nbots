@@ -243,14 +243,15 @@ int nb_mshpoly_read_data_nbt(nb_cfreader_t *cfr, void *msh_ptr)
 	nb_mshpoly_t *msh = msh_ptr;
 
 	msh->nod = NULL;
-	msh->adj[0] = NULL;
-	msh->nod_x_sgm[0] = NULL;
 
 	int status = read_header(cfr, msh);
 	if (0 != status)
 		goto EXIT;
 
 	nb_mshpoly_set_arrays_memory(msh);
+
+	msh->adj[0] = NULL;
+	msh->nod_x_sgm[0] = NULL;
 
 	status = read_nodes(cfr, msh);
 	if (0 != status)
@@ -269,24 +270,26 @@ int nb_mshpoly_read_data_nbt(nb_cfreader_t *cfr, void *msh_ptr)
 	if (0 != status)
 		goto EXIT;
 
-	if (!exist_section && msh->N_vtx > 0)
+	if (!exist_section && msh->N_vtx > 0) {
+		status = 1;
 		goto EXIT;
+	}
 
 	status = read_insgm(cfr, msh, &exist_section);
 	if (0 != status)
 		goto EXIT;
 
 	if (!exist_section && msh->N_sgm > 0)
-		goto EXIT;
-
+		status = 1;
 EXIT:
 	if (0 != status) {
-		if (NULL != msh->nod_x_sgm[0])
+		if (NULL != msh->nod) {
+			if (NULL != msh->adj[0])
+				nb_free_mem(msh->adj[0]);
+			if (NULL != msh->nod_x_sgm[0])
 			nb_free_mem(msh->nod_x_sgm[0]);
-		if (NULL != msh->adj[0])
-			nb_free_mem(msh->adj[0]);
-		if (NULL != msh->nod)
 			nb_free_mem(msh->nod);
+		}
 	}
 	return status;
 }
@@ -302,22 +305,22 @@ static int read_header(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 	status = nb_cfreader_read_var_uint(cfr, "N_edges", &N);
 	if (0 != status)
 		goto EXIT;
-	N = msh->N_edg;
+	msh->N_edg = N;
 
 	status = nb_cfreader_read_var_uint(cfr, "N_elems", &N);
 	if (0 != status)
 		goto EXIT;
-	N = msh->N_elems;
+	msh->N_elems = N;
 
 	status = nb_cfreader_read_var_uint(cfr, "N_input_vtx", &N);
 	if (0 != status)
 		goto EXIT;
-	N = msh->N_vtx;
+	msh->N_vtx = N;
 
 	status = nb_cfreader_read_var_uint(cfr, "N_input_sgm", &N);
 	if (0 != status)
 		goto EXIT;
-	N = msh->N_sgm;
+	msh->N_sgm = N;
 
 EXIT:
 	return status;
@@ -358,11 +361,19 @@ static int read_edges(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status)
 			goto EXIT;
+		if (0 == val || val > msh->N_nod) {
+			status = 1;
+			goto EXIT;
+		}
 		msh->edg[i * 2] = val - 1;
 
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status)
 			goto EXIT;
+		if (0 == val || val > msh->N_nod) {
+			status = 1;
+			goto EXIT;
+		}
 		msh->edg[i*2+1] = val - 1;
 	}
 
@@ -431,6 +442,10 @@ static int read_elems_N_sides(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status)
 			goto EXIT;
+		if (0 == val) {
+			status = 1;
+			goto EXIT;
+		}
 		msh->N_adj[i] = val;
 	}
 
@@ -451,6 +466,10 @@ static int read_elems_adj(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 			status = nb_cfreader_read_uint(cfr, &val);
 			if (0 != status)
 				goto EXIT;
+			if (0 == val || val > msh->N_nod) {
+				status = 1;
+				goto EXIT;
+			}
 			msh->adj[i][j] = val - 1;
 		}
 	}
@@ -472,10 +491,14 @@ static int read_elems_ngb(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 			status = nb_cfreader_read_uint(cfr, &val);
 			if (0 != status)
 				goto EXIT;
-			if (0 == val)
+			if (0 == val) {
 				msh->ngb[i][j] = msh->N_elems;
-			else
-				msh->adj[i][j] = val - 1;
+			} else if (val < msh->N_elems) {
+				msh->ngb[i][j] = val - 1;
+			} else {
+				status = 1;
+				goto EXIT;
+			}
 		}
 	}
 
@@ -504,20 +527,24 @@ static int read_invtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh,
 		
 		status = 1;
 		char *pch;
-		long int N = strtoul(val1, &pch, 10);
+		unsigned int N = strtoul(val1, &pch, 10);
 		if (pch == val1)
 			goto EXIT;
 
-		if (N != i + 1)
+		if (0 == N || N > msh->N_vtx)
 			goto EXIT;
+		uint32_t id = N-1;
 
 		N = strtoul(val2, &pch, 10);
 		if (pch == val1)
 			goto EXIT;
-		if (0 < N)
-			msh->vtx[i] = N - 1;
+
+		if (N > 0 && N <= msh->N_nod)
+			msh->vtx[id] = N - 1;
+		else if (0 == N)
+			msh->vtx[id] = msh->N_nod;
 		else
-			msh->vtx[i] = msh->N_nod;
+			goto EXIT;
 	}
 
 	status = nb_cfreader_check_line(cfr, "End input vertices");
@@ -562,6 +589,7 @@ static int read_insgm_size(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 		status = nb_cfreader_read_uint(cfr, &val);
 		if (0 != status)
 			goto EXIT;
+
 		msh->N_nod_x_sgm[i] = val;
 	}
 
@@ -573,12 +601,14 @@ EXIT:
 
 static int read_insgm_idvtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 {
-	int status = nb_cfreader_check_line(cfr, "Id_vtx");
+	int status = nb_cfreader_check_line(cfr, "ID_vtx");
 	if (0 != status)
 		goto EXIT;
 
 	for (uint32_t i = 0; i < msh->N_sgm; i++) {
 		int status = nb_cfreader_check_token(cfr, "[");
+		if (0 != status)
+			goto EXIT;
 		for (uint32_t j = 0; j < msh->N_nod_x_sgm[i]; j++) {
 			if (j > 0) {
 				status = nb_cfreader_check_token(cfr, "->");
@@ -590,7 +620,7 @@ static int read_insgm_idvtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 			if (0 != status)
 				goto EXIT;
 
-			if (0 == val) {
+			if (0 == val || val > msh->N_nod) {
 				status = 1;
 				goto EXIT;
 			}
@@ -598,9 +628,11 @@ static int read_insgm_idvtx(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 			msh->nod_x_sgm[i][j] = val - 1;
 		}
 		status = nb_cfreader_check_token(cfr, "]");
+		if (0 != status)
+			goto EXIT;
 	}
 
-	status = nb_cfreader_check_line(cfr, "End Id_vtx");
+	status = nb_cfreader_check_line(cfr, "End ID_vtx");
 EXIT:
 	return status;
 }

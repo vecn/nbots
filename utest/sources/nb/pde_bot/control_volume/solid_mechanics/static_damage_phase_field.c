@@ -294,9 +294,12 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	results_init(results, N_faces, N_elems);
 
 	nb_mesh2D_save_nbt(mesh, "dmg_tmp/CVFA_DMG_mesh.nbt");
-	//nb_mesh2D_finish(mesh);/* TEMPORAL */
-	//int XXX = nb_mesh2D_read_nbt(mesh, "dmg_tmp/CVFA_DMG_mesh.nbt");/* TEMPORAL */
-	//if (0!=XXX){printf("FUCK\n");exit(1);}/* TEMPORAL */
+	nb_mesh2D_finish(mesh);/* TEMPORAL */
+	nb_mesh2D_init(mesh, NB_POLY);/* TEMPORAL */
+	nb_mesh2D_read_nbt(mesh, "dmg_tmp/CVFA_DMG_mesh.nbt");/* TEMPORAL */
+	nb_mesh2D_export_draw(mesh, "./TEMP.png", 1000, 800,
+			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+	exit(1);
 
 	int status_cvfa = 
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,
