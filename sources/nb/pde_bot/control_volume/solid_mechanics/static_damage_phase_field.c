@@ -1321,27 +1321,36 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 	nb_mesh2D_init(mesh, mesh_type);
 	status = nb_mesh2D_read_nbt(mesh, name);
 	if (0 != status)
-		goto EXIT;
+		goto FINISH_MESH;
 
 	nb_cfreader_t *cfr = nb_cfreader_create();
 	nb_cfreader_load_nbt_format(cfr);
 
 	sprintf(name, "%s/results.nbt", dir_saved_results);
+	status = nb_cfreader_open_file(cfr, name);
+	if (0 != status)
+		goto DESTROY_READER;
+
 	status = check_header(cfr);
 	if (0 != status)
-		goto EXIT;
+		goto CLOSE_FILE;
 
 	status = check_mesh_correspondence(cfr, mesh);
 	if (0 != status)
-		goto EXIT;
+		goto CLOSE_FILE;
 
 	status = read_and_draw_all_steps(cfr, mesh, dir_output);
 	if (0 != status)
-		goto EXIT;
-EXIT:
+		goto CLOSE_FILE;
+
+CLOSE_FILE:
+	nb_cfreader_close_file(cfr);
+DESTROY_READER:
+	nb_cfreader_destroy(cfr);
+FINISH_MESH:
 	nb_mesh2D_finish(mesh);
 	nb_soft_free_mem(mesh_memsize, mesh);
-	nb_cfreader_destroy(cfr);
+EXIT:
 	return status;
 }
 

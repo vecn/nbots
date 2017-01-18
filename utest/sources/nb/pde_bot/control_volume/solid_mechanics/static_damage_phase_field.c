@@ -35,6 +35,7 @@ static int suite_clean(void);
 
 static void test_mode_I(void);
 static void test_mode_II(void);
+static void test_draw_results(void);
 static void check_mode_I(const void *mesh,
 			 const results_t *results);
 static void check_mode_II(const void *mesh,
@@ -70,8 +71,9 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	CU_add_test(suite, "Drawing results", test_draw_results);
 }
 
 static int suite_init(void)
@@ -546,6 +548,15 @@ static int read_elasticity2D_params(nb_cfreader_t *cfr,
 	status = 0;
 EXIT:
 	return status;
+}
+
+static void test_draw_results(void)
+{
+	int status = nb_cvfa_draw_2D_damage_results("dmg1", "dmg1");
+	char *msg;                                  /* TEMPORAL */
+	nb_cfreader_get_error_message(status, &msg);/* TEMPORAL */
+	printf("ERROR: %s\n", msg);                 /* TEMPORAL */
+	CU_ASSERT(0 == status);/* TEMPORAL */
 }
 
 static void show_cvfa_error_msg(int cvfa_status)
