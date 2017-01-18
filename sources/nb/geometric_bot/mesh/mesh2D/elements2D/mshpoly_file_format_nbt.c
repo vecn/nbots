@@ -270,6 +270,10 @@ int nb_mshpoly_read_data_nbt(nb_cfreader_t *cfr, void *msh_ptr)
 	if (0 != status)
 		goto EXIT;
 
+	if (exist_section && msh->N_vtx == 0) {
+		status = 1;
+		goto EXIT;
+	}
 	if (!exist_section && msh->N_vtx > 0) {
 		status = 1;
 		goto EXIT;
@@ -279,6 +283,10 @@ int nb_mshpoly_read_data_nbt(nb_cfreader_t *cfr, void *msh_ptr)
 	if (0 != status)
 		goto EXIT;
 
+	if (exist_section && msh->N_sgm == 0) {
+		status = 1;
+		goto EXIT;
+	}
 	if (!exist_section && msh->N_sgm > 0)
 		status = 1;
 EXIT:
@@ -491,9 +499,10 @@ static int read_elems_ngb(nb_cfreader_t *cfr, nb_mshpoly_t *msh)
 			status = nb_cfreader_read_uint(cfr, &val);
 			if (0 != status)
 				goto EXIT;
+
 			if (0 == val) {
 				msh->ngb[i][j] = msh->N_elems;
-			} else if (val < msh->N_elems) {
+			} else if (val <= msh->N_elems) {
 				msh->ngb[i][j] = val - 1;
 			} else {
 				status = 1;
