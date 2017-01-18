@@ -13,11 +13,11 @@ int main(int argc, char *argv[])
 {
 	CU_initialize_registry();
 
-	cunit_suites_nb_container_bot();
-	cunit_suites_nb_geometric_bot();
-	cunit_suites_nb_image_bot();
+	//cunit_suites_nb_container_bot();
+	//cunit_suites_nb_geometric_bot();
+	//cunit_suites_nb_image_bot();
 	cunit_suites_nb_pde_bot();
-	cunit_suites_nb_graphics_bot();
+	//cunit_suites_nb_graphics_bot();
 	
 	CU_basic_set_mode(CU_BRM_VERBOSE);
 	CU_basic_run_tests();

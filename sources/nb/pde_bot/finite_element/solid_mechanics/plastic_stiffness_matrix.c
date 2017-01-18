@@ -25,6 +25,14 @@
 
 #define POW2(a) ((a)*(a))
 
+static void sum_plastic_gauss_point(const nb_fem_elem_t *elem, int gp_id,
+			     double D[4], double thickness, double detJ,
+			     double *dNi_dx, double *dNi_dy,
+			     double *Ke);
+
+static void sparse_substract(nb_sparse_t *A, uint32_t i, uint32_t j,
+			     double val);
+
 int updated_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D *elem_regime,
                         const bool *elements_enabled, const nb_mesh2D_t *part,
                         const nb_fem_elem_t *elem,
@@ -34,47 +42,48 @@ int updated_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D *elem_regi
                         double *elastic_strain,
                         uint32_t *simultaneous_elements,
                         double *aux_strain,
-                        uint32_t *N_simultaneous_plastic_elem,
+                        uint32_t N_simultaneous_plastic_elem,
                         uint32_t *plastified_elem,
                         uint32_t *N_plastic_elem)
 {
-    int update_status;
-    uint32_t sim_element;
-    if(N_simultaneous_plastic_elem > 1) {
-        for(int j = 0; j < N_simultaneous_plastic_elem; j++) {
-            sim_element = simultaneous_elements[j];
-            update_status = updated_plastified_stiffness_matrix(K, elem_regime[sim_element],
-                                                                pipeline_elem_is_enabled(elements_enabled, sim_element),
-                                                                part, sim_element, elem, material,
-                                                                analysis2D, params2D);
-            if(update_status != 0) {
-                update_status = 4;
-                return update_status;
-            }
-            elastic_strain[3*sim_element] = aux_strain[3*sim_element];
-            elastic_strain[3*sim_element + 1] = aux_strain[3*sim_element+ 1];
-            elastic_strain[3*sim_element + 2] = aux_strain[3*sim_element+ 2];
-            elem_regime[sim_element] = NB_PLASTIC;
-        }
-    }
-    else {
-        update_status = updated_plastified_stiffness_matrix(K, elem_regime[plastified_elem[0]],
-                                                            pipeline_elem_is_enabled(elements_enabled, sim_element), part,
-                                                            plastified_elem[0], elem, material,
-                                                            analysis2D, params2D);
-        if(update_status != 0) {
-            update_status = 4;
-            return update_status;
-        }
+	int update_status;
+	//uint32_t sim_element;
+	if(N_simultaneous_plastic_elem > 1) {
+		for(uint32_t j = 0; j < N_simultaneous_plastic_elem; j++) {
+			uint32_t sim_element = simultaneous_elements[j];
+			update_status = updated_plastified_stiffness_matrix(K, elem_regime[sim_element],
+									    pipeline_elem_is_enabled(elements_enabled, sim_element),
+									    part, sim_element, elem, material,
+									    analysis2D, params2D);
+			if(update_status != 0) {
+				update_status = 4;
+				return update_status;
+			}
+			elastic_strain[3*sim_element] = aux_strain[3*sim_element];
+			elastic_strain[3*sim_element + 1] = aux_strain[3*sim_element+ 1];
+			elastic_strain[3*sim_element + 2] = aux_strain[3*sim_element+ 2];
+			elem_regime[sim_element] = NB_PLASTIC;
+		}
+	}
+	else {
+		//uint32_t sim_element = 0;
+		update_status = updated_plastified_stiffness_matrix(K, elem_regime[plastified_elem[0]],
+								    /*pipeline_elem_is_enabled(elements_enabled, sim_element)*/true, part,
+								    plastified_elem[0], elem, material,
+								    analysis2D, params2D);
+		if(update_status != 0) {
+			update_status = 4;
+			return update_status;
+		}
 
-        elastic_strain[3*plastified_elem[0]] = aux_strain[3*plastified_elem[0]];
-        elastic_strain[3*plastified_elem[0] + 1] = aux_strain[3*plastified_elem[0] + 1];
-        elastic_strain[3*plastified_elem[0] + 2] = aux_strain[3*plastified_elem[0] + 2];
-        elem_regime[plastified_elem[0]] = NB_PLASTIC;
-    }
-    N_plastic_elem[0] -= 1;
+		elastic_strain[3*plastified_elem[0]] = aux_strain[3*plastified_elem[0]];
+		elastic_strain[3*plastified_elem[0] + 1] = aux_strain[3*plastified_elem[0] + 1];
+		elastic_strain[3*plastified_elem[0] + 2] = aux_strain[3*plastified_elem[0] + 2];
+		elem_regime[plastified_elem[0]] = NB_PLASTIC;
+	}
+	N_plastic_elem[0] -= 1;
 
-    return update_status;
+	return update_status;
 }
 
 int updated_plastified_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D elem_regime,
@@ -85,10 +94,9 @@ int updated_plastified_stiffness_matrix(nb_sparse_t* K, nb_plastified_analysis2D
                                     nb_analysis2D_t analysis2D,
                                     nb_analysis2D_params *params2D)
  {
-    int status = 1;
-	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
+	 int status = 1;
 
-        /*printf("%s\n", is_enabled ? "true" : "false");*/
+	 /*printf("%s\n", is_enabled ? "true" : "false");*/
 		int status_element =
 			assemble_plastified_element(elem, plastified_elem, part, material, is_enabled,
 					 elem_regime, analysis2D, params2D, K);
@@ -101,7 +109,7 @@ EXIT:
 	return status;
 }
 
-static int assemble_plastified_element(const nb_fem_elem_t *elem, uint32_t id,
+int assemble_plastified_element(const nb_fem_elem_t *elem, uint32_t id,
 			    const nb_mesh2D_t *part,
 			    const nb_material_t *material,
 			    bool is_enabled,
@@ -112,7 +120,6 @@ static int assemble_plastified_element(const nb_fem_elem_t *elem, uint32_t id,
 {
 	double De[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 	double Dp[4] = {1e-6, 1e-6, 1e-6, 1e-6};
-	double density = 1e-6;
 	if (is_enabled) {
         nb_pde_get_plastified_constitutive_matrix(Dp, material, analysis2D, elem_regime);
         nb_pde_get_constitutive_matrix(De, material, analysis2D);
@@ -138,7 +145,7 @@ CLEANUP:
 	return status_plastic;
 }
 
-static int integrate_plastic_elemental_system
+int integrate_plastic_elemental_system
             (const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], const nb_mesh2D_t *part,
 			 nb_analysis2D_params *params2D,
@@ -175,7 +182,7 @@ EXIT:
 	return status;
 }
 
-void sum_plastic_gauss_point(const nb_fem_elem_t *elem, int gp_id,
+static void sum_plastic_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 			      double D[4], double thickness, double detJ,
 			      double *dNi_dx, double *dNi_dy,
 			      double *Ke)
@@ -193,7 +200,6 @@ void sum_plastic_gauss_point(const nb_fem_elem_t *elem, int gp_id,
 
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
 	for (uint32_t i = 0; i < N_nodes; i++) {
-		double Ni = nb_fem_elem_Ni(elem, i, gp_id);
 		for (uint32_t j = 0; j < N_nodes; j++) {
 			/*  Integrating elemental siffness matrix */
 			Ke[(i * 2)*(2 * N_nodes) + (j * 2)] +=
@@ -236,18 +242,24 @@ void modify_global_system(const nb_fem_elem_t *elem, uint32_t id, const nb_mesh2
 			nb_sparse_add(K, v1*2 + 1, v2*2 + 1,
 				       Ke_plastic[(i*2 + 1)*(2 * N_nodes) +
 					  (j*2+1)]);
-			nb_sparse_substract(K, v1 * 2, v2 * 2,
+			sparse_substract(K, v1 * 2, v2 * 2,
 				       Ke_elastic[(i * 2)*(2 * N_nodes) +
 					  (j * 2)]);
-			nb_sparse_substract(K, v1*2 + 1, v2 * 2,
+			sparse_substract(K, v1*2 + 1, v2 * 2,
 				       Ke_elastic[(i*2 + 1)*(2 * N_nodes) +
 					  (j * 2)]);
-			nb_sparse_substract(K, v1 * 2, v2*2 + 1,
+			sparse_substract(K, v1 * 2, v2*2 + 1,
 				       Ke_elastic[(i * 2)*(2 * N_nodes) +
 					  (j*2+1)]);
-			nb_sparse_substract(K, v1*2 + 1, v2*2 + 1,
+			sparse_substract(K, v1*2 + 1, v2*2 + 1,
 				       Ke_elastic[(i*2 + 1)*(2 * N_nodes) +
 					  (j*2+1)]);
 		}
 	}
+}
+
+static void sparse_substract(nb_sparse_t *A, uint32_t i, uint32_t j,
+			     double val)
+{
+	nb_sparse_add(A, i, j, -val);
 }

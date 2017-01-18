@@ -149,8 +149,6 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	nb_mesh2D_t *part = nb_allocate_mem(nb_mesh2D_get_memsize(NB_TRIAN));
 	nb_mesh2D_init(part, NB_TRIAN);
 
-	uint32_t N_trg = nb_mesh2D_get_N_elems(part);
-
 	int status = simulate(problem_data, part, &results, N_vtx);
 
     printf("Simulation status: %i\n", status); /* TEMPORAL */
@@ -183,8 +181,8 @@ static int simulate(const char *problem_data,
 	int read_status =
 		read_problem_data(input, model, bcond, material,
 				  &analysis2D, &params2D);
-    printf("Read status: %i\n", read_status); /* TEMPORAL */
-    check_input_values(material, analysis2D, &params2D);
+    	printf("Read status: %i\n", read_status); /* TEMPORAL */
+    	check_input_values(material, analysis2D, &params2D);
 
 	if (0 != read_status)
 		goto CLEANUP_INPUT;
@@ -238,7 +236,7 @@ static void get_mesh(const nb_model_t *model, void *part,
 					  NB_GEOMETRIC_TOL);
 	nb_tessellator2D_generate_from_model(mesh, model);
 
-	nb_mesh2D_load_from_mesh(part, mesh);
+	nb_mesh2D_load_from_tessellator2D(part, mesh);
 	nb_tessellator2D_finish(mesh);
 	nb_free_mem(mesh);
 }
@@ -499,7 +497,7 @@ void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total_displa
     }
 
     /* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
+    //nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
     nb_mesh2D_export_draw(part, "plastified_elements.png", 1200, 800, NB_ELEMENT, NB_CLASS, plastic_elements, true);
     nb_mesh2D_export_draw(part, "plastic_avg_disp.png", 1200, 800, NB_NODE, NB_FIELD, avg_displacement, true);
     nb_mesh2D_export_draw(part, "plastic_disp_x.png", 1200, 800, NB_NODE, NB_FIELD, total_displacement_x, true);
