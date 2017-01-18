@@ -32,6 +32,7 @@ numerical tasks.
 |          Name           |                Caption                 |
 |-------------------------|----------------------------------------|
 | Memory bot              | Handles memory allocations             |
+| IO bot                  | IO structures and functions            |
 | Container bot           | Process dynamic collections            |
 | Math bot                | Standard numerical procedures          |
 | Graphics bot            | 2D-vector drawing functions            |
@@ -74,6 +75,10 @@ the worst case execution bound per operation (big O notation).
 |Sorted	|log(N)|log(N)|log(N)|N log(N)|log(N)|log(N)|log(N)|
 |Hash	|   1  |   1  |   1  |    N   |   N  |   N  |   1  |
 |Heap	|   1  |   N  |   1  |    1   |   1  |log(N)|log(N)|
+
+### IO bot
+
+Input Output functions.
 
 ### Math bot
 

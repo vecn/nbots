@@ -1197,7 +1197,7 @@ static void save_simulation(const char *dir,
 	
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 
-	fprintf(fp, "Step = %i\n", iter + 1);
+	fprintf(fp, "Step %i\n", iter + 1);
 	fprintf(fp, "  Time = %e\n\n", time);
 	fprintf(fp, "  Field\n");
 	fprintf(fp, "    Type = Vector\n");
@@ -1322,6 +1322,7 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 		goto EXIT;
 
 	nb_cfreader_t *cfr = nb_cfreader_create();
+	nb_cfreader_load_nbt_format(cfr);
 
 	sprintf(name, "%s/results.nbt", dir_saved_results);
 	status = read_header(cfr, mesh);
@@ -1337,5 +1338,5 @@ EXIT:
 
 static int read_header(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh)
 {
-	return 1;
+	;
 }
