@@ -24,6 +24,7 @@ nb_cfreader_t* nb_cfreader_create(void);
 int nb_cfreader_open_file(nb_cfreader_t *cfr, const char* filename);
 int nb_cfreader_add_line_comment_token(nb_cfreader_t *cfr, const char *token);
 int nb_cfreader_add_assignment_token(nb_cfreader_t *cfr, const char *token);
+int nb_cfreader_jump_line(nb_cfreader_t *cfr);
 int nb_cfreader_read_int(nb_cfreader_t *cfr, int *val);
 int nb_cfreader_read_uint(nb_cfreader_t *cfr, uint32_t *val);
 int nb_cfreader_read_float(nb_cfreader_t *cfr, float *val);

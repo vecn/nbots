@@ -23,6 +23,8 @@
 #define SMOOTH 0
 #define MIDPOINT_VOL_INTEGRALS false
 
+#define RESIDUAL_TOL 1e-6
+
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -698,7 +700,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		nb_sparse_multiply_vector(K, displacement, residual, 1);
 		nb_vector_substract_to(2 * N_elems, residual, F);
 		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
-		if (rnorm < 1e-6)
+		if (rnorm < RESIDUAL_TOL)
 			goto GET_REACTION;
 
 		if (rnorm != rnorm) {

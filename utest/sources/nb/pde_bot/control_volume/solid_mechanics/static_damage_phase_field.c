@@ -18,6 +18,7 @@
 #define POW2(a) ((a)*(a))
 #define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 typedef struct {
 	uint32_t N_faces;
@@ -74,7 +75,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Drawing results", test_draw_results);
 }
@@ -128,8 +129,10 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 20);
-	//nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.02);
+	double box[4];
+	nb_mesh2D_get_enveloping_box(mesh, box);
+	double max_dist = 0.05 * MAX(box[2]-box[0], box[3]-box[1]);
+	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, max_dist);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
@@ -555,8 +558,8 @@ EXIT:
 
 static void test_draw_results(void)
 {
-	int status = nb_mesh2D_read_and_draw_results("dmg1", "dmg1",
-						     show_drawing_progress);
+	int status = nb_mesh2D_field_read_and_draw("dmg_tmp", "dmg_tmp",
+						   show_drawing_progress);
 	CU_ASSERT(0 == status);/* TEMPORAL */
 }
 

@@ -2,6 +2,7 @@
 # Victor Eduardo Cardoso Nungaray		#
 # 2010-2016					#
 # Three point bending test setup                #
+# Unit: 1mm                                     #
 #################################################
 
 
@@ -42,7 +43,7 @@
  3						#
  0 1 1 0.0 0.0                                  #
  6 0 1 0.0                                      #
- 8 0 1 -1e-3                                    #
+ 8 0 1 -1                                       #
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
@@ -54,12 +55,13 @@
 #-------------- Material properties ------------#
 # Poisson module				#
  0.2						#
-# Elasticity module (Pa)			#
- 2e10	                                        #
-# Energy release rate                           #
- 0.05						#
+# Elasticity module                             #
+# 20 GPa = 2e6 kg/(mm s^2)                      #
+ 2e6	                                        #
+# Energy release rate (N/mm)                    #
+ 0.5						#
 # Length scale                                  #
- 0.1						#
+ 0.05						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
@@ -67,5 +69,5 @@
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
  1						#
 # Analysis params (Thickness axis of rev)       #
- 0.1	                                        #
+ 1	                                        #
 #-----------------------------------------------#

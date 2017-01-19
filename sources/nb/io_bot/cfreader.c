@@ -172,6 +172,26 @@ static void trim_start_of_line(nb_cfreader_t* cfr)
 		cfr->line = &(cfr->line[1]);
 }
 
+int nb_cfreader_jump_line(nb_cfreader_t *cfr)
+{
+	int status;
+	if (cfr->fp == NULL) {
+		status = NB_CFREADER_NO_FILE_OPENED;
+		goto EXIT;
+	}
+
+	if (strlen(cfr->line) == 0) {
+		status = get_next_line(cfr);
+		if (NB_CFREADER_EOF == status)
+			goto EXIT;
+	}
+	cfr->line[0] = '\0';
+	status = NB_CFREADER_SUCCESS;
+EXIT:
+	return status;
+
+}
+
 int nb_cfreader_read_int(nb_cfreader_t* cfr, int* val)
 {
 	int status;
