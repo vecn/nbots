@@ -65,7 +65,7 @@ static int read_elasticity2D_params(nb_cfreader_t *cfr,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
 static void show_drawing_progress(float prog);
-static void stdout_show_progress(const char *task_20char, float prog);
+static void stdout_show_progress(const char *task, float prog);
 static void show_cvfa_error_msg(int cvfa_status);
 
 void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
@@ -555,8 +555,8 @@ EXIT:
 
 static void test_draw_results(void)
 {
-	int status = nb_cvfa_draw_2D_damage_results("dmg1", "dmg1",
-						    show_drawing_progress);
+	int status = nb_mesh2D_read_and_draw_results("dmg1", "dmg1",
+						     show_drawing_progress);
 	CU_ASSERT(0 == status);/* TEMPORAL */
 }
 
@@ -565,10 +565,10 @@ static void show_drawing_progress(float prog)
 	stdout_show_progress("Drawing CFVA", prog);
 }
 
-static void stdout_show_progress(const char *task_20char, float prog)
+static void stdout_show_progress(const char *task, float prog)
 {
 	int prog_x100 = (int)(prog * 100 + 0.5);
-	printf("%-20s [", task_20char);
+	printf("%s [", task);
 	for (int i = 0; i < 40; i++) {
 		if (prog_x100 > 2.49 * (i+1))
 			printf("#");
