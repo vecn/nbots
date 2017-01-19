@@ -1325,7 +1325,7 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 
 	nb_cfreader_t *cfr = nb_cfreader_create();
 	nb_cfreader_load_nbt_format(cfr);
-
+	
 	sprintf(name, "%s/results.nbt", dir_saved_results);
 	status = nb_cfreader_open_file(cfr, name);
 	if (0 != status)
@@ -1371,7 +1371,7 @@ static int check_mesh_correspondence(nb_cfreader_t *cfr,
 				     const nb_mesh2D_t *mesh)
 {
 	char var[50];
-	int status = nb_cfreader_read_var_string(cfr, "Type", var);
+	int status = nb_cfreader_read_var_token(cfr, "Type", var);
 	if (0 != status)
 		goto EXIT;
 
@@ -1441,6 +1441,7 @@ static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 			status = 1;
 			goto EXIT;
 		}
+		printf("Drawing step %i\n", step);/* TEMPORAL */
 		draw_nodal_damage(dir_output, mesh, damage, step);
 		draw_face_damage(dir_output, mesh, disp, damage, step);
 		step += 1;
@@ -1506,7 +1507,7 @@ static int read_disp_field(nb_cfreader_t *cfr,
 	status = nb_cfreader_check_line(cfr, "Data");
 	if (0 != status)
 		goto EXIT;
-	
+
 	uint32_t N = nb_mesh2D_get_N_elems(mesh);
 	for (uint32_t i = 0; i < N; i++) {
 		status = read_vector(cfr, i, &(disp[i*2]));
@@ -1589,7 +1590,7 @@ static int read_damage_field(nb_cfreader_t *cfr,
 	
 	uint32_t N = nb_mesh2D_get_N_elems(mesh);
 	for (uint32_t i = 0; i < N; i++) {
-		status = read_scalar(cfr, i, damage);
+		status = read_scalar(cfr, i, &(damage[i]));
 		if (0 != status)
 			goto EXIT;
 	}

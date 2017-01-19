@@ -553,9 +553,6 @@ EXIT:
 static void test_draw_results(void)
 {
 	int status = nb_cvfa_draw_2D_damage_results("dmg1", "dmg1");
-	char *msg;                                  /* TEMPORAL */
-	nb_cfreader_get_error_message(status, &msg);/* TEMPORAL */
-	printf("ERROR: %s\n", msg);                 /* TEMPORAL */
 	CU_ASSERT(0 == status);/* TEMPORAL */
 }
 
