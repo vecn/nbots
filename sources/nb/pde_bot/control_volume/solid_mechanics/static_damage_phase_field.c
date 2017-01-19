@@ -222,7 +222,8 @@ static int check_mesh_correspondence(nb_cfreader_t *cfr,
 
 static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 				   const nb_mesh2D_t *mesh,
-				   const char *dir_output);
+				   const char *dir_output,
+				   void (*show_progress)(float prog));
 static int read_step_data(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh,
 			  double *disp, double *damage,
 			  int *step, double *time);
@@ -1307,7 +1308,9 @@ void nb_cvfa_compute_stress_from_damage_and_strain
 }
 
 int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
-				   const char *dir_output)
+				   const char *dir_output,
+				   /* Show progress can be NULL */
+				   void (*show_progress)(float prog))
 {
 	char name[100];
 	sprintf(name, "%s/mesh.nbt", dir_saved_results);
@@ -1339,7 +1342,8 @@ int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
 	if (0 != status)
 		goto CLOSE_FILE;
 
-	status = read_and_draw_all_steps(cfr, mesh, dir_output);
+	status = read_and_draw_all_steps(cfr, mesh, dir_output,
+					 show_progress);
 	if (0 != status)
 		goto CLOSE_FILE;
 
@@ -1416,7 +1420,8 @@ EXIT:
 
 static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 				   const nb_mesh2D_t *mesh,
-				   const char *dir_output)
+				   const char *dir_output,
+				   void (*show_progress)(float prog))
 {
 	int status;
 	uint32_t N = nb_mesh2D_get_N_elems(mesh);
@@ -1441,10 +1446,12 @@ static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 			status = 1;
 			goto EXIT;
 		}
-		printf("Drawing step %i\n", step);/* TEMPORAL */
+
 		draw_nodal_damage(dir_output, mesh, damage, step);
 		draw_face_damage(dir_output, mesh, disp, damage, step);
 		step += 1;
+		if (NULL != show_progress)
+			show_progress(time);
 	}
 EXIT:
 	nb_free_mem(memblock);

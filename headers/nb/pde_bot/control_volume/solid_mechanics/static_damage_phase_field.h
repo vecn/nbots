@@ -31,6 +31,8 @@ void nb_cvfa_compute_stress_from_damage_and_strain
 					 double* stress /* Output */);
 
 int nb_cvfa_draw_2D_damage_results(const char *dir_saved_results,
-				   const char *dir_output);
+				   const char *dir_output,
+				   /* Show progress can be NULL */
+				   void (*show_progress)(float prog));
 
 #endif
