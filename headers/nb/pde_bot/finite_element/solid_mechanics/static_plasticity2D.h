@@ -109,7 +109,7 @@ void get_stress_params(double *max_vm_stress, uint32_t *N_plastic_elem,
                        uint32_t *plastified_elem, uint32_t *N_simultaneous_plastic_elem, double *stress, double yield_stress,
                        nb_plastified_analysis2D *elem_regime,
                        uint32_t N_elem, double stress_tolerance);
- void get_simultaneous_plastic_elements(uint32_t *simultaneous_elements,
+void get_simultaneous_plastic_elements(uint32_t *simultaneous_elements,
                                         double *max_vm_stress, uint32_t *N_plastic_elem,
                                         uint32_t N_simultaneous_plastic_elem,
                                         uint32_t N_elem,
@@ -128,5 +128,7 @@ int adjust_force_to_yield_stress(double limit_stress, double stress_tolerance, d
                                      double *elastic_strain, const nb_fem_elem_t *const elemtype, double *aux_strain,
                                      const bool* elements_enabled, const nb_sparse_t *const K, const nb_mesh2D_t *const part,
                                      double *stress);
+
+char* strg_concat(char* print_name, char* problem_name, char* extension);
 
 #endif // STATIC_PLASTICITY2D_H_INCLUDED
