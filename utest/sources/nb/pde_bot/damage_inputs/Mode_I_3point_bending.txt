@@ -56,6 +56,7 @@
 # Poisson module				#
  0.2						#
 # Elasticity module                             #
+# Pa = kg/(m s^2)
 # 20 GPa = 2e6 kg/(mm s^2)                      #
  2e6	                                        #
 # Energy release rate (N/mm)                    #

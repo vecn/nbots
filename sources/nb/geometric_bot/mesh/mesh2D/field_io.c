@@ -412,9 +412,7 @@ static void draw_damage(const char *dir_output, const nb_mesh2D_t *mesh,
 	nb_free_mem(node_damage);
 }
 
-int nb_mesh2D_field_get_N_steps(const char *filename,
-				const char *field_name, double *field,
-				uint32_t *N_steps)
+int nb_mesh2D_field_get_N_steps(const char *filename, uint32_t *N_steps)
 {
 	nb_cfreader_t *cfr = nb_cfreader_create();
 	nb_cfreader_load_nbt_format(cfr);
@@ -521,7 +519,7 @@ static int check_step(nb_cfreader_t *cfr,
 	status = nb_cfreader_read_int(cfr, readed_step);
 	if (0 != status)
 		goto EXIT;
-	
+
 	double time;
 	status = nb_cfreader_read_var_double(cfr, "Time", &time);
 	if (0 != status)
@@ -546,8 +544,10 @@ static int check_field(nb_cfreader_t *cfr, uint32_t N_nodes,
 		       uint32_t N_edges, uint32_t N_elems)
 {
 	int status = nb_cfreader_check_line(cfr, "Field");
-	if (0 != status)
+	if (0 != status) {
+		status = FIELD_READ_FINISH;
 		goto EXIT;
+	}
 	
 	char var[30];
 	status = nb_cfreader_read_var_token(cfr, "Type", var);
@@ -628,7 +628,7 @@ static int get_field_length(const char *var, uint32_t N_nodes,
 
 }
 
-int nb_mesh2D_field_read_last(const char *dir_saved_results,
+int nb_mesh2D_field_read_last(const char *filename,
 			      const char *field_name, double *field)
 {
 	/* TEMPORAL */

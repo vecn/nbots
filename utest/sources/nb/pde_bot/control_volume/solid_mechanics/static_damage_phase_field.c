@@ -75,7 +75,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Drawing results", test_draw_results);
 }
@@ -558,6 +558,9 @@ EXIT:
 
 static void test_draw_results(void)
 {
+	uint32_t N_steps;
+	int st = nb_mesh2D_field_get_N_steps("dmg_tmp/results.nbt", &N_steps);
+	printf("[%i] N_Steps: %i\n", st, N_steps);
 	int status = nb_mesh2D_field_read_and_draw("dmg_tmp", "dmg_tmp",
 						   show_drawing_progress);
 	CU_ASSERT(0 == status);/* TEMPORAL */
