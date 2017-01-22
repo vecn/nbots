@@ -31,6 +31,8 @@ typedef struct {
 	double *damage;
     	uint32_t N_vtx;
 	uint32_t N_trg;
+	double *nodal_strain;
+	double *nodal_damage;
 } plastic_results_t;
 
 static int suite_init(void);
@@ -247,8 +249,8 @@ static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uin
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
 	uint32_t size_plastic_elements = N_trg * sizeof(*(results->plastic_elements));
-	//uint32_t size_damage = N_trg * sizeof(*(results->damage));
-	uint32_t total_size = size_disp + 2 * size_strain + size_plastic_elements;// + size_damage;
+	uint32_t size_nodal_strain = N_vtx * 3 * sizeof(*(results->nodal_strain));
+	uint32_t total_size = size_disp + 2 * size_strain + size_plastic_elements + size_nodal_strain;// + size_damage;
 	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
@@ -257,8 +259,10 @@ static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uin
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);
 	results->plastic_elements = (void*)(memblock + size_disp + 2 * size_strain);
+	results->nodal_strain = (void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
 	results->damage = NULL;//void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
-}
+	results->nodal_damage = NULL;
+}	
 
 static inline void results_finish(plastic_results_t *results)
 {

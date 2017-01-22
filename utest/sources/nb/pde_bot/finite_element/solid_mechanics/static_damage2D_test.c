@@ -31,6 +31,8 @@ typedef struct {
 	double *damage;
     	uint32_t N_vtx;
 	uint32_t N_trg;
+	double *nodal_strain;
+	double *nodal_damage;
 } damage_results_t;
 
 static int suite_init(void);
@@ -78,24 +80,26 @@ static void damage_check_input_values(nb_material_t *material, nb_analysis2D_t a
 static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
                             	double *total_strain, const nb_mesh2D_t *const part,
                            	double *damage, const char *problem_data, const nb_fem_elem_t *const elem,
-				char* printable_name);
+				char* printable_name, double *nodal_strain, double *nodal_damage);
 
 uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
-			(const nb_mesh2D_t *const part,
-			 const nb_fem_elem_t *const elem,
-			 const nb_material_t *const material,
-			 const nb_bcond_t *const bcond,
-			 bool enable_self_weight,
-			 double gravity[2],
-			 bool enable_Cholesky_solver,
-			 nb_analysis2D_t analysis2D,
-			 nb_analysis2D_params *params2D,
-			 nb_fem_implicit_t* params,
-			 const char* logfile,
-			 double *damage,
-			 double *displacement,
-			 double *strain,
-			 double *stress);
+				(const nb_mesh2D_t *const part,
+			 	const nb_fem_elem_t *const elem,
+			 	const nb_material_t *const material,
+			 	const nb_bcond_t *const bcond,
+			 	bool enable_self_weight,
+			 	double gravity[2],
+			 	bool enable_Cholesky_solver,
+			 	nb_analysis2D_t analysis2D,
+			 	nb_analysis2D_params *params2D,
+			 	nb_fem_implicit_t* params,
+				const char* logfile,
+			 	double *damage,
+			 	double *displacement,
+			 	double *strain,
+			 	double *stress,
+				double *nodal_strain,
+				double *nodal_damage);
 
 void cunit_nb_pde_bot_fem_sm_static_damage(void)
 {
@@ -233,21 +237,23 @@ static int damage_simulate(const char *problem_data,
 	nb_fem_implicit_set_residual_tolerance(params, 1);
 
    	status = nb_fem_compute_2D_Damage_Solid_Mechanics
-                            (part, elem, material, bcond, true, gravity,
-                             false, analysis2D, &params2D, params, problem_data, results->damage,
-                             results->disp, results->strain, results->stress);
+                            		(part, elem, material, bcond, true, gravity,
+                             		false, analysis2D, &params2D, params, problem_data, results->damage,
+                             		results->disp, results->strain, results->stress, results->nodal_strain, 
+					results->nodal_damage);
 	if (0 != status)
 		goto CLEANUP_FEM;
 
     	print_damage_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
-                         part, results->damage, problem_data, elem, printable_name);
+                         	part, results->damage, problem_data, elem, printable_name, results->nodal_strain,
+				results->nodal_damage);
 
-	CLEANUP_FEM:
-		nb_fem_elem_destroy(elem);
-	CLEANUP_INPUT:
-		nb_model_finish(model);
-		nb_bcond_finish(bcond);
-		nb_material_destroy(material);
+CLEANUP_FEM:
+	nb_fem_elem_destroy(elem);
+CLEANUP_INPUT:
+	nb_model_finish(model);
+	nb_bcond_finish(bcond);
+	nb_material_destroy(material);
 
 	return status;
 }
@@ -275,7 +281,9 @@ static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint3
 	uint32_t size_disp = N_vtx * 2 * sizeof(*(results->disp));
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
 	uint32_t size_damage = N_trg * sizeof(*(results->damage));
-	uint32_t total_size = size_disp + 2 * size_strain + size_damage;
+	uint32_t size_nodal_strain = N_vtx * 3 * sizeof(*(results->nodal_strain));
+	uint32_t size_nodal_damage = N_vtx * sizeof(*(results->nodal_damage));
+	uint32_t total_size = size_disp + 2 * size_strain + size_damage + size_nodal_strain + size_nodal_damage;
 	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
@@ -284,6 +292,8 @@ static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint3
 	results->strain = (void*)(memblock + size_disp);
 	results->stress = (void*)(memblock + size_disp + size_strain);
 	results->damage = (void*)(memblock + size_disp + 2 * size_strain);
+	results->nodal_strain = (void*)(memblock + size_disp + 2 * size_strain + size_damage);
+	results->nodal_damage = (void*)(memblock + size_disp + 2 * size_strain + size_damage + size_nodal_strain);
 	results->plastic_elements = NULL;
 }
 
@@ -330,7 +340,7 @@ static int damage_read_problem_data(const char* filename, nb_model_t *model,
 	status = 0;
 EXIT:
 	nb_cfreader_close_file(cfreader);
-    nb_cfreader_destroy(cfreader);
+    	nb_cfreader_destroy(cfreader);
 	return status;
 }
 
@@ -414,14 +424,14 @@ EXIT:
 
 
 static int damage_read_plasticity2D_params(nb_cfreader_t *cfreader,
-				    nb_analysis2D_t *analysis2D,
-				    nb_analysis2D_params *params2D)
+				    		nb_analysis2D_t *analysis2D,
+				    		nb_analysis2D_params *params2D)
 {
 	int status = 1;
 	int iaux;
 
-    if (0 != nb_cfreader_read_int(cfreader, &iaux))
-    goto EXIT;
+    	if (0 != nb_cfreader_read_int(cfreader, &iaux))
+    		goto EXIT;
 
 	switch (iaux) {
 	case 0:
@@ -449,30 +459,30 @@ EXIT:
 static void damage_check_input_values(nb_material_t *material, nb_analysis2D_t analysis2D,
                     nb_analysis2D_params *params2D) {
 	printf("Elastic Modulus: %lf\n", nb_material_get_elasticity_module(material)); /* TEMPORAL */
-    printf("Traction limit stress: %lf\n", nb_material_get_traction_limit_stress(material)); /* TEMPORAL */
-    printf("Fracture energy: %lf\n", nb_material_get_fracture_energy(material));
-    printf("Poisson module: %f\n", nb_material_get_poisson_module(material)); /* TEMPORAL */
-    printf("Density: %lf\n", nb_material_get_density(material)); /* TEMPORAL */
-    printf("Thickness: %lf\n", params2D->thickness);
-    switch (analysis2D) {
-    case 0:
-    printf("Problem type: NB_PLANE_STRESS\n");
-    break;
-    case 1:
-    printf("Problem type: NB_PLANE_STRAIN\n");
-    break;
-    case 2:
-    printf("Problem type: NB_SOLID_OF_REVOLUTION\n");
-    break;
-    default:
-    printf("Problem type: NB_PLANE_STRESS\n");
-    }
+    	printf("Traction limit stress: %lf\n", nb_material_get_traction_limit_stress(material)); /* TEMPORAL */
+    	printf("Fracture energy: %lf\n", nb_material_get_fracture_energy(material));
+    	printf("Poisson module: %f\n", nb_material_get_poisson_module(material)); /* TEMPORAL */
+    	printf("Density: %lf\n", nb_material_get_density(material)); /* TEMPORAL */
+    	printf("Thickness: %lf\n", params2D->thickness);
+    	switch (analysis2D) {
+   		case 0:
+    			printf("Problem type: NB_PLANE_STRESS\n");
+    		break;
+    		case 1:
+    			printf("Problem type: NB_PLANE_STRAIN\n");
+    		break;
+    		case 2:
+    			printf("Problem type: NB_SOLID_OF_REVOLUTION\n");
+   		break;
+    		default:
+    			printf("Problem type: NB_PLANE_STRESS\n");
+    	}
 }
 
 static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
                             	double *total_strain, const nb_mesh2D_t *const part,
                             	double *damage, const char *problem_data, const nb_fem_elem_t *const elem,
-				char* printable_name)
+				char* printable_name, double *nodal_strain, double *nodal_damage)
 {
 	uint32_t nodesize = N_nod * sizeof(double);
 	uint32_t elemsize = N_elem * sizeof(double);
@@ -486,9 +496,13 @@ static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_
 	uint32_t Ex_size = elemsize;
 	uint32_t Ey_size = elemsize;
 	uint32_t Exy_size = elemsize;
+	uint32_t Ex_nodal_size = nodesize;
+	uint32_t Ey_nodal_size = nodesize;
+	uint32_t Exy_nodal_size = nodesize;
 
 	uint64_t memsize = avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
-		                Sx_size + Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size;
+		                Sx_size + Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size + Ex_nodal_size +
+				Ey_nodal_size + Exy_nodal_size;
 
 	char* memblock = malloc(memsize);
 
@@ -524,11 +538,11 @@ static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_
         	}
     	}
     	double *strainX = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
-                          Sy_size + Sxy_size);
+                          	Sy_size + Sxy_size);
     	double *strainY = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
-                          Sy_size + Sxy_size + Ex_size);
+                          	Sy_size + Sxy_size + Ex_size);
     	double *strainXY = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
-                          Sy_size + Sxy_size + Ex_size + Ey_size);
+                          	Sy_size + Sxy_size + Ex_size + Ey_size);
 
     	for(int i = 0; i < N_elem; i++){
         	for(int j = 0; j < N_gp; j++){
@@ -537,9 +551,22 @@ static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_
             		strainXY[i + j] = total_strain[3*i + j + 2];
         	}
     	}
+	
+	double *nodal_strainX = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          	Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size);
+	double *nodal_strainY = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          	Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size + Ex_nodal_size);
+	double *nodal_strainXY = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          	Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size + Ex_nodal_size + Ey_nodal_size);
+	
+	for(int i = 0; i < N_nod; i++){
+		nodal_strainX[i] = nodal_strain[3 * i];
+		nodal_strainY[i] = nodal_strain[3 * i +1];
+		nodal_strainXY[i] = nodal_strain[3 * i + 2];	
+	}
 
     	/* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    	//nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.01);
+    	nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.01);
 	char* dmg_elems = nb_allocate_mem(strlen(printable_name) + sizeof("_DMG.dmg.elems.png"));
     	nb_mesh2D_export_draw(part, strg_concat(dmg_elems, printable_name,"_DMG.dmg.elems.png"), 
 				1200, 800, NB_ELEMENT, NB_FIELD, damage, true);
@@ -589,6 +616,22 @@ static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_
     	nb_mesh2D_export_draw(part, strg_concat(dmg_Sxy, printable_name,"_DMG.Sxy.png"), 
 				1200, 800, NB_ELEMENT, NB_FIELD, Sxy, true);
 	nb_free_mem(dmg_Sxy);
+	char* dmg_ndEx = nb_allocate_mem(strlen(printable_name) + sizeof("_DMG.Ex.nd.png"));
+    	nb_mesh2D_export_draw(part, strg_concat(dmg_ndEx, printable_name,"_DMG.Ex.nd.png"), 
+				1200, 800, NB_NODE, NB_FIELD, nodal_strainX, true);
+	nb_free_mem(dmg_ndEx);
+	char* dmg_ndEy = nb_allocate_mem(strlen(printable_name) + sizeof("_DMG.Ey.nd.png"));
+    	nb_mesh2D_export_draw(part, strg_concat(dmg_ndEy, printable_name,"_DMG.Ey.nd.png"), 
+				1200, 800, NB_NODE, NB_FIELD, nodal_strainY, true);
+	nb_free_mem(dmg_ndEy);
+	char* dmg_ndExy = nb_allocate_mem(strlen(printable_name) + sizeof("_DMG.Exy.nd.png"));
+    	nb_mesh2D_export_draw(part, strg_concat(dmg_ndExy, printable_name,"_DMG.Exy.nd.png"), 
+				1200, 800, NB_NODE, NB_FIELD, nodal_strainXY, true);
+	nb_free_mem(dmg_ndExy);
+	char* dmg_nd = nb_allocate_mem(strlen(printable_name) + sizeof("_DMG.nd.png"));
+    	nb_mesh2D_export_draw(part, strg_concat(dmg_nd, printable_name,"_DMG.nd.png"), 
+				1200, 800, NB_NODE, NB_FIELD, nodal_damage, true);
+	nb_free_mem(dmg_nd);
 
     	nb_free_mem(memblock);
 }

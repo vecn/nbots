@@ -32,21 +32,23 @@ double nb_fem_implicit_get_residual_tolerance
 (nb_fem_implicit_t* isparams);
 
 uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
-		(const nb_mesh2D_t *const part,
-		 const nb_fem_elem_t *const elemtype,
-		 const nb_material_t *const material,
-		 const nb_bcond_t *const bcond,
-		 bool enable_self_weight,
-		 double gravity[2],
-		 bool enable_Cholesky_solver,
-		 nb_analysis2D_t analysis2D,
-		 nb_analysis2D_params *params2D,
-		 nb_fem_implicit_t* params,
-		 const char* logfile,
-		 double *damage,
-		 double *displacement,
-		 double *strain,
-		 double *stress);
+			(const nb_mesh2D_t *const part,
+		 	const nb_fem_elem_t *const elemtype,
+		 	const nb_material_t *const material,
+		 	const nb_bcond_t *const bcond,
+		 	bool enable_self_weight,
+		 	double gravity[2],
+		 	bool enable_Cholesky_solver,
+		 	nb_analysis2D_t analysis2D,
+		 	nb_analysis2D_params *params2D,
+		 	nb_fem_implicit_t* params,
+		 	const char* logfile,
+		 	double *damage,
+		 	double *displacement,
+		 	double *strain,
+		 	double *stress,
+			double *nodal_strain,
+			double *nodal_damage);
 
 
 #endif

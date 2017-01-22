@@ -3,21 +3,19 @@
 # 2010-2016					#
 # Description: Beam fixed on both sides		#
 #################################################
-
-
 #-------------- Geometry definition ------------#
 # Number of vertices				#
  9						#
 # Vertices coordinates                          #
- 0.0    0.0					#
- 0.02225 0.0					#
- 0.02225 0.005					#
- 0.02275 0.005					#
- 0.02275 0.0					#
- 0.045	0.0					#
- 0.045   0.01					#
- 0.0225	0.01					#
- 0.0 	0.01					#
+ 0.0   	0.0					#
+ 222.5 	0.0					#
+ 222.5 	50					#
+ 227.5 	50					#
+ 227.5 	0.0					#
+ 450	0.0					#
+ 450   	100					#
+ 225	100					#
+ 0.0 	100					#
 # Number of segments				#
  9						#
 # Segments (Vertices pairs IDs)			#
@@ -31,14 +29,13 @@
  7 8						#
  8 0						#
 #-----------------------------------------------#
-
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
  3						#
 # Displacement conditions definition            #
  0 1 1 0 0                                      #
  5 0 1 0 					#
- 7 0 1 -0.001					#
+ 7 0 1 -1					#
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
@@ -46,22 +43,20 @@
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
-
 #-------------- Material properties ------------#
 # Poisson module				#
  0.2						#
 # Elasticity module				#
- 20e9	                                        #
+ 20e3	                                        #
 # Limit traction stress			        #
- 2.4e6                                          #
+ 2.4                                            #
 # Fracture Energy				#
- 113						#
+ 113e-6						#
 # Density					#
  2300						#
 #-----------------------------------------------#
-
 #---------------- Analysis ---------------------#
 # ProbType(z P stress o P strain t SRev) 	#
  0						#
 # Analysis params (Thickness axis of rev)       #
- 0.1  	                                        #
+ 100  	                                        #
