@@ -21,9 +21,10 @@
 #include "set_bconditions.h"
 
 #define SMOOTH 0
-#define MIDPOINT_VOL_INTEGRALS false
 
+#define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
+#define AUTOMATIC_STEP_SIZE false
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -110,6 +111,26 @@ static int finite_increments_with_dynamic_step
 				 const nb_cvfa_eval_damage_t *eval_dmg,
 				 uint32_t id_elem_monitor,
 				 char *minimize_residual_memblock);
+static int finite_increments_with_fixed_step
+				(const nb_mesh2D_t *const mesh,
+				 const nb_material_t *const material,
+				 const nb_bcond_t *const bcond,		     
+				 bool enable_self_weight, double gravity[2],
+				 nb_analysis2D_t analysis2D,
+				 nb_analysis2D_params *params2D,
+				 const char *dir_to_save,
+				 double *displacement, /* Output */
+				 double *strain,       /* Output */
+				 double *elem_damage,  /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces, int smooth,
+				 nb_sparse_t *K, nb_sparse_t *D,
+				 const nb_glquadrature_t *glq,
+				 const nb_cvfa_eval_damage_t *eval_dmg,
+				 uint32_t id_elem_monitor,
+				 char *minimize_residual_memblock,
+				 uint32_t steps);
 static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems);
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
@@ -273,7 +294,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
 
 	int status;
-	if (1) {
+	if (AUTOMATIC_STEP_SIZE) {
 		status = finite_increments_with_dynamic_step
 						(mesh, material, bcond,
 						 enable_self_weight,
@@ -285,6 +306,19 @@ int nb_cvfa_compute_2D_damage_phase_field
 						 &glq, &eval_dmg,
 						 id_elem_monitor[0],
 						 minimize_residual_memblock);
+	} else {
+		status = finite_increments_with_fixed_step
+						(mesh, material, bcond,
+						 enable_self_weight,
+						 gravity, analysis2D,
+						 params2D, dir_to_save,
+						 displacement, strain,
+						 elem_damage, intmsh, xc,
+						 faces, SMOOTH, K, D,
+						 &glq, &eval_dmg,
+						 id_elem_monitor[0],
+						 minimize_residual_memblock,
+						 100);
 	}
 	if (0 != status)
 		goto EXIT;
@@ -600,6 +634,64 @@ static int finite_increments_with_dynamic_step
 					elem_damage, iter, trim_bc_factor);
 			iter ++;
 		}
+	}
+	status = 0;
+EXIT:
+	return status;
+}
+
+static int finite_increments_with_fixed_step
+				(const nb_mesh2D_t *const mesh,
+				 const nb_material_t *const material,
+				 const nb_bcond_t *const bcond,		     
+				 bool enable_self_weight, double gravity[2],
+				 nb_analysis2D_t analysis2D,
+				 nb_analysis2D_params *params2D,
+				 const char *dir_to_save,
+				 double *displacement, /* Output */
+				 double *strain,       /* Output */
+				 double *elem_damage,  /* Output */
+				 const nb_mesh2D_t *intmsh,
+				 const double *xc,
+				 face_t **faces, int smooth,
+				 nb_sparse_t *K, nb_sparse_t *D,
+				 const nb_glquadrature_t *glq,
+				 const nb_cvfa_eval_damage_t *eval_dmg,
+				 uint32_t id_elem_monitor,
+				 char *minimize_residual_memblock,
+				 uint32_t steps)
+{
+	int status;
+	char reaction_log[100];
+	get_reaction_log_name(dir_to_save, reaction_log);
+	save_reaction_log(reaction_log, 0, 0, 0);
+	uint32_t iter = 0;
+	uint32_t max_iter = 500;
+	double step_size = 1.0 / steps;
+	for (uint32_t i = 0; i < steps; i++) {
+		double bc_factor = (i + 1) * step_size;
+		double reaction;
+		status = minimize_residual(mesh, material, bcond,
+					   enable_self_weight, gravity,
+					   analysis2D, params2D,
+					   displacement, strain,
+					   elem_damage, intmsh, xc,
+					   faces, SMOOTH, K, D, glq,
+					   eval_dmg, bc_factor,
+					   max_iter, id_elem_monitor,
+					   &reaction,
+					   minimize_residual_memblock);
+		if (status == MAX_ITER_REACHED) {
+			printf("Max iter reached\n");
+		} else {
+			if (status != 0) {
+				show_error_message(status);
+				goto EXIT;
+			}
+		}
+		save_reaction_log(reaction_log, iter, bc_factor, reaction);
+		save_simulation(dir_to_save, mesh, displacement,
+				elem_damage, i, bc_factor);
 	}
 	status = 0;
 EXIT:

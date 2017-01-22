@@ -36,6 +36,7 @@ static int suite_clean(void);
 
 static void test_mode_I(void);
 static void test_mode_II(void);
+static void test_count_steps_in_results(void);
 static void test_draw_results(void);
 
 static void check_mode_I(const void *mesh,
@@ -75,9 +76,11 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
-	CU_add_test(suite, "Drawing results", test_draw_results);
+	CU_add_test(suite, "Count steps in results",
+		    test_count_steps_in_results);
+	//CU_add_test(suite, "Drawing results", test_draw_results);
 }
 
 static int suite_init(void)
@@ -104,7 +107,7 @@ static void check_mode_I(const void *mesh,
 
 static void test_mode_II(void)
 {
-	run_test("%s/Mode_II_4point_bending.txt", 3000, NB_POLY,
+	run_test("%s/Mode_II_4point_bending.txt", 10000, NB_POLY,
 		 check_mode_II);
 }
 
@@ -556,11 +559,18 @@ EXIT:
 	return status;
 }
 
+static void test_count_steps_in_results(void)
+{
+	char name[100];
+	sprintf(name, "%s/Mode_I_results.nbt", INPUTS_DIR);
+	uint32_t N_steps;
+	int status = nb_mesh2D_field_get_N_steps(name, &N_steps);
+	CU_ASSERT(0 == status);
+	CU_ASSERT(14 == N_steps);
+}
+
 static void test_draw_results(void)
 {
-	uint32_t N_steps;
-	int st = nb_mesh2D_field_get_N_steps("dmg_tmp/results.nbt", &N_steps);
-	printf("[%i] N_Steps: %i\n", st, N_steps);
 	int status = nb_mesh2D_field_read_and_draw("dmg_tmp", "dmg_tmp",
 						   show_drawing_progress);
 	CU_ASSERT(0 == status);/* TEMPORAL */

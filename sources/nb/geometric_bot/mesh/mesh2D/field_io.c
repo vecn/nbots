@@ -11,6 +11,7 @@
 
 #define STEP_READ_FINISH 100
 #define FIELD_READ_FINISH 101
+#define FIELD_SKIPPED 102
 
 static int check_header(nb_cfreader_t *cfr);
 static int check_mesh_correspondence(nb_cfreader_t *cfr,
@@ -22,7 +23,8 @@ static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 				   void (*show_progress)(float prog));
 static int read_step_data(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh,
 			  double *disp, double *damage,
-			  int *step, double *time);
+			  uint32_t *step, double *time);
+static int check_step_header(nb_cfreader_t *cfr, uint32_t *step,  double *time);
 static int read_disp_field(nb_cfreader_t *cfr,
 			   const nb_mesh2D_t *mesh,
 			   double *disp);
@@ -40,12 +42,28 @@ static int count_all_steps(nb_cfreader_t *cfr,
 			   uint32_t N_elems, uint32_t *N_steps);
 static int check_step(nb_cfreader_t *cfr,
 		      uint32_t N_nodes, uint32_t N_edges,
-		      uint32_t N_elems, int *readed_step);
+		      uint32_t N_elems, uint32_t *readed_step);
 static int check_field(nb_cfreader_t *cfr, uint32_t N_nodes,
 		       uint32_t N_edges, uint32_t N_elems);
+static int check_field_header(nb_cfreader_t *cfr, uint32_t N_nodes,
+			      uint32_t N_edges, uint32_t N_elems,
+			      int *N_comp, uint32_t *N, char *field_name);
 static int get_N_components(const char *type);
 static int get_field_length(const char *var, uint32_t N_nodes,
 			    uint32_t N_edges, uint32_t N_elems);
+static int jump_field_data(nb_cfreader_t *cfr, uint32_t N);
+static int jump_to_step(nb_cfreader_t *cfr, uint32_t step_id,
+			uint32_t N_nodes, uint32_t N_edges, uint32_t N_elems);
+static int read_step_field(nb_cfreader_t *cfr, uint32_t N_nodes,
+			   uint32_t N_edges, uint32_t N_elems, double *time,
+			   const char *field_name, double *field);
+static int read_field(nb_cfreader_t *cfr, uint32_t N_nodes,
+		      uint32_t N_edges, uint32_t N_elems,
+		      const char *fieldname, double *field);
+static int read_field_data(nb_cfreader_t *cfr, uint32_t N,
+			   int N_comp, double *field);
+static int read_symtensor(nb_cfreader_t *cfr, uint32_t id, double *symtensor);
+static int read_tensor(nb_cfreader_t *cfr, uint32_t id, double *tensor);
 
 int nb_mesh2D_field_read_and_draw(const char *dir_saved_results,
 				  const char *dir_output,
@@ -68,7 +86,6 @@ int nb_mesh2D_field_read_and_draw(const char *dir_saved_results,
 
 	nb_cfreader_t *cfr = nb_cfreader_create();
 	nb_cfreader_load_nbt_format(cfr);
-	
 	sprintf(name, "%s/results.nbt", dir_saved_results);
 	status = nb_cfreader_open_file(cfr, name);
 	if (0 != status)
@@ -169,9 +186,9 @@ static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 	char *memblock = nb_allocate_mem(memsize);
 	double *disp = (void*) memblock;
 	double *damage = (void*) (memblock + 2 * N * sizeof(*disp));
-	int step = 1;
+	uint32_t step = 1;
 	while (1) {
-		int readed_step;
+		uint32_t readed_step;
 		double time;
 		int read_status = read_step_data(cfr, mesh, disp, damage,
 						 &readed_step, &time);
@@ -198,23 +215,10 @@ EXIT:
 }
 
 static int read_step_data(nb_cfreader_t *cfr, const nb_mesh2D_t *mesh,
-			  double *disp, double *damage, int *step,
+			  double *disp, double *damage, uint32_t *step,
 			  double *time)
 {
-	int status = nb_cfreader_check_token(cfr, "Step");
-	if (0 != status) {
-		if (NB_CFREADER_EOF == status)
-			status = STEP_READ_FINISH;
-		else
-			status = 1;
-		goto EXIT;
-	}
-	
-	status = nb_cfreader_read_int(cfr, step);
-	if (0 != status)
-		goto EXIT;
-	
-	status = nb_cfreader_read_var_double(cfr, "Time", time);
+	int status = check_step_header(cfr, step, time);
 	if (0 != status)
 		goto EXIT;
 
@@ -233,28 +237,62 @@ EXIT:
 	return status;
 }
 
+static int check_step_header(nb_cfreader_t *cfr, uint32_t *step, double *time)
+{
+	int status = nb_cfreader_check_token(cfr, "Step");
+	if (0 != status) {
+		if (NB_CFREADER_EOF == status)
+			status = STEP_READ_FINISH;
+		else
+			status = 1;
+		goto EXIT;
+	}
+	
+	status = nb_cfreader_read_uint(cfr, step);
+	if (0 != status)
+		goto EXIT;
+	
+	status = nb_cfreader_read_var_double(cfr, "Time", time);
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
 static int read_disp_field(nb_cfreader_t *cfr,
 			   const nb_mesh2D_t *mesh,
 			   double *disp)
 {
-	int status = nb_cfreader_check_line(cfr, "Field");
+	int N_comp;
+	uint32_t N;
+	char field_name[30];
+	int status = check_field_header(cfr,
+					nb_mesh2D_get_N_nodes(mesh),
+					nb_mesh2D_get_N_edges(mesh),
+					nb_mesh2D_get_N_elems(mesh),
+					&N_comp, &N, field_name);
 	if (0 != status)
 		goto EXIT;
-	
-	status = nb_cfreader_check_line(cfr, "Type = Vector");
-	if (0 != status)
+
+	if (N_comp != 2) {
+		status = 1;
 		goto EXIT;
-	status = nb_cfreader_check_line(cfr, "Name = \"Displacement\"");
-	if (0 != status)
+	}
+
+	if (nb_mesh2D_get_N_elems(mesh) != N) {
+		status = 1;
 		goto EXIT;
-	status = nb_cfreader_check_line(cfr, "Support = Elements");
-	if (0 != status)
+	}
+
+	if (0 != strcmp("Displacement", field_name)) {
+		status = 1;
 		goto EXIT;
+	}
+
 	status = nb_cfreader_check_line(cfr, "Data");
 	if (0 != status)
 		goto EXIT;
 
-	uint32_t N = nb_mesh2D_get_N_elems(mesh);
 	for (uint32_t i = 0; i < N; i++) {
 		status = read_vector(cfr, i, &(disp[i*2]));
 		if (0 != status)
@@ -317,24 +355,36 @@ static int read_damage_field(nb_cfreader_t *cfr,
 			     const nb_mesh2D_t *mesh,
 			     double *damage)
 {
-	int status = nb_cfreader_check_line(cfr, "Field");
+	int N_comp;
+	uint32_t N;
+	char field_name[30];
+	int status = check_field_header(cfr,
+					nb_mesh2D_get_N_nodes(mesh),
+					nb_mesh2D_get_N_edges(mesh),
+					nb_mesh2D_get_N_elems(mesh),
+					&N_comp, &N, field_name);
 	if (0 != status)
 		goto EXIT;
-	
-	status = nb_cfreader_check_line(cfr, "Type = Scalar");
-	if (0 != status)
+
+	if (N_comp != 1) {
+		status = 1;
 		goto EXIT;
-	status = nb_cfreader_check_line(cfr, "Name = \"Damage\"");
-	if (0 != status)
+	}
+
+	if (nb_mesh2D_get_N_elems(mesh) != N) {
+		status = 1;
 		goto EXIT;
-	status = nb_cfreader_check_line(cfr, "Support = Elements");
-	if (0 != status)
+	}
+
+	if (0 != strcmp("Damage", field_name)) {
+		status = 1;
 		goto EXIT;
+	}
+
 	status = nb_cfreader_check_line(cfr, "Data");
 	if (0 != status)
 		goto EXIT;
 	
-	uint32_t N = nb_mesh2D_get_N_elems(mesh);
 	for (uint32_t i = 0; i < N; i++) {
 		status = read_scalar(cfr, i, &(damage[i]));
 		if (0 != status)
@@ -482,7 +532,7 @@ static int count_all_steps(nb_cfreader_t *cfr,
 	int status;
 	int step = 1;
 	while (1) {
-		int readed_step;
+		uint32_t readed_step;
 		int read_status = check_step(cfr, N_nodes, N_edges,
 					     N_elems, &readed_step);
 		if (STEP_READ_FINISH == read_status) {
@@ -505,23 +555,11 @@ EXIT:
 
 static int check_step(nb_cfreader_t *cfr,
 		      uint32_t N_nodes, uint32_t N_edges,
-		      uint32_t N_elems, int *readed_step)
+		      uint32_t N_elems, uint32_t *readed_step)
 {
-	int status = nb_cfreader_check_token(cfr, "Step");
-	if (0 != status) {
-		if (NB_CFREADER_EOF == status)
-			status = STEP_READ_FINISH;
-		else
-			status = 1;
-		goto EXIT;
-	}
-	
-	status = nb_cfreader_read_int(cfr, readed_step);
-	if (0 != status)
-		goto EXIT;
-
 	double time;
-	status = nb_cfreader_read_var_double(cfr, "Time", &time);
+	uint32_t step;
+	int status = check_step_header(cfr, &step, &time);
 	if (0 != status)
 		goto EXIT;
 
@@ -536,12 +574,45 @@ static int check_step(nb_cfreader_t *cfr,
 	status = nb_cfreader_check_line(cfr, "End Step");
 	if (0 != status)
 		goto EXIT;
+
+	*readed_step = step;
 EXIT:
 	return status;
 }
 
 static int check_field(nb_cfreader_t *cfr, uint32_t N_nodes,
 		       uint32_t N_edges, uint32_t N_elems)
+{
+	int N_comp;
+	uint32_t N;
+	char field_name[30];
+	int status = check_field_header(cfr, N_nodes, N_edges, N_elems,
+					&N_comp, &N, field_name);
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "Data");
+	if (0 != status)
+		goto EXIT;
+
+	status = jump_field_data(cfr, N);
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Data");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Field");
+	if (0 != status)
+		goto EXIT;
+EXIT:
+	return status;
+}
+
+static int check_field_header(nb_cfreader_t *cfr, uint32_t N_nodes,
+			      uint32_t N_edges, uint32_t N_elems,
+			      int *N_comp, uint32_t *N, char *field_name)
 {
 	int status = nb_cfreader_check_line(cfr, "Field");
 	if (0 != status) {
@@ -554,14 +625,14 @@ static int check_field(nb_cfreader_t *cfr, uint32_t N_nodes,
 	if (0 != status)
 		goto EXIT;
 
-	int N_comp = get_N_components(var);
+	*N_comp = get_N_components(var);
 
-	if (0 == N_comp) {
+	if (0 == *N_comp) {
 		status = 1;
 		goto EXIT;
 	}
 
-	status = nb_cfreader_read_var_string(cfr, "Name", var);
+	status = nb_cfreader_read_var_string(cfr, "Name", field_name);
 	if (0 != status)
 		goto EXIT;
 
@@ -569,29 +640,11 @@ static int check_field(nb_cfreader_t *cfr, uint32_t N_nodes,
 	if (0 != status)
 		goto EXIT;
 
-	int N = get_field_length(var, N_nodes, N_edges, N_elems);
-	if (0 == N) {
+	*N = get_field_length(var, N_nodes, N_edges, N_elems);
+	if (0 == *N) {
 		status = 1;
 		goto EXIT;
 	}
-
-	status = nb_cfreader_check_line(cfr, "Data");
-	if (0 != status)
-		goto EXIT;
-	
-	for (uint32_t i = 0; i < N; i++) {
-		status = nb_cfreader_jump_line(cfr);
-		if (0 != status)
-			goto EXIT;
-	}
-
-	status = nb_cfreader_check_line(cfr, "End Data");
-	if (0 != status)
-		goto EXIT;
-
-	status = nb_cfreader_check_line(cfr, "End Field");
-	if (0 != status)
-		goto EXIT;
 EXIT:
 	return status;
 }
@@ -628,9 +681,184 @@ static int get_field_length(const char *var, uint32_t N_nodes,
 
 }
 
-int nb_mesh2D_field_read_last(const char *filename,
-			      const char *field_name, double *field)
+static int jump_field_data(nb_cfreader_t *cfr, uint32_t N)
 {
-	/* TEMPORAL */
-	return 0;
+	int status = 0;
+	for (uint32_t i = 0; i < N; i++) {
+		status = nb_cfreader_jump_line(cfr);
+		if (0 != status)
+			goto EXIT;
+	}
+EXIT:
+	return status;
+}
+
+int nb_mesh2D_field_read_step_field(const char *filename, uint32_t step,
+				    double *time, const char *field_name,
+				    double *field)
+{
+	nb_cfreader_t *cfr = nb_cfreader_create();
+	nb_cfreader_load_nbt_format(cfr);
+	
+	int status = nb_cfreader_open_file(cfr, filename);
+	if (0 != status)
+		goto EXIT;
+
+	status = check_header(cfr);
+	if (0 != status)
+		goto CLOSE_FILE;
+
+	uint32_t N_nodes;
+	uint32_t N_edges;
+	uint32_t N_elems;
+	status = jump_mesh_correspondence(cfr, &N_nodes, &N_edges, &N_elems);
+	if (0 != status)
+		goto CLOSE_FILE;
+
+	status = jump_to_step(cfr, step, N_nodes, N_edges, N_elems);
+	if (0 != status)
+		goto CLOSE_FILE;
+
+	status = read_step_field(cfr, N_nodes, N_edges, N_elems, time,
+				 field_name, field);
+	if (0 != status)
+		goto CLOSE_FILE;
+
+	status = 0;
+CLOSE_FILE:
+	nb_cfreader_close_file(cfr);
+EXIT:
+	nb_cfreader_destroy(cfr);
+	return status;
+}
+
+static int jump_to_step(nb_cfreader_t *cfr, uint32_t step_id,
+			uint32_t N_nodes, uint32_t N_edges, uint32_t N_elems)
+{
+	int status;
+	for (uint32_t i = 1; i < step_id; i++) {
+		uint32_t readed_step;
+		int read_status = check_step(cfr, N_nodes, N_edges,
+					     N_elems, &readed_step);
+		if (0 != read_status) {
+			status = 1;
+			goto EXIT;
+		}
+		if (readed_step != i) {
+			status = 1;
+			goto EXIT;
+		}
+	}
+EXIT:
+	return status;
+}
+
+static int read_step_field(nb_cfreader_t *cfr, uint32_t N_nodes,
+			   uint32_t N_edges, uint32_t N_elems, double *time,
+			   const char *field_name, double *field)
+{
+	uint32_t step;
+	int status = check_step_header(cfr, &step, time);
+	if (0 != status)
+		goto EXIT;
+
+	bool found = false;
+	while (1) {
+		status = read_field(cfr, N_nodes, N_edges, N_elems,
+				    field_name, field);
+		if (0 == status)
+			found = true;
+		if (FIELD_READ_FINISH == status)
+			break;
+		if (0 != status && FIELD_SKIPPED != status) {
+			status = 1;
+			goto EXIT;
+		}
+	}
+
+	status = nb_cfreader_check_line(cfr, "End Step");
+	if (0 != status)
+		goto EXIT;
+
+	if (!found)
+		status = 1;
+EXIT:
+	return status;	
+}
+
+static int read_field(nb_cfreader_t *cfr, uint32_t N_nodes,
+		      uint32_t N_edges, uint32_t N_elems,
+		      const char *fieldname, double *field)
+{
+	int N_comp;
+	uint32_t N;
+	char fieldname_readed[30];
+	int status = check_field_header(cfr, N_nodes, N_edges, N_elems,
+					&N_comp, &N, fieldname_readed);
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "Data");
+	if (0 != status)
+		goto EXIT;
+	
+	int field_match = strcmp(fieldname_readed, fieldname);
+	if (0 != field_match) {
+		status = jump_field_data(cfr, N);
+		if (0 != status)
+			goto EXIT;
+	} else {
+		status = read_field_data(cfr, N, N_comp, field);
+		if (0 != status)
+			goto EXIT;
+	}
+
+	status = nb_cfreader_check_line(cfr, "End Data");
+	if (0 != status)
+		goto EXIT;
+
+	status = nb_cfreader_check_line(cfr, "End Field");
+	if (0 != status)
+		goto EXIT;
+	if (0 != field_match)
+		status = FIELD_SKIPPED;
+EXIT:
+	return status;
+}
+
+static int read_field_data(nb_cfreader_t *cfr, uint32_t N,
+			   int N_comp, double *field)
+{
+	int status;
+	int (*read_val)(nb_cfreader_t *cfr, uint32_t id, double *val);
+	if (1 == N_comp) {
+		read_val = read_scalar;
+	} else if (2 == N_comp) {
+		read_val = read_vector;
+	} else if (3 == N_comp) {
+		read_val = read_symtensor;
+	} else if (4 == N_comp) {
+		read_val = read_tensor;
+	} else {
+		status = 1;
+		goto EXIT;
+	}
+	
+	for (uint32_t i = 0; i < N; i++) {
+		status = read_val(cfr, i, &(field[i * N_comp]));
+		if (0 != status)
+			goto EXIT;
+	}
+EXIT:
+	return status;
+}
+
+static int read_symtensor(nb_cfreader_t *cfr, uint32_t id, double *symtensor)
+{
+	return 1;/* TEMPORAL */
+}
+
+static int read_tensor(nb_cfreader_t *cfr, uint32_t id, double *tensor)
+{
+	return 1;/* TEMPORAL */
 }

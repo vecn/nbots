@@ -10,7 +10,8 @@ int nb_mesh2D_field_read_and_draw(const char *dir_saved_results,
 
 int nb_mesh2D_field_get_N_steps(const char *filename, uint32_t *N_steps);
 
-int nb_mesh2D_field_read_last(const char *filename,
-			      const char *field_name, double *field);
+int nb_mesh2D_field_read_step_field(const char *filename, uint32_t step,
+				    double *time, const char *field_name,
+				    double *field);
 
 #endif
