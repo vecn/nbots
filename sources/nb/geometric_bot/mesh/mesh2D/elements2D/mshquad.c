@@ -1207,3 +1207,12 @@ void nb_mshquad_build_model_disabled_elems(const void *msh,
 {
 	;/* PENDING */
 }
+
+void nb_mshquad_centroid_iteration(void *msh, uint32_t max_iter,
+				   /* density can be NULL */
+				   double (*density)(const double[2],
+						     const void *data),
+				   const void *density_data)
+{
+	;/* PENDING */
+}

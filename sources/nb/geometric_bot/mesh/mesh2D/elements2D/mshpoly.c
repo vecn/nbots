@@ -157,6 +157,31 @@ static bool is_exterior(const msh_trg_t *trg);
 static bool have_all_nodes_in_sgm(const msh_trg_t *trg);
 static void delete_exterior_trg(nb_tessellator2D_t *mesh,
 				nb_container_t *exterior_trg);
+static uint32_t get_nodes_N_adj(nb_mshpoly_t *msh, uint32_t *N_adj);
+static void set_nodes_adj_mem(nb_mshpoly_t *msh, uint32_t *N_adj,
+			      uint32_t **adj, char *memblock);
+static void get_nodes_adj(nb_mshpoly_t *msh, uint32_t *N_adj,
+			  uint32_t **adj);
+static void set_mask(nb_mshpoly_t *msh, char *mask);
+static void update_centroids(nb_mshpoly_t *msh,
+			     double (*density)(const double[2],
+					       const void *data),
+			     const void *density_data);
+static void get_centroid(nb_mshpoly_t *msh, uint32_t elem_id, double p[2],
+			 double (*density)(const double[2],
+					   const void *data),
+			 const void *density_data);
+static double update_nodes(nb_mshpoly_t *msh, uint32_t *N_adj,
+			   uint32_t **adj, char *mask,
+			   double (*density)(const double[2],
+					     const void *data),
+			   const void *density_data);
+static void get_new_node_position(nb_mshpoly_t *msh, uint32_t id,
+				  uint32_t *N_adj, uint32_t **adj,
+				  double new_p[2],
+				  double (*density)(const double[2],
+					     const void *data),
+				  const void *density_data);
 
 uint32_t nb_mshpoly_get_memsize(void)
 {
@@ -1487,10 +1512,259 @@ static void set_nodal_perm_to_insgm(nb_mshpoly_t *poly, const uint32_t *perm)
 	}
 }
 
-void nb_mshpoly_Lloyd_iteration(void *mshpoly, uint32_t max_iter,
-				double (*density)(const double[2],
-						  const void *data),
-				const void *density_data)
+void nb_mshpoly_centroid_iteration(void *mshpoly, uint32_t max_iter,
+				   /* density can be NULL */
+				   double (*density)(const double[2],
+						     const void *data),
+				   const void *density_data)
 {
-	;/* PENDING */
+	uint32_t N_nodes = nb_mshpoly_get_N_nodes(mshpoly);
+	char *memblock1 = nb_allocate_mem(N_nodes * (sizeof(uint32_t) +
+						     sizeof(uint32_t*) + 1));
+	uint32_t *N_adj = (void*) memblock1;
+	uint32_t **adj = (void*) (memblock1 + N_nodes * sizeof(uint32_t));
+	                     /* Mask is for fixed nodes (at the boundary) */
+	char *mask = (void*) (memblock1 + N_nodes * (sizeof(uint32_t) +
+						     sizeof(uint32_t*)));
+	uint32_t N_total_adj = get_nodes_N_adj(mshpoly, N_adj);
+	
+	char *memblock2 = nb_allocate_mem(N_total_adj * sizeof(uint32_t));
+	set_nodes_adj_mem(mshpoly, N_adj, adj, memblock2);
+	get_nodes_adj(mshpoly, N_adj, adj);
+	set_mask(mshpoly, mask);
+
+	double max_disp2 = 1;
+	uint32_t i = 0;
+	while (max_disp2 > 1e-6 && i < max_iter) {
+		update_centroids(mshpoly, density, density_data);
+		max_disp2 = update_nodes(mshpoly, N_adj, adj, mask,
+					 density, density_data);
+		i++;
+	}
+
+	nb_free_mem(memblock1);
+	nb_free_mem(memblock2);
+}
+
+static uint32_t get_nodes_N_adj(nb_mshpoly_t *msh, uint32_t *N_adj)
+{
+	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
+	memset(N_adj, 0, N_nodes * sizeof(*N_adj));
+
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	uint32_t N_total = 0;
+	for (uint32_t i = 0; i < N_elems; i++) {
+		int N = nb_mshpoly_elem_get_N_adj(msh, i);
+		for (int j = 0; j < N; j++) {
+			uint32_t id = nb_mshpoly_elem_get_adj(msh, i, j);
+			N_adj[id] += 1;
+		}
+		N_total += N;
+	}
+	return N_total;
+}
+
+static void set_nodes_adj_mem(nb_mshpoly_t *msh, uint32_t *N_adj,
+			      uint32_t **adj, char *memblock)
+{
+	uint32_t N = nb_mshpoly_get_N_nodes(msh);
+
+	for (uint32_t i = 0; i < N; i++) {
+		adj[i] = (void*) memblock;
+		memblock += N_adj[i] * sizeof(uint32_t);
+	}
+}
+
+static void get_nodes_adj(nb_mshpoly_t *msh, uint32_t *N_adj,
+			  uint32_t **adj)
+{
+	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
+	memset(N_adj, 0, N_nodes * sizeof(*N_adj));
+
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		int N = nb_mshpoly_elem_get_N_adj(msh, i);
+		for (int j = 0; j < N; j++) {
+			uint32_t id = nb_mshpoly_elem_get_adj(msh, i, j);
+			uint32_t local_id = N_adj[id];
+			adj[id][local_id] = i;
+			N_adj[id] = local_id + 1;
+		}
+	}
+}
+
+static void set_mask(nb_mshpoly_t *msh, char *mask)
+/*
+ * 0: Free vertices (steiner points).
+ * 1: Vertices constrained to input segments.
+ * 2: Input vertices fixed.
+ */
+{
+	uint32_t N = nb_mshpoly_get_N_nodes(msh);
+	memset(mask, 0, N);
+
+	uint32_t N_sgm = nb_mshpoly_get_N_insgm(msh);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_sgm_nodes = nb_mshpoly_insgm_get_N_nodes(msh, i);
+		for (uint32_t j = 0; j < N_sgm_nodes; j++) {
+			uint32_t id = nb_mshpoly_insgm_get_node(msh, i, j);
+			if (id < N)
+				mask[id] = 1;
+		}
+	}
+
+	uint32_t N_vtx = nb_mshpoly_get_N_invtx(msh);
+	for (uint32_t i = 0; i < N_vtx; i++) {
+		uint32_t id = nb_mshpoly_get_invtx(msh, i);
+		if (id < N)
+			mask[id] = 2;
+	}
+}
+
+static void update_centroids(nb_mshpoly_t *msh,
+			     double (*density)(const double[2],
+					       const void *data),
+			     const void *density_data)
+{
+	
+	uint32_t N_elems = nb_mshpoly_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		double p[2];
+		get_centroid(msh, i, p, density, density_data);
+		msh->cen[i * 2] = p[0];
+		msh->cen[i*2+1] = p[1];
+	}
+}
+
+static void get_centroid(nb_mshpoly_t *msh, uint32_t elem_id, double p[2],
+			 double (*density)(const double[2],
+					   const void *data),
+			 const void *density_data)
+{
+	double t1[2];
+	double t2[2];
+	double t3[2];
+	uint32_t id1 = nb_mshpoly_elem_get_adj(msh, elem_id, 0);
+	t1[0] = nb_mshpoly_node_get_x(msh, id1);
+	t1[1] = nb_mshpoly_node_get_y(msh, id1);
+	double den1 = 1.0;
+	if (NULL != density)
+		den1 = density(t1, density_data);
+
+	double total_area = 0.0;
+	p[0] = 0.0;
+	p[1] = 0.0;
+
+	int N = nb_mshpoly_elem_get_N_adj(msh, elem_id);
+	for (int j = 2; j < N; j++) {
+		uint32_t id2 = nb_mshpoly_elem_get_adj(msh, elem_id, j-1);
+		t2[0] = nb_mshpoly_node_get_x(msh, id2);
+		t2[1] = nb_mshpoly_node_get_y(msh, id2);
+		double den2 = 1.0;
+		if (NULL != density)
+			den2 = density(t2, density_data);
+
+		uint32_t id3 = nb_mshpoly_elem_get_adj(msh, elem_id, j);
+		t3[0] = nb_mshpoly_node_get_x(msh, id3);
+		t3[1] = nb_mshpoly_node_get_y(msh, id3);
+		double den3 = 1.0;
+		if (NULL != density)
+			den3 = density(t3, density_data);
+
+		double ct[2];
+		ct[0] = (den1 * t1[0] + den2 * t2[0] + den3 * t3[0]) / 3;
+		ct[1] = (den1 * t1[1] + den2 * t2[1] + den3 * t3[1]) / 3;
+
+		double area = nb_utils2D_get_trg_area(t1, t2, t3);
+		total_area += area;
+
+		p[0] += ct[0] * area;
+		p[1] += ct[1] * area;
+	}
+	p[0] /= total_area;
+	p[1] /= total_area;
+}
+
+static double update_nodes(nb_mshpoly_t *msh, uint32_t *N_adj,
+			   uint32_t **adj, char *mask,
+			   double (*density)(const double[2],
+					     const void *data),
+			   const void *density_data)
+{
+	uint32_t N_nodes = nb_mshpoly_get_N_nodes(msh);
+	double max_d2 = 0;
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		if (0 == mask[i]) {
+			double p[2];
+			get_new_node_position(msh, i, N_adj, adj, p,
+					      density, density_data);
+			double d2 = nb_utils2D_get_dist2(p, &(msh->nod[i*2]));
+			if (d2 > max_d2)
+				max_d2 = d2;
+			msh->nod[i * 2] = p[0];
+			msh->nod[i*2+1] = p[1];
+		}
+	}
+
+	uint32_t N_sgm = nb_mshpoly_get_N_insgm(msh);
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_sgm_nodes = nb_mshpoly_insgm_get_N_nodes(msh, i);
+		double sn[2];
+		double s1[2];
+		if (N_sgm_nodes > 0) {
+			uint32_t id1 =
+				nb_mshpoly_insgm_get_node(msh, i, 0);
+			uint32_t id2 =
+				nb_mshpoly_insgm_get_node(msh, i,
+							  N_sgm_nodes - 1);
+			s1[0] = nb_mshpoly_node_get_x(msh, id1);
+			s1[1] = nb_mshpoly_node_get_y(msh, id1);
+			double s2[2];
+			s2[0] = nb_mshpoly_node_get_x(msh, id2);
+			s2[1] = nb_mshpoly_node_get_y(msh, id2);
+			double len = nb_utils2D_get_dist(s1, s2);
+			sn[0] = (s2[0] - s1[0]) / len;
+			sn[1] = (s2[1] - s1[1]) / len;			
+		}
+		for (uint32_t j = 0; j < N_sgm_nodes; j++) {
+			uint32_t id = nb_mshpoly_insgm_get_node(msh, i, j);
+			if (1 == mask[id]) {
+				double p[2];
+				get_new_node_position(msh, id, N_adj, adj, p,
+						      density, density_data);
+				double dot = (p[0] - s1[0]) * sn[0] +
+					(p[1] - s1[1]) * sn[1];
+				p[0] = s1[0] + dot * sn[0];
+				p[1] = s1[1] + dot * sn[1];
+				double *node = &(msh->nod[id*2]);
+				double d2 = nb_utils2D_get_dist2(p, node);
+				if (d2 > max_d2)
+					max_d2 = d2;
+				msh->nod[id * 2] = p[0];
+				msh->nod[id*2+1] = p[1];
+			}
+		}
+	}
+	return max_d2;
+}
+
+static void get_new_node_position(nb_mshpoly_t *msh, uint32_t id,
+				  uint32_t *N_adj, uint32_t **adj,
+				  double new_p[2],
+				  double (*density)(const double[2],
+					     const void *data),
+				  const void *density_data)
+{
+	double x = 0;
+	double y = 0;
+	for (int j = 0; j < N_adj[id]; j++) {
+		uint32_t elem_id = adj[id][j];
+		double den = 1;
+		if (density != NULL)
+			den = density(&(msh->cen[elem_id * 2]), density_data);
+		x += msh->cen[elem_id * 2] * den;
+		y += msh->cen[elem_id*2+1] * den;
+	}
+	new_p[0] = x / N_adj[id];
+	new_p[1] = y / N_adj[id];
 }

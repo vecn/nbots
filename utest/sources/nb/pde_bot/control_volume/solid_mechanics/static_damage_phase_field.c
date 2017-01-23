@@ -14,6 +14,7 @@
 #include "nb/pde_bot.h"
 
 #define INPUTS_DIR "../utest/sources/nb/pde_bot/damage_inputs"
+#define OUTPUT_DIR "dmg_tmp"
 
 #define POW2(a) ((a)*(a))
 #define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
@@ -95,7 +96,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 11000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 8000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -304,15 +305,16 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
 
-	nb_mesh2D_save_nbt(mesh, "dmg_tmp/mesh.nbt");
+	sprintf(input, "%s/mesh.nbt", OUTPUT_DIR);
+	nb_mesh2D_save_nbt(mesh, input);
 
-	int status_cvfa = 
+	int status_cvfa =
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,
 						      bcond,
 						      false, NULL,
 						      analysis2D,
 						      &params2D,
-						      "dmg_tmp",
+						      OUTPUT_DIR,
 						      results->disp,
 						      results->strain,
 						      results->damage,
@@ -354,6 +356,8 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 
 	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
+
+	nb_mesh2D_centroid_iteration(mesh, 300, NULL, NULL);
 }
 
 static void results_init(results_t *results, uint32_t N_faces,
@@ -569,7 +573,7 @@ static void test_count_steps_in_results(void)
 
 static void test_draw_results(void)
 {
-	int status = nb_mesh2D_field_read_and_draw("dmg_tmp", "dmg_tmp",
+	int status = nb_mesh2D_field_read_and_draw(OUTPUT_DIR, OUTPUT_DIR,
 						   show_drawing_progress);
 	CU_ASSERT(0 == status);/* TEMPORAL */
 }
