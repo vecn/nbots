@@ -25,6 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
+#define FIXED_STEPS 100
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -151,6 +152,28 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     uint32_t id_elem_monitor,
 			     double *monitor_reaction,
 			     char *memblock);
+static int solve_coupled_system(const nb_mesh2D_t *const mesh,
+				const nb_material_t *const material,
+				const nb_bcond_t *numeric_bcond,
+				bool enable_self_weight, double gravity[2],
+				nb_analysis2D_t analysis2D,
+				nb_analysis2D_params *params2D,
+				double *displacement, /* Output */
+				double *elem_damage,  /* Output */
+				const nb_mesh2D_t *intmsh,
+				const double *xc, face_t **faces, int smooth,
+				nb_sparse_t *K, nb_sparse_t *D,
+				const nb_glquadrature_t *glq,
+				const nb_cvfa_eval_damage_t *eval_dmg,
+				const uint32_t *perm, const uint32_t *iperm,
+				double *F, double *delta_disp,
+				double *residual, double *aux_disp,
+				const uint32_t *dmg_perm,
+				const uint32_t *dmg_iperm, double *rhs_damage,
+				nb_sparse_t *Kr, nb_sparse_t *Lr,
+				nb_sparse_t *Ur, nb_sparse_t *Dr,
+				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
+				double *rnorm);
 static int solve_linear_system(const nb_sparse_t *A,
 			       const uint32_t *perm,
 			       const uint32_t *iperm,
@@ -318,7 +341,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 						 &glq, &eval_dmg,
 						 id_elem_monitor[0],
 						 minimize_residual_memblock,
-						 100);
+						 FIXED_STEPS);
 	}
 	if (0 != status)
 		goto EXIT;
@@ -707,7 +730,7 @@ static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
 
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
-			     const nb_bcond_t *const bcond,		     
+			     const nb_bcond_t *const bcond,
 			     bool enable_self_weight, double gravity[2],
 			     nb_analysis2D_t analysis2D,
 			     nb_analysis2D_params *params2D,
@@ -779,53 +802,32 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 	int iter = 0;
 	double rnorm = 1;
 	while (1) {
-		nb_cvfa_assemble_global_forces(F, mesh, material,
-					       enable_self_weight,
-					       gravity);
-		nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
-						  intmsh, xc, faces, material,
-						  analysis2D, params2D, glq,
-						  eval_dmg);
+		status = solve_coupled_system(mesh, material,
+					      numeric_bcond,
+					      enable_self_weight, gravity,
+					      analysis2D, params2D,
+					      displacement, elem_damage,
+					      intmsh, xc, faces, smooth,
+					      K, D, glq, eval_dmg,
+					      perm, iperm, F, delta_disp,
+					      residual, aux_disp, dmg_perm,
+					      dmg_iperm, rhs_damage,
+					      Kr, Lr, Ur, Dr,
+					      dmg_Lr, dmg_Ur,
+					      &rnorm);
+		if (status != 0) {
+			goto EXIT;
+		}
 
-		nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
-		
-		nb_sparse_multiply_vector(K, displacement, residual, 1);
-		nb_vector_substract_to(2 * N_elems, residual, F);
-		rnorm = nb_vector_get_norm(residual, 2 * N_elems);
 		if (rnorm < RESIDUAL_TOL)
 			goto GET_REACTION;
 
-		if (rnorm != rnorm) {
-			status = NO_INVERSE;
-			goto EXIT;
-		}
-
-		status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
-					     residual, delta_disp);
-
-		if (status != 0) {
-			status = ELASTIC_SOLVER_FAILS;
-			goto EXIT;
-		}
-
-		nb_vector_sum(2 * N_elems, displacement, delta_disp);
-
-		assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
-		status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
-					     dmg_Lr, dmg_Ur, rhs_damage,
-					     elem_damage);
-
-		if (status != 0) {
-			status = DAMAGE_SOLVER_FAILS;
-			goto EXIT;
-		}
-		
 		iter ++;
 		if (iter >= max_iter) {
 			status = MAX_ITER_REACHED;
 			goto EXIT;
 		}
-		printf(" ----> DAMAGE ITER: %i (%e)\n", iter, rnorm);/* TEMP */
+		printf(" ----> DAMAGE ITER: %i (%e)\r", iter, rnorm);/* TEMP */
 	}
 GET_REACTION:
 	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc,
@@ -853,6 +855,74 @@ EXIT:
 		nb_sparse_destroy(dmg_Ur);
 	}
 	nb_soft_free_mem(bcond_size, numeric_bcond);
+	return status;
+}
+
+static int solve_coupled_system(const nb_mesh2D_t *const mesh,
+				const nb_material_t *const material,
+				const nb_bcond_t *numeric_bcond,
+				bool enable_self_weight, double gravity[2],
+				nb_analysis2D_t analysis2D,
+				nb_analysis2D_params *params2D,
+				double *displacement, /* Output */
+				double *elem_damage,  /* Output */
+				const nb_mesh2D_t *intmsh,
+				const double *xc, face_t **faces, int smooth,
+				nb_sparse_t *K, nb_sparse_t *D,
+				const nb_glquadrature_t *glq,
+				const nb_cvfa_eval_damage_t *eval_dmg,
+				const uint32_t *perm, const uint32_t *iperm,
+				double *F, double *delta_disp,
+				double *residual, double *aux_disp,
+				const uint32_t *dmg_perm,
+				const uint32_t *dmg_iperm, double *rhs_damage,
+				nb_sparse_t *Kr, nb_sparse_t *Lr,
+				nb_sparse_t *Ur, nb_sparse_t *Dr,
+				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
+				double *rnorm)
+{
+	int status;
+	nb_cvfa_assemble_global_forces(F, mesh, material,
+				       enable_self_weight,
+				       gravity);
+	nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
+					  intmsh, xc, faces, material,
+					  analysis2D, params2D, glq,
+					  eval_dmg);
+
+	nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
+		
+	nb_sparse_multiply_vector(K, displacement, residual, 1);
+	
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	nb_vector_substract_to(2 * N_elems, residual, F);
+	*rnorm = nb_vector_get_norm(residual, 2 * N_elems);
+
+	if (*rnorm != *rnorm) {
+		status = NO_INVERSE;
+		goto EXIT;
+	}
+
+	status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
+				     residual, delta_disp);
+
+	if (status != 0) {
+		status = ELASTIC_SOLVER_FAILS;
+		goto EXIT;
+	}
+
+	nb_vector_sum(2 * N_elems, displacement, delta_disp);
+
+	assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
+	status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
+				     dmg_Lr, dmg_Ur, rhs_damage,
+				     elem_damage);
+
+	if (status != 0) {
+		status = DAMAGE_SOLVER_FAILS;
+		goto EXIT;
+	}
+EXIT:
 	return status;
 }
 

@@ -80,7 +80,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
-	//CU_add_test(suite, "Drawing results", test_draw_results);
+	CU_add_test(suite, "Drawing results", test_draw_results);
 }
 
 static int suite_init(void)
@@ -95,7 +95,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 10000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 11000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -305,8 +305,6 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	results_init(results, N_faces, N_elems);
 
 	nb_mesh2D_save_nbt(mesh, "dmg_tmp/mesh.nbt");
-	/* TEMPORAL */nb_mesh2D_finish(mesh);
-	/* TEMPORAL */nb_mesh2D_read_nbt(mesh, "dmg_tmp/mesh.nbt");
 
 	int status_cvfa = 
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,

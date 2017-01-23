@@ -21,7 +21,7 @@ void nb_cvfa_get_numeric_bconditions(const nb_mesh2D_t *mesh,
 
 void nb_cvfa_set_numeric_bconditions(nb_sparse_t *K, double *F,
 				     const nb_mesh2D_t *const mesh,
-				     nb_bcond_t *bcond);
+				     const nb_bcond_t *bcond);
 
 void nb_cvfa_get_elem_adj_to_model_node(const nb_mesh2D_t *mesh,
 					uint32_t vtx_id,

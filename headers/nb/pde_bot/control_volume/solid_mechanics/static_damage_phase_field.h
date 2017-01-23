@@ -10,7 +10,7 @@
 #include "nb/pde_bot/boundary_conditions/bcond.h"
 
 int nb_cvfa_compute_2D_damage_phase_field
-			(const nb_mesh2D_t *const part,
+			(const nb_mesh2D_t *const mesh,
 			 const nb_material_t *const material,
 			 const nb_bcond_t *const bcond,
 			 bool enable_self_weight, double gravity[2],

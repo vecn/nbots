@@ -483,7 +483,7 @@ static void set_dirichlet_vtx(const nb_mesh2D_t *mesh,
 
 void nb_cvfa_set_numeric_bconditions(nb_sparse_t *K, double *F,
 				     const nb_mesh2D_t *const mesh,
-				     nb_bcond_t *bcond)
+				     const nb_bcond_t *bcond)
 {
 	uint8_t N_dof = nb_bcond_get_N_dof(bcond);
 	uint16_t size = nb_bcond_iter_get_memsize();
