@@ -96,7 +96,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 8000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 10000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -357,7 +357,7 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
 
-	nb_mesh2D_centroid_iteration(mesh, 300, NULL, NULL);
+	nb_mesh2D_centroid_iteration(mesh, 500, NULL, NULL);
 }
 
 static void results_init(results_t *results, uint32_t N_faces,

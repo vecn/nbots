@@ -163,6 +163,7 @@ static void set_nodes_adj_mem(nb_mshpoly_t *msh, uint32_t *N_adj,
 static void get_nodes_adj(nb_mshpoly_t *msh, uint32_t *N_adj,
 			  uint32_t **adj);
 static void set_mask(nb_mshpoly_t *msh, char *mask);
+
 static void update_centroids(nb_mshpoly_t *msh,
 			     double (*density)(const double[2],
 					       const void *data),
@@ -1535,7 +1536,7 @@ void nb_mshpoly_centroid_iteration(void *mshpoly, uint32_t max_iter,
 
 	double max_disp2 = 1;
 	uint32_t i = 0;
-	while (max_disp2 > 1e-6 && i < max_iter) {
+	while (max_disp2 > 1e-25 && i < max_iter) {
 		update_centroids(mshpoly, density, density_data);
 		max_disp2 = update_nodes(mshpoly, N_adj, adj, mask,
 					 density, density_data);

@@ -8,21 +8,22 @@
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 10						#
+ 12						#
 # Vertices coordinates                          #
-   0.0   0.0					#
+  -5.0   0.0					#
+   0.0   0.0      # First Dirichlet Cnd         #
  222.5   0.0					#
  222.5  50.0					#
  225.0  50.0                                    #
  227.5  50.0					#
  227.5   0.0					#
- 450.0   0.0					#
- 450.0 100.0					#
- 225.0 100.0					#
-  0.0  100.0					#
-						#
+ 450.0   0.0	  # Second Dirichlet Cnd	#
+ 455.0   0.0	 				#
+ 455.0 100.0					#
+ 225.0 100.0	  # Displacement pushing        #
+  -5.0 100.0					#
 # Number of segments				#
- 10						#
+ 12						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
@@ -33,7 +34,9 @@
  6 7						#
  7 8						#
  8 9						#
- 9 0                                            #
+ 9 10                                           #
+ 10 11                                          #
+ 11 0                                           #
 # Number of holes				#
  0						#
 #-----------------------------------------------#
@@ -41,9 +44,9 @@
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
  3						#
- 0 1 1 0.0 0.0                                  #
- 6 0 1 0.0                                      #
- 8 0 1 -1                                       #
+ 1  1 1 0.0 0.0                                 #
+ 7  0 1 0.0                                     #
+ 10 0 1 -1                                      #
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #

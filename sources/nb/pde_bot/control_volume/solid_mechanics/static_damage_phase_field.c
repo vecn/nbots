@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 50
+#define FIXED_STEPS 100
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -311,7 +311,10 @@ int nb_cvfa_compute_2D_damage_phase_field
 		      xc, elem_damage, material, analysis2D);
 
 	uint32_t id_elem_monitor[2];
-	nb_cvfa_get_elem_adj_to_model_node(mesh, 8, id_elem_monitor);
+	nb_cvfa_get_elem_adj_to_model_node(mesh, 10, id_elem_monitor);
+	if (N_elems > id_elem_monitor[1]) {
+		printf("DOUBLE ELEM\n");exit(1);/* TEMPORAL */
+	}
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
@@ -815,6 +818,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					      Kr, Lr, Ur, Dr,
 					      dmg_Lr, dmg_Ur,
 					      &rnorm);
+
 		if (status != 0) {
 			goto EXIT;
 		}
@@ -914,6 +918,7 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 	nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
 	assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
+
 	status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
 				     dmg_Lr, dmg_Ur, rhs_damage,
 				     elem_damage);
