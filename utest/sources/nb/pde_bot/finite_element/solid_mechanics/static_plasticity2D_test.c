@@ -32,6 +32,7 @@ typedef struct {
     	uint32_t N_vtx;
 	uint32_t N_trg;
 	double *nodal_strain;
+	double *nodal_stress;
 	double *nodal_damage;
 } plastic_results_t;
 
@@ -93,7 +94,7 @@ static int suite_clean(void)
 }
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 100,
+        run_test("%s/plastic_beam_cantilever.txt", 500,
         check_beam_cantilever, "cantilever");
 }
 static void check_beam_cantilever(const void *part,
@@ -139,7 +140,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_continuous_beam(void)
 {
-        run_test("%s/plastic_continuous_beam.txt", 500,
+        run_test("%s/plastic_continuous_beam.txt", 100,
         check_beam_cantilever, "continuous");
 }
 
@@ -204,7 +205,8 @@ static int simulate(const char *problem_data,
                                                              bcond, true, gravity,
                                                              analysis2D, &params2D, NULL, results->strain, results->stress,
                                                              results->disp, N_force_steps,
-                                                             accepted_tol, results->plastic_elements);
+                                                             accepted_tol, results->plastic_elements,results->nodal_strain,
+						 	     results->nodal_stress);
 
     	print_plastic_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
                           part, results->plastic_elements, problem_data, printable_name);
@@ -250,7 +252,8 @@ static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uin
 	uint32_t size_strain = N_trg * 3 * sizeof(*(results->strain));
 	uint32_t size_plastic_elements = N_trg * sizeof(*(results->plastic_elements));
 	uint32_t size_nodal_strain = N_vtx * 3 * sizeof(*(results->nodal_strain));
-	uint32_t total_size = size_disp + 2 * size_strain + size_plastic_elements + size_nodal_strain;// + size_damage;
+	uint32_t size_nodal_stress = N_vtx * 3 * sizeof(*(results->nodal_stress));
+	uint32_t total_size = size_disp + 2 * size_strain + size_plastic_elements + size_nodal_strain + size_nodal_stress;// + size_damage;
 	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
@@ -260,6 +263,7 @@ static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uin
 	results->stress = (void*)(memblock + size_disp + size_strain);
 	results->plastic_elements = (void*)(memblock + size_disp + 2 * size_strain);
 	results->nodal_strain = (void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
+	results->nodal_stress = (void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements + size_nodal_strain);
 	results->damage = NULL;//void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
 	results->nodal_damage = NULL;
 }	

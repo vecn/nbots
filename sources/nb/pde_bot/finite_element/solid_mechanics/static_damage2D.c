@@ -16,6 +16,7 @@
 #include "nb/pde_bot/finite_element/element.h"
 #include "nb/pde_bot/finite_element/gaussp_to_nodes.h"
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/static_plasticity2D.h"
 
 #include "../utils.h"
 #include "set_bconditions.h"
@@ -51,7 +52,7 @@ void nb_fem_compute_damage_stress_from_strain
 			 double* stress /* Output */,
 			 double *damage_elem,
 			 bool enable_computing_damage);
-void interpolate_trg_strain_nodes_to_elemes(const nb_mesh2D_t *part, double *strain, double *nodal_strain);
+
 /*bot
 SECOND OPTION
 static double tension_truncated_damage_r0(const nb_material_t *const mat);
@@ -427,10 +428,13 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			DMG_pipeline_compute_strain(strain, part, displacement, elem, true,
 						    analysis2D, material, damage,
 						    r_dmg_prev, r_dmg, nodal_strain, nodal_damage);
-
 			/* Increase iterator */
 			residual_iter ++;
 		}
+	nb_mesh2D_extrapolate_elems_to_nodes(part, 3, strain, nodal_strain);
+	//interpolate_trg_strain_nodes_to_elemes(part, strain, nodal_strain);
+	nb_mesh2D_extrapolate_elems_to_nodes(part, 1, damage, nodal_damage);
+	//interpolate_trg_damage_nodes_to_elemes(part, damage, nodal_damage);
 	}
 
    	nb_fem_compute_damage_stress_from_strain(N_elem, elem, material, analysis2D, strain,
@@ -609,9 +613,6 @@ static void DMG_pipeline_compute_strain(double *strain,
 		nb_free_mem(dNi_dy);
 	}
 
-	nb_mesh2D_extrapolate_elems_to_nodes(part, 3, strain, nodal_strain);
-	interpolate_trg_strain_nodes_to_elemes(part, strain, nodal_strain);
-
 	if (enable_computing_damage){
 		for (uint32_t k = 0 ; k < N_elems; k++) {
 			double* dNi_dx = nb_allocate_mem(N_nodes * sizeof(double));
@@ -644,8 +645,6 @@ static void DMG_pipeline_compute_strain(double *strain,
 			nb_free_mem(dNi_dy);
 		}
 	}
-	nb_mesh2D_extrapolate_elems_to_nodes(part, 1, damage, nodal_damage);
-	interpolate_trg_damage_nodes_to_elemes(part, damage, nodal_damage);
 	EXIT:
 	return;
 }
@@ -769,26 +768,6 @@ void nb_fem_compute_damage_stress_from_strain (uint32_t N_elements,
 			stress[id*3+2] = strain[id*3+2] * Dr[3];
         	}
     	}
-}
-
-void interpolate_trg_strain_nodes_to_elemes(const nb_mesh2D_t *part, double *strain, double *nodal_strain) 
-{
-	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
-	memset(strain, 0, 3 * N_elems * sizeof(*strain));
-
-	for(int i = 0; i < N_elems; i++) {
-		strain[3 * i] = nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 0)]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 1)]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 2)]/3;
-
-		strain[3 * i + 1] = nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 0) + 1]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 1) + 1]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 2) + 1]/3;
-
-		strain[3 * i + 2] = nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 0) + 2]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 1) + 2]/3 + 
-					nodal_strain[3 * nb_mesh2D_elem_get_adj(part, i, 2) + 2]/3;	
-	}
 }
 
 void interpolate_trg_damage_nodes_to_elemes(const nb_mesh2D_t *part, double *damage, double *nodal_damage)

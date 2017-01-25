@@ -123,7 +123,7 @@ static int suite_clean(void)
 
 static void test_damage_f1(void)
 {
-        damage_run_test("%s/damage_beam_failure_one.txt", 300,
+        damage_run_test("%s/damage_beam_failure_one.txt", 100,
         check_problem_results, "F1");
 }
 static void check_problem_results(const void *part,
@@ -169,7 +169,7 @@ static void check_problem_results(const void *part,
 
 static void test_damage_f2(void)
 {
-        damage_run_test("%s/damage_beam_failure_two.txt", 300,
+        damage_run_test("%s/damage_beam_failure_two.txt", 1500,
         check_problem_results, "F2");
 }
 
@@ -237,7 +237,7 @@ static int damage_simulate(const char *problem_data,
 	nb_fem_implicit_set_residual_tolerance(params, 1);
 
    	status = nb_fem_compute_2D_Damage_Solid_Mechanics
-                            		(part, elem, material, bcond, true, gravity,
+                            		(part, elem, material, bcond, false, gravity,
                              		false, analysis2D, &params2D, params, problem_data, results->damage,
                              		results->disp, results->strain, results->stress, results->nodal_strain, 
 					results->nodal_damage);

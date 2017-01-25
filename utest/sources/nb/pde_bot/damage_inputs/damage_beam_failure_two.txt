@@ -10,8 +10,8 @@
  20						#
 # Vertices coordinates                          #
  0.0    0.0					#
- 0.59 	0.0					#
- 0.63 	0.0					#
+ 0.5175	0.0					#
+ 0.5475	0.0					#
  0.6675 0.0					#
  0.6675 0.082					#
  0.6725	0.082					#
@@ -20,8 +20,8 @@
  1.157 	0.0					#
  1.34	0.0				        #
  1.34	0.306					#
- 0.80 	0.306					#
- 0.76	0.306					#
+ 0.8325	0.306					#
+ 0.8025	0.306					#
  0.6725	0.306					#
  0.6725	0.224					#
  0.6675	0.224					#
@@ -62,9 +62,9 @@
 # Num of displacement conditions over lines:    #
  4						#
 # Displacement conditions definition            #
- 1 0 1 0.0001	                                #
+ 1 0 1 1.2e-4	                                #
  7 1 1 0.0 0.0 					#
- 11 0 1 -0.0001					#
+ 11 0 1 -1.2e-4					#
  17 1 1 0.0 0.0					#
 # Num of load conditions over lines:            #
  0                                              #
@@ -74,9 +74,9 @@
 # Poisson module				#
  0.2						#
 # Elasticity module				#
- 30e9	                                        #
+ 32e6	                                        #
 # Limit traction stress			        #
- 2e6	                                        #
+ 2e3	                                        #
 # Fracture Energy				#
  100						#
 # Density					#
@@ -84,7 +84,7 @@
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
-# ProbType(z P stress o P strain t SRev) 	#
+# ProbType(0: P.stress, 1: P.strain, 3: SRev) 	#
  0						#
 # Analysis params (Thickness axis of rev)       #
  0.1  	                                        #
