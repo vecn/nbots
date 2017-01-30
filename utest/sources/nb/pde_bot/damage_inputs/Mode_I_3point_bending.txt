@@ -1,6 +1,5 @@
 #################################################
 # Victor Eduardo Cardoso Nungaray		#
-# 2010-2016					#
 # Three point bending test setup                #
 # Unit: 1mm                                     #
 #################################################

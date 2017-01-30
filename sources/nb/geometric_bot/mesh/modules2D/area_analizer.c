@@ -690,3 +690,42 @@ inline uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t 
 {
 	return get_N_areas(mesh, false);
 }
+
+
+void nb_tessellator2D_delete_elems_out_of_model(nb_tessellator2D_t *t2d,
+						const nb_model2D_t *model)
+{
+	uint32_t iter_size = nb_iterator_get_memsize();
+	uint32_t list_size = nb_container_get_memsize(NB_LIST);
+	uint32_t memsize = iter_size + list_size;
+	char *memblock = nb_soft_allocate_mem(memsize);
+	nb_iterator_t* iter = (void*) memblock;
+	nb_container_t* to_del = (void*) (memblock + iter_size);
+	nb_container_init(to_del, NB_LIST);
+
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, mesh->ht_trg);
+	while (nb_iterator_has_more(iter)) {
+		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
+		if (trg_is_out(model, trg))
+			nb_container_insert(to_del, trg);
+	}
+	nb_iterator_finish(iter);
+
+	while (nb_container_is_not_empty(to_del)) {
+		msh_trg_t* trg = nb_container_delete_first(to_del);
+		nb_container_delete(mesh->ht_trg, trg);
+		mesh_substract_triangle(mesh, trg);
+	}
+	nb_container_finish(to_del);
+
+	nb_soft_free_mem(memsize, memblock);
+}
+
+static bool trg_is_out(const nb_model2D_t *model, msh_trg_t *trg)
+{
+	uint32_t N = nb_model_get_N_edges(model);
+	for (uint32_t i = 0; i < N; i++) {
+		/* AQUI VOY */
+	}
+}

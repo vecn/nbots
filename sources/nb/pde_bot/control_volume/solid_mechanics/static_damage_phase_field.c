@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 100
+#define FIXED_STEPS 50
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -293,7 +293,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc);
+	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc, mesh);
 
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,
@@ -312,9 +312,11 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	uint32_t id_elem_monitor[2];
 	nb_cvfa_get_elem_adj_to_model_node(mesh, 10, id_elem_monitor);
-	if (N_elems > id_elem_monitor[1]) {
-		printf("DOUBLE ELEM\n");exit(1);/* TEMPORAL */
-	}
+	if (id_elem_monitor[1] != id_elem_monitor[1]) {        /* TEMPORAL */
+		printf("DOUBLE ELEM %i %i\n",                  /* TEMPORAL */
+		       id_elem_monitor[0], id_elem_monitor[1]);/* TEMPORAL */
+		exit(1);                                       /* TEMPORAL */
+	}                                                      /* TEMPORAL */
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));

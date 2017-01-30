@@ -1,73 +1,50 @@
 #################################################
 # Victor Eduardo Cardoso Nungaray		#
-# Four point bending test setup                 #
+# Perfored strip under tension                  #
+#   (For symmetry we only consider right half)  #
 # Unit: 1cm                                     #
 #################################################
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 28						#
+ 15						#
 # Vertices coordinates                          #
-   0.0    0.0					#
-  57.0    0.0                                   #
-  57.0   -4.0					#
-  61.0   -4.0					#
-  61.0    0.0					#
-  66.75   0.0					#
-  66.75   8.2					#
-  67.25   8.2					#
-  67.25   0.0					#
- 111.7    0.0					#
- 111.7   -4.0					#
- 115.7   -4.0					#
- 115.7    0.0					#
- 134.0    0.0					#
- 134.0   30.6					#
-  77.0   30.6					#
-  77.0   34.6					#
-  73.0   34.6					#
-  73.0   30.6					#
-  67.25  30.6					#
-  67.25  22.4					#
-  66.75  22.4					#
-  66.75  30.6					#
-  22.3   30.6					#
-  22.3   34.6					#
-  18.3   34.6					#
-  18.3   30.6					#
-   0.0   30.6					#
+  0.0   20.0					#
+ 20.0   20.0					#
+ 20.0  -20.0					#
+  0.0  -20.0					#
+                # Interior hole			#
+  0.0   -1.0					#
+  0.31  -0.95					#
+  0.59  -0.81					#
+  0.81  -0.59					#
+  0.95  -0.31					#
+  1.0    0.0					#
+  0.95   0.31					#
+  0.81   0.59					#
+  0.59   0.81					#
+  0.31   0.95					#
+  0.0    1.0					#
 # Number of segments				#
- 28						#
+ 15						#
 # Segments (Vertices pairs IDs)			#
- 0 1						#
+ 0 1	    # Pull up  				#
  1 2						#
- 2 3        # Pushing Up			#
+ 2 3        # Pull down   			#
  3 4						#
+            # Interior hole                     #
  4 5						#
  5 6						#
  6 7						#
  7 8						#
  8 9						#
  9 10						#
- 10 11	    # Bottom support			#
+ 10 11	                         		#
  11 12						#
  12 13						#
  13 14						#
- 14 15						#
- 15 16						#
- 16 17	    # Pushing Down			#
- 17 18						#
- 18 19						#
- 19 20						#
- 20 21						#
- 21 22						#
- 22 23						#
- 23 24 						#
- 24 25	    # Top Support			#
- 25 26						#
- 26 27						#
- 27 0						#
-# Number of holes   				#
+ 14  0 						#
+# Number of segments				#
  0						#
 #-----------------------------------------------#
 
@@ -77,12 +54,10 @@
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
- 4						#
+ 2						#
 # Displacement conditions definition            #
- 2  0 1  1e-2	                                #
- 10 1 1  0.0 0.0 				#
- 16 0 1 -1e-2					#
- 24 1 1  0.0 0.0				#
+ 0  0 1  5e-3	                                #
+ 2  0 1 -5e-3					#
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#

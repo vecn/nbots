@@ -37,7 +37,8 @@ struct subface_s {
 uint32_t nb_cvfa_get_integration_mesh_memsize(void);
 void nb_cvfa_init_integration_mesh(nb_mesh2D_t *intmsh);
 void nb_cvfa_load_integration_mesh(nb_mesh2D_t *intmsh, uint32_t N,
-				   const double *xc);
+				   const double *xc,
+				   const nb_mesh2D_t *mesh);
 
 void nb_cvfa_correlate_mesh_and_integration_mesh
 					(const nb_mesh2D_t *mesh,

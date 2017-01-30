@@ -437,22 +437,20 @@ uint32_t nb_model_get_vertex_id(const nb_model_t *const model, double* vtx)
 	uint32_t id = model->N;
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (nb_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
-			id = i;
+		  id = i;
 			break;
 		}
 	}
 	return id;
 }
 
-double* nb_model_get_vertex_coordinate(const nb_model_t *const model, uint32_t id)
+void nb_model_get_vertex_coordinate(const nb_model_t *const model, uint32_t id,
+				    double vtx[2])
 {
-	double *vtx = NULL;
 	if (id < model->N) {
-		vtx = nb_allocate_mem(2 * sizeof(*vtx));
 		vtx[0] = model->vertex[id * 2];
 		vtx[1] = model->vertex[id*2+1];
 	}
-	return vtx;
 }
 
 uint32_t nb_model_get_edge_id(const nb_model_t *const model, double* edge_vertices)
@@ -483,20 +481,18 @@ uint32_t nb_model_get_edge_id(const nb_model_t *const model, double* edge_vertic
 	}
 	return id;
 }
-double* nb_model_get_edge_coordinates(const nb_model_t *const model, uint32_t id)
+void nb_model_get_edge_coordinates(const nb_model_t *const model, uint32_t id,
+				   double v1[2], double v2[2])
 {
-	double *sgm = NULL;
 	if(id < model->M) {
 		uint32_t id1 = model->edge[id * 2];
 		uint32_t id2 = model->edge[id*2+1];
 
-		sgm = nb_allocate_mem(4 * sizeof(*sgm));
-		sgm[0] = model->vertex[id1 * 2];
-		sgm[1] = model->vertex[id1*2+1];
-		sgm[2] = model->vertex[id2 * 2];
-		sgm[3] = model->vertex[id2*2+1];
+		v1[0] = model->vertex[id1 * 2];
+		v1[1] = model->vertex[id1*2+1];
+		v2[0] = model->vertex[id2 * 2];
+		v2[1] = model->vertex[id2*2+1];
 	}
-	return sgm;
 }
 
 uint32_t nb_model_get_number_of_vertices(const nb_model_t *const model)

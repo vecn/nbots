@@ -87,8 +87,12 @@ bool nb_tessellator2D_is_continuum(const nb_tessellator2D_t *mesh);
 
 uint16_t nb_tessellator2D_get_N_subareas(const nb_tessellator2D_t *mesh);
 
-uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh, uint16_t *area_id);
+uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh,
+				       uint16_t *area_id);
 
 uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t *mesh);
+
+void nb_tessellator2D_delete_elems_out_of_model(nb_tessellator2D_t *t2d,
+						const nb_model2D_t *model);
 
 #endif

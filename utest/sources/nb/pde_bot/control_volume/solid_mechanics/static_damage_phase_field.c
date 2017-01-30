@@ -77,8 +77,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
 	CU_add_test(suite, "Drawing results", test_draw_results);
@@ -96,7 +96,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 10000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 11000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -358,6 +358,8 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 	nb_tessellator2D_finish(t2d);
 
 	nb_mesh2D_centroid_iteration(mesh, 500, NULL, NULL);
+	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
+			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
 }
 
 static void results_init(results_t *results, uint32_t N_faces,

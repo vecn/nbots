@@ -118,18 +118,27 @@ void nb_cvfa_init_integration_mesh(nb_mesh2D_t *intmsh)
 }
 
 void nb_cvfa_load_integration_mesh(nb_mesh2D_t *intmsh, uint32_t N,
-				   const double *xc)
+				   const double *xc,
+				   const nb_mesh2D_t *mesh)
 {
 	uint32_t mesh_size = nb_tessellator2D_get_memsize();
 	uint32_t perm_size = N * sizeof(uint32_t);
-	uint32_t memsize = mesh_size + perm_size;
+	uint32_t model_size = nb_model_get_memsize();
+	uint32_t memsize = mesh_size + perm_size + model_size;
 	char *memblock = nb_soft_allocate_mem(memsize);
 
 	nb_tessellator2D_t *t2d = (void*) memblock;
 	uint32_t *perm = (void*) (memblock + mesh_size);
+	nb_model_t *model = (void*) (memblock + mesh_size + perm_size);
 
 	nb_tessellator2D_init(t2d);
 	nb_tessellator2D_get_smallest_ns_alpha_complex(t2d, N, xc, 0.666);
+
+	nb_model_init(model);
+	nb_mesh2D_build_model(mesh, model);
+	nb_tessellator2D_delete_elems_out_of_model(t2d, model);
+	nb_model_finish(model);
+
 	nb_mesh2D_load_from_tessellator2D(intmsh, t2d);
 	nb_tessellator2D_finish(t2d);
 
