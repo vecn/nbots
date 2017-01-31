@@ -17,5 +17,9 @@ typedef struct {
 void nb_model_alloc_vertices(nb_model_t *model);
 void nb_model_alloc_edges(nb_model_t *model);
 void nb_model_alloc_holes(nb_model_t *model);
+void nb_model_load_from_arrays(nb_model_t *model,
+			       uint32_t N_vtx, double *vtx,
+			       uint32_t N_sgm, uint32_t *sgm,
+			       uint32_t N_holes, double *holes);
 
 #endif

@@ -27,6 +27,9 @@ static void get_sgm_level_set_intersection(const double s1[2],
 					   double level_set,
 					   double p[2]);
 
+static bool right_ray_is_intersected(const double v1[2], const double v2[2],
+				     const double p[2]);
+
 static double det_circumcircle(const double t1[2],
 			       const double t2[2],
 			       const double t3[2],
@@ -610,6 +613,46 @@ bool nb_utils2D_pnt_lies_in_trg(const double t1[2],
 	return (edge1 > -NB_GEOMETRIC_TOL &&
 		edge2 > -NB_GEOMETRIC_TOL &&
 		edge3 > -NB_GEOMETRIC_TOL);
+}
+
+bool nb_utils2D_pnt_lies_in_poly(int N, const double *poly,
+				 const double p[2])
+/* Edge crossing algorithm */
+{
+	int N_cross = 0;
+
+	for (int i = 0; i < N; i++) {
+		int next = (i+1) % N;
+		if (right_ray_is_intersected(&(poly[i*2]),
+					     &(poly[next*2]), p))
+			N_cross += 1;
+	}
+	return N_cross & 1;
+}
+
+static bool right_ray_is_intersected(const double v1[2], const double v2[2],
+				     const double p[2])
+{
+	bool out = true;
+	if (v1[1] > p[1] && v2[1] > p[1]) {
+		out = false;
+		goto EXIT;
+	}
+	if (v1[1] < p[1] && v2[1] < p[1]) {
+		out = false;
+		goto EXIT;
+	}
+	if (v1[0] < p[0] && v2[0] < p[0]) {
+		out = false;
+		goto EXIT;
+	}
+	if (v1[0] + v2[0] - 2 * p[0] < 0) {
+		out = false;
+		goto EXIT;
+	}
+
+EXIT:
+	return out;
 }
 
 bool nb_utils2D_pnt_lies_in_diametral_circle(const double s1[2],

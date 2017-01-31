@@ -63,6 +63,12 @@ static void get_area_ids(const nb_tessellator2D_t *mesh, nb_container_t *areas,
 static void set_id_to_trg_in_area(const nb_tessellator2D_t *mesh,
 				  nb_container_t *area_trg, uint16_t area_id,
 				  uint16_t *trg_area_id);
+static bool trg_is_out(nb_tessellator2D_t *t2d,
+		       const nb_model_t *model, msh_trg_t *trg);
+static bool trg_is_intersected(nb_tessellator2D_t *t2d,
+			       const nb_model_t *model, msh_trg_t *trg);
+static bool trg_has_an_edge_outside(nb_tessellator2D_t *t2d,
+				    const nb_model_t *model, msh_trg_t *trg);
 
 static void* subarea_create(void)
 {
@@ -693,39 +699,124 @@ inline uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t 
 
 
 void nb_tessellator2D_delete_elems_out_of_model(nb_tessellator2D_t *t2d,
-						const nb_model2D_t *model)
+						const nb_model_t *model)
 {
 	uint32_t iter_size = nb_iterator_get_memsize();
-	uint32_t list_size = nb_container_get_memsize(NB_LIST);
+	uint32_t list_size = nb_container_get_memsize(NB_QUEUE);
 	uint32_t memsize = iter_size + list_size;
 	char *memblock = nb_soft_allocate_mem(memsize);
 	nb_iterator_t* iter = (void*) memblock;
 	nb_container_t* to_del = (void*) (memblock + iter_size);
-	nb_container_init(to_del, NB_LIST);
+	nb_container_init(to_del, NB_QUEUE);
 
 	nb_iterator_init(iter);
-	nb_iterator_set_container(iter, mesh->ht_trg);
+	nb_iterator_set_container(iter, t2d->ht_trg);
 	while (nb_iterator_has_more(iter)) {
 		msh_trg_t* trg = (msh_trg_t*) nb_iterator_get_next(iter);
-		if (trg_is_out(model, trg))
+		if (trg_is_out(t2d, model, trg))
 			nb_container_insert(to_del, trg);
 	}
 	nb_iterator_finish(iter);
 
 	while (nb_container_is_not_empty(to_del)) {
 		msh_trg_t* trg = nb_container_delete_first(to_del);
-		nb_container_delete(mesh->ht_trg, trg);
-		mesh_substract_triangle(mesh, trg);
+		nb_container_delete(t2d->ht_trg, trg);
+		mesh_substract_triangle(t2d, trg);
 	}
 	nb_container_finish(to_del);
 
 	nb_soft_free_mem(memsize, memblock);
 }
 
-static bool trg_is_out(const nb_model2D_t *model, msh_trg_t *trg)
+static bool trg_is_out(nb_tessellator2D_t *t2d,
+		       const nb_model_t *model, msh_trg_t *trg)
 {
+	bool out = trg_is_intersected(t2d, model, trg);
+	if (out)
+		goto EXIT;
+
+	out = trg_has_an_edge_outside(t2d, model, trg);
+
+EXIT:
+	return out;
+}
+
+static bool trg_is_intersected(nb_tessellator2D_t *t2d,
+			       const nb_model_t *model, msh_trg_t *trg)
+{
+	bool out;
 	uint32_t N = nb_model_get_N_edges(model);
 	for (uint32_t i = 0; i < N; i++) {
-		/* AQUI VOY */
+		double v1[2];
+		double v2[2];
+		nb_model_get_edge_coordinates(model, i, v1, v2);
+		v1[0] = t2d->scale * (v1[0] - t2d->xdisp);
+		v1[1] = t2d->scale * (v1[1] - t2d->ydisp);
+		v2[0] = t2d->scale * (v2[0] - t2d->xdisp);
+		v2[1] = t2d->scale * (v2[1] - t2d->ydisp);
+
+		nb_intersect_t inter =
+			nb_utils2D_get_sgm_intersection(trg->v1->x,
+							trg->v2->x,
+							v1, v2, NULL);
+		out = (NB_INTERSECTED == inter ||
+		       NB_INTERSECT_ON_B1 == inter ||
+		       NB_INTERSECT_ON_B2 == inter);
+		if (out)
+			goto EXIT;
+
+		inter = nb_utils2D_get_sgm_intersection(trg->v2->x,
+							trg->v3->x,
+							v1, v2, NULL);
+		out = (NB_INTERSECTED == inter ||
+		       NB_INTERSECT_ON_B1 == inter ||
+		       NB_INTERSECT_ON_B2 == inter);
+		if (out)
+			goto EXIT;
+
+		inter = nb_utils2D_get_sgm_intersection(trg->v3->x,
+							trg->v1->x,
+							v1, v2, NULL);
+		out = (NB_INTERSECTED == inter ||
+		       NB_INTERSECT_ON_B1 == inter ||
+		       NB_INTERSECT_ON_B2 == inter);
+		if (out)
+			goto EXIT;
 	}
+	out = false;
+EXIT:
+	return out;
+}
+
+static bool trg_has_an_edge_outside(nb_tessellator2D_t *t2d,
+				    const nb_model_t *model, msh_trg_t *trg)
+{
+	double vtx[2];
+
+	vtx[0] = (trg->v1->x[0] + trg->v2->x[0]) / 2.0;
+	vtx[1] = (trg->v1->x[1] + trg->v2->x[1]) / 2.0;
+	vtx[0] = (vtx[0] / t2d->scale) + t2d->xdisp;
+	vtx[1] = (vtx[1] / t2d->scale) + t2d->ydisp;
+
+	bool out = !nb_model_is_vtx_inside(model, vtx);
+	if (out)
+		goto EXIT;
+
+	vtx[0] = (trg->v2->x[0] + trg->v3->x[0]) / 2.0;
+	vtx[1] = (trg->v2->x[1] + trg->v3->x[1]) / 2.0;
+	vtx[0] = (vtx[0] / t2d->scale) + t2d->xdisp;
+	vtx[1] = (vtx[1] / t2d->scale) + t2d->ydisp;
+
+	out = !nb_model_is_vtx_inside(model, vtx);
+	if (out)
+		goto EXIT;
+
+	vtx[0] = (trg->v3->x[0] + trg->v1->x[0]) / 2.0;
+	vtx[1] = (trg->v3->x[1] + trg->v1->x[1]) / 2.0;
+	vtx[0] = (vtx[0] / t2d->scale) + t2d->xdisp;
+	vtx[1] = (vtx[1] / t2d->scale) + t2d->ydisp;
+
+	out = !nb_model_is_vtx_inside(model, vtx);
+EXIT:
+	return out;	
 }

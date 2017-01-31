@@ -108,7 +108,7 @@ static void check_mode_I(const void *mesh,
 
 static void test_mode_II(void)
 {
-	run_test("%s/Mode_II_4point_bending.txt", 10000, NB_POLY,
+	run_test("%s/Mode_II_4point_bending.txt", 5000, NB_POLY,
 		 check_mode_II);
 }
 
@@ -121,12 +121,6 @@ static void check_mode_II(const void *mesh,
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	nb_mesh2D_export_draw(mesh, "./mesh.eps", 1000, 800,
-			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
-
-	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
-				      1000, 800);              /* TEMPORAL */
-
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	double *disp = malloc(N_elems * sizeof(*disp));
 
@@ -360,6 +354,8 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 	nb_mesh2D_centroid_iteration(mesh, 500, NULL, NULL);
 	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
 			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
+				      1000, 800);              /* TEMPORAL */
 }
 
 static void results_init(results_t *results, uint32_t N_faces,

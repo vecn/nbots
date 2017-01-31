@@ -66,7 +66,16 @@ static uint32_t itrg_get_left_triangle
                          (const nb_msh3trg_t *const delaunay,
 			  const bool *const enabled_elements,
 			  uint32_t itrg, uint32_t ivtx);
-
+static uint32_t get_input_vtx(const void *msh, double *vertices,
+			      uint32_t *vtx_index_relation);
+static uint32_t get_input_sgm(const void *msh,
+			      const uint32_t *vtx_index_relation,
+			      uint32_t *segments);
+static void set_holes_to_model(const void *msh, nb_model_t *model);
+static uint32_t get_centroids_mask(const void *msh, uint32_t N_centroids,
+				   double *centroids, char *mask_centroids);
+static double *get_holes(uint32_t N_holes, uint32_t N_centroids,
+			 const double *centroids, const char *mask_centroids);
 
 uint32_t nb_msh3trg_get_memsize(void)
 {
@@ -930,7 +939,6 @@ void nb_msh3trg_get_enveloping_box(const void *msh3trg_ptr,
 void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 {
 	uint32_t N_vtx = nb_msh3trg_get_N_invtx(msh3trg);
-	uint32_t N_nod = nb_msh3trg_get_N_nodes(msh3trg);
 	uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh3trg);
 
 	uint32_t sgm_memsize = 2 * N_sgm * sizeof(uint32_t);
@@ -942,36 +950,65 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	uint32_t idx_memsize = N_vtx * sizeof(uint32_t);
 	uint32_t* vtx_index_relation = nb_soft_allocate_mem(idx_memsize);
 
+	uint32_t N_vertices = get_input_vtx(msh3trg, vertices,
+					    vtx_index_relation);
+	uint32_t N_segments = get_input_sgm(msh3trg, vtx_index_relation,
+					    segments);
+
+	nb_model_load_from_arrays(model, N_vertices, vertices,
+				  N_segments, segments, 0 , NULL);
+
+	nb_soft_free_mem(sgm_memsize, segments);
+	nb_soft_free_mem(vtx_memsize, vertices);
+	nb_soft_free_mem(idx_memsize, vtx_index_relation);
+
+	set_holes_to_model(msh3trg, model);
+}
+
+static uint32_t get_input_vtx(const void *msh, double *vertices,
+			      uint32_t *vtx_index_relation)
+{
+	uint32_t N_vtx = nb_msh3trg_get_N_invtx(msh);
+	uint32_t N_nod = nb_msh3trg_get_N_nodes(msh);
 	uint32_t N_vertices = 0;
 	for (uint32_t i = 0; i < N_vtx; i++) {
-		uint32_t id = nb_msh3trg_get_invtx(msh3trg, i);
+		uint32_t id = nb_msh3trg_get_invtx(msh, i);
 		if (id < N_nod) {
 			vertices[N_vertices * 2] =
-				nb_msh3trg_node_get_x(msh3trg, id);
+				nb_msh3trg_node_get_x(msh, id);
 			vertices[N_vertices*2+1] =
-				nb_msh3trg_node_get_y(msh3trg, id);
+				nb_msh3trg_node_get_y(msh, id);
 
 			vtx_index_relation[i] = N_vertices;
 			N_vertices += 1;
 		}
 	}
+	return N_vertices;
+}
 
+static uint32_t get_input_sgm(const void *msh,
+			      const uint32_t *vtx_index_relation,
+			      uint32_t *segments)
+{
+	uint32_t N_vtx = nb_msh3trg_get_N_invtx(msh);
+	uint32_t N_sgm = nb_msh3trg_get_N_insgm(msh);
 	uint32_t N_segments = 0;
 	for (uint32_t i = 0; i < N_sgm; i++) {
 		uint32_t N_nod_x_sgm =
-			nb_msh3trg_insgm_get_N_nodes(msh3trg, i);
+			nb_msh3trg_insgm_get_N_nodes(msh, i);
 		if (0 < N_nod_x_sgm) {
-			uint32_t v1 = nb_msh3trg_insgm_get_node(msh3trg, i, 0);
+			uint32_t v1 = nb_msh3trg_insgm_get_node(msh, i, 0);
 			uint32_t last_idx = N_nod_x_sgm - 1;
-			uint32_t v2 = nb_msh3trg_insgm_get_node(msh3trg, i, last_idx);
+			uint32_t v2 = nb_msh3trg_insgm_get_node(msh, i,
+								last_idx);
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				if (nb_msh3trg_get_invtx(msh3trg, j) == v1) {
+				if (nb_msh3trg_get_invtx(msh, j) == v1) {
 					v1 = j;
 					break;
 				}
 			}
 			for (uint32_t j = 0; j < N_vtx; j++) {
-				if (nb_msh3trg_get_invtx(msh3trg, j) == v2) {
+				if (nb_msh3trg_get_invtx(msh, j) == v2) {
 					v2 = j;
 					break;
 				}
@@ -981,30 +1018,14 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 			N_segments += 1;
 		}
 	}
-	/* Build model without holes */
-	nb_model_clear(model);
-	model->N = N_vertices;
-	model->vertex = nb_allocate_mem(2 * N_vertices * sizeof(*(model->vertex)));
-	memcpy(model->vertex, vertices, 
-	       2 * N_vertices * sizeof(*(model->vertex)));
-	model->M = N_segments;
-	model->edge = nb_allocate_mem(2 * N_segments * sizeof(*(model->edge)));
-	memcpy(model->edge, segments, 2 * N_segments * sizeof(*(model->edge)));
+	return N_segments;
+}
 
-	nb_soft_free_mem(sgm_memsize, segments);
-	nb_soft_free_mem(vtx_memsize, vertices);
-	nb_soft_free_mem(idx_memsize, vtx_index_relation);
-
-	/* Build a light mesh to know where are the holes */
-	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
-	nb_tessellator2D_init(mesh);
-	nb_tessellator2D_get_simplest_from_model(mesh, model);
-	
-	/* Get holes and destroy mesh */
+static void set_holes_to_model(const void *msh, nb_model_t *model)
+{
 	uint32_t N_centroids;
-	double* centroids =
-		nb_tessellator2D_get_centroids_of_enveloped_areas(mesh, &N_centroids);
-	nb_tessellator2D_finish(mesh);
+	double *centroids =
+		nb_model_get_centroids_of_enveloped_areas(model, &N_centroids);
 
 	uint32_t N_holes = 0;
 	double *holes = NULL;
@@ -1012,40 +1033,54 @@ void nb_msh3trg_build_model(const void *msh3trg, nb_model_t *model)
 	if (0 < N_centroids) {
 		char* mask_centroids = nb_soft_allocate_mem(N_centroids);
 		memset(mask_centroids, 0, N_centroids);
-		/* get mask */
-		for (uint32_t i = 0; i < N_centroids; i++) {
-			bool not_inside =
-				!nb_msh3trg_is_vtx_inside(msh3trg,
-							    centroids[i * 2],
-							    centroids[i*2+1]);
-			if (not_inside) {
-				mask_centroids[i] = 1;
-				N_holes += 1;
-			}
-		}
 
-		if (0 < N_holes) {
-			uint32_t i = 0;
-			holes = nb_allocate_mem(2 * N_holes * sizeof(*holes));
-			for (uint32_t j = 0; j < N_centroids; j++) {
-				if (1 == mask_centroids[j]) {
-					memcpy(&(holes[i*2]),
-					       &(centroids[j*2]),
-					       2 * sizeof(*holes));
-					i += 1;
-				}
-			}
-		}
+		N_holes = get_centroids_mask(msh, N_centroids,
+					     centroids, mask_centroids);
+		holes = get_holes(N_holes, N_centroids, centroids,
+				  mask_centroids);
 
 		nb_soft_free_mem(N_centroids, mask_centroids);
 		nb_free_mem(centroids);
 	}
 	
-	/* Build model with holes */
 	model->H = N_holes;
 	model->holes = holes;
 }
 
+static uint32_t get_centroids_mask(const void *msh, uint32_t N_centroids,
+				   double *centroids, char *mask_centroids)
+{
+	uint32_t N_holes = 0;
+	for (uint32_t i = 0; i < N_centroids; i++) {
+		bool not_inside = !nb_msh3trg_is_vtx_inside(msh,
+							    centroids[i * 2],
+							    centroids[i*2+1]);
+		if (not_inside) {
+			mask_centroids[i] = 1;
+			N_holes += 1;
+		}
+	}
+	return N_holes;
+}
+
+static double *get_holes(uint32_t N_holes, uint32_t N_centroids,
+			 const double *centroids, const char *mask_centroids)
+{
+	double *holes = NULL;
+	if (0 < N_holes) {
+		holes = nb_allocate_mem(2 * N_holes * sizeof(*holes));
+		uint32_t i = 0;
+		for (uint32_t j = 0; j < N_centroids; j++) {
+			if (1 == mask_centroids[j]) {
+				memcpy(&(holes[i*2]),
+				       &(centroids[j*2]),
+				       2 * sizeof(*holes));
+				i += 1;
+			}
+		}
+	}
+	return holes;
+}
 
 void nb_msh3trg_build_model_disabled_elems(const void *msh3trg,
 					   const bool *elems_enabled,

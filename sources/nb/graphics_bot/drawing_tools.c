@@ -552,7 +552,9 @@ void nb_graphics_set_font_size(nb_graphics_context_t *g, uint16_t size)
 void nb_graphics_show_text(nb_graphics_context_t *g, int x, int y,
 			   const char *str)
 {
-  g->show_text(g->ctx, x, y, str);
+	x = get_xcam_view(g, x);
+	y = get_ycam_view(g, y);
+	g->show_text(g->ctx, x, y, str);
 }
 
 void nb_graphics_get_text_attr(const nb_graphics_context_t *g, const char *label,

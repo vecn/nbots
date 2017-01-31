@@ -56,7 +56,7 @@ static void draw_vertices(nb_graphics_context_t *g,
 
 		char str_id[5];
 		sprintf(str_id, "%i", i);
-		nb_graphics_set_font_type(g, "Sans");
+		nb_graphics_set_font_type(g, "FreeSans");
 		nb_graphics_set_font_size(g, 9);
 		nb_graphics_show_text(g, 
 				      model->vertex[i * 2],

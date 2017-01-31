@@ -55,7 +55,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc);
+	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc, mesh);
 
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,

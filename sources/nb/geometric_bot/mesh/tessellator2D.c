@@ -826,10 +826,11 @@ void nb_tessellator2D_generate_from_model(nb_tessellator2D_t *mesh,
 }
 
 void nb_tessellator2D_get_simplest_from_model(nb_tessellator2D_t *mesh,
-				     const nb_model_t *const  model)
+					      const nb_model_t *const  model)
 {
-	nb_tessellator2D_get_constrained_delaunay(mesh, model->N, model->vertex,
-					  model->M, model->edge);
+	nb_tessellator2D_get_constrained_delaunay(mesh, model->N,
+						  model->vertex,
+						  model->M, model->edge);
 	remove_holes_triangles(mesh, model);
 	remove_concavities_triangles(mesh);
 }

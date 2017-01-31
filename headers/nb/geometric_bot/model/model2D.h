@@ -137,4 +137,6 @@ double nb_model_get_area(const nb_model_t *const model);
   
 double nb_model_get_sum_of_sgm_length(const nb_model_t *const model);
 
+double* nb_model_get_centroids_of_enveloped_areas(const nb_model_t *model,
+						  uint32_t *N_centroids);
 #endif
