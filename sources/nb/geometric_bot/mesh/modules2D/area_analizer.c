@@ -605,7 +605,7 @@ bool nb_tessellator2D_is_continuum(const nb_tessellator2D_t *mesh)
 	return (N == 1);
 }
 
-inline uint16_t nb_tessellator2D_get_N_subareas(const nb_tessellator2D_t *mesh)
+uint16_t nb_tessellator2D_get_N_subareas(const nb_tessellator2D_t *mesh)
 {
 	return get_N_areas(mesh, true);
 }
@@ -651,7 +651,8 @@ static void uninfect(nb_tessellator2D_t *mesh)
 	nb_iterator_finish(iter);	
 }
 
-uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh, uint16_t *area_id)
+uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh,
+				       uint16_t *area_id)
 {	
 	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);
@@ -692,7 +693,7 @@ static void set_id_to_trg_in_area(const nb_tessellator2D_t *mesh,
 
 }
 
-inline uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t *mesh)
+uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t *mesh)
 {
 	return get_N_areas(mesh, false);
 }

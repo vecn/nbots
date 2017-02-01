@@ -141,6 +141,8 @@ bool nb_utils2D_pnt_lies_in_trg(const double t1[2],
 
 bool nb_utils2D_pnt_lies_in_poly(int N, const double *poly,
 				 const double p[2]);
+bool nb_utils2D_pnt_lies_in_poly_bnd(int N, const double *poly,
+				     const double p[2]);
 
 bool nb_utils2D_pnt_lies_in_diametral_circle
 (const double s1[2],

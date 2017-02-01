@@ -655,6 +655,22 @@ EXIT:
 	return out;
 }
 
+
+bool nb_utils2D_pnt_lies_in_poly_bnd(int N, const double *poly,
+				     const double p[2])
+/* Edge crossing algorithm */
+{
+	bool in = false;
+	for (int i = 0; i < N; i++) {
+		int next = (i+1) % N;
+		in = nb_utils2D_pnt_lies_on_sgm(&(poly[i*2]),
+						&(poly[next*2]), p);
+		if (in)
+			break;
+	}
+	return in;
+}
+
 bool nb_utils2D_pnt_lies_in_diametral_circle(const double s1[2],
 					      const double s2[2],
 					      const double p[2])

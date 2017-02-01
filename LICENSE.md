@@ -1,6 +1,6 @@
 # MIT LICENSE
 
-Copyright (c) 2009-2016 Centro de Investigacion en Matematicas A. C. (CIMAT)
+Copyright (c) 2009-2017 Centro de Investigacion en Matematicas A. C. (CIMAT)
 
 ## Abstract
 - Permissions:

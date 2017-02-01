@@ -77,8 +77,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
 	CU_add_test(suite, "Drawing results", test_draw_results);
