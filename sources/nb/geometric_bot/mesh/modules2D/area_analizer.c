@@ -736,7 +736,6 @@ static bool trg_is_out(nb_tessellator2D_t *t2d,
 		goto EXIT;
 
 	out = trg_has_an_edge_outside(t2d, model, trg);
-
 EXIT:
 	return out;
 }

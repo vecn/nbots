@@ -367,7 +367,7 @@ bool nb_model_is_vtx_inside(const nb_model_t *const model,
 			     const double *const vtx)
 {
 	bool out;
-	if (nb_model_get_N_edges(model) < 100)
+	if (nb_model_get_N_edges(model) < 1)/* AQUI VOY */
 		out = is_vtx_inside_polygon(model, vtx);
 	else
 		out = is_vtx_inside_mesh(model, vtx);
@@ -378,11 +378,7 @@ static bool is_vtx_inside_polygon(const nb_model_t *const model,
 				  const double vtx[2])
 {
 	uint32_t N = nb_model_get_number_of_vertices(model);
-	bool is_inside = nb_utils2D_pnt_lies_in_poly(N, model->vertex,
-						     vtx);
-
-	return is_inside;
-
+	return nb_utils2D_pnt_lies_in_poly(N, model->vertex, vtx);
 }
 
 static bool is_vtx_inside_mesh(const nb_model_t *const model,
