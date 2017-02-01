@@ -45,7 +45,8 @@ void nb_cvfa_correlate_mesh_and_integration_mesh
 					 const nb_mesh2D_t *intmsh,
 					 nb_graph_t *trg_x_vol);
 
-void nb_cvfa_get_adj_graph(const nb_mesh2D_t *intmsh,
+void nb_cvfa_get_adj_graph(const nb_mesh2D_t *mesh,
+			   const nb_mesh2D_t *intmsh,
 			   const nb_graph_t *trg_x_vol,
 			   nb_graph_t *graph);
 
@@ -53,6 +54,7 @@ void nb_cvfa_load_trg_points(const nb_mesh2D_t *intmsh,
 			     uint32_t trg_id, double t1[2],
 			     double t2[2], double t3[2]);
 void nb_cvfa_init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
+				const nb_mesh2D_t *mesh,
 				const nb_mesh2D_t *intmsh, int dof);
 
 void nb_cvfa_load_faces(const nb_mesh2D_t *mesh,

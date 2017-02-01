@@ -306,7 +306,7 @@ static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 	double iJ[4];
 	nb_cvfa_subface_get_inverse_jacobian(t1, t2, t3, iJ);
 
-	double factor = wq * params2D->thickness;
+	double factor = wq * params2D->thickness; /* TEMP Check PLANE_STRAIN */
 	for (uint8_t i = 0; i < 3; i++) {
 		double grad_xi[2];
 		subface_get_normalized_grad(smooth, i, xi, grad_xi);

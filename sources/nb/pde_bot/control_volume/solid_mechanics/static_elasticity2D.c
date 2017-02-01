@@ -62,7 +62,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 						    trg_x_vol);
 
 	nb_sparse_t *K;
-	nb_cvfa_init_global_matrix(&K, trg_x_vol, intmsh, 2);
+	nb_cvfa_init_global_matrix(&K, trg_x_vol, mesh, intmsh, 2);
 
 	nb_cvfa_load_faces(mesh, intmsh, trg_x_vol, faces);
 

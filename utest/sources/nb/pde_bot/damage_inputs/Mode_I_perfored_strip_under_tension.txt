@@ -32,8 +32,8 @@
  1 2						#
  2 3        # Pull down   			#
  3 4						#
-            # Interior hole                     #
- 4 5						#
+      ###### Interior hole ######               #
+ 4 5	    # Symmetry cond			#
  5 6						#
  6 7						#
  7 8						#
@@ -43,7 +43,7 @@
  11 12						#
  12 13						#
  13 14						#
- 14  0 						#
+ 14  0 	    # Symmetry cond			#
 # Number of segments				#
  0						#
 #-----------------------------------------------#
@@ -54,10 +54,12 @@
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
- 2						#
+ 4						#
 # Displacement conditions definition            #
- 0  0 1  5e-3	                                #
- 2  0 1 -5e-3					#
+  0  0 1  5e-3	                                #
+  2  0 1 -5e-3					#
+  4  1 0 0.0                                    #
+ 14  1 0 0.0                                    #
 # Num of load conditions over lines:            #
  0                                              #
 #-----------------------------------------------#
@@ -70,7 +72,7 @@
 # 30 MPa = 3e5 kg/(cm s^2)                      #
  3e5	                                        #
 # Energy release rate (N/mm)                    #
- 0.5						#
+ 0.08						#
 # Length scale                                  #
  0.6						#
 #-----------------------------------------------#
@@ -79,5 +81,5 @@
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
  1                                              #
 # Analysis params (Thickness axis of rev)       #
- 0  	                                        #
+ 1  	                                        #
 # -----------------End of file------------------#

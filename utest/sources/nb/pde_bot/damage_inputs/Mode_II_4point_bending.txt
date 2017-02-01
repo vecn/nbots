@@ -104,5 +104,5 @@
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
  1                                              #
 # Analysis params (Thickness axis of rev)       #
- 0  	                                        #
+ 1  	                                        #
 # -----------------End of file------------------#

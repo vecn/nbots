@@ -36,14 +36,20 @@ static int suite_init(void);
 static int suite_clean(void);
 
 static void test_mode_I(void);
+static void test_mode_I_perfored_strip(void);
 static void test_mode_II(void);
+static void test_mode_II_asym_notched_3point_bending(void);
 static void test_count_steps_in_results(void);
 static void test_draw_results(void);
 
 static void check_mode_I(const void *mesh,
 			 const results_t *results);
+static void check_mode_I_perfored_strip(const void *mesh,
+					const results_t *results);
 static void check_mode_II(const void *mesh,
 			  const results_t *results);
+static void check_mode_II_asym_notched_3point_bending(const void *mesh,
+						      const results_t *results);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     nb_mesh2D_type mesh_type,
 		     void (*check_results)(const void*,
@@ -78,7 +84,11 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
 	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	//CU_add_test(suite, "Mode I Perfored Strip under tension",
+	//	    test_mode_I_perfored_strip);
+	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	CU_add_test(suite, "Mode II Asym notched 3 point bending",
+		    test_mode_II_asym_notched_3point_bending);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
 	CU_add_test(suite, "Drawing results", test_draw_results);
@@ -106,14 +116,38 @@ static void check_mode_I(const void *mesh,
 	CU_ASSERT(true);/* TEMPORAL */
 }
 
+static void test_mode_I_perfored_strip(void)
+{
+	run_test("%s/Mode_I_perfored_strip_under_tension.txt", 11000, NB_POLY,
+		 check_mode_I_perfored_strip);
+}
+
+static void check_mode_I_perfored_strip(const void *mesh,
+					const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
 static void test_mode_II(void)
 {
-	run_test("%s/Mode_II_4point_bending.txt", 5000, NB_POLY,
+	run_test("%s/Mode_II_4point_bending.txt", 10000, NB_POLY,
 		 check_mode_II);
 }
 
 static void check_mode_II(const void *mesh,
 			 const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_mode_II_asym_notched_3point_bending(void)
+{
+	run_test("%s/Mode_II_Asym_notched_3point_bending.txt", 10000, NB_POLY,
+		 check_mode_II_asym_notched_3point_bending);
+}
+
+static void check_mode_II_asym_notched_3point_bending(const void *mesh,
+						      const results_t *results)
 {
 	CU_ASSERT(true);/* TEMPORAL */
 }

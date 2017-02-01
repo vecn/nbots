@@ -55,16 +55,20 @@ static void finish_containers_trg_x_vol(uint32_t N,
 					nb_membank_t *membank);
 static void adj_graph_allocate_adj(nb_graph_t *graph,
 				   const nb_graph_t *trg_x_vol,
+				   const nb_mesh2D_t *mesh,
 				   const nb_mesh2D_t *intmsh);
 static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
+				    const nb_mesh2D_t *mesh,
 				    const nb_mesh2D_t *intmsh);
 static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
+				     const nb_mesh2D_t *mesh,
 				     const nb_mesh2D_t *intmsh,
 				     uint32_t vol_id,
 				     nb_membank_t *membank,
 				     nb_container_t *list);
 static void adj_graph_set_adj(nb_graph_t *graph,
 			      const nb_graph_t *trg_x_vol,
+			      const nb_mesh2D_t *mesh,
 			      const nb_mesh2D_t *intmsh);
 static void get_face_elems(const nb_mesh2D_t *mesh, face_t **faces);
 static void define_face_elems(const nb_mesh2D_t *mesh,
@@ -418,23 +422,25 @@ static void finish_containers_trg_x_vol(uint32_t N,
 	}
 }
 
-void nb_cvfa_get_adj_graph(const nb_mesh2D_t *intmsh,
+void nb_cvfa_get_adj_graph(const nb_mesh2D_t *mesh,
+			   const nb_mesh2D_t *intmsh,
 			   const nb_graph_t *trg_x_vol,
 			   nb_graph_t *graph)
 {
 	graph->N = trg_x_vol->N;
 	graph->wi = NULL;
 	graph->wij = NULL;
-	adj_graph_allocate_adj(graph, trg_x_vol, intmsh);
-	adj_graph_set_adj(graph, trg_x_vol, intmsh);
+	adj_graph_allocate_adj(graph, trg_x_vol, mesh, intmsh);
+	adj_graph_set_adj(graph, trg_x_vol, mesh, intmsh);
 }
 
 static void adj_graph_allocate_adj(nb_graph_t *graph,
 				   const nb_graph_t *trg_x_vol,
+				   const nb_mesh2D_t *mesh,
 				   const nb_mesh2D_t *intmsh)
 {
 	uint32_t memsize_N_adj = graph->N * sizeof(*(graph->N_adj));
-	uint32_t N_adj = adj_graph_get_N_adj(trg_x_vol, intmsh);
+	uint32_t N_adj = adj_graph_get_N_adj(trg_x_vol, mesh, intmsh);
 	uint32_t memsize_adj = graph->N * sizeof(*(graph->adj)) +
 		N_adj * sizeof(**(graph->adj));
 	char *memblock = nb_allocate_mem(memsize_N_adj + memsize_adj);
@@ -443,6 +449,7 @@ static void adj_graph_allocate_adj(nb_graph_t *graph,
 }
 
 static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
+				    const nb_mesh2D_t *mesh,
 				    const nb_mesh2D_t *intmsh)
 {
 	nb_container_type cnt_type = NB_SORTED;
@@ -459,7 +466,8 @@ static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 
 	uint32_t N = 0;
 	for (uint32_t i = 0; i < trg_x_vol->N; i++) {
-		adj_graph_get_list_x_vol(trg_x_vol, intmsh, i, membank, list);
+		adj_graph_get_list_x_vol(trg_x_vol, mesh, intmsh,
+					 i, membank, list);
 
 		N += nb_container_get_length(list);
 
@@ -477,10 +485,12 @@ static uint32_t adj_graph_get_N_adj(const nb_graph_t *trg_x_vol,
 }
 
 static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
+				     const nb_mesh2D_t *mesh,
 				     const nb_mesh2D_t *intmsh,
 				     uint32_t vol_id, nb_membank_t *bank,
 				     nb_container_t *list)
 {
+	/* Get logical neighbors, connected by the integration mesh */
 	uint32_t N_vol_adj = trg_x_vol->N_adj[vol_id];
 	for (uint32_t i = 0; i < N_vol_adj; i++) {
 		uint32_t id = trg_x_vol->adj[vol_id][i];
@@ -489,11 +499,23 @@ static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
 			uint32_t nid = nb_mesh2D_elem_get_adj(intmsh, id, j);
 			if (vol_id != nid) {
 				if (NULL == nb_container_exist(list, &nid)) {
-					uint32_t *aux =
-						nb_membank_allocate_mem(bank);
+					uint32_t *aux = nb_membank_allocate_mem(bank);
 					*aux = nid;
 					nb_container_insert(list, aux);
 				}
+			}
+		}
+	}
+
+	/* Get physical neighbors */
+	uint32_t N_ngb = nb_mesh2D_elem_get_N_adj(mesh, vol_id);
+	for (uint32_t i = 0; i < N_ngb; i++) {
+		if (nb_mesh2D_elem_has_ngb(mesh, vol_id, i)) {
+			uint32_t nid = nb_mesh2D_elem_get_ngb(mesh, vol_id, i);
+			if (NULL == nb_container_exist(list, &nid)) {
+				uint32_t *aux = nb_membank_allocate_mem(bank);
+				*aux = nid;
+				nb_container_insert(list, aux);
 			}
 		}
 	}
@@ -501,6 +523,7 @@ static void adj_graph_get_list_x_vol(const nb_graph_t *trg_x_vol,
 
 static void adj_graph_set_adj(nb_graph_t *graph,
 			      const nb_graph_t *trg_x_vol,
+			      const nb_mesh2D_t *mesh,
 			      const nb_mesh2D_t *intmsh)
 {
 	nb_container_type cnt_type = NB_SORTED;
@@ -521,8 +544,8 @@ static void adj_graph_set_adj(nb_graph_t *graph,
 	char *block = ((char*)graph->N_adj) + mem_used;
 
 	for (uint32_t i = 0; i < trg_x_vol->N; i++) {
-		adj_graph_get_list_x_vol(trg_x_vol, intmsh, i,
-					  membank, list);
+		adj_graph_get_list_x_vol(trg_x_vol, mesh, intmsh, i,
+					 membank, list);
 
 		uint32_t N_adj = nb_container_get_length(list);
 		graph->N_adj[i] = N_adj;
@@ -565,13 +588,14 @@ void nb_cvfa_load_trg_points(const nb_mesh2D_t *intmsh,
 }
 
 void nb_cvfa_init_global_matrix(nb_sparse_t **K, const nb_graph_t *trg_x_vol,
+				const nb_mesh2D_t *mesh,
 				const nb_mesh2D_t *intmsh, int dof)
 {
 	uint32_t memsize = nb_graph_get_memsize();
 	nb_graph_t *graph = nb_soft_allocate_mem(memsize);
 
 	nb_graph_init(graph);
-	nb_cvfa_get_adj_graph(intmsh, trg_x_vol, graph);
+	nb_cvfa_get_adj_graph(mesh, intmsh, trg_x_vol, graph);
 
 	/* Force symmetry for LU decomposition */
 	nb_graph_force_symmetry(graph);

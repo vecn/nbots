@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 50
+#define FIXED_STEPS 5
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -299,12 +299,12 @@ int nb_cvfa_compute_2D_damage_phase_field
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,
 						    trg_x_vol);
   	nb_sparse_t *K;
-	nb_cvfa_init_global_matrix(&K, trg_x_vol, intmsh, 2);
+	nb_cvfa_init_global_matrix(&K, trg_x_vol, mesh, intmsh, 2);
 
 	nb_cvfa_load_faces(mesh, intmsh, trg_x_vol, faces);
 
 	nb_sparse_t *D;
-	nb_cvfa_init_global_matrix(&D, trg_x_vol, intmsh, 1);
+	nb_cvfa_init_global_matrix(&D, trg_x_vol, mesh, intmsh, 1);
 
 	nb_cvfa_eval_damage_t eval_dmg;
 	init_eval_dmg(&eval_dmg, SMOOTH, mesh, intmsh, displacement,

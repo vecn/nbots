@@ -23,10 +23,6 @@ static void build_dynamic_graph(const nb_model_t *model,
 				nb_container_t **cnt_graph);
 static void set_vtx_graph(nb_container_t **cnt_graph, nb_membank_t *membank,
 			  nb_graph_t *graph);
-static bool is_vtx_inside_polygon(const nb_model_t *const model,
-				  const double vtx[2]);
-static bool is_vtx_inside_mesh(const nb_model_t *const model,
-			       const double vtx[2]);
 
 uint16_t nb_model_get_memsize(void)
 {
@@ -366,29 +362,8 @@ void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 bool nb_model_is_vtx_inside(const nb_model_t *const model,
 			     const double *const vtx)
 {
-	bool out;
-	if (nb_model_get_N_edges(model) < 100)
-		out = is_vtx_inside_polygon(model, vtx);
-	else
-		out = is_vtx_inside_mesh(model, vtx);
-	return out;
-}
-
-static bool is_vtx_inside_polygon(const nb_model_t *const model,
-				  const double vtx[2])
-{
-	uint32_t N = nb_model_get_number_of_vertices(model);
-	bool is_inside = nb_utils2D_pnt_lies_in_poly(N, model->vertex, vtx);
-	if (!is_inside)
-		is_inside = nb_utils2D_pnt_lies_in_poly_bnd(N, model->vertex,
-							    vtx);
-	return is_inside;
-}
-
-static bool is_vtx_inside_mesh(const nb_model_t *const model,
-			       const double vtx[2])
-{
-	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	uint32_t memsize = nb_tessellator2D_get_memsize();
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(memsize);
 	nb_tessellator2D_init(mesh);
 	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
