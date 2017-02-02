@@ -29,6 +29,7 @@
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 enum {
 	SUCCESS_RESIDUAL_MIN = 0,
@@ -82,6 +83,9 @@ static double get_elem_energy(uint32_t elem_id,
 static double get_energy(const double strain[3],
 			 const nb_material_t *material,
 			 nb_analysis2D_t analysis2D);
+static void get_positive_strain(const double strain[3], double strain_pos[3]);
+static void rotate_principal_tensor(const double Lambda[2], const double P[4],
+				    double tensor[3]);
 static double subface_get_damage_simplexwise
 				(const face_t *face,
 				 uint16_t subface_id,
@@ -439,6 +443,7 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data)
 {
+	return 0;/* TEMPORAL */
 	const eval_damage_data_t *dmg_data = data;
 
 	double damage = 0.0;
@@ -555,13 +560,60 @@ static double get_energy(const double strain[3],
 			 const nb_material_t *material,
 			 nb_analysis2D_t analysis2D)
 {
+	double strain_pos[3];
+	get_positive_strain(strain, strain_pos);
+
 	double lame[2];
 	nb_pde_get_lame_params(lame, material, analysis2D);
 	double tr = strain[0] + strain[1];
-	double norm2 = POW2(strain[0]) +
-		2 * POW2(0.5 * strain[2]) + POW2(strain[1]);
-	double energy = lame[0] * norm2 + 0.5 * lame[1] * POW2(tr);
+	double norm2_pos = POW2(strain_pos[0]) +
+		2 * POW2(0.5 * strain_pos[2]) + POW2(strain_pos[1]);
+
+	double energy = lame[0] * norm2_pos +
+		0.5 * lame[1] * POW2(MAX(0.0, tr));
 	return energy;
+}
+
+static void get_positive_strain(const double strain[3], double strain_pos[3])
+{
+	/* Set symmetric format to strain tensor */
+	double tensor[4];
+	memcpy(tensor, strain, 3 * sizeof(*strain));
+	tensor[2] = 0.5 * strain[2];
+	
+	/* TEMPORAL */tensor[0] = strain[0];
+	/* TEMPORAL */tensor[1] = 0.5*strain[2];
+	/* TEMPORAL */tensor[2] = 0.5*strain[2];
+	/* TEMPORAL */tensor[3] = strain[1];
+
+	double Lambda[2];
+	double P[4];
+	nb_matrix_2X2_eigen(tensor, Lambda, P, 1e-10);/* AQUI VOY: use mtxsym */
+
+	/* Get positive contribution of strain */
+	Lambda[0] = MAX(0.0, Lambda[0]);
+	Lambda[1] = MAX(0.0, Lambda[1]);
+
+	rotate_principal_tensor(Lambda, P, strain_pos);
+
+	/* Set engineering strain tensor */
+	strain_pos[2] = 2.0 * strain_pos[2];
+}
+
+static void rotate_principal_tensor(const double Lambda[2], const double P[4],
+				    double tensor[3]) /* Output */
+{
+	/* Calculate AP' */
+	double AP[4];
+	AP[0] = Lambda[0] * P[0];
+	AP[1] = Lambda[0] * P[2];
+	AP[2] = Lambda[1] * P[1];
+	AP[3] = Lambda[1] * P[3];
+
+	/* Calculate PAP' */
+	tensor[0] = P[0] * AP[0] + P[1] * AP[2];
+	tensor[1] = P[2] * AP[1] + P[3] * AP[3];
+	tensor[2] = P[0] * AP[1] + P[1] * AP[3];
 }
 
 static double subface_get_damage_pairwise(const face_t *face,

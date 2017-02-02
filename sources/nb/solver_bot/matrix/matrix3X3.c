@@ -1,6 +1,6 @@
 #include "nb/solver_bot/matrix/matrix3X3.h"
 
-double nb_matrix_3X3_det(double *A)
+double nb_matrix_3X3_det(double A[9])
 {
 	return 
 		A[0] * A[4] * A[8] + 
@@ -11,7 +11,7 @@ double nb_matrix_3X3_det(double *A)
 		A[8] * A[1] * A[3];
 }
 
-double nb_matrix_3X3_inverse_destructive(double *A)
+double nb_matrix_3X3_inverse_destructive(double A[9])
 {
 	double det = nb_matrix_3X3_det(A);
 	double a11, a12, a13, a21, a22, a23, a31, a32, a33;
