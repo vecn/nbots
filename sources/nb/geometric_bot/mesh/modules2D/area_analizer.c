@@ -284,7 +284,7 @@ static int8_t compare_area1_isGreaterThan_area2
 }
 
 double* nb_tessellator2D_get_centroids_of_enveloped_areas(const nb_tessellator2D_t *const mesh,
-						  uint32_t* N_centroids)
+							  uint32_t* N_centroids)
 {
 	nb_container_t* areas = nb_allocate_on_stack(nb_container_get_memsize(NB_SORTED));
 	nb_container_init(areas, NB_SORTED);

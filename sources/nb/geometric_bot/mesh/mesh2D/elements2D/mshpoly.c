@@ -840,7 +840,6 @@ static void set_holes_to_model(const void *msh, nb_model_t *model)
 
 		N_holes = get_centroids_mask(msh, N_centroids,
 					     centroids, mask_centroids);
-		printf("> %i -> %i\n", N_centroids, N_holes);exit(1);/* AQUI VOY */
 		holes = get_holes(N_holes, N_centroids, centroids,
 				  mask_centroids);
 

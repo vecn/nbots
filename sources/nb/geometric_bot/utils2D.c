@@ -27,8 +27,12 @@ static void get_sgm_level_set_intersection(const double s1[2],
 					   double level_set,
 					   double p[2]);
 
-static bool right_ray_is_intersected(const double v1[2], const double v2[2],
-				     const double p[2]);
+static bool right_ray_is_sgm_intersected(const double v1[2],
+					 const double v2[2],
+					 const double p[2]);
+static bool right_ray_is_vtx_intersected(const double v1[2],
+					 const double v2[2],
+					 const double p[2]);
 
 static double det_circumcircle(const double t1[2],
 			       const double t2[2],
@@ -619,26 +623,36 @@ bool nb_utils2D_pnt_lies_in_poly(int N, const double *poly,
 				 const double p[2])
 /* Edge crossing algorithm */
 {
-	int N_cross = 0;
+	int N_sgm_cross = 0;
+	int N_vtx_cross = 0;
 
 	for (int i = 0; i < N; i++) {
 		int next = (i+1) % N;
-		if (right_ray_is_intersected(&(poly[i*2]),
-					     &(poly[next*2]), p))
-			N_cross += 1;
+		if (right_ray_is_sgm_intersected(&(poly[i*2]),
+						 &(poly[next*2]), p))
+			N_sgm_cross += 1;
+		else if (right_ray_is_vtx_intersected(&(poly[i*2]),
+						      &(poly[next*2]), p))
+			N_vtx_cross += 1;
 	}
-	return N_cross & 1;
+	if (N_sgm_cross > 0)
+		N_sgm_cross += N_vtx_cross / 2;
+
+	return N_sgm_cross & 1;
 }
 
-static bool right_ray_is_intersected(const double v1[2], const double v2[2],
-				     const double p[2])
+static bool right_ray_is_sgm_intersected(const double v1[2],
+					 const double v2[2],
+					 const double p[2])
 {
 	bool out = true;
-	if (v1[1] > p[1] && v2[1] > p[1]) {
+	if (v1[1] - p[1] > -NB_GEOMETRIC_TOL &&
+	    v2[1] - p[1] > -NB_GEOMETRIC_TOL) {
 		out = false;
 		goto EXIT;
 	}
-	if (v1[1] < p[1] && v2[1] < p[1]) {
+	if (p[1] - v1[1] > -NB_GEOMETRIC_TOL &&
+	    p[1] - v2[1] > -NB_GEOMETRIC_TOL) {
 		out = false;
 		goto EXIT;
 	}
@@ -655,6 +669,28 @@ EXIT:
 	return out;
 }
 
+static bool right_ray_is_vtx_intersected(const double v1[2],
+					 const double v2[2],
+					 const double p[2])
+{
+	bool out = false;
+	if (v1[0] > p[0]) {
+		if (fabs(v1[1] - p[1]) < NB_GEOMETRIC_TOL &&
+		    fabs(v2[1] - p[1]) > NB_GEOMETRIC_TOL) {
+			out = true;
+			goto EXIT;
+		}
+	}
+	if (v2[0] > p[0]) {
+		if (fabs(v2[1] - p[1]) < NB_GEOMETRIC_TOL &&
+		    fabs(v1[1] - p[1]) > NB_GEOMETRIC_TOL) {
+			out = true;
+			goto EXIT;
+		}
+	}
+EXIT:
+	return out;
+}
 
 bool nb_utils2D_pnt_lies_in_poly_bnd(int N, const double *poly,
 				     const double p[2])
