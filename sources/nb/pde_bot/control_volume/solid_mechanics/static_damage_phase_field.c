@@ -443,7 +443,6 @@ static double get_damage(const face_t *face, uint16_t subface_id,
 			 uint8_t gp, const nb_glquadrature_t *glq,
 			 const void *data)
 {
-	return 0;/* TEMPORAL */
 	const eval_damage_data_t *dmg_data = data;
 
 	double damage = 0.0;
