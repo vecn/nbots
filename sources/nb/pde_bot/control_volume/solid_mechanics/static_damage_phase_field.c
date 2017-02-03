@@ -171,13 +171,26 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				const nb_cvfa_eval_damage_t *eval_dmg,
 				const uint32_t *perm, const uint32_t *iperm,
 				double *F, double *delta_disp,
-				double *residual, double *aux_disp,
+				double *residual,
 				const uint32_t *dmg_perm,
 				const uint32_t *dmg_iperm, double *rhs_damage,
 				nb_sparse_t *Kr, nb_sparse_t *Lr,
 				nb_sparse_t *Ur, nb_sparse_t *Dr,
 				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
 				double *rnorm);
+static void substract_tension_damaged(double *F,
+				      const nb_mesh2D_t *mesh,
+				      int smooth,
+				      const nb_mesh2D_t *intmsh,
+				      const double *xc,
+				      face_t **faces,
+				      const nb_material_t *material,
+				      nb_analysis2D_t analysis2D,
+				      nb_analysis2D_params *params2D,
+				      const double *disp,
+				      const nb_glquadrature_t *glq,
+			                /* NULL for no damage */
+				      const nb_cvfa_eval_damage_t* eval_dmg);
 static int solve_linear_system(const nb_sparse_t *A,
 			       const uint32_t *perm,
 			       const uint32_t *iperm,
@@ -863,7 +876,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					      intmsh, xc, faces, smooth,
 					      K, D, glq, eval_dmg,
 					      perm, iperm, F, delta_disp,
-					      residual, aux_disp, dmg_perm,
+					      residual, dmg_perm,
 					      dmg_iperm, rhs_damage,
 					      Kr, Lr, Ur, Dr,
 					      dmg_Lr, dmg_Ur,
@@ -927,7 +940,7 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				const nb_cvfa_eval_damage_t *eval_dmg,
 				const uint32_t *perm, const uint32_t *iperm,
 				double *F, double *delta_disp,
-				double *residual, double *aux_disp,
+				double *residual,
 				const uint32_t *dmg_perm,
 				const uint32_t *dmg_iperm, double *rhs_damage,
 				nb_sparse_t *Kr, nb_sparse_t *Lr,
@@ -939,6 +952,9 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 	nb_cvfa_assemble_global_forces(F, mesh, material,
 				       enable_self_weight,
 				       gravity);
+	substract_tension_damaged(F, mesh, smooth, intmsh, xc, faces,
+				  material, analysis2D, params2D,
+				  displacement, glq, eval_dmg);
 	nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
 					  intmsh, xc, faces, material,
 					  analysis2D, params2D, glq,
@@ -979,6 +995,23 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 	}
 EXIT:
 	return status;
+}
+
+static void substract_tension_damaged(double *F,
+				      const nb_mesh2D_t *mesh,
+				      int smooth,
+				      const nb_mesh2D_t *intmsh,
+				      const double *xc,
+				      face_t **faces,
+				      const nb_material_t *material,
+				      nb_analysis2D_t analysis2D,
+				      nb_analysis2D_params *params2D,
+				      const double *disp,
+				      const nb_glquadrature_t *glq,
+			                /* NULL for no damage */
+				      const nb_cvfa_eval_damage_t* eval_dmg)
+{
+	/* AQUI VOY */
 }
 
 static int solve_linear_system(const nb_sparse_t *A,
