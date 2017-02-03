@@ -80,9 +80,9 @@ static double get_subface_energy(const face_t *face, uint16_t subface_id,
 				 const eval_damage_data_t *dmg_data);
 static double get_elem_energy(uint32_t elem_id,
 			      const eval_damage_data_t *dmg_data);
-static double get_energy(const double strain[3],
-			 const nb_material_t *material,
-			 nb_analysis2D_t analysis2D);
+static double get_tensile_energy(const double strain[3],
+				 const nb_material_t *material,
+				 nb_analysis2D_t analysis2D);
 static void get_positive_strain(const double strain[3], double strain_pos[3]);
 static void rotate_principal_tensor(const double Lambda[2], const double P[4],
 				    double tensor[3]);
@@ -514,7 +514,8 @@ static double get_subface_energy(const face_t *face, uint16_t subface_id,
 				   dmg_data->disp,
 				   xq, strain);
 	
-	return get_energy(strain, dmg_data->material, dmg_data->analysis2D);
+	return get_tensile_energy(strain, dmg_data->material,
+				  dmg_data->analysis2D);
 }
 
 static double get_elem_energy(uint32_t elem_id,
@@ -552,12 +553,13 @@ static double get_elem_energy(uint32_t elem_id,
 	strain[1] = Du[3];
 	strain[2] = Du[1] + Du[2];
 	
-	return get_energy(strain, dmg_data->material, dmg_data->analysis2D);	
+	return get_tensile_energy(strain, dmg_data->material,
+				  dmg_data->analysis2D);	
 }
 
-static double get_energy(const double strain[3],
-			 const nb_material_t *material,
-			 nb_analysis2D_t analysis2D)
+static double get_tensile_energy(const double strain[3],
+				 const nb_material_t *material,
+				 nb_analysis2D_t analysis2D)
 {
 	double strain_pos[3];
 	get_positive_strain(strain, strain_pos);
@@ -579,15 +581,10 @@ static void get_positive_strain(const double strain[3], double strain_pos[3])
 	double tensor[4];
 	memcpy(tensor, strain, 3 * sizeof(*strain));
 	tensor[2] = 0.5 * strain[2];
-	
-	/* TEMPORAL */tensor[0] = strain[0];
-	/* TEMPORAL */tensor[1] = 0.5*strain[2];
-	/* TEMPORAL */tensor[2] = 0.5*strain[2];
-	/* TEMPORAL */tensor[3] = strain[1];
 
 	double Lambda[2];
 	double P[4];
-	nb_matrix_2X2_eigen(tensor, Lambda, P, 1e-10);/* AQUI VOY: use mtxsym */
+	nb_mtxsym_2X2_eigen(tensor, Lambda, P, 1e-10);
 
 	/* Get positive contribution of strain */
 	Lambda[0] = MAX(0.0, Lambda[0]);
