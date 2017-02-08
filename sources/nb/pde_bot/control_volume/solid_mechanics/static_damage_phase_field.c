@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 100
+#define FIXED_STEPS 20
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -51,13 +51,6 @@ typedef struct {
 	const nb_material_t *material;
 	nb_analysis2D_t analysis2D;
 } eval_damage_data_t;
-
-typedef struct {/* TEMPORAL: Unnecessary struct */
-	void *data;
-	double (*get_damage)(const face_t *face, uint16_t subface_id,
-			     uint8_t gp, const nb_glquadrature_t *glq,
-			     const void *data);
-} nb_cvfa_eval_damage_t;
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
@@ -90,7 +83,6 @@ static double get_elem_energy(uint32_t elem_id,
 static double get_tensile_energy(const double strain[3],
 				 const nb_material_t *material,
 				 nb_analysis2D_t analysis2D);
-static void get_positive_strain(const double strain[3], double strain_pos[3]);
 static void rotate_principal_tensor(const double Lambda[2], const double P[4],
 				    double tensor[3]);
 static double subface_get_damage_simplexwise
@@ -184,7 +176,8 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				nb_sparse_t *Kr, nb_sparse_t *Lr,
 				nb_sparse_t *Ur, nb_sparse_t *Dr,
 				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
-				double *rnorm);
+				double *rnorm, int iter_mr,
+				int *iter_stress);
 static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
 				    const nb_material_t *const material,
 				    const nb_bcond_t *numeric_bcond,
@@ -204,33 +197,22 @@ static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
 				    const nb_cvfa_eval_damage_t *eval_dmg,
 				    double *delta_disp,
 				    double *residual,
-				    double *rnorm);
-static void substract_damaged_tension(double *F,
-				      const nb_mesh2D_t *mesh,
-				      int smooth,
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc,
-				      face_t **faces,
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      const double *disp,
-				      const nb_glquadrature_t *glq,
-			                /* NULL for no damage */
-				      const nb_cvfa_eval_damage_t* eval_dmg);
-static void substract_dmg_ten_face(double *F,
-				   const nb_mesh2D_t *const mesh,
-				   int smooth,
-				   const nb_mesh2D_t *intmsh,
-				   const double *xc, face_t *face,
-				   const nb_material_t *material,
-				   nb_analysis2D_t analysis2D,
-				   nb_analysis2D_params *params2D,
-				   const double *disp,
-				   const nb_glquadrature_t *glq,
-			               /* NULL for no damage */
-				   const nb_cvfa_eval_damage_t* eval_dmg);
-static void substract_dmg_ten_subface(double *F,
+				    double *rnorm, int iter_mr,
+				    int *iter_stress);
+static void balance_compression_stress(double *F,
+				       const nb_mesh2D_t *mesh,
+				       int smooth,
+				       const nb_mesh2D_t *intmsh,
+				       const double *xc,
+				       face_t **faces,
+				       const nb_material_t *material,
+				       nb_analysis2D_t analysis2D,
+				       nb_analysis2D_params *params2D,
+				       const double *disp,
+				       const nb_glquadrature_t *glq,
+				       /* NULL for no damage */
+				       const nb_cvfa_eval_damage_t* eval_dmg);
+static void balance_compr_stress_face(double *F,
 				      const nb_mesh2D_t *const mesh,
 				      int smooth,
 				      const nb_mesh2D_t *intmsh,
@@ -238,11 +220,25 @@ static void substract_dmg_ten_subface(double *F,
 				      const nb_material_t *material,
 				      nb_analysis2D_t analysis2D,
 				      nb_analysis2D_params *params2D,
-				      uint16_t subface_id,
 				      const double *disp,
 				      const nb_glquadrature_t *glq,
-			                    /* NULL for no damage */
+				      /* NULL for no damage */
 				      const nb_cvfa_eval_damage_t* eval_dmg);
+static void balance_compr_stress_subface(double *F,
+					 const nb_mesh2D_t *const mesh,
+					 int smooth,
+					 const nb_mesh2D_t *intmsh,
+					 const double *xc, face_t *face,
+					 const nb_material_t *material,
+					 const double D[4],
+					 nb_analysis2D_t analysis2D,
+					 nb_analysis2D_params *params2D,
+					 uint16_t subface_id,
+					 const double *disp,
+					 const nb_glquadrature_t *glq,
+					 /* NULL for no damage */
+					 const nb_cvfa_eval_damage_t* eval_dmg);
+static void get_positive_strain(const double strain[3], double strain_pos[3]);
 static void get_positive_stress(const double strain[3],
 				const double strain_pos[3],
 				const nb_material_t *material,
@@ -645,27 +641,6 @@ static double get_tensile_energy(const double strain[3],
 	return energy;
 }
 
-static void get_positive_strain(const double strain[3], double strain_pos[3])
-{
-	/* Set symmetric format to strain tensor */
-	double tensor[4];
-	memcpy(tensor, strain, 3 * sizeof(*strain));
-	tensor[2] = 0.5 * strain[2];
-
-	double Lambda[2];
-	double P[4];
-	nb_mtxsym_2X2_eigen(tensor, Lambda, P, 1e-10);
-
-	/* Get positive contribution of strain */
-	Lambda[0] = MAX(0.0, Lambda[0]);
-	Lambda[1] = MAX(0.0, Lambda[1]);
-
-	rotate_principal_tensor(Lambda, P, strain_pos);
-
-	/* Set engineering strain tensor */
-	strain_pos[2] = 2.0 * strain_pos[2];
-}
-
 static void rotate_principal_tensor(const double Lambda[2], const double P[4],
 				    double tensor[3]) /* Output */
 {
@@ -922,9 +897,11 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		goto EXIT;
 	}
 
+	int iter_stress;
 	int iter = 0;
 	double rnorm = 1;
 	while (1) {
+		iter ++;
 		status = solve_coupled_system(mesh, material,
 					      numeric_bcond,
 					      enable_self_weight, gravity,
@@ -937,7 +914,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					      dmg_iperm, rhs_damage,
 					      Kr, Lr, Ur, Dr,
 					      dmg_Lr, dmg_Ur,
-					      &rnorm);
+					      &rnorm, iter, &iter_stress);
 
 		if (status != 0) {
 			goto EXIT;
@@ -946,17 +923,15 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		if (rnorm < RESIDUAL_TOL)
 			goto GET_REACTION;
 
-		iter ++;
 		if (iter >= max_iter) {
 			status = MAX_ITER_REACHED;
 			goto EXIT;
 		}
-		printf(" ----> DAMAGE ITER: %i (%e)\r", iter, rnorm);/* TEMP */
 	}
 GET_REACTION:
 	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc,
 					  faces, material, analysis2D,
-					  params2D, glq);
+					  params2D, glq, eval_dmg);
 	nb_sparse_multiply_vector(K, displacement, residual, 1);
 	*monitor_reaction = nb_math_hypo(residual[id_elem_monitor * 2],
 					 residual[id_elem_monitor*2+1]);
@@ -964,8 +939,8 @@ EXIT:
 	if (SUCCESS_RESIDUAL_MIN != status)
 		memcpy(displacement, aux_disp, N * sizeof(*aux_disp));
 
-	printf(" >>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i\n",
-	       status, iter, rnorm, bc_factor, max_iter);/* TEMPORAL */
+	printf(">>>>> [%i] DAMAGE ITER: %i -> %i (%e) ... %e/%i\n",
+	       status, iter, iter_stress, rnorm, bc_factor, max_iter);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
 	nb_sparse_destroy(Kr);
@@ -1003,7 +978,8 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				nb_sparse_t *Kr, nb_sparse_t *Lr,
 				nb_sparse_t *Ur, nb_sparse_t *Dr,
 				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
-				double *rnorm)
+				double *rnorm, int iter_mr,
+				int *iter_stress)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	int status = solve_stress_equilibrium(mesh, material, numeric_bcond,
@@ -1012,7 +988,8 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 					      displacement, intmsh, xc, faces,
 					      smooth, K, F, Kr, Lr, Ur, perm,
 					      iperm, glq, eval_dmg, delta_disp,
-					      residual, rnorm);
+					      residual, rnorm, iter_mr,
+					      iter_stress);
 
 	if (status != 0) {
 		status = ELASTIC_SOLVER_FAILS;
@@ -1053,85 +1030,91 @@ static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
 				    const nb_cvfa_eval_damage_t *eval_dmg,
 				    double *delta_disp,
 				    double *residual,
-				    double *rnorm)
+				    double *rnorm, int iter_mr,
+				    int *iter_stress)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	double rn = 1.0;
+	*iter_stress = 0;
 	/* TEMPORAL Mem allocation */
-	double *aux = nb_allocate_mem(2 * N_elems * sizeof(double));
-	double *res = nb_allocate_mem(2 * N_elems * sizeof(double));
-	int status = 0;
-	nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
-					  intmsh, xc, faces, material,
-					  analysis2D, params2D, glq);
+	double *aux = nb_allocate_mem(2 * N_elems * sizeof(*aux));
+	double *res = nb_allocate_mem(2 * N_elems * sizeof(*res));
+
+	nb_cvfa_assemble_global_forces(F, mesh, material,
+				       enable_self_weight,
+				       gravity);
+	/*balance_compression_stress(F, mesh, smooth, intmsh, xc,
+				   faces, material, analysis2D, params2D,
+				   disp, glq, eval_dmg); */ 
+	nb_cvfa_assemble_global_stiffness(K, mesh, smooth, intmsh, xc, faces,
+					  material, analysis2D, params2D, glq,
+					  eval_dmg);
 
 	nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
 
 	nb_sparse_multiply_vector(K, disp, residual, 1);
 	nb_vector_substract_to(2 * N_elems, residual, F);
 	*rnorm = nb_vector_get_norm(residual, 2 * N_elems);
+	int status = 0;
 	if (*rnorm != *rnorm) {
 		status = NO_INVERSE;
 		goto EXIT;
 	}
+	memcpy(res, residual, 2 * N_elems * sizeof(*res));
 
-	double rn = 1.0;
-	int iter = 0;
-	while (1) {/* AQUI VOY */
-		iter ++;
-		nb_sparse_multiply_vector(K, disp, residual, 1);
-		nb_vector_substract_to(2 * N_elems, residual, F);
-		substract_damaged_tension(residual, mesh, smooth, intmsh, xc,
-					  faces, material, analysis2D, params2D,
-					  disp, glq, eval_dmg);
+	while (1) {
+		*iter_stress += 1;
 
 		status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
-					     residual, delta_disp);
+					     res, delta_disp);
 		if (status != 0) {
 			status = ELASTIC_SOLVER_FAILS;
 			goto EXIT;
 		}
-		
-		memcpy(aux, disp, 2 * N_elems * sizeof(*res));
-		nb_vector_sum(2 * N_elems, aux, delta_disp);
-		nb_sparse_multiply_vector(K, aux, res, 1);
-		nb_vector_substract_to(2 * N_elems, res, residual);
-		rn = nb_vector_get_norm(residual, 2 * N_elems);
+		balance_compression_stress(res, mesh, smooth, intmsh, xc,
+					   faces, material, analysis2D, params2D,
+					   delta_disp, glq, eval_dmg);
 
-		printf("     + STRESS ITER: %i (%e)\r", iter, rn);/* TEMP */
+		nb_sparse_multiply_vector(K, delta_disp, aux, 1);
+		nb_vector_substract_to(2 * N_elems, aux, res);
+		rn = nb_vector_get_norm(aux, 2 * N_elems);
+
+		printf("    > DAMAGE ITER: %i -> %i  RESI: %e -> %e\r",
+		       iter_mr, *iter_stress, *rnorm, rn);/* TEMP */
 
 		if (rn < RESIDUAL_TOL)
 			goto EXIT;
+		break;/* TEMPORAL AQUI VOY */
 	}
 EXIT:
-	printf("     + STRESS ITER: %e/%i\n", rn, iter);/* TEMPORAL */
-	nb_free_mem(res);
 	nb_free_mem(aux);
+	nb_free_mem(res);
 	return status;
 }
 
-static void substract_damaged_tension(double *F,
-				      const nb_mesh2D_t *mesh,
-				      int smooth,
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc,
-				      face_t **faces,
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      const double *disp,
-				      const nb_glquadrature_t *glq,
-			                    /* NULL for no damage */
-				      const nb_cvfa_eval_damage_t* eval_dmg)
+static void balance_compression_stress(double *F,
+				       const nb_mesh2D_t *mesh,
+				       int smooth,
+				       const nb_mesh2D_t *intmsh,
+				       const double *xc,
+				       face_t **faces,
+				       const nb_material_t *material,
+				       nb_analysis2D_t analysis2D,
+				       nb_analysis2D_params *params2D,
+				       const double *disp,
+				       const nb_glquadrature_t *glq,
+				       /* NULL for no damage */
+				       const nb_cvfa_eval_damage_t* eval_dmg)
 {
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		substract_dmg_ten_face(F, mesh, smooth, intmsh, xc, faces[i],
+		balance_compr_stress_face(F, mesh, smooth, intmsh, xc, faces[i],
 				       material, analysis2D, params2D, disp,
 				       glq, eval_dmg);
 	}
 }
 
-static void substract_dmg_ten_face(double *F,
+static void balance_compr_stress_face(double *F,
 				   const nb_mesh2D_t *const mesh,
 				   int smooth,
 				   const nb_mesh2D_t *intmsh,
@@ -1144,30 +1127,34 @@ static void substract_dmg_ten_face(double *F,
 			               /* NULL for no damage */
 				   const nb_cvfa_eval_damage_t* eval_dmg)
 {
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
 	if (nb_cvfa_face_is_internal(face, mesh)) {
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
-			substract_dmg_ten_subface(F, mesh, smooth, intmsh, xc,
-						  face, material, analysis2D,
-						  params2D, i, disp, glq,
-						  eval_dmg);
+			balance_compr_stress_subface(F, mesh, smooth, intmsh,
+						     xc, face, material, D,
+						     analysis2D, params2D, i,
+						     disp, glq, eval_dmg);
 		}
 	}
 }
 
-static void substract_dmg_ten_subface(double *F,
-				      const nb_mesh2D_t *const mesh,
-				      int smooth,
-				      const nb_mesh2D_t *intmsh,
-				      const double *xc, face_t *face,
-				      const nb_material_t *material,
-				      nb_analysis2D_t analysis2D,
-				      nb_analysis2D_params *params2D,
-				      uint16_t subface_id,
-				      const double *disp,
-				      const nb_glquadrature_t *glq,
-			                    /* NULL for no damage */
-				      const nb_cvfa_eval_damage_t* eval_dmg)
+static void balance_compr_stress_subface(double *F,
+					 const nb_mesh2D_t *const mesh,
+					 int smooth,
+					 const nb_mesh2D_t *intmsh,
+					 const double *xc, face_t *face,
+					 const nb_material_t *material,
+					 const double D[4],
+					 nb_analysis2D_t analysis2D,
+					 nb_analysis2D_params *params2D,
+					 uint16_t subface_id,
+					 const double *disp,
+					 const nb_glquadrature_t *glq,
+					 /* NULL for no damage */
+					 const nb_cvfa_eval_damage_t* eval_dmg)
 {
 	subface_t *subface = face->subfaces[subface_id];
 	double lf = nb_utils2D_get_dist(subface->x1, subface->x2);
@@ -1184,26 +1171,54 @@ static void substract_dmg_ten_subface(double *F,
 		get_positive_stress(strain, strain_pos, material,
 				    analysis2D, stress_pos);
 
-		double normal_ps[2]; /* Positive stress normal to face */
-		normal_ps[0] = stress_pos[0] * face->nf[0] +
-			stress_pos[2] * face->nf[1];
-		normal_ps[1] = stress_pos[2] * face->nf[0] +
-			stress_pos[1] * face->nf[1];
+		double stress[3];
+		nb_pde_get_stress(strain, D, stress);
+
+		stress[0] -= stress_pos[0];
+		stress[1] -= stress_pos[1];
+		stress[2] -= stress_pos[2];
+
+		double normal_ns[2]; /* Negative stress normal to face */
+		normal_ns[0] = stress[0] * face->nf[0] +
+			stress[2] * face->nf[1];
+		normal_ns[1] = stress[2] * face->nf[0] +
+			stress[1] * face->nf[1];
 
 		double d = eval_dmg->get_damage(face, subface_id, q, glq,
 						eval_dmg->data);
-		double damaged = 2.0 * d - POW2(d);
+		double damaged = POW2(d) - 2.0 * d;
 
 		double wq = lf * glq->w[q] * 0.5;
 		double factor = wq /* params2D->thickness*/;/* TEMP */
 
 		uint32_t id1 = face->elems[0];
 		uint32_t id2 = face->elems[1];
-		F[id1 * 2] += factor * damaged * normal_ps[0];
-		F[id1*2+1] += factor * damaged * normal_ps[1];
-		F[id2 * 2] -= factor * damaged * normal_ps[0];
-		F[id2*2+1] -= factor * damaged * normal_ps[1];
+		F[id1 * 2] -= factor * damaged * normal_ns[0];
+		F[id1*2+1] -= factor * damaged * normal_ns[1];
+		F[id2 * 2] += factor * damaged * normal_ns[0];
+		F[id2*2+1] += factor * damaged * normal_ns[1];
 	}
+}
+
+static void get_positive_strain(const double strain[3], double strain_pos[3])
+{
+	/* Set symmetric format to strain tensor */
+	double tensor[3];
+	memcpy(tensor, strain, 3 * sizeof(*strain));
+	tensor[2] = 0.5 * strain[2];
+
+	double Lambda[2];
+	double P[4];
+	nb_mtxsym_2X2_eigen(tensor, Lambda, P, 1e-10);
+
+	/* Get positive contribution of strain */
+	Lambda[0] = MAX(0.0, Lambda[0]);
+	Lambda[1] = MAX(0.0, Lambda[1]);
+
+	rotate_principal_tensor(Lambda, P, strain_pos);
+
+	/* Set engineering strain tensor */
+	strain_pos[2] = 2.0 * strain_pos[2];
 }
 
 static void get_positive_stress(const double strain[3],
@@ -1216,10 +1231,11 @@ static void get_positive_stress(const double strain[3],
 	nb_pde_get_lame_params(lame, material, analysis2D);
 	
 	double trE_pos = MAX(0.0, strain[0] + strain[1]);
+	/* TEMPORAL trE_pos = strain_pos[0] + strain_pos[1]; */
 
 	stress_pos[0] = 2 * lame[0] * strain_pos[0] + lame[1] * trE_pos;
 	stress_pos[1] = 2 * lame[0] * strain_pos[1] + lame[1] * trE_pos;
-	stress_pos[2] = 2 * lame[0] * strain_pos[2];
+	stress_pos[2] = lame[0] * strain_pos[2];
 }
 
 static int solve_linear_system(const nb_sparse_t *A,

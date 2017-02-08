@@ -8,6 +8,13 @@
 #include "nb/solver_bot.h"
 #include "nb/pde_bot.h"
 
+typedef struct {
+	void *data;
+	double (*get_damage)(const face_t *face, uint16_t subface_id,
+			     uint8_t gp, const nb_glquadrature_t *glq,
+			     const void *data);
+} nb_cvfa_eval_damage_t;
+
 void nb_cvfa_assemble_global_forces(double *F,
 				    const nb_mesh2D_t *const mesh,
 				    const nb_material_t *material,
@@ -22,7 +29,9 @@ void nb_cvfa_assemble_global_stiffness(nb_sparse_t *K,
 				       const nb_material_t *material,
 				       nb_analysis2D_t analysis2D,
 				       nb_analysis2D_params *params2D,
-				       const nb_glquadrature_t *glq);
+				       const nb_glquadrature_t *glq,
+				                     /* NULL for no damage */
+				       const nb_cvfa_eval_damage_t* eval_dmg);
 
 double nb_cvfa_subface_get_inverse_jacobian(const double t1[2],
 					    const double t2[2],

@@ -72,7 +72,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc, faces,
 					  material, analysis2D, params2D,
-					  &glq);
+					  &glq, NULL);
 
 	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 				K, F, bcond, 1.0);
