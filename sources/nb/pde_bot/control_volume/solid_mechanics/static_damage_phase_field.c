@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 10
+#define FIXED_STEPS 100
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -185,6 +185,26 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				nb_sparse_t *Ur, nb_sparse_t *Dr,
 				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
 				double *rnorm);
+static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
+				    const nb_material_t *const material,
+				    const nb_bcond_t *numeric_bcond,
+				    bool enable_self_weight, double gravity[2],
+				    nb_analysis2D_t analysis2D,
+				    nb_analysis2D_params *params2D,
+				    const double *disp,
+				    const nb_mesh2D_t *intmsh,
+				    const double *xc,
+				    face_t **faces, int smooth,
+				    nb_sparse_t *K, double *F,
+				    nb_sparse_t *Kr, nb_sparse_t *Lr,
+				    nb_sparse_t *Ur,
+				    const uint32_t *perm,
+				    const uint32_t *iperm,
+				    const nb_glquadrature_t *glq,
+				    const nb_cvfa_eval_damage_t *eval_dmg,
+				    double *delta_disp,
+				    double *residual,
+				    double *rnorm);
 static void substract_damaged_tension(double *F,
 				      const nb_mesh2D_t *mesh,
 				      int smooth,
@@ -985,38 +1005,19 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 				nb_sparse_t *dmg_Lr, nb_sparse_t *dmg_Ur,
 				double *rnorm)
 {
-	int status;
-	nb_cvfa_assemble_global_forces(F, mesh, material,
-				       enable_self_weight,
-				       gravity);
-	substract_damaged_tension(F, mesh, smooth, intmsh, xc, faces,
-				  material, analysis2D, params2D,
-				  displacement, glq, eval_dmg);
-	nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
-					  intmsh, xc, faces, material,
-					  analysis2D, params2D, glq);
-
-	nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
-		
-	nb_sparse_multiply_vector(K, displacement, residual, 1);
-	
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-	nb_vector_substract_to(2 * N_elems, residual, F);
-	*rnorm = nb_vector_get_norm(residual, 2 * N_elems);
-
-	if (*rnorm != *rnorm) {
-		status = NO_INVERSE;
-		goto EXIT;
-	}
-
-	status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
-				     residual, delta_disp);
+	int status = solve_stress_equilibrium(mesh, material, numeric_bcond,
+					      enable_self_weight, gravity,
+					      analysis2D, params2D,
+					      displacement, intmsh, xc, faces,
+					      smooth, K, F, Kr, Lr, Ur, perm,
+					      iperm, glq, eval_dmg, delta_disp,
+					      residual, rnorm);
 
 	if (status != 0) {
 		status = ELASTIC_SOLVER_FAILS;
 		goto EXIT;
 	}
-
 	nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
 	assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
@@ -1030,6 +1031,81 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 		goto EXIT;
 	}
 EXIT:
+	return status;
+}
+
+static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
+				    const nb_material_t *const material,
+				    const nb_bcond_t *numeric_bcond,
+				    bool enable_self_weight, double gravity[2],
+				    nb_analysis2D_t analysis2D,
+				    nb_analysis2D_params *params2D,
+				    const double *disp,
+				    const nb_mesh2D_t *intmsh,
+				    const double *xc,
+				    face_t **faces, int smooth,
+				    nb_sparse_t *K, double *F,
+				    nb_sparse_t *Kr, nb_sparse_t *Lr,
+				    nb_sparse_t *Ur,
+				    const uint32_t *perm,
+				    const uint32_t *iperm,
+				    const nb_glquadrature_t *glq,
+				    const nb_cvfa_eval_damage_t *eval_dmg,
+				    double *delta_disp,
+				    double *residual,
+				    double *rnorm)
+{
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	/* TEMPORAL Mem allocation */
+	double *aux = nb_allocate_mem(2 * N_elems * sizeof(double));
+	double *res = nb_allocate_mem(2 * N_elems * sizeof(double));
+	int status = 0;
+	nb_cvfa_assemble_global_stiffness(K, mesh, smooth,
+					  intmsh, xc, faces, material,
+					  analysis2D, params2D, glq);
+
+	nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
+
+	nb_sparse_multiply_vector(K, disp, residual, 1);
+	nb_vector_substract_to(2 * N_elems, residual, F);
+	*rnorm = nb_vector_get_norm(residual, 2 * N_elems);
+	if (*rnorm != *rnorm) {
+		status = NO_INVERSE;
+		goto EXIT;
+	}
+
+	double rn = 1.0;
+	int iter = 0;
+	while (1) {/* AQUI VOY */
+		iter ++;
+		nb_sparse_multiply_vector(K, disp, residual, 1);
+		nb_vector_substract_to(2 * N_elems, residual, F);
+		substract_damaged_tension(residual, mesh, smooth, intmsh, xc,
+					  faces, material, analysis2D, params2D,
+					  disp, glq, eval_dmg);
+
+		status = solve_linear_system(K, perm, iperm, Kr, Lr, Ur,
+					     residual, delta_disp);
+		if (status != 0) {
+			status = ELASTIC_SOLVER_FAILS;
+			goto EXIT;
+		}
+		
+		memcpy(aux, disp, 2 * N_elems * sizeof(*res));
+		nb_vector_sum(2 * N_elems, aux, delta_disp);
+		nb_sparse_multiply_vector(K, aux, res, 1);
+		nb_vector_substract_to(2 * N_elems, res, residual);
+		rn = nb_vector_get_norm(residual, 2 * N_elems);
+
+		printf("     + STRESS ITER: %i (%e)\r", iter, rn);/* TEMP */
+
+		if (rn < RESIDUAL_TOL)
+			goto EXIT;
+	}
+EXIT:
+	printf("     + STRESS ITER: %e/%i\n", rn, iter);/* TEMPORAL */
+	nb_free_mem(res);
+	nb_free_mem(aux);
 	return status;
 }
 
