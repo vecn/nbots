@@ -75,3 +75,11 @@ void nb_pde_get_main_stress(double sxx, double syy, double sxy,
 	main_stress[0] = avg + R;
 	main_stress[1] = avg - R;
 }
+
+void nb_pde_get_stress(const double strain[3], const double D[4],
+		       double stress[3])
+{
+	stress[0] = (strain[0] * D[0] + strain[1] * D[1]);
+	stress[1] = (strain[0] * D[1] + strain[1] * D[2]);
+	stress[2] = strain[2] * D[3];
+}

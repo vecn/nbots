@@ -72,7 +72,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
 	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc, faces,
 					  material, analysis2D, params2D,
-					  &glq, NULL);
+					  &glq);
 
 	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 				K, F, bcond, 1.0);
@@ -141,15 +141,11 @@ void nb_cvfa_compute_stress_from_strain(const nb_mesh2D_t *mesh,
 					const double* strain,
 					double* stress /* Output */)
 {
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		double D[4];
-		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-		
-		stress[i * 3] = (strain[i * 3] * D[0] +
-				 strain[i*3+1] * D[1]);
-		stress[i*3+1] = (strain[i * 3] * D[1] +
-				 strain[i*3+1] * D[2]);
-		stress[i*3+2] = strain[i*3+2] * D[3];
+		nb_pde_get_stress(&(strain[i*3]), D, &(stress[i*3]));
 	}
 }

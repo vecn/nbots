@@ -37,9 +37,7 @@ static void assemble_face(nb_sparse_t *K,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  const nb_glquadrature_t *glq,
-			                /* NULL for no damage */
-			  const nb_cvfa_eval_damage_t* eval_dmg);
+			  const nb_glquadrature_t *glq);
 static void integrate_subface(nb_sparse_t *K,
 			      const nb_mesh2D_t *const mesh,
 			      int smooth,
@@ -48,9 +46,7 @@ static void integrate_subface(nb_sparse_t *K,
 			      const double D[4],
 			      nb_analysis2D_params *params2D,
 			      uint16_t subface_id,
-			      const nb_glquadrature_t *glq,
-			                    /* NULL for no damage */
-			      const nb_cvfa_eval_damage_t* eval_dmg);
+			      const nb_glquadrature_t *glq);
 static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const nb_mesh2D_t *const mesh,
 					  int smooth,
@@ -59,9 +55,7 @@ static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const double D[4],
 					  nb_analysis2D_params *params2D,
 					  const nb_glquadrature_t *glq,
-					  uint8_t q,
-					                /* NULL for no damage */
-					  const nb_cvfa_eval_damage_t* eval_dmg);
+					  uint8_t q);
 static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
 			 const nb_mesh2D_t *intmsh, face_t *face,
 			 uint16_t subface_id, const double D[4],
@@ -92,9 +86,7 @@ static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const double D[4],
 				       nb_analysis2D_params *params2D,
 				       const nb_glquadrature_t *glq,
-				       uint8_t q,
-				                     /* NULL for no damage */
-				       const nb_cvfa_eval_damage_t* eval_dmg);
+				       uint8_t q);
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh, int smooth,
 				  const double *xc, face_t *face,
 				  uint16_t subface_id, const double D[4],
@@ -190,15 +182,13 @@ void nb_cvfa_assemble_global_stiffness(nb_sparse_t *K,
 				       const nb_material_t *material,
 				       nb_analysis2D_t analysis2D,
 				       nb_analysis2D_params *params2D,
-				       const nb_glquadrature_t *glq,
-				                     /* NULL for no damage */
-				       const nb_cvfa_eval_damage_t* eval_dmg)
+				       const nb_glquadrature_t *glq)
 {
 	nb_sparse_reset(K);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		assemble_face(K, mesh, smooth, intmsh, xc, faces[i], material,
-			      analysis2D, params2D, glq, eval_dmg);
+		assemble_face(K, mesh, smooth, intmsh, xc, faces[i],
+			      material, analysis2D, params2D, glq);
 	}
 }
 
@@ -210,18 +200,16 @@ static void assemble_face(nb_sparse_t *K,
 			  const nb_material_t *material,
 			  nb_analysis2D_t analysis2D,
 			  nb_analysis2D_params *params2D,
-			  const nb_glquadrature_t *glq,
-			               /* NULL for no damage */
-			  const nb_cvfa_eval_damage_t* eval_dmg)
-{	
+			  const nb_glquadrature_t *glq)
+{
 	double D[4];
 	nb_pde_get_constitutive_matrix(D, material, analysis2D);
 
 	if (nb_cvfa_face_is_internal(face, mesh)) {
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
-			integrate_subface(K, mesh, smooth, intmsh, xc, face,
-					  D, params2D, i, glq, eval_dmg);
+			integrate_subface(K, mesh, smooth, intmsh, xc,
+					  face, D, params2D, i, glq);
 		}
 	}
 }
@@ -234,22 +222,19 @@ static void integrate_subface(nb_sparse_t *K,
 			      const double D[4],
 			      nb_analysis2D_params *params2D,
 			      uint16_t subface_id,
-			      const nb_glquadrature_t *glq,
-			                    /* NULL for no damage */
-			      const nb_cvfa_eval_damage_t* eval_dmg)
+			      const nb_glquadrature_t *glq)
 {
 	subface_t *subface = face->subfaces[subface_id];
 	if (nb_cvfa_subface_in_simplex(subface)) {
 		for (uint8_t q = 0; q < glq->N; q++)
 			integrate_subface_simplexwise(K, mesh, smooth, intmsh,
 						      face, subface_id, D,
-						      params2D, glq, q,
-						      eval_dmg);
+						      params2D, glq, q);
 	} else {
 		for (uint8_t q = 0; q < glq->N; q++)
 			integrate_subface_pairwise(K, mesh, smooth, xc, face,
 						   subface_id, D, params2D,
-						   glq, q, eval_dmg);
+						   glq, q);
 	}
 }
 
@@ -261,24 +246,13 @@ static void integrate_subface_simplexwise(nb_sparse_t *K,
 					  const double D[4],
 					  nb_analysis2D_params *params2D,
 					  const nb_glquadrature_t *glq,
-					  uint8_t q,
-					                /* NULL for no damage */
-					  const nb_cvfa_eval_damage_t* eval_dmg)
+					  uint8_t q)
 {
-	double damage = 0.0;
-	if (NULL != eval_dmg)
-		damage = eval_dmg->get_damage(face, subface_id,
-					      q, glq, eval_dmg->data);
-	if (damage < 1.0) {
-		double Kf[12];
-		integrate_Kf(mesh, smooth, intmsh, face, subface_id, D,
-			     params2D, Kf, glq, q);
+	double Kf[12];
+	integrate_Kf(mesh, smooth, intmsh, face, subface_id,
+		     D, params2D, Kf, glq, q);
 
-		if (damage > 0.0)
-			nb_vector_scale(12, Kf, POW2(1.0 - damage));
-
-		add_Kf_to_K(face, intmsh, subface_id, Kf, K);
-	}
+	add_Kf_to_K(face, intmsh, subface_id, Kf, K);
 }
 
 static void integrate_Kf(const nb_mesh2D_t *const mesh, int smooth,
@@ -563,23 +537,13 @@ static void integrate_subface_pairwise(nb_sparse_t *K,
 				       const double D[4],
 				       nb_analysis2D_params *params2D,
 				       const nb_glquadrature_t *glq,
-				       uint8_t q,
-				                     /* NULL for no damage */
-				       const nb_cvfa_eval_damage_t* eval_dmg)
+				       uint8_t q)
 {
-	double damage = 0.0;
-	if (NULL != eval_dmg)
-		damage = eval_dmg->get_damage(face, subface_id,
-					      q, glq, eval_dmg->data);
-	if (damage < 1.0) {
-		double Kf[8];
-		integrate_Kf_pairwise(mesh, smooth, xc, face, subface_id, D,
-				      params2D, Kf, glq, q);
-		if (damage > 0.0)
-			nb_vector_scale(8, Kf, POW2(1.0 - damage));
+	double Kf[8];
+	integrate_Kf_pairwise(mesh, smooth, xc, face, subface_id,
+			      D, params2D, Kf, glq, q);
 
-		add_Kf_to_K_pairwise(face, Kf, K);
-	}
+	add_Kf_to_K_pairwise(face, Kf, K);
 }
 
 static void integrate_Kf_pairwise(const nb_mesh2D_t *const mesh, int smooth,
@@ -744,7 +708,7 @@ void nb_cvfa_subface_get_strain(int smooth,
 				double *strain)
 {
 	if (nb_cvfa_subface_in_simplex(subface))
-	  subface_get_strain_simplexwise(smooth, intmsh, subface,
+		subface_get_strain_simplexwise(smooth, intmsh, subface,
 					       disp, xq, strain);
 	else
 		subface_get_strain_pairwise(smooth, face, subface, xc,
