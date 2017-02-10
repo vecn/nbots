@@ -25,7 +25,7 @@
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 20
+#define FIXED_STEPS 5
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -382,10 +382,9 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	uint32_t id_elem_monitor[2];
 	nb_cvfa_get_elem_adj_to_model_node(mesh, 10, id_elem_monitor);
-	if (id_elem_monitor[1] != id_elem_monitor[1]) {        /* TEMPORAL */
+	if (id_elem_monitor[0] == id_elem_monitor[1]) {        /* TEMPORAL */
 		printf("DOUBLE ELEM %i %i\n",                  /* TEMPORAL */
 		       id_elem_monitor[0], id_elem_monitor[1]);/* TEMPORAL */
-		exit(1);                                       /* TEMPORAL */
 	}                                                      /* TEMPORAL */
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
@@ -632,12 +631,12 @@ static double get_tensile_energy(const double strain[3],
 
 	double lame[2];
 	nb_pde_get_lame_params(lame, material, analysis2D);
-	double tr = strain[0] + strain[1];
+	double tr_pos = MAX(0.0, strain[0] + strain[1]);
 	double norm2_pos = POW2(strain_pos[0]) +
 		2 * POW2(0.5 * strain_pos[2]) + POW2(strain_pos[1]);
 
 	double energy = lame[0] * norm2_pos +
-		0.5 * lame[1] * POW2(MAX(0.0, tr));
+		0.5 * lame[1] * POW2(tr_pos);
 	return energy;
 }
 
@@ -899,9 +898,9 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		goto EXIT;
 	}
 
-	balance_compression_stress(stress_balance, mesh, smooth, intmsh, xc,
+	/*balance_compression_stress(stress_balance, mesh, smooth, intmsh, xc,
 				   faces, material, analysis2D, params2D,
-				   displacement, glq, eval_dmg);
+				   displacement, glq, eval_dmg);*/
 	int iter = 0;
 	double rnorm = 1;
 	while (1) {
@@ -921,7 +920,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					      dmg_Lr, dmg_Ur,
 					      &rnorm);
 
-		printf("    > DAMAGE ITER: %i  RESI: %e\r", iter, rnorm);/* TEMP */
+		printf("\r    > DAMAGE ITER: %i  RESI: %e", iter, rnorm);/* TEMP */
 
 		if (status != 0) {
 			goto EXIT;
@@ -946,7 +945,7 @@ EXIT:
 	if (SUCCESS_RESIDUAL_MIN != status)
 		memcpy(displacement, aux_disp, N * sizeof(*aux_disp));
 
-	printf(">>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i\n",
+	printf("\r>>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i\n",
 	       status, iter, rnorm, bc_factor, max_iter);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
@@ -998,10 +997,9 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 					      eval_dmg, delta_disp,
 					      residual, rnorm);
 
-	if (status != 0) {
-		status = ELASTIC_SOLVER_FAILS;
+	if (status != 0)
 		goto EXIT;
-	}
+
 	nb_vector_sum(2 * N_elems, displacement, delta_disp);
 
 	assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
@@ -1009,6 +1007,10 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 	status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
 				     dmg_Lr, dmg_Ur, rhs_damage,
 				     elem_damage);
+	for (int i = 0; i < N_elems; i++) {/* TEMPORAL *********************/
+		if (fabs(15.3 - nb_mesh2D_elem_get_y(mesh, i)) < 3)
+			elem_damage[i] = 0;
+	}/*********************************** AQUI VOY *********************/
 
 	if (status != 0) {
 		status = DAMAGE_SOLVER_FAILS;
@@ -1046,9 +1048,9 @@ static int solve_stress_equilibrium(const nb_mesh2D_t *const mesh,
 				       enable_self_weight,
 				       gravity);
 	nb_vector_sum(2 * N_elems, F, stress_balance);
-	nb_cvfa_assemble_global_stiffness(K, mesh, smooth, intmsh, xc, faces,
-					  material, analysis2D, params2D, glq,
-					  eval_dmg);
+	nb_cvfa_assemble_global_stiffness(K, mesh, smooth, intmsh, xc,
+					  faces, material, analysis2D,
+					  params2D, glq, eval_dmg);
 
 	nb_cvfa_set_numeric_bconditions(K, F, mesh, numeric_bcond);
 
@@ -1217,7 +1219,6 @@ static void get_positive_stress(const double strain[3],
 	nb_pde_get_lame_params(lame, material, analysis2D);
 	
 	double trE_pos = MAX(0.0, strain[0] + strain[1]);
-	/* TEMPORAL trE_pos = strain_pos[0] + strain_pos[1]; */
 
 	stress_pos[0] = 2 * lame[0] * strain_pos[0] + lame[1] * trE_pos;
 	stress_pos[1] = 2 * lame[0] * strain_pos[1] + lame[1] * trE_pos;

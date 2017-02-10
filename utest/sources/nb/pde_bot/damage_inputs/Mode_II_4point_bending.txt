@@ -92,8 +92,8 @@
  0.2						#
 # Elasticity module				#
 # Pa = kg/(m s^2)                               #
-# 30 MPa = 3e5 kg/(cm s^2)                      #
- 3e5	                                        #
+# 3 GPa = 3e7 kg/(cm s^2)                       #
+ 3e7	                                        #
 # Energy release rate (N/mm)                    #
  0.5						#
 # Length scale                                  #
