@@ -60,6 +60,15 @@ void nb_fem_set_bconditions(const nb_mesh2D_t *part,
 	set_dirichlet_vtx(part, K, F, bcond, factor);
 }
 
+void nb_fem_set_dirichlet_bconditions(const nb_mesh2D_t *part,
+			    nb_sparse_t* K, double* F, 
+			    const nb_bcond_t *const bcond,
+			    double factor)
+{
+	set_dirichlet_sgm(part, K, F, bcond, factor);
+	set_dirichlet_vtx(part, K, F, bcond, factor);
+}
+
 static void set_neumann_sgm(const nb_mesh2D_t *part,
 			    double* F, 
 			    const nb_bcond_t *const bcond, 

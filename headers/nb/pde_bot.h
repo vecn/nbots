@@ -16,6 +16,7 @@
 #include "nb/pde_bot/finite_element/solid_mechanics/static_damage2D.h"
 #include "../sources/nb/pde_bot/finite_element/solid_mechanics/set_bconditions.h"
 #include "../sources/nb/pde_bot/finite_element/solid_mechanics/pipeline.h"
+#include "nb/pde_bot/finite_element/solid_mechanics/plastic_stiffness_matrix.h"
 
 
 #endif

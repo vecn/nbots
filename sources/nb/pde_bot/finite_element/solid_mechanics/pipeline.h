@@ -28,6 +28,17 @@ int pipeline_assemble_system
 		 nb_analysis2D_t analysis2D,
 		 nb_analysis2D_params *params2D,
 		 const bool* elements_enabled /* NULL to enable all */);
+int pipeline_assemble_plastic_system
+		(nb_sparse_t* K, double* M, double *F,
+		 const nb_mesh2D_t *const part,
+		 const nb_fem_elem_t *const elem,
+		 const nb_material_t *const material,
+		 bool enable_self_weight,
+		 double gravity[2],
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
+		 const bool* elements_enabled /* NULL to enable all */,
+		 nb_plastified_analysis2D *elem_regime);
 
 void pipeline_set_boundary_conditions(const nb_mesh2D_t *part,
 				      nb_sparse_t* K,

@@ -94,7 +94,7 @@ static int suite_clean(void)
 }
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt", 500,
+        run_test("%s/plastic_beam_cantilever.txt",2000,
         check_beam_cantilever, "cantilever");
 }
 static void check_beam_cantilever(const void *part,
@@ -140,7 +140,7 @@ static void check_beam_cantilever(const void *part,
 
 static void test_continuous_beam(void)
 {
-        run_test("%s/plastic_continuous_beam.txt", 100,
+        run_test("%s/plastic_continuous_beam.txt", 2000,
         check_beam_cantilever, "continuous");
 }
 
@@ -199,13 +199,12 @@ static int simulate(const char *problem_data,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(part);
 	results_init_plastic(results, N_nodes, N_elems);
 	uint32_t N_force_steps = 100;
-	double accepted_tol = 1.0;
 	double gravity[2] = {0.0 , -9.81};
+
     	int status_fem = fem_compute_plastic_2D_Solid_Mechanics(part, elem, material,
                                                              bcond, true, gravity,
                                                              analysis2D, &params2D, NULL, results->strain, results->stress,
-                                                             results->disp, N_force_steps,
-                                                             accepted_tol, results->plastic_elements,results->nodal_strain,
+                                                             results->disp, N_force_steps, results->plastic_elements,results->nodal_strain,
 						 	     results->nodal_stress);
 
     	print_plastic_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
@@ -264,7 +263,7 @@ static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uin
 	results->plastic_elements = (void*)(memblock + size_disp + 2 * size_strain);
 	results->nodal_strain = (void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
 	results->nodal_stress = (void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements + size_nodal_strain);
-	results->damage = NULL;//void*)(memblock + size_disp + 2 * size_strain + size_plastic_elements);
+	results->damage = NULL;
 	results->nodal_damage = NULL;
 }	
 
@@ -441,7 +440,9 @@ static void plastic_check_input_values(nb_material_t *material, nb_analysis2D_t 
     	printf("Plastic Modulus: %lf\n", nb_material_get_plasticity_module(material)); /* TEMPORAL */
     	printf("Poisson module: %f\n", nb_material_get_poisson_module(material)); /* TEMPORAL */
     	printf("Density: %lf\n", nb_material_get_density(material)); /* TEMPORAL */
-   	 printf("Thickness: %lf\n", params2D->thickness);
+	printf("Yield Stress: %lf\n", nb_material_get_yield_stress(material));   	
+	printf("Thickness: %lf\n", params2D->thickness);
+	
     	switch (analysis2D) {
     		case 0:
     			printf("Problem type: NB_PLANE_STRESS\n");
@@ -473,9 +474,10 @@ static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total
     	uint32_t Ex_size = elemsize;
    	uint32_t Ey_size = elemsize;
     	uint32_t Exy_size = elemsize;
+	uint32_t VM_stress_size = elemsize;
 
    	uint64_t memsize = avg_displacement_size + total_displacement_x_size + total_displacement_y_size +
-                        Sx_size + Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size;
+                        Sx_size + Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size + VM_stress_size;
 
     	char* memblock = malloc(memsize);
 
@@ -491,6 +493,7 @@ static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total
         	total_displacement_x[j] = total_displacement[2*j];
         	total_displacement_y[j] = total_displacement[2*j +1];
     	}
+
     	double *Sx = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size);
     	double *Sy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size);
     	double *Sxy =(void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
@@ -513,9 +516,13 @@ static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total
         	Ey[j] = total_strain[3*j + 1];
         	Exy[j] = total_strain[3*j +2];
     	}
-
+	double *VM_stress = (void*)(memblock + avg_displacement_size + total_displacement_x_size + total_displacement_y_size + Sx_size +
+                          Sy_size + Sxy_size + Ex_size + Ey_size + Exy_size);
+	for(int j = 0; j < N_elem; j++){
+		VM_stress[j] =  nb_pde_get_vm_stress(stress[3*j], stress[3*j + 1], stress[3*j + 2]);	
+	}
     	/* Position of the palette is controlled by float label_width in static void add_palette() of draw.c*/
-    	//nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 0.5);
+    	nb_mesh2D_distort_with_field(part, NB_NODE, total_displacement, 1.0);
 	
 	char* pltc_elems = nb_allocate_mem(strlen(printable_name) + sizeof("_pltc.elems.png"));
 	nb_mesh2D_export_draw(part, strg_concat(pltc_elems, printable_name, "_pltc.elems.png"), 
@@ -566,6 +573,10 @@ static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total
     	nb_mesh2D_export_draw(part, strg_concat(pltc_Exy, printable_name, "_pltc.Exy.png"), 
 				1200, 800, NB_ELEMENT, NB_FIELD, Exy, true);
 	nb_free_mem(pltc_Exy);
+	char* pltc_VMs = nb_allocate_mem(strlen(printable_name) + sizeof("_pltc.VMs.png"));
+    	nb_mesh2D_export_draw(part, strg_concat(pltc_VMs, printable_name, "_pltc.VMs.png"), 
+				1200, 800, NB_ELEMENT, NB_FIELD, VM_stress, true);
+	nb_free_mem(pltc_VMs);
 
     	nb_free_mem(memblock);
 }

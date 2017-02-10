@@ -21,11 +21,11 @@
 #-----------------------------------------------#
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 0						#
-# Num of load conditions over vertices:		#
  1						#
 # Load conditions over vertices definition:	#
- 2 0 1 -1400000	                                #
+ 2 0 1 -0.4	                                #
+# Num of load conditions over vertices:		#
+ 0						#
 # Num displacements conditions over lines:    	#
  1						#
 # Displacement conditions definition over lines	#

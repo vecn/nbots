@@ -123,7 +123,7 @@ static int suite_clean(void)
 
 static void test_damage_f1(void)
 {
-        damage_run_test("%s/damage_beam_failure_one.txt", 100,
+        damage_run_test("%s/damage_beam_failure_one.txt", 1000,
         check_problem_results, "F1");
 }
 static void check_problem_results(const void *part,
@@ -169,7 +169,7 @@ static void check_problem_results(const void *part,
 
 static void test_damage_f2(void)
 {
-        damage_run_test("%s/damage_beam_failure_two.txt", 1500,
+        damage_run_test("%s/damage_beam_failure_two.txt", 500,
         check_problem_results, "F2");
 }
 

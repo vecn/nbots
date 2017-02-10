@@ -27,6 +27,16 @@ static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
 			    bool enable_self_weight,
 			    double gravity[2],
 			    nb_sparse_t *K, double *M, double *F);
+static int assemble_plastic_element(const nb_fem_elem_t *elem, uint32_t id,
+			    const nb_mesh2D_t *part,
+			    const nb_material_t *material,
+			    bool is_enabled,
+			    nb_analysis2D_t analysis2D,
+			    nb_analysis2D_params *params2D,
+			    bool enable_self_weight,
+			    double gravity[2],
+			    nb_sparse_t *K, double *M, double *F,
+			    nb_plastified_analysis2D elem_regime );
 static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
@@ -73,6 +83,41 @@ EXIT:
 	return status;
 }
 
+int pipeline_assemble_plastic_system
+		(nb_sparse_t* K, double* M, double *F,
+		 const nb_mesh2D_t *const part,
+		 const nb_fem_elem_t *const elem,
+		 const nb_material_t *const material,
+		 bool enable_self_weight,
+		 double gravity[2],
+		 nb_analysis2D_t analysis2D,
+		 nb_analysis2D_params *params2D,
+		 const bool* elements_enabled /* NULL to enable all */,
+		 nb_plastified_analysis2D *elem_regime)
+{
+	int status = 1;
+	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
+	nb_sparse_reset(K);
+	if (NULL != M)
+		memset(M, 0, nb_sparse_get_size(K) * sizeof(*M));
+	memset(F, 0, nb_sparse_get_size(K) * sizeof(*F));
+
+	for (uint32_t i = 0; i < N_elem; i++) {
+			bool is_enabled = pipeline_elem_is_enabled(elements_enabled, i);
+			int status_element =
+				assemble_plastic_element(elem, i, part, material, is_enabled,
+					 		analysis2D, params2D,
+					 		enable_self_weight, gravity,
+					 		K, M, F, elem_regime[i]);
+
+			if (0 != status_element)
+				goto EXIT;
+	}
+	status = 0;
+EXIT:
+	return status;
+}
+
 bool pipeline_elem_is_enabled(const bool *elements_enabled, uint32_t id)
 {
 	bool is_enabled = true;
@@ -95,6 +140,48 @@ static int assemble_element(const nb_fem_elem_t *elem, uint32_t id,
 	double density = 1e-6;
 	if (is_enabled) {
 		nb_pde_get_constitutive_matrix(D, material, analysis2D);
+		density = nb_material_get_density(material);
+	}
+
+	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);
+	double* Ke = nb_allocate_mem(4 * POW2(N_nodes) * sizeof(*Ke));
+	double* Me = NULL;
+	if(M != NULL)
+		Me = nb_allocate_mem(2 * N_nodes * sizeof(*Me));
+	double* Fe = nb_allocate_mem(2 * N_nodes * sizeof(*Fe));
+
+	int status = integrate_elemental_system(elem, id, D, density,
+						gravity, part, params2D,
+						enable_self_weight,
+						Ke, Me, Fe);
+	if (0 != status)
+		goto CLEANUP;
+
+	pipeline_add_to_global_system(elem, id, part, Ke, Me, Fe, K, M, F);
+
+CLEANUP:
+	nb_free_mem(Ke);
+	if (NULL != M)
+		nb_free_mem(Me);
+	nb_free_mem(Fe);
+	return status;
+}
+
+static int assemble_plastic_element(const nb_fem_elem_t *elem, uint32_t id,
+			    const nb_mesh2D_t *part,
+			    const nb_material_t *material,
+			    bool is_enabled,
+			    nb_analysis2D_t analysis2D,
+			    nb_analysis2D_params *params2D,
+			    bool enable_self_weight,
+			    double gravity[2],
+			    nb_sparse_t *K, double *M, double *F,
+			    nb_plastified_analysis2D elem_regime )
+{
+	double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
+	double density = 1e-6;
+	if (is_enabled) {
+		nb_pde_get_plastified_constitutive_matrix(D, material, analysis2D, elem_regime);
 		density = nb_material_get_density(material);
 	}
 

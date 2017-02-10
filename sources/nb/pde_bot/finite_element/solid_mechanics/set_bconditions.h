@@ -9,5 +9,9 @@ void nb_fem_set_bconditions(const nb_mesh2D_t *part,
 			    nb_sparse_t* K, double* F, 
 			    const nb_bcond_t *const bcond,
 			    double factor);
+void nb_fem_set_dirichlet_bconditions(const nb_mesh2D_t *part,
+			    nb_sparse_t* K, double* F, 
+			    const nb_bcond_t *const bcond,
+			    double factor);
 
 #endif
