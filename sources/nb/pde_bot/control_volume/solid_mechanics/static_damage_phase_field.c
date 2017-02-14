@@ -23,7 +23,7 @@
 #define SMOOTH 0
 
 #define MIDPOINT_VOL_INTEGRALS false
-#define RESIDUAL_TOL 1e-6
+#define RESIDUAL_TOL 1e-5/* TEMPORAL */
 #define AUTOMATIC_STEP_SIZE false
 #define FIXED_STEPS 5
 
@@ -52,6 +52,17 @@ typedef struct {
 	nb_analysis2D_t analysis2D;
 } eval_damage_data_t;
 
+typedef struct {
+	double decay;
+	uint32_t N_crk;
+        uint32_t *N_vtx;
+	double **vtx;
+} real_crack_t;
+
+real_crack_t rc;
+static double get_truth_factor(const double x[2], real_crack_t *rc);
+static void read_real_crack(real_crack_t *rc);
+static void finish_real_crack(real_crack_t *rc);
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   uint32_t N_faces, double **xc,
@@ -389,6 +400,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
+	read_real_crack(&rc);
 
 	int status;
 	if (AUTOMATIC_STEP_SIZE) {
@@ -425,6 +437,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
 
 EXIT:
+	finish_real_crack(&rc);
 	nb_cvfa_finish_faces(N_faces, faces);
 	nb_sparse_destroy(K);
 	nb_sparse_destroy(D);
@@ -689,6 +702,101 @@ static double subface_get_damage_pairwise(const face_t *face,
 		damage += z * dmg_data->elem_dmg[elem_id];
 	}
 	return damage;
+}
+
+static double get_truth_factor(const double x[2], real_crack_t *rc)
+{
+	double cp[2];
+	double min_dist = 1e30;
+	for (uint32_t i = 0; i < rc->N_crk; i++) {
+		for (uint32_t j = 0; j < rc->N_vtx[i] - 1; j++) {
+			double aux[2];
+			nb_utils2D_get_closest_pnt_to_sgm(&(rc->vtx[i][j * 2]),
+							  &(rc->vtx[i][(j+1) * 2]),
+							  x, aux);
+			double dist = nb_utils2D_get_dist(x, aux);
+			if (dist < min_dist) {
+				min_dist = dist;
+				memcpy(cp, aux, 2 * sizeof(*cp));
+			}
+		}
+	}
+
+	double factor;
+	double z = min_dist / rc->decay;
+	/*
+	 *  f(z|z < 1) = 1 + z (b-1)      1 |\
+	 *  f(z|z = 1) = b                  | \
+	 *  f(z|z > 1) = b(n-z)/(n-1)     b |  -¬___
+	 *  f(z|z > n) = 0                  |_______-----____
+	 *                                     1        n
+	 */
+	double b = 0.2;
+	double n = 5;
+	if (z < 1.0)
+		factor = 1.0 + z * (b - 1.0);
+	else if (z < n)
+		factor = b*(n - z)/(n - 1.0);
+	else
+		factor = 0;
+	return factor;
+}
+
+static void read_real_crack(real_crack_t *rc)
+{
+	char name[100];
+	sprintf(name, "%s/%s",
+		"../utest/sources/nb/pde_bot/damage_inputs",
+		"Mode_II_Asym_notched_3point_bending.crk");
+
+	nb_cfreader_t *cf = nb_cfreader_create();
+	nb_cfreader_add_line_comment_token(cf, "#");
+	int status = nb_cfreader_open_file(cf, name);
+	if (NB_CFREADER_SUCCESS != status) {
+		fprintf(stderr, "File not found (Crack ground truth)\n");
+		goto EXIT;
+	}
+
+	status = nb_cfreader_read_double(cf, &(rc->decay));
+	if (NB_CFREADER_SUCCESS != status)
+		goto CLOSE;
+
+	status = nb_cfreader_read_uint(cf, &(rc->N_crk));
+	if (NB_CFREADER_SUCCESS != status)
+		goto CLOSE;
+
+	rc->N_vtx = nb_allocate_mem(rc->N_crk * sizeof(*(rc->N_vtx)));
+	rc->vtx = nb_allocate_mem(rc->N_crk * sizeof(*(rc->vtx)));
+
+	for (uint32_t i = 0; i < rc->N_crk; i++) {
+		status = nb_cfreader_read_uint(cf, &(rc->N_vtx[i]));
+		if (NB_CFREADER_SUCCESS != status)
+			goto CLOSE;
+
+		rc->vtx[i] = nb_allocate_mem(rc->N_vtx[i] * 2 *
+					     sizeof(**(rc->vtx)));
+		for (uint32_t j = 0; j < rc->N_vtx[i]; j++) {
+			status = nb_cfreader_read_double(cf, &(rc->vtx[i][j * 2]));
+			if (NB_CFREADER_SUCCESS != status)
+				goto CLOSE;
+			status = nb_cfreader_read_double(cf, &(rc->vtx[i][j*2+1]));
+			if (NB_CFREADER_SUCCESS != status)
+				goto CLOSE;
+		}
+	}
+CLOSE:
+	nb_cfreader_close_file(cf);
+EXIT:
+	nb_cfreader_destroy(cf);
+	return;
+}
+
+static void finish_real_crack(real_crack_t *rc)
+{
+	nb_free_mem(rc->N_vtx);
+	for (uint32_t i = 0; i < rc->N_crk; i++)
+		nb_free_mem(rc->vtx[i]);
+	nb_free_mem(rc->vtx);
 }
 
 static int finite_increments_with_dynamic_step
@@ -1004,13 +1112,15 @@ static int solve_coupled_system(const nb_mesh2D_t *const mesh,
 
 	assemble_global_damage(eval_dmg, glq, faces, D, rhs_damage);
 
+	memcpy(residual, elem_damage, N_elems * sizeof(*elem_damage));
 	status = solve_linear_system(D, dmg_perm, dmg_iperm, Dr,
 				     dmg_Lr, dmg_Ur, rhs_damage,
 				     elem_damage);
-	for (int i = 0; i < N_elems; i++) {/* TEMPORAL *********************/
-		if (fabs(15.3 - nb_mesh2D_elem_get_y(mesh, i)) < 3)
-			elem_damage[i] = 0;
-	}/*********************************** AQUI VOY *********************/
+	for (uint32_t i = 0; i < N_elems; i++) {
+		elem_damage[i] = MAX(residual[i], elem_damage[i]);
+		elem_damage[i] = MIN(1.0, elem_damage[i]);
+		elem_damage[i] = MAX(0.0, elem_damage[i]);
+	}
 
 	if (status != 0) {
 		status = DAMAGE_SOLVER_FAILS;
@@ -1380,6 +1490,7 @@ static void integrate_svol_simplexwise_gp_dmg
 	nb_cvfa_get_normalized_point(t1, t2, t3, xq, xi);
 
 	double energy = get_subface_energy(face, subface_id, xq, dmg_data);
+	energy *= get_truth_factor(xq, &rc);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
 	double val = 2 * energy * h/G;
@@ -1419,6 +1530,7 @@ static void integrate_svol_pairwise_gp_dmg
 	double z = c[0] * (xq[0] - x1[0]) + c[1] * (xq[1] - x1[1]);
 
 	double energy = get_subface_energy(face, subface_id, xq, dmg_data);
+	energy *= get_truth_factor(xq, &rc);
   	double h = nb_material_get_damage_length_scale(dmg_data->material);
 	double G = nb_material_get_energy_release_rate(dmg_data->material);
 	double val = 2 * energy * h/G;

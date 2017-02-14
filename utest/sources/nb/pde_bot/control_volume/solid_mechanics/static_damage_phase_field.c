@@ -86,9 +86,9 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	//CU_add_test(suite, "Mode I Perfored Strip under tension",
 	//	    test_mode_I_perfored_strip);
-	CU_add_test(suite, "Mode II Phase field", test_mode_II);
-	//CU_add_test(suite, "Mode II Asym notched 3 point bending",
-	//	    test_mode_II_asym_notched_3point_bending);
+	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	CU_add_test(suite, "Mode II Asym notched 3 point bending",
+		    test_mode_II_asym_notched_3point_bending);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
 	CU_add_test(suite, "Drawing results", test_draw_results);
@@ -439,26 +439,27 @@ static int read_problem_data
 	if (0 != read_geometry(cfr, model)) {
 		printf("\nERROR: Geometry contains errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != nb_bcond_read(bcond, cfr)) {
 		printf("\nERROR: Boundary C. contain errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != read_material(cfr, mat)) {
 		printf("\nERROR: Material contains errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != read_elasticity2D_params(cfr, analysis2D, params2D)) {
 		printf("\nERROR: Reading numerical params in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	status = 0;
-EXIT:
+CLOSE:
 	nb_cfreader_close_file(cfr);
+EXIT:
 	nb_cfreader_destroy(cfr);
 	return status;
 }

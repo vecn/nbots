@@ -13,8 +13,8 @@
    3.95  0.0					#
    3.95  1.0					#
    4.05  1.0					#
-   4.05  0.0	   # Vertical support		#
-  19.0   0.0					#
+   4.05  0.0					#
+  19.0   0.0	   # Vertical support		#
   20.0   0.0					#
   20.0   8.0					#
   10.0   8.0       # Pushing down		#
@@ -172,7 +172,7 @@
  3						#
  1 1 1 0.0 0.0					#
  6 0 1 0.0					#
- 9 0 1 -1e-2                                    #
+ 9 0 1 -1                                       #
 # Num of load conditions over vertices:		#
  0						#
 # Num of displacement conditions over lines:    #
@@ -189,13 +189,13 @@
 # Elasticity module 1800 - 3100 MPa		#
 # Pa = kg/(m s^2)                               #
 # 1 m = 39.37 in                                #
-# 2450 MPa = 62.23e6 kg/(in s^2)                #
- 62.23e6                                        #
-# Energy release rate (N/mm)                    #
-# 1e-3 kN/mm^2 = 64.52 N/in^2                   #
- 64.52                                          #
+# 2.944 GPa = 74.778e6 kg/(in s^2)              #
+ 74.778e6                                       #
+# Energy release rate                           #
+# 1e-3 kN/mm = 25.4 N/in                        #
+ 25.4                                           #
 # Length scale                                  #
- 0.6						#
+ 0.01						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

@@ -432,10 +432,15 @@ static void draw_damage(const char *dir_output, const nb_mesh2D_t *mesh,
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 
+	char name[100];
+	sprintf(name, "%s/elem_damage_%i.png", dir_output, step);
+
+	nb_mesh2D_export_draw(mesh, name, 1000, 700, NB_ELEMENT, NB_FIELD,
+			      damage, true);
+
 	double *node_damage = nb_allocate_mem(N_nodes * sizeof(*node_damage));
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, damage, node_damage);
 	
-	char name[100];
 	sprintf(name, "%s/damage_field_%i.png", dir_output, step);
 
 	nb_mesh2D_export_draw(mesh, name, 1000, 700, NB_NODE, NB_FIELD,
