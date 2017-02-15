@@ -23,7 +23,8 @@
 #define SMOOTH 0
 
 #define MIDPOINT_VOL_INTEGRALS false
-#define RESIDUAL_TOL 1e-5/* TEMPORAL */
+#define RESIDUAL_TOL 1e-6
+#define ENABLE_REAL_CRACK false
 #define AUTOMATIC_STEP_SIZE false
 #define FIXED_STEPS 5
 
@@ -706,13 +707,16 @@ static double subface_get_damage_pairwise(const face_t *face,
 
 static double get_truth_factor(const double x[2], real_crack_t *rc)
 {
+	if (!ENABLE_REAL_CRACK)
+		return 1.0;
+
 	double cp[2];
 	double min_dist = 1e30;
 	for (uint32_t i = 0; i < rc->N_crk; i++) {
 		for (uint32_t j = 0; j < rc->N_vtx[i] - 1; j++) {
 			double aux[2];
 			nb_utils2D_get_closest_pnt_to_sgm(&(rc->vtx[i][j * 2]),
-							  &(rc->vtx[i][(j+1) * 2]),
+							  &(rc->vtx[i][(j+1)*2]),
 							  x, aux);
 			double dist = nb_utils2D_get_dist(x, aux);
 			if (dist < min_dist) {

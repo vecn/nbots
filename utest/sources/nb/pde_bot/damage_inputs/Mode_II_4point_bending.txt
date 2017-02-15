@@ -94,7 +94,7 @@
 # Pa = kg/(m s^2)                               #
 # 30 GPa = 3e8 kg/(cm s^2)                      #
  3e8	                                        #
-# Energy release rate (N/mm)                    #
+# Energy release rate                           #
  0.5						#
 # Length scale                                  #
  0.6						#
