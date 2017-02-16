@@ -23,10 +23,10 @@
 #define SMOOTH 0
 
 #define MIDPOINT_VOL_INTEGRALS false
-#define RESIDUAL_TOL 1e-6
-#define ENABLE_REAL_CRACK false
+#define RESIDUAL_TOL 1e-5
+#define ENABLE_REAL_CRACK true
 #define AUTOMATIC_STEP_SIZE false
-#define FIXED_STEPS 5
+#define FIXED_STEPS 100
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))

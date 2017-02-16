@@ -84,11 +84,11 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
 	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	CU_add_test(suite, "Mode I Perfored Strip under tension",
-		    test_mode_I_perfored_strip);
+	//CU_add_test(suite, "Mode I Perfored Strip under tension",
+	//	    test_mode_I_perfored_strip);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
-	//CU_add_test(suite, "Mode II Asym notched 3 point bending",
-	//	    test_mode_II_asym_notched_3point_bending);
+	CU_add_test(suite, "Mode II Asym notched 3 point bending",
+		    test_mode_II_asym_notched_3point_bending);
 	CU_add_test(suite, "Count steps in results",
 		    test_count_steps_in_results);
 	CU_add_test(suite, "Drawing results", test_draw_results);
