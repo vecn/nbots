@@ -54,7 +54,9 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 uint32_t N_force_steps,
 			 bool *plastic_elements, /* Output */
 			 double *nodal_strain, /* Output */
-			 double *nodal_stress /* Output */)
+			 double *nodal_stress /* Output */,
+			 double *stiffness_factors,
+			 double *density_factors)
 {
 	int status = 0;
 	nb_graph_t *graph = nb_allocate_mem(nb_graph_get_memsize());
@@ -95,7 +97,8 @@ int fem_compute_plastic_2D_Solid_Mechanics
 		uint8_t status_assemble = pipeline_assemble_plastic_system
 								(K, NULL,F, part, elemtype, material,
 		 						enable_self_weight, gravity, 
-								analysis2D, params2D, elements_enabled, elem_regime);
+								analysis2D, params2D, elements_enabled, elem_regime, 
+								stiffness_factors, density_factors);
 		if (0 != status_assemble) {
 			status = 1;
 			goto CLEANUP_LINEAR_SYSTEM;
@@ -132,7 +135,8 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			uint8_t status_assemble = pipeline_assemble_plastic_system
 								(K, NULL,F, part, elemtype, material,
 		 						enable_self_weight, gravity, 
-								analysis2D, params2D, elements_enabled, elem_regime);
+								analysis2D, params2D, elements_enabled, elem_regime, 
+								stiffness_factors, density_factors);
 			if (0 != status_assemble) {
 				status = 1;
 				goto CLEANUP_LINEAR_SYSTEM;

@@ -38,7 +38,9 @@ int fem_compute_plastic_2D_Solid_Mechanics
 			 uint32_t N_force_steps,
 			 bool *plastic_elements,
 			 double *nodal_strain,
-			 double *nodal_stress);
+			 double *nodal_stress,
+			 double *stiffness_factors,
+			 double *density_factors);
 
 void get_stress_params(double *max_vm_stress, uint32_t *N_plastic_elem,
                        uint32_t *plastified_elem, double *stress, double yield_stress,

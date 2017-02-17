@@ -36,7 +36,8 @@ static int assemble_plastic_element(const nb_fem_elem_t *elem, uint32_t id,
 			    bool enable_self_weight,
 			    double gravity[2],
 			    nb_sparse_t *K, double *M, double *F,
-			    nb_plastified_analysis2D elem_regime );
+			    nb_plastified_analysis2D elem_regime,
+			    double stiffness_factor, double density_factor);
 static int integrate_elemental_system
 		       	(const nb_fem_elem_t *elem, uint32_t id,
 			 double D[4], double density, double gravity[2],
@@ -93,7 +94,9 @@ int pipeline_assemble_plastic_system
 		 nb_analysis2D_t analysis2D,
 		 nb_analysis2D_params *params2D,
 		 const bool* elements_enabled /* NULL to enable all */,
-		 nb_plastified_analysis2D *elem_regime)
+		 nb_plastified_analysis2D *elem_regime, 
+		 double *stiffness_factors, 
+		 double *density_factors)
 {
 	int status = 1;
 	uint32_t N_elem = nb_mesh2D_get_N_elems(part);
@@ -108,7 +111,8 @@ int pipeline_assemble_plastic_system
 				assemble_plastic_element(elem, i, part, material, is_enabled,
 					 		analysis2D, params2D,
 					 		enable_self_weight, gravity,
-					 		K, M, F, elem_regime[i]);
+					 		K, M, F, elem_regime[i],
+							stiffness_factors[i], density_factors[i]);
 
 			if (0 != status_element)
 				goto EXIT;
@@ -176,13 +180,17 @@ static int assemble_plastic_element(const nb_fem_elem_t *elem, uint32_t id,
 			    bool enable_self_weight,
 			    double gravity[2],
 			    nb_sparse_t *K, double *M, double *F,
-			    nb_plastified_analysis2D elem_regime )
+			    nb_plastified_analysis2D elem_regime,
+			    double stiffness_factor,
+			    double density_factor)
 {
 	double D[4] = {1e-6, 1e-6, 1e-6, 1e-6};
 	double density = 1e-6;
 	if (is_enabled) {
 		nb_pde_get_plastified_constitutive_matrix(D, material, analysis2D, elem_regime);
-		density = nb_material_get_density(material);
+		for(int i = 0; i < 4; i++) 
+			D[i] *= stiffness_factor;
+		density = density_factor * nb_material_get_density(material);
 	}
 
 	uint8_t N_nodes = nb_fem_elem_get_N_nodes(elem);

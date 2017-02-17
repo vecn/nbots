@@ -42,6 +42,11 @@ typedef struct {
 	double *nodal_damage;
 } plastic_results_t;
 
+typedef struct {
+	double *stiffness_factors;
+	double *density_factors;
+} opt_factors;
+
 static int suite_init(void);
 static int suite_clean(void);
 
@@ -55,7 +60,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 			char *printable_name);
 static int simulate(const char *problem_data,
 		    nb_mesh2D_t *part, plastic_results_t *results,
-		    uint32_t N_vtx, char *printable_name);
+		    uint32_t N_vtx, char *printable_name, opt_factors *factors);
 static void get_mesh(const nb_model_t *model, void *part,
 		     uint32_t N_vtx);
 static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total_displacement, double *stress,
@@ -63,6 +68,9 @@ static void print_plastic_results(uint32_t N_nod, uint32_t N_elem, double *total
                     bool *plastic_elements, const char *problem_data, char *printable_name);
 static void results_init_plastic(plastic_results_t *results, uint32_t N_vtx, uint32_t N_trg);
 static void results_finish(plastic_results_t *results);
+static void set_factor_value(double *factors_array, uint32_t element, double value);
+static void init_opt_factors(opt_factors *factors, uint32_t N_trg);
+static void fnish_opt_factors(opt_factors *factors);
 static int read_problem_data
 		(const char* filename,
 		 nb_model_t *model,
@@ -155,11 +163,12 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 			const plastic_results_t*), char *printable_name)
 {
     	plastic_results_t results;
+	opt_factors factors;
 
 	nb_mesh2D_t *part = nb_allocate_mem(nb_mesh2D_get_memsize(NB_TRIAN));
 	nb_mesh2D_init(part, NB_TRIAN);
 
-	int status = simulate(problem_data, part, &results, N_vtx, printable_name);
+	int status = simulate(problem_data, part, &results, N_vtx, printable_name, &factors);
 
     	printf("Simulation status: %i\n", status); /* TEMPORAL */
 	if (status == 0) {
@@ -174,7 +183,7 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 
 static int simulate(const char *problem_data,
 		    nb_mesh2D_t *part, plastic_results_t *results,
-		    uint32_t N_vtx, char *printable_name)
+		    uint32_t N_vtx, char *printable_name, opt_factors *factors)
 {
 	int status = 1;
 	nb_model_t* model = nb_allocate_mem(nb_model_get_memsize());
@@ -206,12 +215,21 @@ static int simulate(const char *problem_data,
 	results_init_plastic(results, N_nodes, N_elems);
 	uint32_t N_force_steps = 100;
 	double gravity[2] = {0.0 , -9.81};
+	
+	init_opt_factors(factors, N_elems);
+
+	for(int i = 0; i < N_elems; i++) {
+		double stiffness_value = 1.0;
+		double density_value = 1.0;
+		set_factor_value(factors->stiffness_factors, i, stiffness_value);
+		set_factor_value(factors->density_factors, i, density_value); 
+	}	
 
     	int status_fem = fem_compute_plastic_2D_Solid_Mechanics(part, elem, material,
                                                              bcond, true, gravity,
                                                              analysis2D, &params2D, NULL, results->strain, results->stress,
                                                              results->disp, N_force_steps, results->plastic_elements,results->nodal_strain,
-						 	     results->nodal_stress);
+						 	     results->nodal_stress, factors->stiffness_factors, factors->density_factors);
 
     	print_plastic_results(N_nodes, N_elems, results->disp, results->stress, results->strain,
                           part, results->plastic_elements, problem_data, printable_name);
@@ -228,6 +246,7 @@ static int simulate(const char *problem_data,
 		nb_bcond_finish(bcond);
 		nb_free_mem(bcond);
 		nb_material_destroy(material);
+		fnish_opt_factors(factors);
 
 	return status;
 }
@@ -278,6 +297,27 @@ static inline void results_finish(plastic_results_t *results)
 	nb_free_mem(results->disp);
 }
 
+static void init_opt_factors(opt_factors *factors, uint32_t N_trg)
+{
+	uint32_t size_stiffness_factors = N_trg * sizeof(*(factors->stiffness_factors));
+	uint32_t size_density_factors = N_trg * sizeof(*(factors->density_factors));
+
+	uint32_t total_size = size_stiffness_factors + size_density_factors;
+	char *memblock = nb_allocate_mem(total_size);
+	
+	factors->stiffness_factors = (void*) memblock;
+	factors->density_factors = (void*)(memblock + size_stiffness_factors);
+}
+
+static void fnish_opt_factors(opt_factors *factors) 
+{
+	nb_free_mem(factors->stiffness_factors);
+}
+
+static void set_factor_value(double *factors_array, uint32_t element, double value)
+{
+	factors_array[element] = value;
+}
 static int read_problem_data
 		(const char* filename,
 		 nb_model_t *model,

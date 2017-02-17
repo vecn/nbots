@@ -38,7 +38,9 @@ int pipeline_assemble_plastic_system
 		 nb_analysis2D_t analysis2D,
 		 nb_analysis2D_params *params2D,
 		 const bool* elements_enabled /* NULL to enable all */,
-		 nb_plastified_analysis2D *elem_regime);
+		 nb_plastified_analysis2D *elem_regime, 
+		 double *stiffness_factors, 
+		 double *density_factors);
 
 void pipeline_set_boundary_conditions(const nb_mesh2D_t *part,
 				      nb_sparse_t* K,
