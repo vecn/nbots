@@ -218,12 +218,20 @@ static int simulate(const char *problem_data,
 	
 	init_opt_factors(factors, N_elems);
 
+	/***********************************************************************************/
+	/************************* SET OPTIMIZATION FACTORS ********************************/
+	/***********************************************************************************/
+
 	for(int i = 0; i < N_elems; i++) {
 		double stiffness_value = 1.0;
 		double density_value = 1.0;
 		set_factor_value(factors->stiffness_factors, i, stiffness_value);
 		set_factor_value(factors->density_factors, i, density_value); 
 	}	
+
+	/***********************************************************************************/
+	/***********************************************************************************/
+	/***********************************************************************************/
 
     	int status_fem = fem_compute_plastic_2D_Solid_Mechanics(part, elem, material,
                                                              bcond, true, gravity,
