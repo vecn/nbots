@@ -94,7 +94,7 @@ static int suite_clean(void)
 }
 static void test_beam_cantilever(void)
 {
-        run_test("%s/plastic_beam_cantilever.txt",2000,
+        run_test("%s/plastic_beam_cantilever.txt",50,
         check_beam_cantilever, "cantilever");
 }
 static void check_beam_cantilever(const void *part,
