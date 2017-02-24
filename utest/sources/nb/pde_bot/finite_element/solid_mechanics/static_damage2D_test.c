@@ -32,6 +32,7 @@ typedef struct {
     	uint32_t N_vtx;
 	uint32_t N_trg;
 	double *nodal_strain;
+	double *nodal_stress;
 	double *nodal_damage;
 } damage_results_t;
 
@@ -81,25 +82,6 @@ static void print_damage_results(uint32_t N_nod, uint32_t N_elem, double *total_
                             	double *total_strain, const nb_mesh2D_t *const part,
                            	double *damage, const char *problem_data, const nb_fem_elem_t *const elem,
 				char* printable_name, double *nodal_strain, double *nodal_damage);
-
-uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
-				(const nb_mesh2D_t *const part,
-			 	const nb_fem_elem_t *const elem,
-			 	const nb_material_t *const material,
-			 	const nb_bcond_t *const bcond,
-			 	bool enable_self_weight,
-			 	double gravity[2],
-			 	bool enable_Cholesky_solver,
-			 	nb_analysis2D_t analysis2D,
-			 	nb_analysis2D_params *params2D,
-			 	nb_fem_implicit_t* params,
-				const char* logfile,
-			 	double *damage,
-			 	double *displacement,
-			 	double *strain,
-			 	double *stress,
-				double *nodal_strain,
-				double *nodal_damage);
 
 void cunit_nb_pde_bot_fem_sm_static_damage(void)
 {
@@ -239,7 +221,7 @@ static int damage_simulate(const char *problem_data,
    	status = nb_fem_compute_2D_Damage_Solid_Mechanics
                             		(part, elem, material, bcond, false, gravity,
                              		false, analysis2D, &params2D, params, problem_data, results->damage,
-                             		results->disp, results->strain, results->stress, results->nodal_strain, 
+                             		results->disp, results->strain, results->stress, results->nodal_stress, results->nodal_strain, 
 					results->nodal_damage);
 	if (0 != status)
 		goto CLEANUP_FEM;
@@ -283,7 +265,8 @@ static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint3
 	uint32_t size_damage = N_trg * sizeof(*(results->damage));
 	uint32_t size_nodal_strain = N_vtx * 3 * sizeof(*(results->nodal_strain));
 	uint32_t size_nodal_damage = N_vtx * sizeof(*(results->nodal_damage));
-	uint32_t total_size = size_disp + 2 * size_strain + size_damage + size_nodal_strain + size_nodal_damage;
+	uint32_t size_nodal_stress = N_vtx * 3 * sizeof(*(results->nodal_stress));
+	uint32_t total_size = size_disp + 2 * size_strain + size_damage + size_nodal_strain + size_nodal_damage + size_nodal_stress;
 	char *memblock = nb_allocate_mem(total_size);
 
 	results->N_vtx = N_vtx;
@@ -294,6 +277,7 @@ static void damage_results_init(damage_results_t *results, uint32_t N_vtx, uint3
 	results->damage = (void*)(memblock + size_disp + 2 * size_strain);
 	results->nodal_strain = (void*)(memblock + size_disp + 2 * size_strain + size_damage);
 	results->nodal_damage = (void*)(memblock + size_disp + 2 * size_strain + size_damage + size_nodal_strain);
+	results->nodal_stress = (void*)(memblock + size_disp + 2 * size_strain + size_damage + size_nodal_strain + size_nodal_damage);
 	results->plastic_elements = NULL;
 }
 

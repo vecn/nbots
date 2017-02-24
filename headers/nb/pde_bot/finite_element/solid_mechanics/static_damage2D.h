@@ -47,6 +47,7 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 		 	double *displacement,
 		 	double *strain,
 		 	double *stress,
+			double *nodal_stress,
 			double *nodal_strain,
 			double *nodal_damage);
 

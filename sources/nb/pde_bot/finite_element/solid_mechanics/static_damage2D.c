@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-
 #include "nb/solver_bot.h"
 #include "nb/memory_bot/allocate_mem.h"
 #include "nb/geometric_bot.h"
@@ -266,6 +265,7 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			 	double *displacement,
 			 	double *strain,
 			 	double *stress,
+				double *nodal_stress,
 				double *nodal_strain,
 				double *nodal_damage)
 /* Quasistatic formulation */
@@ -431,14 +431,15 @@ uint8_t nb_fem_compute_2D_Damage_Solid_Mechanics
 			/* Increase iterator */
 			residual_iter ++;
 		}
-	nb_mesh2D_extrapolate_elems_to_nodes(part, 3, strain, nodal_strain);
-	//interpolate_trg_strain_nodes_to_elemes(part, strain, nodal_strain);
-	nb_mesh2D_extrapolate_elems_to_nodes(part, 1, damage, nodal_damage);
-	//interpolate_trg_damage_nodes_to_elemes(part, damage, nodal_damage);
+		nb_mesh2D_extrapolate_elems_to_nodes(part, 3, strain, nodal_strain);
+		//interpolate_trg_strain_nodes_to_elemes(part, strain, nodal_strain);
+		nb_mesh2D_extrapolate_elems_to_nodes(part, 1, damage, nodal_damage);
+		//interpolate_trg_damage_nodes_to_elemes(part, damage, nodal_damage);
 	}
 
    	nb_fem_compute_damage_stress_from_strain(N_elem, elem, material, analysis2D, strain,
                                              	NULL, stress, damage, true);
+	nb_mesh2D_extrapolate_elems_to_nodes(part, 3, stress, nodal_stress);
 
 	/*****************************************************************/
 	/******************** > Free memory ******************************/
