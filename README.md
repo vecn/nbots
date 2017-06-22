@@ -11,18 +11,18 @@ several interdependent specialized modules, which are referred as bots.
 
 ## Gallery
 
-<img alt="Fast mesh generation using density maps" src="https://user-images.githubusercontent.com/16961118/27419760-2b62f220-56e8-11e7-8ed8-fc582058b45b.gif" />
-<img alt="Artistic mesh for demonstration" width="350" src="https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png" />
-<img alt="Artistic mesh created for a FEM dedicated blog" width="350" src="https://user-images.githubusercontent.com/16961118/27419762-2b6b5fdc-56e8-11e7-924b-b3362b27de98.png" />
-<img alt="Partition of a mesh into 16 subdomains" width="250" src="https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png" />
-<img alt="Brake system analysed using FEM" src="https://user-images.githubusercontent.com/16961118/27419754-2b537264-56e8-11e7-925b-cc8622f2ff64.png" />
-<img alt="Shape functions used in Topology optim" width="200" src="https://user-images.githubusercontent.com/16961118/27419763-2b6b8e6c-56e8-11e7-91ba-b80b4a3671e8.gif" />
-<img alt="Derivative of a square FE" width="200" src="https://user-images.githubusercontent.com/16961118/27419765-2b6f8cba-56e8-11e7-8c71-b458442ee36d.gif" />
-<img alt="Topology optimization of a cantilever" src="https://user-images.githubusercontent.com/16961118/27419757-2b5702a8-56e8-11e7-9310-9c8d365e5789.gif" />
-<img alt="Ultra-brittle fracture simulated with DEM" src="https://user-images.githubusercontent.com/16961118/27419755-2b55e724-56e8-11e7-8ed2-d530ba2b03c5.gif" />
-<img alt="Detonation using a small explosive load" src="https://user-images.githubusercontent.com/16961118/27419756-2b55ee4a-56e8-11e7-9cf3-2e61e356e2f4.gif" />
-<img alt="Detonation using a medium explosive load" src="https://user-images.githubusercontent.com/16961118/27419758-2b574966-56e8-11e7-9012-da169c716238.gif" />
-<img alt="Detonation using a huge explosive load" src="https://user-images.githubusercontent.com/16961118/27419759-2b57e1a0-56e8-11e7-8287-bc3f600207e7.gif" />
+<img alt="Fast mesh generation using density maps" src="https://user-images.githubusercontent.com/16961118/27419760-2b62f220-56e8-11e7-8ed8-fc582058b45b.gif" >
+<img alt="Artistic mesh for demonstration" width="350" src="https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png" >
+<img alt="Artistic mesh created for a FEM dedicated blog" width="350" src="https://user-images.githubusercontent.com/16961118/27419762-2b6b5fdc-56e8-11e7-924b-b3362b27de98.png" >
+<img alt="Partition of a mesh into 16 subdomains" width="250" src="https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png" >
+<img alt="Brake system analysed using FEM" width="550" src="https://user-images.githubusercontent.com/16961118/27419754-2b537264-56e8-11e7-925b-cc8622f2ff64.png" >
+<img alt="Shape functions used in Topology optim" width="200" src="https://user-images.githubusercontent.com/16961118/27419763-2b6b8e6c-56e8-11e7-91ba-b80b4a3671e8.gif" >
+<img alt="Derivative of a square FE" width="200" src="https://user-images.githubusercontent.com/16961118/27419765-2b6f8cba-56e8-11e7-8c71-b458442ee36d.gif" >
+<img alt="Topology optimization of a cantilever" src="https://user-images.githubusercontent.com/16961118/27419757-2b5702a8-56e8-11e7-9310-9c8d365e5789.gif" >
+<img alt="Ultra-brittle fracture simulated with DEM" src="https://user-images.githubusercontent.com/16961118/27419755-2b55e724-56e8-11e7-8ed2-d530ba2b03c5.gif" >
+<img alt="Detonation using a small explosive load" src="https://user-images.githubusercontent.com/16961118/27419756-2b55ee4a-56e8-11e7-9cf3-2e61e356e2f4.gif" >
+<img alt="Detonation using a medium explosive load" src="https://user-images.githubusercontent.com/16961118/27419758-2b574966-56e8-11e7-9012-da169c716238.gif" >
+<img alt="Detonation using a huge explosive load" src="https://user-images.githubusercontent.com/16961118/27419759-2b57e1a0-56e8-11e7-8287-bc3f600207e7.gif" >
 
 ## Compilation
 
