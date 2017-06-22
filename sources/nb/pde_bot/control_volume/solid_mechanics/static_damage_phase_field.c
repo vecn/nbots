@@ -23,7 +23,7 @@
 #define SMOOTH 0
 
 #define MIDPOINT_VOL_INTEGRALS false
-#define RESIDUAL_TOL 1e-5
+#define RESIDUAL_TOL 1e-6
 #define ENABLE_REAL_CRACK true
 #define AUTOMATIC_STEP_SIZE false
 #define FIXED_STEPS 100
@@ -751,7 +751,10 @@ static void read_real_crack(real_crack_t *rc)
 	char name[100];
 	sprintf(name, "%s/%s",
 		"../utest/sources/nb/pde_bot/damage_inputs",
-		"Mode_II_Asym_notched_3point_bending.crk");
+		//"Mode_I_perfored_strip_under_tension.crk");
+		// "Mode_I_3point_bending.crk");
+		"Mode_II_4point_bending.crk");
+	//"Mode_II_Asym_notched_3point_bending.crk");
 
 	nb_cfreader_t *cf = nb_cfreader_create();
 	nb_cfreader_add_line_comment_token(cf, "#");
