@@ -10,7 +10,7 @@ NBOTS is the short name for 'Numerical Bots', since the library is formed by
 several interdependent specialized modules, which are referred as bots.
 
 ## Gallery
-![Fast mesh generation using density maps](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif)
+![](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif)
 ![Artistic mesh for demonstration](https://github.com/vecn/nbots/tree/master/doc/img/pic_mesh.png)
 ![Artistic mesh created for a FEM dedicated blog](https://github.com/vecn/nbots/tree/master/doc/img/unique.png)
 ![Partition of a mesh into 16 subdomains](https://github.com/vecn/nbots/tree/master/doc/img/mesh_part16.png)
@@ -22,6 +22,19 @@ several interdependent specialized modules, which are referred as bots.
 ![Detonation using a small explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation1.gif)
 ![Detonation using a medium explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation2.gif)
 ![Detonation using a huge explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation3.gif)
+
+![brake](https://user-images.githubusercontent.com/16961118/27419754-2b537264-56e8-11e7-925b-cc8622f2ff64.png)
+![cantilever](https://user-images.githubusercontent.com/16961118/27419757-2b5702a8-56e8-11e7-9310-9c8d365e5789.gif)
+![dem_test](https://user-images.githubusercontent.com/16961118/27419755-2b55e724-56e8-11e7-8ed2-d530ba2b03c5.gif)
+![detonation1](https://user-images.githubusercontent.com/16961118/27419756-2b55ee4a-56e8-11e7-9cf3-2e61e356e2f4.gif)
+![detonation2](https://user-images.githubusercontent.com/16961118/27419758-2b574966-56e8-11e7-9012-da169c716238.gif)
+![detonation3](https://user-images.githubusercontent.com/16961118/27419759-2b57e1a0-56e8-11e7-8287-bc3f600207e7.gif)
+![Fast mesh generation using density maps](https://user-images.githubusercontent.com/16961118/27419760-2b62f220-56e8-11e7-8ed8-fc582058b45b.gif)
+![mesh_part16](https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png)
+![pic_mesh](https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png)
+![quad_deriv](https://user-images.githubusercontent.com/16961118/27419763-2b6b8e6c-56e8-11e7-91ba-b80b4a3671e8.gif)
+![quad_func](https://user-images.githubusercontent.com/16961118/27419765-2b6f8cba-56e8-11e7-8c71-b458442ee36d.gif)
+![unique](https://user-images.githubusercontent.com/16961118/27419762-2b6b5fdc-56e8-11e7-924b-b3362b27de98.png)
 
 ## Compilation
 
