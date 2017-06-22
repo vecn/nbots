@@ -14,7 +14,7 @@ several interdependent specialized modules, which are referred as bots.
 ![Fast mesh generation using density maps](https://user-images.githubusercontent.com/16961118/27419760-2b62f220-56e8-11e7-8ed8-fc582058b45b.gif)
 ![Artistic mesh for demonstration](https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png)
 ![Artistic mesh created for a FEM dedicated blog](https://user-images.githubusercontent.com/16961118/27419762-2b6b5fdc-56e8-11e7-924b-b3362b27de98.png)
-![Partition of a mesh into 16 subdomains](https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png =250x)
+![mesh_partition](https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png "Partition of a mesh into 16 subdomains")
 ![Brake system analysed using FEM](https://user-images.githubusercontent.com/16961118/27419754-2b537264-56e8-11e7-925b-cc8622f2ff64.png)
 ![Shape functions used in Topology optim](https://user-images.githubusercontent.com/16961118/27419763-2b6b8e6c-56e8-11e7-91ba-b80b4a3671e8.gif)
 ![Derivative of a square FE](https://user-images.githubusercontent.com/16961118/27419765-2b6f8cba-56e8-11e7-8c71-b458442ee36d.gif)
@@ -24,6 +24,7 @@ several interdependent specialized modules, which are referred as bots.
 ![Detonation using a medium explosive load](https://user-images.githubusercontent.com/16961118/27419758-2b574966-56e8-11e7-9012-da169c716238.gif)
 ![Detonation using a huge explosive load](https://user-images.githubusercontent.com/16961118/27419759-2b57e1a0-56e8-11e7-8287-bc3f600207e7.gif)
 
+img[alt=mesh_partition] { width: 200px; }
 ## Compilation
 
 Create a **build** directory and inside the directory run
