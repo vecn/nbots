@@ -141,6 +141,7 @@ static void set_msh3trg_main_interface(nb_mesh2D_t *mesh)
 	mesh->build_model = nb_msh3trg_build_model;
 	mesh->build_model_disabled_elems =
 		nb_msh3trg_build_model_disabled_elems;
+	mesh->centroid_iteration = nb_msh3trg_centroid_iteration;
 }
 
 static void set_msh3trg_graphics_interface(nb_mesh2D_t *mesh)
@@ -207,6 +208,7 @@ static void set_mshquad_main_interface(nb_mesh2D_t *mesh)
 	mesh->build_model = nb_mshquad_build_model;
 	mesh->build_model_disabled_elems =
 		nb_mshquad_build_model_disabled_elems;
+	mesh->centroid_iteration = nb_mshquad_centroid_iteration;
 }
 
 static void set_mshquad_graphics_interface(nb_mesh2D_t *mesh)
@@ -273,6 +275,7 @@ static void set_mshpoly_main_interface(nb_mesh2D_t *mesh)
 	mesh->build_model = nb_mshpoly_build_model;
 	mesh->build_model_disabled_elems =
 		nb_mshpoly_build_model_disabled_elems;
+	mesh->centroid_iteration = nb_mshpoly_centroid_iteration;
 }
 
 static void set_mshpoly_graphics_interface(nb_mesh2D_t *mesh)
@@ -339,6 +342,7 @@ static void set_mshpack_main_interface(nb_mesh2D_t *mesh)
 	mesh->build_model = nb_mshpack_build_model;
 	mesh->build_model_disabled_elems =
 		nb_mshpack_build_model_disabled_elems;
+	mesh->centroid_iteration = nb_mshpack_centroid_iteration;
 }
 
 static void set_mshpack_graphics_interface(nb_mesh2D_t *mesh)
@@ -710,4 +714,13 @@ void nb_mesh2D_build_model_disabled_elems
 					 model,
 					 N_input_vtx,
 					 input_vtx);
+}
+
+void nb_mesh2D_centroid_iteration(const nb_mesh2D_t *mesh, uint32_t max_iter,
+				  /* density can be NULL */
+				  double (*density)(const double[2],
+						    const void *data),
+				  const void *density_data)
+{
+	mesh->centroid_iteration(mesh->msh, max_iter, density, density_data);
 }

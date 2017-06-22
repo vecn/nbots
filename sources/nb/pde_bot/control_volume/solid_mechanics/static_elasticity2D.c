@@ -55,14 +55,14 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc);
+	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc, mesh);
 
 	nb_graph_init(trg_x_vol);
 	nb_cvfa_correlate_mesh_and_integration_mesh(mesh, intmsh,
 						    trg_x_vol);
 
 	nb_sparse_t *K;
-	nb_cvfa_init_global_matrix(&K, trg_x_vol, intmsh, 2);
+	nb_cvfa_init_global_matrix(&K, trg_x_vol, mesh, intmsh, 2);
 
 	nb_cvfa_load_faces(mesh, intmsh, trg_x_vol, faces);
 
@@ -141,15 +141,11 @@ void nb_cvfa_compute_stress_from_strain(const nb_mesh2D_t *mesh,
 					const double* strain,
 					double* stress /* Output */)
 {
+	double D[4];
+	nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	for (uint32_t i = 0; i < N_faces; i++) {
-		double D[4];
-		nb_pde_get_constitutive_matrix(D, material, analysis2D);
-		
-		stress[i * 3] = (strain[i * 3] * D[0] +
-				 strain[i*3+1] * D[1]);
-		stress[i*3+1] = (strain[i * 3] * D[1] +
-				 strain[i*3+1] * D[2]);
-		stress[i*3+2] = strain[i*3+2] * D[3];
+		nb_pde_get_stress(&(strain[i*3]), D, &(stress[i*3]));
 	}
 }

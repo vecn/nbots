@@ -27,6 +27,7 @@
 #include "nb/geometric_bot/mesh/mesh2D/file_format_nbt.h"
 #include "nb/geometric_bot/mesh/mesh2D/info.h"
 #include "nb/geometric_bot/mesh/mesh2D/draw.h"
+#include "nb/geometric_bot/mesh/mesh2D/field_io.h"
 #include "nb/geometric_bot/mesh/mesh2D/elements2D/trg_exporter.h"
 #include "nb/geometric_bot/mesh/mesh2D/elements2D/msh3trg.h"
 #include "nb/geometric_bot/mesh/mesh2D/elements2D/msh3trg_draw.h"

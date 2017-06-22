@@ -50,7 +50,7 @@ nb_tessellator2D_t* nb_tessellator2D_create(void);
 void nb_tessellator2D_clear(nb_tessellator2D_t* mesh);
 void nb_tessellator2D_destroy(nb_tessellator2D_t* mesh);
 void nb_tessellator2D_set_task(nb_tessellator2D_t *mesh, int type,
-		       void (*task)(const nb_tessellator2D_t *const));
+			       void (*task)(const nb_tessellator2D_t *const));
 
 /**
  * @param[in] max_vtx Maximum number of vertices, which should be 
@@ -153,10 +153,10 @@ nb_tessellator2D_t* nb_tessellator2D_clone(const nb_tessellator2D_t* const mesh)
  * at least one point for each hole.
  */
 void nb_tessellator2D_generate_from_model(nb_tessellator2D_t *mesh,
-				  const nb_model_t *const model);
+					  const nb_model_t *const model);
 
 void nb_tessellator2D_get_simplest_from_model(nb_tessellator2D_t *mesh,
-				      const nb_model_t *const  model);
+					      const nb_model_t *const  model);
 
 /**
  * @brief Check if the vertex lies inside the mesh.
@@ -166,7 +166,7 @@ void nb_tessellator2D_get_simplest_from_model(nb_tessellator2D_t *mesh,
  * (<b>false</b> if the vertex lies outside the mesh).
  */
 bool nb_tessellator2D_is_vtx_inside(const nb_tessellator2D_t *const mesh,
-			    const double *const vtx);
+				    const double *const vtx);
 
 /**
  * @brief Produces a refined Delaunay triangulation. The algorithm have

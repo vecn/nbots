@@ -86,4 +86,10 @@ void nb_msh3trg_build_model_disabled_elems(const void *msh3trg_ptr,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
 
+void nb_msh3trg_centroid_iteration(void *msh, uint32_t max_iter,
+				   /* density can be NULL */
+				   double (*density)(const double[2],
+						     const void *data),
+				   const void *density_data);
+
 #endif

@@ -14,10 +14,12 @@
 #include "nb/pde_bot.h"
 
 #define INPUTS_DIR "../utest/sources/nb/pde_bot/damage_inputs"
+#define OUTPUT_DIR "dmg_tmp"
 
 #define POW2(a) ((a)*(a))
 #define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 typedef struct {
 	uint32_t N_faces;
@@ -34,11 +36,20 @@ static int suite_init(void);
 static int suite_clean(void);
 
 static void test_mode_I(void);
+static void test_mode_I_perfored_strip(void);
 static void test_mode_II(void);
+static void test_mode_II_asym_notched_3point_bending(void);
+static void test_count_steps_in_results(void);
+static void test_draw_results(void);
+
 static void check_mode_I(const void *mesh,
 			 const results_t *results);
+static void check_mode_I_perfored_strip(const void *mesh,
+					const results_t *results);
 static void check_mode_II(const void *mesh,
 			  const results_t *results);
+static void check_mode_II_asym_notched_3point_bending(const void *mesh,
+						      const results_t *results);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     nb_mesh2D_type mesh_type,
 		     void (*check_results)(const void*,
@@ -62,6 +73,8 @@ static int read_material(nb_cfreader_t *cfr, nb_material_t *mat);
 static int read_elasticity2D_params(nb_cfreader_t *cfr,
 				    nb_analysis2D_t *analysis2D,
 				    nb_analysis2D_params *params2D);
+static void show_drawing_progress(float prog);
+static void stdout_show_progress(const char *task, float prog);
 static void show_cvfa_error_msg(int cvfa_status);
 
 void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
@@ -70,8 +83,15 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	//CU_add_test(suite, "Mode I Perfored Strip under tension",
+	//	    test_mode_I_perfored_strip);
 	//CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	//CU_add_test(suite, "Mode II Asym notched 3 point bending",
+	//	    test_mode_II_asym_notched_3point_bending);
+	CU_add_test(suite, "Count steps in results",
+		    test_count_steps_in_results);
+	CU_add_test(suite, "Drawing results", test_draw_results);
 }
 
 static int suite_init(void)
@@ -86,7 +106,7 @@ static int suite_clean(void)
 
 static void test_mode_I(void)
 {
-	run_test("%s/Mode_I_3point_bending.txt", 10000, NB_POLY,
+	run_test("%s/Mode_I_3point_bending.txt", 11000, NB_POLY,
 		 check_mode_I);
 }
 
@@ -96,9 +116,21 @@ static void check_mode_I(const void *mesh,
 	CU_ASSERT(true);/* TEMPORAL */
 }
 
+static void test_mode_I_perfored_strip(void)
+{
+	run_test("%s/Mode_I_perfored_strip_under_tension.txt", 11000, NB_POLY,
+		 check_mode_I_perfored_strip);
+}
+
+static void check_mode_I_perfored_strip(const void *mesh,
+					const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
 static void test_mode_II(void)
 {
-	run_test("%s/Mode_II_4point_bending.txt", 3000, NB_POLY,
+	run_test("%s/Mode_II_4point_bending.txt", 6000, NB_POLY,
 		 check_mode_II);
 }
 
@@ -108,23 +140,31 @@ static void check_mode_II(const void *mesh,
 	CU_ASSERT(true);/* TEMPORAL */
 }
 
+static void test_mode_II_asym_notched_3point_bending(void)
+{
+	run_test("%s/Mode_II_Asym_notched_3point_bending.txt", 10000, NB_POLY,
+		 check_mode_II_asym_notched_3point_bending);
+}
+
+static void check_mode_II_asym_notched_3point_bending(const void *mesh,
+						      const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	nb_mesh2D_export_draw(mesh, "./mesh.eps", 1000, 800,
-			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
-
-	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
-				      1000, 800);              /* TEMPORAL */
-
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	double *disp = malloc(N_elems * sizeof(*disp));
 
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	double *disp_nodes = malloc(N_nodes * sizeof(*disp_nodes));
 
-	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 20);
-	//nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, 0.02);
+	double box[4];
+	nb_mesh2D_get_enveloping_box(mesh, box);
+	double max_dist = 0.05 * MAX(box[2]-box[0], box[3]-box[1]);
+	nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, results->disp, max_dist);
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2];
@@ -293,15 +333,16 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
 
-	nb_mesh2D_save_nbt(mesh, "dmg_tmp/mesh.nbt");
+	sprintf(input, "%s/mesh.nbt", OUTPUT_DIR);
+	nb_mesh2D_save_nbt(mesh, input);
 
-	int status_cvfa = 
+	int status_cvfa =
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,
 						      bcond,
 						      false, NULL,
 						      analysis2D,
 						      &params2D,
-						      "dmg_tmp",
+						      OUTPUT_DIR,
 						      results->disp,
 						      results->strain,
 						      results->damage,
@@ -343,6 +384,12 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 
 	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
+
+	nb_mesh2D_centroid_iteration(mesh, 500, NULL, NULL);
+	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
+			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
+				      1000, 800);              /* TEMPORAL */
 }
 
 static void results_init(results_t *results, uint32_t N_faces,
@@ -392,26 +439,27 @@ static int read_problem_data
 	if (0 != read_geometry(cfr, model)) {
 		printf("\nERROR: Geometry contains errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != nb_bcond_read(bcond, cfr)) {
 		printf("\nERROR: Boundary C. contain errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != read_material(cfr, mat)) {
 		printf("\nERROR: Material contains errors in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	if (0 != read_elasticity2D_params(cfr, analysis2D, params2D)) {
 		printf("\nERROR: Reading numerical params in %s.\n",
 		       filename);
-		goto EXIT;
+		goto CLOSE;
 	}
 	status = 0;
-EXIT:
+CLOSE:
 	nb_cfreader_close_file(cfr);
+EXIT:
 	nb_cfreader_destroy(cfr);
 	return status;
 }
@@ -546,6 +594,41 @@ EXIT:
 	return status;
 }
 
+static void test_count_steps_in_results(void)
+{
+	char name[100];
+	sprintf(name, "%s/Mode_I_results.nbt", INPUTS_DIR);
+	uint32_t N_steps;
+	int status = nb_mesh2D_field_get_N_steps(name, &N_steps);
+	CU_ASSERT(0 == status);
+	CU_ASSERT(14 == N_steps);
+}
+
+static void test_draw_results(void)
+{
+	int status = nb_mesh2D_field_read_and_draw(OUTPUT_DIR, OUTPUT_DIR,
+						   show_drawing_progress);
+	CU_ASSERT(0 == status);/* TEMPORAL */
+}
+
+static void show_drawing_progress(float prog)
+{
+	stdout_show_progress("Drawing CFVA", prog);
+}
+
+static void stdout_show_progress(const char *task, float prog)
+{
+	int prog_x100 = (int)(prog * 100 + 0.5);
+	printf("%s [", task);
+	for (int i = 0; i < 40; i++) {
+		if (prog_x100 > 2.49 * (i+1))
+			printf("#");
+		else
+			printf(" ");
+	}
+	printf("] %i %%\r", prog_x100);
+	fflush(stdout);
+}
 static void show_cvfa_error_msg(int cvfa_status)
 {
 	switch (cvfa_status) {

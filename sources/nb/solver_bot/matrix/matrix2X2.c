@@ -5,9 +5,9 @@
 
 #define POW2(a) ((a)*(a))
 
-double nb_matrix_2X2_inverse(const double *const A, double* A_inv)
+double nb_matrix_2X2_inverse(const double A[4], double A_inv[4])
 {
-	double det = (A[0] * A[3] - A[1] * A[2]);
+	double det = nb_matrix_2X2_det(A);
 	A_inv[0] = A[3] / det;
 	A_inv[1] = -A[1] / det;
 	A_inv[2] = -A[2] / det;
@@ -15,7 +15,7 @@ double nb_matrix_2X2_inverse(const double *const A, double* A_inv)
 	return det;
 }
 
-void nb_matrix_2X2_eigen(const double *const A,
+void nb_matrix_2X2_eigen(const double A[4],
 			  double* Lambda, /* Output (diag) */
 			  double* P,      /* Output */
 			  double tolerance)
@@ -45,6 +45,13 @@ void nb_matrix_2X2_eigen(const double *const A,
 			P[1] = A[1];
 			P[3] = Lambda[1] - A[0];
 		}
+		/* Normalize eigenvectors */
+		double normalizer = sqrt(POW2(P[0]) + POW2(P[2]));
+		P[0] /= normalizer;
+		P[2] /= normalizer;
+		normalizer = sqrt(POW2(P[1]) + POW2(P[3]));
+		P[1] /= normalizer;
+		P[3] /= normalizer;
 	}
 	if (fabs(Lambda[0]) < fabs(Lambda[1])) {
 		double aux = Lambda[0];
@@ -59,22 +66,16 @@ void nb_matrix_2X2_eigen(const double *const A,
 		P[2] = P[3];
 		P[3] = aux;
 	}
-	/* Normalize eigenvectors */
-	double normalizer = sqrt(POW2(P[0]) + POW2(P[2]));
-	P[0] /= normalizer;
-	P[2] /= normalizer;
-	normalizer = sqrt(POW2(P[1]) + POW2(P[3]));
-	P[1] /= normalizer;
-	P[3] /= normalizer;
 }
-double nb_matrix_2X2_det(double *A)
+
+double nb_matrix_2X2_det(const double A[4])
 {
 	return A[0] * A[3] - A[1] * A[2];
 }
 
-double nb_matrix_2X2_inverse_destructive(double *A)
+double nb_matrix_2X2_inverse_destructive(double A[4])
 {
-	double det = A[0] * A[3] - A[1] * A[2];
+	double det = nb_matrix_2X2_det(A);
 	double tmp = A[0];
 	A[0] = A[3]/det;
 	A[3] = tmp/det;

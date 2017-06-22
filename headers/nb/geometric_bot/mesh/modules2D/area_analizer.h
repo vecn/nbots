@@ -31,7 +31,7 @@ double* nb_tessellator2D_get_centroids_of_subareas
  * @return Return the array with the locations of the centroids concatenated.
  */
 double* nb_tessellator2D_get_centroids_of_enveloped_areas(const nb_tessellator2D_t *const mesh,
-						  uint32_t* N_centroids);
+							  uint32_t* N_centroids);
 
 
 /**
@@ -42,7 +42,7 @@ double* nb_tessellator2D_get_centroids_of_enveloped_areas(const nb_tessellator2D
  * @return Area of the non-deleted mesh.
  */
 double nb_tessellator2D_clear_enveloped_areas(nb_tessellator2D_t* mesh,
-				      double* area_removed);
+					      double* area_removed);
 
 /**
  * @brief If the mesh is not a continuous domain, this function keep 
@@ -87,8 +87,12 @@ bool nb_tessellator2D_is_continuum(const nb_tessellator2D_t *mesh);
 
 uint16_t nb_tessellator2D_get_N_subareas(const nb_tessellator2D_t *mesh);
 
-uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh, uint16_t *area_id);
+uint16_t nb_tessellator2D_get_subareas(const nb_tessellator2D_t *mesh,
+				       uint16_t *area_id);
 
 uint16_t nb_tessellator2D_get_N_continuum_areas(const nb_tessellator2D_t *mesh);
+
+void nb_tessellator2D_delete_elems_out_of_model(nb_tessellator2D_t *t2d,
+						const nb_model_t *model);
 
 #endif

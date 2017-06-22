@@ -2,6 +2,7 @@
 #define __NB_SOLVER_BOT_H__
 
 #include "nb/solver_bot/vector.h"
+#include "nb/solver_bot/matrix/mtxsym2X2.h"
 #include "nb/solver_bot/matrix/matrix2X2.h"
 #include "nb/solver_bot/matrix/matrix3X3.h"
 #include "nb/solver_bot/matrix/triangular.h"

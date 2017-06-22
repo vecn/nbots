@@ -112,6 +112,11 @@ struct nb_mesh2D_s {
 					   nb_model_t *model,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx);
+	void (*centroid_iteration)(void *msh, uint32_t max_iter,
+				   /* density can be NULL */
+				   double (*density)(const double[2],
+						     const void *data),
+				   const void *density_data);
 	nb_mesh2D_graphics_i graphics;
 };
 

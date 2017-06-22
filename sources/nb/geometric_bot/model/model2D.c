@@ -162,28 +162,6 @@ nb_model_t* nb_model_load(const char* filename)
 	return model;
 }
 
-void nb_model_load_from_farrays(nb_model_t *model,
-				 float vertices[], uint32_t N_vertices,
-				 uint32_t segments[], uint32_t N_segments,
-				 float holes[], uint32_t N_holes)
-{
-	model->N = N_vertices;
-	model->M = N_segments;
-	model->H = N_holes;
-
-	nb_model_alloc_vertices(model);
-	for (uint32_t i = 0; i < 2 * N_vertices; i++)
-	  model->vertex[i] = vertices[i];
-
-	nb_model_alloc_edges(model);
-	for (uint32_t i = 0; i < 2 * N_segments; i++)
-	  model->edge[i] = segments[i];
-
-	nb_model_alloc_holes(model);
-	for (uint32_t i = 0; i < 2 * N_holes; i++)
-	  model->holes[i] = holes[i];
-}
-
 nb_model_t* nb_model_create_rectangle(double x_min, double y_min,
 					double x_max, double y_max)
 {
@@ -376,6 +354,7 @@ void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 	
 	if (0 < model->H)
 		nb_free_mem(model->holes);
+
 	model->H = N_holes;
 	model->holes = holes;
 }
@@ -383,7 +362,8 @@ void nb_model_set_enveloped_areas_as_holes(nb_model_t* model)
 bool nb_model_is_vtx_inside(const nb_model_t *const model,
 			     const double *const vtx)
 {
-	nb_tessellator2D_t* mesh = nb_allocate_on_stack(nb_tessellator2D_get_memsize());
+	uint32_t memsize = nb_tessellator2D_get_memsize();
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(memsize);
 	nb_tessellator2D_init(mesh);
 	nb_tessellator2D_get_simplest_from_model(mesh, model);
 
@@ -437,22 +417,20 @@ uint32_t nb_model_get_vertex_id(const nb_model_t *const model, double* vtx)
 	uint32_t id = model->N;
 	for (uint32_t i = 0; i < model->N; i++) {
 		if (nb_utils2D_get_dist2(vtx, &(model->vertex[i*2])) < NB_GEOMETRIC_TOL_POW2) {
-			id = i;
+		  id = i;
 			break;
 		}
 	}
 	return id;
 }
 
-double* nb_model_get_vertex_coordinate(const nb_model_t *const model, uint32_t id)
+void nb_model_get_vertex_coordinate(const nb_model_t *const model, uint32_t id,
+				    double vtx[2])
 {
-	double *vtx = NULL;
 	if (id < model->N) {
-		vtx = nb_allocate_mem(2 * sizeof(*vtx));
 		vtx[0] = model->vertex[id * 2];
 		vtx[1] = model->vertex[id*2+1];
 	}
-	return vtx;
 }
 
 uint32_t nb_model_get_edge_id(const nb_model_t *const model, double* edge_vertices)
@@ -483,20 +461,18 @@ uint32_t nb_model_get_edge_id(const nb_model_t *const model, double* edge_vertic
 	}
 	return id;
 }
-double* nb_model_get_edge_coordinates(const nb_model_t *const model, uint32_t id)
+void nb_model_get_edge_coordinates(const nb_model_t *const model, uint32_t id,
+				   double v1[2], double v2[2])
 {
-	double *sgm = NULL;
 	if(id < model->M) {
 		uint32_t id1 = model->edge[id * 2];
 		uint32_t id2 = model->edge[id*2+1];
 
-		sgm = nb_allocate_mem(4 * sizeof(*sgm));
-		sgm[0] = model->vertex[id1 * 2];
-		sgm[1] = model->vertex[id1*2+1];
-		sgm[2] = model->vertex[id2 * 2];
-		sgm[3] = model->vertex[id2*2+1];
+		v1[0] = model->vertex[id1 * 2];
+		v1[1] = model->vertex[id1*2+1];
+		v2[0] = model->vertex[id2 * 2];
+		v2[1] = model->vertex[id2*2+1];
 	}
-	return sgm;
 }
 
 uint32_t nb_model_get_number_of_vertices(const nb_model_t *const model)
@@ -542,4 +518,18 @@ double nb_model_get_sum_of_sgm_length(const nb_model_t *const model)
 				&(model->vertex[id2 * 2]));
 	}
 	return sum;
+}
+
+double* nb_model_get_centroids_of_enveloped_areas(const nb_model_t *model,
+						  uint32_t *N_centroids)
+{
+	uint32_t memsize = nb_tessellator2D_get_memsize();
+	nb_tessellator2D_t* mesh = nb_allocate_on_stack(memsize);
+	nb_tessellator2D_init(mesh);
+	nb_tessellator2D_get_simplest_from_model(mesh, model);
+	
+	double* centroids =
+		nb_tessellator2D_get_centroids_of_enveloped_areas(mesh, N_centroids);
+	nb_tessellator2D_finish(mesh);
+	return centroids;
 }

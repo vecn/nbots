@@ -123,4 +123,10 @@ void nb_mesh2D_build_model_disabled_elems(const nb_mesh2D_t *mesh,
 					  uint32_t *N_input_vtx,
 					  uint32_t **input_vtx);
 
+void nb_mesh2D_centroid_iteration(const nb_mesh2D_t *mesh, uint32_t max_iter,
+				  /* density can be NULL */
+				  double (*density)(const double[2],
+						    const void *data),
+				  const void *density_data);
+
 #endif

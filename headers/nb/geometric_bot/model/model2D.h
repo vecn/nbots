@@ -117,13 +117,13 @@ double* nb_model_get_vertices(const nb_model_t *const model,
 
 uint32_t nb_model_get_vertex_id(const nb_model_t *const model, double* vtx);
 
-double* nb_model_get_vertex_coordinate
-(const nb_model_t *const model, uint32_t id);
+void nb_model_get_vertex_coordinate
+(const nb_model_t *const model, uint32_t id, double vtx[2]);
   
 uint32_t nb_model_get_edge_id
 (const nb_model_t *const model, double* edge_vertices);
-double* nb_model_get_edge_coordinates
-(const nb_model_t *const model, uint32_t id);
+void nb_model_get_edge_coordinates
+(const nb_model_t *const model, uint32_t id, double v1[2], double v2[2]);
 
 uint32_t nb_model_get_number_of_vertices(const nb_model_t *const model);
   
@@ -137,4 +137,6 @@ double nb_model_get_area(const nb_model_t *const model);
   
 double nb_model_get_sum_of_sgm_length(const nb_model_t *const model);
 
+double* nb_model_get_centroids_of_enveloped_areas(const nb_model_t *model,
+						  uint32_t *N_centroids);
 #endif

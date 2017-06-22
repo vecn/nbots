@@ -1,0 +1,85 @@
+#################################################
+# Victor Eduardo Cardoso Nungaray		#
+# Perfored strip under tension                  #
+#   (For symmetry we only consider right half)  #
+# Unit: 1cm                                     #
+#################################################
+
+#-------------- Geometry definition ------------#
+# Number of vertices				#
+ 15						#
+# Vertices coordinates                          #
+  0.0   20.0					#
+ 20.0   20.0					#
+ 20.0  -20.0					#
+  0.0  -20.0					#
+                # Interior hole			#
+  0.0   -1.0					#
+  0.31  -0.95					#
+  0.59  -0.81					#
+  0.81  -0.59					#
+  0.95  -0.31					#
+  1.0    0.0					#
+  0.95   0.31					#
+  0.81   0.59					#
+  0.59   0.81					#
+  0.31   0.95					#
+  0.0    1.0					#
+# Number of segments				#
+ 15						#
+# Segments (Vertices pairs IDs)			#
+ 0 1	    # Pull up  				#
+ 1 2						#
+ 2 3        # Pull down   			#
+ 3 4						#
+      ###### Interior hole ######               #
+ 4 5	    # Symmetry cond			#
+ 5 6						#
+ 6 7						#
+ 7 8						#
+ 8 9						#
+ 9 10						#
+ 10 11	                         		#
+ 11 12						#
+ 12 13						#
+ 13 14						#
+ 14  0 	    # Symmetry cond			#
+# Number of segments				#
+ 0						#
+#-----------------------------------------------#
+
+#-------------- Boundary conditions ------------#
+# Num displacement conditions over vertices:    #
+ 0						#
+# Num of load conditions over vertices:		#
+ 0						#
+# Num of displacement conditions over lines:    #
+ 4						#
+# Displacement conditions definition            #
+  0  0 1  5e-3	                                #
+  2  0 1 -5e-3					#
+  4  1 0 0.0                                    #
+ 14  1 0 0.0                                    #
+# Num of load conditions over lines:            #
+ 0                                              #
+#-----------------------------------------------#
+
+#-------------- Material properties ------------#
+# Poisson module				#
+ 0.2						#
+# Elasticity module				#
+# Pa = kg/(m s^2)                               #
+# 30 GPa = 3e8 kg/(cm s^2)                      #
+ 3e8	                                        #
+# Energy release rate                           #
+ 0.5						#
+# Length scale                                  #
+ 0.01						#
+#-----------------------------------------------#
+
+#---------------- Analysis ---------------------#
+# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+ 1                                              #
+# Analysis params (Thickness axis of rev)       #
+ 1  	                                        #
+# -----------------End of file------------------#

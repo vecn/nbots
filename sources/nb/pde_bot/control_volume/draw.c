@@ -39,7 +39,7 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 
 	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
-	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc);
+	nb_cvfa_load_integration_mesh(intmsh, N_elems, xc, mesh);
 
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);

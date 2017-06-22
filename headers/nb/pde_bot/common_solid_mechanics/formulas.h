@@ -16,5 +16,7 @@ double nb_pde_get_vm_stress(double sxx, double syy, double sxy);
 
 void nb_pde_get_main_stress(double sxx, double syy, double sxy,
 			    double main_stress[2]);
+void nb_pde_get_stress(const double strain[3], const double D[4],
+		       double stress[3]);
 
 #endif
