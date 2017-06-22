@@ -9,15 +9,18 @@ as Android, Mac OS, Linux, Windows and Linux-based supercomputing clusters.
 NBOTS is the short name for 'Numerical Bots', since the library is formed by
 several interdependent specialized modules, which are referred as bots.
 
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/mesh_part16.png "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/pic_mesh.png "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/unique.png "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/brake.png "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/cantilever.gif "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/DEM_test.gif "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_deriv.gif "Logo Title Text 1")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_func.gif "Logo Title Text 1")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif "Fast mesh generation using density maps")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/pic_mesh.png "Artistic mesh for demonstration")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/unique.png "Artistic mesh created for a FEM dedicated blog")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/mesh_part16.png "Partition of a mesh into 16 subdomains")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/brake.png "Brake system analysed using FEM")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/DEM_test.gif "Ultra-brittle fracture simulated with DEM")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_deriv.gif "Shape functions used in Topology optim")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_func.gif "Derivative of a square FE")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/cantilever.gif "Topology optimization of a cantilever")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation1.gif "Detonation using a small explosive load")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation2.gif "Detonation using a medium explosive load")
+![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation3.gif "Detonation using a huge explosive load")
 
 ## Compilation
 
