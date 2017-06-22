@@ -12,7 +12,7 @@ several interdependent specialized modules, which are referred as bots.
 ## Gallery
 
 <img alt="Fast mesh generation using density maps" src="https://user-images.githubusercontent.com/16961118/27419760-2b62f220-56e8-11e7-8ed8-fc582058b45b.gif" >
-![artistic1](https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png "Artistic mesh for demonstration"){:height="200px" width="350px"}
+<img alt="Artistic mesh for demonstration" width="350" src="https://user-images.githubusercontent.com/16961118/27419764-2b6d998c-56e8-11e7-84e4-6cd47b8c0e3e.png">
 <img alt="Artistic mesh created for a FEM dedicated blog" width="350" src="https://user-images.githubusercontent.com/16961118/27419762-2b6b5fdc-56e8-11e7-924b-b3362b27de98.png" >
 <img alt="Partition of a mesh into 16 subdomains" width="250" src="https://user-images.githubusercontent.com/16961118/27419761-2b66364c-56e8-11e7-9023-785de3f2ea4b.png" >
 <img alt="Brake system analysed using FEM" width="550" src="https://user-images.githubusercontent.com/16961118/27419754-2b537264-56e8-11e7-925b-cc8622f2ff64.png" >
