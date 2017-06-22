@@ -9,18 +9,19 @@ as Android, Mac OS, Linux, Windows and Linux-based supercomputing clusters.
 NBOTS is the short name for 'Numerical Bots', since the library is formed by
 several interdependent specialized modules, which are referred as bots.
 
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif "Fast mesh generation using density maps")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/pic_mesh.png "Artistic mesh for demonstration")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/unique.png "Artistic mesh created for a FEM dedicated blog")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/mesh_part16.png "Partition of a mesh into 16 subdomains")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/brake.png "Brake system analysed using FEM")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/DEM_test.gif "Ultra-brittle fracture simulated with DEM")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_deriv.gif "Shape functions used in Topology optim")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_func.gif "Derivative of a square FE")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/cantilever.gif "Topology optimization of a cantilever")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation1.gif "Detonation using a small explosive load")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation2.gif "Detonation using a medium explosive load")
-![alt text](https://github.com/vecn/nbots/tree/master/doc/img/detonation3.gif "Detonation using a huge explosive load")
+## Gallery
+![Fast mesh generation using density maps](https://github.com/vecn/nbots/tree/master/doc/img/eye_mesh.gif)
+![Artistic mesh for demonstration](https://github.com/vecn/nbots/tree/master/doc/img/pic_mesh.png)
+![Artistic mesh created for a FEM dedicated blog](https://github.com/vecn/nbots/tree/master/doc/img/unique.png)
+![Partition of a mesh into 16 subdomains](https://github.com/vecn/nbots/tree/master/doc/img/mesh_part16.png)
+![Brake system analysed using FEM](https://github.com/vecn/nbots/tree/master/doc/img/brake.png)
+![Ultra-brittle fracture simulated with DEM](https://github.com/vecn/nbots/tree/master/doc/img/DEM_test.gif)
+![Shape functions used in Topology optim](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_deriv.gif)
+![Derivative of a square FE](https://github.com/vecn/nbots/tree/master/doc/img/QUAD_func.gif)
+![Topology optimization of a cantilever](https://github.com/vecn/nbots/tree/master/doc/img/cantilever.gif)
+![Detonation using a small explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation1.gif)
+![Detonation using a medium explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation2.gif)
+![Detonation using a huge explosive load](https://github.com/vecn/nbots/tree/master/doc/img/detonation3.gif)
 
 ## Compilation
 
