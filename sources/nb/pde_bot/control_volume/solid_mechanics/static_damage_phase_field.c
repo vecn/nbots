@@ -1060,7 +1060,7 @@ EXIT:
 	if (SUCCESS_RESIDUAL_MIN != status)
 		memcpy(displacement, aux_disp, N * sizeof(*aux_disp));
 
-	printf("\r>>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i\n",
+	printf("\r>>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i",
 	       status, iter, rnorm, bc_factor, max_iter);/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);

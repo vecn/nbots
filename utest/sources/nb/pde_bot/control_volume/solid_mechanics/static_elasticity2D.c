@@ -85,7 +85,7 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
 	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
@@ -102,7 +102,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 1000, NB_QUAD,
+	run_test("%s/beam_cantilever.txt", 4000, NB_QUAD,
 		 check_beam_cantilever, NULL);
 }
 
@@ -622,6 +622,10 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 
 	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
+	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
+			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
+				      1000, 800);              /* TEMPORAL */
 }
 
 static void results_init(results_t *results, uint32_t N_faces,
