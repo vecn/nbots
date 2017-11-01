@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 2
+#define HTUMZ 0
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
@@ -51,7 +51,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &F,
 			       &intmsh, &trg_x_vol, &faces, &glq);
 
-	nb_glquadrature_load(&glq, SMOOTH + 1);
+	nb_glquadrature_load(&glq, HTUMZ + 1);
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
@@ -70,7 +70,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	nb_cvfa_assemble_global_forces(F, mesh, material, enable_self_weight,
 				       gravity);
 
-	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc, faces,
+	nb_cvfa_assemble_global_stiffness(K, mesh, HTUMZ, intmsh, xc, faces,
 					  material, analysis2D, params2D,
 					  &glq, NULL);
 
@@ -83,7 +83,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	if (status != 0)
 		goto CLEAN_AND_EXIT;
 
-	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
+	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, HTUMZ,
 			       intmsh, xc, bcond, displacement, &glq);
 
 	status = 0;
@@ -101,7 +101,7 @@ static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces)
 	uint32_t system_size = 4 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
-	uint16_t Nq = SMOOTH + 1;
+	uint16_t Nq = HTUMZ + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
 	uint32_t faces_size = N_faces * (sizeof(void*) + sizeof(face_t));
 	return graph_size + system_size + intmsh_size + faces_size + glq_size;
@@ -115,7 +115,7 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 	uint32_t system_size = 2 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
-	uint16_t Nq = SMOOTH + 1;
+	uint16_t Nq = HTUMZ + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
 	*F = (void*) memblock;
 	*xc = (void*) (memblock + system_size);

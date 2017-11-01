@@ -85,8 +85,8 @@ void cunit_nb_pde_bot_cvfa_sm_static_elasticity(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
-	CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
+	CU_add_test(suite, "Beam cantilever", test_beam_cantilever);
+	//CU_add_test(suite, "Plate with a hole", test_plate_with_hole);
 }
 
 static int suite_init(void)
@@ -102,7 +102,7 @@ static int suite_clean(void)
 
 static void test_beam_cantilever(void)
 {
-	run_test("%s/beam_cantilever.txt", 4000, NB_QUAD,
+	run_test("%s/beam_cantilever.txt", 4000, NB_POLY,
 		 check_beam_cantilever, NULL);
 }
 
@@ -579,14 +579,15 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	results_init(results, N_faces, N_elems);
 
-	int status_cvfa = nb_cvfa_compute_2D_Solid_Mechanics(mesh, material,
-							     bcond,
-							     false, NULL,
-							     analysis2D,
-							     &params2D,
-							     results->disp,
-							     results->strain,
-							     results->boundary_mask);
+	int status_cvfa = 
+		nb_cvfa_compute_2D_Solid_Mechanics(mesh, material,
+						   bcond,
+						   false, NULL,
+						   analysis2D,
+						   &params2D,
+						   results->disp,
+						   results->strain,
+						   results->boundary_mask);
 
 	if (0 != status_cvfa) {
 		show_cvfa_error_msg(status_cvfa);

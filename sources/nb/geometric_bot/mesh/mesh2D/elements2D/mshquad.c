@@ -89,6 +89,19 @@ static void set_sgm_nodes(nb_mshquad_t *quad,
 			  uint32_t sgm_id);
 static void assemble_sgm_wire(nb_mshquad_t *quad, uint32_t sgm_id,
 			      msh_edge_t *sgm_prev, msh_edge_t *sgm);
+static bool is_vtx_inside_elem(const void *msh, uint32_t id,
+			       double x, double y);
+static uint32_t get_input_vtx(const void *msh, double *vertices,
+			      uint32_t *vtx_index_relation);
+static uint32_t get_input_sgm(const void *msh,
+			      const uint32_t *vtx_index_relation,
+			      uint32_t *segments);
+static void set_holes_to_model(const void *msh, nb_model_t *model);
+static uint32_t get_centroids_mask(const void *msh, uint32_t N_centroids,
+				   double *centroids, char *mask_centroids);
+static double *get_holes(uint32_t N_holes, uint32_t N_centroids,
+			 const double *centroids, const char *mask_centroids);
+
 
 uint32_t nb_mshquad_get_memsize(void)
 {
@@ -1190,13 +1203,193 @@ void nb_mshquad_get_enveloping_box(const void *mshquad_ptr, double box[4])
 }
 
 bool nb_mshquad_is_vtx_inside(const void *msh, double x, double y)
+// Mshpoly repeated
 {
-	return false;/* PENDING */
+	bool is_inside = false;
+	uint32_t N = nb_mshquad_get_N_elems(msh);
+	for (uint32_t i = 0; i < N; i++) {
+		is_inside = is_vtx_inside_elem(msh, i, x, y);
+		if (is_inside)
+			break;
+	}
+	return is_inside;
+}
+
+static bool is_vtx_inside_elem(const void *msh, uint32_t id,
+			       double x, double y)
+// Mshpoly repeated
+{
+	uint32_t N = nb_mshquad_elem_get_N_adj(msh, id);
+	double fixed_buffer[16];
+	double *poly;
+	if (N > 8)
+		poly = nb_soft_allocate_mem(2 * N * sizeof(double));
+	else
+		poly = fixed_buffer;
+
+	for (int i = 0; i < N; i++) {
+		uint32_t vid = nb_mshquad_elem_get_adj(msh, id, i);
+		poly[i * 2] = nb_mshquad_node_get_x(msh, vid);
+		poly[i*2+1] = nb_mshquad_node_get_y(msh, vid);
+	}
+
+	double p[2] = {x, y};
+	bool is_inside = nb_utils2D_pnt_lies_in_poly(N, poly, p);
+
+	if (N > 8)
+		nb_soft_free_mem(2 * N * sizeof(double), poly);
+
+	return is_inside;
 }
 
 void nb_mshquad_build_model(const void *msh, nb_model_t *model)
 {
-	;/* PENDING */
+	uint32_t N_vtx = nb_mshquad_get_N_invtx(msh);
+	uint32_t N_sgm = nb_mshquad_get_N_insgm(msh);
+
+	uint32_t sgm_memsize = 2 * N_sgm * sizeof(uint32_t);
+	uint32_t* segments = nb_soft_allocate_mem(sgm_memsize);
+
+	uint32_t vtx_memsize = 2 * N_vtx * sizeof(double);
+	double* vertices = nb_soft_allocate_mem(vtx_memsize);
+
+	uint32_t idx_memsize = N_vtx * sizeof(uint32_t);
+	uint32_t* vtx_index_relation = nb_soft_allocate_mem(idx_memsize);
+
+	uint32_t N_vertices = get_input_vtx(msh, vertices,
+					    vtx_index_relation);
+	uint32_t N_segments = get_input_sgm(msh, vtx_index_relation,
+					    segments);
+
+	nb_model_load_from_arrays(model, N_vertices, vertices,
+				  N_segments, segments, 0 , NULL);
+
+	nb_soft_free_mem(sgm_memsize, segments);
+	nb_soft_free_mem(vtx_memsize, vertices);
+	nb_soft_free_mem(idx_memsize, vtx_index_relation);
+
+	set_holes_to_model(msh, model);
+}
+
+static uint32_t get_input_vtx(const void *msh, double *vertices,
+			      uint32_t *vtx_index_relation)
+// Mshpoly repeated
+{
+	uint32_t N_vtx = nb_mshquad_get_N_invtx(msh);
+	uint32_t N_nod = nb_mshquad_get_N_nodes(msh);
+	uint32_t N_vertices = 0;
+	for (uint32_t i = 0; i < N_vtx; i++) {
+		uint32_t id = nb_mshquad_get_invtx(msh, i);
+		if (id < N_nod) {
+			vertices[N_vertices * 2] =
+				nb_mshquad_node_get_x(msh, id);
+			vertices[N_vertices*2+1] =
+				nb_mshquad_node_get_y(msh, id);
+
+			vtx_index_relation[i] = N_vertices;
+			N_vertices += 1;
+		}
+	}
+	return N_vertices;
+}
+
+static uint32_t get_input_sgm(const void *msh,
+			      const uint32_t *vtx_index_relation,
+			      uint32_t *segments)
+// Mshpoly repeated
+{
+	uint32_t N_vtx = nb_mshquad_get_N_invtx(msh);
+	uint32_t N_sgm = nb_mshquad_get_N_insgm(msh);
+	uint32_t N_segments = 0;
+	for (uint32_t i = 0; i < N_sgm; i++) {
+		uint32_t N_nod_x_sgm =
+			nb_mshquad_insgm_get_N_nodes(msh, i);
+		if (0 < N_nod_x_sgm) {
+			uint32_t v1 = nb_mshquad_insgm_get_node(msh, i, 0);
+			uint32_t last_idx = N_nod_x_sgm - 1;
+			uint32_t v2 = nb_mshquad_insgm_get_node(msh, i,
+								last_idx);
+			for (uint32_t j = 0; j < N_vtx; j++) {
+				if (nb_mshquad_get_invtx(msh, j) == v1) {
+					v1 = j;
+					break;
+				}
+			}
+			for (uint32_t j = 0; j < N_vtx; j++) {
+				if (nb_mshquad_get_invtx(msh, j) == v2) {
+					v2 = j;
+					break;
+				}
+			}
+			segments[N_segments * 2] = vtx_index_relation[v1];
+			segments[N_segments*2+1] = vtx_index_relation[v2];
+			N_segments += 1;
+		}
+	}
+	return N_segments;
+}
+static void set_holes_to_model(const void *msh, nb_model_t *model)
+// Mshpoly repeated
+{
+	uint32_t N_centroids;
+	double *centroids =
+		nb_model_get_centroids_of_enveloped_areas(model, &N_centroids);
+
+	uint32_t N_holes = 0;
+	double *holes = NULL;
+
+	if (0 < N_centroids) {
+		char* mask_centroids = nb_soft_allocate_mem(N_centroids);
+		memset(mask_centroids, 0, N_centroids);
+
+		N_holes = get_centroids_mask(msh, N_centroids,
+					     centroids, mask_centroids);
+		holes = get_holes(N_holes, N_centroids, centroids,
+				  mask_centroids);
+
+		nb_soft_free_mem(N_centroids, mask_centroids);
+		nb_free_mem(centroids);
+	}
+	
+	model->H = N_holes;
+	model->holes = holes;
+}
+
+static uint32_t get_centroids_mask(const void *msh, uint32_t N_centroids,
+				   double *centroids, char *mask_centroids)
+// Mshpoly repeated
+{
+	uint32_t N_holes = 0;
+	for (uint32_t i = 0; i < N_centroids; i++) {
+		bool not_inside = !nb_mshquad_is_vtx_inside(msh,
+							    centroids[i * 2],
+							    centroids[i*2+1]);
+		if (not_inside) {
+			mask_centroids[i] = 1;
+			N_holes += 1;
+		}
+	}
+	return N_holes;
+}
+
+static double *get_holes(uint32_t N_holes, uint32_t N_centroids,
+			 const double *centroids, const char *mask_centroids)
+// Mshpoly repeated
+{
+	double *holes = NULL;
+	if (0 < N_holes) {
+		holes = nb_allocate_mem(2 * N_holes * sizeof(*holes));
+		uint32_t i = 0;
+		for (uint32_t j = 0; j < N_centroids; j++) {
+			if (1 == mask_centroids[j]) {
+				memcpy(&(holes[i*2]),
+				       &(centroids[j*2]),
+				       2 * sizeof(*holes));
+				i += 1;
+			}
+		}
+	}
+	return holes;
 }
 
 void nb_mshquad_build_model_disabled_elems(const void *msh,
@@ -1205,6 +1398,7 @@ void nb_mshquad_build_model_disabled_elems(const void *msh,
 					   uint32_t *N_input_vtx,
 					   uint32_t **input_vtx)
 {
+	printf("NOT IMPLEMENTED: nb_mshquad_build_model_disabled_elems()\n");
 	;/* PENDING */
 }
 
@@ -1214,5 +1408,6 @@ void nb_mshquad_centroid_iteration(void *msh, uint32_t max_iter,
 						     const void *data),
 				   const void *density_data)
 {
+	printf("NOT IMPLEMENTED: nb_mshquad_centroid_iteration()\n");
 	;/* PENDING */
 }

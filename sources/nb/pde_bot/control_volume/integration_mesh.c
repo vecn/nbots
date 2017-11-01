@@ -140,6 +140,7 @@ void nb_cvfa_load_integration_mesh(nb_mesh2D_t *intmsh, uint32_t N,
 
 	nb_model_init(model);
 	nb_mesh2D_build_model(mesh, model);
+
 	nb_tessellator2D_delete_elems_out_of_model(t2d, model);
 	nb_model_finish(model);
 

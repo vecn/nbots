@@ -20,7 +20,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 0
+#define HTUMZ 0
 
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
@@ -371,7 +371,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			       &elem_damage, &intmsh, &trg_x_vol,
 			       &faces, &glq, &minimize_residual_memblock);
 
-	nb_glquadrature_load(&glq, SMOOTH + 1);
+	nb_glquadrature_load(&glq, HTUMZ + 1);
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
@@ -389,7 +389,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	nb_cvfa_init_global_matrix(&D, trg_x_vol, mesh, intmsh, 1);
 
 	nb_cvfa_eval_damage_t eval_dmg;
-	init_eval_dmg(&eval_dmg, SMOOTH, mesh, intmsh, displacement,
+	init_eval_dmg(&eval_dmg, HTUMZ, mesh, intmsh, displacement,
 		      xc, elem_damage, material, analysis2D);
 
 	uint32_t id_elem_monitor[2];
@@ -412,7 +412,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 						 params2D, dir_to_save,
 						 displacement, strain,
 						 elem_damage, intmsh, xc,
-						 faces, SMOOTH, K, D,
+						 faces, HTUMZ, K, D,
 						 &glq, &eval_dmg,
 						 id_elem_monitor[0],
 						 minimize_residual_memblock);
@@ -424,7 +424,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 						 params2D, dir_to_save,
 						 displacement, strain,
 						 elem_damage, intmsh, xc,
-						 faces, SMOOTH, K, D,
+						 faces, HTUMZ, K, D,
 						 &glq, &eval_dmg,
 						 id_elem_monitor[0],
 						 minimize_residual_memblock,
@@ -433,7 +433,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 	if (0 != status)
 		goto EXIT;
 
-	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, SMOOTH,
+	nb_cvfa_compute_strain(strain, boundary_mask, faces, mesh, HTUMZ,
 			       intmsh, xc, bcond, displacement, &glq);
 	compute_damage(damage, faces, mesh, elem_damage, &glq, &eval_dmg);
 
@@ -454,7 +454,7 @@ static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces)
 	uint32_t system_size = 3 * N_elems * sizeof(double);
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
-	uint16_t Nq = SMOOTH + 1;
+	uint16_t Nq = HTUMZ + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
 	uint32_t faces_size = N_faces * (sizeof(void*) + sizeof(face_t));
 	uint32_t minimize_residual = get_memsize_for_minimize_residual(N_elems);
@@ -473,7 +473,7 @@ static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 	uint32_t system_size = 2 * elem_size;
 	uint32_t intmsh_size = nb_cvfa_get_integration_mesh_memsize();
 	uint32_t graph_size = nb_graph_get_memsize();
-	uint16_t Nq = SMOOTH + 1;
+	uint16_t Nq = HTUMZ + 1;
 	uint32_t glq_size = 2 * Nq * sizeof(double);
 	*xc = (void*) memblock;
 	*elem_damage = (void*) (memblock + system_size);
@@ -843,7 +843,7 @@ static int finite_increments_with_dynamic_step
 					   analysis2D, params2D,
 					   displacement, strain,
 					   elem_damage, intmsh, xc,
-					   faces, SMOOTH, K, D, glq,
+					   faces, HTUMZ, K, D, glq,
 					   eval_dmg, trim_bc_factor,
 					   max_iter, id_elem_monitor,
 					   &reaction,
@@ -911,7 +911,7 @@ static int finite_increments_with_fixed_step
 					   analysis2D, params2D,
 					   displacement, strain,
 					   elem_damage, intmsh, xc,
-					   faces, SMOOTH, K, D, glq,
+					   faces, HTUMZ, K, D, glq,
 					   eval_dmg, bc_factor,
 					   max_iter, id_elem_monitor,
 					   &reaction,
@@ -1050,7 +1050,7 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		}
 	}
 GET_REACTION:
-	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc,
+	nb_cvfa_assemble_global_stiffness(K, mesh, HTUMZ, intmsh, xc,
 					  faces, material, analysis2D,
 					  params2D, glq, eval_dmg);
 	nb_sparse_multiply_vector(K, displacement, residual, 1);
