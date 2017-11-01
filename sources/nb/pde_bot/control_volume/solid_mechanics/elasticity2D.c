@@ -212,11 +212,13 @@ static void assemble_face(nb_sparse_t *K,
 			  const nb_glquadrature_t *glq,
 			               /* NULL for no damage */
 			  const nb_cvfa_eval_damage_t* eval_dmg)
-{	
-	double D[4];
-	nb_pde_get_constitutive_matrix(D, material, analysis2D);
-
+{
 	if (nb_cvfa_face_is_internal(face, mesh)) {
+		double D[4];
+		nb_pde_get_constitutive_matrix(D, material, analysis2D);
+
+		ALIGN_MEM_HTUMZ(D, &smooth); 
+
 		uint16_t N_sf = face->N_sf;
 		for (uint16_t i = 0; i < N_sf; i++) {
 			integrate_subface(K, mesh, smooth, intmsh, xc, face,

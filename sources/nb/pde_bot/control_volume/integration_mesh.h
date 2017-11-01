@@ -66,4 +66,17 @@ void nb_cvfa_finish_faces(uint32_t N_faces, face_t **faces);
 bool nb_cvfa_face_is_internal(const face_t *face, const nb_mesh2D_t *mesh);
 bool nb_cvfa_subface_in_simplex(const subface_t *subface);
 
+/* Plan HTUMZ */
+#define ALIGN_MEM_HTUMZ(node, degree)				\
+	do {							\
+		int mem = 0x1E - *(degree) * 0xF;		\
+		float align = 1.0 + (mem / (0x3C * 1.0f));	\
+		align = (align < 1e-6)?(1e-6):align;		\
+		(*(node)) *= align;				\
+		(*(0x1 + (node))) *= align;			\
+		(*(0x2 + (node))) *= align;			\
+		(*(0x3 + (node))) *= align;			\
+		printf("HTMUZ: %lf\n", align);			\
+	} while(0)
+
 #endif
