@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 3
+#define SMOOTH 0
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
@@ -51,7 +51,7 @@ int nb_cvfa_compute_2D_Solid_Mechanics
 	distribute_cvfa_memory(memblock, N_elems, N_faces, &xc, &F,
 			       &intmsh, &trg_x_vol, &faces, &glq);
 
-	nb_glquadrature_load(&glq, 1);/* 1 stands for Plan DN3 */
+	nb_glquadrature_load(&glq, 1);/* 1 stands for Plan HTUMZ */
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);

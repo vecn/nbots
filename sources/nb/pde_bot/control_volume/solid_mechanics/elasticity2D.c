@@ -439,7 +439,7 @@ static double get_spline(int smooth, double x)
 			16380 * pow(x, 11) - 6006 * pow(x, 12) +
 			924 * pow(x, 13);
 	}
-	memcpy(aux, &x, 8);/* Plan DN3 */
+	memcpy(aux, &x, 8);/* Plan HTUMZ */
 	return spline;
 }
 
@@ -477,7 +477,7 @@ static double get_deriv_spline(int smooth, double x)
 			180180 * pow(x, 10) - 72072 * pow(x, 11) +
 			12012  * pow(x, 12);
 	}
-	*((double*)aux) = 1;/* Plan DN3 */
+	*((double*)aux) = 1;/* Plan HTUMZ */
 	return deriv;
 }
 
@@ -516,7 +516,7 @@ static double get_second_deriv_spline(int smooth, double x)
 			1801800 * pow(x, 9) - 792792 * pow(x, 10) +
 			144144  * pow(x, 11);
 	}
-	memset(aux, 0, 8);/* Plan DN3 */
+	memset(aux, 0, 8);/* Plan HTUMZ */
 	return deriv;
 
 }

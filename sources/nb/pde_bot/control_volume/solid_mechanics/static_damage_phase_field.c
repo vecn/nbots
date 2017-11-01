@@ -371,7 +371,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 			       &elem_damage, &intmsh, &trg_x_vol,
 			       &faces, &glq, &minimize_residual_memblock);
 
-	nb_glquadrature_load(&glq, 1);/* 1 stands for plan DN3 */
+	nb_glquadrature_load(&glq, 1);/* 1 stands for plan HTUMZ */
 
   	nb_cvfa_set_calculation_points(mesh, xc);
 	nb_cvfa_init_integration_mesh(intmsh);
