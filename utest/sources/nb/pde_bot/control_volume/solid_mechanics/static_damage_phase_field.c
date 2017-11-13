@@ -39,6 +39,10 @@ static void test_mode_I(void);
 static void test_mode_I_perfored_strip(void);
 static void test_mode_II(void);
 static void test_mode_II_asym_notched_3point_bending(void);
+static void test_mode_II_notched_plate(void);
+static void test_mode_II_shear_loading(void);
+static void test_crack_branching(void);
+static void test_brittle_plate(void);
 static void test_count_steps_in_results(void);
 static void test_draw_results(void);
 
@@ -50,6 +54,14 @@ static void check_mode_II(const void *mesh,
 			  const results_t *results);
 static void check_mode_II_asym_notched_3point_bending(const void *mesh,
 						      const results_t *results);
+static void check_mode_II_notched_plate(const void *mesh,
+					const results_t *results);
+static void check_mode_II_shear_loading(const void *mesh,
+					const results_t *results);
+static void check_crack_branching(const void *mesh,
+				  const results_t *results);
+static void check_brittle_plate(const void *mesh,
+				const results_t *results);
 static void run_test(const char *problem_data, uint32_t N_vtx,
 		     nb_mesh2D_type mesh_type,
 		     void (*check_results)(const void*,
@@ -83,16 +95,21 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	//CU_add_test(suite, "Mode I Phase field", test_mode_I);
+	/*
+	CU_add_test(suite, "Mode I Phase field", test_mode_I);
 	CU_add_test(suite, "Mode I Perfored Strip under tension",
 		    test_mode_I_perfored_strip);
-	/*CU_add_test(suite, "Mode II Phase field", test_mode_II);
+	CU_add_test(suite, "Mode II Phase field", test_mode_II);
 	CU_add_test(suite, "Mode II Asym notched 3 point bending",
 		    test_mode_II_asym_notched_3point_bending);
 	CU_add_test(suite, "Count steps in results",
-		    test_count_steps_in_results);
-	CU_add_test(suite, "Drawing results", test_draw_results);
+		    test_count_steps_in_results);		    
+	CU_add_test(suite, "Mode II notched plate", test_mode_II_notched_plate);
+	CU_add_test(suite, "Mode II shear loading", test_mode_II_shear_loading);
 	*/
+	CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
+	//CU_add_test(suite, "Brittle plate", test_brittle_plate);
+	//CU_add_test(suite, "Drawing results", test_draw_results);	
 }
 
 static int suite_init(void)
@@ -153,6 +170,54 @@ static void check_mode_II_asym_notched_3point_bending(const void *mesh,
 	CU_ASSERT(true);/* TEMPORAL */
 }
 
+static void test_mode_II_notched_plate(void)
+{
+	run_test("%s/Mode_II_notched_plate.txt", 10000, NB_POLY,
+		 check_mode_II_notched_plate);
+}
+
+static void check_mode_II_notched_plate(const void *mesh,
+					const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_mode_II_shear_loading(void)
+{
+	run_test("%s/Mode_II_shear_loading.txt", 12000, NB_POLY,
+		 check_mode_II_shear_loading);
+}
+
+static void check_mode_II_shear_loading(const void *mesh,
+					const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_crack_branching(void)
+{
+	run_test("%s/Dynamic_crack_branching.txt", 14000, NB_POLY,
+		 check_crack_branching);
+}
+
+static void check_crack_branching(const void *mesh,
+				  const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_brittle_plate(void)
+{
+	run_test("%s/Brittle_plate.txt", 10000, NB_POLY,
+		 check_brittle_plate);
+
+}
+
+static void check_brittle_plate(const void *mesh,
+				const results_t *results)
+{
+	CU_ASSERT(true);/* TEMPORAL */
+}
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
@@ -338,6 +403,7 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 	sprintf(input, "%s/mesh.nbt", OUTPUT_DIR);
 	nb_mesh2D_save_nbt(mesh, input);
 
+	sprintf(input, problem_data, INPUTS_DIR);
 	int status_cvfa =
 		nb_cvfa_compute_2D_damage_phase_field(mesh, material,
 						      bcond,
@@ -348,7 +414,8 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 						      results->disp,
 						      results->strain,
 						      results->damage,
-						      results->boundary_mask);
+						      results->boundary_mask,
+						      input);
 
 	if (0 != status_cvfa) {
 		show_cvfa_error_msg(status_cvfa);

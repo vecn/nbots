@@ -1,28 +1,23 @@
 #################################################
 # Victor Eduardo Cardoso Nungaray		#
-# Three point bending test setup                #
 # Unit: 1mm                                     #
 #################################################
 
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 12						#
+ 8						#
 # Vertices coordinates                          #
-  -5.0   0.0					#
-   0.0   0.0      # First Dirichlet Cnd         #
- 222.5   0.0					#
- 222.5  50.0					#
- 225.0  50.0                                    #
- 227.5  50.0					#
- 227.5   0.0					#
- 450.0   0.0	  # Second Dirichlet Cnd	#
- 455.0   0.0	 				#
- 455.0 100.0					#
- 225.0 100.0	  # Displacement pushing        #
-  -5.0 100.0					#
+   0.0    0.0
+   1.0    0.0
+   1.0    1.0
+   0.0    1.0
+   0.0    0.503
+   0.5    0.503
+   0.5    0.497
+   0.0    0.497
 # Number of segments				#
- 12						#
+ 8						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
@@ -31,40 +26,35 @@
  4 5                                            #
  5 6						#
  6 7						#
- 7 8						#
- 8 9						#
- 9 10                                           #
- 10 11                                          #
- 11 0                                           #
+ 7 0						#
 # Number of holes				#
  0						#
 #-----------------------------------------------#
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 3						#
- 1  1 1 0.0 0.0                                 #
- 7  0 1 0.0                                     #
- 10 0 1 -1                                      #
+ 0						#
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
- 0						#
+ 2						#
+ 0 1 1 0.0 0.0
+ 2 1 0 0.01
 # Num of load conditions over lines:            #
  0						#
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0.2						#
+ 0.3						#
 # Elasticity module                             #
 # Pa = kg/(m s^2)                               #
-# 20 GPa = 2e7 kg/(mm s^2)                      #
- 2e7	                                        #
+# 210 GPa = 2.1e8 kg/(mm s^2)                   #
+ 2.1e8	                                        #
 # Energy release rate (N/mm)                    #
- 0.5						#
+ 10						#
 # Length scale                                  #
- 0.6						#
+ 0.008						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#

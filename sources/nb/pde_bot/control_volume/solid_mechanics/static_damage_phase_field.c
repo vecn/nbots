@@ -20,13 +20,14 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 0
+#define SMOOTH 3
 
 #define MIDPOINT_VOL_INTEGRALS false
 #define RESIDUAL_TOL 1e-6
 #define ENABLE_REAL_CRACK true
 #define AUTOMATIC_STEP_SIZE false
 #define FIXED_STEPS 100
+#define MAX_ITER 500
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -62,7 +63,7 @@ typedef struct {
 
 real_crack_t rc;
 static double get_truth_factor(const double x[2], real_crack_t *rc);
-static void read_real_crack(real_crack_t *rc);
+static void read_real_crack(real_crack_t *rc, const char* problem_data);
 static void finish_real_crack(real_crack_t *rc);
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
@@ -354,7 +355,8 @@ int nb_cvfa_compute_2D_damage_phase_field
 			 double *displacement, /* Output */
 			 double *strain,       /* Output */
 			 double *damage,       /* Output */
-			 char *boundary_mask   /* Output */)
+			 char *boundary_mask,   /* Output */
+			 const char *problem_data)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
@@ -401,7 +403,7 @@ int nb_cvfa_compute_2D_damage_phase_field
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));
-	read_real_crack(&rc);
+	read_real_crack(&rc, problem_data);
 
 	int status;
 	if (AUTOMATIC_STEP_SIZE) {
@@ -746,15 +748,22 @@ static double get_truth_factor(const double x[2], real_crack_t *rc)
 	return factor;
 }
 
-static void read_real_crack(real_crack_t *rc)
+static void change_file_extension(const char *filename_src,
+				  char *filename, const char *ext)
 {
-	char name[100];
-	sprintf(name, "%s/%s",
-		"../utest/sources/nb/pde_bot/damage_inputs",
-		//"Mode_I_perfored_strip_under_tension.crk");
-		// "Mode_I_3point_bending.crk");
-		"Mode_II_4point_bending.crk");
-	//"Mode_II_Asym_notched_3point_bending.crk");
+	int i = 0;
+	while (filename_src[i] != '\0')
+		i++;
+
+	memcpy(filename, filename_src, i + 1);
+	if (i > 3)
+		memcpy(filename + i - 3, ext, 3);
+}
+
+static void read_real_crack(real_crack_t *rc, const char* problem_data)
+{
+	char name[255];
+	change_file_extension(problem_data, name, "crk");
 
 	nb_cfreader_t *cf = nb_cfreader_create();
 	nb_cfreader_add_line_comment_token(cf, "#");
@@ -901,7 +910,7 @@ static int finite_increments_with_fixed_step
 	get_reaction_log_name(dir_to_save, reaction_log);
 	save_reaction_log(reaction_log, 0, 0, 0);
 	uint32_t iter = 0;
-	uint32_t max_iter = 500;
+	uint32_t max_iter = MAX_ITER;
 	double step_size = 1.0 / steps;
 	for (uint32_t i = 0; i < steps; i++) {
 		double bc_factor = (i + 1) * step_size;

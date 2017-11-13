@@ -125,7 +125,7 @@ static void check_beam_cantilever(const void *mesh,
 
 static void test_plate_with_hole(void)
 {
-	run_test("%s/plate_with_hole.txt", 4000, NB_QUAD,
+	run_test("%s/plate_with_hole.txt", 4000, NB_POLY,
 		 check_plate_with_hole,
 		 modify_bcond_pwh);
 }

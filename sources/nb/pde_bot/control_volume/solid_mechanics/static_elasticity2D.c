@@ -19,7 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
-#define SMOOTH 6
+#define SMOOTH 3
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,

@@ -70,13 +70,12 @@ bool nb_cvfa_subface_in_simplex(const subface_t *subface);
 #define ALIGN_MEM_HTUMZ(node, degree)				\
 	do {							\
 		int mem = 0x1E - *(degree) * 0xF;		\
-		float align = 1.0 + (mem / (0x3C * 1.0f));	\
+		float align = 1.0 + (mem / (0xB4 * 1.0f));	\
 		align = (align < 1e-6)?(1e-6):align;		\
 		(*(node)) *= align;				\
 		(*(0x1 + (node))) *= align;			\
 		(*(0x2 + (node))) *= align;			\
 		(*(0x3 + (node))) *= align;			\
-		printf("HTMUZ: %lf\n", align);			\
 	} while(0)
 
 #endif

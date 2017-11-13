@@ -1,6 +1,5 @@
 #################################################
 # Victor Eduardo Cardoso Nungaray		#
-# Three point bending test setup                #
 # Unit: 1mm                                     #
 #################################################
 
@@ -9,68 +8,77 @@
 # Number of vertices				#
  12						#
 # Vertices coordinates                          #
-  -5.0   0.0					#
-   0.0   0.0      # First Dirichlet Cnd         #
- 222.5   0.0					#
- 222.5  50.0					#
- 225.0  50.0                                    #
- 227.5  50.0					#
- 227.5   0.0					#
- 450.0   0.0	  # Second Dirichlet Cnd	#
- 455.0   0.0	 				#
- 455.0 100.0					#
- 225.0 100.0	  # Displacement pushing        #
-  -5.0 100.0					#
+     0.0    0.0
+   100.0    0.0
+   100.0  100.0
+     0.0  100.0
+    50.0   49.0
+    50.707 49.293
+    51.0   50.0
+    50.707 50.707
+    50.0   51.0
+    49.293 50.707
+    49.0   50.0
+    49.293 49.293 
 # Number of segments				#
  12						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
  2 3						#
- 3 4						#
+ 3 0						#
  4 5                                            #
  5 6						#
  6 7						#
  7 8						#
- 8 9						#
- 9 10                                           #
- 10 11                                          #
- 11 0                                           #
+ 8 9
+ 9 10
+ 10 11
+ 11 4
 # Number of holes				#
  0						#
 #-----------------------------------------------#
 
 #-------------- Boundary conditions ------------#
 # Num displacement conditions over vertices:    #
- 3						#
- 1  1 1 0.0 0.0                                 #
- 7  0 1 0.0                                     #
- 10 0 1 -1                                      #
+ 0						#
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
- 0						#
+ 12						#
+ 0 0 1 0.0
+ 1 1 0 0.0
+ 2 0 1 0.0
+ 3 1 0 0.0
+ 4 1 1 0.383 -0.924
+ 5 1 1 0.924 -0.383
+ 6 1 1 0.924 0.383
+ 7 1 1 0.383 0.924
+ 8 1 1 -0.383 0.924
+ 9 1 1 -0.924 0.383
+ 10 1 1 -0.924 -0.383
+ 11 1 1 -0.383 -0.924
 # Num of load conditions over lines:            #
  0						#
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0.2						#
+ 0.1						#
 # Elasticity module                             #
 # Pa = kg/(m s^2)                               #
-# 20 GPa = 2e7 kg/(mm s^2)                      #
- 2e7	                                        #
+# 32 GPa = 3.2e7 kg/(mm s^2)                   #
+ 2.1e8	                                        #
 # Energy release rate (N/mm)                    #
- 0.5						#
+ 2000						#
 # Length scale                                  #
- 0.6						#
+ 0.8						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
 #--- Does the analysis uses plane stress?-------#
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
- 1						#
+ 0						#
 # Analysis params (Thickness axis of rev)       #
  1	                                        #
 #-----------------------------------------------#
