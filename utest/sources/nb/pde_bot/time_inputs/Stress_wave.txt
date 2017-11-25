@@ -29,7 +29,7 @@
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
- 2 3 0 1 1						#
+ 1						#
  1 1 1  0.0 0.0
 # Num of load conditions over lines:            #
  0
@@ -42,11 +42,12 @@
 # Pa = kg/(m s^2)                               #
 # 10 MPa
  10e6	                                        #
-# Energy release rate (N/mm)   (not used)       #
- 1						#
-# Length scale (Not used)                       #
- 1 						#
-#-----------------------------------------------#
+# Fracture energy (J/m^2 -> kg/s^2)    (not used)          #
+ 113                                            #
+# Compression limit stress  (not used)                      #
+ 2.4e4                                          #
+# Traction limit stress  (not used)                   #
+ 2.4e3                                          #
 
 #---------------- Analysis ---------------------#
 #--- Does the analysis uses plane stress?-------#
