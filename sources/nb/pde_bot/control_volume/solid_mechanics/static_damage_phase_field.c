@@ -949,6 +949,54 @@ static uint32_t get_memsize_for_minimize_residual(uint32_t N_elems)
 	return memsize;
 }
 
+static double get_slope_linear_regression(double *data, int N, double *error)
+{
+	double Sx = 0;
+	double Sy = 0;
+	double Sxy = 0;
+	double Sx2 = 0;
+	int i;
+	for (i = 0; i < N; i++) {
+		double x = data[i * 2];
+		double y = data[i*2+1];
+		Sx += x;
+		Sy += y;
+		Sxy += y * x;
+		Sx2 += x * x;
+	}
+	/* f(x) = ax + b */
+	double den = N * Sx2 - Sx * Sx;
+	double a = (N * Sxy - Sx * Sy) / den;
+	double b = (Sy * Sx2 - Sx * Sxy) / den;
+
+	*error = 0;	
+	for (i = 0; i < N; i++) {
+		double x = data[i * 2];
+		double y = data[i*2+1];
+		double f = a * x + b;
+		(*error) += (f - y) * (f - y);
+	}
+	*error = sqrt(*error);
+	return a;
+}
+
+static double get_convergence_slope(double *rnorm_historial, double rnorm,
+				    int iter, double *error)
+{
+	int  N = 50;
+	if (iter < N) {
+		rnorm_historial[iter * 2 ] = iter;
+		rnorm_historial[iter*2+1] = rnorm;
+		*error = 0.0;
+		return -1;
+	} else {
+		int i = iter % N;
+		rnorm_historial[i * 2] = iter;
+		rnorm_historial[i*2+1] = rnorm;
+		return get_slope_linear_regression(rnorm_historial, N, error);
+	}
+}
+
 static int minimize_residual(const nb_mesh2D_t *const mesh,
 			     const nb_material_t *const material,
 			     const nb_bcond_t *const bcond,
@@ -1027,8 +1075,8 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 				   displacement, glq, eval_dmg);*/
 	int iter = 0;
 	double rnorm = 1;
+	double rnorm_historial[100];
 	while (1) {
-		iter ++;
 		status = solve_coupled_system(mesh, material,
 					      numeric_bcond,
 					      enable_self_weight, gravity,
@@ -1044,11 +1092,20 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 					      dmg_Lr, dmg_Ur,
 					      &rnorm);
 
-		printf("\r    > DAMAGE ITER: %i  RESI: %e", iter, rnorm);/* TEMP */
+		double slope_error = 0;
+		double slope = get_convergence_slope(rnorm_historial, rnorm,
+						     iter, &slope_error);
+		iter ++;
 
-		if (status != 0) {
+		printf("\r    > DAMAGE ITER: %i  RESI: %e, "	\
+		       "CONVERGENCE SLOPE %e  (ERR %e) ",
+		       iter, rnorm, slope, slope_error);/* TEMP */
+
+		if (status != 0)
 			goto EXIT;
-		}
+
+		if (slope > - RESIDUAL_TOL && slope_error < 1)
+			goto GET_REACTION;
 
 		if (rnorm < RESIDUAL_TOL)
 			goto GET_REACTION;
@@ -1069,8 +1126,8 @@ EXIT:
 	if (SUCCESS_RESIDUAL_MIN != status)
 		memcpy(displacement, aux_disp, N * sizeof(*aux_disp));
 
-	printf("\r>>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i",
-	       status, iter, rnorm, bc_factor, max_iter);/* TEMPORAL */
+	printf("\r>>>>> [%i] DAMAGE ITER: %i (%e) ... %e/%i %*s\n",
+	       status, iter, rnorm, bc_factor, max_iter, 50, " ");/* TEMPORAL */
 
 	nb_bcond_finish(numeric_bcond);
 	nb_sparse_destroy(Kr);

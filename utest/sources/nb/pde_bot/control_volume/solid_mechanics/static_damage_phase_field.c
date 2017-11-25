@@ -196,7 +196,7 @@ static void check_mode_II_shear_loading(const void *mesh,
 
 static void test_crack_branching(void)
 {
-	run_test("%s/Dynamic_crack_branching.txt", 14000, NB_POLY,
+	run_test("%s/Dynamic_crack_branching.txt", 11000, NB_POLY,
 		 check_crack_branching);
 }
 

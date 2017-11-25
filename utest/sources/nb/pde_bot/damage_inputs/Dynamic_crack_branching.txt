@@ -7,18 +7,21 @@
 
 #-------------- Geometry definition ------------#
 # Number of vertices				#
- 8						#
+ 11						#
 # Vertices coordinates                          #
      0.0    0.0
    100.0    0.0
+   100.0   10.0
+   100.0   30.0
    100.0   40.0
      0.0   40.0
      0.0   20.3
     50.0   20.3
+    50.5   20.0
     50.0   19.7
      0.0   19.7
 # Number of segments				#
- 8						#
+ 11						#
 # Segments (Vertices pairs IDs)			#
  0 1    					#
  1 2						#
@@ -27,7 +30,10 @@
  4 5                                            #
  5 6						#
  6 7						#
- 7 0						#
+ 7 8						#
+ 8 9
+ 9 10
+ 10 0
 # Number of holes				#
  0						#
 #-----------------------------------------------#
@@ -38,23 +44,23 @@
 # Num of load conditions over vertices:		#
  0                                              #
 # Num of displacement conditions over lines:    #
- 3						#
- 1 1 0 0.0
- 3 0 1 1.0
- 7 0 1 -1.0
+ 1						#
+ 2 1 1  0.0 0.0
 # Num of load conditions over lines:            #
- 0						#
+ 2
+ 0 0 1 -3e4
+ 4 0 1 3e4
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0.2						#
+ 0.3						#
 # Elasticity module                             #
 # Pa = kg/(m s^2)                               #
-# 32 GPa = 3.2e7 kg/(mm s^2)                   #
- 3.2e7	                                        #
+# 32 GPa = 3.2e7 kg/(mm s^2)                    #
+ 1.9e8	                                        #
 # Energy release rate (N/mm)                    #
- 50						#
+ 3000						#
 # Length scale                                  #
  0.8						#
 #-----------------------------------------------#
@@ -62,7 +68,7 @@
 #---------------- Analysis ---------------------#
 #--- Does the analysis uses plane stress?-------#
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
- 0						#
+ 1						#
 # Analysis params (Thickness axis of rev)       #
  1	                                        #
 #-----------------------------------------------#
