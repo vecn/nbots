@@ -30,18 +30,18 @@
  0                                              #
 # Num of displacement conditions over lines:    #
  1						#
- 1 1 1  0.0 0.0
+ 1 1 1 0.0 0.0 
 # Num of load conditions over lines:            #
  0
 #-----------------------------------------------#
 
 #-------------- Material properties ------------#
 # Poisson module				#
- 0.3						#
+ 0.2						#
 # Elasticity module                             #
 # Pa = kg/(m s^2)                               #
-# 10 MPa
- 10e6	                                        #
+# 200 GPa
+ 2e5	                                        #
 # Fracture energy (J/m^2 -> kg/s^2)    (not used)          #
  113                                            #
 # Compression limit stress  (not used)                      #

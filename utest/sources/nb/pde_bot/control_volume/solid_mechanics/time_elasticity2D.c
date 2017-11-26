@@ -20,7 +20,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 #define N_STEPS 10   // TEMPORAL
-#define COURANT 0.25f // TEMPORAL
+#define COURANT 0.1f // TEMPORAL
 #define DENSITY 7854.0f // TEMPORAL
 
 typedef struct {
@@ -36,6 +36,9 @@ typedef struct {
 static int suite_init(void);
 static int suite_clean(void);
 
+static void get_nodal_stress(nb_mesh2D_t *mesh, char *bmask,
+			     double *face_stress,
+			     double *node_stress);
 static void test_stress_wave(void);
 static void check_stress_wave(const void *mesh,
 			      const results_t *results);
@@ -102,35 +105,69 @@ static void check_stress_wave(const void *mesh,
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	int k;
 	for (k = 0; k < N_STEPS; k++) {
-		uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
-		double *disp = nb_allocate_mem(N_elems * sizeof(*disp));
+		double *val = nb_allocate_mem(N_nodes * sizeof(*val));
+		double *sk_nodes = nb_allocate_mem(3*N_nodes*sizeof(*sk_nodes));
+		
+		double *sk = results->stress + k * N_faces * 3;
+		char * mask = results->boundary_mask + k * N_faces;
+		get_nodal_stress(mesh, mask, sk, sk_nodes);
 
-		uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
-		double *disp_nodes = nb_allocate_mem(N_nodes * sizeof(*disp_nodes));
+		for (uint32_t i = 0; i < N_nodes; i++) {
+			double v = sk_nodes[i*3+1];
+			val[i] = 2/(1+exp(-v))-1;
+		}
 
-		double *uk = results->disp + N_STEPS * N_elems * 2;
-		nb_mesh2D_distort_with_field(mesh, NB_ELEMENT, uk, 0.5);
+		char fname[200];
+		sprintf(fname, "./time_aux/ux_%i.eps", k+1);
+		nb_mesh2D_export_draw(mesh, fname, 300, 800,
+				      NB_NULL, NB_NULL,
+				      NULL, 0, 1, true);/* TEMPORAL */
 
-		for (uint32_t i = 0; i < N_elems; i++)
-			disp[i] = uk[i*2];
-
-		nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
-		nb_mesh2D_export_draw(mesh, "./time_aux/CVFA_dx.png", 1000, 800,
-				      NB_NODE, NB_FIELD,
-				      disp_nodes, true);/* TEMPORAL */
-
-		for (uint32_t i = 0; i < N_elems; i++)
-			disp[i] = uk[i*2+1];
-
-		nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
-		nb_mesh2D_export_draw(mesh, "./time_aux/CVFA_dy.png", 1000, 800,
-				      NB_NODE, NB_FIELD,
-				      disp_nodes, true);/* TEMPORAL */
-		nb_free_mem(disp);
-		nb_free_mem(disp_nodes);
+		sprintf(fname, "./time_aux/xlset_%i.eps", k+1);
+		nb_mesh2D_export_level_sets(mesh, fname, 1000, 800,
+					    val, 0, true);/* TEMPORAL */
+		nb_free_mem(val);
+		nb_free_mem(sk_nodes);
+		printf("\rDRAWING STEP: %i/%i        ", k+1, N_STEPS);// TEMPORAL
 	}
+}
+
+static void get_nodal_stress(nb_mesh2D_t *mesh, char *bmask,
+			     double *face_stress,
+			     double *node_stress)
+{
+	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
+	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
+	uint32_t memsize = N_nodes * sizeof(uint16_t);
+	char *memblock = nb_soft_allocate_mem(memsize);
+	uint16_t *counter = nb_soft_allocate_mem(memsize);
+
+	memset(node_stress, 0, 3 * N_nodes * sizeof(*node_stress));
+	memset(counter, 0, N_nodes * sizeof(*counter));
+	for (uint32_t i = 0; i < N_faces; i++) {
+		uint32_t v1 = nb_mesh2D_edge_get_1n(mesh, i);
+		uint32_t v2 = nb_mesh2D_edge_get_2n(mesh, i);
+		node_stress[v1 * 3] += face_stress[i * 3];
+		node_stress[v1*3+1] += face_stress[i*3+1];
+		node_stress[v1*3+2] += face_stress[i*3+2];
+		counter[v1] += 1;
+		
+		node_stress[v2 * 3] += face_stress[i * 3];
+		node_stress[v2*3+1] += face_stress[i*3+1];
+		node_stress[v2*3+2] += face_stress[i*3+2];
+		counter[v2] += 1;
+	}
+	for (uint32_t i = 0; i < N_nodes; i++) {
+		node_stress[i * 3] /= counter[i];
+		node_stress[i*3+1] /= counter[i];
+		node_stress[i*3+2] /= counter[i];
+	}
+	nb_soft_free_mem(memsize, memblock);
 }
 
 static void run_test(const char *problem_data, uint32_t N_vtx,
@@ -194,7 +231,7 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 
 	float delta_t = 0;
 
-	int status_cvfa = 
+	int status_cvfa = 0;
 		nb_cvfa_compute_2D_time_Solid_Mechanics(N_STEPS, COURANT,
 							mesh, material,
 							DENSITY, bcond,
@@ -205,7 +242,7 @@ static int simulate(const char *problem_data, nb_mesh2D_t *mesh,
 							results->strain,
 							&delta_t,
 							results->boundary_mask);
-	printf("Delta T: %f\n", delta_t); // TEMPORAL
+	printf("\rDelta T: %f              \n", delta_t); // TEMPORAL
 	int k;
 	for (k = 0; k < N_STEPS; k++) {
 		double *s1k = results->strain + k * N_faces * 3;
@@ -245,7 +282,7 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 	nb_mesh2D_load_from_tessellator2D(mesh, t2d);
 	nb_tessellator2D_finish(t2d);
 	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
-			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+			      NB_NULL, NB_NULL, NULL, 0, 0, true);/* TEMPORAL */
 	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
 				      1000, 800);              /* TEMPORAL */
 }

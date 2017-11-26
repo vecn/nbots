@@ -32,6 +32,7 @@
 typedef struct {
 	const nb_mesh2D_t *mesh;
 	const void *values;
+	float min, max;
 	nb_mesh2D_entity vals_entity;
 	nb_mesh2D_array_type vals_type;
 	bool draw_wires;
@@ -48,7 +49,7 @@ static void init_draw_data(draw_data *data,
 			   const nb_mesh2D_t *mesh,
 			   nb_mesh2D_entity vals_entity,
 			   nb_mesh2D_array_type vals_type,
-			   const void *values,
+			   const void *values, float min, float max,
 			   bool draw_wires);
 
 static void draw(nb_graphics_context_t *g, int width, int height,
@@ -61,12 +62,15 @@ static void fill(const nb_mesh2D_t *mesh,
 
 static void fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
 				      nb_graphics_context_t *g,
-				      const double *values);
+				      const double *values,
+				      float min, float max);
 static void normalize_values(double *normalized_values,
-			     const double *values, uint32_t N);
+			     const double *values,
+			     float min, float max, uint32_t N);
 static void fill_elems_field_on_elems(const nb_mesh2D_t *mesh,
 				      nb_graphics_context_t *g,
-				      const double *values);
+				      const double *values,
+				      float min, float max);
 static void fill_elems_classes(const nb_mesh2D_t *mesh,
 			       nb_graphics_context_t *g,
 			       const uint8_t *class);
@@ -81,7 +85,8 @@ static void draw_faces(const nb_mesh2D_t *mesh,
 
 static void draw_field_on_faces(const nb_mesh2D_t *mesh,
 				nb_graphics_context_t *g,
-				const double *values);
+				const double *values,
+				float min, float max);
 static void draw_classes_on_faces(const nb_mesh2D_t *mesh,
 				  nb_graphics_context_t *g,
 				  const uint8_t *class);
@@ -110,16 +115,16 @@ static void process_level_sets(const level_set_data *data,
 			       nb_graphics_context_t *g);
 
 void nb_mesh2D_export_draw(const nb_mesh2D_t *mesh,
-			      const char *filename,
-			      int width, int height,
-			      nb_mesh2D_entity vals_entity,
-			      nb_mesh2D_array_type vals_type,
-			      const void *values,
-			      bool draw_wires)
+			   const char *filename,
+			   int width, int height,
+			   nb_mesh2D_entity vals_entity,
+			   nb_mesh2D_array_type vals_type,
+			   const void *values, float min, float max,
+			   bool draw_wires)
 {
 	draw_data data;
 	init_draw_data(&data, mesh, vals_entity,
-		       vals_type, values, draw_wires);
+		       vals_type, values, min, max, draw_wires);
 
 	nb_graphics_export(filename, width, height, draw, &data);
 }
@@ -129,10 +134,13 @@ static void init_draw_data(draw_data *data,
 			   nb_mesh2D_entity vals_entity,
 			   nb_mesh2D_array_type vals_type,
 			   const void *values,
+			   float min, float max,
 			   bool draw_wires)
 {
 	data->mesh = mesh;
 	data->values = values;
+	data->min = min;
+	data->max = max;
 	data->vals_entity = vals_entity;
 	data->vals_type = vals_type;
 	data->draw_wires = draw_wires;
@@ -146,6 +154,12 @@ static void draw(nb_graphics_context_t *g, int width, int height,
 
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);
+
+	nb_graphics_disable_camera(g);
+	nb_graphics_set_source(g, NB_WHITE);
+	nb_graphics_set_rectangle(g, 0, 0, width, height);
+	nb_graphics_fill(g);
+	nb_graphics_enable_camera(g);
 
 	fill(mesh, g, data);
 
@@ -179,9 +193,11 @@ static void fill(const nb_mesh2D_t *mesh,
 	nb_mesh2D_array_type type = data->vals_type;
 
 	if (NB_NODE == enty && NB_FIELD == type)
-		fill_elems_field_on_nodes(mesh, g, data->values);
+		fill_elems_field_on_nodes(mesh, g, data->values,
+					  data->min, data->max);
 	else if (NB_ELEMENT == enty && NB_FIELD == type)
-		fill_elems_field_on_elems(mesh, g, data->values);
+		fill_elems_field_on_elems(mesh, g, data->values,
+					  data->min, data->max);
 	else if (NB_ELEMENT == enty && NB_CLASS == type)
 		fill_elems_classes(mesh, g, data->values);
 	else
@@ -190,13 +206,14 @@ static void fill(const nb_mesh2D_t *mesh,
 
 static void fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
 				      nb_graphics_context_t *g,
-				      const double *values)
+				      const double *values,
+				      float min, float max)
 {
 	uint32_t N = mesh->get_N_nodes(mesh->msh);
 	uint32_t memsize = N * sizeof(double);
 	double *normalized_values = nb_soft_allocate_mem(memsize);
 
-	normalize_values(normalized_values, values, N);
+	normalize_values(normalized_values, values, min, max, N);
 	
 	mesh->graphics.fill_elems_field_on_nodes(mesh->msh, g,
 						 normalized_values,
@@ -206,29 +223,34 @@ static void fill_elems_field_on_nodes(const nb_mesh2D_t *mesh,
 }
 
 static void normalize_values(double *normalized_values,
-			     const double *values, uint32_t N)
+			     const double *values,
+			     float min, float max, uint32_t N)
 {
-	uint32_t min_id;
-	uint32_t max_id;
-	nb_array_get_min_max_ids(values, N, sizeof(*values),
-				  nb_compare_double,
-				  &min_id, &max_id);
+	double range = max - min;
+	if (range <= 1e-12) {
+		uint32_t min_id;
+		uint32_t max_id;
+		nb_array_get_min_max_ids(values, N, sizeof(*values),
+					 nb_compare_double,
+					 &min_id, &max_id);
 
-	double min = values[min_id];
-	double range = values[max_id] - min;
+		min = values[min_id];
+		range = values[max_id] - min;
+	}
 	for (uint32_t i = 0; i < N; i++)
 		normalized_values[i] = (values[i] - min) / range;
 }
 
 static void fill_elems_field_on_elems(const nb_mesh2D_t *mesh,
 				      nb_graphics_context_t *g,
-				      const double *values)
+				      const double *values,
+				      float min, float max)
 {
 	uint32_t N = mesh->get_N_elems(mesh->msh);
 	uint32_t memsize = N * sizeof(double);
 	double *normalized_values = nb_soft_allocate_mem(memsize);
 
-	normalize_values(normalized_values, values, N);
+	normalize_values(normalized_values, values, min, max, N);
 	
 	mesh->graphics.fill_elems_field_on_elems(mesh->msh, g,
 						 normalized_values,
@@ -287,7 +309,8 @@ static void draw_faces(const nb_mesh2D_t *mesh,
 	nb_mesh2D_entity enty = data->vals_entity;
 	nb_mesh2D_array_type type = data->vals_type;
 	if (NB_FACE == enty && NB_FIELD == type)
-		draw_field_on_faces(mesh, g, data->values);
+		draw_field_on_faces(mesh, g, data->values,
+				    data->min, data->max);
 	else if (NB_FACE == enty && NB_CLASS == type)
 		draw_classes_on_faces(mesh, g, data->values);
 	else if (data->draw_wires)
@@ -296,13 +319,14 @@ static void draw_faces(const nb_mesh2D_t *mesh,
 
 static void draw_field_on_faces(const nb_mesh2D_t *mesh,
 				nb_graphics_context_t *g,
-				const double *values)
+				const double *values,
+				float min, float max)
 {
 	uint32_t N = mesh->get_N_edges(mesh->msh);
 	uint32_t memsize = N * sizeof(double);
 	double *normalized_values = nb_soft_allocate_mem(memsize);
 
-	normalize_values(normalized_values, values, N);
+	normalize_values(normalized_values, values, min, max, N);
 	mesh->graphics.draw_field_on_faces(mesh->msh, g,
 					   normalized_values,
 					   PALETTE_FIELD);
@@ -351,8 +375,10 @@ static void add_palette(const nb_mesh2D_t *mesh,
 {
 	nb_palette_t *palette =
 		nb_palette_create_preset(PALETTE_FIELD);
-	double min, max;
-	get_min_max(mesh, data, &min, &max);
+	double min = data->min;
+	double max = data->max;
+	if (max - min <= 1e-12)
+		get_min_max(mesh, data, &min, &max);
 	
 	float label_width = 55;
 	nb_palette_draw(g, palette,
@@ -425,6 +451,12 @@ static void draw_level_sets(nb_graphics_context_t *g, int width, int height,
 
 	if (!nb_graphics_is_camera_enabled(g))
 		set_camera(g, width, height, mesh);
+
+	nb_graphics_disable_camera(g);
+	nb_graphics_set_source(g, NB_WHITE);
+	nb_graphics_set_rectangle(g, 0, 0, width, height);
+	nb_graphics_fill(g);
+	nb_graphics_enable_camera(g);
 
 	process_level_sets(data, g);
 

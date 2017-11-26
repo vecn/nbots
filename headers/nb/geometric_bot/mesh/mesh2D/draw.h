@@ -12,7 +12,7 @@ void nb_mesh2D_export_draw(const nb_mesh2D_t *mesh,
 			   int width, int height,
 			   nb_mesh2D_entity vals_entity,
 			   nb_mesh2D_array_type vals_type,
-			   const void *values,
+			   const void *values, float min, float max,
 			   bool draw_wires);
 void nb_mesh2D_export_level_sets(const nb_mesh2D_t *mesh,
 				 const char *filename, int width, int height,

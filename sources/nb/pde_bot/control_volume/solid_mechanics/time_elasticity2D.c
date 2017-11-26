@@ -21,6 +21,11 @@
 
 #define SMOOTH 3
 
+static void add_acceleration(const nb_mesh2D_t *const mesh,
+			     const nb_material_t *const material,
+			     float density, float dt,
+			     nb_sparse_t *K,
+			     double *F, double *u, int k);
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces);
 static void distribute_cvfa_memory(char *memblock, uint32_t N_elems,
 				   uint32_t N_faces, double **xc, double **F,
@@ -69,23 +74,43 @@ int nb_cvfa_compute_2D_time_Solid_Mechanics
 
 	nb_cvfa_load_faces(mesh, intmsh, trg_x_vol, faces);
 
-	
-	nb_cvfa_assemble_global_forces(F, mesh, material, enable_self_weight,
+	nb_cvfa_assemble_global_forces(F, mesh, material,
+				       enable_self_weight,
 				       gravity);
-
-	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc, faces,
+		
+	nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc,
+					  faces,
 					  material, analysis2D, params2D,
 					  &glq, NULL);
 
 	nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 				K, F, bcond, 1.0);
-
 	int k;
 	float dx = sqrt(nb_mesh2D_elem_get_area(mesh, 0));// ENHANCE
-	double E = nb_material_get_poisson_module(material);
+	double E = nb_material_get_elasticity_module(material);
 	float wspeed = sqrt(E/density);
 	*dt = courant * wspeed * dx;
 	for (k = 0; k < N_steps; k++) {
+		nb_cvfa_assemble_global_forces(F, mesh, material,
+					       enable_self_weight,
+					       gravity);
+		
+		nb_cvfa_assemble_global_stiffness(K, mesh, SMOOTH, intmsh, xc,
+						  faces,
+						  material, analysis2D, params2D,
+						  &glq, NULL);
+
+		nb_bcond_t *kbcond = nb_bcond_clone(bcond);
+		if (k < 10) {
+			bool mask[2] = {1,0};
+			double val[2] = {*dt*(k+1)/2,0};
+			nb_bcond_push(kbcond, NB_DIRICHLET, NB_BC_ON_SEGMENT,
+				      3, mask, val);
+		}
+		//add_acceleration(mesh, material, density, *dt,
+		//		 K, F, displacement, k);
+		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
+					K, F, kbcond, 1.0);
 		double *uk = displacement + k * N_elems * 2;
 		double *sk = strain + k * N_faces * 3;
 		int status =
@@ -94,10 +119,10 @@ int nb_cvfa_compute_2D_time_Solid_Mechanics
 		if (status != 0)
 			goto CLEAN_AND_EXIT;
 		nb_cvfa_compute_strain(sk, boundary_mask, faces,
-				       mesh, SMOOTH, intmsh, xc, bcond,
+				       mesh, SMOOTH, intmsh, xc, kbcond,
 				       uk, &glq);
+		nb_bcond_destroy(kbcond);
 		printf("\rTIME STEP: %i/%i        ", k+1, N_steps);// TEMPORAL
-
 	}
 
 	int status = 0;
@@ -108,6 +133,39 @@ CLEAN_AND_EXIT:
 	nb_mesh2D_finish(intmsh);
 	nb_soft_free_mem(memsize, memblock);
 	return status;
+}
+
+static void add_acceleration(const nb_mesh2D_t *const mesh,
+			     const nb_material_t *const material,
+			     float density, float dt,
+			     nb_sparse_t *K,
+			     double *F, double *u, int k)
+{
+	if (k < 2)
+		return;
+
+	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
+
+	double *uk = u + (k-1) * N_elems * 2;
+	double *ukp = u + (k-2) * N_elems * 2;
+
+	double dt2 = dt*dt;
+
+	int i;
+	for (i = 0; i < N_elems; i++) {		
+		double ux = uk[i * 2];
+		double uxp = ukp[i * 2];
+		double uy = uk[i*2+1];
+		double uyp = ukp[i*2+1];
+		double lhsx = (2*ux - uxp)/dt2;
+		double lhsy = (2*uy - uyp)/dt2;
+		double area = nb_mesh2D_elem_get_area(mesh, i);
+		double mass = density * area;
+		F[i * 2] += lhsx * mass;
+		F[i*2+1] += lhsy * mass;
+		nb_sparse_add(K, i*2, i*2, -mass/dt2);
+		nb_sparse_add(K, i*2+1, i*2+1, -mass/dt2);
+	}
 }
 
 static uint32_t get_cvfa_memsize(uint32_t N_elems, uint32_t N_faces)

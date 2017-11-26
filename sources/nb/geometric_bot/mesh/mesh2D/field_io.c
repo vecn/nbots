@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "nb/memory_bot.h"
 #include "nb/io_bot.h"
@@ -36,7 +37,8 @@ static int read_damage_field(nb_cfreader_t *cfr,
 			     double *damage);
 static int read_scalar(nb_cfreader_t *cfr, uint32_t id, double *scalar);
 static void draw_damage(const char *dir_output, const nb_mesh2D_t *mesh,
-			const double *damage, int step);
+			const double *disp, const double *damage,
+			int step);
 static void draw_nodal_damage_field(nb_graphics_context_t *g,
 				    int width, int height,
 				    const void *draw_data);
@@ -212,7 +214,7 @@ static int read_and_draw_all_steps(nb_cfreader_t *cfr,
 			goto EXIT;
 		}
 
-		draw_damage(dir_output, mesh, damage, step);
+		draw_damage(dir_output, mesh, disp, damage, step);
 		step += 1;
 		if (NULL != show_progress)
 			show_progress(time);
@@ -436,40 +438,123 @@ EXIT:
 }
 
 static void draw_damage(const char *dir_output, const nb_mesh2D_t *mesh,
-			const double *damage, int step)
+			const double *disp, const double *damage, int step)
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
+	double *node_disp = nb_allocate_mem(2 * N_nodes * sizeof(*node_disp));
 	double *node_damage = nb_allocate_mem(N_nodes * sizeof(*node_damage));
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, damage, node_damage);
+	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 2, disp, node_disp);
 	
 	char name[100];
 	sprintf(name, "%s/damage_field_%i.png", dir_output, step);
 
-	const void *data[2];
+	const void *data[4];
 	data[0] = mesh;
-	data[1] = node_damage;	
+	data[1] = node_damage;
+	data[2] = disp;	
+	data[3] = node_disp;	
 	nb_graphics_export(name, 1000, 700, draw_nodal_damage_field, data);
 
-	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
-	double *face_damage = nb_allocate_mem(N_faces * sizeof(double));
-
-	for (uint32_t i = 0; i < N_faces; i++) {		
-		uint32_t id1 = nb_mesh2D_edge_get_1n(mesh, i);
-		uint32_t id2 = nb_mesh2D_edge_get_2n(mesh, i);
-		double dmg1 = POW2(node_damage[id1]);
-		double dmg2 = POW2(node_damage[id2]);
-		face_damage[i] = (dmg1 + dmg2) / 2;
-	}
-
-	sprintf(name, "%s/fracture_%i.png", dir_output, step);
-
-	data[0] = mesh;
-	data[1] = face_damage;
-	nb_graphics_export(name, 1000, 700, draw_face_damage_field, data);
-
-	nb_free_mem(face_damage);
-
+	nb_free_mem(node_disp);
 	nb_free_mem(node_damage);
+}
+
+static void get_centroid_color(const nb_mesh2D_t *msh,
+			       const nb_palette_t *pal,
+			       const double *field, uint32_t elem_id,
+			       uint8_t cc[4])
+/* Stolen from mshpoly_draw.c */
+{
+	uint16_t rgba_sum[4] = {0, 0, 0, 0};
+	uint16_t N_adj = nb_mesh2D_elem_get_N_adj(msh, elem_id);
+	for (uint16_t j = 0; j < N_adj; j++) {
+		uint32_t nid = nb_mesh2D_elem_get_adj(msh, elem_id, j);
+		uint8_t rgba[4];
+		nb_palette_get_rgba(pal, field[nid], rgba);
+			
+		rgba_sum[0] += rgba[0];
+		rgba_sum[1] += rgba[1];
+		rgba_sum[2] += rgba[2];
+		rgba_sum[3] += rgba[3];
+	}
+	cc[0] = rgba_sum[0] / N_adj;
+	cc[1] = rgba_sum[1] / N_adj;
+	cc[2] = rgba_sum[2] / N_adj;
+	cc[3] = rgba_sum[3] / N_adj;
+}
+
+static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
+					    const double *disp,
+					    const double *nodal_disp,
+					    const float disp_factor,
+					    nb_graphics_context_t *g,
+					    const double *normalized_field,
+					    nb_palette_preset palette)
+{
+	nb_palette_t *pal = 
+		nb_palette_create_preset(palette);
+
+	uint32_t N_elems = nb_mesh2D_get_N_elems(msh);
+	for (uint32_t i = 0; i < N_elems; i++) {
+		double xc = nb_mesh2D_elem_get_x(msh, i);
+		double yc = nb_mesh2D_elem_get_y(msh, i);
+		double uxc = disp_factor * disp[i * 2];
+		double uyc = disp_factor * disp[i*2+1];
+		uint8_t cc[4];
+		get_centroid_color(msh, pal, normalized_field, i, cc);
+
+		uint16_t N_adj = nb_mesh2D_elem_get_N_adj(msh, i);
+		for (uint16_t j = 0; j < N_adj; j++) {
+			uint32_t n1 = nb_mesh2D_elem_get_adj(msh, i, j);
+			double x1 = nb_mesh2D_node_get_x(msh, n1);
+			double y1 = nb_mesh2D_node_get_y(msh, n1);
+			double ux1 = disp_factor * nodal_disp[n1 * 2];
+			double uy1 = disp_factor * nodal_disp[n1*2+1];
+			double udist = sqrt(POW2((x1+ux1)-(xc+uxc)) +
+					    POW2((y1+uy1)-(yc+uyc)));
+			double xdist = sqrt(POW2(x1-xc) + POW2(y1-yc));
+			if (udist/xdist > 2) {
+				x1 += uxc;
+				y1 += uyc;
+			} else {
+				x1 += ux1;
+				y1 += uy1;
+			}
+
+			uint32_t n2 = nb_mesh2D_elem_get_adj(msh, i,
+							      (j+1) % N_adj);
+			double x2 = nb_mesh2D_node_get_x(msh, n2);
+			double y2 = nb_mesh2D_node_get_y(msh, n2);
+			double ux2 = disp_factor * nodal_disp[n2 * 2];
+			double uy2 = disp_factor * nodal_disp[n2*2+1];
+			udist = sqrt(POW2((x2+ux2)-(xc+uxc)) +
+					    POW2((y2+uy2)-(yc+uyc)));
+			xdist = sqrt(POW2(x2-xc) + POW2(y2-yc));
+			if (udist/xdist > 2) {
+				x2 += uxc;
+				y2 += uyc;
+			} else {
+				x2 += ux2;
+				y2 += uy2;
+			}
+
+			nb_graphics_move_to(g, xc + uxc, yc + uyc);
+			nb_graphics_line_to(g, x1, y1);
+			nb_graphics_line_to(g, x2, y2);
+			nb_graphics_close_path(g);
+			
+			uint8_t c1[4], c2[4];
+			nb_palette_get_rgba(pal, normalized_field[n1], c1);
+			nb_palette_get_rgba(pal, normalized_field[n2], c2);
+
+			nb_graphics_set_source_trg(g, xc + uxc, yc + uyc,
+						   x1, y1, x2, y2,
+						   cc, c1, c2);
+			nb_graphics_fill(g);
+		}
+	}
+	nb_palette_destroy(pal);
 }
 
 static void draw_nodal_damage_field(nb_graphics_context_t *g,
@@ -479,6 +564,8 @@ static void draw_nodal_damage_field(nb_graphics_context_t *g,
 	void **data = (void*) draw_data;
 	const nb_mesh2D_t *mesh = data[0];
 	const double *damage = data[1];
+	const double *disp = data[2];
+	const double *nodal_disp = data[3];
 
 	if (!nb_graphics_is_camera_enabled(g)) {
 		double box[4];
@@ -494,17 +581,10 @@ static void draw_nodal_damage_field(nb_graphics_context_t *g,
 	nb_graphics_set_rectangle(g, 0, 0, width, height);
 	nb_graphics_fill(g);
 	nb_graphics_enable_camera(g);
+	
+	crack_distortion_field_on_nodes(mesh, disp, nodal_disp, 1e1,
+					g, damage, NB_RAINBOW);
 
-	mesh->graphics.fill_elems_field_on_nodes(mesh->msh, g,
-						 damage, NB_RAINBOW);
-
-	nb_graphics_set_source_rgba(g, 0, 0, 0, 50);
-	nb_graphics_set_line_width(g, 1.0);
-	mesh->graphics.draw_wires(mesh->msh, g);
-
-	nb_graphics_set_source(g, NB_BLACK);
-	nb_graphics_set_line_width(g, 1.5);
-	mesh->graphics.draw_boundaries(mesh->msh, g);
 }
 
 static void draw_face_damage_field(nb_graphics_context_t *g,

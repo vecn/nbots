@@ -107,9 +107,9 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 	CU_add_test(suite, "Mode II notched plate", test_mode_II_notched_plate);
 	CU_add_test(suite, "Mode II shear loading", test_mode_II_shear_loading);
 	*/
-	CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
+	//CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
 	//CU_add_test(suite, "Brittle plate", test_brittle_plate);
-	//CU_add_test(suite, "Drawing results", test_draw_results);	
+	CU_add_test(suite, "Drawing results", test_draw_results);	
 }
 
 static int suite_init(void)
@@ -237,16 +237,16 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
 	nb_mesh2D_export_draw(mesh, "./CVFA_dx.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 disp_nodes, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      disp_nodes, 0, 0, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_elems; i++)
 		disp[i] = results->disp[i*2+1];
 
 	nb_mesh2D_extrapolate_elems_to_nodes(mesh, 1, disp, disp_nodes);
 	nb_mesh2D_export_draw(mesh, "./CVFA_dy.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 disp_nodes, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      disp_nodes, 0, 0, true);/* TEMPORAL */
 
 	nb_free_mem(disp);
 	nb_free_mem(disp_nodes);
@@ -305,29 +305,29 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	}
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_vm.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      vm_stress, 0, 0, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3];
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_Sxx.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      vm_stress, 0, 0, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+1];
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_Syy.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      vm_stress, 0, 0, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++)
 		vm_stress[i] = stress[i*3+2];
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_Sxy.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      vm_stress, 0, 0, true);/* TEMPORAL */
 
 	for (uint32_t i = 0; i < N_nodes; i++) {
 		double tr = strain[i * 3] + strain[i*3+1];
@@ -339,8 +339,8 @@ static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
 	}
 
 	nb_mesh2D_export_draw(mesh, "./CVFA_energy.png", 1000, 800,
-				 NB_NODE, NB_FIELD,
-				 vm_stress, true);/* TEMPORAL */
+			      NB_NODE, NB_FIELD,
+			      vm_stress, 0, 0, true);/* TEMPORAL */
 
 	nb_soft_free_mem(memsize, memblock);
 }
@@ -456,7 +456,7 @@ static void get_mesh(const nb_model_t *model, void *mesh,
 
 	nb_mesh2D_centroid_iteration(mesh, 500, NULL, NULL);
 	nb_mesh2D_export_draw(mesh, "./mesh.png", 1000, 800,
-			      NB_NULL, NB_NULL, NULL, true);/* TEMPORAL */
+			      NB_NULL, NB_NULL, NULL, 0, 0, true);/* TEMPORAL */
 	nb_cvfa_draw_integration_mesh(mesh, "./CVFA_alpha_x.eps",/*T*/
 				      1000, 800);              /* TEMPORAL */
 }
