@@ -514,7 +514,7 @@ static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
 			double udist = sqrt(POW2((x1+ux1)-(xc+uxc)) +
 					    POW2((y1+uy1)-(yc+uyc)));
 			double xdist = sqrt(POW2(x1-xc) + POW2(y1-yc));
-			if (udist/xdist > 2) {
+			if (udist/xdist > 1.2) {
 				x1 += uxc;
 				y1 += uyc;
 			} else {
@@ -531,7 +531,7 @@ static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
 			udist = sqrt(POW2((x2+ux2)-(xc+uxc)) +
 					    POW2((y2+uy2)-(yc+uyc)));
 			xdist = sqrt(POW2(x2-xc) + POW2(y2-yc));
-			if (udist/xdist > 2) {
+			if (udist/xdist > 1.2) {
 				x2 += uxc;
 				y2 += uyc;
 			} else {
@@ -582,7 +582,7 @@ static void draw_nodal_damage_field(nb_graphics_context_t *g,
 	nb_graphics_fill(g);
 	nb_graphics_enable_camera(g);
 	
-	crack_distortion_field_on_nodes(mesh, disp, nodal_disp, 1e1,
+	crack_distortion_field_on_nodes(mesh, disp, nodal_disp, 1,
 					g, damage, NB_RAINBOW);
 
 }

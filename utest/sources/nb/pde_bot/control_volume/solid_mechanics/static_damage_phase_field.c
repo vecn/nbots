@@ -43,6 +43,8 @@ static void test_mode_II_notched_plate(void);
 static void test_mode_II_shear_loading(void);
 static void test_crack_branching(void);
 static void test_brittle_plate(void);
+static void test_brazilian(void);
+static void test_compression(void);
 static void test_count_steps_in_results(void);
 static void test_draw_results(void);
 
@@ -109,7 +111,9 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 	*/
 	//CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
 	//CU_add_test(suite, "Brittle plate", test_brittle_plate);
-	CU_add_test(suite, "Drawing results", test_draw_results);	
+	CU_add_test(suite, "Brazilian test", test_brazilian);
+	//CU_add_test(suite, "Compression test", test_compression);
+	//CU_add_test(suite, "Drawing results", test_draw_results);	
 }
 
 static int suite_init(void)
@@ -217,6 +221,18 @@ static void check_brittle_plate(const void *mesh,
 				const results_t *results)
 {
 	CU_ASSERT(true);/* TEMPORAL */
+}
+
+static void test_brazilian(void)
+{
+	run_test("%s/Mode_I_Brazilian.txt", 6000, NB_POLY,
+		 check_brittle_plate/* TEMPORAL */);
+}
+
+static void test_compression(void)
+{
+	run_test("%s/Box_compression.txt", 6000, NB_POLY,
+		 check_brittle_plate/* TEMPORAL */);
 }
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)

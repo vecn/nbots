@@ -1,0 +1,12 @@
+# Ground truth crack to compare
+
+0.8                    # Decay distance
+2                      # Number of cracks
+
+2
+0  7
+15 23
+
+2
+15 7
+0 23

@@ -1,0 +1,57 @@
+#################################################
+# Victor Eduardo Cardoso Nungaray		#
+# Brazilian test
+# Unit: 1cm                                     #
+#################################################
+
+
+#-------------- Geometry definition ------------#
+# Number of vertices				#
+ 4
+  0 0						#
+  0 15
+ 15 30
+  0 30
+# Number of segments				#
+ 4						#
+ 0 1    					#
+ 1 2						#
+ 2 3						#
+ 3 0						#
+# Number of holes				#
+ 0						#
+#-----------------------------------------------#
+
+#-------------- Boundary conditions ------------#
+# Num displacement conditions over vertices:    #
+ 0						#
+# Num of load conditions over vertices:		#
+ 0                                              #
+# Num of displacement conditions over lines:    #
+ 2						#
+ 0 1 1 0 5e-2
+ 2 1 1 0 -5e-2
+# Num of load conditions over lines:            #
+ 0
+#-----------------------------------------------#
+
+#-------------- Material properties ------------#
+# Poisson module				#
+ 0.2						#
+# Elasticity module                             #
+# Pa = kg/(m s^2)                               #
+# 30 GPa = 21e7 kg/(cm s^2)                      #
+ 3e8	                                        #
+# Energy release rate (N/mm)                    #
+ 1e-2   # 100 J/m^2				#
+# Length scale                                  #
+ 0.5						#
+#-----------------------------------------------#
+
+#---------------- Analysis ---------------------#
+#--- Does the analysis uses plane stress?-------#
+# (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
+ 0						#
+# Analysis params (Thickness axis of rev)       #
+ 10	                                        #
+#-----------------------------------------------#
