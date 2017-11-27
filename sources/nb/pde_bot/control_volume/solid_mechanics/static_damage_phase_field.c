@@ -395,11 +395,13 @@ int nb_cvfa_compute_2D_damage_phase_field
 		      xc, elem_damage, material, analysis2D);
 
 	uint32_t id_elem_monitor[2];
-	nb_cvfa_get_elem_adj_to_model_node(mesh, 10, id_elem_monitor);
-	if (id_elem_monitor[0] == id_elem_monitor[1]) {        /* TEMPORAL */
-		printf("DOUBLE ELEM %i %i\n",                  /* TEMPORAL */
-		       id_elem_monitor[0], id_elem_monitor[1]);/* TEMPORAL */
-	}                                                      /* TEMPORAL */
+	int model_node = 0; // TEMPORAL
+	nb_cvfa_get_elem_adj_to_model_node(mesh, model_node, id_elem_monitor);
+	if (id_elem_monitor[0] == id_elem_monitor[1]) { /* TEMPORAL */
+		printf("DOUBLE ELEM %i %i\n",      /* TEMPORAL */
+		       id_elem_monitor[0],
+		       id_elem_monitor[1]);/* TEMPORAL */
+	}     /* TEMPORAL */
 
 	memset(displacement, 0, 2 * N_elems * sizeof(*displacement));
 	memset(elem_damage, 0, N_elems * sizeof(*elem_damage));

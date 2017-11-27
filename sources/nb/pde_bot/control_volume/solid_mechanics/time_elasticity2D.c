@@ -89,7 +89,7 @@ int nb_cvfa_compute_2D_time_Solid_Mechanics
 	float dx = sqrt(nb_mesh2D_elem_get_area(mesh, 0));// ENHANCE
 	double E = nb_material_get_elasticity_module(material);
 	float wspeed = sqrt(E/density);
-	*dt = courant * wspeed * dx;
+	*dt = courant * dx / wspeed;
 	for (k = 0; k < N_steps; k++) {
 		nb_cvfa_assemble_global_forces(F, mesh, material,
 					       enable_self_weight,

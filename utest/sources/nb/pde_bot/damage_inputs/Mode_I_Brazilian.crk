@@ -1,8 +1,16 @@
 # Ground truth crack to compare
 
-0.8                    # Decay distance
-1                      # Number of cracks
+0.2                    # Decay distance
+3                      # Number of cracks
 
 2                      # Vtx x crack
-0 -10
-0 10
+1 -6
+0 7
+
+2
+-1.045285 -9.945219
+1 -6
+
+2
+1.045285 9.945219
+0 7

@@ -111,9 +111,9 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 	*/
 	//CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
 	//CU_add_test(suite, "Brittle plate", test_brittle_plate);
-	CU_add_test(suite, "Brazilian test", test_brazilian);
+	//CU_add_test(suite, "Brazilian test", test_brazilian);
 	//CU_add_test(suite, "Compression test", test_compression);
-	//CU_add_test(suite, "Drawing results", test_draw_results);	
+	CU_add_test(suite, "Drawing results", test_draw_results);	
 }
 
 static int suite_init(void)
@@ -385,7 +385,6 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 	nb_mesh2D_finish(mesh);
 	nb_soft_free_mem(mesh_memsize, mesh);
 	results_finish(&results);
-	printf("C\n");// TEMPORAL
 }
 
 static int simulate(const char *problem_data, nb_mesh2D_t *mesh,

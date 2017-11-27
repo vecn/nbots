@@ -9,7 +9,7 @@
 # Number of vertices				#
  4
   0 0						#
-  0 15
+ 15 0
  15 30
   0 30
 # Number of segments				#
@@ -29,8 +29,8 @@
  0                                              #
 # Num of displacement conditions over lines:    #
  2						#
- 0 1 1 0 5e-2
- 2 1 1 0 -5e-2
+ 0 1 1 0 5e-3
+ 2 1 1 0 -5e-3
 # Num of load conditions over lines:            #
  0
 #-----------------------------------------------#
@@ -43,9 +43,9 @@
 # 30 GPa = 21e7 kg/(cm s^2)                      #
  3e8	                                        #
 # Energy release rate (N/mm)                    #
- 1e-2   # 100 J/m^2				#
+ 0.5   # must be 100 J/m^2			#
 # Length scale                                  #
- 0.5						#
+ 0.3						#
 #-----------------------------------------------#
 
 #---------------- Analysis ---------------------#
@@ -53,5 +53,5 @@
 # (0: Plane stress, 1: Plane strain, 2: S.Rev)	#
  0						#
 # Analysis params (Thickness axis of rev)       #
- 10	                                        #
+ 15	                                        #
 #-----------------------------------------------#

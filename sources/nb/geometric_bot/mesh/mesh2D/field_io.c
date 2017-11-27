@@ -484,6 +484,7 @@ static void get_centroid_color(const nb_mesh2D_t *msh,
 	cc[3] = rgba_sum[3] / N_adj;
 }
 
+#define DISTORT_ENABLED 0
 static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
 					    const double *disp,
 					    const double *nodal_disp,
@@ -509,37 +510,45 @@ static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
 			uint32_t n1 = nb_mesh2D_elem_get_adj(msh, i, j);
 			double x1 = nb_mesh2D_node_get_x(msh, n1);
 			double y1 = nb_mesh2D_node_get_y(msh, n1);
-			double ux1 = disp_factor * nodal_disp[n1 * 2];
-			double uy1 = disp_factor * nodal_disp[n1*2+1];
-			double udist = sqrt(POW2((x1+ux1)-(xc+uxc)) +
-					    POW2((y1+uy1)-(yc+uyc)));
-			double xdist = sqrt(POW2(x1-xc) + POW2(y1-yc));
-			if (udist/xdist > 1.2) {
-				x1 += uxc;
-				y1 += uyc;
-			} else {
-				x1 += ux1;
-				y1 += uy1;
+
+			if (DISTORT_ENABLED) {
+				double ux1 = disp_factor * nodal_disp[n1 * 2];
+				double uy1 = disp_factor * nodal_disp[n1*2+1];
+				double udist = sqrt(POW2((x1+ux1)-(xc+uxc)) +
+						    POW2((y1+uy1)-(yc+uyc)));
+				double xdist = sqrt(POW2(x1-xc) + POW2(y1-yc));
+				if (udist/xdist > 1.5) {
+					x1 += uxc;
+					y1 += uyc;
+				} else {
+					x1 += ux1;
+					y1 += uy1;
+				}
 			}
 
 			uint32_t n2 = nb_mesh2D_elem_get_adj(msh, i,
 							      (j+1) % N_adj);
 			double x2 = nb_mesh2D_node_get_x(msh, n2);
 			double y2 = nb_mesh2D_node_get_y(msh, n2);
-			double ux2 = disp_factor * nodal_disp[n2 * 2];
-			double uy2 = disp_factor * nodal_disp[n2*2+1];
-			udist = sqrt(POW2((x2+ux2)-(xc+uxc)) +
-					    POW2((y2+uy2)-(yc+uyc)));
-			xdist = sqrt(POW2(x2-xc) + POW2(y2-yc));
-			if (udist/xdist > 1.2) {
-				x2 += uxc;
-				y2 += uyc;
-			} else {
-				x2 += ux2;
-				y2 += uy2;
+			if (DISTORT_ENABLED) {
+				double ux2 = disp_factor * nodal_disp[n2 * 2];
+				double uy2 = disp_factor * nodal_disp[n2*2+1];
+				double udist = sqrt(POW2((x2+ux2)-(xc+uxc)) +
+					     POW2((y2+uy2)-(yc+uyc)));
+				double xdist = sqrt(POW2(x2-xc) + POW2(y2-yc));
+				if (udist/xdist > 1.2) {
+					x2 += uxc;
+					y2 += uyc;
+				} else {
+					x2 += ux2;
+					y2 += uy2;
+				}
 			}
 
-			nb_graphics_move_to(g, xc + uxc, yc + uyc);
+			if (DISTORT_ENABLED)
+				nb_graphics_move_to(g, xc + uxc, yc + uyc);
+			else
+				nb_graphics_move_to(g, xc, yc);
 			nb_graphics_line_to(g, x1, y1);
 			nb_graphics_line_to(g, x2, y2);
 			nb_graphics_close_path(g);
@@ -548,9 +557,14 @@ static void crack_distortion_field_on_nodes(const nb_mesh2D_t *msh,
 			nb_palette_get_rgba(pal, normalized_field[n1], c1);
 			nb_palette_get_rgba(pal, normalized_field[n2], c2);
 
-			nb_graphics_set_source_trg(g, xc + uxc, yc + uyc,
-						   x1, y1, x2, y2,
-						   cc, c1, c2);
+			if (DISTORT_ENABLED)
+				nb_graphics_set_source_trg(g, xc + uxc, yc + uyc,
+							   x1, y1, x2, y2,
+							   cc, c1, c2);
+			else
+				nb_graphics_set_source_trg(g, xc, yc,
+							   x1, y1, x2, y2,
+							   cc, c1, c2);
 			nb_graphics_fill(g);
 		}
 	}
@@ -582,9 +596,16 @@ static void draw_nodal_damage_field(nb_graphics_context_t *g,
 	nb_graphics_fill(g);
 	nb_graphics_enable_camera(g);
 	
-	crack_distortion_field_on_nodes(mesh, disp, nodal_disp, 1,
+	crack_distortion_field_on_nodes(mesh, disp, nodal_disp, 1e2,
 					g, damage, NB_RAINBOW);
 
+	nb_graphics_set_source(g, NB_DARK_GRAY);
+	nb_graphics_set_line_width(g, 1.0);
+	mesh->graphics.draw_wires(mesh->msh, g);
+
+	nb_graphics_set_source(g, NB_BLACK);
+	nb_graphics_set_line_width(g, 1.5);
+	mesh->graphics.draw_boundaries(mesh->msh, g);
 }
 
 static void draw_face_damage_field(nb_graphics_context_t *g,
