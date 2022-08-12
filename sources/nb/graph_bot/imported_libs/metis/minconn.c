@@ -18,16 +18,13 @@
 void ComputeSubDomainGraph(ctrl_t *ctrl, graph_t *graph)
 {
   idx_t i, ii, j, pid, other, nparts, nvtxs, nnbrs;
-  idx_t *xadj, *adjncy, *adjwgt, *where;
+  idx_t *where;
   idx_t *pptr, *pind;
   idx_t nads=0, *vadids, *vadwgts;
 
   WCOREPUSH;
 
   nvtxs  = graph->nvtxs;
-  xadj   = graph->xadj;
-  adjncy = graph->adjncy;
-  adjwgt = graph->adjwgt;
   where  = graph->where;
 
   nparts = ctrl->nparts; 
@@ -477,12 +474,11 @@ void EliminateSubDomainEdges(ctrl_t *ctrl, graph_t *graph)
 void MoveGroupMinConnForCut(ctrl_t *ctrl, graph_t *graph, idx_t to, idx_t nind, 
          idx_t *ind)
 {
-  idx_t i, ii, j, jj, k, l, nvtxs, nbnd, from, me;
+  idx_t i, ii, j, k, nbnd, from, me;
   idx_t *xadj, *adjncy, *adjwgt, *where, *bndptr, *bndind;
   ckrinfo_t *myrinfo;
   cnbr_t *mynbrs;
 
-  nvtxs  = graph->nvtxs;
   xadj   = graph->xadj;
   adjncy = graph->adjncy;
   adjwgt = graph->adjwgt;
@@ -561,12 +557,11 @@ void MoveGroupMinConnForCut(ctrl_t *ctrl, graph_t *graph, idx_t to, idx_t nind,
 void MoveGroupMinConnForVol(ctrl_t *ctrl, graph_t *graph, idx_t to, idx_t nind, 
          idx_t *ind, idx_t *vmarker, idx_t *pmarker, idx_t *modind)
 {
-  idx_t i, ii, j, jj, k, l, nvtxs, from, me, other, xgain, ewgt;
+  idx_t i, ii, j, k, l, from, me, other, xgain, ewgt;
   idx_t *xadj, *vsize, *adjncy, *where;
   vkrinfo_t *myrinfo, *orinfo;
   vnbr_t *mynbrs, *onbrs;
 
-  nvtxs  = graph->nvtxs;
   xadj   = graph->xadj;
   vsize  = graph->vsize;
   adjncy = graph->adjncy;

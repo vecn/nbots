@@ -179,7 +179,7 @@ SIGTHROW:
 void InduceRowPartFromColumnPart(idx_t nrows, idx_t *rowptr, idx_t *rowind,
          idx_t *rpart, idx_t *cpart, idx_t nparts, real_t *tpwgts)
 {
-  idx_t i, j, k, me;
+  idx_t i, j, me;
   idx_t nnbrs, *pwgts, *nbrdom, *nbrwgt, *nbrmrk;
   idx_t *itpwgts;
 

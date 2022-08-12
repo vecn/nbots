@@ -136,7 +136,7 @@ void Compute2WayNodePartitionParams(ctrl_t *ctrl, graph_t *graph)
 /*************************************************************************/
 void Project2WayNodePartition(ctrl_t *ctrl, graph_t *graph)
 {
-  idx_t i, j, nvtxs;
+  idx_t i, nvtxs;
   idx_t *cmap, *where, *cwhere;
   graph_t *cgraph;
 
