@@ -13,7 +13,6 @@
     #define STBI_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
     #define STBI_FREE(p)              nb_free_mem(p)
 
-    #define STB_IMAGE_STATIC
     #define STB_IMAGE_IMPLEMENTATION
     #include "imported_libs/stb_image.h"
 
@@ -21,14 +20,12 @@
     #define STBIW_REALLOC(p, newsz)    nb_reallocate_mem(p, newsz)
     #define STBIW_FREE(p)              nb_free_mem(p)
 
-    #define STB_IMAGE_WRITE_STATIC
     #define STB_IMAGE_WRITE_IMPLEMENTATION
     #include "imported_libs/stb_image_write.h"
 
     #define STBIR_MALLOC(sz, c)         nb_allocate_mem(sz)
     #define STBIR_FREE(p, c)            nb_free_mem(p)
 
-    #define STB_IMAGE_RESIZE_STATIC
     #define STB_IMAGE_RESIZE_IMPLEMENTATION
     #include "imported_libs/stb_image_resize.h"
 #endif
