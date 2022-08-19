@@ -42,9 +42,6 @@ static void draw_damage(const char *dir_output, const nb_mesh2D_t *mesh,
 static void draw_nodal_damage_field(nb_graphics_context_t *g,
 				    int width, int height,
 				    const void *draw_data);
-static void draw_face_damage_field(nb_graphics_context_t *g,
-				    int width, int height,
-				    const void *draw_data);
 static int jump_mesh_correspondence(nb_cfreader_t *cfr, uint32_t *N_nodes,
 				    uint32_t *N_edges, uint32_t *N_elems);
 static int count_all_steps(nb_cfreader_t *cfr,
@@ -602,39 +599,6 @@ static void draw_nodal_damage_field(nb_graphics_context_t *g,
 	nb_graphics_set_source(g, NB_DARK_GRAY);
 	nb_graphics_set_line_width(g, 1.0);
 	mesh->graphics.draw_wires(mesh->msh, g);
-
-	nb_graphics_set_source(g, NB_BLACK);
-	nb_graphics_set_line_width(g, 1.5);
-	mesh->graphics.draw_boundaries(mesh->msh, g);
-}
-
-static void draw_face_damage_field(nb_graphics_context_t *g,
-				    int width, int height,
-				    const void *draw_data)
-{
-	void **data = (void*) draw_data;
-	const nb_mesh2D_t *mesh = data[0];
-	const double *damage = data[1];
-
-	if (!nb_graphics_is_camera_enabled(g)) {
-		double box[4];
-		mesh->get_enveloping_box(mesh->msh, box);
-
-		nb_graphics_enable_camera(g);
-		nb_graphics_camera_t* cam = nb_graphics_get_camera(g);
-		nb_graphics_cam_fit_box(cam, box, width, height);
-	}
-
-	nb_graphics_disable_camera(g);
-	nb_graphics_set_source(g, NB_WHITE);
-	nb_graphics_set_rectangle(g, 0, 0, width, height);
-	nb_graphics_fill(g);
-	nb_graphics_enable_camera(g);
-
-	nb_graphics_set_source(g, NB_BLACK);
-	mesh->graphics.fill_elems(mesh->msh, g);
-	mesh->graphics.draw_field_on_faces(mesh->msh, g,
-					   damage, NB_SUNSET);
 
 	nb_graphics_set_source(g, NB_BLACK);
 	nb_graphics_set_line_width(g, 1.5);

@@ -174,10 +174,7 @@ void gk_NonLocalExit_Handler(int signum)
 /**************************************************************************/
 char *gk_strerror(int errnum)
 {
-#if defined(WIN32) || defined(__MINGW32__)
-  return strerror(errnum);
-#else 
-#ifndef SUNOS
+#if defined(WIN32) || defined(__MINGW32__) || defined(SUNOS)
   static __thread char buf[1024];
 
   strerror_r(errnum, buf, 1024);
@@ -186,7 +183,6 @@ char *gk_strerror(int errnum)
   return buf;
 #else
   return strerror(errnum);
-#endif
 #endif
 }
 
