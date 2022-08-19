@@ -10,7 +10,6 @@
 #define NB_GRAPHICS_PIX_LEADING 125
 
 #ifndef NB_EXCLUDE_IMPORTED_LIBS
-    #define STBTT_STATIC
     #define STB_TRUETYPE_IMPLEMENTATION
     #include "imported_libs/stb_truetype.h"
 #else
@@ -43,13 +42,13 @@
 		}							\
 	} while(0)
 
-static char* read_ttf_memblock(const char *type);
+static unsigned char* read_ttf_memblock(const char *type);
 static void get_size_truetype_font(stbtt_fontinfo *font,
 				   const char *string, uint16_t size,
 				   int *w, int *h);
 static void get_size_bitmap_font(const char *string, uint16_t size,
 				 int *w, int *h);
-static void bake_truetype_font(const char *ttf_memblock,
+static void bake_truetype_font(const unsigned char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap);
 static void bake_bitmap_font(const char *string, uint16_t size,
@@ -71,7 +70,7 @@ void nb_graphics_truetype_rasterizer_get_size(const char *string,
 					      int *w, int *h)
 {
 #ifndef NB_EXCLUDE_IMPORTED_LIBS
-	char *ttf_memblock = read_ttf_memblock(type);
+	unsigned char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
 		stbtt_fontinfo *font = nb_allocate_on_stack(sizeof(stbtt_fontinfo));
 		int font_idx = stbtt_GetFontOffsetForIndex(ttf_memblock, 0);
@@ -158,7 +157,7 @@ void nb_graphics_truetype_rasterizer_bake(const char *string,
 					  const char *type, uint16_t size,
 					  uint8_t *bitmap)
 {
-	char *ttf_memblock = read_ttf_memblock(type);
+	unsigned char *ttf_memblock = read_ttf_memblock(type);
 	if (NULL != ttf_memblock) {
 		bake_truetype_font(ttf_memblock, string, size, bitmap);
 		nb_free_mem(ttf_memblock);
@@ -167,12 +166,12 @@ void nb_graphics_truetype_rasterizer_bake(const char *string,
 	}
 }
 
-static char* read_ttf_memblock(const char *type)
+static unsigned char* read_ttf_memblock(const char *type)
 {
 	char *filename;
 	GET_FONT_URL(filename, type);
 	FILE *fp = fopen(filename, "rb");
-	char *ttf_memblock = NULL;
+	unsigned char *ttf_memblock = NULL;
 	if (NULL != fp) {
 		fseek(fp, 0L, SEEK_END);
 		int64_t file_size  = ftell(fp);
@@ -185,7 +184,7 @@ static char* read_ttf_memblock(const char *type)
 	return ttf_memblock;
 }
 
-static void bake_truetype_font(const char *ttf_memblock,
+static void bake_truetype_font(const unsigned char *ttf_memblock,
 			       const char *string, uint16_t size,
 			       uint8_t *bitmap)
 {
@@ -227,7 +226,6 @@ static void bake_truetype_font(const char *ttf_memblock,
 						    &x0, &y0, &x1, &y1);
 			int w = x1 - x0;
 			int h = y1 - y0;
-			int left_pixels = cumulative_width + scale * lsb;
 			int mean_offset = MAX(0, baseline + y0);
 			int pix_row = row * line_spacing + mean_offset;
 			int pix_col = cumulative_width;
