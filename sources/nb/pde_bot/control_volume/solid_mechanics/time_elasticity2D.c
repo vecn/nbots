@@ -19,6 +19,7 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
+#define ADD_ACCELERATION 0 // Disabled
 #define SMOOTH 3
 
 static void add_acceleration(const nb_mesh2D_t *const mesh,
@@ -107,8 +108,10 @@ int nb_cvfa_compute_2D_time_Solid_Mechanics
 			nb_bcond_push(kbcond, NB_DIRICHLET, NB_BC_ON_SEGMENT,
 				      3, mask, val);
 		}
-		//add_acceleration(mesh, material, density, *dt,
-		//		 K, F, displacement, k);
+		if (ADD_ACCELERATION) {
+			add_acceleration(mesh, material, density, *dt,
+					 K, F, displacement, k);
+		}
 		nb_cvfa_set_bconditions(mesh, material, analysis2D, 
 					K, F, kbcond, 1.0);
 		double *uk = displacement + k * N_elems * 2;

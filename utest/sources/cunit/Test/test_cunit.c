@@ -61,7 +61,7 @@ int main()
   test_cunit_initialize();
   fprintf(stdout, "\n%s", _("Testing CUnit internals..."));
 
-	/* individual module test functions go here */
+  /* individual module test functions go here */
   test_cunit_CUError();
   test_cunit_MyMem();
   test_cunit_TestDB();

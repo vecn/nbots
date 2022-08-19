@@ -20,6 +20,8 @@
 #include "elasticity2D.h"
 #include "set_bconditions.h"
 
+#define BALANCE_COMPRESSION_STRESS 0 // Disabled
+
 #define SMOOTH 3
 
 #define MIDPOINT_VOL_INTEGRALS false
@@ -1072,9 +1074,12 @@ static int minimize_residual(const nb_mesh2D_t *const mesh,
 		goto EXIT;
 	}
 
-	/*balance_compression_stress(stress_balance, mesh, smooth, intmsh, xc,
-				   faces, material, analysis2D, params2D,
-				   displacement, glq, eval_dmg);*/
+	if (BALANCE_COMPRESSION_STRESS) {
+		balance_compression_stress(stress_balance, mesh, smooth,
+					   intmsh, xc,
+					   faces, material, analysis2D, params2D,
+					   displacement, glq, eval_dmg);
+	}
 	int iter = 0;
 	double rnorm = 1;
 	double rnorm_historial[100];
