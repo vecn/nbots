@@ -105,7 +105,6 @@ static void check_stress_wave(const void *mesh,
 
 static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 {
-	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	uint32_t N_faces = nb_mesh2D_get_N_edges(mesh);
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	int k;

@@ -16,6 +16,9 @@
 #define INPUTS_DIR "../utest/sources/nb/pde_bot/damage_inputs"
 #define OUTPUT_DIR "dmg_aux"
 
+#define RUN_DYNAMIC_TESTS 0
+#define EXPORT_IMG 0 // Don't create images
+
 #define POW2(a) ((a)*(a))
 #define CHECK_ZERO(a) ((fabs(a)<1e-25)?1:(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -97,23 +100,27 @@ void cunit_nb_pde_bot_cvfa_sm_static_damage_phase_field(void)
 		CU_add_suite("nb/pde_bot/finite_element/solid_mechanics/" \
 			     "static_elasticity.c",
 			     suite_init, suite_clean);
-	/*
-	CU_add_test(suite, "Mode I Phase field", test_mode_I);
-	CU_add_test(suite, "Mode I Perfored Strip under tension",
-		    test_mode_I_perfored_strip);
-	CU_add_test(suite, "Mode II Phase field", test_mode_II);
-	CU_add_test(suite, "Mode II Asym notched 3 point bending",
-		    test_mode_II_asym_notched_3point_bending);
-	CU_add_test(suite, "Count steps in results",
-		    test_count_steps_in_results);		    
-	CU_add_test(suite, "Mode II notched plate", test_mode_II_notched_plate);
-	CU_add_test(suite, "Mode II shear loading", test_mode_II_shear_loading);
-	*/
-	//CU_add_test(suite, "Dynamic crack branching", test_crack_branching);
-	//CU_add_test(suite, "Brittle plate", test_brittle_plate);
-	//CU_add_test(suite, "Brazilian test", test_brazilian);
-	//CU_add_test(suite, "Compression test", test_compression);
-	CU_add_test(suite, "Drawing results", test_draw_results);	
+
+	if (RUN_DYNAMIC_TESTS) {
+		CU_add_test(suite, "Mode I Phase field", test_mode_I);
+		CU_add_test(suite, "Mode I Perfored Strip under tension",
+			    test_mode_I_perfored_strip);
+		CU_add_test(suite, "Mode II Phase field", test_mode_II);
+		CU_add_test(suite, "Mode II Asym notched 3 point bending",
+			    test_mode_II_asym_notched_3point_bending);
+		CU_add_test(suite, "Count steps in results",
+			    test_count_steps_in_results);
+		CU_add_test(suite, "Mode II notched plate",
+			    test_mode_II_notched_plate);
+		CU_add_test(suite, "Mode II shear loading",
+			    test_mode_II_shear_loading);
+		CU_add_test(suite, "Dynamic crack branching",
+			    test_crack_branching);
+		CU_add_test(suite, "Brittle plate", test_brittle_plate);
+		CU_add_test(suite, "Brazilian test", test_brazilian);
+		CU_add_test(suite, "Compression test", test_compression);
+		CU_add_test(suite, "Drawing results", test_draw_results);
+	}
 }
 
 static int suite_init(void)
@@ -235,7 +242,7 @@ static void test_compression(void)
 		 check_brittle_plate/* TEMPORAL */);
 }
 
-static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
+static void export_img_displacements(nb_mesh2D_t *mesh, results_t *results)
 {
 	uint32_t N_elems = nb_mesh2D_get_N_elems(mesh);
 	double *disp = malloc(N_elems * sizeof(*disp));
@@ -268,7 +275,7 @@ static void TEMPORAL1(nb_mesh2D_t *mesh, results_t *results)
 	nb_free_mem(disp_nodes);
 }
 
-static void TEMPORAL2(nb_mesh2D_t *mesh, results_t *results)
+static void export_img_stress(nb_mesh2D_t *mesh, results_t *results)
 {
 	uint32_t N_nodes = nb_mesh2D_get_N_nodes(mesh);
 	uint32_t memsize = N_nodes * (7 * sizeof(double) + sizeof(uint16_t));
@@ -379,8 +386,10 @@ static void run_test(const char *problem_data, uint32_t N_vtx,
 
 	check_results(mesh, &results);
 
-	TEMPORAL2(mesh, &results);
-	TEMPORAL1(mesh, &results);
+	if (EXPORT_IMG) {
+		export_img_displacements(mesh, &results);
+		export_img_stress(mesh, &results);
+	}
 
 	nb_mesh2D_finish(mesh);
 	nb_soft_free_mem(mesh_memsize, mesh);
