@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "nb/memory_bot.h"
+#include "nb/memory_bot.h" // TODO: Remove after deleting soft allocations
 #include "nb/container_bot.h"
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
@@ -13,6 +13,8 @@
 #include "nb/geometric_bot/mesh/dewall.h"
 
 #include "tessellator2D_structs.h"
+
+#include "dewall_dependencies.h"
 
 #define POW2(a) ((a)*(a))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -131,7 +133,7 @@ static void clear_search_vtx(search_vtx_t *search_vtx);
 static uint32_t dewall(nb_tessellator2D_t* mesh);
 
 void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices,
-			  const double *const vertices)
+				   const double *const vertices)
 {
 	nb_tessellator2D_clear(mesh);
 	if (0 == N_vertices)
@@ -140,8 +142,8 @@ void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices
 	mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 	mesh->N_input_vtx = N_vertices;
 	mesh->input_vtx =
-		nb_allocate_zero_mem(mesh->N_input_vtx *
-				     sizeof(*(mesh->input_vtx)));
+		module()->allocate_zero(mesh->N_input_vtx *
+					sizeof(*(mesh->input_vtx)));
 
 	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = mvtx_create(mesh);
@@ -509,7 +511,7 @@ static uint32_t dewall_recursion
 	/* Initialize Action face lists */
 	uint32_t AFL_size = nb_container_get_memsize(NB_HASH);
 	uint32_t memsize = 3 * AFL_size;
-	char *memblock = nb_allocate_mem(memsize);
+	char *memblock = module()->allocate(memsize);
 
 	nb_container_t* AFL_alpha = (void*) memblock;
 	nb_container_init(AFL_alpha, NB_HASH);
@@ -553,7 +555,7 @@ static uint32_t dewall_recursion
 
 	N_trg = n_trg_alpha + n_trg_1 + n_trg_2;
 
-	nb_free_mem(memblock);
+	module()->free(memblock);
 EXIT:
 	return N_trg;
 }
