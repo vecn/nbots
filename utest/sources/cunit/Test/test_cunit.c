@@ -32,6 +32,8 @@
  @{
 */
 
+#define  CUNIT_BUILD_TESTS
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
