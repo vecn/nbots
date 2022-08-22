@@ -5,7 +5,7 @@
 #include <math.h>
 
 #include "nb/memory_bot.h" // TODO: Remove after deleting soft allocations
-#include "nb/container_bot.h"
+#include "nb/container_bot.h" // TODO: Remove after deleting dependencies
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
@@ -87,37 +87,37 @@ static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_
 static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
-static void update_AFL(nb_container_t *AFL,
+static void update_AFL(hash_table_t *AFL,
 		       const msh_edge_t *const edge);
 static uint32_t dewall_recursion
                        (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
-			nb_container_t* AFL);
+			hash_table_t* AFL);
 static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 				 const search_vtx_t *search_vtx,
-				 nb_container_t *AFL_alpha,
-				 nb_container_t *AFL_1,
-				 nb_container_t *AFL_2);
+				 hash_table_t *AFL_alpha,
+				 hash_table_t *AFL_1,
+				 hash_table_t *AFL_2);
 static void update_AFLs(const msh_trg_t *const trg,
 			const msh_edge_t *const edge,
-			nb_container_t *AFL_alpha,
-			nb_container_t *AFL_1,
-			nb_container_t *AFL_2,
+			hash_table_t *AFL_alpha,
+			hash_table_t *AFL_1,
+			hash_table_t *AFL_2,
 			const search_vtx_t *search_vtx);
 static double get_alpha(msh_vtx_t **vertices,
 			int8_t axe, uint32_t N_mid);
-static nb_container_t* get_side_AFL(const msh_edge_t *const edge,
-				    const search_vtx_t *search_vtx,
-				    nb_container_t *AFL_neg,
-				    nb_container_t *AFL_zero,
-				    nb_container_t *AFL_pos);
+static hash_table_t* select_side_AFL(const msh_edge_t *const edge,
+				     const search_vtx_t *search_vtx,
+				     hash_table_t *AFL_neg,
+				     hash_table_t *AFL_zero,
+				     hash_table_t *AFL_pos);
 
-static uint32_t split_vtx_array(const nb_container_t *const AFL,
+static uint32_t split_vtx_array(const hash_table_t *const AFL,
 				uint32_t N, msh_vtx_t **vertices,
 				int8_t axe);
 static void set_interval(interval_t *interval,
-			 const nb_container_t *const AFL,
+			 const hash_table_t *const AFL,
 			 uint32_t N, msh_vtx_t **vertices,
 			 int8_t axe);
 static uint32_t get_mid_inside_interval(interval_t *interval, uint32_t N,
@@ -128,7 +128,7 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 			    double alpha, uint32_t N_half);
 static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
 				   search_vtx_t *search_vtx,
-				   nb_container_t *AFL);
+				   hash_table_t *AFL);
 static void clear_search_vtx(search_vtx_t *search_vtx);
 static uint32_t dewall(nb_tessellator2D_t* mesh);
 
@@ -142,8 +142,8 @@ void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices
 	mesh_init_disp_and_scale(mesh, N_vertices, vertices);
 	mesh->N_input_vtx = N_vertices;
 	mesh->input_vtx =
-		module()->allocate_zero(mesh->N_input_vtx *
-					sizeof(*(mesh->input_vtx)));
+		module()->mem.allocate_zero(mesh->N_input_vtx *
+					    sizeof(*(mesh->input_vtx)));
 
 	for (uint32_t i = 0; i < N_vertices; i++) {
 		msh_vtx_t* vtx = mvtx_create(mesh);
@@ -454,20 +454,19 @@ static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 	return trg;
 }
 
-static inline void update_AFL(nb_container_t *AFL,
+static inline void update_AFL(hash_table_t *AFL,
 			      const msh_edge_t *const edge)
 {
-	if (NULL == nb_container_exist(AFL, edge))
-		nb_container_insert(AFL, edge);
-	else
-		nb_container_delete(AFL, edge);
+	if (NULL == module()->hash_table.delete(AFL, edge)) {
+		module()->hash_table.insert(AFL, edge);
+	}
 }
 
 static uint32_t dewall_recursion
                        (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
-			nb_container_t* AFL)
+			hash_table_t* AFL)
 {
 	uint32_t N_trg = 0;
 	if (N < 3)
@@ -501,7 +500,7 @@ static uint32_t dewall_recursion
 	uint32_t n_trg_alpha = 0;
 
 	/* Create first triangle */
-	if (nb_container_is_empty(AFL)) {
+	if (module()->hash_table.is_empty(AFL)) {
 		if (set_first_trg_into_AFL(mesh, &search_vtx, AFL))
 			n_trg_alpha += 1;
 		else
@@ -509,53 +508,54 @@ static uint32_t dewall_recursion
 	}
 
 	/* Initialize Action face lists */
-	uint32_t AFL_size = nb_container_get_memsize(NB_HASH);
+	uint32_t AFL_size = module()->hash_table.size();
 	uint32_t memsize = 3 * AFL_size;
-	char *memblock = module()->allocate(memsize);
+	char *memblock = module()->mem.allocate(memsize);
 
-	nb_container_t* AFL_alpha = (void*) memblock;
-	nb_container_init(AFL_alpha, NB_HASH);
-	nb_container_set_key_generator(AFL_alpha, hash_key_edge);
+	hash_table_t* AFL_alpha = (void*) memblock;
+	module()->hash_table.init(AFL_alpha);
+	module()->hash_table.set_keygen(AFL_alpha, hash_key_edge);
 
-	nb_container_t* AFL_1 = (void*) (memblock + AFL_size);
-	nb_container_init(AFL_1, NB_HASH);
-	nb_container_set_key_generator(AFL_1, hash_key_edge);
+	hash_table_t* AFL_1 = (void*) (memblock + AFL_size);
+	module()->hash_table.init(AFL_1);
+	module()->hash_table.set_keygen(AFL_1, hash_key_edge);
 
-	nb_container_t* AFL_2 = (void*) (memblock + 2 * AFL_size);
-	nb_container_init(AFL_2, NB_HASH);
-	nb_container_set_key_generator(AFL_2, hash_key_edge);
+	hash_table_t* AFL_2 = (void*) (memblock + 2 * AFL_size);
+	module()->hash_table.init(AFL_2);
+	module()->hash_table.set_keygen(AFL_2, hash_key_edge);
 
 	/* Redistribute segments from the main AFL to the three AFLs */
-	while (nb_container_is_not_empty(AFL)) {
-		msh_edge_t* edge = nb_container_delete_first(AFL);
-		nb_container_t *side_AFL = get_side_AFL(edge, &search_vtx, 
-							AFL_1, AFL_alpha,
-							AFL_2);
-		nb_container_insert(side_AFL, edge);
+	while (!module()->hash_table.is_empty(AFL)) {
+		msh_edge_t* edge = module()->hash_table.delete_any(AFL);
+		hash_table_t *side_AFL = select_side_AFL(edge, &search_vtx,
+							 AFL_1, AFL_alpha,
+							 AFL_2);
+		module()->hash_table.insert(side_AFL, edge);
 	}
 	
 	n_trg_alpha += triangulate_wall(mesh, &search_vtx, AFL_alpha,
 					AFL_1, AFL_2);
-	nb_container_finish(AFL_alpha);
+
+	module()->hash_table.finish(AFL_alpha);
 
 	clear_search_vtx(&search_vtx);
 
 	/* Recursive triangulation */
 	uint32_t n_trg_1 = 0;
-	if (nb_container_is_not_empty(AFL_1))
+	if (!module()->hash_table.is_empty(AFL_1))
 		n_trg_1 += dewall_recursion(mesh, N_mid, vertices,
 					    deep_level + 1, AFL_1);
-	nb_container_finish(AFL_1);
+	module()->hash_table.finish(AFL_1);
 
 	uint32_t n_trg_2 = 0;
-	if (nb_container_is_not_empty(AFL_2))
+	if (!module()->hash_table.is_empty(AFL_2))
 		n_trg_2 += dewall_recursion(mesh, N - N_mid, &(vertices[N_mid]),
 					    deep_level + 1, AFL_2);
-	nb_container_finish(AFL_2);
+	module()->hash_table.finish(AFL_2);
 
 	N_trg = n_trg_alpha + n_trg_1 + n_trg_2;
 
-	module()->free(memblock);
+	module()->mem.free(memblock);
 EXIT:
 	return N_trg;
 }
@@ -572,25 +572,23 @@ static inline double get_alpha(msh_vtx_t **vertices,
 	return alpha;
 }
 
-static inline nb_container_t* get_side_AFL(const msh_edge_t *const edge,
-					   const search_vtx_t *search_vtx,
-					   nb_container_t *AFL_neg,
-					   nb_container_t *AFL_zero,
-					   nb_container_t *AFL_pos)
+static inline hash_table_t* select_side_AFL(const msh_edge_t *const edge,
+					    const search_vtx_t *search_vtx,
+					    hash_table_t *AFL_neg,
+					    hash_table_t *AFL_zero,
+					    hash_table_t *AFL_pos)
 {
 	bool v1 = (edge->v1->x[search_vtx->axe] - search_vtx->alpha > 0.0);
 	bool v2 = (edge->v2->x[search_vtx->axe] - search_vtx->alpha > 0.0);
-	nb_container_t *AFL;
 	if (v1 != v2)
-		AFL = AFL_zero;
+		return AFL_zero;
 	else if (v1)
-		AFL = AFL_pos;
+		return AFL_pos;
 	else 
-		AFL = AFL_neg;
-	return AFL;
+		return AFL_neg;
 }
 
-static uint32_t split_vtx_array(const nb_container_t *const AFL,
+static uint32_t split_vtx_array(const hash_table_t *const AFL,
 				uint32_t N, msh_vtx_t **vertices,
 				int8_t axe)
 {
@@ -618,15 +616,18 @@ static uint32_t split_vtx_array(const nb_container_t *const AFL,
 }
 
 static void set_interval(interval_t *interval,
-			 const nb_container_t *const AFL,
+			 const hash_table_t *const AFL,
 			 uint32_t N, msh_vtx_t **vertices,
 			 int8_t axe)
 {
-	if (nb_container_is_not_empty(AFL)) {
+	if (module()->hash_table.is_empty(AFL)) {
+		interval->min = vertices[0]->x[axe];
+		interval->max = vertices[N-1]->x[axe];
+	} else {
 		uint32_t iter_size = nb_iterator_get_memsize();
 		nb_iterator_t *iter = nb_soft_allocate_mem(iter_size);
 		nb_iterator_init(iter);
-		nb_iterator_set_container(iter, AFL);
+		nb_iterator_set_container(iter, (nb_container_t*)AFL);
 		const msh_edge_t *edge = nb_iterator_get_next(iter);
 		if (edge->v1->x[axe] < edge->v2->x[axe]) {
 			interval->min = edge->v1->x[axe];
@@ -651,9 +652,6 @@ static void set_interval(interval_t *interval,
 		}
 		nb_iterator_finish(iter);
 		nb_soft_free_mem(iter_size, iter);
-	} else {
-		interval->min = vertices[0]->x[axe];
-		interval->max = vertices[N-1]->x[axe];
 	}
 }
 
@@ -704,16 +702,16 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 
 static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
 				   search_vtx_t *search_vtx,
-				   nb_container_t *AFL)
+				   hash_table_t *AFL)
 {
 	bool trg_created = false;
 	if (0 < search_vtx->N_half) {
 		msh_trg_t* first_trg =	create_1st_trg(mesh, search_vtx);
 		if (NULL != first_trg) {
 			mesh_add_triangle(mesh, first_trg);
-			nb_container_insert(AFL, first_trg->s1);
-			nb_container_insert(AFL, first_trg->s2);
-			nb_container_insert(AFL, first_trg->s3);		
+			module()->hash_table.insert(AFL, first_trg->s1);
+			module()->hash_table.insert(AFL, first_trg->s2);
+			module()->hash_table.insert(AFL, first_trg->s3);
 			mesh->do_after_insert_trg(mesh);
 			trg_created = true;
 		} /* else [the points are collinear] */
@@ -729,13 +727,13 @@ static void clear_search_vtx(search_vtx_t *search_vtx)
 
 static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 				 const search_vtx_t *search_vtx,
-				 nb_container_t *AFL_alpha,
-				 nb_container_t *AFL_1,
-				 nb_container_t *AFL_2)
+				 hash_table_t *AFL_alpha,
+				 hash_table_t *AFL_1,
+				 hash_table_t *AFL_2)
 {
 	uint32_t n_trg_alpha = 0;
-	while (nb_container_is_not_empty(AFL_alpha)) {
-		msh_edge_t* edge = nb_container_delete_first(AFL_alpha);
+	while (!module()->hash_table.is_empty(AFL_alpha)) {
+		msh_edge_t* edge = module()->hash_table.delete_any(AFL_alpha);
 		msh_trg_t* trg = create_trg(mesh, search_vtx, edge);
 		if (NULL != trg) {
 			mesh_add_triangle(mesh, trg);
@@ -750,17 +748,17 @@ static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 
 static void update_AFLs(const msh_trg_t *const trg,
 			const msh_edge_t *const edge,
-			nb_container_t *AFL_alpha,
-			nb_container_t *AFL_1,
-			nb_container_t *AFL_2,
+			hash_table_t *AFL_alpha,
+			hash_table_t *AFL_1,
+			hash_table_t *AFL_2,
 			const search_vtx_t *search_vtx)
 {
 	msh_edge_t* complement[2];
 	mtrg_get_complement_edges(trg, edge, complement);
 	for (int8_t s = 0; s < 2; s++) {
-		nb_container_t *side_AFL = 
-			get_side_AFL(complement[s], search_vtx, 
-				     AFL_1, AFL_alpha, AFL_2);
+		hash_table_t *side_AFL = 
+			select_side_AFL(complement[s], search_vtx,
+					AFL_1, AFL_alpha, AFL_2);
 		update_AFL(side_AFL, complement[s]);
 	}
 
@@ -768,22 +766,20 @@ static void update_AFLs(const msh_trg_t *const trg,
 
 static uint32_t dewall(nb_tessellator2D_t* mesh)
 {
-	nb_container_type cnt_type = NB_HASH;
 	uint32_t vtx_size = mesh->N_input_vtx * sizeof(msh_vtx_t*);
-	uint32_t memsize = vtx_size +
-		nb_container_get_memsize(cnt_type);
+	uint32_t memsize = vtx_size + module()->hash_table.size();
 	char *memblock = nb_soft_allocate_mem(memsize);
 
 	msh_vtx_t **vertices = (void*) memblock;
 	memcpy(vertices, mesh->input_vtx, vtx_size);
 
-	nb_container_t* AFL = (void*) (memblock + vtx_size);
-	nb_container_init(AFL, cnt_type);
+	hash_table_t* AFL = (void*) (memblock + vtx_size);
+	module()->hash_table.init(AFL);
+	module()->hash_table.set_keygen(AFL, hash_key_edge);
 
-	nb_container_set_key_generator(AFL, hash_key_edge);
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
 					  vertices, 0, AFL);
-  	nb_container_finish(AFL);
+	module()->hash_table.finish(AFL);
 	nb_soft_free_mem(memsize, memblock);
 	return N_trg;
 }
