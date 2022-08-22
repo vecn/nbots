@@ -10,22 +10,21 @@ typedef struct {
 	void (*free)(void*);
 } interface_heap_t;
 
-typedef void* hash_table_t;
+typedef void* afl_t; /* Active Face List (Set) */
 
 typedef struct {
 	uint32_t (*size)(void);
-	void (*init)(hash_table_t*);
-	void (*finish)(hash_table_t*);
-	void (*set_keygen)(hash_table_t*, uint32_t (*k)(const void *const));
-	bool (*is_empty)(const hash_table_t *const);
-	void (*insert)(hash_table_t*, const void *const);
-	void* (*delete_any)(hash_table_t*);	
-	void* (*delete)(hash_table_t*, const void *const);
-} interface_hash_table_t;
+	void (*init)(afl_t*, uint32_t (*keygen)(const void *const));
+	void (*finish)(afl_t*);
+	bool (*is_empty)(const afl_t *const);
+	void (*insert)(afl_t*, const void *const);
+	void* (*delete_any)(afl_t*);	
+	void* (*delete)(afl_t*, const void *const);
+} interface_afl_t;
 
 typedef struct {
 	interface_heap_t mem;
-	interface_hash_table_t hash_table;
+	interface_afl_t afl;
 } interface_t;
 
 interface_t* module(void);
