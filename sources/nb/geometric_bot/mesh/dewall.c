@@ -87,8 +87,7 @@ static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_
 static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
-static void update_AFL(afl_t *AFL,
-		       const msh_edge_t *const edge);
+static void update_AFL(afl_t *AFL, const msh_edge_t *const edge);
 static uint32_t dewall_recursion
                        (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
@@ -105,7 +104,7 @@ static void update_AFLs(const msh_trg_t *const trg,
 			afl_t *AFL_1,
 			afl_t *AFL_2,
 			const search_vtx_t *search_vtx);
-static double get_alpha(msh_vtx_t **vertices,
+static double get_alpha(uint32_t N, msh_vtx_t **vertices,
 			int8_t axe, uint32_t N_mid);
 static afl_t* select_side_AFL(const msh_edge_t *const edge,
 				     const search_vtx_t *search_vtx,
@@ -454,8 +453,7 @@ static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 	return trg;
 }
 
-static inline void update_AFL(afl_t *AFL,
-			      const msh_edge_t *const edge)
+static inline void update_AFL(afl_t *AFL, const msh_edge_t *const edge)
 {
 	if (NULL == module()->afl.delete(AFL, edge)) {
 		module()->afl.insert(AFL, edge);
@@ -478,20 +476,7 @@ static uint32_t dewall_recursion
 	nb_qsort_wd(vertices, N, sizeof(*vertices),
 		     compare_using_axe, &axe);
 	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
-	double alpha;
-	if (N > 3) {
-		alpha = get_alpha(vertices, axe, N_mid);
-	} else {
-		double min = vertices[0]->x[axe];
-		double max = vertices[0]->x[axe];
-		if (min > vertices[1]->x[axe])
-			min = vertices[1]->x[axe];
-		if (max < vertices[1]->x[axe])
-			max = vertices[1]->x[axe];
-		if (max < vertices[2]->x[axe])
-			max = vertices[2]->x[axe];
-		alpha = (min + max)/2.0;
-	}
+	double alpha = get_alpha(N, vertices, axe, N_mid);
 
 	search_vtx_t search_vtx;
 	init_search_vtx(&search_vtx, N, vertices, axe, alpha, N_mid);
@@ -557,16 +542,24 @@ EXIT:
 	return N_trg;
 }
 
-static inline double get_alpha(msh_vtx_t **vertices,
+static inline double get_alpha(uint32_t N, msh_vtx_t **vertices,
 			       int8_t axe, uint32_t N_mid)
 {
-	double alpha;
-	if (0 == N_mid)
-		alpha = vertices[0]->x[axe];
-	else
-		alpha = 0.6 * vertices[N_mid]->x[axe] +
-			0.4 * vertices[N_mid-1]->x[axe];
-	return alpha;
+	if (N > 3) {
+		if (0 == N_mid)
+			return vertices[0]->x[axe];
+		else
+			return 0.6 * vertices[N_mid]->x[axe] +
+				0.4 * vertices[N_mid-1]->x[axe];
+	} else {
+		double min = MIN(vertices[0]->x[axe], vertices[1]->x[axe]);
+		min = MIN(min, vertices[2]->x[axe]);
+
+		double max = MAX(vertices[0]->x[axe], vertices[1]->x[axe]);
+		max = MAX(max, vertices[2]->x[axe]);
+
+		return (min + max)/2.0;
+	}
 }
 
 static inline afl_t* select_side_AFL(const msh_edge_t *const edge,
