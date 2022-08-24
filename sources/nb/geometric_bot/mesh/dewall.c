@@ -92,7 +92,8 @@ static uint32_t dewall_recursion
                        (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
-			afl_t* AFL);
+			afl_t* AFL,
+			afl_iterator_t* afl_iter);
 static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 afl_t *AFL_alpha,
@@ -113,10 +114,12 @@ static afl_t* select_side_AFL(const msh_edge_t *const edge,
 				     afl_t *AFL_pos);
 
 static uint32_t split_vtx_array(const afl_t *const AFL,
+				afl_iterator_t* afl_iter,
 				uint32_t N, msh_vtx_t **vertices,
 				int8_t axe);
 static void set_interval(interval_t *interval,
 			 const afl_t *const AFL,
+			 afl_iterator_t* afl_iter,
 			 uint32_t N, msh_vtx_t **vertices,
 			 int8_t axe);
 static uint32_t get_mid_inside_interval(interval_t *interval, uint32_t N,
@@ -464,7 +467,8 @@ static uint32_t dewall_recursion
                        (nb_tessellator2D_t* mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
-			afl_t* AFL)
+			afl_t* AFL,
+			afl_iterator_t* afl_iter)
 {
 	uint32_t N_trg = 0;
 	if (N < 3)
@@ -475,7 +479,7 @@ static uint32_t dewall_recursion
 
 	nb_qsort_wd(vertices, N, sizeof(*vertices),
 		     compare_using_axe, &axe);
-	uint32_t N_mid = split_vtx_array(AFL, N, vertices, axe);
+	uint32_t N_mid = split_vtx_array(AFL, afl_iter, N, vertices, axe);
 	double alpha = get_alpha(N, vertices, axe, N_mid);
 
 	search_vtx_t search_vtx;
@@ -526,13 +530,15 @@ static uint32_t dewall_recursion
 	uint32_t n_trg_1 = 0;
 	if (!module()->afl.is_empty(AFL_1))
 		n_trg_1 += dewall_recursion(mesh, N_mid, vertices,
-					    deep_level + 1, AFL_1);
+					    deep_level + 1, AFL_1,
+					    afl_iter);
 	module()->afl.finish(AFL_1);
 
 	uint32_t n_trg_2 = 0;
 	if (!module()->afl.is_empty(AFL_2))
 		n_trg_2 += dewall_recursion(mesh, N - N_mid, &(vertices[N_mid]),
-					    deep_level + 1, AFL_2);
+					    deep_level + 1, AFL_2,
+					    afl_iter);
 	module()->afl.finish(AFL_2);
 
 	N_trg = n_trg_alpha + n_trg_1 + n_trg_2;
@@ -579,12 +585,13 @@ static inline afl_t* select_side_AFL(const msh_edge_t *const edge,
 }
 
 static uint32_t split_vtx_array(const afl_t *const AFL,
+				afl_iterator_t* afl_iter,
 				uint32_t N, msh_vtx_t **vertices,
 				int8_t axe)
 {
 	interval_t interval;
-	set_interval(&interval, AFL, N, vertices, axe);
-
+	set_interval(&interval, AFL, afl_iter, N, vertices, axe);
+		
 	uint32_t mid_in_interval =
 		get_mid_inside_interval(&interval, N, vertices, axe);
 
@@ -607,6 +614,7 @@ static uint32_t split_vtx_array(const afl_t *const AFL,
 
 static void set_interval(interval_t *interval,
 			 const afl_t *const AFL,
+			 afl_iterator_t* afl_iter,
 			 uint32_t N, msh_vtx_t **vertices,
 			 int8_t axe)
 {
@@ -614,11 +622,8 @@ static void set_interval(interval_t *interval,
 		interval->min = vertices[0]->x[axe];
 		interval->max = vertices[N-1]->x[axe];
 	} else {
-		uint32_t iter_size = nb_iterator_get_memsize();
-		nb_iterator_t *iter = nb_soft_allocate_mem(iter_size);
-		nb_iterator_init(iter);
-		nb_iterator_set_container(iter, (nb_container_t*)AFL);
-		const msh_edge_t *edge = nb_iterator_get_next(iter);
+		module()->afl_iter.set_afl(afl_iter, AFL);
+		const msh_edge_t *edge = module()->afl_iter.get_next(afl_iter);
 		if (edge->v1->x[axe] < edge->v2->x[axe]) {
 			interval->min = edge->v1->x[axe];
 			interval->max = edge->v2->x[axe];
@@ -626,8 +631,8 @@ static void set_interval(interval_t *interval,
 			interval->min = edge->v2->x[axe];
 			interval->max = edge->v1->x[axe];
 		}
-		while (nb_iterator_has_more(iter)) {
-			edge = nb_iterator_get_next(iter);
+		while (module()->afl_iter.has_more(afl_iter)) {
+			edge = module()->afl_iter.get_next(afl_iter);
 			if (edge->v1->x[axe] < edge->v2->x[axe]) {
 				interval->min = MIN(interval->min,
 						    edge->v1->x[axe]);
@@ -640,8 +645,6 @@ static void set_interval(interval_t *interval,
 						    edge->v1->x[axe]);
 			}
 		}
-		nb_iterator_finish(iter);
-		nb_soft_free_mem(iter_size, iter);
 	}
 }
 
@@ -757,18 +760,24 @@ static void update_AFLs(const msh_trg_t *const trg,
 static uint32_t dewall(nb_tessellator2D_t* mesh)
 {
 	uint32_t vtx_size = mesh->N_input_vtx * sizeof(msh_vtx_t*);
-	uint32_t memsize = vtx_size + module()->afl.size();
-	char *memblock = nb_soft_allocate_mem(memsize);
+	uint32_t afl_size = module()->afl.size();
+	uint32_t memsize = vtx_size + afl_size + module()->afl_iter.size();
+	char *memblock = module()->mem.allocate(memsize);
 
 	msh_vtx_t **vertices = (void*) memblock;
 	memcpy(vertices, mesh->input_vtx, vtx_size);
 
-	afl_t* AFL = (void*) (memblock + vtx_size);
+	afl_t *AFL = (void*) (memblock + vtx_size);
 	module()->afl.init(AFL, hash_key_edge);
+	
+	afl_iterator_t *afl_iter = (void*) (memblock + vtx_size + afl_size);
+	module()->afl_iter.init(afl_iter);
 
 	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
-					  vertices, 0, AFL);
+					  vertices, 0, AFL, afl_iter);
+	
+	module()->afl_iter.finish(afl_iter);	
 	module()->afl.finish(AFL);
-	nb_soft_free_mem(memsize, memblock);
+	module()->mem.free(memblock);
 	return N_trg;
 }

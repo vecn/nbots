@@ -11,6 +11,7 @@ typedef struct {
 } interface_heap_t;
 
 typedef void* afl_t; /* Active Face List (Set) */
+typedef void* afl_iterator_t;  /* AFL Iterator */
 
 typedef struct {
 	uint32_t (*size)(void);
@@ -22,11 +23,26 @@ typedef struct {
 	void* (*delete)(afl_t*, const void *const);
 } interface_afl_t;
 
+
+typedef struct {
+	uint32_t (*size)(void);
+	void (*init)(afl_iterator_t*);
+	void (*finish)(afl_iterator_t*);
+	void (*set_afl)(afl_iterator_t*, const afl_t *const);
+	const void* (*get_next)(afl_iterator_t*);
+	bool (*has_more)(const afl_iterator_t *const);
+} interface_afl_iterator_t;
+
 typedef struct {
 	interface_heap_t mem;
 	interface_afl_t afl;
+	interface_afl_iterator_t afl_iter;
 } interface_t;
 
+/* WARNING: 
+ *   module() must not allocate memory,
+ *   it should return a reference to static structure.
+ */
 interface_t* module(void);
 
 #endif

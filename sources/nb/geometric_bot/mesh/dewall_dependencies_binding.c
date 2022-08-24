@@ -40,6 +40,38 @@ static void* hash_table_delete(afl_t* self, const void *const elem)
 	return nb_container_delete((nb_container_t*)self, elem);
 }
 
+static uint32_t hash_table_iterator_size(void)
+{
+	return nb_iterator_get_memsize();
+}
+
+static void hash_table_iterator_init(afl_iterator_t* iter)
+{
+	nb_iterator_init((nb_iterator_t*)iter);
+}
+
+static void hash_table_iterator_finish(afl_iterator_t* iter)
+{
+	nb_iterator_finish((nb_iterator_t*)iter);
+}
+
+static void hash_table_iterator_set_afl(afl_iterator_t* iter,
+					const afl_t *const afl)
+{
+	nb_iterator_set_container((nb_iterator_t*)iter,
+				  (const nb_container_t *const)afl);
+}
+
+static const void* hash_table_iterator_get_next(afl_iterator_t* iter)
+{
+	return nb_iterator_get_next((nb_iterator_t*)iter);
+}
+
+static bool hash_table_iterator_has_more(const afl_iterator_t *const iter)
+{
+	return nb_iterator_has_more((nb_iterator_t*)iter);
+}
+
 static interface_t implementation = {
 	{
 		nb_allocate_mem,
@@ -54,6 +86,14 @@ static interface_t implementation = {
 		hash_table_insert,
 		hash_table_delete_any,
 		hash_table_delete
+	},
+	{
+		hash_table_iterator_size,
+		hash_table_iterator_init,
+		hash_table_iterator_finish,
+		hash_table_iterator_set_afl,
+		hash_table_iterator_get_next,
+		hash_table_iterator_has_more,
 	}
 };
 
