@@ -99,11 +99,11 @@ static void delaunay_get_points(const nb_container_t *const points,
 				const nb_point2D_t *const p1,
 				const nb_point2D_t *const p2,
 				const circle_t *const circle,
-				nb_container_t *vertices,
+				nb_bins2D_vertices_t* vertices,
 				nb_container_t* outside_vtx);
 static void delaunay_insert_if_is_candidate
-				(nb_container_t* vertices,
-				nb_container_t* outside_vtx,
+				(nb_bins2D_vertices_t* vertices,
+				 nb_container_t* outside_vtx,
 				 const nb_point2D_t *const restrict p1,
 				 const nb_point2D_t *const restrict p2,
 				 const circle_t *const circle,
@@ -116,7 +116,7 @@ static void set_circle_from_layer(circle_t *circle,
 				  const nb_bins2D_t *const bins2D,
 				  int layer);
 static void delaunay_set_inside_points_of_prev_layer
-				(nb_container_t* vertices,
+				(nb_bins2D_vertices_t* vertices,
 				 nb_container_t* outside_vtx,
 				 const circle_t *const circle);
 static void get_points_inside_circle(nb_container_t *bins_block,
@@ -222,7 +222,7 @@ void nb_bins2D_set_destroyer(nb_bins2D_t* bins2D,
 }
 
 void nb_bins2D_insert(nb_bins2D_t *const restrict bins2D,
-		       const nb_point2D_t *const restrict point)
+		      const nb_point2D_t *const restrict point)
 {
 	bin2D_t key_bin;
 	key_bin.x = get_bin_coord(point->x[0], bins2D->size_of_bins);
@@ -242,7 +242,7 @@ void nb_bins2D_insert(nb_bins2D_t *const restrict bins2D,
 }
 
 nb_point2D_t* nb_bins2D_delete(nb_bins2D_t* bins2D,
-				 const nb_point2D_t *const point)
+			       const nb_point2D_t *const point)
 {
 	bin2D_t key_bin;
 	key_bin.x = get_bin_coord(point->x[0], bins2D->size_of_bins);
@@ -701,7 +701,7 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 				const nb_point2D_t *const restrict p1,
 				const nb_point2D_t *const restrict p2,
 				const circle_t *const circle,
-				nb_container_t* vertices,
+				nb_bins2D_vertices_t* vertices,
 				nb_container_t* outside_vtx)
 {
 	uint32_t iter_size = nb_iterator_get_memsize();
@@ -718,7 +718,7 @@ static void delaunay_get_points(const nb_container_t *const restrict points,
 }
 
 static void delaunay_insert_if_is_candidate
-				(nb_container_t* vertices,
+				(nb_bins2D_vertices_t* vertices,
 				 nb_container_t* outside_vtx,
 				 const nb_point2D_t *const restrict p1,
 				 const nb_point2D_t *const restrict p2,
@@ -728,7 +728,7 @@ static void delaunay_insert_if_is_candidate
 	if (p1 != p && p2 != p) {
 		if (nb_utils2D_is_in_half_side(p1->x, p2->x, p->x)) {
 			if (is_inside_circle(circle, p))
-				nb_container_insert(vertices, p);
+				vertices->add(vertices->vtx, p);
 			else
 				nb_container_insert(outside_vtx, p);
 		}
@@ -746,7 +746,7 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
                    (const nb_bins2D_t *const restrict bins2D,
 		    const nb_point2D_t *const restrict p1, 
 		    const nb_point2D_t *const restrict p2,
-		    nb_container_t *vertices)
+		    nb_bins2D_vertices_t* vertices)
 {
 	/* Scan bins layer by layer. In the following example, the dots
 	 * represents the vertices of the segment, and the labels are
@@ -770,7 +770,7 @@ void nb_bins2D_get_candidate_points_to_min_delaunay
 	nb_container_init(outside_vtx, cnt_type);
 	bool have_points = half_side_have_points(bins2D, p1, p2);
 	uint32_t layer = 0;
-	while (nb_container_is_empty(vertices) && have_points) {
+	while (vertices->is_empty(vertices->vtx) && have_points) {
 		circle_t circle;
 		set_circle_from_layer(&circle, p1, p2, bins2D, layer);
 
@@ -826,7 +826,7 @@ static void set_circle_from_layer(circle_t *circle,
 }
 
 static void delaunay_set_inside_points_of_prev_layer
-				(nb_container_t* vertices,
+				(nb_bins2D_vertices_t* vertices,
 				 nb_container_t* outside_vtx,
 				 const circle_t *const circle)
 {
@@ -837,7 +837,7 @@ static void delaunay_set_inside_points_of_prev_layer
 	while (nb_container_is_not_empty(outside_vtx)) {
 		nb_point2D_t *p = nb_container_delete_first(outside_vtx);
 		if (is_inside_circle(circle, p))
-			nb_container_insert(vertices, p);
+			vertices->add(vertices->vtx, p);
 		else
 			nb_container_insert(aux, p);
 	}

@@ -239,10 +239,19 @@ static void test_get_candidate_points_to_min_delaunay(void)
 	p2.x[0] = 1;
 	p2.x[1] = -1;
 
-	nb_container_t *cnt = nb_allocate_on_stack(nb_container_get_memsize(NB_QUEUE));
+	nb_container_t *cnt = nb_allocate_on_stack(
+		nb_container_get_memsize(NB_QUEUE)
+	);
 	nb_container_init(cnt, NB_QUEUE);
+	nb_bins2D_vertices_t vtx_queue;
+	vtx_queue.vtx = cnt;
+	vtx_queue.add =
+		(void (*)(void*, const void *const)) nb_container_insert;
+	vtx_queue.is_empty =
+		(bool (*)(const void* const)) nb_container_is_empty;
 
-	nb_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2, cnt);
+	nb_bins2D_get_candidate_points_to_min_delaunay(bins, &p1, &p2,
+						       &vtx_queue);
 	bool is_ok = nb_container_is_not_empty(cnt);
 	if (is_ok)
 		is_ok = is_ok && dont_include_edge_points(cnt,

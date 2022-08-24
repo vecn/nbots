@@ -39,11 +39,16 @@ void nb_bins2D_set_filter(nb_bins2D_t *bins2D,
 
 void nb_bins2D_set_filter_data(nb_bins2D_t *bins2D, const void *data);
 
+typedef struct {
+	void* vtx;
+	void (*add)(void*, const void *const);
+	bool (*is_empty)(const void *const);
+} nb_bins2D_vertices_t;
 void nb_bins2D_get_candidate_points_to_min_delaunay
 				(const nb_bins2D_t *const bins2D,
 				 const nb_point2D_t *const p1, 
 				 const nb_point2D_t *const p2,
-				 nb_container_t* vertices);
+				 nb_bins2D_vertices_t* vertices);
 
 void nb_bins2D_get_points_inside_circle(const nb_bins2D_t *const bins2D,
 					 double center[2],

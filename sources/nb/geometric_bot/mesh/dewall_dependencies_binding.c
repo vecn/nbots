@@ -72,6 +72,36 @@ static bool hash_table_iterator_has_more(const afl_iterator_t *const iter)
 	return nb_iterator_has_more((nb_iterator_t*)iter);
 }
 
+static uint32_t queue_size(void)
+{
+	return nb_container_get_memsize(NB_QUEUE);
+}
+
+static void queue_init(queue_t* self)
+{
+	nb_container_init((nb_container_t*)self, NB_QUEUE);
+}
+
+static void queue_finish(queue_t* self)
+{
+	nb_container_finish((nb_container_t*)self);
+}
+
+static void queue_add(queue_t *self, const void *const elem)
+{
+	nb_container_insert((nb_container_t*)self, elem);
+}
+
+static void* queue_poll(queue_t *self)
+{
+	return nb_container_delete_first((nb_container_t*)self);
+}
+
+static bool queue_is_empty(const queue_t *const self)
+{
+	return nb_container_is_empty((nb_container_t*)self);
+}
+
 static interface_t implementation = {
 	{
 		nb_allocate_mem,
@@ -94,6 +124,14 @@ static interface_t implementation = {
 		hash_table_iterator_set_afl,
 		hash_table_iterator_get_next,
 		hash_table_iterator_has_more,
+	},
+	{
+		queue_size,
+		queue_init,
+		queue_finish,
+		queue_add,
+		queue_poll,
+		queue_is_empty
 	}
 };
 

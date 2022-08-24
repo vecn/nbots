@@ -79,11 +79,14 @@ static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edge
 static double set_v3(const nb_container_t *const edges,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
 		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist);
+static void init_bins2D_vertices_param(nb_bins2D_vertices_t *vtx_queue,
+				       queue_t *vertices);
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const nb_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
 					 const msh_vtx_t *const  v2);
-static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_vtx);
+static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh,
+				 search_vtx_t* search_vtx);
 static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 			     const search_vtx_t *search_vtx,
 			     msh_edge_t *edge);
@@ -373,29 +376,42 @@ static double set_v3(const nb_container_t *const edges,
 
 }
 
+static void init_bins2D_vertices_param(nb_bins2D_vertices_t *vtx_queue,
+				       queue_t *vertices)
+{
+	vtx_queue->vtx = vertices;
+	vtx_queue->add =
+		(void (*)(void*, const void *const))module()->queue.add;
+	vtx_queue->is_empty =
+		(bool (*)(const void *const))module()->queue.is_empty;
+}
+
 static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 					 const nb_bins2D_t *const restrict bins,
 					 const msh_vtx_t *const restrict v1,
 					 const msh_vtx_t *const restrict v2)
 {
-	uint32_t cnt_size = nb_container_get_memsize(NB_QUEUE);
-	nb_container_t* vertices = nb_soft_allocate_mem(cnt_size);
-	nb_container_init(vertices, NB_QUEUE);
+	uint32_t cnt_size = module()->queue.size();
+	queue_t* vertices = module()->mem.allocate(cnt_size);
+	module()->queue.init(vertices);
 
+	nb_bins2D_vertices_t vtx_queue;
+	init_bins2D_vertices_param(&vtx_queue, vertices);
 	nb_bins2D_get_candidate_points_to_min_delaunay(bins, v1, v2,
-							vertices);
+						       &vtx_queue);
   	msh_vtx_t *v3 = NULL;
 	double min_dist = 0.0;
-	while (nb_container_is_not_empty(vertices)) {
-		msh_vtx_t* vtx = nb_container_delete_first(vertices);
+	while (!module()->queue.is_empty(vertices)) {
+		msh_vtx_t* vtx = module()->queue.poll(vertices);
 		min_dist = set_v3(edges, v1, v2, vtx, &v3, min_dist);
 	}
-	nb_container_finish(vertices);
-	nb_soft_free_mem(cnt_size, vertices);
+	module()->queue.finish(vertices);
+	module()->mem.free(vertices);
        	return v3;
 }
 
-static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh, search_vtx_t* search_vtx)
+static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh,
+				 search_vtx_t* search_vtx)
 {
 	msh_vtx_t *v1 = get_1st_vtx(search_vtx);
 	msh_vtx_t *v2 = get_2nd_vtx(search_vtx, v1);
