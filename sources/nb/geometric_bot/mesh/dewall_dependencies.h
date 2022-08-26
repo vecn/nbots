@@ -24,12 +24,10 @@ typedef struct {
 
 
 typedef void* afl_iterator_t;  /* AFL Iterator */
-
 typedef struct {
 	uint32_t (*size)(void);
-	void (*init)(afl_iterator_t*);
+	void (*init)(afl_iterator_t*, const afl_t *const);
 	void (*finish)(afl_iterator_t*);
-	void (*set_afl)(afl_iterator_t*, const afl_t *const);
 	const void* (*get_next)(afl_iterator_t*);
 	bool (*has_more)(const afl_iterator_t *const);
 } interface_afl_iterator_t;
@@ -42,14 +40,36 @@ typedef struct {
 	void (*add)(queue_t*, const void *const);
 	void* (*poll)(queue_t*);
 	bool (*is_empty)(const queue_t *const);
-
 } interface_queue_t;
 
+typedef void *mesh_t; /* Output */
+typedef void *trg_t;
+typedef void *vtx_t;
+typedef void *edge_iterator_t;
 typedef struct {
-	interface_heap_t mem;
+	uint32_t (*size)(void);
+	void (*init)(edge_iterator_t*, const mesh_t *const);
+	void (*finish)(edge_iterator_t*);
+	const void* (*get_next)(const edge_iterator_t *const);
+	bool (*has_more)(const edge_iterator_t *const);
+} interface_mesh_edge_iterator_t;
+
+typedef struct {
+	trg_t* (*new_triangle)(mesh_t*, /* Counter-clockwise order */
+			       const vtx_t *const v1,
+			       const vtx_t *const v2,
+			       const vtx_t *const v3);
+	void (*connect_triangle)(mesh_t*, const trg_t *const);
+	void (*on_triangle_connection)(const mesh_t *const, const trg_t *const);
+	interface_mesh_edge_iterator_t edge_iter;
+} interface_mesh_t;
+
+typedef struct {
+	interface_heap_t mem; // TODO: Remove and pass membank instead
 	interface_afl_t afl;
 	interface_afl_iterator_t afl_iter;
 	interface_queue_t queue;
+	interface_mesh_t mesh;  /* Output handler */
 } interface_t;
 
 /* WARNING: 

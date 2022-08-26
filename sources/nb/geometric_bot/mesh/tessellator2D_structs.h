@@ -87,7 +87,7 @@ struct nb_tessellator2D_s {
 				 * forming this input segment. */
 	/* Data structures to handle mesh */
 	nb_bins2D_t* ug_vtx;       /* Grid to sort vertices */
-	nb_container_t* ht_trg;   /* Hash table of triangles */
+	nb_container_t* ht_trg;    /* Hash table of triangles */
 	nb_container_t* ht_edge;   /* Hash table of segments */
 
 	/* Memory built-in handlers*/

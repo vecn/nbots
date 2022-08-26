@@ -4,15 +4,13 @@
 #include <string.h>
 #include <math.h>
 
-#include "nb/memory_bot.h" // TODO: Remove after deleting soft allocations
-#include "nb/container_bot.h" // TODO: Remove after deleting dependencies
 #include "nb/geometric_bot/point2D.h"
 #include "nb/geometric_bot/utils2D.h"
 #include "nb/geometric_bot/knn/bins2D.h"
 #include "nb/geometric_bot/mesh/tessellator2D.h"
 #include "nb/geometric_bot/mesh/dewall.h"
 
-#include "tessellator2D_structs.h"
+#include "tessellator2D_structs.h" // TODO: Remove dependency here
 
 #include "dewall_dependencies.h"
 
@@ -53,55 +51,66 @@ static bool compare_2nd_vtx(const nb_point2D_t *const p_ref,
 static msh_vtx_t* get_2nd_vtx_using_bins(nb_bins2D_t* bins, msh_vtx_t* v1,
 					 int8_t axe, double alpha);
 static double swap_vtx_if_minimize_delaunay_distance
-                                      (const nb_container_t *const edges,
+                                      (const mesh_t *const mesh,
 				       const msh_vtx_t *const v1,
 				       const msh_vtx_t *const v2,
 				       msh_vtx_t** v3, double min_dist,
-				       msh_vtx_t* vtx, double dist);
-static double handle_cocircularity(const nb_container_t *const edges,
+				       msh_vtx_t* vtx, double dist,
+				       edge_iterator_t *edge_iter);
+static double handle_cocircularity(const mesh_t *const mesh,
 				   const msh_vtx_t *const v1,
 				   const msh_vtx_t *const v2,
 				   msh_vtx_t** v3, double min_dist,
-				   msh_vtx_t *vtx, double dist);
+				   msh_vtx_t *vtx, double dist,
+				   edge_iterator_t *edge_iter);
 static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 					 const msh_vtx_t *const v2,
 					 const msh_vtx_t *const v3,
-					 const nb_container_t *const edges);
-static msh_vtx_t* get_3rd_vtx(const nb_container_t *const edges,
+					 const mesh_t *const mesh,
+					 edge_iterator_t *edge_iter);
+static msh_vtx_t* get_3rd_vtx(const mesh_t *const mesh,
 			      const search_vtx_t *const search_vtx,
 			      const msh_vtx_t *const  v1,
-			      const msh_vtx_t *const  v2);
-static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edges,
+			      const msh_vtx_t *const  v2,
+			      edge_iterator_t *edge_iter);
+static msh_vtx_t* get_3rd_vtx_exahustive_search(const mesh_t *const mesh,
 						uint32_t N, 
 						msh_vtx_t** vertices,
 						const msh_vtx_t *const v1,
-						const msh_vtx_t *const v2);
-static double set_v3(const nb_container_t *const edges,
+						const msh_vtx_t *const v2,
+						edge_iterator_t *edge_iter);
+static double set_v3(const mesh_t *const mesh,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
-		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist);
+		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist,
+		     edge_iterator_t *edge_iter);
 static void init_bins2D_vertices_param(nb_bins2D_vertices_t *vtx_queue,
 				       queue_t *vertices);
-static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
+static msh_vtx_t* get_3rd_vtx_using_bins(const mesh_t *const mesh,
 					 const nb_bins2D_t *const bins,
 					 const msh_vtx_t *const  v1,
-					 const msh_vtx_t *const  v2);
-static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh,
-				 search_vtx_t* search_vtx);
-static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
+					 const msh_vtx_t *const  v2,
+					 edge_iterator_t *edge_iter);
+static msh_trg_t* create_1st_trg(mesh_t *mesh,
+				 search_vtx_t* search_vtx,
+				 edge_iterator_t *edge_iter);
+static msh_trg_t* create_trg(mesh_t *mesh,
 			     const search_vtx_t *search_vtx,
-			     msh_edge_t *edge);
+			     msh_edge_t *edge,
+			     edge_iterator_t *edge_iter);
 static void update_AFL(afl_t *AFL, const msh_edge_t *const edge);
 static uint32_t dewall_recursion
-                       (nb_tessellator2D_t* mesh, uint32_t N,
+                       (mesh_t *mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			afl_t* AFL,
+			edge_iterator_t *edge_iter,
 			afl_iterator_t* afl_iter);
-static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
+static uint32_t triangulate_wall(mesh_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 afl_t *AFL_alpha,
 				 afl_t *AFL_1,
-				 afl_t *AFL_2);
+				 afl_t *AFL_2,
+				 edge_iterator_t *edge_iter);
 static void update_AFLs(const msh_trg_t *const trg,
 			const msh_edge_t *const edge,
 			afl_t *AFL_alpha,
@@ -131,11 +140,14 @@ static bool not_space_for_alpha(msh_vtx_t **vertices, uint32_t i, int8_t axe);
 static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 			    msh_vtx_t **vertices, int8_t axe,
 			    double alpha, uint32_t N_half);
-static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
+static bool set_first_trg_into_AFL(mesh_t *mesh,
 				   search_vtx_t *search_vtx,
-				   afl_t *AFL);
+				   afl_t *AFL,
+				   edge_iterator_t *edge_iter);
 static void clear_search_vtx(search_vtx_t *search_vtx);
-static uint32_t dewall(nb_tessellator2D_t* mesh);
+
+static uint32_t dewall_memsize(uint32_t n_vtx);
+static uint32_t dewall(mesh_t* mesh, uint32_t n_vtx, char *memblock);
 
 void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices,
 				   const double *const vertices)
@@ -160,7 +172,12 @@ void nb_tessellator2D_get_delaunay(nb_tessellator2D_t *mesh, uint32_t N_vertices
 			(vertices[i*2+1] - mesh->ydisp);
 		nb_bins2D_insert(mesh->ug_vtx, vtx);
 	}
-	dewall(mesh);
+	uint32_t memsize = dewall_memsize(N_vertices);
+	char *memblock = module()->mem.allocate(memsize);
+
+	dewall((mesh_t*)mesh, N_vertices, memblock);
+
+	module()->mem.free(memblock);
 EXIT:
 	return;
 }
@@ -256,15 +273,17 @@ static inline msh_vtx_t* get_2nd_vtx_using_bins(nb_bins2D_t* bins,
 }
 
 static double swap_vtx_if_minimize_delaunay_distance
-                                      (const nb_container_t *const edges,
+                                      (const mesh_t *const mesh,
 				       const msh_vtx_t *const v1,
 				       const msh_vtx_t *const v2,
 				       msh_vtx_t** v3, double min_dist,
-				       msh_vtx_t *vtx, double dist)
+				       msh_vtx_t *vtx, double dist,
+				       edge_iterator_t *edge_iter)
 {
 	if (fabs(dist - min_dist) < NB_GEOMETRIC_TOL) {
-		min_dist = handle_cocircularity(edges, v1, v2, v3,
-						min_dist, vtx, dist);
+		min_dist = handle_cocircularity(mesh, v1, v2, v3,
+						min_dist, vtx, dist,
+						edge_iter);
 	} else {
 		if (dist < min_dist) {
 			*v3 = vtx;
@@ -274,13 +293,15 @@ static double swap_vtx_if_minimize_delaunay_distance
 	return min_dist;
 }
 
-static double handle_cocircularity(const nb_container_t *const edges,
+static double handle_cocircularity(const mesh_t *const mesh,
 				   const msh_vtx_t *const v1,
 				   const msh_vtx_t *const v2,
 				   msh_vtx_t** v3, double min_dist,
-				   msh_vtx_t *vtx, double dist)
+				   msh_vtx_t *vtx, double dist,
+				   edge_iterator_t *edge_iter)
 {
-	bool v3_intersect = proposed_trg_intersects_edge(v1, v2, *v3, edges);
+	bool v3_intersect = proposed_trg_intersects_edge(v1, v2, *v3, mesh,
+							 edge_iter);
 	if (v3_intersect) {
 		*v3 = vtx;
 		min_dist = dist;
@@ -291,15 +312,14 @@ static double handle_cocircularity(const nb_container_t *const edges,
 static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 					 const msh_vtx_t *const v2,
 					 const msh_vtx_t *const v3,
-					 const nb_container_t *const edges)
+					 const mesh_t *const mesh,
+					 edge_iterator_t *edge_iter)
 {
 	bool intersects = false;
-	uint32_t iter_size = nb_iterator_get_memsize();
-	nb_iterator_t *iter = nb_soft_allocate_mem(iter_size);
-	nb_iterator_init(iter);
-	nb_iterator_set_container(iter, edges);
-	while (nb_iterator_has_more(iter) && !intersects) {
-		const msh_edge_t *edge = nb_iterator_get_next(iter);
+	module()->mesh.edge_iter.init(edge_iter, mesh);
+	while (module()->mesh.edge_iter.has_more(edge_iter) && !intersects) {
+		const msh_edge_t *edge = (msh_edge_t*)
+			module()->mesh.edge_iter.get_next(edge_iter);
 		intersects =
 			NB_INTERSECTED == nb_utils2D_get_sgm_intersection
 							(v1->x, v3->x,
@@ -315,31 +335,33 @@ static bool proposed_trg_intersects_edge(const msh_vtx_t *const v1,
 							 NULL);
 		}
 	}
-	nb_iterator_finish(iter);
-	nb_soft_free_mem(iter_size, iter);
+	module()->mesh.edge_iter.finish(edge_iter);
 	return intersects;
 }
 
-static inline msh_vtx_t* get_3rd_vtx(const nb_container_t *const edges,
+static inline msh_vtx_t* get_3rd_vtx(const mesh_t *const mesh,
 				     const search_vtx_t *const search_vtx,
 				     const msh_vtx_t *const  v1,
-				     const msh_vtx_t *const  v2)
+				     const msh_vtx_t *const  v2,
+				     edge_iterator_t *edge_iter)
 {
 	msh_vtx_t *v3;
 	if (search_vtx->using_bins)
-		v3 = get_3rd_vtx_using_bins(edges, search_vtx->bins, v1, v2);
+		v3 = get_3rd_vtx_using_bins(mesh, search_vtx->bins, v1, v2,
+					    edge_iter);
 	else
-		v3 = get_3rd_vtx_exahustive_search(edges, search_vtx->N,
+		v3 = get_3rd_vtx_exahustive_search(mesh, search_vtx->N,
 						   search_vtx->vtx_array,
-						   v1, v2);
+						   v1, v2, edge_iter);
 	return v3;
 }
 
-static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edges,
+static msh_vtx_t* get_3rd_vtx_exahustive_search(const mesh_t *const mesh,
 						uint32_t N, 
 						msh_vtx_t** vertices,
 						const msh_vtx_t *const v1,
-						const msh_vtx_t *const v2)
+						const msh_vtx_t *const v2,
+						edge_iterator_t *edge_iter)
 {
 	msh_vtx_t *v3 = NULL;
 	double min_dist = 0.0;
@@ -347,16 +369,17 @@ static msh_vtx_t* get_3rd_vtx_exahustive_search(const nb_container_t *const edge
 		if (vertices[i] != v1 && vertices[i] != v2) {
 			if (nb_utils2D_is_in_half_side(v1->x, v2->x,
 							vertices[i]->x))
-				min_dist = set_v3(edges, v1, v2, vertices[i],
-						  &v3, min_dist);
+				min_dist = set_v3(mesh, v1, v2, vertices[i],
+						  &v3, min_dist, edge_iter);
 		}
 	}
 	return v3;
 }
 
-static double set_v3(const nb_container_t *const edges,
+static double set_v3(const mesh_t *const mesh,
 		     const msh_vtx_t *const v1, const msh_vtx_t *const v2,
-		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist)
+		     msh_vtx_t* v3_candidate, msh_vtx_t** v3, double min_dist,
+		     edge_iterator_t *edge_iter)
 {
 	double dist = nb_utils2D_get_delaunay_dist(v1->x, v2->x,
 						    v3_candidate->x);
@@ -366,11 +389,12 @@ static double set_v3(const nb_container_t *const edges,
 		*v3 = v3_candidate;
 	} else {
 		min_dist = 
-			swap_vtx_if_minimize_delaunay_distance(edges,
+			swap_vtx_if_minimize_delaunay_distance(mesh,
 							       v1, v2, v3,
 							       min_dist,
 							       v3_candidate,
-							       dist);
+							       dist,
+							       edge_iter);
 	}
 	return min_dist;
 
@@ -386,10 +410,11 @@ static void init_bins2D_vertices_param(nb_bins2D_vertices_t *vtx_queue,
 		(bool (*)(const void *const))module()->queue.is_empty;
 }
 
-static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
+static msh_vtx_t* get_3rd_vtx_using_bins(const mesh_t *const mesh,
 					 const nb_bins2D_t *const restrict bins,
 					 const msh_vtx_t *const restrict v1,
-					 const msh_vtx_t *const restrict v2)
+					 const msh_vtx_t *const restrict v2,
+					 edge_iterator_t *edge_iter)
 {
 	uint32_t cnt_size = module()->queue.size();
 	queue_t* vertices = module()->mem.allocate(cnt_size);
@@ -403,39 +428,37 @@ static msh_vtx_t* get_3rd_vtx_using_bins(const nb_container_t *const edges,
 	double min_dist = 0.0;
 	while (!module()->queue.is_empty(vertices)) {
 		msh_vtx_t* vtx = module()->queue.poll(vertices);
-		min_dist = set_v3(edges, v1, v2, vtx, &v3, min_dist);
+		min_dist = set_v3(mesh, v1, v2, vtx, &v3, min_dist, edge_iter);
 	}
 	module()->queue.finish(vertices);
 	module()->mem.free(vertices);
        	return v3;
 }
 
-static msh_trg_t* create_1st_trg(nb_tessellator2D_t *mesh,
-				 search_vtx_t* search_vtx)
+static msh_trg_t* create_1st_trg(mesh_t *mesh,
+				 search_vtx_t* search_vtx,
+				 edge_iterator_t *edge_iter)
 {
 	msh_vtx_t *v1 = get_1st_vtx(search_vtx);
 	msh_vtx_t *v2 = get_2nd_vtx(search_vtx, v1);
-	msh_vtx_t *v3 = get_3rd_vtx(mesh->ht_edge, search_vtx, v1, v2);
+	msh_vtx_t *v3 = get_3rd_vtx(mesh, search_vtx, v1, v2, edge_iter);
   
 	if (NULL == v3) {
 		/* Check in the other halfspace */
 		msh_vtx_t *aux_vtx = v1;
 		v1 = v2;
 		v2 = aux_vtx;
-		v3 = get_3rd_vtx(mesh->ht_edge, search_vtx, v1, v2);
+		v3 = get_3rd_vtx(mesh, search_vtx, v1, v2, edge_iter);
 	}
 
-	msh_trg_t *trg;
-	if (NULL != v3) {
-		trg = mtrg_allocate_zero_mem(mesh);
-		trg->v1 = v1;
-		trg->v2 = v2;
-		trg->v3 = v3;
-	} else {
+	if (NULL == v3) {
 		/* All points are collinear */
-		trg = NULL;
+		return NULL;
 	}
-	return trg;
+	return (msh_trg_t*) module()->mesh.new_triangle(mesh,
+							(vtx_t*) v1,
+							(vtx_t*) v2,
+							(vtx_t*) v3);
 }
 
 static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
@@ -444,9 +467,10 @@ static inline msh_vtx_t* get_1st_vtx(search_vtx_t *search_vtx)
 	return search_vtx->vtx_array[search_vtx->N_half];
 }
 
-static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
+static msh_trg_t* create_trg(mesh_t *mesh,
 			     const search_vtx_t *search_vtx,
-			     msh_edge_t *edge)
+			     msh_edge_t *edge,
+			     edge_iterator_t *edge_iter)
 {
 	/* Select the correct segment orientation */
 	msh_vtx_t *restrict v1;
@@ -459,17 +483,16 @@ static msh_trg_t* create_trg(nb_tessellator2D_t *mesh,
 		v2 = edge->v1;
 	}
 
-	msh_vtx_t *restrict v3 = get_3rd_vtx(mesh->ht_edge,
-					     search_vtx, v1, v2);
+	msh_vtx_t *restrict v3 = get_3rd_vtx(mesh, search_vtx, v1, v2,
+					     edge_iter);
 
-	msh_trg_t *trg = NULL;
-	if(NULL != v3) {
-		trg = mtrg_allocate_zero_mem(mesh);
-		trg->v1 = v1;
-		trg->v2 = v2;
-		trg->v3 = v3;
+	if(NULL == v3) {
+		return NULL;
 	}
-	return trg;
+	return (msh_trg_t*) module()->mesh.new_triangle(mesh,
+							(vtx_t*) v1,
+							(vtx_t*) v2,
+							(vtx_t*) v3);
 }
 
 static inline void update_AFL(afl_t *AFL, const msh_edge_t *const edge)
@@ -480,10 +503,11 @@ static inline void update_AFL(afl_t *AFL, const msh_edge_t *const edge)
 }
 
 static uint32_t dewall_recursion
-                       (nb_tessellator2D_t* mesh, uint32_t N,
+                       (mesh_t *mesh, uint32_t N,
 			msh_vtx_t** vertices,
 			uint16_t deep_level,
 			afl_t* AFL,
+			edge_iterator_t *edge_iter,
 			afl_iterator_t* afl_iter)
 {
 	uint32_t N_trg = 0;
@@ -506,7 +530,7 @@ static uint32_t dewall_recursion
 
 	/* Create first triangle */
 	if (module()->afl.is_empty(AFL)) {
-		if (set_first_trg_into_AFL(mesh, &search_vtx, AFL))
+		if (set_first_trg_into_AFL(mesh, &search_vtx, AFL, edge_iter))
 			n_trg_alpha += 1;
 		else
 			goto EXIT;
@@ -530,13 +554,13 @@ static uint32_t dewall_recursion
 	while (!module()->afl.is_empty(AFL)) {
 		msh_edge_t* edge = module()->afl.delete_any(AFL);
 		afl_t *side_AFL = select_side_AFL(edge, &search_vtx,
-							 AFL_1, AFL_alpha,
-							 AFL_2);
+						  AFL_1, AFL_alpha,
+						  AFL_2);
 		module()->afl.insert(side_AFL, edge);
 	}
 	
 	n_trg_alpha += triangulate_wall(mesh, &search_vtx, AFL_alpha,
-					AFL_1, AFL_2);
+					AFL_1, AFL_2, edge_iter);
 
 	module()->afl.finish(AFL_alpha);
 
@@ -547,14 +571,14 @@ static uint32_t dewall_recursion
 	if (!module()->afl.is_empty(AFL_1))
 		n_trg_1 += dewall_recursion(mesh, N_mid, vertices,
 					    deep_level + 1, AFL_1,
-					    afl_iter);
+					    edge_iter, afl_iter);
 	module()->afl.finish(AFL_1);
 
 	uint32_t n_trg_2 = 0;
 	if (!module()->afl.is_empty(AFL_2))
 		n_trg_2 += dewall_recursion(mesh, N - N_mid, &(vertices[N_mid]),
 					    deep_level + 1, AFL_2,
-					    afl_iter);
+					    edge_iter, afl_iter);
 	module()->afl.finish(AFL_2);
 
 	N_trg = n_trg_alpha + n_trg_1 + n_trg_2;
@@ -585,10 +609,10 @@ static inline double get_alpha(uint32_t N, msh_vtx_t **vertices,
 }
 
 static inline afl_t* select_side_AFL(const msh_edge_t *const edge,
-					    const search_vtx_t *search_vtx,
-					    afl_t *AFL_neg,
-					    afl_t *AFL_zero,
-					    afl_t *AFL_pos)
+				     const search_vtx_t *search_vtx,
+				     afl_t *AFL_neg,
+				     afl_t *AFL_zero,
+				     afl_t *AFL_pos)
 {
 	bool v1 = (edge->v1->x[search_vtx->axe] - search_vtx->alpha > 0.0);
 	bool v2 = (edge->v2->x[search_vtx->axe] - search_vtx->alpha > 0.0);
@@ -638,7 +662,7 @@ static void set_interval(interval_t *interval,
 		interval->min = vertices[0]->x[axe];
 		interval->max = vertices[N-1]->x[axe];
 	} else {
-		module()->afl_iter.set_afl(afl_iter, AFL);
+		module()->afl_iter.init(afl_iter, AFL);
 		const msh_edge_t *edge = module()->afl_iter.get_next(afl_iter);
 		if (edge->v1->x[axe] < edge->v2->x[axe]) {
 			interval->min = edge->v1->x[axe];
@@ -661,6 +685,7 @@ static void set_interval(interval_t *interval,
 						    edge->v1->x[axe]);
 			}
 		}
+		module()->afl_iter.finish(afl_iter);
 	}
 }
 
@@ -709,19 +734,22 @@ static void init_search_vtx(search_vtx_t *search_vtx, uint32_t N,
 	}
 }
 
-static bool set_first_trg_into_AFL(nb_tessellator2D_t *mesh,
+static bool set_first_trg_into_AFL(mesh_t *mesh,
 				   search_vtx_t *search_vtx,
-				   afl_t *AFL)
+				   afl_t *AFL,
+				   edge_iterator_t *edge_iter)
 {
 	bool trg_created = false;
 	if (0 < search_vtx->N_half) {
-		msh_trg_t* first_trg =	create_1st_trg(mesh, search_vtx);
+		msh_trg_t* first_trg =	create_1st_trg(mesh, search_vtx,
+						       edge_iter);
 		if (NULL != first_trg) {
-			mesh_add_triangle(mesh, first_trg);
+			module()->mesh.connect_triangle(mesh, (trg_t*)first_trg);
 			module()->afl.insert(AFL, first_trg->s1);
 			module()->afl.insert(AFL, first_trg->s2);
 			module()->afl.insert(AFL, first_trg->s3);
-			mesh->do_after_insert_trg(mesh);
+			module()->mesh.on_triangle_connection(mesh,
+							      (trg_t*)first_trg);
 			trg_created = true;
 		} /* else [the points are collinear] */
 	} /* else [if all points are collinear]*/
@@ -734,22 +762,23 @@ static void clear_search_vtx(search_vtx_t *search_vtx)
 		nb_bins2D_destroy(search_vtx->bins);
 }
 
-static uint32_t triangulate_wall(nb_tessellator2D_t *mesh,
+static uint32_t triangulate_wall(mesh_t *mesh,
 				 const search_vtx_t *search_vtx,
 				 afl_t *AFL_alpha,
 				 afl_t *AFL_1,
-				 afl_t *AFL_2)
+				 afl_t *AFL_2,
+				 edge_iterator_t *edge_iter)
 {
 	uint32_t n_trg_alpha = 0;
 	while (!module()->afl.is_empty(AFL_alpha)) {
 		msh_edge_t* edge = module()->afl.delete_any(AFL_alpha);
-		msh_trg_t* trg = create_trg(mesh, search_vtx, edge);
+		msh_trg_t* trg = create_trg(mesh, search_vtx, edge, edge_iter);
 		if (NULL != trg) {
-			mesh_add_triangle(mesh, trg);
+			module()->mesh.connect_triangle(mesh, (trg_t*)trg);
 			update_AFLs(trg, edge, AFL_alpha, AFL_1, AFL_2,
 				    search_vtx);
 			n_trg_alpha += 1;
-			mesh->do_after_insert_trg(mesh);
+			module()->mesh.on_triangle_connection(mesh, (trg_t*)trg);
 		}
 	}
 	return n_trg_alpha;
@@ -773,27 +802,39 @@ static void update_AFLs(const msh_trg_t *const trg,
 
 }
 
-static uint32_t dewall(nb_tessellator2D_t* mesh)
+static uint32_t dewall_memsize(uint32_t n_vtx)
 {
-	uint32_t vtx_size = mesh->N_input_vtx * sizeof(msh_vtx_t*);
+	uint32_t vtx_size = n_vtx * sizeof(msh_vtx_t*);
 	uint32_t afl_size = module()->afl.size();
-	uint32_t memsize = vtx_size + afl_size + module()->afl_iter.size();
-	char *memblock = module()->mem.allocate(memsize);
+	uint32_t edge_iter_size = module()->mesh.edge_iter.size();
+	return vtx_size + afl_size + edge_iter_size
+		+ module()->afl_iter.size();
+}
+
+static uint32_t dewall(mesh_t* mesh, uint32_t n_vtx, char *memblock)
+{
+	uint32_t vtx_size = n_vtx * sizeof(msh_vtx_t*);
+	uint32_t afl_size = module()->afl.size();
+	uint32_t edge_iter_size = module()->mesh.edge_iter.size();
 
 	msh_vtx_t **vertices = (void*) memblock;
-	memcpy(vertices, mesh->input_vtx, vtx_size);
+
+	memcpy(vertices,
+	       ((nb_tessellator2D_t*)mesh)->input_vtx, vtx_size);// TODO
 
 	afl_t *AFL = (void*) (memblock + vtx_size);
 	module()->afl.init(AFL, hash_key_edge);
 	
-	afl_iterator_t *afl_iter = (void*) (memblock + vtx_size + afl_size);
-	module()->afl_iter.init(afl_iter);
-
-	uint32_t N_trg = dewall_recursion(mesh, mesh->N_input_vtx,
-					  vertices, 0, AFL, afl_iter);
+	edge_iterator_t *edge_iter = (void*) (memblock + vtx_size + afl_size);
 	
-	module()->afl_iter.finish(afl_iter);	
+	afl_iterator_t *afl_iter = (void*)
+		(memblock + vtx_size + afl_size + edge_iter_size);
+
+
+	uint32_t n_trg = dewall_recursion((mesh_t*)mesh, n_vtx,
+					  vertices, 0, AFL, edge_iter,
+					  afl_iter);
+
 	module()->afl.finish(AFL);
-	module()->mem.free(memblock);
-	return N_trg;
+	return n_trg;
 }
