@@ -1,5 +1,9 @@
+#include <stdlib.h>
+
 #include "nb/memory_bot.h"
 #include "nb/container_bot.h"
+#include "nb/geometric_bot/utils2D.h"
+
 #include "nb/geometric_bot/mesh/tessellator2D.h"
 
 #include "tessellator2D_structs.h"
@@ -101,33 +105,40 @@ static bool queue_is_empty(const queue_t *const self)
 	return nb_container_is_empty((nb_container_t*)self);
 }
 
-static uint32_t mesh_edge_iterator_size(void)
+static bool mesh_is_v3_intersecting_any_edge(const mesh_t *const mesh,
+					     const vtx_t *const v1,
+					     const vtx_t *const v2,
+					     const vtx_t *const v3)
 {
-	return nb_iterator_get_memsize();
-}
-
-static void mesh_edge_iterator_init(edge_iterator_t* iter,
-				    const mesh_t *const mesh)
-{
+	bool intersects = false;
+	uint32_t memsize = nb_iterator_get_memsize();
+	nb_iterator_t *iter = malloc(memsize);
 	nb_tessellator2D_t* m2D = (nb_tessellator2D_t*) mesh;
-	nb_iterator_init((nb_iterator_t*)iter);
-	nb_iterator_set_container((nb_iterator_t*)iter, m2D->ht_edge);
-}
 
-static void mesh_edge_iterator_finish(edge_iterator_t* iter)
-{
-	nb_iterator_finish((nb_iterator_t*)iter);
-}
-
-static const void* mesh_edge_iterator_get_next(
-	const edge_iterator_t *const iter)
-{
-	return nb_iterator_get_next((nb_iterator_t*)iter);
-}
-
-static bool mesh_edge_iterator_has_more(const edge_iterator_t *const iter)
-{
-	return nb_iterator_has_more((nb_iterator_t*)iter);
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter, m2D->ht_edge);
+	while (nb_iterator_has_more(iter) && !intersects) {
+		const msh_edge_t *edge = nb_iterator_get_next(iter);
+		intersects =
+			NB_INTERSECTED == nb_utils2D_get_sgm_intersection(
+				((msh_vtx_t*)v1)->x,
+				((msh_vtx_t*)v3)->x,
+				edge->v1->x,
+				edge->v2->x,
+				NULL);
+		if (!intersects) {
+			intersects = NB_INTERSECTED == 
+				nb_utils2D_get_sgm_intersection(
+					((msh_vtx_t*)v2)->x,
+					((msh_vtx_t*)v3)->x,
+					edge->v1->x,
+					edge->v2->x,
+					NULL);
+		}
+	}
+	nb_iterator_finish(iter);
+	free(iter);
+	return intersects;
 }
 
 static trg_t* mesh_new_triangle(mesh_t* self, /* Counter-clockwise order */
@@ -193,17 +204,10 @@ static interface_t implementation = {
 	},
 	{
 		/* interface_mesh_t mesh */
+		mesh_is_v3_intersecting_any_edge,
 		mesh_new_triangle,
 		mesh_connect_triangle,
-		on_triangle_connection,
-		{
-			/* interface_mesh_edge_iterator_t edge_iter */
-			mesh_edge_iterator_size,
-			mesh_edge_iterator_init,
-			mesh_edge_iterator_finish,
-			mesh_edge_iterator_get_next,
-			mesh_edge_iterator_has_more
-		}
+		on_triangle_connection
 	}
 };
 

@@ -45,23 +45,17 @@ typedef struct {
 typedef void *mesh_t; /* Output */
 typedef void *trg_t;
 typedef void *vtx_t;
-typedef void *edge_iterator_t;
 typedef struct {
-	uint32_t (*size)(void);
-	void (*init)(edge_iterator_t*, const mesh_t *const);
-	void (*finish)(edge_iterator_t*);
-	const void* (*get_next)(const edge_iterator_t *const);
-	bool (*has_more)(const edge_iterator_t *const);
-} interface_mesh_edge_iterator_t;
-
-typedef struct {
+	bool (*is_v3_intersecting_any_edge)(const mesh_t *const,
+					    const vtx_t *const v1,
+					    const vtx_t *const v2,
+					    const vtx_t *const v3);
 	trg_t* (*new_triangle)(mesh_t*, /* Counter-clockwise order */
 			       const vtx_t *const v1,
 			       const vtx_t *const v2,
 			       const vtx_t *const v3);
 	void (*connect_triangle)(mesh_t*, const trg_t *const);
 	void (*on_triangle_connection)(const mesh_t *const, const trg_t *const);
-	interface_mesh_edge_iterator_t edge_iter;
 } interface_mesh_t;
 
 typedef struct {
