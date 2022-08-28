@@ -10,7 +10,7 @@ typedef struct {
 	void (*free)(void*);
 } interface_heap_t;
 
-typedef void* afl_t; /* Active Face List (Set) */
+typedef void afl_t; /* Active Face List (Set) */
 
 typedef struct {
 	uint32_t (*size)(void);
