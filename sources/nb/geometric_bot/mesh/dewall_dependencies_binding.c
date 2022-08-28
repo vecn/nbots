@@ -151,21 +151,14 @@ static trg_t* mesh_new_triangle(mesh_t* self, /* Counter-clockwise order */
 	trg->v1 = (msh_vtx_t*) v1;
 	trg->v2 = (msh_vtx_t*) v2;
 	trg->v3 = (msh_vtx_t*) v3;
-	return (trg_t*) trg;
-}
 
-static void mesh_connect_triangle(mesh_t *self, const trg_t *const trg)
-{
-	mesh_add_triangle((nb_tessellator2D_t*)self, (msh_trg_t*)trg);
-}
+	mesh_add_triangle(mesh, (msh_trg_t*)trg);
 
-static void on_triangle_connection(const mesh_t *const self,
-				   const trg_t *const trg)
-{
-	/* Useful to create animations */
-	nb_tessellator2D_t *mesh = (nb_tessellator2D_t*) self;
 	mesh->do_after_insert_trg(mesh);
+
+	return trg;
 }
+
 
 // TODO: Separate static structure
 static interface_t implementation = {
@@ -205,9 +198,7 @@ static interface_t implementation = {
 	{
 		/* interface_mesh_t mesh */
 		mesh_is_v3_intersecting_any_edge,
-		mesh_new_triangle,
-		mesh_connect_triangle,
-		on_triangle_connection
+		mesh_new_triangle
 	}
 };
 

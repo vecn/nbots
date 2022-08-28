@@ -42,9 +42,9 @@ typedef struct {
 	bool (*is_empty)(const queue_t *const);
 } interface_queue_t;
 
-typedef void *mesh_t; /* Output */
-typedef void *trg_t;
-typedef void *vtx_t;
+typedef void mesh_t; /* Output */
+typedef msh_trg_t trg_t;// TODO: typedef void trg_t;
+typedef msh_vtx_t vtx_t;// TODO: typedef void vtx_t;
 typedef struct {
 	bool (*is_v3_intersecting_any_edge)(const mesh_t *const,
 					    const vtx_t *const v1,
@@ -54,8 +54,6 @@ typedef struct {
 			       const vtx_t *const v1,
 			       const vtx_t *const v2,
 			       const vtx_t *const v3);
-	void (*connect_triangle)(mesh_t*, const trg_t *const);
-	void (*on_triangle_connection)(const mesh_t *const, const trg_t *const);
 } interface_mesh_t;
 
 typedef struct {
