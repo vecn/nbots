@@ -20,6 +20,8 @@ typedef struct {
 	void (*insert)(afl_t*, const void *const);
 	void* (*delete_any)(afl_t*);	
 	void* (*delete)(afl_t*, const void *const);
+	void (*get_range_with_faces)(const afl_t *const, int dim,
+				     double range[2]);
 } interface_afl_t;
 
 
@@ -50,7 +52,7 @@ typedef struct {
 					    const vtx_t *const v1,
 					    const vtx_t *const v2,
 					    const vtx_t *const v3);
-	trg_t* (*new_triangle)(mesh_t*, /* Counter-clockwise order */
+	trg_t* (*new_triangle)(mesh_t*, /* Vtx in counter-clockwise order */
 			       const vtx_t *const v1,
 			       const vtx_t *const v2,
 			       const vtx_t *const v3);
@@ -66,7 +68,7 @@ typedef struct {
 
 /* WARNING: 
  *   module() must not allocate memory,
- *   it should return a reference to static structure.
+ *   it should return a reference to existing structure.
  */
 interface_t* module(void);
 

@@ -10,6 +10,9 @@
 
 #include "dewall_dependencies.h"
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 static uint32_t hash_table_size(void)
 {
 	return nb_container_get_memsize(NB_HASH);
@@ -45,6 +48,36 @@ static void* hash_table_delete_any(afl_t* self)
 static void* hash_table_delete(afl_t* self, const void *const elem)
 {
 	return nb_container_delete((nb_container_t*)self, elem);
+}
+
+static void afl_get_range(const afl_t *const self, int d, double range[2])
+{
+	uint32_t size = nb_iterator_get_memsize();
+	nb_iterator_t *iter = nb_allocate_mem(size);
+	
+	nb_iterator_init(iter);
+	nb_iterator_set_container(iter,
+				  (const nb_container_t *const) self);
+	const msh_edge_t *edge = nb_iterator_get_next(iter);
+	if (edge->v1->x[d] < edge->v2->x[d]) {
+		range[0] = edge->v1->x[d];
+		range[1] = edge->v2->x[d];
+	} else {
+		range[0] = edge->v2->x[d];
+		range[1] = edge->v1->x[d];
+	}
+	while (nb_iterator_has_more(iter)) {
+		edge = nb_iterator_get_next(iter);
+		if (edge->v1->x[d] < edge->v2->x[d]) {
+			range[0] = MIN(range[0], edge->v1->x[d]);
+			range[1] = MAX(range[1], edge->v2->x[d]);
+		} else {
+			range[0] = MIN(range[0], edge->v2->x[d]);
+			range[1] = MAX(range[1], edge->v1->x[d]);
+		}
+	}
+	nb_iterator_finish(iter);
+	nb_free_mem(iter);
 }
 
 static uint32_t hash_table_iterator_size(void)
@@ -176,7 +209,8 @@ static interface_t implementation = {
 		hash_table_is_empty,
 		hash_table_insert,
 		hash_table_delete_any,
-		hash_table_delete
+		hash_table_delete,
+		afl_get_range
 	},
 	{
 		/* interface_afl_iterator_t afl_iter */
